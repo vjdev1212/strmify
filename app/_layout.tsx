@@ -1,5 +1,5 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { DarkTheme, DefaultTheme, Theme, ThemeProvider } from '@react-navigation/native';
+import { DarkTheme, Theme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -7,6 +7,8 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
+import MovieDetails from './movie/[imdbid]';
+import SeriesDetails from './series/[imdbid]';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -58,7 +60,7 @@ function RootLayoutNav() {
       border: 'rgb(216, 216, 216)',
       notification: 'rgb(255, 59, 48)',
     },
-    fonts:{
+    fonts: {
       regular: {
         fontFamily: '',
         fontWeight: 'bold'
@@ -83,8 +85,8 @@ function RootLayoutNav() {
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="MovieDetails" options={{ headerShown: false }} />
-        <Stack.Screen name="SeriesDetails" options={{ headerShown: false }} />
+        <Stack.Screen name="movie/[imdbid]" options={{ headerShown: false }} />
+        <Stack.Screen name="series/[imdbid]" options={{ headerShown: false }} />
       </Stack>
     </ThemeProvider>
   );

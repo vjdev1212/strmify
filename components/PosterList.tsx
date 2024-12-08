@@ -21,7 +21,6 @@ const PosterList = ({
   type: 'movie' | 'series';
   layout?: 'horizontal' | 'vertical';
 }) => {
-  const router = useRouter();
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -47,27 +46,17 @@ const PosterList = ({
         ? item.year.split('–')[0]
         : item.year;
 
-    const handlePress = () => {
-      const href: Href = {
-        pathname: item.type === 'movie' ? '/movie/MovieDetails' : '/series/SeriesDetails',
-        params: { imdbid: item.imdb_id },
-      };
-
-      router.push(href);
-    };
-
     return (
       <TouchableOpacity
-        style={[styles.posterContainer, layout === 'vertical' && styles.verticalContainer]}
-        onPress={handlePress} >
-        <Image
-          source={{ uri: item.poster }}
-          style={[styles.posterImage, layout === 'vertical' && styles.verticalImage]}
-        />
-        <Text numberOfLines={1} ellipsizeMode="tail" style={styles.posterTitle}>
-          {item.name}
-        </Text>
-        <Text style={styles.posterYear}>{year}</Text>
+        style={[styles.posterContainer, layout === 'vertical' && styles.verticalContainer]}>
+          <Image
+            source={{ uri: item.poster }}
+            style={[styles.posterImage, layout === 'vertical' && styles.verticalImage]}
+          />
+          <Text numberOfLines={1} ellipsizeMode="tail" style={styles.posterTitle}>
+            {item.name}
+          </Text>
+          <Text style={styles.posterYear}>{year}</Text>
       </TouchableOpacity>
     );
   };
@@ -128,7 +117,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   posterContainer: {
-    marginRight: 15,
+    padding: 10
   },
   verticalContainer: {
     marginBottom: 10,

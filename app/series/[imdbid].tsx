@@ -1,10 +1,8 @@
-import { useSearchParams } from 'expo-router/build/hooks';
 import React, { useEffect, useState } from 'react';
-import { Text, StyleSheet, ScrollView, Image, View } from 'react-native';
+import { StyleSheet, ScrollView, Image } from 'react-native';
+import { Text } from '../../components/Themed';
 
-const MovieDetails = () => {
-  const searchParams = useSearchParams();
-  const imdbid = searchParams.get('imdbid');
+const SeriesDetails = ({ imdbid }: { imdbid: string }) => {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -12,9 +10,10 @@ const MovieDetails = () => {
     const fetchDetails = async () => {
       try {
         const response = await fetch(
-          `https://v3-cinemeta.strem.io/meta/movie/${imdbid}.json`
+          `https://v3-cinemeta.strem.io/meta/series/${imdbid}.json`
         );
         const result = await response.json();
+        console.log(result);
         setData(result.meta);
       } catch (error) {
         console.error('Error fetching movie details:', error);
@@ -59,6 +58,7 @@ const styles = StyleSheet.create({
   poster: {
     width: '100%',
     height: 300,
+    borderRadius: 10,
     marginBottom: 20,
   },
   title: {
@@ -81,4 +81,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default MovieDetails;
+export default SeriesDetails;
