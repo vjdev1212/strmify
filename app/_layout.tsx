@@ -7,8 +7,8 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
-import MovieDetails from './movie/[imdbid]';
-import SeriesDetails from './series/[imdbid]';
+import MovieDetails from './movie/Details';
+import SeriesDetails from './series/Details';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -85,8 +85,8 @@ function RootLayoutNav() {
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="movie/[imdbid]" options={{ headerShown: false }} />
-        <Stack.Screen name="series/[imdbid]" options={{ headerShown: false }} />
+        <Stack.Screen name="movie/Details" options={{ headerShown: false }} />
+        <Stack.Screen name="series/Details" options={{ headerShown: false }} />
       </Stack>
     </ThemeProvider>
   );

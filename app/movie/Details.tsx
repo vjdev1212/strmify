@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, ScrollView, Image } from 'react-native';
-import { Text } from '../../components/Themed';
+import { StyleSheet, ScrollView, Image, View as RNView } from 'react-native';
+import { Text, View } from '../../components/Themed';
+import { useLocalSearchParams } from 'expo-router';
 
-const SeriesDetails = ({ imdbid }: { imdbid: string }) => {
+
+const MovieDetails = () => {
+  const { imdbid } = useLocalSearchParams();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -10,10 +13,9 @@ const SeriesDetails = ({ imdbid }: { imdbid: string }) => {
     const fetchDetails = async () => {
       try {
         const response = await fetch(
-          `https://v3-cinemeta.strem.io/meta/series/${imdbid}.json`
+          `https://v3-cinemeta.strem.io/meta/movie/${imdbid}.json`
         );
         const result = await response.json();
-        console.log(result);
         setData(result.meta);
       } catch (error) {
         console.error('Error fetching movie details:', error);
@@ -33,11 +35,11 @@ const SeriesDetails = ({ imdbid }: { imdbid: string }) => {
     return <Text>No movie details available</Text>;
   }
 
-  const { poster, name, description, genre, runtime, released, imdbRating } = data;
+  const { background, name, description, genre, runtime, released, imdbRating } = data;
 
   return (
     <>
-      <Image source={{ uri: poster }} style={styles.poster} />
+      <Image source={{ uri: background }} style={styles.poster} />
       <ScrollView style={styles.container}>
         <Text style={styles.title}>{name}</Text>
         <Text style={styles.genre}>{genre.join(', ')}</Text>
@@ -57,9 +59,8 @@ const styles = StyleSheet.create({
   },
   poster: {
     width: '100%',
-    height: 300,
-    borderRadius: 10,
-    marginBottom: 20,
+    height: 400,
+    resizeMode: 'cover', // Ensures the image covers the area
   },
   title: {
     fontSize: 24,
@@ -81,4 +82,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SeriesDetails;
+export default MovieDetails;

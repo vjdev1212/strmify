@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { FlatList, Image, StyleSheet, TouchableOpacity, View as RNView } from 'react-native';
-import { Text } from './Themed';
-import { Href, Link, useRouter } from 'expo-router';
+import { Text, View } from './Themed';
+import { Link } from 'expo-router';
 
 // Skeleton Loader Component
 const SkeletonLoader = () => (
@@ -47,17 +47,24 @@ const PosterList = ({
         : item.year;
 
     return (
-      <TouchableOpacity
-        style={[styles.posterContainer, layout === 'vertical' && styles.verticalContainer]}>
-          <Image
-            source={{ uri: item.poster }}
-            style={[styles.posterImage, layout === 'vertical' && styles.verticalImage]}
-          />
-          <Text numberOfLines={1} ellipsizeMode="tail" style={styles.posterTitle}>
-            {item.name}
-          </Text>
-          <Text style={styles.posterYear}>{year}</Text>
-      </TouchableOpacity>
+      <Link href={{
+        pathname: `/${type}/Details`,
+        params: { imdbid: item.imdb_id }
+      }}>
+        <View>
+          <TouchableOpacity
+            style={[styles.posterContainer, layout === 'vertical' && styles.verticalContainer]}>
+            <Image
+              source={{ uri: item.poster }}
+              style={[styles.posterImage, layout === 'vertical' && styles.verticalImage]}
+            />
+            <Text numberOfLines={1} ellipsizeMode="tail" style={styles.posterTitle}>
+              {item.name}
+            </Text>
+            <Text style={styles.posterYear}>{year}</Text>
+          </TouchableOpacity>
+        </View>
+      </Link>
     );
   };
 
@@ -74,7 +81,7 @@ const PosterList = ({
 
       {loading ? (
         <FlatList
-          data={new Array(10).fill(null)} // Dummy array for skeleton loader
+          data={new Array(10).fill(null)}
           renderItem={() => <SkeletonLoader />}
           keyExtractor={(item, index) => index.toString()}
           horizontal={layout === 'horizontal'}
