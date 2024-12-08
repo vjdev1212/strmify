@@ -31,19 +31,19 @@ export default function TabLayout() {
           tabBarIconStyle: { marginVertical: 5 }
         }}
       />
+            <Tabs.Screen
+        name="search"
+        options={{
+          title: 'Search',
+          tabBarIcon: ({ color }) => <TabBarIcon name="search" color={color} />,
+          tabBarIconStyle: { marginVertical: 5 }
+        }}
+      />
       <Tabs.Screen
         name="library"
         options={{
           title: 'Library',
           tabBarIcon: ({ color }) => <TabBarIcon name="star" color={color} />,
-          tabBarIconStyle: { marginVertical: 5 }
-        }}
-      />
-      <Tabs.Screen
-        name="search"
-        options={{
-          title: 'Search',
-          tabBarIcon: ({ color }) => <TabBarIcon name="search" color={color} />,
           tabBarIconStyle: { marginVertical: 5 }
         }}
       />
