@@ -1,31 +1,28 @@
-import { StyleSheet } from 'react-native';
+import { SafeAreaView, ScrollView, StyleSheet } from 'react-native';
+import HorizontalPosterList from '@/components/HorizontalPosterList';
 
-import EditScreenInfo from '@/components/EditScreenInfo';
-import { Text, View } from '@/components/Themed';
-
-export default function TabOneScreen() {
+export default function HomeScreen() {
+  const catalogUrl = {
+    topMovies: 'https://v3-cinemeta.strem.io/catalog/movie/top.json',
+    topSeries: 'https://v3-cinemeta.strem.io/catalog/series/top.json',
+    popularMovies: 'https://v3-cinemeta.strem.io/catalog/series/imdbRating.json',
+    popularSeries: 'https://v3-cinemeta.strem.io/catalog/movie/imdbRating.json'
+  }
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Tab One</Text>
-      <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-      <EditScreenInfo path="app/(tabs)/index.tsx" />
-    </View>
+    <SafeAreaView style={styles.container}>
+      <ScrollView>
+        <HorizontalPosterList apiUrl={catalogUrl.topMovies} title='Top Movies' type='movie' />
+        <HorizontalPosterList apiUrl={catalogUrl.topSeries} title='Top Series' type='series' />
+        <HorizontalPosterList apiUrl={catalogUrl.popularMovies} title='Popular Movies' type='movie' />
+        <HorizontalPosterList apiUrl={catalogUrl.popularSeries} title='Popular Series' type='series' />
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  separator: {
-    marginVertical: 30,
-    height: 1,
-    width: '80%',
-  },
+    paddingTop: 20,
+  }
 });

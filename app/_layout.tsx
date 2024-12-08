@@ -1,5 +1,5 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, Theme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -48,8 +48,38 @@ export default function RootLayout() {
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
 
+  const LightTheme: Theme = {
+    dark: false,
+    colors: {
+      primary: 'rgb(0, 122, 255)',
+      background: 'rgb(255, 255, 255)',
+      card: 'rgb(255, 255, 255)',
+      text: 'rgb(28, 28, 30)',
+      border: 'rgb(216, 216, 216)',
+      notification: 'rgb(255, 59, 48)',
+    },
+    fonts:{
+      regular: {
+        fontFamily: '',
+        fontWeight: 'bold'
+      },
+      medium: {
+        fontFamily: '',
+        fontWeight: 'bold'
+      },
+      bold: {
+        fontFamily: '',
+        fontWeight: 'bold'
+      },
+      heavy: {
+        fontFamily: '',
+        fontWeight: 'bold'
+      }
+    }
+  };
+
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : LightTheme}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
