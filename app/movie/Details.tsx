@@ -3,7 +3,6 @@ import { StyleSheet, ScrollView, Image, View as RNView, TouchableOpacity } from 
 import { Text, View } from '../../components/Themed';
 import { useLocalSearchParams } from 'expo-router';
 
-
 const MovieDetails = () => {
   const { imdbid } = useLocalSearchParams();
   const [data, setData] = useState<any>(null);
@@ -51,11 +50,11 @@ const MovieDetails = () => {
     <ScrollView style={styles.container}>
       <Image source={{ uri: background }} style={styles.poster} />
       <View style={styles.contentContainer}>
-        <Text style={styles.title}>{name}</Text>
-        <Text style={styles.genre}>{genre?.join(', ')}</Text>
-        <Text style={styles.info}>
-          ★ {imdbRating} | Runtime: {runtime}
-        </Text>
+          <Text style={styles.title}>{name}</Text>
+          <Text style={styles.genre}>{genre?.join(', ')}</Text>
+          <Text style={styles.info}>
+            ★ {imdbRating} | Runtime: {runtime}
+          </Text>
         <View style={styles.playButtonWrapper}>
           <TouchableOpacity style={styles.playButton} onPress={() => console.log('Play clicked')}>
             <Text style={styles.playButtonText}>Play Movie</Text>
