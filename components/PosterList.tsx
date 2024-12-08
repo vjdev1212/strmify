@@ -1,7 +1,13 @@
-// HorizontalPosterList.tsx
 import React, { useEffect, useState } from 'react';
-import { FlatList, Image, StyleSheet, TouchableOpacity } from 'react-native';
-import { Text, View } from './Themed';
+import { FlatList, Image, StyleSheet, TouchableOpacity, View as RNView } from 'react-native';
+import { Text } from './Themed';
+
+// Skeleton Loader Component
+const SkeletonLoader = () => (
+  <RNView style={styles.skeletonContainer}>
+    <RNView style={styles.skeletonImage} />
+  </RNView>
+);
 
 const PosterList = ({
   apiUrl,
@@ -37,8 +43,9 @@ const PosterList = ({
     const year = item.year && typeof item.year === 'string' && item.year.includes('–')
       ? item.year.split('–')[0]
       : item.year;
+
     return (
-      <View style={[styles.posterContainer, layout === 'vertical' && styles.verticalContainer]}>
+      <RNView style={[styles.posterContainer, layout === 'vertical' && styles.verticalContainer]}>
         <Image
           source={{ uri: item.poster }}
           style={[styles.posterImage, layout === 'vertical' && styles.verticalImage]}
@@ -53,24 +60,30 @@ const PosterList = ({
         <Text style={styles.posterYear}>
           {year}
         </Text>
-      </View>
+      </RNView>
     )
   };
 
-
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
+    <RNView style={styles.container}>
+      <RNView style={styles.header}>
         <Text lightColor="rgba(0,0,0,0.8)" darkColor="rgba(255,255,255,0.8)" style={styles.title}>
           {title}
         </Text>
         <TouchableOpacity>
           <Text style={styles.viewAllText}>View All</Text>
         </TouchableOpacity>
-      </View>
+      </RNView>
 
       {loading ? (
-        <Text>Loading...</Text>
+        <FlatList
+          data={new Array(10).fill(null)} // Dummy array for skeleton loader
+          renderItem={() => <SkeletonLoader />}
+          keyExtractor={(item, index) => index.toString()}
+          horizontal={layout === 'horizontal'}
+          showsHorizontalScrollIndicator={false}
+          numColumns={layout === 'vertical' ? 2 : 1}
+        />
       ) : (
         <FlatList
           data={data}
@@ -81,7 +94,7 @@ const PosterList = ({
           numColumns={layout === 'vertical' ? 2 : 1}
         />
       )}
-    </View>
+    </RNView>
   );
 };
 
@@ -104,7 +117,7 @@ const styles = StyleSheet.create({
   viewAllText: {
     fontSize: 14,
     color: '#007BFF',
-    fontWeight: 'bold'
+    fontWeight: 'bold',
   },
   posterContainer: {
     marginRight: 15,
@@ -132,6 +145,18 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: 'gray',
   },
+  // Skeleton styles
+  skeletonContainer: {
+    marginRight: 15,
+    width: 100,
+    alignItems: 'center',
+  },
+  skeletonImage: {
+    width: 100,
+    height: 150,
+    backgroundColor: 'gray',
+    borderRadius: 8,
+  }
 });
 
 export default PosterList;
