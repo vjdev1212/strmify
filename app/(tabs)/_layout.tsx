@@ -31,7 +31,7 @@ export default function TabLayout() {
           tabBarIconStyle: { marginVertical: 5 }
         }}
       />
-            <Tabs.Screen
+      <Tabs.Screen
         name="search"
         options={{
           title: 'Search',

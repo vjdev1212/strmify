@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { FlatList, Image, StyleSheet, TouchableOpacity, View as RNView } from 'react-native';
 import { Text } from './Themed';
+import { Href, Link, useRouter } from 'expo-router';
 
 // Skeleton Loader Component
 const SkeletonLoader = () => (
@@ -20,6 +21,7 @@ const PosterList = ({
   type: 'movie' | 'series';
   layout?: 'horizontal' | 'vertical';
 }) => {
+  const router = useRouter();
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -40,28 +42,34 @@ const PosterList = ({
   }, [apiUrl]);
 
   const renderItem = ({ item }: any) => {
-    const year = item.year && typeof item.year === 'string' && item.year.includes('–')
-      ? item.year.split('–')[0]
-      : item.year;
+    const year =
+      item.year && typeof item.year === 'string' && item.year.includes('–')
+        ? item.year.split('–')[0]
+        : item.year;
+
+    const handlePress = () => {
+      const href: Href = {
+        pathname: item.type === 'movie' ? '/movie/MovieDetails' : '/series/SeriesDetails',
+        params: { imdbid: item.imdb_id },
+      };
+
+      router.push(href);
+    };
 
     return (
-      <RNView style={[styles.posterContainer, layout === 'vertical' && styles.verticalContainer]}>
+      <TouchableOpacity
+        style={[styles.posterContainer, layout === 'vertical' && styles.verticalContainer]}
+        onPress={handlePress} >
         <Image
           source={{ uri: item.poster }}
           style={[styles.posterImage, layout === 'vertical' && styles.verticalImage]}
         />
-        <Text
-          numberOfLines={1}
-          ellipsizeMode="tail"
-          style={styles.posterTitle}
-        >
+        <Text numberOfLines={1} ellipsizeMode="tail" style={styles.posterTitle}>
           {item.name}
         </Text>
-        <Text style={styles.posterYear}>
-          {year}
-        </Text>
-      </RNView>
-    )
+        <Text style={styles.posterYear}>{year}</Text>
+      </TouchableOpacity>
+    );
   };
 
   return (
