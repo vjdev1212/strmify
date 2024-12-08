@@ -1,5 +1,5 @@
 import { SafeAreaView, ScrollView, StyleSheet } from 'react-native';
-import HorizontalPosterList from '@/components/HorizontalPosterList';
+import PosterList from '@/components/PosterList';
 
 export default function HomeScreen() {
   const catalogUrl = {
@@ -11,10 +11,10 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>
-        <HorizontalPosterList apiUrl={catalogUrl.topMovies} title='Top Movies' type='movie' />
-        <HorizontalPosterList apiUrl={catalogUrl.topSeries} title='Top Series' type='series' />
-        <HorizontalPosterList apiUrl={catalogUrl.popularMovies} title='Popular Movies' type='movie' />
-        <HorizontalPosterList apiUrl={catalogUrl.popularSeries} title='Popular Series' type='series' />
+        <PosterList apiUrl={catalogUrl.topMovies} title='Top Movies' type='movie' />
+        <PosterList apiUrl={catalogUrl.topSeries} title='Top Series' type='series' />
+        <PosterList apiUrl={catalogUrl.popularMovies} title='Popular Movies' type='movie' />
+        <PosterList apiUrl={catalogUrl.popularSeries} title='Popular Series' type='series' />
       </ScrollView>
     </SafeAreaView>
   );
