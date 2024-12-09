@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import { Text, View } from './Themed';
-import { formatDate } from '@/utils/Date';
+import { formatDate, getYear } from '@/utils/Date';
 
 
 const MediaContentHeader = ({
@@ -20,7 +20,7 @@ const MediaContentHeader = ({
   <View style={styles.container}>
     <Text style={styles.title}>{name}</Text>
     <Text style={styles.genre}>{genre?.join(', ')}</Text>
-    <Text style={styles.info}>{formatDate(released)} | ★ {imdbRating} | Runtime: {runtime}</Text>
+    <Text style={styles.info}>{getYear(released)} | ★ {imdbRating} | Runtime: {runtime}</Text>
   </View>
 );
 
