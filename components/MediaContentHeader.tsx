@@ -20,7 +20,7 @@ const MediaContentHeader = ({
   <View style={styles.container}>
     <Text style={styles.title}>{name}</Text>
     <Text style={styles.genre}>{genre?.join(', ')}</Text>
-    <Text style={styles.info}>{getYear(released)} | ★ {imdbRating} | Runtime: {runtime}</Text>
+    <Text style={styles.info}>{getYear(released)}   |   ★ {imdbRating}   |   Runtime: {runtime}</Text>
   </View>
 );
 
