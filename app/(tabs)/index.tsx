@@ -10,7 +10,7 @@ export default function HomeScreen() {
   }
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView>
+      <ScrollView showsVerticalScrollIndicator={false}>
         <PosterList apiUrl={catalogUrl.topMovies} title='Top Movies' type='movie' />
         <PosterList apiUrl={catalogUrl.topSeries} title='Top Series' type='series' />
         <PosterList apiUrl={catalogUrl.popularMovies} title='Popular Movies' type='movie' />

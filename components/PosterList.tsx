@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { FlatList, Image, StyleSheet, TouchableOpacity, View as RNView } from 'react-native';
 import { Text, View } from './Themed';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 
 // Skeleton Loader Component
 const SkeletonLoader = () => (
@@ -51,7 +51,7 @@ const PosterList = ({
         pathname: `/${type}/Details`,
         params: { imdbid: item.imdb_id || item.id }
       }}>
-        <View>
+        <RNView>
           <TouchableOpacity
             style={[styles.posterContainer, layout === 'vertical' && styles.verticalContainer]}>
             <Image
@@ -63,7 +63,7 @@ const PosterList = ({
             </Text>
             <Text style={styles.posterYear}>{year}</Text>
           </TouchableOpacity>
-        </View>
+        </RNView>
       </Link>
     );
   };
@@ -71,12 +71,17 @@ const PosterList = ({
   return (
     <RNView style={styles.container}>
       <RNView style={styles.header}>
-        <Text lightColor="rgba(0,0,0,0.8)" darkColor="rgba(255,255,255,0.8)" style={styles.title}>
+        <Text style={styles.title}>
           {title}
         </Text>
-        <TouchableOpacity>
-          <Text style={styles.viewAllText}>View All</Text>
-        </TouchableOpacity>
+        <Link
+          href={{
+            pathname: `/${type}/List`,
+            params: { apiUrl, title, type },
+          }}
+        >
+          <Text style={styles.seeAllText}>See All</Text>
+        </Link>
       </RNView>
 
       {loading ? (
@@ -105,7 +110,7 @@ const PosterList = ({
 const styles = StyleSheet.create({
   container: {
     marginBottom: 20,
-    paddingHorizontal: 15,
+    paddingHorizontal: 10,
     paddingTop: 10,
   },
   header: {
@@ -113,12 +118,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 10,
     alignItems: 'center',
+    marginHorizontal: 10
   },
   title: {
     fontSize: 18,
     fontWeight: 'bold',
   },
-  viewAllText: {
+  seeAllText: {
     fontSize: 14,
     fontWeight: 'bold',
   },
