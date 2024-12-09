@@ -1,5 +1,6 @@
 import React from 'react';
-import { Text, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { Text, View } from './Themed';
 
 const MediaContentDescription = ({ description }: { description: string }) => (
   <Text style={styles.description}>{description}</Text>

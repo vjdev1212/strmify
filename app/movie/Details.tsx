@@ -5,7 +5,7 @@ import { Text } from '../../components/Themed';
 import MediaContentDescription from '@/components/MediaContentDescription';
 import MediaContentDetailsList from '@/components/MediaContentDetailsList';
 import MediaContentHeader from '@/components/MediaContentHeader';
-import MediaPoster from '@/components/MediaContentPoster';
+import MediaContentPoster from '@/components/MediaContentPoster';
 import PlayButton from '@/components/PlayButton';
 
 const MovieDetails = () => {
@@ -43,7 +43,7 @@ const MovieDetails = () => {
 
   return (
     <ScrollView style={styles.container}>
-      <MediaPoster background={background} />
+      <MediaContentPoster background={background} />
       <MediaContentHeader name={name} genre={genre} runtime={runtime} imdbRating={imdbRating} />
       <PlayButton onPress={() => console.log('Play clicked')} />
       <MediaContentDescription description={description} />
