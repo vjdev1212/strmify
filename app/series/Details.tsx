@@ -7,6 +7,7 @@ import MediaContentDetailsList from '@/components/MediaContentDetailsList';
 import MediaContentHeader from '@/components/MediaContentHeader';
 import MediaContentPoster from '@/components/MediaContentPoster';
 import PlayButton from '@/components/PlayButton';
+import SeasonEpisodeList from '@/components/SeasonEpisodeList';
 
 const SeriesDetails = () => {
   const { imdbid } = useLocalSearchParams();
@@ -47,6 +48,11 @@ const SeriesDetails = () => {
       <MediaContentHeader name={name} genre={genre} runtime={runtime} imdbRating={imdbRating} />
       <PlayButton onPress={() => console.log('Play clicked')} />
       <MediaContentDescription description={description} />
+      <SeasonEpisodeList
+        videos={data.videos}
+        onEpisodeSelect={(season, episode) => {
+        }}
+      />
       <MediaContentDetailsList
         released={released}
         country={country}

@@ -120,7 +120,6 @@ const styles = StyleSheet.create({
   },
   viewAllText: {
     fontSize: 14,
-    color: '#007BFF',
     fontWeight: 'bold',
   },
   posterContainer: {

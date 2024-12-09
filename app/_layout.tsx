@@ -83,10 +83,10 @@ function RootLayoutNav() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : LightTheme}>
       <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'Home' }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="movie/Details" options={{ headerShown: false }} />
-        <Stack.Screen name="series/Details" options={{ headerShown: false }} />
+        <Stack.Screen name="movie/Details" options={{ headerShown: true, headerTransparent: true, headerTitle: '' }} />
+        <Stack.Screen name="series/Details" options={{ headerShown: true, headerTransparent: true, headerTitle: '' }} />
       </Stack>
     </ThemeProvider>
   );

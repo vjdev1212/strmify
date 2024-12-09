@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import { Text, View } from './Themed';
+import { formatDate } from '@/utils/Date';
 
 const MediaContentDetailsList = ({
   released,
@@ -19,7 +20,7 @@ const MediaContentDetailsList = ({
     {released && (
       <>
         <Text style={styles.label}>Released:</Text>
-        <Text style={styles.value}>{released}</Text>
+        <Text style={styles.value}>{formatDate(released)}</Text>
       </>
     )}
     {country && (
