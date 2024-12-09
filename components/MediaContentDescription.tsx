@@ -1,0 +1,17 @@
+import React from 'react';
+import { Text, StyleSheet } from 'react-native';
+
+const MediaContentDescription = ({ description }: { description: string }) => (
+  <Text style={styles.description}>{description}</Text>
+);
+
+const styles = StyleSheet.create({
+  description: {
+    fontSize: 16,
+    lineHeight: 22,
+    paddingHorizontal: 20,
+    marginVertical: 10,
+  },
+});
+
+export default MediaContentDescription;
