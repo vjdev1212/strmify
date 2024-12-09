@@ -59,7 +59,12 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
   return (
     <View style={styles.container}>
       <FlatList
-        data={Object.keys(groupedEpisodes).map(Number)} // Convert season keys to numbers
+        data={[
+          ...Object.keys(groupedEpisodes)
+            .map(Number)
+            .filter((season) => season !== 0),
+          0,
+        ]}
         horizontal
         keyExtractor={(item) => `season-${item}`}
         renderItem={({ item }) => (
@@ -116,7 +121,7 @@ const styles = StyleSheet.create({
   },
   seasonButton: {
     marginHorizontal: 5,
-    paddingVertical: 8,
+    paddingVertical: 10,
     paddingHorizontal: 15,
     borderRadius: 4,
   },
