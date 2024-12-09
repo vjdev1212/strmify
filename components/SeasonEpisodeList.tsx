@@ -76,7 +76,7 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
             onPress={() => handleEpisodeSelect(item.season, item.number)}
           >
             <Image source={{ uri: item.thumbnail }} style={styles.thumbnail} />
-            <Text style={styles.episodeTitle}>{item.name}</Text>
+            <Text style={styles.episodeTitle} numberOfLines={1}>{item.name}</Text>
           </TouchableOpacity>
         )}
         contentContainerStyle={styles.episodeList}
@@ -98,17 +98,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
   },
   episodeContainer: {
-    padding: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 5
   },
   thumbnail: {
-    width: 150,
+    width: 180,
     height: 100,
-    borderRadius: 8,
+    borderRadius: 6,
   },
   episodeTitle: {
-    marginTop: 5,
-    fontSize: 12,
-    textAlign: 'center',
+    marginTop: 10,
+    fontSize: 14,
+    maxWidth: 180,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
   },
 });
 
