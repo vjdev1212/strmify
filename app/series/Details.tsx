@@ -46,7 +46,6 @@ const SeriesDetails = () => {
     <ScrollView style={styles.container}>
       <MediaContentPoster background={background} />
       <MediaContentHeader name={name} genre={genre} runtime={runtime} imdbRating={imdbRating} />
-      <PlayButton onPress={() => console.log('Play clicked')} />
       <MediaContentDescription description={description} />
       <SeasonEpisodeList
         videos={data.videos}

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, FlatList, Image, TouchableOpacity } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
 import { Text, View } from './Themed';
 
 
@@ -45,6 +44,11 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
   if (!videos || videos.length === 0) {
     return null; // Hide component if no videos
   }
+  const handleSeasonSelect = (season: number) => {
+    setSelectedSeason(season);
+    setSelectedEpisode(1); // Reset to first episode when season changes
+    onEpisodeSelect(season, 1);
+  };
 
   const handleEpisodeSelect = (season: number, episode: number) => {
     setSelectedSeason(season);
@@ -54,16 +58,32 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
 
   return (
     <View style={styles.container}>
-      <Picker
-        selectedValue={selectedSeason}
-        onValueChange={(itemValue) => setSelectedSeason(itemValue)}
-        style={styles.picker}
-      >
-        {Object.keys(groupedEpisodes).map((season) => (
-          <Picker.Item key={season} label={`Season ${season}`} value={parseInt(season)} />
-        ))}
-      </Picker>
+      <FlatList
+        data={Object.keys(groupedEpisodes).map(Number)} // Convert season keys to numbers
+        horizontal
+        keyExtractor={(item) => `season-${item}`}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={[
+              styles.seasonButton,
+              item === selectedSeason && styles.selectedSeasonButton,
+            ]}
+            onPress={() => handleSeasonSelect(item)}
+          >
+            <Text
+              style={[
+                styles.seasonText,
+                item === selectedSeason && styles.selectedSeasonText,
+              ]}
+            >
+              {item === 0 ? 'Specials' : `Season ${item}`}
+            </Text>
+          </TouchableOpacity>
 
+        )}
+        contentContainerStyle={styles.seasonList}
+        showsHorizontalScrollIndicator={false}
+      />
       <FlatList
         data={groupedEpisodes[selectedSeason]}
         horizontal
@@ -76,10 +96,11 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
             onPress={() => handleEpisodeSelect(item.season, item.number)}
           >
             <Image source={{ uri: item.thumbnail }} style={styles.thumbnail} />
-            <Text style={styles.episodeTitle} numberOfLines={1}>{item.name}</Text>
+            <Text style={styles.episodeTitle} numberOfLines={1}>{item.number}. {item.name}</Text>
           </TouchableOpacity>
         )}
         contentContainerStyle={styles.episodeList}
+        showsHorizontalScrollIndicator={false}
       />
     </View>
   );
@@ -89,10 +110,26 @@ const styles = StyleSheet.create({
   container: {
     margin: 10,
   },
-  picker: {
+  seasonList: {
+    paddingHorizontal: 5,
     marginBottom: 10,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
+  },
+  seasonButton: {
+    marginHorizontal: 5,
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 4,
+  },
+  selectedSeasonButton: {
+    backgroundColor: '#fc7703',
+  },
+  seasonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  selectedSeasonText: {
+    fontWeight: 'bold',
+    color: '#fff'
   },
   episodeList: {
     paddingHorizontal: 5,
@@ -102,14 +139,14 @@ const styles = StyleSheet.create({
     paddingVertical: 5
   },
   thumbnail: {
-    width: 180,
-    height: 100,
-    borderRadius: 6,
+    width: 200,
+    height: 115,
+    borderRadius: 4,
   },
   episodeTitle: {
-    marginTop: 10,
+    marginTop: 15,
     fontSize: 14,
-    maxWidth: 180,
+    maxWidth: 200,
     overflow: 'hidden',
     textOverflow: 'ellipsis',
   },
