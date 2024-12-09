@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { Text } from '../../components/Themed';
+import { ActivityIndicator, Text, View } from '../../components/Themed';
 import MediaContentDescription from '@/components/MediaContentDescription';
 import MediaContentDetailsList from '@/components/MediaContentDetailsList';
 import MediaContentHeader from '@/components/MediaContentHeader';
@@ -32,12 +32,22 @@ const MovieDetails = () => {
   }, [imdbid]);
 
   if (loading) {
-    return <Text>Loading...</Text>;
+    return (
+      <View style={styles.centeredContainer}>
+        <ActivityIndicator size="large" style={styles.activityIndicator} />
+        <Text style={styles.centeredText}>Loading</Text>
+      </View>
+    );
   }
 
   if (!data) {
-    return <Text>No movie details available</Text>;
+    return (
+      <View style={styles.centeredContainer}>
+        <Text style={styles.centeredText}>No movies details available</Text>
+      </View>
+    );
   }
+
 
   const { background, name, description, genre, runtime, released, imdbRating, country, director, writer, cast } = data;
 
@@ -61,6 +71,20 @@ const MovieDetails = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  activityIndicator: {
+    marginBottom: 10
+  },
+  centeredContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  centeredText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
 });
 

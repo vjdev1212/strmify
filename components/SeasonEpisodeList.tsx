@@ -138,6 +138,7 @@ const styles = StyleSheet.create({
   },
   episodeList: {
     paddingHorizontal: 5,
+    paddingVertical: 10
   },
   episodeContainer: {
     paddingHorizontal: 8,

@@ -49,7 +49,7 @@ const PosterList = ({
     return (
       <Link href={{
         pathname: `/${type}/Details`,
-        params: { imdbid: item.imdb_id }
+        params: { imdbid: item.imdb_id || item.id }
       }}>
         <View>
           <TouchableOpacity
