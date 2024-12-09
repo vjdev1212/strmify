@@ -54,7 +54,7 @@ const MovieDetails = () => {
   return (
     <ScrollView style={styles.container}>
       <MediaContentPoster background={background} />
-      <MediaContentHeader name={name} genre={genre} runtime={runtime} imdbRating={imdbRating} />
+      <MediaContentHeader name={name} genre={genre} released={released} runtime={runtime} imdbRating={imdbRating} />
       <PlayButton onPress={() => console.log('Play clicked')} />
       <MediaContentDescription description={description} />
       <MediaContentDetailsList

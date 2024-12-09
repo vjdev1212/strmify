@@ -1,23 +1,26 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import { Text, View } from './Themed';
+import { formatDate } from '@/utils/Date';
 
 
 const MediaContentHeader = ({
   name,
   genre,
+  released,
   runtime,
   imdbRating,
 }: {
   name: string;
   genre: string[];
+  released: string;
   runtime: string;
   imdbRating: string;
 }) => (
   <View style={styles.container}>
     <Text style={styles.title}>{name}</Text>
     <Text style={styles.genre}>{genre?.join(', ')}</Text>
-    <Text style={styles.info}>★ {imdbRating} | Runtime: {runtime}</Text>
+    <Text style={styles.info}>{formatDate(released)} | ★ {imdbRating} | Runtime: {runtime}</Text>
   </View>
 );
 
