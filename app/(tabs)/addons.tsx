@@ -7,26 +7,11 @@ import { View, Text } from '@/components/Themed';
 const AddonsScreen = () => {
   const [addons, setAddons] = useState<any[]>([]);
 
-
-  const sampleAddon = {
-    id: 'com.stremio.torrentio.addon',
-    version: '0.0.14',
-    name: 'Torrentio',
-    description: 'Provides torrent streams from scraped torrent providers.',
-    background: 'https://i.ibb.co/VtSfFP9/t8wVwcg.jpg',
-    logo: 'https://i.ibb.co/w4BnkC9/GwxAcDV.png',
-    configurable: true,
-    baseURL: 'https://torrentio.strem.fun',
-  };
-
-
   const fetchAddons = async () => {
     try {
       const storedAddons = await AsyncStorage.getItem('addons');
       if (storedAddons) {
         setAddons(JSON.parse(storedAddons));
-      } else {
-        setAddons([sampleAddon]);
       }
     } catch (error) {
       console.error('Error fetching addons:', error);
@@ -38,10 +23,7 @@ const AddonsScreen = () => {
   }, []);
 
 
-  const addAddon = async (addon: any) => {
-    const updatedAddons = [...addons, addon];
-    setAddons(updatedAddons);
-    await AsyncStorage.setItem('addons', JSON.stringify(updatedAddons));
+  const addAddon = async () => {
   };
 
 
@@ -66,7 +48,7 @@ const AddonsScreen = () => {
         </View>
         <View style={styles.titleColumn}>
           <Text style={styles.addonName}>{item.name}</Text>
-          <Text style={styles.addonTypes}>{item.types.join(', ')}</Text>
+          <Text style={styles.addonTypes}>{item.types?.join(', ')}</Text>
         </View>
       </View>
 
@@ -107,17 +89,18 @@ const AddonsScreen = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Manage Addons</Text>
+      <TouchableOpacity
+        style={styles.addButton}
+        onPress={() => addAddon()}
+      >
+        <Text style={styles.addButtonText}>New Addon</Text>
+      </TouchableOpacity>
       <FlatList
         data={addons}
         keyExtractor={(item) => item.id}
         renderItem={renderAddonItem}
         contentContainerStyle={styles.addonsList}
-      />
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => addAddon(sampleAddon)}
-      >
-      </TouchableOpacity>
+      />      
     </View>
   );
 };
@@ -197,15 +180,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   addButton: {
-    backgroundColor: '#2e7d32',
-    padding: 15,
+    backgroundColor: '#fc7703',
+    padding: 12,
     borderRadius: 8,
-    alignItems: 'center',
+    width: '60%',
+    margin: 'auto'
   },
   addButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+    textAlign: 'center'
   },
 });
 
