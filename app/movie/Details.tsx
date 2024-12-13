@@ -52,7 +52,7 @@ const MovieDetails = () => {
   const { background, logo, name, description, genre, runtime, released, imdbRating, country, director, writer, cast } = data;
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView showsVerticalScrollIndicator={false} style={styles.container}>
       <MediaContentPoster background={background} logo={logo} />
       <MediaContentHeader name={name} genre={genre} released={released} runtime={runtime} imdbRating={imdbRating} />
       <PlayButton onPress={() => console.log('Play clicked')} />

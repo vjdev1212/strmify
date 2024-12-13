@@ -40,14 +40,6 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="library"
-        options={{
-          title: 'Library',
-          tabBarIcon: ({ color }) => <TabBarIcon name="star" color={color} />,
-          tabBarIconStyle: { marginVertical: 5 }
-        }}
-      />
-      <Tabs.Screen
         name="addons"
         options={{
           title: 'Addons',
