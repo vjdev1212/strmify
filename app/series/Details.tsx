@@ -35,7 +35,7 @@ const SeriesDetails = () => {
   if (loading) {
     return (
       <View style={styles.centeredContainer}>
-        <ActivityIndicator size="large" style={styles.activityIndicator} />
+        <ActivityIndicator color="#fc7703" size="large" style={styles.activityIndicator} />
         <Text style={styles.centeredText}>Loading</Text>
       </View>
     );
@@ -49,11 +49,11 @@ const SeriesDetails = () => {
     );
   }
 
-  const { background, name, description, genre, runtime, released, imdbRating, country, director, writer, cast } = data;
+  const { background, logo, name, description, genre, runtime, released, imdbRating, country, director, writer, cast } = data;
 
   return (
     <ScrollView style={styles.container}>
-      <MediaContentPoster background={background} />
+      <MediaContentPoster background={background} logo={logo} />
       <MediaContentHeader name={name} genre={genre} released={released} runtime={runtime} imdbRating={imdbRating} />
       <MediaContentDescription description={description} />
       <SeasonEpisodeList

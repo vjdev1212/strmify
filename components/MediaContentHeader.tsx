@@ -18,7 +18,6 @@ const MediaContentHeader = ({
   imdbRating: string;
 }) => (
   <View style={styles.container}>
-    <Text style={styles.title}>{name}</Text>
     <Text style={styles.genre}>{genre?.join(', ')}</Text>
     <Text style={styles.info}>{getYear(released)}   |   ★ {imdbRating}   |   Runtime: {runtime}</Text>
   </View>

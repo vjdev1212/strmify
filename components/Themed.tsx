@@ -39,9 +39,7 @@ export function Text(props: TextProps) {
 }
 
 export function ActivityIndicator(props: ActivityIndicatorProps) {
-  const { style, ...otherProps } = props;
-  const color = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
-
+  const { style, color, ...otherProps } = props;
   return (
     <DefaultActivityIndicator style={style} color={color}  {...otherProps} />
   );

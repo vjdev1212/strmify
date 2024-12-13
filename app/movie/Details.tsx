@@ -34,7 +34,7 @@ const MovieDetails = () => {
   if (loading) {
     return (
       <View style={styles.centeredContainer}>
-        <ActivityIndicator size="large" style={styles.activityIndicator} />
+        <ActivityIndicator color="#fc7703" size="large" style={styles.activityIndicator} />
         <Text style={styles.centeredText}>Loading</Text>
       </View>
     );
@@ -49,11 +49,11 @@ const MovieDetails = () => {
   }
 
 
-  const { background, name, description, genre, runtime, released, imdbRating, country, director, writer, cast } = data;
+  const { background, logo, name, description, genre, runtime, released, imdbRating, country, director, writer, cast } = data;
 
   return (
     <ScrollView style={styles.container}>
-      <MediaContentPoster background={background} />
+      <MediaContentPoster background={background} logo={logo} />
       <MediaContentHeader name={name} genre={genre} released={released} runtime={runtime} imdbRating={imdbRating} />
       <PlayButton onPress={() => console.log('Play clicked')} />
       <MediaContentDescription description={description} />
@@ -73,7 +73,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   activityIndicator: {
-    marginBottom: 10
+    marginBottom: 10,
+    color: '#fc7703'
   },
   centeredContainer: {
     flex: 1,
