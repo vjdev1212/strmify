@@ -59,41 +59,50 @@ const AddonsScreen = () => {
 
   const renderAddonItem = ({ item }: { item: any }) => (
     <View style={styles.addonItem}>
-      <View style={styles.iconColumn}>
-        <Image source={{ uri: item.logo }} style={styles.addonLogo} />
-      </View>
-      <View style={styles.detailsColumn}>
-        <Text style={styles.addonName}>{item.name}</Text>
-        <Text style={styles.addonDescription}>{item.description}</Text>
-        <View style={styles.actions}>
-          <TouchableOpacity
-            style={styles.configureButton}
-            onPress={() => openConfiguration(item.baseURL)}
-          >
-            <Text style={styles.actionText}>Configure</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.removeButton}
-            onPress={() => {
-              Alert.alert(
-                'Remove Addon',
-                `Are you sure you want to remove ${item.name}?`,
-                [
-                  { text: 'Cancel' },
-                  {
-                    text: 'Remove',
-                    onPress: () => removeAddon(item.id),
-                  },
-                ]
-              );
-            }}
-          >
-            <Text style={styles.actionText}>Remove</Text>
-          </TouchableOpacity>
+      {/* First Row: Icon and Title */}
+      <View style={styles.firstRow}>
+        <View style={styles.iconColumn}>
+          <Image source={{ uri: item.logo }} style={styles.addonLogo} />
         </View>
+        <View style={styles.titleColumn}>
+          <Text style={styles.addonName}>{item.name}</Text>
+          <Text style={styles.addonTypes}>{item.types.join(', ')}</Text>
+        </View>
+      </View>
+
+      {/* Second Row: Description */}
+      <Text style={styles.addonDescription}>{item.description}</Text>
+
+      {/* Third Row: Actions */}
+      <View style={styles.actions}>
+        <TouchableOpacity
+          style={styles.configureButton}
+          onPress={() => openConfiguration(item.baseURL)}
+        >
+          <Text style={styles.actionText}>Configure</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.removeButton}
+          onPress={() => {
+            Alert.alert(
+              'Remove Addon',
+              `Are you sure you want to remove ${item.name}?`,
+              [
+                { text: 'Cancel' },
+                {
+                  text: 'Remove',
+                  onPress: () => removeAddon(item.id),
+                },
+              ]
+            );
+          }}
+        >
+          <Text style={styles.actionText}>Remove</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
+
 
   return (
     <View style={styles.container}>
@@ -131,31 +140,36 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 15,
     padding: 15,
+  },
+  firstRow: {
     flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
   },
   iconColumn: {
-    width: 60,
-    alignItems: 'center',
-    justifyContent: 'center',
     marginRight: 15,
   },
-  detailsColumn: {
+  titleColumn: {
     flex: 1,
-    justifyContent: 'space-between',
   },
   addonLogo: {
-    width: 50,
-    height: 50,
+    width: 60,
+    height: 60,
     borderRadius: 8,
+    resizeMode: 'contain',
   },
   addonName: {
-    fontSize: 14,
+    fontSize: 18,
     fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  addonTypes: {
+    fontSize: 14,
   },
   addonDescription: {
     fontSize: 14,
     color: '#777',
-    marginTop: 10,
+    marginBottom: 10,
   },
   actions: {
     marginTop: 20,
