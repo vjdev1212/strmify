@@ -3,22 +3,21 @@ import { Link } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { View as RNView } from 'react-native';
 import { StyleSheet, FlatList, Image, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons'; // For using the clear icon
 
 const SearchScreen = () => {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [movies, setMovies] = useState<any[]>([]);
   const [series, setSeries] = useState<any[]>([]);
-  const [debouncedQuery, setDebouncedQuery] = useState(query);
-
 
   const fetchData = async () => {
-    if (!debouncedQuery.trim()) return;
+    if (!query.trim()) return;
     setLoading(true);
     try {
       const [moviesResponse, seriesResponse] = await Promise.all([
-        fetch(`https://v3-cinemeta.strem.io/catalog/movie/top/search=${debouncedQuery}.json`),
-        fetch(`https://v3-cinemeta.strem.io/catalog/series/top/search=${debouncedQuery}.json`),
+        fetch(`https://v3-cinemeta.strem.io/catalog/movie/top/search=${query}.json`),
+        fetch(`https://v3-cinemeta.strem.io/catalog/series/top/search=${query}.json`),
       ]);
 
       const moviesResult = await moviesResponse.json();
@@ -33,20 +32,10 @@ const SearchScreen = () => {
     }
   };
 
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedQuery(query);
-    }, 500);
-
-
-    return () => clearTimeout(timer);
-  }, [query]);
-
-
+  // Fetch data whenever the query changes
   useEffect(() => {
     fetchData();
-  }, [debouncedQuery]);
+  }, [query]);
 
   const renderMoviePoster = ({ item }: { item: any }) => {
     return (
@@ -87,14 +76,25 @@ const SearchScreen = () => {
     );
   };
 
+  const clearSearch = () => {
+    setQuery(''); // Clear the query
+  };
+
   return (
     <View style={styles.container}>
-      <TextInput
-        style={styles.searchInput}
-        placeholder="Search movies or series..."
-        value={query}
-        onChangeText={setQuery}
-      />
+      <View style={styles.searchInputContainer}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search movies or series..."
+          value={query}
+          onChangeText={setQuery} // Trigger fetchData directly on text change
+        />
+        {query.length > 0 && (
+          <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
+            <Ionicons name="close-circle" size={24} color="gray" />
+          </TouchableOpacity>
+        )}
+      </View>
 
       {loading && <ActivityIndicator size="large" color="#fc7703" style={styles.loader} />}
 
@@ -132,14 +132,23 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingTop: 20,
   },
+  searchInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    margin: 20,
+    marginTop: 50,
+  },
   searchInput: {
     height: 50,
     borderWidth: 0.75,
     borderRadius: 12,
-    margin: 20,
-    marginTop: 50,
+    flex: 1,
     paddingLeft: 15,
     borderColor: 'gray'
+  },
+  clearButton: {
+    paddingLeft: 10,
+    paddingRight: 10,
   },
   loader: {
     marginTop: 20,
