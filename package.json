@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.2",
+    "@react-native-async-storage/async-storage": "^2.1.0",
     "@react-native-picker/picker": "2.9.0",
     "@react-navigation/native": "^7.0.13",
     "expo": "~52.0.17",
