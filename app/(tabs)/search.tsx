@@ -3,14 +3,15 @@ import { Link } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { View as RNView } from 'react-native';
 import { StyleSheet, FlatList, Image, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons'; // For using the close icon
-import { useColorScheme } from 'react-native'; // To handle light/dark mode
+import { Ionicons } from '@expo/vector-icons'; 
+import { useColorScheme } from 'react-native'; 
 
 const SearchScreen = () => {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [movies, setMovies] = useState<any[]>([]);
   const [series, setSeries] = useState<any[]>([]);
+  const [debounceTimeout, setDebounceTimeout] = useState<NodeJS.Timeout | null>(null); 
 
   const fetchData = async () => {
     if (!query.trim()) return;
@@ -33,9 +34,22 @@ const SearchScreen = () => {
     }
   };
 
+
   useEffect(() => {
-    fetchData();
-  }, [query]);
+    if (debounceTimeout) {
+      clearTimeout(debounceTimeout); 
+    }
+    
+    const timeout = setTimeout(() => {
+      fetchData();
+    }, 1000);
+
+    setDebounceTimeout(timeout); 
+
+    return () => {
+      clearTimeout(timeout); 
+    };
+  }, [query]); 
 
   const renderMoviePoster = ({ item }: { item: any }) => {
     return (
@@ -77,7 +91,7 @@ const SearchScreen = () => {
   };
 
   const clearSearch = () => {
-    setQuery(''); // Clear the query
+    setQuery(''); 
   };
 
   const colorScheme = useColorScheme();
@@ -89,7 +103,7 @@ const SearchScreen = () => {
           style={[styles.searchInput, colorScheme === 'dark' ? styles.darkSearchInput : styles.lightSearchInput]}
           placeholder="Search movies or series..."
           value={query}
-          onChangeText={setQuery} // Trigger fetchData directly on text change
+          onChangeText={setQuery} 
         />
         {query.length > 0 && (
           <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>

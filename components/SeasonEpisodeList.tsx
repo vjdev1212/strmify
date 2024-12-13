@@ -102,7 +102,7 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
           >
             <Image source={{ uri: item.thumbnail }} style={styles.thumbnail} />
             <Text style={styles.episodeTitle} numberOfLines={1}>{item.number}. {item.name}</Text>
-            <Text style={styles.episodeDescription}>
+            <Text style={styles.episodeDescription} numberOfLines={10}>
               {item.description}
             </Text>
           </TouchableOpacity>
