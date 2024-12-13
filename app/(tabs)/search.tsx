@@ -3,7 +3,8 @@ import { Link } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { View as RNView } from 'react-native';
 import { StyleSheet, FlatList, Image, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons'; // For using the close icon
+import { useColorScheme } from 'react-native'; // To handle light/dark mode
 
 const SearchScreen = () => {
   const [query, setQuery] = useState('');
@@ -32,7 +33,6 @@ const SearchScreen = () => {
     }
   };
 
-  // Fetch data whenever the query changes
   useEffect(() => {
     fetchData();
   }, [query]);
@@ -80,11 +80,13 @@ const SearchScreen = () => {
     setQuery(''); // Clear the query
   };
 
+  const colorScheme = useColorScheme();
+
   return (
     <View style={styles.container}>
       <View style={styles.searchInputContainer}>
         <TextInput
-          style={styles.searchInput}
+          style={[styles.searchInput, colorScheme === 'dark' ? styles.darkSearchInput : styles.lightSearchInput]}
           placeholder="Search movies or series..."
           value={query}
           onChangeText={setQuery} // Trigger fetchData directly on text change
@@ -138,13 +140,19 @@ const styles = StyleSheet.create({
     marginTop: 50,
   },
   searchInput: {
-    height: 50,    
-    borderWidth: 1,
-    borderRadius: 30,
+    height: 50,
+    borderWidth: 0.75,
+    borderRadius: 50,
     paddingLeft: 15,
     paddingRight: 40,
     borderColor: 'gray',
     fontSize: 16,
+  },
+  lightSearchInput: {
+    backgroundColor: '#fff',
+  },
+  darkSearchInput: {
+    backgroundColor: '#333',
   },
   clearButton: {
     position: 'absolute',
@@ -169,7 +177,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   posterTitle: {
-    textAlign: 'center',
     marginTop: 8,
     fontSize: 14,
     maxWidth: 100,
