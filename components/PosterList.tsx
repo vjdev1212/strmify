@@ -154,7 +154,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: 'gray',
   },
-  // Skeleton styles
   skeletonContainer: {
     marginRight: 15,
     width: 100,
