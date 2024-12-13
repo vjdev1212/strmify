@@ -3,7 +3,7 @@ import { Link } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { View as RNView } from 'react-native';
 import { StyleSheet, FlatList, Image, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons'; // For using the clear icon
+import { Ionicons } from '@expo/vector-icons';
 
 const SearchScreen = () => {
   const [query, setQuery] = useState('');
@@ -133,22 +133,24 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   searchInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    position: 'relative',
     margin: 20,
     marginTop: 50,
   },
   searchInput: {
-    height: 50,
-    borderWidth: 0.75,
-    borderRadius: 12,
-    flex: 1,
+    height: 50,    
+    borderWidth: 1,
+    borderRadius: 30,
     paddingLeft: 15,
-    borderColor: 'gray'
+    paddingRight: 40,
+    borderColor: 'gray',
+    fontSize: 16,
   },
   clearButton: {
-    paddingLeft: 10,
-    paddingRight: 10,
+    position: 'absolute',
+    right: 10,
+    top: '50%',
+    transform: [{ translateY: -12 }],
   },
   loader: {
     marginTop: 20,
