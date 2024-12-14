@@ -7,6 +7,7 @@ import MediaContentDetailsList from '@/components/MediaContentDetailsList';
 import MediaContentHeader from '@/components/MediaContentHeader';
 import MediaContentPoster from '@/components/MediaContentPoster';
 import PlayButton from '@/components/PlayButton';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const MovieDetails = () => {
   const { imdbid } = useLocalSearchParams();
@@ -52,19 +53,19 @@ const MovieDetails = () => {
   const { background, logo, name, description, genre, runtime, released, imdbRating, country, director, writer, cast } = data;
 
   return (
-    <ScrollView showsVerticalScrollIndicator={false} style={styles.container}>
-      <MediaContentPoster background={background} logo={logo} />
-      <MediaContentHeader name={name} genre={genre} released={released} runtime={runtime} imdbRating={imdbRating} />
-      <PlayButton onPress={() => console.log('Play clicked')} />
-      <MediaContentDescription description={description} />
-      <MediaContentDetailsList
-        released={released}
-        country={country}
-        director={director}
-        writer={writer}
-        cast={cast}
-      />
-    </ScrollView>
+      <ScrollView showsVerticalScrollIndicator={false} style={styles.container}>
+        <MediaContentPoster background={background} logo={logo} />
+        <MediaContentHeader name={name} genre={genre} released={released} runtime={runtime} imdbRating={imdbRating} />
+        <PlayButton onPress={() => console.log('Play clicked')} />
+        <MediaContentDescription description={description} />
+        <MediaContentDetailsList
+          released={released}
+          country={country}
+          director={director}
+          writer={writer}
+          cast={cast}
+        />
+      </ScrollView>
   );
 };
 

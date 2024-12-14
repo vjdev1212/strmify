@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { FlatList, Image, StyleSheet, TouchableOpacity, View as RNView } from 'react-native';
 import { Text } from '@/components/Themed';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
+import { ScrollView } from 'react-native-reanimated/lib/typescript/Animated';
 
 const MoviesList = () => {
   const { apiUrl, title, type } = useLocalSearchParams();

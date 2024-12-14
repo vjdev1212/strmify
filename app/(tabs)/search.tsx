@@ -1,17 +1,17 @@
 import { Text, ActivityIndicator, TextInput, View } from '@/components/Themed';
 import { Link } from 'expo-router';
 import { useState, useEffect } from 'react';
-import { View as RNView } from 'react-native';
+import { View as RNView, SafeAreaView } from 'react-native';
 import { StyleSheet, FlatList, Image, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons'; 
-import { useColorScheme } from 'react-native'; 
+import { Ionicons } from '@expo/vector-icons';
+import { useColorScheme } from 'react-native';
 
 const SearchScreen = () => {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [movies, setMovies] = useState<any[]>([]);
   const [series, setSeries] = useState<any[]>([]);
-  const [debounceTimeout, setDebounceTimeout] = useState<NodeJS.Timeout | null>(null); 
+  const [debounceTimeout, setDebounceTimeout] = useState<NodeJS.Timeout | null>(null);
 
   const fetchData = async () => {
     if (!query.trim()) return;
@@ -37,19 +37,19 @@ const SearchScreen = () => {
 
   useEffect(() => {
     if (debounceTimeout) {
-      clearTimeout(debounceTimeout); 
+      clearTimeout(debounceTimeout);
     }
-    
+
     const timeout = setTimeout(() => {
       fetchData();
     }, 1000);
 
-    setDebounceTimeout(timeout); 
+    setDebounceTimeout(timeout);
 
     return () => {
-      clearTimeout(timeout); 
+      clearTimeout(timeout);
     };
-  }, [query]); 
+  }, [query]);
 
   const renderMoviePoster = ({ item }: { item: any }) => {
     return (
@@ -75,35 +75,39 @@ const SearchScreen = () => {
 
   const PosterContent = ({ item }: { item: any }) => {
     return (
-      <RNView>
-        <TouchableOpacity style={styles.posterContainer}>
-          <Image
-            source={{ uri: item.poster }}
-            style={styles.posterImage}
-          />
-          <Text numberOfLines={1} ellipsizeMode="tail" style={styles.posterTitle}>
-            {item.name}
-          </Text>
-          <Text style={styles.posterYear}>{item.releaseInfo}</Text>
-        </TouchableOpacity>
-      </RNView>
+      <SafeAreaView>
+        <RNView>
+          <TouchableOpacity style={styles.posterContainer}>
+            <Image
+              source={{ uri: item.poster }}
+              style={styles.posterImage}
+            />
+            <Text numberOfLines={1} ellipsizeMode="tail" style={styles.posterTitle}>
+              {item.name}
+            </Text>
+            <Text style={styles.posterYear}>{item.releaseInfo}</Text>
+          </TouchableOpacity>
+        </RNView>
+      </SafeAreaView>
     );
   };
 
   const clearSearch = () => {
-    setQuery(''); 
+    setQuery('');
+    setMovies([]);
+    setSeries([])
   };
 
   const colorScheme = useColorScheme();
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.searchInputContainer}>
         <TextInput
           style={[styles.searchInput, colorScheme === 'dark' ? styles.darkSearchInput : styles.lightSearchInput]}
           placeholder="Search movies or series..."
           value={query}
-          onChangeText={setQuery} 
+          onChangeText={setQuery}
         />
         {query.length > 0 && (
           <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
@@ -139,19 +143,19 @@ const SearchScreen = () => {
           />
         </View>
       )}
-    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 20,
+    paddingTop: 10,
   },
   searchInputContainer: {
     position: 'relative',
-    margin: 20,
-    marginTop: 50,
+    marginTop: 10,
+    padding: 20
   },
   searchInput: {
     height: 50,
@@ -170,9 +174,9 @@ const styles = StyleSheet.create({
   },
   clearButton: {
     position: 'absolute',
-    right: 10,
+    right: 35,
     top: '50%',
-    transform: [{ translateY: -12 }],
+    transform: [{ translateY: 7 }],
   },
   loader: {
     marginTop: 20,

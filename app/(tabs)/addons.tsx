@@ -3,6 +3,8 @@ import { StyleSheet, FlatList, TouchableOpacity, Image, Alert } from 'react-nati
 import * as WebBrowser from 'expo-web-browser';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, Text } from '@/components/Themed';
+import { Link } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const AddonsScreen = () => {
   const [addons, setAddons] = useState<any[]>([]);
@@ -21,11 +23,6 @@ const AddonsScreen = () => {
   useEffect(() => {
     fetchAddons();
   }, []);
-
-
-  const addAddon = async () => {
-  };
-
 
   const removeAddon = async (addonId: string) => {
     const updatedAddons = addons.filter(addon => addon.id !== addonId);
@@ -87,34 +84,41 @@ const AddonsScreen = () => {
 
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Manage Addons</Text>
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => addAddon()}
-      >
-        <Text style={styles.addButtonText}>New Addon</Text>
-      </TouchableOpacity>
-      <FlatList
-        data={addons}
-        keyExtractor={(item) => item.id}
-        renderItem={renderAddonItem}
-        contentContainerStyle={styles.addonsList}
-      />      
-    </View>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.contentContainer}>
+        <Text style={styles.header}>Manage Addons</Text>
+        <TouchableOpacity
+          style={styles.addButton}>
+          <Link href={{
+            pathname: "/addons/add",
+            params: {},
+          }}>
+            <Text style={styles.addButtonText}>Add New</Text>
+          </Link>
+        </TouchableOpacity>
+        <FlatList
+          data={addons}
+          keyExtractor={(item) => item.id}
+          renderItem={renderAddonItem}
+          contentContainerStyle={styles.addonsList}
+        />
+      </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    marginTop: 100,
-    paddingHorizontal: 20,
+    paddingTop: 10,
+  },
+  contentContainer: {
+    paddingHorizontal: 20
   },
   header: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginVertical: 20,
   },
   addonsList: {
     marginBottom: 20,
@@ -184,7 +188,8 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     width: '60%',
-    margin: 'auto'
+    margin: 'auto',
+    marginTop: 20
   },
   addButtonText: {
     color: '#fff',

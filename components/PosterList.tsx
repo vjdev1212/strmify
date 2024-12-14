@@ -76,7 +76,7 @@ const PosterList = ({
         </Text>
         <Link
           href={{
-            pathname: `/${type}/List`,
+            pathname: `/${type}/list`,
             params: { apiUrl, title, type },
           }}
         >
