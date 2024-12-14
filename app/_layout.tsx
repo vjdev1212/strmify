@@ -82,11 +82,11 @@ function RootLayoutNav() {
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'Home' }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="movie/details" options={{ headerShown: false, headerTransparent: true, headerTitle: '' }} />
-        <Stack.Screen name="movie/list" options={{ headerShown: false, headerTitle: '' }} />
-        <Stack.Screen name="series/details" options={{ headerShown: false, headerTransparent: true, headerTitle: '' }} />
-        <Stack.Screen name="series/list" options={{ headerShown: false, headerTitle: '' }} />
-        <Stack.Screen name="addons/add" options={{ headerShown: true, headerTitle: '' }} />
+        <Stack.Screen name="movie/details" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#fc7703' }} />
+        <Stack.Screen name="movie/list" options={{ headerShown: true, headerTitle: '', headerTintColor: '#fc7703' }} />
+        <Stack.Screen name="series/details" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#fc7703' }} />
+        <Stack.Screen name="series/list" options={{ headerShown: true, headerTitle: '', headerTintColor: '#fc7703' }} />
+        <Stack.Screen name="addons/add" options={{ headerShown: true, headerTitle: '', headerTintColor: '#fc7703' }} />
       </Stack>
     </ThemeProvider>
   );

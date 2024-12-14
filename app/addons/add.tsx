@@ -15,6 +15,11 @@ export default function AddAddonScreen() {
             return;
         }
 
+        if (!url.toLocaleLowerCase().endsWith('manifest.json')) {
+            Alert.alert('Invalid Manifest URL', 'Please enter the valid Addon manifest URL.');
+            return;
+        }
+
         setLoading(true);
         setManifestData(null);
 
@@ -33,10 +38,16 @@ export default function AddAddonScreen() {
         }
     };
 
+    const getBaseUrl = (url: string) => {
+        const parsedUrl = new URL(url);
+        return `${parsedUrl.protocol}//${parsedUrl.host}`;
+    }
+
     const addAddon = async () => {
         if (!manifestData) return;
 
         try {
+            manifestData.url = getBaseUrl(url);
             const storedAddons = await AsyncStorage.getItem('addons');
             const addons = storedAddons ? JSON.parse(storedAddons) : {};
             const newKey = `${manifestData.id}`;
@@ -50,12 +61,11 @@ export default function AddAddonScreen() {
             Alert.alert('Success', 'Addon added successfully!');
             setManifestData(null);
             setUrl('');
+            router.navigate({ pathname: '/(tabs)/addons' });
         } catch (error) {
             Alert.alert('Error', 'Failed to save addon.');
         }
     };
-
-    const isPresented = router.canGoBack();
 
     return (
         <SafeAreaView style={styles.container}>
@@ -68,7 +78,6 @@ export default function AddAddonScreen() {
                     onChangeText={setUrl}
                     autoCapitalize="none"
                     keyboardType="url"
-                    onSubmitEditing={fetchManifest}
                     onBlur={fetchManifest}
                 />
 
@@ -116,7 +125,7 @@ export default function AddAddonScreen() {
                                 <Text style={styles.label}>Types:</Text>
                                 <Text style={styles.value}>{manifestData.types.join(', ')}</Text>
                             </View>
-                        )}                        
+                        )}
                     </View>
                 )}
             </ScrollView>
@@ -153,13 +162,13 @@ const styles = StyleSheet.create({
         marginVertical: 20,
     },
     dataContainer: {
-        marginTop: 20,
+        marginTop: 10,
         width: '100%',
         marginBottom: 40,
         padding: 10
     },
     dataRow: {
-        marginBottom: 15,
+        marginBottom: 20,
     },
     label: {
         fontWeight: 'bold',
@@ -177,6 +186,7 @@ const styles = StyleSheet.create({
     },
     addButton: {
         alignItems: 'center',
+        marginBottom: 10
     },
     addButtonText: {
         backgroundColor: '#fc7703',
@@ -187,6 +197,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
         textAlign: 'center',
-        marginBottom: 10
+        marginBottom: 20
     },
 });

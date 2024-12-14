@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, FlatList, TouchableOpacity, Image, Alert, ScrollView } from 'react-native';
+import { StyleSheet, TouchableOpacity, Image, Alert, ScrollView, SafeAreaView, View } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { View, Text } from '@/components/Themed';
+import { Text } from '@/components/Themed';
 import { Link } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 const AddonsScreen = () => {
   const [addons, setAddons] = useState<any[]>([]);
@@ -25,7 +24,6 @@ const AddonsScreen = () => {
     }
   };
 
-
   useEffect(() => {
     fetchAddons();
   }, []);
@@ -36,14 +34,12 @@ const AddonsScreen = () => {
     await AsyncStorage.setItem('addons', JSON.stringify(updatedAddons));
   };
 
-
   const openConfiguration = (url: string) => {
     WebBrowser.openBrowserAsync(`${url}/configure`);
   };
 
-
-  const renderAddonItem = ({ item }: { item: any }) => (
-    <View style={styles.addonItem}>
+  const renderAddonItem = (item: any) => (
+    <View style={styles.addonItem} key={item.id}>
       <View style={styles.firstRow}>
         <View style={styles.iconColumn}>
           <Image source={{ uri: item.logo }} style={styles.addonLogo} />
@@ -61,7 +57,7 @@ const AddonsScreen = () => {
       <View style={styles.actions}>
         <TouchableOpacity
           style={styles.configureButton}
-          onPress={() => openConfiguration(item.baseURL)}
+          onPress={() => openConfiguration(item.url)}
         >
           <Text style={styles.actionText}>Configure</Text>
         </TouchableOpacity>
@@ -87,26 +83,17 @@ const AddonsScreen = () => {
     </View>
   );
 
-
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView showsHorizontalScrollIndicator={false} style={styles.contentContainer}>
-        <Text style={styles.header}>Manage Addons</Text>
-        <TouchableOpacity
-          style={styles.addButton}>
-          <Link href={{
-            pathname: "/addons/add",
-            params: {},
-          }}>
-            <Text style={styles.addButtonText}>Add New</Text>
-          </Link>
-        </TouchableOpacity>
-        <FlatList
-          data={addons}
-          keyExtractor={(item) => item.id}
-          renderItem={renderAddonItem}
-          contentContainerStyle={styles.addonsList}
-        />
+      <TouchableOpacity style={styles.addButton}>
+        <Link href={{ pathname: "/addons/add", params: {} }}>
+          <Text style={styles.addButtonText}>Add New</Text>
+        </Link>
+      </TouchableOpacity>
+      <ScrollView showsVerticalScrollIndicator={false} style={styles.contentContainer}>
+        <View style={styles.addonsList}>
+          {addons.map(renderAddonItem)}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -115,16 +102,14 @@ const AddonsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    marginTop: 10
   },
   contentContainer: {
-    paddingHorizontal: 20
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    paddingHorizontal: 20,
   },
   addonsList: {
-    marginBottom: 20,
+    marginTop: 10,
+    marginBottom: 50,
   },
   addonItem: {
     borderRadius: 10,
@@ -154,12 +139,12 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   addonTypes: {
-    fontSize: 14,
+    fontSize: 16,
   },
   addonDescription: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#777',
-    marginBottom: 10,
+    marginVertical: 5,
   },
   actions: {
     marginTop: 20,
@@ -169,7 +154,7 @@ const styles = StyleSheet.create({
   configureButton: {
     backgroundColor: '#fc7703',
     padding: 10,
-    borderRadius: 6,
+    borderRadius: 4,
     flex: 1,
     marginRight: 10,
     alignItems: 'center',
@@ -177,28 +162,29 @@ const styles = StyleSheet.create({
   removeButton: {
     backgroundColor: '#ff4d4d',
     padding: 10,
-    borderRadius: 6,
+    borderRadius: 4,
     flex: 1,
     alignItems: 'center',
   },
   actionText: {
     color: 'white',
     fontWeight: 'bold',
-    fontSize: 14,
+    fontSize: 16,
   },
   addButton: {
     backgroundColor: '#fc7703',
-    padding: 12,
-    borderRadius: 8,
+    padding: 10,
+    borderRadius: 4,
     width: '60%',
     margin: 'auto',
-    marginTop: 20
+    marginBottom: 10,
+    marginTop: 30
   },
   addButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
-    textAlign: 'center'
+    textAlign: 'center',
   },
 });
 

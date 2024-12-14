@@ -19,7 +19,7 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: '#fc7703',
         headerShown: false,
       }}
     >
@@ -37,7 +37,6 @@ export default function TabLayout() {
           title: 'Search',
           tabBarIcon: ({ color }) => <TabBarIcon name="search" color={color} />,
           tabBarIconStyle: { marginVertical: 5 },
-          headerShown: true,          
         }}
       />
       <Tabs.Screen
@@ -46,7 +45,6 @@ export default function TabLayout() {
           title: 'Addons',
           tabBarIcon: ({ color }) => <TabBarIcon name="puzzle-piece" color={color} />,
           tabBarIconStyle: { marginVertical: 5 },
-          headerShown: true,
         }}
       />
       <Tabs.Screen
@@ -55,7 +53,6 @@ export default function TabLayout() {
           title: 'Settings',
           tabBarIcon: ({ color }) => <TabBarIcon name="gear" color={color} />,
           tabBarIconStyle: { marginVertical: 5 },
-          headerShown: true,
         }}
       />
     </Tabs>
