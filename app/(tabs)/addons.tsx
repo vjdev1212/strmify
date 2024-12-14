@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, TouchableOpacity, Image, Alert, ScrollView, SafeAreaView, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, Image, Alert, ScrollView, SafeAreaView, View, Clipboard } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Text } from '@/components/Themed';
 import { Link } from 'expo-router';
+import * as Sharing from 'expo-sharing';
 
 const AddonsScreen = () => {
   const [addons, setAddons] = useState<any[]>([]);
@@ -38,6 +39,22 @@ const AddonsScreen = () => {
     WebBrowser.openBrowserAsync(`${url}/configure`);
   };
 
+  const shareManifestUrl = async (url: string) => {
+    try {
+      if (await Sharing.isAvailableAsync()) {
+        if (url && url.startsWith('http')) {
+          await Sharing.shareAsync(url);
+        } else {
+          Alert.alert('Invalid URL', 'The URL provided is invalid.');
+        }
+      } else {
+        Alert.alert('Sharing is not available on this device.');
+      }
+    } catch (error) {
+      console.error('Error sharing content:', error);
+    }
+  };
+
   const renderAddonItem = (item: any) => (
     <View style={styles.addonItem} key={item.id}>
       <View style={styles.firstRow}>
@@ -53,14 +70,21 @@ const AddonsScreen = () => {
       {/* Second Row: Description */}
       <Text style={styles.addonDescription}>{item.description}</Text>
 
-      {/* Third Row: Actions */}
       <View style={styles.actions}>
         <TouchableOpacity
-          style={styles.configureButton}
-          onPress={() => openConfiguration(item.url)}
+          style={styles.shareButton}
+          onPress={() => shareManifestUrl(item.manifestUrl)}
         >
-          <Text style={styles.actionText}>Configure</Text>
+          <Text style={styles.actionText}>Share</Text>
         </TouchableOpacity>
+        {item.behaviorHints?.configurable && (
+          <TouchableOpacity
+            style={styles.configureButton}
+            onPress={() => openConfiguration(item.url)}
+          >
+            <Text style={styles.actionText}>Configure</Text>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity
           style={styles.removeButton}
           onPress={() => {
@@ -139,11 +163,10 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   addonTypes: {
-    fontSize: 16,
+    fontSize: 15,
   },
   addonDescription: {
-    fontSize: 16,
-    color: '#777',
+    fontSize: 15,
     marginVertical: 5,
   },
   actions: {
@@ -151,8 +174,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
-  configureButton: {
+  shareButton: {
     backgroundColor: '#fc7703',
+    padding: 10,
+    borderRadius: 4,
+    flex: 1,
+    marginRight: 10,
+    alignItems: 'center',
+  },
+  configureButton: {
+    backgroundColor: '#32a852',
     padding: 10,
     borderRadius: 4,
     flex: 1,

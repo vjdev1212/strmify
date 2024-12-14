@@ -47,6 +47,7 @@ export default function AddAddonScreen() {
         if (!manifestData) return;
 
         try {
+            manifestData.manifestUrl = url;
             manifestData.url = getBaseUrl(url);
             const storedAddons = await AsyncStorage.getItem('addons');
             const addons = storedAddons ? JSON.parse(storedAddons) : {};

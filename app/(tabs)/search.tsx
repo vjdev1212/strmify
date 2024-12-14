@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 35,
     top: '50%',
-    transform: [{ translateY: 7 }],
+    transform: [{ translateY: -12 }],
   },
   loader: {
     marginTop: 20,
