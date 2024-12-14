@@ -47,8 +47,10 @@ export default function AddAddonScreen() {
         if (!manifestData) return;
 
         try {
-            manifestData.manifestUrl = url;
-            manifestData.url = getBaseUrl(url);
+            manifestData.manifestUrl = url;            
+            manifestData.baseUrl = getBaseUrl(url);
+            manifestData.streamBaseUrl = url.toLocaleLowerCase().replace('/manifest.json', '');
+            
             const storedAddons = await AsyncStorage.getItem('addons');
             const addons = storedAddons ? JSON.parse(storedAddons) : {};
             const newKey = `${manifestData.id}`;
