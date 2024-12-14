@@ -105,7 +105,8 @@ const SearchScreen = () => {
       <View style={styles.searchInputContainer}>
         <TextInput
           style={[styles.searchInput, colorScheme === 'dark' ? styles.darkSearchInput : styles.lightSearchInput]}
-          placeholder="Search movies or series..."
+          placeholder="Search movies or series..."          
+          placeholderTextColor={colorScheme === 'dark' ? '#AAA' : '#333'}        
           value={query}
           onChangeText={setQuery}
         />
@@ -158,19 +159,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20
   },
   searchInput: {
-    height: 50,
+    height: 40,
     borderWidth: 0.75,
-    borderRadius: 50,
-    paddingLeft: 15,
-    paddingRight: 40,
+    borderRadius: 20,
+    paddingLeft: 20,
     borderColor: 'gray',
-    fontSize: 16,
+    fontSize: 14,
   },
   lightSearchInput: {
     backgroundColor: '#fff',
+    color: '#000'
   },
   darkSearchInput: {
     backgroundColor: '#333',
+    color: '#fff'
   },
   clearButton: {
     position: 'absolute',
