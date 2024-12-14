@@ -86,7 +86,7 @@ function RootLayoutNav() {
         <Stack.Screen name="movie/list" options={{ headerShown: false, headerTitle: '' }} />
         <Stack.Screen name="series/details" options={{ headerShown: false, headerTransparent: true, headerTitle: '' }} />
         <Stack.Screen name="series/list" options={{ headerShown: false, headerTitle: '' }} />
-        <Stack.Screen name="addons/add" options={{ headerShown: true, headerTransparent: true, headerTitle: '' }} />
+        <Stack.Screen name="addons/add" options={{ headerShown: true, headerTitle: '' }} />
       </Stack>
     </ThemeProvider>
   );

@@ -154,8 +154,8 @@ const styles = StyleSheet.create({
   },
   searchInputContainer: {
     position: 'relative',
-    marginTop: 10,
-    padding: 20
+    marginTop: 30,
+    paddingHorizontal: 20
   },
   searchInput: {
     height: 50,

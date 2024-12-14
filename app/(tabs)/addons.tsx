@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, FlatList, TouchableOpacity, Image, Alert } from 'react-native';
+import { StyleSheet, FlatList, TouchableOpacity, Image, Alert, ScrollView } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, Text } from '@/components/Themed';
@@ -13,12 +13,18 @@ const AddonsScreen = () => {
     try {
       const storedAddons = await AsyncStorage.getItem('addons');
       if (storedAddons) {
-        setAddons(JSON.parse(storedAddons));
+        const parsedAddons = JSON.parse(storedAddons);
+        const addonsArray = Object.keys(parsedAddons).map(key => ({
+          id: key,
+          ...parsedAddons[key],
+        }));
+        setAddons(addonsArray);
       }
     } catch (error) {
       console.error('Error fetching addons:', error);
     }
   };
+
 
   useEffect(() => {
     fetchAddons();
@@ -38,7 +44,6 @@ const AddonsScreen = () => {
 
   const renderAddonItem = ({ item }: { item: any }) => (
     <View style={styles.addonItem}>
-      {/* First Row: Icon and Title */}
       <View style={styles.firstRow}>
         <View style={styles.iconColumn}>
           <Image source={{ uri: item.logo }} style={styles.addonLogo} />
@@ -85,7 +90,7 @@ const AddonsScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.contentContainer}>
+      <ScrollView showsHorizontalScrollIndicator={false} style={styles.contentContainer}>
         <Text style={styles.header}>Manage Addons</Text>
         <TouchableOpacity
           style={styles.addButton}>
@@ -102,7 +107,7 @@ const AddonsScreen = () => {
           renderItem={renderAddonItem}
           contentContainerStyle={styles.addonsList}
         />
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -110,7 +115,6 @@ const AddonsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 10,
   },
   contentContainer: {
     paddingHorizontal: 20
@@ -118,7 +122,6 @@ const styles = StyleSheet.create({
   header: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginVertical: 20,
   },
   addonsList: {
     marginBottom: 20,
@@ -126,7 +129,7 @@ const styles = StyleSheet.create({
   addonItem: {
     borderRadius: 10,
     marginBottom: 15,
-    padding: 15,
+    paddingVertical: 15,
   },
   firstRow: {
     flexDirection: 'row',
