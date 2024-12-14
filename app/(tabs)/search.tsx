@@ -54,7 +54,7 @@ const SearchScreen = () => {
   const renderMoviePoster = ({ item }: { item: any }) => {
     return (
       <Link href={{
-        pathname: `/movie/Details`,
+        pathname: `/movie/details`,
         params: { imdbid: item.imdb_id || item.id }
       }}>
         <PosterContent item={item} />
@@ -65,7 +65,7 @@ const SearchScreen = () => {
   const renderSeriesPoster = ({ item }: { item: any }) => {
     return (
       <Link href={{
-        pathname: `/series/Details`,
+        pathname: `/series/details`,
         params: { imdbid: item.imdb_id || item.id }
       }}>
         <PosterContent item={item} />

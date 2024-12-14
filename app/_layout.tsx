@@ -7,8 +7,8 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
-import MovieDetails from './movie/Details';
-import SeriesDetails from './series/Details';
+import MovieDetails from './movie/details';
+import SeriesDetails from './series/details';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -85,10 +85,11 @@ function RootLayoutNav() {
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'Home' }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="movie/Details" options={{ headerShown: true, headerTransparent: true, headerTitle: '' }} />
-        <Stack.Screen name="movie/List" options={{ headerShown: true, headerTitle: '' }} />
-        <Stack.Screen name="series/Details" options={{ headerShown: true, headerTransparent: true, headerTitle: '' }} />
-        <Stack.Screen name="series/List" options={{ headerShown: true, headerTitle: '' }} />
+        <Stack.Screen name="movie/details" options={{ headerShown: true, headerTransparent: true, headerTitle: '' }} />
+        <Stack.Screen name="movie/list" options={{ headerShown: true, headerTitle: '' }} />
+        <Stack.Screen name="series/details" options={{ headerShown: true, headerTransparent: true, headerTitle: '' }} />
+        <Stack.Screen name="series/list" options={{ headerShown: true, headerTitle: '' }} />
+        <Stack.Screen name="addons/add" options={{ headerShown: true, headerTransparent: true, headerTitle: '' }} />
       </Stack>
     </ThemeProvider>
   );

@@ -48,7 +48,7 @@ const PosterList = ({
 
     return (
       <Link href={{
-        pathname: `/${type}/Details`,
+        pathname: `/${type}/details`,
         params: { imdbid: item.imdb_id || item.id }
       }}>
         <RNView>

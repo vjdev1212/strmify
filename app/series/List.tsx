@@ -32,7 +32,7 @@ const SeriesList = () => {
 
     return (
       <Link href={{
-        pathname: `/movie/Details`,
+        pathname: `/movie/details`,
         params: { imdbid: item.imdb_id || item.id }
       }}>
         <RNView>
