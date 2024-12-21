@@ -1,168 +1,203 @@
-import { View, Text, TextInput } from '@/components/Themed';
+import React, { useEffect, useState } from 'react';
+import { FlatList, Image, StyleSheet, TouchableOpacity, View as RNView, Alert, Linking } from 'react-native';
+import { Text } from '@/components/Themed';
 import { useLocalSearchParams } from 'expo-router';
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, FlatList, TouchableOpacity, ScrollView, Linking, Alert, SafeAreaView } from 'react-native';
+import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const StreamListScreen = () => {
-    const { imdbId, season, episode } = useLocalSearchParams();
-    const [selectedAddon, setSelectedAddon] = useState(null);
+const StreamScreen = () => {
+    const { imdbid, type, season, episode } = useLocalSearchParams();
     const [addons, setAddons] = useState<any[]>([]);
-    const [addonStreams, setAddonStreams] = useState({});
+    const [selectedAddon, setSelectedAddon] = useState<any>(null); // Track selected addon
+    const [streams, setStreams] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Example addon data - replace this with fetching addons
-        const fetchedAddons = [
-            { id: 'addon1', name: 'Addon 1', types: ['movie'], streamBaseUrl: 'https://example.com' },
-            { id: 'addon2', name: 'Addon 2', types: ['series'], streamBaseUrl: 'https://example2.com' },
-            { id: 'addon3', name: 'Addon 3', types: ['movie', 'series'], streamBaseUrl: 'https://example3.com' },
-            // Add more addons as needed
-        ];
-        setAddons(fetchedAddons);
+        const fetchAddons = async () => {
+            try {
+                // Get the stored addons from AsyncStorage
+                const storedAddons = await AsyncStorage.getItem('addons');
+                const addonsData = storedAddons ? JSON.parse(storedAddons) : {};
+                console.log(addonsData);
+                setAddons(Object.values(addonsData)); // Set the addon list
+            } catch (error) {
+                console.error('Error fetching addons:', error);
+                Alert.alert('Error', 'Failed to load addons');
+            }
+        };
 
-        // Trigger search when the screen loads
-        searchStreams(fetchedAddons);
+        fetchAddons();
     }, []);
 
-    const searchStreams = async (availableAddons: any[]) => {
-        if (!imdbId || (!season && !episode)) {
-            Alert.alert('Error', 'Please provide IMDb ID and Season/Episode (if series).');
-            return;
-        }
+    useEffect(() => {
+        if (selectedAddon) {
+            // Fetch streams when an addon is selected
+            const fetchStreams = async () => {
+                try {
+                    const addonUrl = selectedAddon?.url || '';
+                    const streamBaseUrl = selectedAddon?.streamBaseUrl || addonUrl;
 
-        const type = season && episode ? 'series' : 'movie'; // Determine type
-        const searchPromises = availableAddons
-            .filter(addon => addon.types.includes(type)) // Filter addons that support the type
-            .map(addon => fetchStreams(addon, type));
+                    let streamUrl = '';
+                    if (type === 'series') {
+                        // For TV series, include season and episode info
+                        streamUrl = `${streamBaseUrl}/stream/series/${imdbid}${season && episode ? `:${season}:${episode}` : ''}.json`;
+                    } else {
+                        // For movies, use only the imdbid
+                        streamUrl = `${streamBaseUrl}/stream/${type}/${imdbid}.json`;
+                    }
 
-        try {
-            const results = await Promise.all(searchPromises);
-            const streamsByAddon = results.reduce((acc: any, { addon, streams }) => {
-                acc[addon.id] = streams;
-                return acc;
-            }, {});
-            setAddonStreams(streamsByAddon);
-            setSelectedAddon(null); // Reset selection
-        } catch (error) {
-            console.error('Error fetching streams:', error);
-            Alert.alert('Error', 'Failed to fetch streams.');
+                    try {
+                        console.log(`Fetching from: ${streamUrl}`);
+                        const response = await fetch(streamUrl);
+                        const data = await response.json();
+                        if (data.streams) {
+                            setStreams(data.streams);
+                        }
+                    } catch (error) {
+                        console.error(`Error fetching from ${streamUrl}: `, error);
+                    }
+                } catch (error) {
+                    console.error('Error fetching streams:', error);
+                    Alert.alert('Error', 'Failed to load streams');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            fetchStreams();
         }
+    }, [selectedAddon, imdbid, season, episode, type]);
+
+    const handlePress = () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     };
 
-    const fetchStreams = async (addon: any, type: string) => {
-        const url =
-            type === 'movie'
-                ? `${addon.streamBaseUrl}/stream/movie/${imdbId}.json`
-                : `${addon.streamBaseUrl}/stream/series/${imdbId}:${season}:${episode}.json`;
-
-        try {
-            const response = await fetch(url);
-            const data = await response.json();
-            return { addon, streams: data.streams || [] }; // Assuming response has `streams` array
-        } catch (error) {
-            console.error(`Error fetching streams for ${addon.name}:`, error);
-            return { addon, streams: [] };
-        }
-    };
-
-    const renderAddonItem = ({ item }: any) => (
-        <TouchableOpacity
-            style={[styles.addonItem, selectedAddon === item.id ? styles.selectedAddon : {}]}
-            onPress={() => setSelectedAddon(item.id)}
-        >
-            <Text style={styles.addonName}>{item.name}</Text>
-        </TouchableOpacity>
-    );
-
-    const renderStreamItem = (stream: any, addonId: string) => (
-        <View style={styles.streamItem}>
-            <Text style={styles.streamName}>{stream.name}</Text>
-            <Text style={styles.streamDescription}>{stream.description}</Text>
-            <TouchableOpacity onPress={() => Linking.openURL(stream.URL)}>
-                <Text style={styles.streamUrl}>{stream.URL}</Text>
-            </TouchableOpacity>
-        </View>
-    );
-
-    const renderAddonStreams = () => {
-        if (!selectedAddon) return null;
-        const streams = addonStreams[selectedAddon] || [];
+    const renderAddonItem = ({ item }: any) => {
+        const { name, logo } = item;
+        const addonLogo = logo || '';
         return (
-            <FlatList
-                data={streams}
-                keyExtractor={(item, index) => index.toString()}
-                renderItem={({ item }) => renderStreamItem(item, selectedAddon)}
-                contentContainerStyle={styles.streamList}
-            />
+            <TouchableOpacity
+                style={styles.addonItem}
+                onPress={() => setSelectedAddon(item)} // Set selected addon
+            >
+                <Image source={{ uri: addonLogo }} style={styles.addonIcon} />
+                <Text style={styles.addonName}>{name}</Text>
+            </TouchableOpacity>
+        );
+    };
+
+    const renderStreamItem = ({ item }: any) => {
+        const { name, title, url, description, infoHash } = item;
+        const streamType = url ? 'url' : 'magnet';
+
+        const handleOpenLink = (streamUrl: string) => {
+            if (streamType === 'url') {
+                const appUrls = [
+                    `vlc://${streamUrl}`,
+                    `vidhub://open?url=${encodeURIComponent(streamUrl)}`,
+                    `outplayer://open?url=${encodeURIComponent(streamUrl)}`,
+                    `infuse://open?url=${encodeURIComponent(streamUrl)}`
+                ];
+
+                appUrls.some((appUrl) => {
+                    Linking.canOpenURL(appUrl).then((supported) => {
+                        if (supported) {
+                            Linking.openURL(appUrl);
+                            return true;
+                        }
+                        return false;
+                    });
+                });
+            } else {
+                Linking.openURL(`magnet:?xt=urn:btih:${infoHash}`);
+            }
+        };
+
+        return (
+            <RNView style={styles.streamItemContainer}>
+                <TouchableOpacity
+                    style={styles.streamItem}
+                    onPress={() => handlePress()}
+                >
+                    <Text style={styles.streamName} numberOfLines={2}>
+                        {name}
+                    </Text>
+                    <Text style={styles.streamTitle} numberOfLines={2}>
+                        {title || description}
+                    </Text>
+                </TouchableOpacity>
+            </RNView>
         );
     };
 
     return (
-        <SafeAreaView style={styles.container}>
-            <ScrollView contentContainerStyle={styles.scrollViewContent}>
-                {/* Addon List */}
+        <RNView style={styles.container}>
+            <FlatList
+                data={addons}
+                renderItem={renderAddonItem}
+                keyExtractor={(item, index) => index.toString()}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.addonList}
+            />
+            {loading ? (
+                <Text>Loading...</Text>
+            ) : (
                 <FlatList
-                    data={addons}
-                    horizontal
-                    keyExtractor={(item) => item.id}
-                    renderItem={renderAddonItem}
-                    contentContainerStyle={styles.addonList}
+                    data={streams}
+                    renderItem={renderStreamItem}
+                    showsVerticalScrollIndicator={false}
+                    keyExtractor={(item, index) => index.toString()}
                 />
-                {/* Render streams for selected addon */}
-                {renderAddonStreams()}
-            </ScrollView>
-        </SafeAreaView>
+            )}
+        </RNView>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        paddingTop: 20,
-    },
-    scrollViewContent: {
-        paddingHorizontal: 20,
-        paddingBottom: 20,
-    },
-    header: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginBottom: 20,
+        padding: 10,
     },
     addonList: {
-        marginBottom: 20,
+        margin: 20,
     },
     addonItem: {
-        marginRight: 15,
-        padding: 10,
-        backgroundColor: '#f0f0f0',
-        borderRadius: 5,
+        alignItems: 'center',
+        marginRight: 20,
     },
-    selectedAddon: {
-        backgroundColor: '#fc7703',
-    },
-    addonName: {
-        fontWeight: 'bold',
-    },
-    streamList: {
-        marginBottom: 20,
-    },
-    streamItem: {
-        padding: 10,
-        backgroundColor: '#f9f9f9',
-        marginBottom: 10,
-        borderRadius: 5,
-    },
-    streamName: {
-        fontWeight: 'bold',
-    },
-    streamDescription: {
-        color: '#777',
+    addonIcon: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         marginBottom: 5,
     },
-    streamUrl: {
-        color: '#1e90ff',
-        textDecorationLine: 'underline',
+    addonName: {
+        fontSize: 12,
+    },
+    streamItemContainer: {
+        marginBottom: 15,
+        alignItems: 'center',
+        width: '100%',
+    },
+    streamItem: {
+        paddingHorizontal: 20,
+        paddingVertical: 20,
+        borderRadius: 8,
+        width: '100%',
+        borderColor: 'gray',
+        borderWidth: 1
+    },
+    streamName: {
+        fontSize: 14,
+        flex: 1,
+        fontWeight: 'bold',
+        marginBottom: 10
+    },
+    streamTitle: {
+        fontSize: 14,
+        flex: 1,
     },
 });
 
-export default StreamListScreen;
+export default StreamScreen;
