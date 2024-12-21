@@ -125,7 +125,6 @@ const StreamScreen = () => {
         });
     };
 
-    // Render each stream item
     const renderStreamItem = ({ item }: any) => {
         const { name, title, url, description } = item;
 
@@ -144,23 +143,25 @@ const StreamScreen = () => {
                     <Text style={styles.streamTitle} numberOfLines={2}>
                         {title || description}
                     </Text>
-                </TouchableOpacity>
 
-                {isExpanded && (
-                    <RNView style={styles.playerIconsContainer}>
-                        {players.map((player: string) => (
-                            <TouchableOpacity key={player} onPress={() => handleOpenPlayer(player, url)}>
-                                <Image
-                                    source={playerIcons[player]} // Use the mapped player icon
-                                    style={styles.playerIcon}
-                                />
-                            </TouchableOpacity>
-                        ))}
-                    </RNView>
-                )}
+                    {/* Player icons are now inside the stream item container */}
+                    {isExpanded && (
+                        <RNView style={styles.playerIconsContainer}>
+                            {players.map((player: string) => (
+                                <TouchableOpacity key={player} onPress={() => handleOpenPlayer(player, url)}>
+                                    <Image
+                                        source={playerIcons[player]} // Use the mapped player icon
+                                        style={styles.playerIcon}
+                                    />
+                                </TouchableOpacity>
+                            ))}
+                        </RNView>
+                    )}
+                </TouchableOpacity>
             </RNView>
         );
     };
+
 
     return (
         <RNView style={styles.container}>
@@ -239,7 +240,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-evenly',
         alignContent: 'center',
         alignItems: 'center',
-        marginTop: 10,
+        marginTop: 20,
         padding: 10,
         width: '100%',
     },
