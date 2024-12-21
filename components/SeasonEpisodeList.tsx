@@ -35,8 +35,7 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
       const defaultEpisode = videos.find((video) => video.season === 1 && video.number === 1);
       if (defaultEpisode) {
         setSelectedSeason(1);
-        setSelectedEpisode(1);
-        onEpisodeSelect(1, 1);
+        setSelectedEpisode(1);        
       }
     }
   }, [videos]);

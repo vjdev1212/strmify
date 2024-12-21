@@ -37,7 +37,7 @@ const SeriesDetails = () => {
   if (loading) {
     return (
       <View style={styles.centeredContainer}>
-        <ActivityIndicator size="large" style={styles.activityIndicator} />
+        <ActivityIndicator size="large" style={styles.activityIndicator} color="#fc7703" />
         <Text style={styles.centeredText}>Loading</Text>
       </View>
     );
@@ -90,6 +90,7 @@ const styles = StyleSheet.create({
   },
   activityIndicator: {
     marginBottom: 10,
+    color: '#fc7703',
   },
   centeredContainer: {
     flex: 1,

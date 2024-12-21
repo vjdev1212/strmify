@@ -37,7 +37,7 @@ const MovieDetails = () => {
   if (loading) {
     return (
       <View style={styles.centeredContainer}>
-        <ActivityIndicator size="large" style={styles.activityIndicator} />
+        <ActivityIndicator size="large" style={styles.activityIndicator} color="#fc7703" />
         <Text style={styles.centeredText}>Loading</Text>
       </View>
     );

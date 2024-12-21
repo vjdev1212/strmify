@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { FlatList, Image, StyleSheet, TouchableOpacity, View as RNView, Alert, Linking } from 'react-native';
-import { Text } from '@/components/Themed';
+import { ActivityIndicator, Text, View } from '@/components/Themed';
 import { useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -45,6 +45,7 @@ const StreamScreen = () => {
     }, []);
 
     // Fetch streams for all addons
+    // Fetch streams for all addons
     const fetchStreams = async (addonList: any[]) => {
         setLoading(true); // Start loading
 
@@ -52,6 +53,14 @@ const StreamScreen = () => {
             const allStreams: any[] = [];
 
             for (const addon of addonList) {
+                const addonTypes = addon?.types || []; // Get supported types for the addon
+
+                // Check if the addon supports the requested type
+                if (!addonTypes.includes(type)) {
+                    console.log(`Skipping addon "${addon?.name}" as it does not support type "${type}"`);
+                    continue; // Skip if the addon doesn't support the requested media type
+                }
+
                 const addonUrl = addon?.url || '';
                 const streamBaseUrl = addon?.streamBaseUrl || addonUrl;
                 let streamUrl = '';
@@ -61,18 +70,20 @@ const StreamScreen = () => {
                 } else {
                     streamUrl = `${streamBaseUrl}/stream/${type}/${imdbid}.json`;
                 }
-                console.log(streamUrl);
-                const response = await fetch(streamUrl);
-                const data = await response.json();
+                try {
+                    const response = await fetch(streamUrl);
+                    const data = await response.json();
 
-                if (data.streams) {
-                    allStreams.push({ addon, streams: data.streams }); // Collect streams for each addon
-                } else {
-                    allStreams.push({ addon, streams: [] }); // No streams found for this addon
+                    if (data.streams) {
+                        allStreams.push({ addon, streams: data.streams }); // Collect streams for each addon
+                    } else {
+                        allStreams.push({ addon, streams: [] }); // No streams found for this addon
+                    }
+                } catch (error) {
+                    console.error(`Error fetching streams for addon "${addon?.name}":`, error);
                 }
             }
 
-            // Set all streams for each addon
             setStreams(allStreams);
         } catch (error) {
             console.error('Error fetching streams:', error);
@@ -168,7 +179,10 @@ const StreamScreen = () => {
         <RNView style={styles.container}>
             {loading ? (
                 <RNView style={styles.loadingContainer}>
-                    <Text>Loading...</Text>
+                    <View style={styles.centeredContainer}>
+                        <ActivityIndicator size="large" style={styles.activityIndicator} color="#fc7703" />
+                        <Text style={styles.centeredText}>Loading</Text>
+                    </View>
                 </RNView>
             ) : (
                 <>
@@ -256,6 +270,21 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    activityIndicator: {
+        marginBottom: 10,
+        color: '#fc7703',
+    },
+    centeredContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    centeredText: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        textAlign: 'center',
     },
 });
 
