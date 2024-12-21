@@ -12,10 +12,10 @@ const playerIcons: any = {
     infuse: require('../../assets/images/players/infuse.png'),
 };
 
-
 const StreamScreen = () => {
     const { imdbid, type, season, episode } = useLocalSearchParams();
     const [addons, setAddons] = useState<any[]>([]);
+    const [selectedAddon, setSelectedAddon] = useState<any | null>(null); // Track selected addon
     const [streams, setStreams] = useState<any[]>([]);
     const [expandedStream, setExpandedStream] = useState<any | null>(null);
     const [loading, setLoading] = useState(true);
@@ -26,6 +26,10 @@ const StreamScreen = () => {
                 const storedAddons = await AsyncStorage.getItem('addons');
                 const addonsData = storedAddons ? JSON.parse(storedAddons) : {};
                 setAddons(Object.values(addonsData)); // Set the addon list
+
+                if (Object.values(addonsData).length === 1) {
+                    setSelectedAddon(Object.values(addonsData)[0]);
+                }
             } catch (error) {
                 console.error('Error fetching addons:', error);
                 Alert.alert('Error', 'Failed to load addons');
@@ -37,10 +41,10 @@ const StreamScreen = () => {
 
     useEffect(() => {
         const fetchStreams = async () => {
-            try {
-                const addonRequests = addons.map(async (addon) => {
-                    const addonUrl = addon?.url || '';
-                    const streamBaseUrl = addon?.streamBaseUrl || addonUrl;
+            if (selectedAddon) {
+                try {
+                    const addonUrl = selectedAddon?.url || '';
+                    const streamBaseUrl = selectedAddon?.streamBaseUrl || addonUrl;
 
                     let streamUrl = '';
                     if (type === 'series') {
@@ -49,35 +53,24 @@ const StreamScreen = () => {
                         streamUrl = `${streamBaseUrl}/stream/${type}/${imdbid}.json`;
                     }
 
-                    try {
-                        const response = await fetch(streamUrl);
-                        const data = await response.json();
-                        if (data.streams) {
-                            return { addon, streams: data.streams };
-                        }
-                    } catch (error) {
-                        console.error(`Error fetching from ${streamUrl}: `, error);
+                    const response = await fetch(streamUrl);
+                    const data = await response.json();
+                    if (data.streams) {
+                        setStreams(data.streams);
                     }
-                });
-
-                const results = await Promise.all(addonRequests);
-                setStreams(results.filter(result => result)); // Filter out any failed responses
-            } catch (error) {
-                console.error('Error fetching streams:', error);
-                Alert.alert('Error', 'Failed to load streams');
-            } finally {
-                setLoading(false);
+                } catch (error) {
+                    console.error('Error fetching streams:', error);
+                    Alert.alert('Error', 'Failed to load streams');
+                } finally {
+                    setLoading(false);
+                }
             }
         };
 
-        if (addons.length) {
+        if (selectedAddon) {
             fetchStreams();
         }
-    }, [addons, imdbid, season, episode, type]);
-
-    const handlePress = () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    };
+    }, [selectedAddon, imdbid, season, episode, type]);
 
     const handleStreamExpand = (stream: any) => {
         setExpandedStream(expandedStream === stream ? null : stream); // Toggle expand on stream click
@@ -89,7 +82,7 @@ const StreamScreen = () => {
         return (
             <TouchableOpacity
                 style={styles.addonItem}
-                onPress={() => handlePress()} // Just to trigger haptic feedback
+                onPress={() => setSelectedAddon(item)} // Set selected addon
             >
                 <Image source={{ uri: addonLogo }} style={styles.addonIcon} />
                 <Text style={styles.addonName}>{name}</Text>
@@ -98,32 +91,37 @@ const StreamScreen = () => {
     };
 
     const handleOpenPlayer = (player: string, streamUrl: string) => {
-        const playerIcon = playerIcons[player]; // Get the player icon
-        if (!playerIcon) return; // If the player icon doesn't exist, do nothing
-
-        const appUrls = [
-            `vlc://${streamUrl}`,
-            `vidhub://open?url=${encodeURIComponent(streamUrl)}`,
-            `outplayer://open?url=${encodeURIComponent(streamUrl)}`,
-            `infuse://open?url=${encodeURIComponent(streamUrl)}`
-        ];
-
-        appUrls.some((appUrl) => {
-            Linking.canOpenURL(appUrl).then((supported) => {
-                if (supported) {
-                    Linking.openURL(appUrl);
-                    return true;
-                }
-                return false;
-            });
+        // Mapping players to their respective callback URL schemes
+        const playerUrls: { [key: string]: string } = {
+            vlc: `vlc://${streamUrl}`, // VLC URL scheme
+            vidhub: `open-vidhub://x-callback-url/open?url=${encodeURIComponent(streamUrl)}`, // VidHub URL scheme
+            outplayer: `outplayer://${streamUrl}`, // OutPlayer URL scheme
+            infuse: `infuse://x-callback-url/play?url=${encodeURIComponent(streamUrl)}`, // Infuse URL scheme
+        };
+    
+        // Get the corresponding URL for the selected player
+        const playerUrl = playerUrls[player];
+        
+        if (!playerUrl) return; // If no URL found for the player, do nothing
+    
+        // Check if the URL scheme can be opened by any app
+        Linking.canOpenURL(playerUrl).then((supported) => {
+            if (supported) {
+                Linking.openURL(playerUrl); // Open the player with the stream URL
+            } else {
+                console.error(`App for player ${player} is not installed or cannot open the URL.`);
+            }
+        }).catch((error) => {
+            console.error("Error checking URL scheme:", error);
         });
-    };
+    };    
 
     const renderStreamItem = ({ item }: any) => {
-        const { name, title, url, description, infoHash, addon } = item;
+        const { name, title, url, description, infoHash } = item;
         const streamType = url ? 'url' : 'magnet';
 
         const isExpanded = expandedStream === item;
+        const players = ['vlc', 'infuse', 'vidhub', 'outplayer',];
 
         return (
             <RNView style={styles.streamItemContainer}>
@@ -141,7 +139,7 @@ const StreamScreen = () => {
 
                 {isExpanded && (
                     <RNView style={styles.playerIconsContainer}>
-                        {item.players && item.players.map((player: string) => (
+                        {players.map((player: string) => (
                             <TouchableOpacity key={player} onPress={() => handleOpenPlayer(player, url)}>
                                 <Image
                                     source={playerIcons[player]} // Use the mapped player icon
@@ -169,7 +167,7 @@ const StreamScreen = () => {
                 <Text>Loading...</Text>
             ) : (
                 <FlatList
-                    data={streams.flatMap(result => result.streams)} // Flattening streams from all addons
+                    data={streams} // Only show streams from the selected addon
                     renderItem={renderStreamItem}
                     showsVerticalScrollIndicator={false}
                     keyExtractor={(item, index) => index.toString()}
@@ -225,12 +223,17 @@ const styles = StyleSheet.create({
     },
     playerIconsContainer: {
         flexDirection: 'row',
+        justifyContent: 'space-evenly',
+        alignContent: 'center',
+        alignItems: 'center',
         marginTop: 10,
+        padding: 10,
+        width: '100%',
     },
     playerIcon: {
-        width: 30,
-        height: 30,
-        margin: 5,
+        width: 50,
+        height: 50,
+        borderRadius: 10
     },
 });
 
