@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
     },
     streamName: {
         fontSize: 14,
-        fontWeight: '400',
+        fontWeight: 'bold',
         flex: 1,
         marginBottom: 10,
     },
