@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
         padding: 10,
     },
     addonList: {
-        marginVertical: 30,
+        marginVertical: 20,
         marginHorizontal: 20
     },
     addonItem: {
@@ -226,11 +226,10 @@ const styles = StyleSheet.create({
         marginBottom: 5,
     },
     addonName: {
-        paddingVertical: 5,
+        paddingVertical: 10,
         fontWeight: 'bold'
     },
     streamItemContainer: {
-        marginVertical: 15,
         alignItems: 'center',
         width: '100%',
     },
@@ -239,18 +238,19 @@ const styles = StyleSheet.create({
         paddingVertical: 20,
         borderRadius: 8,
         width: '100%',
-        borderColor: 'gray',
-        borderWidth: 1,
+        borderColor: '#a0a0a0',
+        borderBottomWidth: 0.5,
     },
     streamName: {
         fontSize: 14,
+        fontWeight: '400',
         flex: 1,
-        fontWeight: 'bold',
         marginBottom: 10,
     },
     streamTitle: {
-        fontSize: 14,
+        fontSize: 13,
         flex: 1,
+        color: 'gray',
     },
     playerIconsContainer: {
         flexDirection: 'row',
