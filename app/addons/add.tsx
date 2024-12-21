@@ -41,7 +41,7 @@ export default function AddAddonScreen() {
     const getBaseUrl = (url: string) => {
         const parsedUrl = new URL(url);
         return `${parsedUrl.protocol}//${parsedUrl.host}`;
-    }
+    };
 
     const addAddon = async () => {
         if (!manifestData) return;
@@ -72,11 +72,12 @@ export default function AddAddonScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
-            <ScrollView showsVerticalScrollIndicator={false} style={styles.contentContainer}>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollViewContent}>
                 <Text style={styles.title}>Add Addon</Text>
                 <TextInput
                     style={styles.input}
                     placeholder="Enter manifest.json URL"
+                    placeholderTextColor="#B0B0B0"
                     value={url}
                     onChangeText={setUrl}
                     autoCapitalize="none"
@@ -88,11 +89,9 @@ export default function AddAddonScreen() {
 
                 {manifestData && (
                     <View style={styles.dataContainer}>
-                        <View style={styles.addButton}>
-                            <TouchableOpacity onPress={addAddon}>
-                                <Text style={styles.addButtonText}>+ Add addon</Text>
-                            </TouchableOpacity>
-                        </View>
+                        <TouchableOpacity style={styles.addButton} onPress={addAddon}>
+                            <Text style={styles.addButtonText}>+ Add Addon</Text>
+                        </TouchableOpacity>
 
                         {manifestData.logo && (
                             <Image
@@ -102,33 +101,35 @@ export default function AddAddonScreen() {
                             />
                         )}
 
-                        {manifestData.name && (
-                            <View style={styles.dataRow}>
-                                <Text style={styles.label}>Name:</Text>
-                                <Text style={styles.value}>{manifestData.name}</Text>
-                            </View>
-                        )}
+                        <View style={styles.dataInfo}>
+                            {manifestData.name && (
+                                <View style={styles.dataRow}>
+                                    <Text style={styles.label}>Name:</Text>
+                                    <Text style={styles.value}>{manifestData.name}</Text>
+                                </View>
+                            )}
 
-                        {manifestData.version && (
-                            <View style={styles.dataRow}>
-                                <Text style={styles.label}>Version:</Text>
-                                <Text style={styles.value}>{manifestData.version}</Text>
-                            </View>
-                        )}
+                            {manifestData.version && (
+                                <View style={styles.dataRow}>
+                                    <Text style={styles.label}>Version:</Text>
+                                    <Text style={styles.value}>{manifestData.version}</Text>
+                                </View>
+                            )}
 
-                        {manifestData.description && (
-                            <View style={styles.dataRow}>
-                                <Text style={styles.label}>Description:</Text>
-                                <Text style={styles.value}>{manifestData.description}</Text>
-                            </View>
-                        )}
+                            {manifestData.description && (
+                                <View style={styles.dataRow}>
+                                    <Text style={styles.label}>Description:</Text>
+                                    <Text style={styles.value}>{manifestData.description}</Text>
+                                </View>
+                            )}
 
-                        {manifestData.types && manifestData.types.length > 0 && (
-                            <View style={styles.dataRow}>
-                                <Text style={styles.label}>Types:</Text>
-                                <Text style={styles.value}>{manifestData.types.join(', ')}</Text>
-                            </View>
-                        )}
+                            {manifestData.types && manifestData.types.length > 0 && (
+                                <View style={styles.dataRow}>
+                                    <Text style={styles.label}>Types:</Text>
+                                    <Text style={styles.value}>{manifestData.types.join(', ')}</Text>
+                                </View>
+                            )}
+                        </View>
                     </View>
                 )}
             </ScrollView>
@@ -141,65 +142,68 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingTop: 10,
     },
-    contentContainer: {
-        marginTop: 20,
-        padding: 10,
+    scrollViewContent: {
+        padding: 20,
     },
     title: {
-        fontSize: 20,
+        fontSize: 24,
         fontWeight: 'bold',
         marginBottom: 20,
-        paddingHorizontal: 10,
-        textAlign: 'center'
+        textAlign: 'center',
     },
     input: {
-        height: 40,
-        borderColor: 'gray',
+        height: 50,
+        borderColor: '#ddd',
         borderWidth: 1,
-        marginBottom: 10,
-        marginHorizontal: 10,
-        borderRadius: 5,
-        paddingHorizontal: 10,
+        borderRadius: 10,
+        paddingHorizontal: 15,
+        fontSize: 16,
+        marginBottom: 20,
     },
     loading: {
         marginVertical: 20,
     },
     dataContainer: {
-        marginTop: 10,
-        width: '100%',
-        marginBottom: 40,
-        padding: 10
-    },
-    dataRow: {
-        marginBottom: 20,
-    },
-    label: {
-        fontWeight: 'bold',
-        fontSize: 16,
-        marginBottom: 5,
-    },
-    value: {
-        fontSize: 14,
+        marginTop: 20,
+        borderRadius: 10,
+        shadowColor: '#000',
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        shadowOffset: { width: 0, height: 2 },
+        elevation: 3,
+        padding: 20,
     },
     logo: {
-        width: 150,
-        height: 150,
+        width: 100,
+        height: 100,
         alignSelf: 'center',
         marginBottom: 20,
     },
+    dataInfo: {
+        marginTop: 10,
+    },
+    dataRow: {
+        marginBottom: 10,
+    },
+    label: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        paddingVertical: 4
+    },
+    value: {
+        fontSize: 14,
+        paddingVertical: 4
+    },
     addButton: {
+        backgroundColor: '#fc7703',
+        paddingVertical: 12,
+        borderRadius: 10,
         alignItems: 'center',
-        marginBottom: 10
+        marginBottom: 20,
     },
     addButtonText: {
-        backgroundColor: '#fc7703',
-        padding: 12,
-        borderRadius: 8,
-        width: 150,
         color: '#fff',
         fontSize: 16,
         fontWeight: 'bold',
-        textAlign: 'center',
-        marginBottom: 20
     },
 });

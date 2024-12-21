@@ -1,8 +1,7 @@
 import React from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Tabs } from 'expo-router';
-
-import Colors from '@/constants/Colors';
+import * as Haptics from 'expo-haptics';
 import { useColorScheme } from '@/components/useColorScheme';
 
 // You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
@@ -25,14 +24,25 @@ export default function TabLayout() {
     >
       <Tabs.Screen
         name="index"
+        listeners={{
+          tabPress: () => {
+            Haptics.selectionAsync(); // Trigger haptic feedback on tab click
+          },
+        }}
         options={{
           title: 'Home',
           tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
           tabBarIconStyle: { marginVertical: 5 }
+          
         }}
       />
       <Tabs.Screen
         name="search"
+        listeners={{
+          tabPress: () => {
+            Haptics.selectionAsync(); // Trigger haptic feedback on tab click
+          },
+        }}
         options={{
           title: 'Search',
           tabBarIcon: ({ color }) => <TabBarIcon name="search" color={color} />,
@@ -41,6 +51,11 @@ export default function TabLayout() {
       />
       <Tabs.Screen
         name="addons"
+        listeners={{
+          tabPress: () => {
+            Haptics.selectionAsync(); // Trigger haptic feedback on tab click
+          },
+        }}
         options={{
           title: 'Addons',
           tabBarIcon: ({ color }) => <TabBarIcon name="puzzle-piece" color={color} />,
@@ -49,6 +64,11 @@ export default function TabLayout() {
       />
       <Tabs.Screen
         name="settings"
+        listeners={{
+          tabPress: () => {
+            Haptics.selectionAsync(); // Trigger haptic feedback on tab click
+          },
+        }}
         options={{
           title: 'Settings',
           tabBarIcon: ({ color }) => <TabBarIcon name="gear" color={color} />,
