@@ -249,8 +249,7 @@ const styles = StyleSheet.create({
     },
     streamTitle: {
         fontSize: 13,
-        flex: 1,
-        color: 'gray',
+        flex: 1
     },
     playerIconsContainer: {
         flexDirection: 'row',
