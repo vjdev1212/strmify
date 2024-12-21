@@ -87,7 +87,7 @@ function RootLayoutNav() {
         <Stack.Screen name="series/details" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#fc7703' }} />
         <Stack.Screen name="series/list" options={{ headerShown: true, headerTitle: '', headerTintColor: '#fc7703' }} />
         <Stack.Screen name="addons/add" options={{ headerShown: true, headerTitle: '', headerTintColor: '#fc7703' }} />
-        <Stack.Screen name="streams/list" options={{ headerShown: true, title: 'Streams', headerTitle: 'Streams', headerTintColor: '#fc7703' }} />
+        <Stack.Screen name="stream/list" options={{ headerShown: true, headerTitle:"Streams", headerTintColor: '#fc7703' }} />
       </Stack>
     </ThemeProvider>
   );

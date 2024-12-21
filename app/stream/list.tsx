@@ -15,23 +15,26 @@ const StreamScreen = () => {
     const { imdbid, type, season, episode } = useLocalSearchParams();
     const [addons, setAddons] = useState<any[]>([]);
     const [selectedAddon, setSelectedAddon] = useState<any | null>(null); // Track selected addon
-    const [streams, setStreams] = useState<any[]>([]);
-    const [expandedStream, setExpandedStream] = useState<any | null>(null);
+    const [streams, setStreams] = useState<any[]>([]); // Streams for selected addon
+    const [expandedStream, setExpandedStream] = useState<any | null>(null); // Track expanded stream
     const [loading, setLoading] = useState(true);
 
-    // Fetch addons on mount
+    // Fetch all addons on mount
     useEffect(() => {
         const fetchAddons = async () => {
             try {
                 const storedAddons = await AsyncStorage.getItem('addons');
                 const addonsData = storedAddons ? JSON.parse(storedAddons) : {};
-                setAddons(Object.values(addonsData)); // Set the addon list
+                const addonList = Object.values(addonsData); // Set the addon list
 
-                // Automatically select the first addon if there is one
-                if (Object.values(addonsData).length === 1) {
-                    setSelectedAddon(Object.values(addonsData)[0]);
-                } else if (Object.values(addonsData).length > 0) {
-                    setSelectedAddon(Object.values(addonsData)[0]); // Default select first addon if available
+                setAddons(addonList); // Set all addons
+
+                // Fetch streams for each addon
+                fetchStreams(addonList);
+                
+                // Automatically select the first addon
+                if (addonList.length > 0) {
+                    setSelectedAddon(addonList[0]);
                 }
             } catch (error) {
                 console.error('Error fetching addons:', error);
@@ -42,18 +45,18 @@ const StreamScreen = () => {
         fetchAddons();
     }, []);
 
-    // Fetch streams from the selected addon
-    useEffect(() => {
-        const fetchStreams = async () => {
-            if (!selectedAddon) return; // Ensure the addon is selected first
+    // Fetch streams for all addons
+    const fetchStreams = async (addonList: any[]) => {
+        setLoading(true); // Start loading
 
-            setLoading(true); // Start loading
-
-            try {
-                const addonUrl = selectedAddon?.url || '';
-                const streamBaseUrl = selectedAddon?.streamBaseUrl || addonUrl;
-
+        try {
+            const allStreams: any[] = [];
+            
+            for (const addon of addonList) {
+                const addonUrl = addon?.url || '';
+                const streamBaseUrl = addon?.streamBaseUrl || addonUrl;
                 let streamUrl = '';
+
                 if (type === 'series') {
                     streamUrl = `${streamBaseUrl}/stream/series/${imdbid}${season && episode ? `:${season}:${episode}` : ''}.json`;
                 } else {
@@ -62,23 +65,25 @@ const StreamScreen = () => {
 
                 const response = await fetch(streamUrl);
                 const data = await response.json();
+
                 if (data.streams) {
-                    setStreams(data.streams); // Set the fetched streams
+                    allStreams.push({ addon, streams: data.streams }); // Collect streams for each addon
                 } else {
-                    setStreams([]); // Clear streams if none are found
+                    allStreams.push({ addon, streams: [] }); // No streams found for this addon
                 }
-            } catch (error) {
-                console.error('Error fetching streams:', error);
-                Alert.alert('Error', 'Failed to load streams');
-            } finally {
-                setLoading(false); // End loading state
             }
-        };
 
-        fetchStreams();
-    }, [selectedAddon, imdbid, season, episode, type]);
+            // Set all streams for each addon
+            setStreams(allStreams);
+        } catch (error) {
+            console.error('Error fetching streams:', error);
+            Alert.alert('Error', 'Failed to load streams');
+        } finally {
+            setLoading(false); // End loading state
+        }
+    };
 
-    // Handle expansion of the stream item
+    // Handle stream selection (expand or collapse)
     const handleStreamExpand = (stream: any) => {
         setExpandedStream(expandedStream === stream ? null : stream); // Toggle expand on stream click
     };
@@ -111,14 +116,13 @@ const StreamScreen = () => {
         // Get the corresponding URL for the selected player
         const playerUrl = playerUrls[player];
 
-        if (!playerUrl) return; // If no URL found for the player, do nothing
+        if (!playerUrl) return; 
 
-        // Check if the URL scheme can be opened by any app
         Linking.canOpenURL(playerUrl).then((supported) => {
             if (supported) {
                 Linking.openURL(playerUrl); // Open the player with the stream URL
             } else {
-                console.error(`App for player ${player} is not installed or cannot open the URL.`);
+                console.log(`App for player ${player} is not installed or cannot open the URL.`);
             }
         }).catch((error) => {
             console.error("Error checking URL scheme:", error);
@@ -144,7 +148,6 @@ const StreamScreen = () => {
                         {title || description}
                     </Text>
 
-                    {/* Player icons are now inside the stream item container */}
                     {isExpanded && (
                         <RNView style={styles.playerIconsContainer}>
                             {players.map((player: string) => (
@@ -162,6 +165,8 @@ const StreamScreen = () => {
         );
     };
 
+    // Get streams for the selected addon
+    const selectedAddonStreams = streams.find((addonData) => addonData.addon === selectedAddon)?.streams || [];
 
     return (
         <RNView style={styles.container}>
@@ -180,7 +185,7 @@ const StreamScreen = () => {
                         contentContainerStyle={styles.addonList}
                     />
                     <FlatList
-                        data={streams} // Only show streams from the selected addon
+                        data={selectedAddonStreams} // Only show streams from the selected addon
                         renderItem={renderStreamItem}
                         showsVerticalScrollIndicator={false}
                         keyExtractor={(item, index) => index.toString()}
@@ -197,23 +202,25 @@ const styles = StyleSheet.create({
         padding: 10,
     },
     addonList: {
-        margin: 20,
+        marginVertical: 30,
+        marginHorizontal: 20
     },
     addonItem: {
         alignItems: 'center',
         marginRight: 20,
     },
     addonIcon: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 50,
+        height: 50,
+        borderRadius: 10,
         marginBottom: 5,
     },
     addonName: {
-        fontSize: 12,
+        paddingVertical: 5,
+        fontWeight: 'bold'
     },
     streamItemContainer: {
-        marginBottom: 15,
+        marginVertical: 15,
         alignItems: 'center',
         width: '100%',
     },
