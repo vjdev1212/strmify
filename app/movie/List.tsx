@@ -1,20 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { FlatList, Image, StyleSheet, TouchableOpacity, View as RNView } from 'react-native';
 import { Text } from '@/components/Themed';
-import { Link, useLocalSearchParams, useRouter } from 'expo-router';
-import { ScrollView } from 'react-native-reanimated/lib/typescript/Animated';
+import { Link, useLocalSearchParams } from 'expo-router';
 
 const MoviesList = () => {
-  const { apiUrl, title, type } = useLocalSearchParams();
+  const { apiUrl } = useLocalSearchParams();
   const [data, setData] = useState<any[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const response = await fetch(apiUrl as string);
         const result = await response.json();
-        setData(result.metas);
+        if (result.metas) {
+          setData(result.metas);
+        }
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -26,22 +27,18 @@ const MoviesList = () => {
   }, [apiUrl]);
 
   const renderItem = ({ item }: any) => {
-    const year =
-      item.year && typeof item.year === 'string' && item.year.includes('–')
-        ? item.year.split('–')[0]
-        : item.year;
+    const year = item.year?.split('–')[0] || item.year;
 
     return (
-      <Link href={{
-        pathname: `/movie/details`,
-        params: { imdbid: item.imdb_id || item.id }
-      }}>
+      <Link
+        href={{
+          pathname: `/movie/details`,
+          params: { imdbid: item.imdb_id || item.id },
+        }}
+      >
         <RNView>
           <TouchableOpacity style={styles.posterContainer}>
-            <Image
-              source={{ uri: item.poster }}
-              style={styles.posterImage}
-            />
+            <Image source={{ uri: item.poster }} style={styles.posterImage} />
             <Text numberOfLines={1} ellipsizeMode="tail" style={styles.posterTitle}>
               {item.name}
             </Text>
@@ -54,13 +51,17 @@ const MoviesList = () => {
 
   return (
     <RNView style={styles.container}>
-      <FlatList
-        data={data}
-        renderItem={renderItem}
-        keyExtractor={(item, index) => index.toString()}
-        numColumns={3}
-        showsVerticalScrollIndicator={false}
-      />
+      {loading ? (
+        <Text style={styles.title}>Loading...</Text>
+      ) : (
+        <FlatList
+          data={data}
+          renderItem={renderItem}
+          keyExtractor={(item, index) => index.toString()}
+          numColumns={3}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
     </RNView>
   );
 };
@@ -68,17 +69,17 @@ const MoviesList = () => {
 const styles = StyleSheet.create({
   container: {
     paddingVertical: 20,
-    padding: 10
+    padding: 10,
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 15,
-    textAlign: 'center'
+    textAlign: 'center',
   },
   posterContainer: {
     padding: 10,
-    marginBottom: 10
+    marginBottom: 10,
   },
   posterImage: {
     width: 100,
@@ -95,17 +96,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: 'gray',
   },
-  skeletonContainer: {
-    marginRight: 15,
-    width: 100,
-    alignItems: 'center',
-  },
-  skeletonImage: {
-    width: 100,
-    height: 150,
-    backgroundColor: 'gray',
-    borderRadius: 8,
-  }
 });
 
 export default MoviesList;

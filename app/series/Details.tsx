@@ -6,13 +6,12 @@ import MediaContentDescription from '@/components/MediaContentDescription';
 import MediaContentDetailsList from '@/components/MediaContentDetailsList';
 import MediaContentHeader from '@/components/MediaContentHeader';
 import MediaContentPoster from '@/components/MediaContentPoster';
-import PlayButton from '@/components/PlayButton';
 import SeasonEpisodeList from '@/components/SeasonEpisodeList';
 
 const SeriesDetails = () => {
   const { imdbid } = useLocalSearchParams();
   const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchDetails = async () => {
@@ -21,7 +20,9 @@ const SeriesDetails = () => {
           `https://v3-cinemeta.strem.io/meta/series/${imdbid}.json`
         );
         const result = await response.json();
-        setData(result.meta);
+        if (result.meta) {
+          setData(result.meta);
+        }
       } catch (error) {
         console.error('Error fetching series details:', error);
       } finally {
@@ -35,7 +36,7 @@ const SeriesDetails = () => {
   if (loading) {
     return (
       <View style={styles.centeredContainer}>
-        <ActivityIndicator color="#fc7703" size="large" style={styles.activityIndicator} />
+        <ActivityIndicator size="large" style={styles.activityIndicator} />
         <Text style={styles.centeredText}>Loading</Text>
       </View>
     );
@@ -49,24 +50,29 @@ const SeriesDetails = () => {
     );
   }
 
-  const { background, logo, name, description, genre, runtime, released, imdbRating, country, director, writer, cast } = data;
-
   return (
     <ScrollView showsVerticalScrollIndicator={false} style={styles.container}>
-      <MediaContentPoster background={background} logo={logo} />
-      <MediaContentHeader name={name} genre={genre} released={released} runtime={runtime} imdbRating={imdbRating} />
-      <MediaContentDescription description={description} />
+      <MediaContentPoster background={data.background} logo={data.logo} />
+      <MediaContentHeader
+        name={data.name}
+        genre={data.genre}
+        released={data.released}
+        runtime={data.runtime}
+        imdbRating={data.imdbRating}
+      />
+      <MediaContentDescription description={data.description} />
       <SeasonEpisodeList
         videos={data.videos}
         onEpisodeSelect={(season, episode) => {
+          console.log(`Selected Season ${season}, Episode ${episode}`);
         }}
       />
       <MediaContentDetailsList
-        released={released}
-        country={country}
-        director={director}
-        writer={writer}
-        cast={cast}
+        released={data.released}
+        country={data.country}
+        director={data.director}
+        writer={data.writer}
+        cast={data.cast}
       />
     </ScrollView>
   );
@@ -77,7 +83,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   activityIndicator: {
-    marginBottom: 10
+    marginBottom: 10,
   },
   centeredContainer: {
     flex: 1,

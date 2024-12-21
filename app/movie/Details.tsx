@@ -7,12 +7,11 @@ import MediaContentDetailsList from '@/components/MediaContentDetailsList';
 import MediaContentHeader from '@/components/MediaContentHeader';
 import MediaContentPoster from '@/components/MediaContentPoster';
 import PlayButton from '@/components/PlayButton';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 const MovieDetails = () => {
   const { imdbid } = useLocalSearchParams();
   const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchDetails = async () => {
@@ -21,7 +20,9 @@ const MovieDetails = () => {
           `https://v3-cinemeta.strem.io/meta/movie/${imdbid}.json`
         );
         const result = await response.json();
-        setData(result.meta);
+        if (result.meta) {
+          setData(result.meta);
+        }
       } catch (error) {
         console.error('Error fetching movie details:', error);
       } finally {
@@ -35,7 +36,7 @@ const MovieDetails = () => {
   if (loading) {
     return (
       <View style={styles.centeredContainer}>
-        <ActivityIndicator color="#fc7703" size="large" style={styles.activityIndicator} />
+        <ActivityIndicator size="large" style={styles.activityIndicator} />
         <Text style={styles.centeredText}>Loading</Text>
       </View>
     );
@@ -44,38 +45,41 @@ const MovieDetails = () => {
   if (!data) {
     return (
       <View style={styles.centeredContainer}>
-        <Text style={styles.centeredText}>No movies details available</Text>
+        <Text style={styles.centeredText}>No movie details available</Text>
       </View>
     );
   }
 
-
-  const { background, logo, name, description, genre, runtime, released, imdbRating, country, director, writer, cast } = data;
-
   return (
-      <ScrollView showsVerticalScrollIndicator={false} style={styles.container}>
-        <MediaContentPoster background={background} logo={logo} />
-        <MediaContentHeader name={name} genre={genre} released={released} runtime={runtime} imdbRating={imdbRating} />
-        <PlayButton onPress={() => console.log('Play clicked')} />
-        <MediaContentDescription description={description} />
-        <MediaContentDetailsList
-          released={released}
-          country={country}
-          director={director}
-          writer={writer}
-          cast={cast}
-        />
-      </ScrollView>
+    <ScrollView showsVerticalScrollIndicator={false} style={styles.container}>
+      <MediaContentPoster background={data.background} logo={data.logo} />
+      <MediaContentHeader
+        name={data.name}
+        genre={data.genre}
+        released={data.released}
+        runtime={data.runtime}
+        imdbRating={data.imdbRating}
+      />
+      <PlayButton onPress={() => console.log('Play clicked')} />
+      <MediaContentDescription description={data.description} />
+      <MediaContentDetailsList
+        released={data.released}
+        country={data.country}
+        director={data.director}
+        writer={data.writer}
+        cast={data.cast}
+      />
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1
+    flex: 1,
   },
   activityIndicator: {
     marginBottom: 10,
-    color: '#fc7703'
+    color: '#fc7703',
   },
   centeredContainer: {
     flex: 1,
