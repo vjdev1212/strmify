@@ -152,8 +152,8 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginVertical: 20,
     alignSelf: 'center',
-    padding: 15,
-    width: '60%',
+    padding: 12,
+    width: '40%',
   },
   addButtonText: {
     color: '#fff',

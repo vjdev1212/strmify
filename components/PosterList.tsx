@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { FlatList, Image, StyleSheet, TouchableOpacity, View as RNView } from 'react-native';
 import { Text, View } from './Themed';
-import { Link, useRouter } from 'expo-router';
+import { Link } from 'expo-router';
+import * as Haptics from 'expo-haptics'; // Importing Haptics for haptic feedback
 
 // Skeleton Loader Component
 const SkeletonLoader = () => (
@@ -24,12 +25,13 @@ const PosterList = ({
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
+  // Fetch data when apiUrl changes
   useEffect(() => {
     const fetchData = async () => {
       try {
         const response = await fetch(apiUrl);
         const result = await response.json();
-        setData(result.metas.slice(0, 20));
+        setData(result.metas.slice(0, 20)); // Slice the first 20 items
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -38,7 +40,11 @@ const PosterList = ({
     };
 
     fetchData();
-  }, [apiUrl]);
+  }, [apiUrl]); // Dependency array contains only apiUrl
+
+  const handlePress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); // Triggering haptic feedback
+  };
 
   const renderItem = ({ item }: any) => {
     const year =
@@ -53,7 +59,9 @@ const PosterList = ({
       }}>
         <RNView>
           <TouchableOpacity
-            style={[styles.posterContainer, layout === 'vertical' && styles.verticalContainer]}>
+            style={[styles.posterContainer, layout === 'vertical' && styles.verticalContainer]}
+            onPress={handlePress} // Trigger haptic feedback on press
+          >
             <Image
               source={{ uri: item.poster }}
               style={[styles.posterImage, layout === 'vertical' && styles.verticalImage]}
@@ -71,9 +79,7 @@ const PosterList = ({
   return (
     <RNView style={styles.container}>
       <RNView style={styles.header}>
-        <Text style={styles.title}>
-          {title}
-        </Text>
+        <Text style={styles.title}>{title}</Text>
         <Link
           href={{
             pathname: `/${type}/list`,
@@ -86,7 +92,7 @@ const PosterList = ({
 
       {loading ? (
         <FlatList
-          data={new Array(10).fill(null)}
+          data={new Array(10).fill(null)} // Skeleton loader
           renderItem={() => <SkeletonLoader />}
           keyExtractor={(item, index) => index.toString()}
           horizontal={layout === 'horizontal'}
@@ -118,7 +124,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 10,
     alignItems: 'center',
-    marginHorizontal: 10
+    marginHorizontal: 10,
   },
   title: {
     fontSize: 18,
@@ -129,7 +135,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   posterContainer: {
-    padding: 10
+    padding: 10,
   },
   verticalContainer: {
     marginBottom: 10,
@@ -164,7 +170,7 @@ const styles = StyleSheet.create({
     height: 150,
     backgroundColor: 'gray',
     borderRadius: 8,
-  }
+  },
 });
 
 export default PosterList;

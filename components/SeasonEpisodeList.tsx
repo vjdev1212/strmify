@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, FlatList, Image, TouchableOpacity } from 'react-native';
 import { Text, View } from './Themed';
-
+import * as Haptics from 'expo-haptics';  // Importing Haptics for haptic feedback
 
 interface Episode {
   name: string;
@@ -13,7 +13,7 @@ interface Episode {
 
 interface SeasonEpisodeListProps {
   videos: Episode[];
-  onEpisodeSelect: (season: number, episode: number) => Promise<void>;
+  onEpisodeSelect: (season: number, episode: number) => void;
 }
 
 const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisodeSelect }) => {
@@ -44,13 +44,16 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
   if (!videos || videos.length === 0) {
     return null; // Hide component if no videos
   }
+
   const handleSeasonSelect = (season: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);  // Trigger haptic feedback on season select
     setSelectedSeason(season);
     setSelectedEpisode(1); // Reset to first episode when season changes
     onEpisodeSelect(season, 1);
   };
 
   const handleEpisodeSelect = (season: number, episode: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);  // Trigger haptic feedback on episode select
     setSelectedSeason(season);
     setSelectedEpisode(episode);
     onEpisodeSelect(season, episode);
@@ -73,7 +76,7 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
               styles.seasonButton,
               item === selectedSeason && styles.selectedSeasonButton,
             ]}
-            onPress={() => handleSeasonSelect(item)}
+            onPress={() => handleSeasonSelect(item)}  // Trigger haptic feedback on season press
           >
             <Text
               style={[
@@ -84,7 +87,6 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
               {item === 0 ? 'Specials' : `Season ${item}`}
             </Text>
           </TouchableOpacity>
-
         )}
         contentContainerStyle={styles.seasonList}
         showsHorizontalScrollIndicator={false}
@@ -95,13 +97,13 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
         keyExtractor={(item) => `${item.season}-${item.number}`}
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={[
-              styles.episodeContainer
-            ]}
-            onPress={() => handleEpisodeSelect(item.season, item.number)}
+            style={[styles.episodeContainer]}
+            onPress={() => handleEpisodeSelect(item.season, item.number)}  // Trigger haptic feedback on episode press
           >
             <Image source={{ uri: item.thumbnail }} style={styles.thumbnail} />
-            <Text style={styles.episodeTitle} numberOfLines={1}>{item.number}. {item.name}</Text>
+            <Text style={styles.episodeTitle} numberOfLines={1}>
+              {item.number}. {item.name}
+            </Text>
             <Text style={styles.episodeDescription} numberOfLines={10}>
               {item.description}
             </Text>
@@ -137,15 +139,15 @@ const styles = StyleSheet.create({
   },
   selectedSeasonText: {
     fontWeight: 'bold',
-    color: '#fff'
+    color: '#fff',
   },
   episodeList: {
     paddingHorizontal: 5,
-    paddingVertical: 10
+    paddingVertical: 10,
   },
   episodeContainer: {
     marginHorizontal: 10,
-    marginVertical: 5
+    marginVertical: 5,
   },
   thumbnail: {
     width: 180,

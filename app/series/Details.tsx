@@ -51,8 +51,7 @@ const SeriesDetails = () => {
     );
   }
 
-  const handleEpisodeSelect = async (season: number, episode: number) => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); // Trigger haptic feedback on episode select
+  const handleEpisodeSelect = (season: number, episode: number) => {
     console.log(`Selected Season ${season}, Episode ${episode}`);
   };
 
