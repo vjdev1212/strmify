@@ -5,6 +5,7 @@ import { View as RNView, SafeAreaView } from 'react-native';
 import { StyleSheet, FlatList, Image, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from 'react-native';
+import * as Haptics from 'expo-haptics';
 
 const SearchScreen = () => {
   const [query, setQuery] = useState('');
@@ -34,7 +35,6 @@ const SearchScreen = () => {
     }
   };
 
-
   useEffect(() => {
     if (debounceTimeout) {
       clearTimeout(debounceTimeout);
@@ -53,10 +53,12 @@ const SearchScreen = () => {
 
   const renderMoviePoster = ({ item }: { item: any }) => {
     return (
-      <Link href={{
-        pathname: `/movie/details`,
-        params: { imdbid: item.imdb_id || item.id }
-      }}>
+      <Link
+        href={{
+          pathname: `/movie/details`,
+          params: { imdbid: item.imdb_id || item.id },
+        }}
+      >
         <PosterContent item={item} />
       </Link>
     );
@@ -64,24 +66,27 @@ const SearchScreen = () => {
 
   const renderSeriesPoster = ({ item }: { item: any }) => {
     return (
-      <Link href={{
-        pathname: `/series/details`,
-        params: { imdbid: item.imdb_id || item.id }
-      }}>
+      <Link
+        href={{
+          pathname: `/series/details`,
+          params: { imdbid: item.imdb_id || item.id },
+        }}
+      >
         <PosterContent item={item} />
       </Link>
     );
   };
 
   const PosterContent = ({ item }: { item: any }) => {
+    const handlePress = async () => {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    };
+
     return (
       <SafeAreaView>
         <RNView>
-          <TouchableOpacity style={styles.posterContainer}>
-            <Image
-              source={{ uri: item.poster }}
-              style={styles.posterImage}
-            />
+          <TouchableOpacity style={styles.posterContainer} onPress={handlePress}>
+            <Image source={{ uri: item.poster }} style={styles.posterImage} />
             <Text numberOfLines={1} ellipsizeMode="tail" style={styles.posterTitle}>
               {item.name}
             </Text>
@@ -92,10 +97,11 @@ const SearchScreen = () => {
     );
   };
 
-  const clearSearch = () => {
+  const clearSearch = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setQuery('');
     setMovies([]);
-    setSeries([])
+    setSeries([]);
   };
 
   const colorScheme = useColorScheme();
@@ -104,9 +110,12 @@ const SearchScreen = () => {
     <SafeAreaView style={styles.container}>
       <View style={styles.searchInputContainer}>
         <TextInput
-          style={[styles.searchInput, colorScheme === 'dark' ? styles.darkSearchInput : styles.lightSearchInput]}
-          placeholder="Search movies or series..."          
-          placeholderTextColor={colorScheme === 'dark' ? '#AAA' : '#333'}        
+          style={[
+            styles.searchInput,
+            colorScheme === 'dark' ? styles.darkSearchInput : styles.lightSearchInput,
+          ]}
+          placeholder="Search movies or series..."
+          placeholderTextColor={colorScheme === 'dark' ? '#AAA' : '#333'}
           value={query}
           onChangeText={setQuery}
         />
@@ -156,7 +165,7 @@ const styles = StyleSheet.create({
   searchInputContainer: {
     position: 'relative',
     marginTop: 30,
-    paddingHorizontal: 20
+    paddingHorizontal: 20,
   },
   searchInput: {
     height: 40,
@@ -168,11 +177,11 @@ const styles = StyleSheet.create({
   },
   lightSearchInput: {
     backgroundColor: '#fff',
-    color: '#000'
+    color: '#000',
   },
   darkSearchInput: {
     backgroundColor: '#333',
-    color: '#fff'
+    color: '#fff',
   },
   clearButton: {
     position: 'absolute',
@@ -189,7 +198,7 @@ const styles = StyleSheet.create({
     margin: 20,
   },
   posterContainer: {
-    marginHorizontal: 15
+    marginHorizontal: 15,
   },
   posterImage: {
     width: 100,

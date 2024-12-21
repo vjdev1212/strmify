@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { FlatList, Image, StyleSheet, TouchableOpacity, View as RNView } from 'react-native';
 import { Text } from '@/components/Themed';
 import { Link, useLocalSearchParams } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 
 const MoviesList = () => {
   const { apiUrl } = useLocalSearchParams();
@@ -29,6 +30,10 @@ const MoviesList = () => {
   const renderItem = ({ item }: any) => {
     const year = item.year?.split('–')[0] || item.year;
 
+    const handlePress = async () => {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); // Trigger haptic feedback
+    };
+
     return (
       <Link
         href={{
@@ -37,7 +42,10 @@ const MoviesList = () => {
         }}
       >
         <RNView>
-          <TouchableOpacity style={styles.posterContainer}>
+          <TouchableOpacity
+            style={styles.posterContainer}
+            onPress={handlePress} // Apply haptic feedback on press
+          >
             <Image source={{ uri: item.poster }} style={styles.posterImage} />
             <Text numberOfLines={1} ellipsizeMode="tail" style={styles.posterTitle}>
               {item.name}

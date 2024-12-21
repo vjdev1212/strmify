@@ -13,7 +13,7 @@ interface Episode {
 
 interface SeasonEpisodeListProps {
   videos: Episode[];
-  onEpisodeSelect: (season: number, episode: number) => void;
+  onEpisodeSelect: (season: number, episode: number) => Promise<void>;
 }
 
 const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisodeSelect }) => {

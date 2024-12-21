@@ -7,6 +7,7 @@ import MediaContentDetailsList from '@/components/MediaContentDetailsList';
 import MediaContentHeader from '@/components/MediaContentHeader';
 import MediaContentPoster from '@/components/MediaContentPoster';
 import PlayButton from '@/components/PlayButton';
+import * as Haptics from 'expo-haptics';
 
 const MovieDetails = () => {
   const { imdbid } = useLocalSearchParams();
@@ -50,6 +51,11 @@ const MovieDetails = () => {
     );
   }
 
+  const handlePlayPress = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    console.log('Play clicked');
+  };
+
   return (
     <ScrollView showsVerticalScrollIndicator={false} style={styles.container}>
       <MediaContentPoster background={data.background} logo={data.logo} />
@@ -60,7 +66,7 @@ const MovieDetails = () => {
         runtime={data.runtime}
         imdbRating={data.imdbRating}
       />
-      <PlayButton onPress={() => console.log('Play clicked')} />
+      <PlayButton onPress={handlePlayPress} />
       <MediaContentDescription description={data.description} />
       <MediaContentDetailsList
         released={data.released}

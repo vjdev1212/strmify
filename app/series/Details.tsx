@@ -7,6 +7,7 @@ import MediaContentDetailsList from '@/components/MediaContentDetailsList';
 import MediaContentHeader from '@/components/MediaContentHeader';
 import MediaContentPoster from '@/components/MediaContentPoster';
 import SeasonEpisodeList from '@/components/SeasonEpisodeList';
+import * as Haptics from 'expo-haptics'; // Import Haptics from Expo
 
 const SeriesDetails = () => {
   const { imdbid } = useLocalSearchParams();
@@ -50,6 +51,11 @@ const SeriesDetails = () => {
     );
   }
 
+  const handleEpisodeSelect = async (season: number, episode: number) => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); // Trigger haptic feedback on episode select
+    console.log(`Selected Season ${season}, Episode ${episode}`);
+  };
+
   return (
     <ScrollView showsVerticalScrollIndicator={false} style={styles.container}>
       <MediaContentPoster background={data.background} logo={data.logo} />
@@ -63,9 +69,7 @@ const SeriesDetails = () => {
       <MediaContentDescription description={data.description} />
       <SeasonEpisodeList
         videos={data.videos}
-        onEpisodeSelect={(season, episode) => {
-          console.log(`Selected Season ${season}, Episode ${episode}`);
-        }}
+        onEpisodeSelect={handleEpisodeSelect} // Pass the haptic feedback function
       />
       <MediaContentDetailsList
         released={data.released}
