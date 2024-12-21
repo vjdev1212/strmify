@@ -4,6 +4,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Text, View, TextInput } from '@/components/Themed';
 import { router } from 'expo-router';
 
+const defaultAddonLogo = 'https://i.ibb.co/NrJ7N0c/puzzle-1.png';
+
 export default function AddAddonScreen() {
     const [url, setUrl] = useState('');
     const [loading, setLoading] = useState(false);
@@ -47,10 +49,10 @@ export default function AddAddonScreen() {
         if (!manifestData) return;
 
         try {
-            manifestData.manifestUrl = url;            
+            manifestData.manifestUrl = url;
             manifestData.baseUrl = getBaseUrl(url);
             manifestData.streamBaseUrl = url.replace('/manifest.json', '');
-            
+            manifestData.logo = manifestData?.logo?.match(/\.(png|jpg|jpeg)$/i) ? manifestData.logo : defaultAddonLogo;
             const storedAddons = await AsyncStorage.getItem('addons');
             const addons = storedAddons ? JSON.parse(storedAddons) : {};
             const newKey = `${manifestData.id}`;
@@ -95,7 +97,11 @@ export default function AddAddonScreen() {
 
                         {manifestData.logo && (
                             <Image
-                                source={{ uri: manifestData.logo }}
+                                source={{
+                                    uri: manifestData.logo.match(/\.(png|jpg|jpeg)$/i)
+                                        ? manifestData.logo
+                                        : defaultAddonLogo,
+                                }}
                                 style={styles.logo}
                                 resizeMode="contain"
                             />
