@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, TouchableOpacity, Image, Alert, ScrollView, SafeAreaView, View, Clipboard } from 'react-native';
+import {
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  Alert,
+  ScrollView,
+  SafeAreaView,
+  View,
+} from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Text } from '@/components/Themed';
@@ -9,97 +17,102 @@ import * as Sharing from 'expo-sharing';
 const AddonsScreen = () => {
   const [addons, setAddons] = useState<any[]>([]);
 
-  const fetchAddons = async () => {
-    try {
-      const storedAddons = await AsyncStorage.getItem('addons');
-      if (storedAddons) {
-        const parsedAddons = JSON.parse(storedAddons);
-        const addonsArray = Object.keys(parsedAddons).map(key => ({
-          id: key,
-          ...parsedAddons[key],
-        }));
-        setAddons(addonsArray);
-      }
-    } catch (error) {
-      console.error('Error fetching addons:', error);
-    }
-  };
-
   useEffect(() => {
+    const fetchAddons = async () => {
+      try {
+        const storedAddons = await AsyncStorage.getItem('addons');
+        if (storedAddons) {
+          const parsedAddons = JSON.parse(storedAddons);
+          setAddons(
+            Object.keys(parsedAddons).map(key => ({
+              id: key,
+              ...parsedAddons[key],
+            }))
+          );
+        }
+      } catch (error) {
+        console.error('Error fetching addons:', error);
+      }
+    };
+
     fetchAddons();
   }, []);
 
   const removeAddon = async (addonId: string) => {
     const updatedAddons = addons.filter(addon => addon.id !== addonId);
     setAddons(updatedAddons);
-    await AsyncStorage.setItem('addons', JSON.stringify(updatedAddons));
+    try {
+      const updatedAddonsObject = Object.fromEntries(
+        updatedAddons.map(addon => [addon.id, addon])
+      );
+      await AsyncStorage.setItem('addons', JSON.stringify(updatedAddonsObject));
+      Alert.alert('Success', 'Addon removed successfully!');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to remove addon.');
+    }
   };
 
-  const openConfiguration = (url: string) => {
-    WebBrowser.openBrowserAsync(`${url}/configure`);
+  const openConfiguration = async (url: string) => {
+    try {
+      await WebBrowser.openBrowserAsync(`${url}/configure`);
+    } catch {
+      Alert.alert('Error', 'Unable to open configuration URL.');
+    }
   };
 
   const shareManifestUrl = async (url: string) => {
     try {
       if (await Sharing.isAvailableAsync()) {
-        if (url && url.startsWith('http')) {
-          await Sharing.shareAsync(url);
-        } else {
-          Alert.alert('Invalid URL', 'The URL provided is invalid.');
-        }
+        await Sharing.shareAsync(url);
       } else {
         Alert.alert('Sharing is not available on this device.');
       }
-    } catch (error) {
-      console.error('Error sharing content:', error);
+    } catch {
+      Alert.alert('Error', 'Failed to share the URL.');
     }
   };
 
   const renderAddonItem = (item: any) => (
     <View style={styles.addonItem} key={item.id}>
-      <View style={styles.firstRow}>
-        <View style={styles.iconColumn}>
-          <Image source={{ uri: item.logo }} style={styles.addonLogo} />
-        </View>
-        <View style={styles.titleColumn}>
+      <View style={styles.row}>
+        <Image source={{ uri: item.logo }} style={styles.addonLogo} />
+        <View style={styles.details}>
           <Text style={styles.addonName}>{item.name}</Text>
           <Text style={styles.addonTypes}>{item.types?.join(', ')}</Text>
         </View>
       </View>
-
-      {/* Second Row: Description */}
       <Text style={styles.addonDescription}>{item.description}</Text>
-
       <View style={styles.actions}>
         <TouchableOpacity
-          style={styles.shareButton}
+          style={[styles.actionButton, styles.shareButton]}
           onPress={() => shareManifestUrl(item.manifestUrl)}
         >
           <Text style={styles.actionText}>Share</Text>
         </TouchableOpacity>
         {item.behaviorHints?.configurable && (
           <TouchableOpacity
-            style={styles.configureButton}
+            style={[styles.actionButton, styles.configureButton]}
             onPress={() => openConfiguration(item.url)}
           >
             <Text style={styles.actionText}>Configure</Text>
           </TouchableOpacity>
         )}
         <TouchableOpacity
-          style={styles.removeButton}
-          onPress={() => {
+          style={[styles.actionButton, styles.removeButton]}
+          onPress={() =>
             Alert.alert(
               'Remove Addon',
-              `Are you sure you want to remove ${item.name}?`,
+              `Are you sure you want to remove "${item.name}"?`,
               [
-                { text: 'Cancel' },
+                { text: 'Cancel', style: 'cancel' },
                 {
                   text: 'Remove',
+                  style: 'destructive',
                   onPress: () => removeAddon(item.id),
                 },
               ]
-            );
-          }}
+            )
+          }
         >
           <Text style={styles.actionText}>Remove</Text>
         </TouchableOpacity>
@@ -110,14 +123,16 @@ const AddonsScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <TouchableOpacity style={styles.addButton}>
-        <Link href={{ pathname: "/addons/add", params: {} }}>
+        <Link href="/addons/add">
           <Text style={styles.addButtonText}>Add New</Text>
         </Link>
       </TouchableOpacity>
-      <ScrollView showsVerticalScrollIndicator={false} style={styles.contentContainer}>
-        <View style={styles.addonsList}>
-          {addons.map(renderAddonItem)}
-        </View>
+      <ScrollView contentContainerStyle={styles.contentContainer}>
+        {addons.length > 0 ? (
+          addons.map(renderAddonItem)
+        ) : (
+          <Text style={styles.emptyText}>No addons available. Add one now!</Text>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -126,96 +141,92 @@ const AddonsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    marginTop: 10
   },
   contentContainer: {
-    paddingHorizontal: 20,
+    padding: 20,
+    paddingBottom: 50,
   },
-  addonsList: {
-    marginTop: 10,
-    marginBottom: 50,
+  addButton: {
+    backgroundColor: '#fc7703',
+    borderRadius: 25,
+    marginHorizontal: 20,
+    marginVertical: 20,
+    alignSelf: 'center',
+    padding: 15,
+    width: '60%',
+  },
+  addButtonText: {
+    color: '#fff',
+    textAlign: 'center',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  emptyText: {
+    textAlign: 'center',
+    fontSize: 16,
+    color: '#999',
+    marginTop: 20,
   },
   addonItem: {
     borderRadius: 10,
+    padding: 15,
     marginBottom: 15,
-    paddingVertical: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 3,
   },
-  firstRow: {
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 10,
-  },
-  iconColumn: {
-    marginRight: 15,
-  },
-  titleColumn: {
-    flex: 1,
   },
   addonLogo: {
     width: 60,
     height: 60,
     borderRadius: 8,
     resizeMode: 'contain',
+    marginRight: 15,
+  },
+  details: {
+    flex: 1,
   },
   addonName: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 5,
   },
   addonTypes: {
-    fontSize: 15,
+    fontSize: 14,
   },
   addonDescription: {
-    fontSize: 15,
-    marginVertical: 5,
+    fontSize: 14,
+    marginBottom: 20,
   },
   actions: {
-    marginTop: 20,
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
+  actionButton: {
+    flex: 1,
+    padding: 10,
+    borderRadius: 20,
+    marginHorizontal: 5,
+    alignItems: 'center',
+  },
   shareButton: {
     backgroundColor: '#fc7703',
-    padding: 10,
-    borderRadius: 4,
-    flex: 1,
-    marginRight: 10,
-    alignItems: 'center',
   },
   configureButton: {
     backgroundColor: '#32a852',
-    padding: 10,
-    borderRadius: 4,
-    flex: 1,
-    marginRight: 10,
-    alignItems: 'center',
   },
   removeButton: {
     backgroundColor: '#ff4d4d',
-    padding: 10,
-    borderRadius: 4,
-    flex: 1,
-    alignItems: 'center',
   },
   actionText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  addButton: {
-    backgroundColor: '#fc7703',
-    padding: 10,
-    borderRadius: 4,
-    width: '60%',
-    margin: 'auto',
-    marginBottom: 10,
-    marginTop: 30
-  },
-  addButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
-    textAlign: 'center',
   },
 });
 
