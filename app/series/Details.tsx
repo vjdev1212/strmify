@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, Text, View } from '../../components/Themed';
 import MediaContentDescription from '@/components/MediaContentDescription';
 import MediaContentDetailsList from '@/components/MediaContentDetailsList';
@@ -52,7 +52,10 @@ const SeriesDetails = () => {
   }
 
   const handleEpisodeSelect = (season: number, episode: number) => {
-    console.log(`Selected Season ${season}, Episode ${episode}`);
+    router.push({
+      pathname: '/stream/list',
+      params: { imdbid: data.imdb_id, type: 'series', season: season, episode: episode },
+    });
   };
 
   return (

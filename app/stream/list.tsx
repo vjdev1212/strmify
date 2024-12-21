@@ -26,12 +26,11 @@ const StreamScreen = () => {
                 const storedAddons = await AsyncStorage.getItem('addons');
                 const addonsData = storedAddons ? JSON.parse(storedAddons) : {};
                 const addonList = Object.values(addonsData); // Set the addon list
-
                 setAddons(addonList); // Set all addons
 
                 // Fetch streams for each addon
                 fetchStreams(addonList);
-                
+
                 // Automatically select the first addon
                 if (addonList.length > 0) {
                     setSelectedAddon(addonList[0]);
@@ -51,7 +50,7 @@ const StreamScreen = () => {
 
         try {
             const allStreams: any[] = [];
-            
+
             for (const addon of addonList) {
                 const addonUrl = addon?.url || '';
                 const streamBaseUrl = addon?.streamBaseUrl || addonUrl;
@@ -62,7 +61,7 @@ const StreamScreen = () => {
                 } else {
                     streamUrl = `${streamBaseUrl}/stream/${type}/${imdbid}.json`;
                 }
-
+                console.log(streamUrl);
                 const response = await fetch(streamUrl);
                 const data = await response.json();
 
@@ -113,19 +112,16 @@ const StreamScreen = () => {
             infuse: `infuse://x-callback-url/play?url=${encodeURIComponent(streamUrl)}`, // Infuse URL scheme
         };
 
-        // Get the corresponding URL for the selected player
         const playerUrl = playerUrls[player];
 
-        if (!playerUrl) return; 
+        if (!playerUrl) return;
 
-        Linking.canOpenURL(playerUrl).then((supported) => {
-            if (supported) {
-                Linking.openURL(playerUrl); // Open the player with the stream URL
-            } else {
-                console.log(`App for player ${player} is not installed or cannot open the URL.`);
-            }
-        }).catch((error) => {
-            console.error("Error checking URL scheme:", error);
+        Linking.openURL(playerUrl).catch((error) => {
+            console.error('Error opening URL:', error);
+            Alert.alert(
+                'Error',
+                `Failed to open ${player}.`
+            );
         });
     };
 
@@ -144,7 +140,7 @@ const StreamScreen = () => {
                     <Text style={styles.streamName} numberOfLines={2}>
                         {name}
                     </Text>
-                    <Text style={styles.streamTitle} numberOfLines={2}>
+                    <Text style={styles.streamTitle}>
                         {title || description}
                     </Text>
 
