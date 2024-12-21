@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { FlatList, Image, StyleSheet, TouchableOpacity, View as RNView, Alert, Linking } from 'react-native';
 import { Text } from '@/components/Themed';
 import { useLocalSearchParams } from 'expo-router';
-import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const playerIcons: any = {
@@ -20,6 +19,7 @@ const StreamScreen = () => {
     const [expandedStream, setExpandedStream] = useState<any | null>(null);
     const [loading, setLoading] = useState(true);
 
+    // Fetch addons on mount
     useEffect(() => {
         const fetchAddons = async () => {
             try {
@@ -27,8 +27,11 @@ const StreamScreen = () => {
                 const addonsData = storedAddons ? JSON.parse(storedAddons) : {};
                 setAddons(Object.values(addonsData)); // Set the addon list
 
+                // Automatically select the first addon if there is one
                 if (Object.values(addonsData).length === 1) {
                     setSelectedAddon(Object.values(addonsData)[0]);
+                } else if (Object.values(addonsData).length > 0) {
+                    setSelectedAddon(Object.values(addonsData)[0]); // Default select first addon if available
                 }
             } catch (error) {
                 console.error('Error fetching addons:', error);
@@ -39,43 +42,48 @@ const StreamScreen = () => {
         fetchAddons();
     }, []);
 
+    // Fetch streams from the selected addon
     useEffect(() => {
         const fetchStreams = async () => {
-            if (selectedAddon) {
-                try {
-                    const addonUrl = selectedAddon?.url || '';
-                    const streamBaseUrl = selectedAddon?.streamBaseUrl || addonUrl;
+            if (!selectedAddon) return; // Ensure the addon is selected first
 
-                    let streamUrl = '';
-                    if (type === 'series') {
-                        streamUrl = `${streamBaseUrl}/stream/series/${imdbid}${season && episode ? `:${season}:${episode}` : ''}.json`;
-                    } else {
-                        streamUrl = `${streamBaseUrl}/stream/${type}/${imdbid}.json`;
-                    }
+            setLoading(true); // Start loading
 
-                    const response = await fetch(streamUrl);
-                    const data = await response.json();
-                    if (data.streams) {
-                        setStreams(data.streams);
-                    }
-                } catch (error) {
-                    console.error('Error fetching streams:', error);
-                    Alert.alert('Error', 'Failed to load streams');
-                } finally {
-                    setLoading(false);
+            try {
+                const addonUrl = selectedAddon?.url || '';
+                const streamBaseUrl = selectedAddon?.streamBaseUrl || addonUrl;
+
+                let streamUrl = '';
+                if (type === 'series') {
+                    streamUrl = `${streamBaseUrl}/stream/series/${imdbid}${season && episode ? `:${season}:${episode}` : ''}.json`;
+                } else {
+                    streamUrl = `${streamBaseUrl}/stream/${type}/${imdbid}.json`;
                 }
+
+                const response = await fetch(streamUrl);
+                const data = await response.json();
+                if (data.streams) {
+                    setStreams(data.streams); // Set the fetched streams
+                } else {
+                    setStreams([]); // Clear streams if none are found
+                }
+            } catch (error) {
+                console.error('Error fetching streams:', error);
+                Alert.alert('Error', 'Failed to load streams');
+            } finally {
+                setLoading(false); // End loading state
             }
         };
 
-        if (selectedAddon) {
-            fetchStreams();
-        }
+        fetchStreams();
     }, [selectedAddon, imdbid, season, episode, type]);
 
+    // Handle expansion of the stream item
     const handleStreamExpand = (stream: any) => {
         setExpandedStream(expandedStream === stream ? null : stream); // Toggle expand on stream click
     };
 
+    // Render each addon item
     const renderAddonItem = ({ item }: any) => {
         const { name, logo } = item;
         const addonLogo = logo || '';
@@ -90,6 +98,7 @@ const StreamScreen = () => {
         );
     };
 
+    // Handle opening the player with a selected stream
     const handleOpenPlayer = (player: string, streamUrl: string) => {
         // Mapping players to their respective callback URL schemes
         const playerUrls: { [key: string]: string } = {
@@ -98,12 +107,12 @@ const StreamScreen = () => {
             outplayer: `outplayer://${streamUrl}`, // OutPlayer URL scheme
             infuse: `infuse://x-callback-url/play?url=${encodeURIComponent(streamUrl)}`, // Infuse URL scheme
         };
-    
+
         // Get the corresponding URL for the selected player
         const playerUrl = playerUrls[player];
-        
+
         if (!playerUrl) return; // If no URL found for the player, do nothing
-    
+
         // Check if the URL scheme can be opened by any app
         Linking.canOpenURL(playerUrl).then((supported) => {
             if (supported) {
@@ -114,14 +123,14 @@ const StreamScreen = () => {
         }).catch((error) => {
             console.error("Error checking URL scheme:", error);
         });
-    };    
+    };
 
+    // Render each stream item
     const renderStreamItem = ({ item }: any) => {
-        const { name, title, url, description, infoHash } = item;
-        const streamType = url ? 'url' : 'magnet';
+        const { name, title, url, description } = item;
 
         const isExpanded = expandedStream === item;
-        const players = ['vlc', 'infuse', 'vidhub', 'outplayer',];
+        const players = ['vlc', 'infuse', 'vidhub', 'outplayer'];
 
         return (
             <RNView style={styles.streamItemContainer}>
@@ -155,23 +164,27 @@ const StreamScreen = () => {
 
     return (
         <RNView style={styles.container}>
-            <FlatList
-                data={addons}
-                renderItem={renderAddonItem}
-                keyExtractor={(item, index) => index.toString()}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.addonList}
-            />
             {loading ? (
-                <Text>Loading...</Text>
+                <RNView style={styles.loadingContainer}>
+                    <Text>Loading...</Text>
+                </RNView>
             ) : (
-                <FlatList
-                    data={streams} // Only show streams from the selected addon
-                    renderItem={renderStreamItem}
-                    showsVerticalScrollIndicator={false}
-                    keyExtractor={(item, index) => index.toString()}
-                />
+                <>
+                    <FlatList
+                        data={addons}
+                        renderItem={renderAddonItem}
+                        keyExtractor={(item, index) => index.toString()}
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.addonList}
+                    />
+                    <FlatList
+                        data={streams} // Only show streams from the selected addon
+                        renderItem={renderStreamItem}
+                        showsVerticalScrollIndicator={false}
+                        keyExtractor={(item, index) => index.toString()}
+                    />
+                </>
             )}
         </RNView>
     );
@@ -231,9 +244,14 @@ const styles = StyleSheet.create({
         width: '100%',
     },
     playerIcon: {
-        width: 50,
-        height: 50,
+        width: 40,
+        height: 40,
         borderRadius: 10
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
 });
 
