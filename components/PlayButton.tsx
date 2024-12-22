@@ -9,7 +9,7 @@ const PlayButton = ({ onPress }: { onPress: () => void }) => (
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: '#fc7703',
+    backgroundColor: '#535aff',
     paddingVertical: 12,
     paddingHorizontal: 30,
     borderRadius: 8,

@@ -88,7 +88,7 @@ export default function AddAddonScreen() {
                     numberOfLines={3}
                 />
 
-                {loading && <ActivityIndicator size="large" color="#fc7703" style={styles.loading} />}
+                {loading && <ActivityIndicator size="large" color="#535aff" style={styles.loading} />}
 
                 {manifestData && (
                     <View style={styles.dataContainer}>
@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
         paddingVertical: 4
     },
     addButton: {
-        backgroundColor: '#fc7703',
+        backgroundColor: '#535aff',
         paddingVertical: 12,
         borderRadius: 50,
         alignItems: 'center',

@@ -122,7 +122,7 @@ const SearchScreen = () => {
         )}
       </View>
 
-      {loading && <ActivityIndicator size="large" color="#fc7703" style={styles.loader} />}
+      {loading && <ActivityIndicator size="large" color="#535aff" style={styles.loader} />}
 
       {!loading && movies.length > 0 && (
         <View>

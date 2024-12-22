@@ -37,7 +37,7 @@ const MovieDetails = () => {
   if (loading) {
     return (
       <View style={styles.centeredContainer}>
-        <ActivityIndicator size="large" style={styles.activityIndicator} color="#fc7703" />
+        <ActivityIndicator size="large" style={styles.activityIndicator} color="#535aff" />
         <Text style={styles.centeredText}>Loading</Text>
       </View>
     );
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
   },
   activityIndicator: {
     marginBottom: 10,
-    color: '#fc7703',
+    color: '#535aff',
   },
   centeredContainer: {
     flex: 1,

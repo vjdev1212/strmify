@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
     paddingBottom: 50,
   },
   addButton: {
-    backgroundColor: '#fc7703',
+    backgroundColor: '#535aff',
     borderRadius: 25,
     marginHorizontal: 20,
     marginVertical: 20,
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   shareButton: {
-    backgroundColor: '#fc7703',
+    backgroundColor: '#535aff',
   },
   configureButton: {
     backgroundColor: '#32a852',

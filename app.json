@@ -9,7 +9,7 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/icons/streamsrc128x128.png",
+      "image": "./assets/icons/streamsrc512x512.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -18,7 +18,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icons/streamsrc128x128.png",
+        "foregroundImage": "./assets/icons/streamsrc512x512.png",
         "backgroundColor": "#ffffff"
       }
     },

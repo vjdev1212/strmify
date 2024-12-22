@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   selectedSeasonButton: {
-    backgroundColor: '#fc7703',
+    backgroundColor: '#535aff',
   },
   seasonText: {
     fontSize: 16,
