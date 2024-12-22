@@ -47,7 +47,7 @@ const StreamScreen = () => {
 
     const fetchStreams = async (addonList: any[]) => {
         setLoading(true); // Start loading
-    
+
         const fetchWithTimeout = (url: string, timeout = 10000) => {
             return Promise.race([
                 fetch(url).then((response) => response.json()),
@@ -56,27 +56,26 @@ const StreamScreen = () => {
                 ),
             ]);
         };
-    
+
         try {
             const addonPromises = addonList.map(async (addon) => {
                 const addonTypes = addon?.types || []; // Get supported types for the addon
-    
+
                 // Skip addons that don't support the requested type
                 if (!addonTypes.includes(type)) {
-                    console.log(`Skipping addon "${addon?.name}" as it does not support type "${type}"`);
                     return { addon, streams: [] }; // Return empty streams for unsupported addons
                 }
-    
+
                 const addonUrl = addon?.url || '';
                 const streamBaseUrl = addon?.streamBaseUrl || addonUrl;
                 let streamUrl = '';
-    
+
                 if (type === 'series') {
                     streamUrl = `${streamBaseUrl}/stream/series/${imdbid}${season && episode ? `:${season}:${episode}` : ''}.json`;
                 } else {
                     streamUrl = `${streamBaseUrl}/stream/${type}/${imdbid}.json`;
                 }
-    
+
                 try {
                     const data = await fetchWithTimeout(streamUrl, 10000); // Fetch with timeout
                     return { addon, streams: data.streams || [] }; // Return streams or empty if none found
@@ -85,10 +84,10 @@ const StreamScreen = () => {
                     return { addon, streams: [] }; // Return empty streams on error
                 }
             });
-    
+
             // Run all addon fetches in parallel
             const allStreams = await Promise.all(addonPromises);
-    
+
             setStreams(allStreams); // Set the collected streams
         } catch (error) {
             console.error('Error fetching streams:', error);
@@ -97,7 +96,7 @@ const StreamScreen = () => {
             setLoading(false); // End loading state
         }
     };
-    
+
     // Handle stream selection (expand or collapse)
     const handleStreamExpand = (stream: any) => {
         Haptics.selectionAsync(); // Trigger haptics
@@ -106,7 +105,13 @@ const StreamScreen = () => {
 
     // Render each addon item
     const renderAddonItem = ({ item }: any) => {
-        const { name, logo } = item;
+        const { name, logo, types } = item;
+
+        // Check if the addon supports the requested type
+        if (!types || !types.includes(type)) {
+            return null; // Skip rendering this addon if it doesn't support the requested type
+        }
+
         const addonLogo = logo || '';
         return (
             <TouchableOpacity
@@ -223,8 +228,10 @@ const styles = StyleSheet.create({
         padding: 10,
     },
     addonList: {
-        marginVertical: 20,
-        marginHorizontal: 20,
+        paddingVertical: 20,
+        paddingHorizontal: 20,
+        borderBottomColor: 'gray',
+        borderBottomWidth: 0.5,
     },
     addonItem: {
         alignItems: 'center',
@@ -232,8 +239,8 @@ const styles = StyleSheet.create({
         width: 100,
     },
     addonIcon: {
-        width: 60,
-        height: 60,
+        width: 50,
+        height: 50,
         borderRadius: 10,
         marginBottom: 5,
     },
@@ -250,22 +257,25 @@ const styles = StyleSheet.create({
         width: '100%',
     },
     streamItem: {
-        paddingHorizontal: 20,
+        paddingHorizontal: 10,
         paddingVertical: 20,
         borderRadius: 8,
         width: '100%',
-        borderColor: '#a0a0a0',
+        borderColor: 'gray',
         borderBottomWidth: 0.5,
     },
     streamName: {
         fontSize: 14,
-        fontWeight: 'bold',
+        fontWeight: '600',
         flex: 1,
         marginBottom: 10,
+        paddingHorizontal: 10
     },
     streamTitle: {
         fontSize: 13,
         flex: 1,
+        paddingHorizontal: 10,
+        color: 'gray',
     },
     playerIconsContainer: {
         flexDirection: 'row',

@@ -3,7 +3,7 @@ import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 
 const PlayButton = ({ onPress }: { onPress: () => void }) => (
   <TouchableOpacity style={styles.button} onPress={onPress}>
-    <Text style={styles.text}>Play Movie</Text>
+    <Text style={styles.text}>Search Movie</Text>
   </TouchableOpacity>
 );
 
