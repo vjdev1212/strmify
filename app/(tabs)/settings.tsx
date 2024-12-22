@@ -11,8 +11,8 @@ const SettingsScreen = () => {
 
   // List of settings for Servers and Contact
   const serversList = [
-    { title: 'Stremio Server', route: '/settings/stremio-server', icon: 'film-outline' },
-    { title: 'TorrServer', route: '/settings/torrserver', icon: 'film-outline' },
+    { title: 'Stremio Server', route: '/settings/stremio-server', icon: 'server-outline' },
+    { title: 'TorrServer', route: '/settings/torrserver', icon: 'server-outline' },
   ];
 
   const contactList = [
@@ -77,7 +77,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   settingsGroup: {
-    marginBottom: 5,
+    marginVertical: 15,
   },
   settingItem: {
     flexDirection: 'row',
