@@ -84,7 +84,7 @@ const MovieDetails = () => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flex: 1
   },
   activityIndicator: {
     marginBottom: 10,

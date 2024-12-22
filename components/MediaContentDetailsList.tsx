@@ -54,6 +54,7 @@ const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 20,
     marginVertical: 10,
+    paddingBottom: 50
   },
   label: {
     fontSize: 14,
