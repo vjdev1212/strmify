@@ -22,7 +22,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 10,
+    marginTop: 20,
   },
   contentContainer: {
     marginTop: 30

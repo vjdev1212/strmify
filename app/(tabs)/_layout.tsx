@@ -3,6 +3,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Tabs } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useColorScheme } from '@/components/useColorScheme';
+import { Platform } from 'react-native';
 
 // You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
 function TabBarIcon(props: {
@@ -20,6 +21,7 @@ export default function TabLayout() {
       screenOptions={{
         tabBarActiveTintColor: '#fc7703',
         headerShown: false,
+        tabBarStyle: { height: Platform.OS === 'android' ? 65 : 90, },
       }}
     >
       <Tabs.Screen
@@ -33,7 +35,7 @@ export default function TabLayout() {
           title: 'Home',
           tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
           tabBarIconStyle: { marginVertical: 5 }
-          
+
         }}
       />
       <Tabs.Screen

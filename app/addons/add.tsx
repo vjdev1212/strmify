@@ -85,6 +85,7 @@ export default function AddAddonScreen() {
                     autoCapitalize="none"
                     keyboardType="url"
                     onBlur={fetchManifest}
+                    numberOfLines={3}
                 />
 
                 {loading && <ActivityIndicator size="large" color="#fc7703" style={styles.loading} />}
@@ -159,9 +160,9 @@ const styles = StyleSheet.create({
     },
     input: {
         height: 50,
-        borderColor: '#ddd',
+        borderColor: 'gray',
         borderWidth: 1,
-        borderRadius: 10,
+        borderRadius: 30,
         paddingHorizontal: 15,
         fontSize: 16,
         marginBottom: 20,
