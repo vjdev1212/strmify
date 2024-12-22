@@ -4,7 +4,7 @@
     "slug": "streamsrc",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icons/streamsrc64x64.png",
+    "icon": "./assets/icons/streamsrc512x512.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -14,7 +14,10 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "image": "./assets/icons/streamsrc512x512.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
     },
     "android": {
       "adaptiveIcon": {
