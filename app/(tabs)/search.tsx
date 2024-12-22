@@ -1,7 +1,7 @@
 import { Text, ActivityIndicator, TextInput, View } from '@/components/Themed';
 import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
-import { View as RNView, SafeAreaView } from 'react-native';
+import { Platform, View as RNView, SafeAreaView } from 'react-native';
 import { StyleSheet, FlatList, Image, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from 'react-native';
@@ -70,7 +70,9 @@ const SearchScreen = () => {
 
   const PosterContent = ({ item, type }: { item: any, type: string }) => {
     const handlePress = async () => {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      if (Platform.OS !== 'web') {
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
       router.push(
         {
           pathname: type === 'movie' ? '/movie/details' : '/series/details',
@@ -94,7 +96,9 @@ const SearchScreen = () => {
   };
 
   const clearSearch = async () => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== 'web') {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     setQuery('');
     setMovies([]);
     setSeries([]);

@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'; // Import icons from Expo
 import { Text } from '@/components/Themed'; // Assuming you have a Themed Text component
 import { useRouter } from 'expo-router';
@@ -27,7 +27,9 @@ const SettingsScreen = () => {
   );
 
   const onSettingsItemPress = async (item: any) => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== 'web') {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     router.push({ pathname: item.route });
   }
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, Image, StyleSheet, TouchableOpacity, View as RNView } from 'react-native';
+import { FlatList, Image, StyleSheet, TouchableOpacity, View as RNView, Platform } from 'react-native';
 import { Text, View } from './Themed';
 import { Link, router } from 'expo-router';
 import * as Haptics from 'expo-haptics'; // Importing Haptics for haptic feedback
@@ -43,7 +43,9 @@ const PosterList = ({
   }, [apiUrl]); // Dependency array contains only apiUrl
 
   const handlePress = async (item: any) => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== 'web') {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     router.push({
       pathname: `/${type}/details`,
       params: { imdbid: item.imdb_id || item.id },
@@ -76,7 +78,9 @@ const PosterList = ({
   };
 
   const handleSeeAllPress = async (item: any) => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== 'web') {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     router.push({
       pathname: `/${type}/list`,
       params: { apiUrl, title, type },
@@ -146,12 +150,12 @@ const styles = StyleSheet.create({
     width: 100,
     height: 150,
     borderRadius: 8,
-    backgroundColor: 'white', 
-    elevation: 5, 
+    backgroundColor: 'white',
+    elevation: 5,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 }, 
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.3,
-    shadowRadius: 4, 
+    shadowRadius: 4,
   },
   verticalImage: {
     width: '100%',

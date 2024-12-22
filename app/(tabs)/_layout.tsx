@@ -28,7 +28,9 @@ export default function TabLayout() {
         name="index"
         listeners={{
           tabPress: () => {
-            Haptics.selectionAsync(); // Trigger haptic feedback on tab click
+            if (Platform.OS !== 'web') {
+              Haptics.selectionAsync();
+            }
           },
         }}
         options={{
@@ -41,7 +43,9 @@ export default function TabLayout() {
         name="search"
         listeners={{
           tabPress: () => {
-            Haptics.selectionAsync(); // Trigger haptic feedback on tab click
+            if (Platform.OS !== 'web') {
+              Haptics.selectionAsync();
+            }
           },
         }}
         options={{
@@ -54,7 +58,9 @@ export default function TabLayout() {
         name="addons"
         listeners={{
           tabPress: () => {
-            Haptics.selectionAsync(); // Trigger haptic feedback on tab click
+            if (Platform.OS !== 'web') {
+              Haptics.selectionAsync();
+            }
           },
         }}
         options={{
@@ -67,7 +73,9 @@ export default function TabLayout() {
         name="settings"
         listeners={{
           tabPress: () => {
-            Haptics.selectionAsync(); // Trigger haptic feedback on tab click
+            if (Platform.OS !== 'web') {
+              Haptics.selectionAsync();
+            }
           },
         }}
         options={{

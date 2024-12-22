@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, Image, StyleSheet, TouchableOpacity, View as RNView, Alert, Linking } from 'react-native';
+import { FlatList, Image, StyleSheet, TouchableOpacity, View as RNView, Alert, Linking, Platform } from 'react-native';
 import { ActivityIndicator, Text, View } from '@/components/Themed';
 import { useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -123,8 +123,10 @@ const StreamScreen = () => {
         return (
             <TouchableOpacity
                 style={styles.addonItem}
-                onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); // Trigger haptics
+                onPress={async () => {
+                    if (Platform.OS !== 'web') {
+                        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    }
                     setSelectedAddon(item); // Set selected addon
                     fetchStreams([item]); // Fetch streams for the selected addon
                 }}
@@ -136,8 +138,10 @@ const StreamScreen = () => {
     };
 
     // Handle opening the player with a selected stream
-    const handleOpenPlayer = (player: string, streamUrl: string) => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); // Trigger haptics
+    const handleOpenPlayer = async (player: string, streamUrl: string) => {
+        if (Platform.OS !== 'web') {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
         const playerUrls: { [key: string]: string } = {
             vlc: `vlc://${streamUrl}`,
             vidhub: `open-vidhub://x-callback-url/open?url=${encodeURIComponent(streamUrl)}`,

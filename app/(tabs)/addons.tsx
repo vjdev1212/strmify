@@ -7,6 +7,7 @@ import {
   ScrollView,
   SafeAreaView,
   View,
+  Platform,
 } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -54,7 +55,9 @@ const AddonsScreen = () => {
   };
 
   const openConfiguration = async (url: string) => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== 'web') {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     try {
       await WebBrowser.openBrowserAsync(`${url}/configure`);
     } catch {
@@ -63,8 +66,9 @@ const AddonsScreen = () => {
   };
 
   const shareManifestUrl = async (url: string) => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    try {
+    if (Platform.OS !== 'web') {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } try {
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(url);
       } else {
@@ -103,8 +107,9 @@ const AddonsScreen = () => {
         <TouchableOpacity
           style={[styles.actionButton, styles.removeButton]}
           onPress={async () => {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            Alert.alert(
+            if (Platform.OS !== 'web') {
+              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            } Alert.alert(
               'Remove Addon',
               `Are you sure you want to remove "${item.name}"?`,
               [
@@ -126,7 +131,9 @@ const AddonsScreen = () => {
   );
 
   const onAddNewPress = async () => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== 'web') {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     router.push('/addons/add');
   }
 

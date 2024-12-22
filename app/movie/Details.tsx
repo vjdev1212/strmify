@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { Platform, ScrollView, StyleSheet } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, Text, View } from '../../components/Themed';
 import MediaContentDescription from '@/components/MediaContentDescription';
@@ -52,8 +52,9 @@ const MovieDetails = () => {
   }
 
   const handlePlayPress = async () => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push({
+    if (Platform.OS !== 'web') {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } router.push({
       pathname: '/stream/list',
       params: { imdbid: data.imdb_id, type: 'movie', season: 0, episode: 0 },
     });

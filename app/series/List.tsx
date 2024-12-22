@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, Image, StyleSheet, TouchableOpacity, View as RNView } from 'react-native';
+import { FlatList, Image, StyleSheet, TouchableOpacity, View as RNView, Platform } from 'react-native';
 import { ActivityIndicator, Text, View } from '@/components/Themed';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';  // Importing Haptics for haptic feedback
@@ -29,8 +29,9 @@ const SeriesList = () => {
   }, [apiUrl]);
 
   const handlePress = async (item: any) => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push({
+    if (Platform.OS !== 'web') {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } router.push({
       pathname: '/series/details',
       params: { imdbid: item.imdb_id || item.id },
     });

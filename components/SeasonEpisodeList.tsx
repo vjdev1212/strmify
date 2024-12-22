@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, FlatList, Image, TouchableOpacity } from 'react-native';
+import { StyleSheet, FlatList, Image, TouchableOpacity, Platform } from 'react-native';
 import { Text, View } from './Themed';
 import * as Haptics from 'expo-haptics';  // Importing Haptics for haptic feedback
 
@@ -35,7 +35,7 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
       const defaultEpisode = videos.find((video) => video.season === 1 && video.number === 1);
       if (defaultEpisode) {
         setSelectedSeason(1);
-        setSelectedEpisode(1);        
+        setSelectedEpisode(1);
       }
     }
   }, [videos]);
@@ -44,14 +44,18 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
     return null; // Hide component if no videos
   }
 
-  const handleSeasonSelect = (season: number) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);  // Trigger haptic feedback on season select
+  const handleSeasonSelect = async (season: number) => {
+    if (Platform.OS !== 'web') {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     setSelectedSeason(season);
-    setSelectedEpisode(1); 
+    setSelectedEpisode(1);
   };
 
-  const handleEpisodeSelect = (season: number, episode: number) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);  // Trigger haptic feedback on episode select
+  const handleEpisodeSelect = async (season: number, episode: number) => {
+    if (Platform.OS !== 'web') {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     setSelectedSeason(season);
     setSelectedEpisode(episode);
     onEpisodeSelect(season, episode);

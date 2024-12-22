@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity, Linking } from 'react-native';
+import { StyleSheet, TouchableOpacity, Linking, Platform } from 'react-native';
 import { View, Text } from '@/components/Themed';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics'
@@ -7,7 +7,9 @@ import * as Haptics from 'expo-haptics'
 const DonateScreen = () => {
 
     const handleDonate = async () => {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        if (Platform.OS !== 'web') {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
         const profileUsername = 'iamvijay91';
         const buyMeACoffeeUrl = `https://www.buymeacoffee.com/${profileUsername}`;
         Linking.openURL(buyMeACoffeeUrl).catch((err) =>
