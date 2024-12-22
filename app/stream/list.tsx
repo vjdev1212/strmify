@@ -14,13 +14,14 @@ const playerIcons: any = {
 
 const StreamScreen = () => {
     const { imdbid, type, season, episode } = useLocalSearchParams();
-    const [addons, setAddons] = useState<any[]>([]);
+    const [addons, setAddons] = useState<any[]>([]); // Addons for selection
     const [selectedAddon, setSelectedAddon] = useState<any | null>(null); // Track selected addon
     const [streams, setStreams] = useState<any[]>([]); // Streams for selected addon
     const [expandedStream, setExpandedStream] = useState<any | null>(null); // Track expanded stream
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false); // Set loading state false initially
+    const [noStreamsFound, setNoStreamsFound] = useState(false); // Flag to track no streams found
 
-    // Fetch all addons on mount
+    // Fetch all addons on mount (without showing loading initially)
     useEffect(() => {
         const fetchAddons = async () => {
             try {
@@ -29,12 +30,10 @@ const StreamScreen = () => {
                 const addonList = Object.values(addonsData); // Set the addon list
                 setAddons(addonList); // Set all addons
 
-                // Fetch streams for each addon
-                fetchStreams(addonList);
-
-                // Automatically select the first addon
+                // Automatically select the first addon if available
                 if (addonList.length > 0) {
                     setSelectedAddon(addonList[0]);
+                    fetchStreams(addonList); // Fetch streams in the background after initial render
                 }
             } catch (error) {
                 console.error('Error fetching addons:', error);
@@ -46,7 +45,8 @@ const StreamScreen = () => {
     }, []);
 
     const fetchStreams = async (addonList: any[]) => {
-        setLoading(true); // Start loading
+        setLoading(true); // Start loading when fetching streams
+        setNoStreamsFound(false); // Reset "No streams found" flag
 
         const fetchWithTimeout = (url: string, timeout = 10000) => {
             return Promise.race([
@@ -89,9 +89,16 @@ const StreamScreen = () => {
             const allStreams = await Promise.all(addonPromises);
 
             setStreams(allStreams); // Set the collected streams
+
+            // Check if no streams were found across all addons
+            const allStreamsData = allStreams.map(stream => stream.streams).flat();
+            if (allStreamsData.length === 0) {
+                setNoStreamsFound(true); // Set the flag if no streams found
+            }
         } catch (error) {
             console.error('Error fetching streams:', error);
             Alert.alert('Error', 'Failed to load streams');
+            setNoStreamsFound(true); // Set the flag if an error occurs
         } finally {
             setLoading(false); // End loading state
         }
@@ -119,6 +126,7 @@ const StreamScreen = () => {
                 onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); // Trigger haptics
                     setSelectedAddon(item); // Set selected addon
+                    fetchStreams([item]); // Fetch streams for the selected addon
                 }}
             >
                 <Image source={{ uri: addonLogo }} style={styles.addonIcon} />
@@ -193,11 +201,10 @@ const StreamScreen = () => {
 
     return (
         <RNView style={styles.container}>
-            {loading ? (
+            {noStreamsFound ? (
                 <RNView style={styles.loadingContainer}>
                     <View style={styles.centeredContainer}>
-                        <ActivityIndicator size="large" style={styles.activityIndicator} color="#fc7703" />
-                        <Text style={styles.centeredText}>Loading</Text>
+                        <Text style={styles.centeredText}>No streams found</Text>
                     </View>
                 </RNView>
             ) : (
@@ -210,6 +217,14 @@ const StreamScreen = () => {
                         showsHorizontalScrollIndicator={false}
                         contentContainerStyle={styles.addonList}
                     />
+                    {loading && (
+                        <RNView style={styles.loadingContainer}>
+                            <View style={styles.centeredContainer}>
+                                <ActivityIndicator size="large" style={styles.activityIndicator} color="#fc7703" />
+                                <Text style={styles.centeredText}>Loading streams...</Text>
+                            </View>
+                        </RNView>
+                    )}
                     <FlatList
                         data={selectedAddonStreams}
                         renderItem={renderStreamItem}
