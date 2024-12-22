@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     height: 40,
-    borderWidth: 0.75,
+    borderWidth: StyleSheet.hairlineWidth,
     borderRadius: 20,
     paddingLeft: 20,
     borderColor: 'gray',

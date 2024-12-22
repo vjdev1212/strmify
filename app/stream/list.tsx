@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
     },
     addonListBorder: {
         borderBottomColor: 'gray',
-        borderBottomWidth: 0.5,
+        borderBottomWidth: StyleSheet.hairlineWidth,
     },
     addonItem: {
         alignItems: 'center',
@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         width: '100%',
         borderColor: 'gray',
-        borderBottomWidth: 0.5,
+        borderBottomWidth: StyleSheet.hairlineWidth,
     },
     streamName: {
         fontSize: 14,
