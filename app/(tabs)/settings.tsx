@@ -1,17 +1,14 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'; // Import icons from Expo
-import { useNavigation } from '@react-navigation/native';
 import { Text } from '@/components/Themed'; // Assuming you have a Themed Text component
-import { router } from 'expo-router';
+import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics'
 
 const SettingsScreen = () => {
-  const navigation = useNavigation();
-
-  // List of settings for Servers and Contact
+  const router = useRouter();
   const serversList = [
-    { title: 'Stremio Server', route: '/settings/stremio-server', icon: 'server-outline' },
+    { title: 'Stremio Server', route: '/settings/stremioserver', icon: 'server-outline' },
     { title: 'TorrServer', route: '/settings/torrserver', icon: 'server-outline' },
   ];
 

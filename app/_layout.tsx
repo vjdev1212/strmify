@@ -88,6 +88,10 @@ function RootLayoutNav() {
         <Stack.Screen name="series/list" options={{ headerShown: true, headerTitle: '', headerTintColor: '#535aff' }} />
         <Stack.Screen name="addons/add" options={{ headerShown: true, headerTitle: '', headerTintColor: '#535aff' }} />
         <Stack.Screen name="stream/list" options={{ headerShown: true, headerTitle:"Streams", headerTintColor: '#535aff' }} />
+        <Stack.Screen name="settings/stremioserver" options={{ headerShown: true, headerTitle:'', headerTintColor: '#535aff' }} />
+        <Stack.Screen name="settings/torrserver" options={{ headerShown: true, headerTitle:'', headerTintColor: '#535aff' }} />
+        <Stack.Screen name="settings/contact" options={{ headerShown: true, headerTitle:'', headerTintColor: '#535aff' }} />
+        <Stack.Screen name="settings/donate" options={{ headerShown: true, headerTitle:'', headerTintColor: '#535aff' }} />
       </Stack>
     </ThemeProvider>
   );
