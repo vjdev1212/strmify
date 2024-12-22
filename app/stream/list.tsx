@@ -225,7 +225,7 @@ const StreamScreen = () => {
                         showsHorizontalScrollIndicator={false}
                         contentContainerStyle={[
                             styles.addonList,
-                            !loading && styles.addonListBorder, // Apply border only when not loading
+                            !loading && styles.addonListBorder,
                         ]}
                     />
                     <FlatList
@@ -295,6 +295,7 @@ const styles = StyleSheet.create({
         fontSize: 13,
         flex: 1,
         paddingHorizontal: 10,
+        color: 'gray',
     },
     playerIconsContainer: {
         flexDirection: 'row',

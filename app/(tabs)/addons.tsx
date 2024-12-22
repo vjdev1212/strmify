@@ -54,6 +54,7 @@ const AddonsScreen = () => {
   };
 
   const openConfiguration = async (url: string) => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     try {
       await WebBrowser.openBrowserAsync(`${url}/configure`);
     } catch {
@@ -62,6 +63,7 @@ const AddonsScreen = () => {
   };
 
   const shareManifestUrl = async (url: string) => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     try {
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(url);
@@ -100,7 +102,8 @@ const AddonsScreen = () => {
         )}
         <TouchableOpacity
           style={[styles.actionButton, styles.removeButton]}
-          onPress={() =>
+          onPress={async () => {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             Alert.alert(
               'Remove Addon',
               `Are you sure you want to remove "${item.name}"?`,
@@ -113,6 +116,7 @@ const AddonsScreen = () => {
                 },
               ]
             )
+          }
           }
         >
           <Text style={styles.actionText}>Remove</Text>
