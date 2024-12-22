@@ -201,7 +201,14 @@ const StreamScreen = () => {
 
     return (
         <RNView style={styles.container}>
-            {noStreamsFound ? (
+            {loading ? (
+                <RNView style={styles.loadingContainer}>
+                    <View style={styles.centeredContainer}>
+                        <ActivityIndicator size="large" style={styles.activityIndicator} color="#fc7703" />
+                        <Text style={styles.centeredText}>Loading</Text>
+                    </View>
+                </RNView>
+            ) : noStreamsFound ? (
                 <RNView style={styles.loadingContainer}>
                     <View style={styles.centeredContainer}>
                         <Text style={styles.centeredText}>No streams found</Text>
@@ -209,22 +216,18 @@ const StreamScreen = () => {
                 </RNView>
             ) : (
                 <>
+                    {/* Conditionally add borderBottom when not loading */}
                     <FlatList
                         data={addons}
                         renderItem={renderAddonItem}
                         keyExtractor={(item, index) => index.toString()}
                         horizontal
                         showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.addonList}
+                        contentContainerStyle={[
+                            styles.addonList,
+                            !loading && styles.addonListBorder, // Apply border only when not loading
+                        ]}
                     />
-                    {loading && (
-                        <RNView style={styles.loadingContainer}>
-                            <View style={styles.centeredContainer}>
-                                <ActivityIndicator size="large" style={styles.activityIndicator} color="#fc7703" />
-                                <Text style={styles.centeredText}>Loading streams...</Text>
-                            </View>
-                        </RNView>
-                    )}
                     <FlatList
                         data={selectedAddonStreams}
                         renderItem={renderStreamItem}
@@ -245,6 +248,8 @@ const styles = StyleSheet.create({
     addonList: {
         paddingVertical: 20,
         paddingHorizontal: 20,
+    },
+    addonListBorder: {
         borderBottomColor: 'gray',
         borderBottomWidth: 0.5,
     },
