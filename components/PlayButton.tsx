@@ -12,11 +12,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#535aff',
     paddingVertical: 12,
     paddingHorizontal: 30,
-    borderRadius: 8,
+    borderRadius: 30,
     alignItems: 'center',
     marginVertical: 20,
     alignSelf: 'center',
-    width: 275
   },
   text: {
     color: '#fff',
