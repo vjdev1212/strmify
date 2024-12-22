@@ -118,7 +118,8 @@ const styles = StyleSheet.create({
         paddingVertical: 15,
         borderRadius: 25,
         fontSize: 16,
-        fontWeight: 'bold'
+        fontWeight: 'bold',
+        color: '#fff'
     }
 });
 

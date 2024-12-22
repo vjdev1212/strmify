@@ -8,8 +8,8 @@ import * as Haptics from 'expo-haptics'
 const SettingsScreen = () => {
   const router = useRouter();
   const serversList = [
-    { title: 'Stremio Server', route: '/settings/stremioserver', icon: 'server-outline' },
-    { title: 'TorrServer', route: '/settings/torrserver', icon: 'server-outline' },
+    { title: 'Stremio Server', route: '/settings/stremioserver', icon: 'cloud-outline' },
+    { title: 'TorrServer', route: '/settings/torrserver', icon: 'cloud-outline' },
   ];
 
   const contactList = [
