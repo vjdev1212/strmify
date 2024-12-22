@@ -275,7 +275,6 @@ const styles = StyleSheet.create({
         fontSize: 13,
         flex: 1,
         paddingHorizontal: 10,
-        color: 'gray',
     },
     playerIconsContainer: {
         flexDirection: 'row',
