@@ -20,6 +20,7 @@
     "expo": "~52.0.17",
     "expo-font": "~13.0.1",
     "expo-haptics": "~14.0.0",
+    "expo-intent-launcher": "~12.0.1",
     "expo-linking": "~7.0.3",
     "expo-router": "~4.0.11",
     "expo-sharing": "~13.0.0",
