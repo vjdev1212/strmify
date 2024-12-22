@@ -108,7 +108,7 @@ const StreamScreen = () => {
                 onPress={() => setSelectedAddon(item)} // Set selected addon
             >
                 <Image source={{ uri: addonLogo }} style={styles.addonIcon} />
-                <Text style={styles.addonName}>{name}</Text>
+                <Text style={styles.addonName} numberOfLines={1}>{name}</Text>
             </TouchableOpacity>
         );
     };
@@ -218,16 +218,21 @@ const styles = StyleSheet.create({
     addonItem: {
         alignItems: 'center',
         marginRight: 20,
+        width: 100
     },
     addonIcon: {
-        width: 50,
-        height: 50,
+        width: 60,
+        height: 60,
         borderRadius: 10,
         marginBottom: 5,
     },
     addonName: {
         paddingVertical: 10,
-        fontWeight: 'bold'
+        paddingBottom: 20,
+        fontWeight: 'bold',
+        overflow: 'hidden',
+        textAlign: 'left',
+        flexShrink: 1,
     },
     streamItemContainer: {
         alignItems: 'center',
