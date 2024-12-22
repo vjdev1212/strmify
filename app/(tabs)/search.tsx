@@ -70,7 +70,7 @@ const SearchScreen = () => {
 
   const PosterContent = ({ item, type }: { item: any, type: string }) => {
     const handlePress = async () => {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       router.push(
         {
           pathname: type === 'movie' ? '/movie/details' : '/series/details',

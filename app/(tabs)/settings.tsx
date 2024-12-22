@@ -27,7 +27,7 @@ const SettingsScreen = () => {
   );
 
   const onSettingsItemPress = async (item: any) => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push({ pathname: item.route });
   }
 

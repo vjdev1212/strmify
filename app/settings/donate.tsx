@@ -7,7 +7,7 @@ import * as Haptics from 'expo-haptics'
 const DonateScreen = () => {
 
     const handleDonate = async () => {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         const profileUsername = 'iamvijay91';
         const buyMeACoffeeUrl = `https://www.buymeacoffee.com/${profileUsername}`;
         Linking.openURL(buyMeACoffeeUrl).catch((err) =>

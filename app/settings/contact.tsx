@@ -11,7 +11,7 @@ const ContactScreen = () => {
       value: 'vcmvijay@gmail.com',
       icon: 'mail-outline',
       action: async() => {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         Linking.openURL('mailto:vcmvijay@gmail.com')
     },
     }    

@@ -43,7 +43,7 @@ const PosterList = ({
   }, [apiUrl]); // Dependency array contains only apiUrl
 
   const handlePress = async (item: any) => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push({
       pathname: `/${type}/details`,
       params: { imdbid: item.imdb_id || item.id },
@@ -76,7 +76,7 @@ const PosterList = ({
   };
 
   const handleSeeAllPress = async (item: any) => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push({
       pathname: `/${type}/list`,
       params: { apiUrl, title, type },

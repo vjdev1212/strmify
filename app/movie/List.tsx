@@ -32,7 +32,7 @@ const MoviesList = () => {
     const year = item.year?.split('–')[0] || item.year;
 
     const handlePress = async () => {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       router.push({
         pathname: '/movie/details',
         params: { imdbid: item.imdb_id || item.id },

@@ -54,7 +54,7 @@ const AddonsScreen = () => {
   };
 
   const openConfiguration = async (url: string) => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     try {
       await WebBrowser.openBrowserAsync(`${url}/configure`);
     } catch {
@@ -63,7 +63,7 @@ const AddonsScreen = () => {
   };
 
   const shareManifestUrl = async (url: string) => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     try {
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(url);
@@ -126,7 +126,7 @@ const AddonsScreen = () => {
   );
 
   const onAddNewPress = async () => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push('/addons/add');
   }
 

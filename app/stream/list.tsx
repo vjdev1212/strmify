@@ -124,7 +124,7 @@ const StreamScreen = () => {
             <TouchableOpacity
                 style={styles.addonItem}
                 onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); // Trigger haptics
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); // Trigger haptics
                     setSelectedAddon(item); // Set selected addon
                     fetchStreams([item]); // Fetch streams for the selected addon
                 }}
