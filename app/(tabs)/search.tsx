@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingLeft: 20,
     borderColor: 'gray',
-    fontSize: 14,
+    fontSize: 16,
   },
   lightSearchInput: {
     backgroundColor: '#fff',
