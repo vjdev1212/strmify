@@ -47,8 +47,7 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
   const handleSeasonSelect = (season: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);  // Trigger haptic feedback on season select
     setSelectedSeason(season);
-    setSelectedEpisode(1); // Reset to first episode when season changes
-    onEpisodeSelect(season, 1);
+    setSelectedEpisode(1); 
   };
 
   const handleEpisodeSelect = (season: number, episode: number) => {

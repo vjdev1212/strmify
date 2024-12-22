@@ -11,8 +11,9 @@ import {
 import * as WebBrowser from 'expo-web-browser';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Text } from '@/components/Themed';
-import { Link } from 'expo-router';
+import { router } from 'expo-router';
 import * as Sharing from 'expo-sharing';
+import * as Haptics from 'expo-haptics';
 
 const AddonsScreen = () => {
   const [addons, setAddons] = useState<any[]>([]);
@@ -120,14 +121,17 @@ const AddonsScreen = () => {
     </View>
   );
 
+  const onAddNewPress = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    router.push('/addons/add');
+  }
+
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity style={styles.addButton}>
-        <Link href="/addons/add">
-          <Text style={styles.addButtonText}>Add New</Text>
-        </Link>
+      <TouchableOpacity style={styles.addButton} onPress={onAddNewPress}>
+        <Text style={styles.addButtonText}>Add New</Text>
       </TouchableOpacity>
-      <ScrollView contentContainerStyle={styles.contentContainer}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.contentContainer}>
         {addons.length > 0 ? (
           addons.map(renderAddonItem)
         ) : (

@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { FlatList, Image, StyleSheet, TouchableOpacity, View as RNView } from 'react-native';
-import { Text } from '@/components/Themed';
-import { Link, useLocalSearchParams } from 'expo-router';
+import { ActivityIndicator, Text, View } from '@/components/Themed';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';  // Importing Haptics for haptic feedback
 
 const SeriesList = () => {
+  const router = useRouter();
   const { apiUrl } = useLocalSearchParams();
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,46 +28,46 @@ const SeriesList = () => {
     fetchData();
   }, [apiUrl]);
 
-  const handlePress = (item: any) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);  // Trigger haptic feedback on press
+  const handlePress = async (item: any) => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    router.push({
+      pathname: '/series/details',
+      params: { imdbid: item.imdb_id || item.id },
+    });
   };
 
   const renderItem = ({ item }: any) => {
     const year = item.year?.split('–')[0] || item.year;
 
     return (
-      <Link
-        href={{
-          pathname: `/movie/details`,
-          params: { imdbid: item.imdb_id || item.id },
-        }}
-      >
-        <RNView>
-          <TouchableOpacity
-            style={styles.posterContainer}
-            onPress={() => handlePress(item)}  // Handle press and trigger haptic feedback
-          >
-            <Image source={{ uri: item.poster }} style={styles.posterImage} />
-            <Text numberOfLines={1} ellipsizeMode="tail" style={styles.posterTitle}>
-              {item.name}
-            </Text>
-            <Text style={styles.posterYear}>{year}</Text>
-          </TouchableOpacity>
-        </RNView>
-      </Link>
+      <RNView>
+        <TouchableOpacity
+          style={styles.posterContainer}
+          onPress={() => handlePress(item)}  // Handle press and trigger haptic feedback
+        >
+          <Image source={{ uri: item.poster }} style={styles.posterImage} />
+          <Text numberOfLines={1} ellipsizeMode="tail" style={styles.posterTitle}>
+            {item.name}
+          </Text>
+          <Text style={styles.posterYear}>{year}</Text>
+        </TouchableOpacity>
+      </RNView>
     );
   };
 
   return (
     <RNView style={styles.container}>
       {loading ? (
-        <Text style={styles.title}>Loading...</Text>
-      ) : (
+        <View style={styles.centeredContainer}>
+          <ActivityIndicator size="large" style={styles.activityIndicator} color="#fc7703" />
+          <Text style={styles.centeredText}>Loading</Text>
+        </View>) : (
         <FlatList
           data={data}
           renderItem={renderItem}
           keyExtractor={(item, index) => index.toString()}
           numColumns={3}
+          contentContainerStyle={styles.posterList}
           showsVerticalScrollIndicator={false}
         />
       )}
@@ -76,6 +77,7 @@ const SeriesList = () => {
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
     paddingVertical: 20,
     padding: 10,
   },
@@ -84,6 +86,9 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 15,
     textAlign: 'center',
+  },
+  posterList: {
+    paddingVertical: 20
   },
   posterContainer: {
     padding: 10,
@@ -103,6 +108,21 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontSize: 12,
     color: 'gray',
+  },
+  activityIndicator: {
+    marginBottom: 10,
+    color: '#fc7703',
+  },
+  centeredContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  centeredText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
 });
 

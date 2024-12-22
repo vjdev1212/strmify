@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Text, View, TextInput } from '@/components/Themed';
 import { router } from 'expo-router';
 
-const defaultAddonLogo = 'https://i.ibb.co/NrJ7N0c/puzzle-1.png';
+const defaultAddonLogo = 'https://i.ibb.co/fSJ42PJ/addon.png';
 
 export default function AddAddonScreen() {
     const [url, setUrl] = useState('');

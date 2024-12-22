@@ -1,5 +1,5 @@
 import { Text, ActivityIndicator, TextInput, View } from '@/components/Themed';
-import { Link } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { View as RNView, SafeAreaView } from 'react-native';
 import { StyleSheet, FlatList, Image, TouchableOpacity } from 'react-native';
@@ -8,6 +8,7 @@ import { useColorScheme } from 'react-native';
 import * as Haptics from 'expo-haptics';
 
 const SearchScreen = () => {
+  const router = useRouter();
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [movies, setMovies] = useState<any[]>([]);
@@ -53,33 +54,28 @@ const SearchScreen = () => {
 
   const renderMoviePoster = ({ item }: { item: any }) => {
     return (
-      <Link
-        href={{
-          pathname: `/movie/details`,
-          params: { imdbid: item.imdb_id || item.id },
-        }}
-      >
-        <PosterContent item={item} />
-      </Link>
+      <TouchableOpacity>
+        <PosterContent item={item} type='movie' />
+      </TouchableOpacity>
     );
   };
 
   const renderSeriesPoster = ({ item }: { item: any }) => {
     return (
-      <Link
-        href={{
-          pathname: `/series/details`,
-          params: { imdbid: item.imdb_id || item.id },
-        }}
-      >
-        <PosterContent item={item} />
-      </Link>
+      <TouchableOpacity>
+        <PosterContent item={item} type='series' />
+      </TouchableOpacity>
     );
   };
 
-  const PosterContent = ({ item }: { item: any }) => {
+  const PosterContent = ({ item, type }: { item: any, type: string }) => {
     const handlePress = async () => {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      router.push(
+        {
+          pathname: type === 'movie' ? '/movie/details' : '/series/details',
+          params: { imdbid: item.imdb_id || item.id }
+        });
     };
 
     return (

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { FlatList, Image, StyleSheet, TouchableOpacity, View as RNView } from 'react-native';
 import { Text, View } from './Themed';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import * as Haptics from 'expo-haptics'; // Importing Haptics for haptic feedback
 
 // Skeleton Loader Component
@@ -42,8 +42,12 @@ const PosterList = ({
     fetchData();
   }, [apiUrl]); // Dependency array contains only apiUrl
 
-  const handlePress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); // Triggering haptic feedback
+  const handlePress = async (item: any) => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    router.push({
+      pathname: `/${type}/details`,
+      params: { imdbid: item.imdb_id || item.id },
+    })
   };
 
   const renderItem = ({ item }: any) => {
@@ -53,55 +57,39 @@ const PosterList = ({
         : item.year;
 
     return (
-      <Link href={{
-        pathname: `/${type}/details`,
-        params: { imdbid: item.imdb_id || item.id }
-      }}>
-        <RNView>
-          <TouchableOpacity
-            style={[styles.posterContainer, layout === 'vertical' && styles.verticalContainer]}
-            onPress={handlePress} // Trigger haptic feedback on press
-          >
-            <Image
-              source={{ uri: item.poster }}
-              style={[styles.posterImage, layout === 'vertical' && styles.verticalImage]}
-            />
-            <Text numberOfLines={1} ellipsizeMode="tail" style={styles.posterTitle}>
-              {item.name}
-            </Text>
-            <Text style={styles.posterYear}>{year}</Text>
-          </TouchableOpacity>
-        </RNView>
-      </Link>
+      <RNView>
+        <TouchableOpacity
+          style={[styles.posterContainer, layout === 'vertical' && styles.verticalContainer]}
+          onPress={() => handlePress(item)}
+        >
+          <Image
+            source={{ uri: item.poster }}
+            style={[styles.posterImage, layout === 'vertical' && styles.verticalImage]}
+          />
+          <Text numberOfLines={1} ellipsizeMode="tail" style={styles.posterTitle}>
+            {item.name}
+          </Text>
+          <Text style={styles.posterYear}>{year}</Text>
+        </TouchableOpacity>
+      </RNView>
     );
   };
+
+  const handleSeeAllPress = async (item: any) => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    router.push({
+      pathname: `/${type}/list`,
+      params: { apiUrl, title, type },
+    })
+  }
 
   return (
     <RNView style={styles.container}>
       <RNView style={styles.header}>
         <Text style={styles.title}>{title}</Text>
-
-        {type === 'movie' && (
-          <Link
-            href={{
-              pathname: '/movie/list',
-              params: { apiUrl, title, type },
-            }}
-          >
-            <Text style={styles.seeAllText}>See All Movies</Text>
-          </Link>
-        )}
-
-        {type === 'series' && (
-          <Link
-            href={{
-              pathname: '/series/list',
-              params: { apiUrl, title, type },
-            }}
-          >
-            <Text style={styles.seeAllText}>See All Series</Text>
-          </Link>
-        )}
+        <TouchableOpacity onPress={handleSeeAllPress}>
+          <Text style={styles.seeAllText}>See All</Text>
+        </TouchableOpacity>
       </RNView>
 
       {loading ? (

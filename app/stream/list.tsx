@@ -45,46 +45,51 @@ const StreamScreen = () => {
         fetchAddons();
     }, []);
 
-    // Fetch streams for all addons
     const fetchStreams = async (addonList: any[]) => {
         setLoading(true); // Start loading
-
+    
+        const fetchWithTimeout = (url: string, timeout = 10000) => {
+            return Promise.race([
+                fetch(url).then((response) => response.json()),
+                new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('Request timed out')), timeout)
+                ),
+            ]);
+        };
+    
         try {
-            const allStreams: any[] = [];
-
-            for (const addon of addonList) {
+            const addonPromises = addonList.map(async (addon) => {
                 const addonTypes = addon?.types || []; // Get supported types for the addon
-
-                // Check if the addon supports the requested type
+    
+                // Skip addons that don't support the requested type
                 if (!addonTypes.includes(type)) {
                     console.log(`Skipping addon "${addon?.name}" as it does not support type "${type}"`);
-                    continue; // Skip if the addon doesn't support the requested media type
+                    return { addon, streams: [] }; // Return empty streams for unsupported addons
                 }
-
+    
                 const addonUrl = addon?.url || '';
                 const streamBaseUrl = addon?.streamBaseUrl || addonUrl;
                 let streamUrl = '';
-
+    
                 if (type === 'series') {
                     streamUrl = `${streamBaseUrl}/stream/series/${imdbid}${season && episode ? `:${season}:${episode}` : ''}.json`;
                 } else {
                     streamUrl = `${streamBaseUrl}/stream/${type}/${imdbid}.json`;
                 }
+    
                 try {
-                    const response = await fetch(streamUrl);
-                    const data = await response.json();
-
-                    if (data.streams) {
-                        allStreams.push({ addon, streams: data.streams }); // Collect streams for each addon
-                    } else {
-                        allStreams.push({ addon, streams: [] }); // No streams found for this addon
-                    }
+                    const data = await fetchWithTimeout(streamUrl, 10000); // Fetch with timeout
+                    return { addon, streams: data.streams || [] }; // Return streams or empty if none found
                 } catch (error) {
                     console.error(`Error fetching streams for addon "${addon?.name}":`, error);
+                    return { addon, streams: [] }; // Return empty streams on error
                 }
-            }
-
-            setStreams(allStreams);
+            });
+    
+            // Run all addon fetches in parallel
+            const allStreams = await Promise.all(addonPromises);
+    
+            setStreams(allStreams); // Set the collected streams
         } catch (error) {
             console.error('Error fetching streams:', error);
             Alert.alert('Error', 'Failed to load streams');
@@ -92,7 +97,7 @@ const StreamScreen = () => {
             setLoading(false); // End loading state
         }
     };
-
+    
     // Handle stream selection (expand or collapse)
     const handleStreamExpand = (stream: any) => {
         Haptics.selectionAsync(); // Trigger haptics
