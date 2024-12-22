@@ -77,6 +77,7 @@ const PosterList = ({
 
   const handleSeeAllPress = async (item: any) => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    console.log(type);
     router.push({
       pathname: `/${type}/list`,
       params: { apiUrl, title, type },

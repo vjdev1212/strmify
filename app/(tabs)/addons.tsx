@@ -220,13 +220,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   shareButton: {
-    backgroundColor: '#535aff',
+    backgroundColor: '#7F7FFF',
   },
   configureButton: {
-    backgroundColor: '#32a852',
+    backgroundColor: '#317ca8',
   },
   removeButton: {
-    backgroundColor: '#ff4d4d',
+    backgroundColor: '#39db90',
   },
   actionText: {
     color: '#fff',
