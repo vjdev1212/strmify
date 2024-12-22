@@ -223,10 +223,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#7F7FFF',
   },
   configureButton: {
-    backgroundColor: '#317ca8',
+    backgroundColor: '#38b040',
   },
   removeButton: {
-    backgroundColor: '#39db90',
+    backgroundColor: '#28b099',
   },
   actionText: {
     color: '#fff',
