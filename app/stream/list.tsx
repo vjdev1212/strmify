@@ -3,6 +3,7 @@ import { FlatList, Image, StyleSheet, TouchableOpacity, View as RNView, Alert, L
 import { ActivityIndicator, Text, View } from '@/components/Themed';
 import { useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Haptics from 'expo-haptics'; // Import Haptics
 
 const playerIcons: any = {
     vlc: require('../../assets/images/players/vlc.png'),
@@ -44,7 +45,6 @@ const StreamScreen = () => {
         fetchAddons();
     }, []);
 
-    // Fetch streams for all addons
     // Fetch streams for all addons
     const fetchStreams = async (addonList: any[]) => {
         setLoading(true); // Start loading
@@ -95,6 +95,7 @@ const StreamScreen = () => {
 
     // Handle stream selection (expand or collapse)
     const handleStreamExpand = (stream: any) => {
+        Haptics.selectionAsync(); // Trigger haptics
         setExpandedStream(expandedStream === stream ? null : stream); // Toggle expand on stream click
     };
 
@@ -105,7 +106,10 @@ const StreamScreen = () => {
         return (
             <TouchableOpacity
                 style={styles.addonItem}
-                onPress={() => setSelectedAddon(item)} // Set selected addon
+                onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); // Trigger haptics
+                    setSelectedAddon(item); // Set selected addon
+                }}
             >
                 <Image source={{ uri: addonLogo }} style={styles.addonIcon} />
                 <Text style={styles.addonName} numberOfLines={1}>{name}</Text>
@@ -115,12 +119,12 @@ const StreamScreen = () => {
 
     // Handle opening the player with a selected stream
     const handleOpenPlayer = (player: string, streamUrl: string) => {
-        // Mapping players to their respective callback URL schemes
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); // Trigger haptics
         const playerUrls: { [key: string]: string } = {
-            vlc: `vlc://${streamUrl}`, // VLC URL scheme
-            vidhub: `open-vidhub://x-callback-url/open?url=${encodeURIComponent(streamUrl)}`, // VidHub URL scheme
-            outplayer: `outplayer://${streamUrl}`, // OutPlayer URL scheme
-            infuse: `infuse://x-callback-url/play?url=${encodeURIComponent(streamUrl)}`, // Infuse URL scheme
+            vlc: `vlc://${streamUrl}`,
+            vidhub: `open-vidhub://x-callback-url/open?url=${encodeURIComponent(streamUrl)}`,
+            outplayer: `outplayer://${streamUrl}`,
+            infuse: `infuse://x-callback-url/play?url=${encodeURIComponent(streamUrl)}`,
         };
 
         const playerUrl = playerUrls[player];
@@ -158,9 +162,12 @@ const StreamScreen = () => {
                     {isExpanded && (
                         <RNView style={styles.playerIconsContainer}>
                             {players.map((player: string) => (
-                                <TouchableOpacity key={player} onPress={() => handleOpenPlayer(player, url)}>
+                                <TouchableOpacity
+                                    key={player}
+                                    onPress={() => handleOpenPlayer(player, url)}
+                                >
                                     <Image
-                                        source={playerIcons[player]} // Use the mapped player icon
+                                        source={playerIcons[player]}
                                         style={styles.playerIcon}
                                     />
                                 </TouchableOpacity>
@@ -172,7 +179,6 @@ const StreamScreen = () => {
         );
     };
 
-    // Get streams for the selected addon
     const selectedAddonStreams = streams.find((addonData) => addonData.addon === selectedAddon)?.streams || [];
 
     return (
@@ -195,7 +201,7 @@ const StreamScreen = () => {
                         contentContainerStyle={styles.addonList}
                     />
                     <FlatList
-                        data={selectedAddonStreams} // Only show streams from the selected addon
+                        data={selectedAddonStreams}
                         renderItem={renderStreamItem}
                         showsVerticalScrollIndicator={false}
                         keyExtractor={(item, index) => index.toString()}
@@ -213,12 +219,12 @@ const styles = StyleSheet.create({
     },
     addonList: {
         marginVertical: 20,
-        marginHorizontal: 20
+        marginHorizontal: 20,
     },
     addonItem: {
         alignItems: 'center',
         marginRight: 20,
-        width: 100
+        width: 100,
     },
     addonIcon: {
         width: 60,
@@ -254,7 +260,7 @@ const styles = StyleSheet.create({
     },
     streamTitle: {
         fontSize: 13,
-        flex: 1
+        flex: 1,
     },
     playerIconsContainer: {
         flexDirection: 'row',
@@ -268,7 +274,7 @@ const styles = StyleSheet.create({
     playerIcon: {
         width: 40,
         height: 40,
-        borderRadius: 10
+        borderRadius: 10,
     },
     loadingContainer: {
         flex: 1,
