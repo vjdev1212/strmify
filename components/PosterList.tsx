@@ -80,14 +80,28 @@ const PosterList = ({
     <RNView style={styles.container}>
       <RNView style={styles.header}>
         <Text style={styles.title}>{title}</Text>
-        <Link
-          href={{
-            pathname: `/${type}/list`,
-            params: { apiUrl, title, type },
-          }}
-        >
-          <Text style={styles.seeAllText}>See All</Text>
-        </Link>
+
+        {type === 'movie' && (
+          <Link
+            href={{
+              pathname: '/movie/list',
+              params: { apiUrl, title, type },
+            }}
+          >
+            <Text style={styles.seeAllText}>See All Movies</Text>
+          </Link>
+        )}
+
+        {type === 'series' && (
+          <Link
+            href={{
+              pathname: '/series/list',
+              params: { apiUrl, title, type },
+            }}
+          >
+            <Text style={styles.seeAllText}>See All Series</Text>
+          </Link>
+        )}
       </RNView>
 
       {loading ? (
