@@ -29,7 +29,7 @@ const StreamDetailsScreen = () => {
     const [selectedServer, setSelectedServer] = useState<string | null>(null);
     const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
-    const [playButtonText, setPlayButtonText] = useState('Play');
+    const [statusText, setStatusText] = useState('');
 
     const { name, title, description, url, infoHash } = useLocalSearchParams<{
         name: string;
@@ -106,47 +106,59 @@ const StreamDetailsScreen = () => {
     const handlePlay = async () => {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
 
-        if (!selectedServer || !selectedPlayer) {
-            Alert.alert('Error', 'Please select both a server and a media player.');
+        if (!selectedPlayer) {
+            Alert.alert('Error', 'Please select a media player.');
+            return;
+        }
+
+        if (!url && !selectedServer) {
+            Alert.alert('Error', 'Please select a server or provide a valid URL.');
             return;
         }
 
         const server = servers.find((s) => s.name === selectedServer);
         const player = players.find((p) => p.name === selectedPlayer);
 
-        if (!server || !player) {
-            Alert.alert('Error', 'Invalid server or player selection.');
+        if (!player) {
+            Alert.alert('Error', 'Invalid media player selection.');
             return;
         }
 
         try {
-            let videoUrl = '';
-            if (url) {
-                videoUrl = url;
-            } else {
-                setPlayButtonText('Generating Url..');
-                videoUrl = infoHash ? await generatePlayerUrlWithInfoHash(infoHash, server) : '';
+            let videoUrl = url || '';
+            if (!url && infoHash && server) {
+                setStatusText('Generating Url..');
+                videoUrl = await generatePlayerUrlWithInfoHash(infoHash, server);
                 setTimeout(() => {
-                    setPlayButtonText('URL Generated!');
+                    setStatusText('Url Generated..');
                 }, 500);
             }
+
+            if (!videoUrl) {
+                Alert.alert('Error', 'Unable to generate a valid video URL.');
+                return;
+            }
+
             const streamUrl = player.encodeUrl ? encodeURIComponent(videoUrl) : videoUrl;
             const playerUrl = `${player.scheme}${streamUrl}`;
 
             console.log(playerUrl);
             if (playerUrl) {
+                setStatusText('Opening Stream..');
                 setTimeout(() => {
-                    setPlayButtonText('Opening Player..')
+                    Linking.openURL(playerUrl);
+                    setStatusText('Stream Opened in Media Player..');
+                    setStatusText('');
                 }, 500);
-                Linking.openURL(playerUrl);
             }
         } catch (error) {
             console.error('Error during playback process:', error);
             Alert.alert('Error', 'An error occurred while trying to play the stream.');
         } finally {
-            setPlayButtonText('Play');
+            setStatusText('')
         }
     };
+
 
     if (loading) {
         return (
@@ -162,12 +174,16 @@ const StreamDetailsScreen = () => {
                 <DetailsRow label="Name" value={name} />
                 {title && <DetailsRow label="Title" value={title} />}
                 {description && <DetailsRow label="Description" value={description} multiline />}
-                <SelectionGroup
-                    title="Server"
-                    options={servers}
-                    selected={selectedServer}
-                    onSelect={setSelectedServer}
-                />
+
+                {!url && (
+                    <SelectionGroup
+                        title="Server"
+                        options={servers}
+                        selected={selectedServer}
+                        onSelect={setSelectedServer}
+                    />
+                )}
+
                 <SelectionGroup
                     title="Media Player"
                     options={players}
@@ -178,12 +194,14 @@ const StreamDetailsScreen = () => {
 
                 <View style={styles.buttonContainer}>
                     <Pressable style={styles.button} onPress={handlePlay}>
-                        <Text style={styles.buttonText}>{playButtonText}</Text>
+                        <Text style={styles.buttonText}>Play</Text>
                     </Pressable>
                 </View>
+                <Text style={styles.statusText}>{statusText}</Text>
             </View>
         </ScrollView>
     );
+
 };
 
 const DetailsRow = ({ label, value, multiline }: { label: string; value: string; multiline?: boolean }) => (
@@ -311,7 +329,8 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         alignItems: 'center',
         backgroundColor: '#535aff',
-        borderRadius: 30
+        borderRadius: 30,
+        minWidth: 150
     },
     buttonText: {
         fontSize: 16,
@@ -326,6 +345,11 @@ const styles = StyleSheet.create({
     loadingText: {
         fontSize: 16,
         color: '#666',
+    },
+    statusText: {
+        marginTop: 20,
+        fontSize: 14,
+        textAlign: 'center'
     }
 });
 

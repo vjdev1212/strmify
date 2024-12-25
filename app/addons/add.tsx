@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, ActivityIndicator, Alert, Pressable, Image, SafeAreaView, ScrollView } from 'react-native';
+import { StyleSheet, ActivityIndicator, Alert, Pressable, Image, SafeAreaView, ScrollView, useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Text, View, TextInput } from '@/components/Themed';
 import { router } from 'expo-router';
@@ -7,6 +7,7 @@ import { router } from 'expo-router';
 const defaultAddonLogo = 'https://i.ibb.co/fSJ42PJ/addon.png';
 
 export default function AddAddonScreen() {
+    const colorScheme = useColorScheme();
     const [url, setUrl] = useState('');
     const [loading, setLoading] = useState(false);
     const [manifestData, setManifestData] = useState<any>(null);
@@ -46,6 +47,7 @@ export default function AddAddonScreen() {
     };
 
     const addAddon = async () => {
+
         if (!manifestData) return;
 
         try {
@@ -77,7 +79,10 @@ export default function AddAddonScreen() {
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollViewContent}>
                 <Text style={styles.title}>Add Addon</Text>
                 <TextInput
-                    style={styles.input}
+                    style={[
+                        styles.input,
+                        colorScheme === 'dark' ? styles.darkInput : styles.lightInput,
+                    ]}
                     placeholder="Enter manifest.json URL"
                     placeholderTextColor="#B0B0B0"
                     value={url}
@@ -159,13 +164,18 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     input: {
-        height: 50,
-        borderColor: '#888',
-        borderWidth: 1,
-        borderRadius: 30,
-        paddingHorizontal: 15,
-        fontSize: 16,
-        marginBottom: 20,
+        height: 40,
+        borderRadius: 12,
+        paddingLeft: 20,
+        fontSize: 14,
+    },
+    lightInput: {
+        backgroundColor: '#f0f0f0',
+        color: '#000',
+    },
+    darkInput: {
+        backgroundColor: '#1f1f1f',
+        color: '#fff',
     },
     loading: {
         marginVertical: 20,
