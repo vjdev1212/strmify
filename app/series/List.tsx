@@ -122,7 +122,6 @@ const styles = StyleSheet.create({
   },
   centeredText: {
     fontSize: 18,
-    fontWeight: 'bold',
     textAlign: 'center',
   },
 });

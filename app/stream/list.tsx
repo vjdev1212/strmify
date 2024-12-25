@@ -216,10 +216,8 @@ const styles = StyleSheet.create({
     },
     addonName: {
         fontSize: 15,
-        fontWeight: 'bold',
     },
     selectedaddonName: {
-        fontWeight: 'bold',
         color: '#fff',
     },
     streamItemContainer: {
@@ -234,7 +232,6 @@ const styles = StyleSheet.create({
     },
     streamName: {
         fontSize: 14,
-        fontWeight: 'bold',
         marginBottom: 10,
         paddingHorizontal: 10,
     },
@@ -274,7 +271,6 @@ const styles = StyleSheet.create({
     },
     centeredText: {
         fontSize: 18,
-        fontWeight: 'bold',
         textAlign: 'center',
     },
     noStreams: {

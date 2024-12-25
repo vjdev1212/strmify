@@ -146,10 +146,8 @@ const styles = StyleSheet.create({
   },
   seasonText: {
     fontSize: 16,
-    fontWeight: 'bold',
   },
   selectedSeasonText: {
-    fontWeight: 'bold',
     color: '#fff',
   },
   episodeList: {

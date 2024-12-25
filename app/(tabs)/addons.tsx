@@ -174,7 +174,6 @@ const styles = StyleSheet.create({
   addButtonText: {
     color: '#fff',
     textAlign: 'center',
-    fontWeight: 'bold',
     fontSize: 16,
   },
   emptyText: {
@@ -237,7 +236,6 @@ const styles = StyleSheet.create({
   actionText: {
     color: '#fff',
     fontSize: 14,
-    fontWeight: 'bold',
   },
 });
 

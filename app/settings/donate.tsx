@@ -60,7 +60,6 @@ const styles = StyleSheet.create({
     donateText: {
         color: '#fff',
         fontSize: 18,
-        fontWeight: '600',
         marginLeft: 10,
     },
     icon: {
