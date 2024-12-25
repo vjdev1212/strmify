@@ -110,7 +110,6 @@ const StreamScreen = () => {
         setExpandedStream(expandedStream === stream ? null : stream); // Toggle expand on stream click
     };
 
-    // Render each addon item
     const renderAddonItem = ({ item }: any) => {
         const { name, logo, types } = item;
 
@@ -120,23 +119,31 @@ const StreamScreen = () => {
         }
 
         const addonLogo = logo || '';
+        const isSelected = item.name === selectedAddon?.name; // Compare using a unique property like `name`
+
         return (
             <TouchableOpacity
-                style={[styles.addonItem,
-                item === selectedAddon && styles.selectedAddonItem,
+                style={[
+                    styles.addonItem,
+                    isSelected && styles.selectedAddonItem,
                 ]}
                 onPress={async () => {
                     if (Platform.OS !== 'web') {
                         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     }
-                    setSelectedAddon(item); // Set selected addon
-                    fetchStreams([item]); // Fetch streams for the selected addon
+                    setSelectedAddon(item);
+                    fetchStreams([item]);
                 }}
             >
-                <Text style={[
-                    styles.addonName,
-                    item === selectedAddon && styles.selectedaddonName,
-                ]} numberOfLines={1}>{name}</Text>
+                <Text
+                    style={[
+                        styles.addonName,
+                        isSelected && styles.selectedaddonName,
+                    ]}
+                    numberOfLines={1}
+                >
+                    {name}
+                </Text>
             </TouchableOpacity>
         );
     };
@@ -250,21 +257,21 @@ const styles = StyleSheet.create({
     },
     addonList: {
         marginTop: 30,
-        marginBottom: 20
+        marginBottom: 20,
+        paddingHorizontal: 10
     },
     addonItem: {
-        marginHorizontal: 10,
+        marginHorizontal: 5,
         borderRadius: 25,
-        backgroundColor: '#535aff',
     },
     selectedAddonItem: {
         backgroundColor: '#535aff',
     },
     addonName: {
-        fontSize: 16,
+        fontSize: 15,
         fontWeight: 'bold',
-        paddingHorizontal: 30,
-        paddingVertical: 12,
+        paddingHorizontal: 20,
+        paddingVertical: 15,
         marginBottom: 5
     },
     selectedaddonName: {
