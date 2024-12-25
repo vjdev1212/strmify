@@ -6,6 +6,11 @@ import { useLocalSearchParams } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
+enum Servers {
+    Stremio = "Stremio",
+    TorrServer = "TorrServer"
+}
+
 const StreamDetailsScreen = () => {
     const [servers, setServers] = useState<{ name: string; url: string }[]>([]);
     const [players] = useState([
@@ -34,10 +39,10 @@ const StreamDetailsScreen = () => {
 
                 const loadedServers = [];
                 if (stremioConfig) {
-                    loadedServers.push({ name: 'Stremio Server', url: JSON.parse(stremioConfig).url });
+                    loadedServers.push({ name: Servers.Stremio, url: JSON.parse(stremioConfig).url });
                 }
                 if (torrServerConfig) {
-                    loadedServers.push({ name: 'TorrServer', url: JSON.parse(torrServerConfig).url });
+                    loadedServers.push({ name: Servers.TorrServer, url: JSON.parse(torrServerConfig).url });
                 }
 
                 setServers(loadedServers);
@@ -52,6 +57,61 @@ const StreamDetailsScreen = () => {
         fetchServerConfigs();
     }, []);
 
+    const callStremioServer = async (infoHash: string, serverUrl: string) => {
+        try {
+            const endpointUrl = `${serverUrl}/${infoHash}/create`;
+
+            const payload = {
+                torrent: { infoHash },
+                guessFileIdx: {},
+            };
+
+            const mediaCreateResponse = await fetch(endpointUrl, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+
+            if (mediaCreateResponse.ok) {
+                const data = await mediaCreateResponse.json();
+                return data;
+            } else {
+                throw new Error('Failed to call the server endpoint.');
+            }
+        } catch (error) {
+            console.error('Error calling Stremio server:', error);
+            Alert.alert('Error', 'Failed to contact the Stremio server. Please check your connection and try again.');
+            throw error;
+        }
+    };
+
+    const generatePlayerUrl = async (infoHash: string, server: any, player: any) => {
+        try {
+            switch (server.name) {
+                case Servers.Stremio:
+                    {
+                        const data = await callStremioServer(infoHash, server.url);
+                        const videoUrl = `${server.url}/${infoHash}/${data.guessedFileIdx || 0}`;
+                        const streamUrl = url
+                            ? (player.encodeUrl ? encodeURIComponent(url) : url)
+                            : (player.encodeUrl
+                                ? encodeURIComponent(videoUrl)
+                                : videoUrl);
+
+                        return `${player.scheme}${streamUrl}`;
+                    }
+                    break;
+                case Servers.TorrServer:
+                    return '';
+                default:
+                    return '';
+                    break;
+            }
+        } catch (error) {
+            console.error('Error generating player URL:', error);
+            throw error;
+        }
+    };
+
     const handlePlay = async () => {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
 
@@ -60,57 +120,26 @@ const StreamDetailsScreen = () => {
             return;
         }
 
-        const serverUrl = servers.find((server) => server.name === selectedServer)?.url;
-        const playerScheme = players.find((player) => player.name === selectedPlayer)?.scheme;
-        const encodeUrl = players.find((player) => player.name === selectedPlayer)?.encodeUrl; // Check if the player has the encodeUrl flag
+        const server = servers.find((server) => server.name === selectedServer);
+        const player = players.find((player) => player.name === selectedPlayer);
 
-        if (!serverUrl || !playerScheme) {
+        if (!server?.url || !player?.scheme) {
             Alert.alert('Error', 'Invalid server or player selection.');
             return;
         }
 
         try {
-            const stremioServerUrl = servers.find((server) => server.name === 'Stremio Server')?.url;
-
-            if (stremioServerUrl && infoHash) {
-                const endpointUrl = `${stremioServerUrl}/${infoHash}/create`;
-
-                const payload = {
-                    torrent: { infoHash },
-                    guessFileIdx: {},
-                };
-
-                const mediaCreateResponse = await fetch(endpointUrl, {
-                    method: 'POST',
-                    body: JSON.stringify(payload),
-                });
-
-                if (mediaCreateResponse.ok) {
-                    const data = await mediaCreateResponse.json();
-                    const videoUrl = `${serverUrl}/${infoHash}/${data.guessedFileIdx || 0}`
-                    const streamUrl = url
-                        ? (encodeUrl ? encodeURIComponent(url) : url)
-                        : (encodeUrl
-                            ? encodeURIComponent(videoUrl)
-                            : videoUrl);
-
-                    // const subbtitleApiUrl = `${serverUrl}/opensubHash?videoUrl=${encodeURIComponent(videoUrl)}`
-                    // const subtitleApiResponse = await fetch(subbtitleApiUrl);
-                    // const subtitleData = await subtitleApiResponse.json();
-                    // const size = subtitleData.result.size;
-                    // const subhash = subtitleData.result.hash;
-                    const playerUrl = `${playerScheme}${streamUrl}`;
-                    console.log(playerUrl);
-                    Linking.openURL(playerUrl);
-                } else {
-                    Alert.alert('Error', 'Failed to call the server endpoint. Please try again.');
-                }
-            } else {
-                Alert.alert('Error', 'Stremio Server URL or InfoHash is missing.');
+            let playerUrl = ''
+            if (infoHash) {
+                playerUrl = await generatePlayerUrl(infoHash, server, player);
             }
+
+            console.log(playerUrl);
+
+            Linking.openURL(playerUrl);
         } catch (error) {
-            console.error('Error calling server endpoint:', error);
-            Alert.alert('Error', 'Failed to contact the server. Please check your connection and try again.');
+            console.error('Error during playback process:', error);
+            Alert.alert('Error', 'An error occurred while trying to play the stream.');
         }
     };
 
@@ -147,9 +176,7 @@ const StreamDetailsScreen = () => {
                     {servers.map((server) => (
                         <Pressable
                             key={server.name}
-                            style={[
-                                styles.radioContainer
-                            ]}
+                            style={[styles.radioContainer]}
                             onPress={() => setSelectedServer(server.name)}
                         >
                             <View style={styles.radioRow}>
@@ -158,16 +185,14 @@ const StreamDetailsScreen = () => {
                                     <Text style={styles.radioValue}>{server.url}</Text>
                                 </View>
                                 <View>
-                                    {
-                                        selectedServer === server.name ? (
-                                            <MaterialIcons
-                                                name={'check-circle'}
-                                                size={24}
-                                                color={'#535aff'}
-                                                style={styles.radioIcon}
-                                            />
-                                        ) : (null)
-                                    }
+                                    {selectedServer === server.name && (
+                                        <MaterialIcons
+                                            name={'check-circle'}
+                                            size={24}
+                                            color={'#535aff'}
+                                            style={styles.radioIcon}
+                                        />
+                                    )}
                                 </View>
                             </View>
                         </Pressable>
@@ -179,9 +204,7 @@ const StreamDetailsScreen = () => {
                     {players.map((player) => (
                         <Pressable
                             key={player.name}
-                            style={[
-                                styles.radioContainer
-                            ]}
+                            style={[styles.radioContainer]}
                             onPress={() => setSelectedPlayer(player.name)}
                         >
                             <View style={styles.radioRow}>
@@ -189,16 +212,14 @@ const StreamDetailsScreen = () => {
                                     <Text style={styles.radioLabel}>{player.name}</Text>
                                 </View>
                                 <View>
-                                    {
-                                        selectedPlayer === player.name ? (
-                                            <MaterialIcons
-                                                name={'check-circle'}
-                                                size={24}
-                                                color={'#535aff'}
-                                                style={styles.radioIcon}
-                                            />
-                                        ) : (null)
-                                    }
+                                    {selectedPlayer === player.name && (
+                                        <MaterialIcons
+                                            name={'check-circle'}
+                                            size={24}
+                                            color={'#535aff'}
+                                            style={styles.radioIcon}
+                                        />
+                                    )}
                                 </View>
                             </View>
                         </Pressable>
@@ -211,7 +232,7 @@ const StreamDetailsScreen = () => {
                     </Pressable>
                 </View>
             </View>
-        </ScrollView >
+        </ScrollView>
     );
 };
 
