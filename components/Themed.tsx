@@ -59,3 +59,35 @@ export function View(props: ViewProps) {
 
   return <DefaultView style={[{ backgroundColor }, style]} {...otherProps} />;
 }
+
+export function Card(props: ViewProps) {
+  const { style, lightColor, darkColor, ...otherProps } = props;
+
+  // Use color scheme to decide background color based on light or dark mode
+  const colorScheme = useColorScheme();
+
+  // Dynamically adjust border and shadow based on the color scheme
+  const backgroundColor = colorScheme === 'dark' ? '#303030' : '#EFEFEF'
+  const borderColor = colorScheme === 'dark' ? '#101010' : '#DDDDDD';
+  const shadowColor = colorScheme === 'dark' ? '#101010' : '#EFEFEF';
+
+  return (
+    <DefaultView
+      style={[
+        {
+          backgroundColor,
+          borderColor,
+          borderWidth: 0.5,
+          shadowColor,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 1,
+          shadowRadius: 10,
+          elevation: 10,
+          overflow: 'hidden', 
+        },
+        style,
+      ]}
+      {...otherProps}
+    />
+  );
+}

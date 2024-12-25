@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, Image, StyleSheet, TouchableOpacity, View as RNView, Alert, Linking, Platform } from 'react-native';
-import { ActivityIndicator, Text, View } from '@/components/Themed';
+import { FlatList, Image, StyleSheet, TouchableOpacity, View as RNView, Alert, Linking, Platform, useColorScheme } from 'react-native';
+import { ActivityIndicator, Card, Text, View } from '@/components/Themed';
 import { useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics'; // Import Haptics
@@ -175,38 +175,37 @@ const StreamScreen = () => {
 
     const renderStreamItem = ({ item }: any) => {
         const { name, title, url, description } = item;
-
         const isExpanded = expandedStream === item;
         const players = ['vlc', 'infuse', 'vidhub', 'outplayer'];
 
         return (
             <RNView style={styles.streamItemContainer}>
-                <TouchableOpacity
-                    style={styles.streamItem}
-                    onPress={() => handleStreamExpand(item)}
+                <TouchableOpacity onPress={() => handleStreamExpand(item)}
                 >
-                    <Text style={styles.streamName} numberOfLines={2}>
-                        {name}
-                    </Text>
-                    <Text style={styles.streamTitle}>
-                        {title || description}
-                    </Text>
+                    <Card style={styles.streamItem}>
+                        <Text style={styles.streamName} numberOfLines={2}>
+                            {name}
+                        </Text>
+                        <Text style={styles.streamTitle}>
+                            {title || description}
+                        </Text>
 
-                    {isExpanded && (
-                        <RNView style={styles.playerIconsContainer}>
-                            {players.map((player: string) => (
-                                <TouchableOpacity
-                                    key={player}
-                                    onPress={() => handleOpenPlayer(player, url)}
-                                >
-                                    <Image
-                                        source={playerIcons[player]}
-                                        style={styles.playerIcon}
-                                    />
-                                </TouchableOpacity>
-                            ))}
-                        </RNView>
-                    )}
+                        {isExpanded && (
+                            <RNView style={styles.playerIconsContainer}>
+                                {players.map((player: string) => (
+                                    <TouchableOpacity
+                                        key={player}
+                                        onPress={() => handleOpenPlayer(player, url)}
+                                    >
+                                        <Image
+                                            source={playerIcons[player]}
+                                            style={styles.playerIcon}
+                                        />
+                                    </TouchableOpacity>
+                                ))}
+                            </RNView>
+                        )}
+                    </Card>
                 </TouchableOpacity>
             </RNView>
         );
@@ -284,23 +283,20 @@ const styles = StyleSheet.create({
     streamItem: {
         paddingHorizontal: 10,
         paddingVertical: 20,
-        borderRadius: 8,
-        width: '100%',
-        borderColor: 'gray',
-        borderBottomWidth: StyleSheet.hairlineWidth,
+        marginVertical: 10,
+        marginHorizontal: 20,
+        borderRadius: 10,
     },
     streamName: {
         fontSize: 14,
         fontWeight: '600',
-        flex: 1,
         marginBottom: 10,
-        paddingHorizontal: 10
+        paddingHorizontal: 10,
     },
     streamTitle: {
         fontSize: 13,
-        flex: 1,
         paddingHorizontal: 10,
-        color: 'gray',
+        color: '#888888',
     },
     playerIconsContainer: {
         flexDirection: 'row',
