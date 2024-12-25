@@ -122,7 +122,9 @@ const StreamScreen = () => {
         const addonLogo = logo || '';
         return (
             <TouchableOpacity
-                style={styles.addonItem}
+                style={[styles.addonItem,
+                item === selectedAddon && styles.selectedAddonItem,
+                ]}
                 onPress={async () => {
                     if (Platform.OS !== 'web') {
                         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -131,8 +133,10 @@ const StreamScreen = () => {
                     fetchStreams([item]); // Fetch streams for the selected addon
                 }}
             >
-                <Image source={{ uri: addonLogo }} style={styles.addonIcon} />
-                <Text style={styles.addonName} numberOfLines={1}>{name}</Text>
+                <Text style={[
+                    styles.addonName,
+                    item === selectedAddon && styles.selectedaddonName,
+                ]} numberOfLines={1}>{name}</Text>
             </TouchableOpacity>
         );
     };
@@ -219,18 +223,14 @@ const StreamScreen = () => {
                     </View>
                 </RNView>
             ) : (
-                <>
-                    {/* Conditionally add borderBottom when not loading */}
+                <View style={{ flex: 1 }}>
                     <FlatList
+                        style={styles.addonList}
                         data={addons}
                         renderItem={renderAddonItem}
                         keyExtractor={(item, index) => index.toString()}
                         horizontal
                         showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={[
-                            styles.addonList,
-                            !loading && styles.addonListBorder,
-                        ]}
                     />
                     <FlatList
                         data={selectedAddonStreams}
@@ -238,7 +238,7 @@ const StreamScreen = () => {
                         showsVerticalScrollIndicator={false}
                         keyExtractor={(item, index) => index.toString()}
                     />
-                </>
+                </View>
             )}
         </RNView>
     );
@@ -247,37 +247,31 @@ const StreamScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 10,
     },
     addonList: {
-        paddingVertical: 20,
-        paddingHorizontal: 20,
-    },
-    addonListBorder: {
-        borderBottomColor: 'gray',
-        borderBottomWidth: StyleSheet.hairlineWidth,
+        marginTop: 30,
+        marginBottom: 20
     },
     addonItem: {
-        alignItems: 'center',
-        marginRight: 20,
-        width: 100,
+        marginHorizontal: 10,
+        borderRadius: 25,
+        backgroundColor: '#535aff',
     },
-    addonIcon: {
-        width: 50,
-        height: 50,
-        borderRadius: 10,
-        marginBottom: 5,
+    selectedAddonItem: {
+        backgroundColor: '#535aff',
     },
     addonName: {
-        paddingVertical: 10,
-        paddingBottom: 20,
+        fontSize: 16,
         fontWeight: 'bold',
-        overflow: 'hidden',
-        textAlign: 'left',
-        flexShrink: 1,
+        paddingHorizontal: 30,
+        paddingVertical: 12,
+        marginBottom: 5
+    },
+    selectedaddonName: {
+        fontWeight: 'bold',
+        color: '#fff',
     },
     streamItemContainer: {
-        alignItems: 'center',
         width: '100%',
     },
     streamItem: {
