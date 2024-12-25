@@ -2,13 +2,17 @@ import React, { useEffect, useState } from 'react';
 import { StyleSheet, FlatList, Image, TouchableOpacity, Platform } from 'react-native';
 import { Text, View } from './Themed';
 import * as Haptics from 'expo-haptics';  // Importing Haptics for haptic feedback
+import { formatDate } from '@/utils/Date';
+import { ScrollView } from 'react-native-gesture-handler';
 
 interface Episode {
   name: string;
   season: number;
+  episode: number;
   number: number;
   thumbnail: string;
   description: string;
+  firstAired: string;
 }
 
 interface SeasonEpisodeListProps {
@@ -93,27 +97,32 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
         contentContainerStyle={styles.seasonList}
         showsHorizontalScrollIndicator={false}
       />
-      <FlatList
-        data={groupedEpisodes[selectedSeason]}
-        horizontal
-        keyExtractor={(item) => `${item.season}-${item.number}`}
-        renderItem={({ item }) => (
+      <View style={styles.episodeList}>
+        {groupedEpisodes[selectedSeason]?.map((item) => (
           <TouchableOpacity
+            key={`${item.season}-${item.number}`} // Unique key for each episode
             style={[styles.episodeContainer]}
-            onPress={() => handleEpisodeSelect(item.season, item.number)}  // Trigger haptic feedback on episode press
+            onPress={() => handleEpisodeSelect(item.season, item.number)} // Trigger haptic feedback on episode press
           >
-            <Image source={{ uri: item.thumbnail }} style={styles.thumbnail} />
-            <Text style={styles.episodeTitle} numberOfLines={1}>
-              {item.number}. {item.name}
-            </Text>
-            <Text style={styles.episodeDescription} numberOfLines={10}>
-              {item.description}
-            </Text>
+            <View style={{ flexDirection: 'row' }}>
+              <Image source={{ uri: item.thumbnail }} style={styles.thumbnail} />
+              <View style={{ flex: 1, justifyContent: 'center' }}>
+                <Text style={styles.episodeTitle} numberOfLines={3}>
+                  {item.episode}. {item.name}
+                </Text>
+                <Text style={styles.episodeAired}>
+                  {formatDate(item.firstAired)}
+                </Text>
+              </View>
+            </View>
+            <View>
+              <Text style={styles.episodeDescription} numberOfLines={10}>
+                {item.description}
+              </Text>
+            </View>
           </TouchableOpacity>
-        )}
-        contentContainerStyle={styles.episodeList}
-        showsHorizontalScrollIndicator={false}
-      />
+        ))}
+      </View>
     </View>
   );
 };
@@ -124,13 +133,13 @@ const styles = StyleSheet.create({
   },
   seasonList: {
     paddingHorizontal: 5,
-    marginBottom: 10,
+    marginVertical: 10,
   },
   seasonButton: {
     marginHorizontal: 5,
     paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 4,
+    paddingHorizontal: 20,
+    borderRadius: 25,
   },
   selectedSeasonButton: {
     backgroundColor: '#535aff',
@@ -149,24 +158,26 @@ const styles = StyleSheet.create({
   },
   episodeContainer: {
     marginHorizontal: 10,
-    marginVertical: 5,
+    marginVertical: 10
   },
   thumbnail: {
-    width: 180,
-    height: 100,
+    width: 140,
+    height: 90,
     borderRadius: 8,
+    marginRight: 15,
   },
   episodeTitle: {
-    marginTop: 15,
     fontSize: 14,
-    maxWidth: 200,
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
+    width: '100%',
+  },
+  episodeAired: {
+    marginTop: 5,
+    fontSize: 13,
+    color: 'gray',
   },
   episodeDescription: {
-    marginTop: 10,
-    fontSize: 12,
-    maxWidth: 200,
+    marginTop: 15,
+    fontSize: 14,
     color: 'gray',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
