@@ -54,7 +54,7 @@ const AddonsScreen = () => {
     }
   };
 
-  const openConfiguration = async (url: string) => {
+  const openConfiguration = async (url: string) => {    
     if (Platform.OS !== 'web') {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
@@ -99,7 +99,7 @@ const AddonsScreen = () => {
         {item.behaviorHints?.configurable && (
           <Pressable
             style={[styles.actionButton, styles.configureButton]}
-            onPress={() => openConfiguration(item.url)}
+            onPress={() => openConfiguration(item.baseUrl)}
           >
             <Text style={styles.actionText}>Configure</Text>
           </Pressable>
