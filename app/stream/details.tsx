@@ -7,8 +7,8 @@ import { MaterialIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
 enum Servers {
-    Stremio = "Stremio",
-    TorrServer = "TorrServer"
+    Stremio = 'Stremio',
+    TorrServer = 'TorrServer',
 }
 
 const StreamDetailsScreen = () => {
@@ -34,16 +34,15 @@ const StreamDetailsScreen = () => {
     useEffect(() => {
         const fetchServerConfigs = async () => {
             try {
-                const stremioConfig = await AsyncStorage.getItem('stremioServerConfig');
-                const torrServerConfig = await AsyncStorage.getItem('torrServerConfig');
+                const configs = await Promise.all([
+                    AsyncStorage.getItem('stremioServerConfig'),
+                    AsyncStorage.getItem('torrServerConfig'),
+                ]);
 
-                const loadedServers = [];
-                if (stremioConfig) {
-                    loadedServers.push({ name: Servers.Stremio, url: JSON.parse(stremioConfig).url });
-                }
-                if (torrServerConfig) {
-                    loadedServers.push({ name: Servers.TorrServer, url: JSON.parse(torrServerConfig).url });
-                }
+                const loadedServers = [
+                    configs[0] && { name: Servers.Stremio, url: JSON.parse(configs[0]).url },
+                    configs[1] && { name: Servers.TorrServer, url: JSON.parse(configs[1]).url },
+                ].filter(Boolean) as { name: string; url: string }[];
 
                 setServers(loadedServers);
             } catch (error) {
@@ -59,24 +58,16 @@ const StreamDetailsScreen = () => {
 
     const callStremioServer = async (infoHash: string, serverUrl: string) => {
         try {
-            const endpointUrl = `${serverUrl}/${infoHash}/create`;
-
-            const payload = {
-                torrent: { infoHash },
-                guessFileIdx: {},
-            };
-
-            const mediaCreateResponse = await fetch(endpointUrl, {
+            const response = await fetch(`${serverUrl}/${infoHash}/create`, {
                 method: 'POST',
-                body: JSON.stringify(payload),
+                body: JSON.stringify({ torrent: { infoHash }, guessFileIdx: {} }),
             });
 
-            if (mediaCreateResponse.ok) {
-                const data = await mediaCreateResponse.json();
-                return data;
-            } else {
+            if (!response.ok) {
                 throw new Error('Failed to call the server endpoint.');
             }
+
+            return response.json();
         } catch (error) {
             console.error('Error calling Stremio server:', error);
             Alert.alert('Error', 'Failed to contact the Stremio server. Please check your connection and try again.');
@@ -84,28 +75,21 @@ const StreamDetailsScreen = () => {
         }
     };
 
-    const generatePlayerUrl = async (infoHash: string, server: any, player: any) => {
+    const generatePlayerUrl = async (infoHash: string, server: { name: string; url: string }, player: { scheme: string; encodeUrl: boolean }) => {
         try {
-            switch (server.name) {
-                case Servers.Stremio:
-                    {
-                        const data = await callStremioServer(infoHash, server.url);
-                        const videoUrl = `${server.url}/${infoHash}/${data.guessedFileIdx || 0}`;
-                        const streamUrl = url
-                            ? (player.encodeUrl ? encodeURIComponent(url) : url)
-                            : (player.encodeUrl
-                                ? encodeURIComponent(videoUrl)
-                                : videoUrl);
-
-                        return `${player.scheme}${streamUrl}`;
-                    }
-                    break;
-                case Servers.TorrServer:
-                    return '';
-                default:
-                    return '';
-                    break;
+            if (server.name === Servers.Stremio) {
+                const data = await callStremioServer(infoHash, server.url);
+                const videoUrl = `${server.url}/${infoHash}/${data.guessedFileIdx || 0}`;
+                const streamUrl = player.encodeUrl ? encodeURIComponent(url || videoUrl) : url || videoUrl;
+                return `${player.scheme}${streamUrl}`;
             }
+
+            if (server.name === Servers.TorrServer) {
+                // Add TorrServer logic here when applicable.
+                return '';
+            }
+
+            return '';
         } catch (error) {
             console.error('Error generating player URL:', error);
             throw error;
@@ -120,23 +104,20 @@ const StreamDetailsScreen = () => {
             return;
         }
 
-        const server = servers.find((server) => server.name === selectedServer);
-        const player = players.find((player) => player.name === selectedPlayer);
+        const server = servers.find((s) => s.name === selectedServer);
+        const player = players.find((p) => p.name === selectedPlayer);
 
-        if (!server?.url || !player?.scheme) {
+        if (!server || !player) {
             Alert.alert('Error', 'Invalid server or player selection.');
             return;
         }
 
         try {
-            let playerUrl = ''
-            if (infoHash) {
-                playerUrl = await generatePlayerUrl(infoHash, server, player);
-            }
-
+            const playerUrl = infoHash ? await generatePlayerUrl(infoHash, server, player) : '';
             console.log(playerUrl);
-
-            Linking.openURL(playerUrl);
+            if (playerUrl) {
+                Linking.openURL(playerUrl);
+            }
         } catch (error) {
             console.error('Error during playback process:', error);
             Alert.alert('Error', 'An error occurred while trying to play the stream.');
@@ -154,87 +135,73 @@ const StreamDetailsScreen = () => {
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <View style={styles.mediaItem}>
-                <View style={styles.row}>
-                    <Text style={styles.label}>Name:</Text>
-                    <Text style={styles.value}>{name}</Text>
-                </View>
-                {title && (
-                    <View style={styles.row}>
-                        <Text style={styles.label}>Title:</Text>
-                        <Text style={styles.value}>{title}</Text>
-                    </View>
-                )}
-                {description && (
-                    <View style={styles.row}>
-                        <Text style={styles.label}>Description:</Text>
-                        <Text style={styles.value} numberOfLines={4}>{description}</Text>
-                    </View>
-                )}
-
-                <Text style={styles.subtitle}>Server:</Text>
-                <View style={styles.radioGroup}>
-                    {servers.map((server) => (
-                        <Pressable
-                            key={server.name}
-                            style={[styles.radioContainer]}
-                            onPress={() => setSelectedServer(server.name)}
-                        >
-                            <View style={styles.radioRow}>
-                                <View>
-                                    <Text style={styles.radioLabel}>{server.name}</Text>
-                                    <Text style={styles.radioValue}>{server.url}</Text>
-                                </View>
-                                <View>
-                                    {selectedServer === server.name && (
-                                        <MaterialIcons
-                                            name={'check-circle'}
-                                            size={24}
-                                            color={'#535aff'}
-                                            style={styles.radioIcon}
-                                        />
-                                    )}
-                                </View>
-                            </View>
-                        </Pressable>
-                    ))}
-                </View>
-
-                <Text style={styles.subtitle}>Media Player:</Text>
-                <View style={styles.radioGroup}>
-                    {players.map((player) => (
-                        <Pressable
-                            key={player.name}
-                            style={[styles.radioContainer]}
-                            onPress={() => setSelectedPlayer(player.name)}
-                        >
-                            <View style={styles.radioRow}>
-                                <View>
-                                    <Text style={styles.radioLabel}>{player.name}</Text>
-                                </View>
-                                <View>
-                                    {selectedPlayer === player.name && (
-                                        <MaterialIcons
-                                            name={'check-circle'}
-                                            size={24}
-                                            color={'#535aff'}
-                                            style={styles.radioIcon}
-                                        />
-                                    )}
-                                </View>
-                            </View>
-                        </Pressable>
-                    ))}
-                </View>
-
-                <View style={styles.buttonContainer}>
-                    <Pressable style={styles.button} onPress={handlePlay}>
-                        <Text style={styles.buttonText}>Play</Text>
-                    </Pressable>
-                </View>
+                <DetailsRow label="Name" value={name} />
+                {title && <DetailsRow label="Title" value={title} />}
+                {description && <DetailsRow label="Description" value={description} multiline />}
+                <SelectionGroup
+                    title="Server"
+                    options={servers}
+                    selected={selectedServer}
+                    onSelect={setSelectedServer}
+                />
+                <SelectionGroup
+                    title="Media Player"
+                    options={players}
+                    selected={selectedPlayer}
+                    onSelect={setSelectedPlayer}
+                />
+                <Pressable style={styles.button} onPress={handlePlay}>
+                    <Text style={styles.buttonText}>Play</Text>
+                </Pressable>
             </View>
         </ScrollView>
     );
 };
+
+const DetailsRow = ({ label, value, multiline }: { label: string; value: string; multiline?: boolean }) => (
+    <View style={styles.row}>
+        <Text style={styles.label}>{label}:</Text>
+        <Text style={[styles.value, multiline && { flexWrap: 'wrap' }]}>{value}</Text>
+    </View>
+);
+
+const SelectionGroup = ({
+    title,
+    options,
+    selected,
+    onSelect,
+}: {
+    title: string;
+    options: { name: string; url?: string }[];
+    selected: string | null;
+    onSelect: (name: string) => void;
+}) => (
+    <>
+        <Text style={styles.subtitle}>{title}:</Text>
+        <View style={styles.radioGroup}>
+            {options.map((option) => (
+                <Pressable
+                    key={option.name}
+                    style={styles.radioContainer}
+                    onPress={() => onSelect(option.name)}
+                >
+                    <View style={styles.radioRow}>
+                        <Text style={styles.radioLabel}>{option.name}</Text>
+                        {option.url && <Text style={styles.radioValue}>{option.url}</Text>}
+                        {selected === option.name && (
+                            <MaterialIcons
+                                name="check-circle"
+                                size={24}
+                                color="#535aff"
+                                style={styles.radioIcon}
+                            />
+                        )}
+                    </View>
+                </Pressable>
+            ))}
+        </View>
+    </>
+);
 
 const styles = StyleSheet.create({
     container: {
