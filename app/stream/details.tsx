@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, ScrollView, Alert, Pressable, Linking } from 'react-native';
+import { StyleSheet, ScrollView, Alert, Pressable, Linking, Image } from 'react-native';
 import { Text, View } from '@/components/Themed'; // Replace with your custom themed components
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams } from 'expo-router';
@@ -14,14 +14,15 @@ enum Servers {
 const StreamDetailsScreen = () => {
     const [servers, setServers] = useState<{ name: string; url: string }[]>([]);
     const [players] = useState([
-        { name: 'VLC', scheme: 'vlc://', encodeUrl: false },
-        { name: 'Infuse', scheme: 'infuse://x-callback-url/play?url=', encodeUrl: true },
-        { name: 'VidHub', scheme: 'open-vidhub://x-callback-url/open?url=', encodeUrl: true },
-        { name: 'OutPlayer', scheme: 'outplayer://', encodeUrl: false },
+        { name: 'VLC', scheme: 'vlc://', encodeUrl: false, icon: require('@/assets/images/players/vlc.png') },
+        { name: 'Infuse', scheme: 'infuse://x-callback-url/play?url=', encodeUrl: true, icon: require('@/assets/images/players/infuse.png') },
+        { name: 'VidHub', scheme: 'open-vidhub://x-callback-url/open?url=', encodeUrl: true, icon: require('@/assets/images/players/vidhub.png') },
+        { name: 'OutPlayer', scheme: 'outplayer://', encodeUrl: false, icon: require('@/assets/images/players/outplayer.png') },
     ]);
     const [selectedServer, setSelectedServer] = useState<string | null>(null);
     const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
+    const [playButtonText, setPlayButtonText] = useState('Play');
 
     const { name, title, description, url, infoHash } = useLocalSearchParams<{
         name: string;
@@ -113,14 +114,23 @@ const StreamDetailsScreen = () => {
         }
 
         try {
+            setPlayButtonText('Generating Url..');
             const playerUrl = infoHash ? await generatePlayerUrl(infoHash, server, player) : '';
+            setTimeout(() => {
+                setPlayButtonText('URL Generated!');
+            }, 500);
             console.log(playerUrl);
             if (playerUrl) {
+                setTimeout(() => {
+                    setPlayButtonText('Opening Player..')
+                }, 500);
                 Linking.openURL(playerUrl);
             }
         } catch (error) {
             console.error('Error during playback process:', error);
             Alert.alert('Error', 'An error occurred while trying to play the stream.');
+        } finally {
+            setPlayButtonText('Play');
         }
     };
 
@@ -149,11 +159,12 @@ const StreamDetailsScreen = () => {
                     options={players}
                     selected={selectedPlayer}
                     onSelect={setSelectedPlayer}
+                    isPlayer
                 />
 
                 <View style={styles.buttonContainer}>
                     <Pressable style={styles.button} onPress={handlePlay}>
-                        <Text style={styles.buttonText}>Play</Text>
+                        <Text style={styles.buttonText}>{playButtonText}</Text>
                     </Pressable>
                 </View>
             </View>
@@ -173,11 +184,13 @@ const SelectionGroup = ({
     options,
     selected,
     onSelect,
+    isPlayer = false,
 }: {
     title: string;
-    options: { name: string; url?: string }[];
+    options: { name: string; url?: string; icon?: any }[];
     selected: string | null;
     onSelect: (name: string) => void;
+    isPlayer?: boolean;
 }) => (
     <>
         <Text style={styles.subtitle}>{title}:</Text>
@@ -189,7 +202,10 @@ const SelectionGroup = ({
                     onPress={() => onSelect(option.name)}
                 >
                     <View style={styles.radioRow}>
-                        <Text style={styles.radioLabel}>{option.name}</Text>
+                        <View style={styles.iconLabel}>
+                            {isPlayer && option.icon && <Image source={option.icon} style={styles.playerIcon} />}
+                            <Text style={styles.radioLabel}>{option.name}</Text>
+                        </View>
                         {option.url && <Text style={styles.radioValue}>{option.url}</Text>}
                     </View>
                     <View>
@@ -238,6 +254,16 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingVertical: 5
     },
+    iconLabel: {
+        flexDirection: 'row',
+        alignItems: 'center'
+    },
+    playerIcon: {
+        width: 32,
+        height: 32,
+        marginRight: 10,
+        borderRadius: 8
+    },
     subtitle: {
         fontSize: 14,
         fontWeight: 'bold',
@@ -271,13 +297,13 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         alignItems: 'center',
         backgroundColor: '#535aff',
-        borderRadius: 30,
-        width: '50%'
+        borderRadius: 30
     },
     buttonText: {
         fontSize: 16,
         fontWeight: 'bold',
-        color: '#ffffff'
+        color: '#ffffff',
+        paddingHorizontal: 10
     },
     centeredContainer: {
         flex: 1,
@@ -287,7 +313,7 @@ const styles = StyleSheet.create({
     loadingText: {
         fontSize: 16,
         color: '#666',
-    },
+    }
 });
 
 export default StreamDetailsScreen;
