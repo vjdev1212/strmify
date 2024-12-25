@@ -77,12 +77,7 @@ export function Card(props: ViewProps) {
         {
           backgroundColor,
           borderColor,
-          borderWidth: 1,
-          shadowColor,
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 1,
-          shadowRadius: 10,
-          elevation: 10,
+          borderWidth: 1,          
           overflow: 'hidden', 
         },
         style,

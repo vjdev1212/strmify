@@ -156,12 +156,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 200,
     borderRadius: 8,
-    backgroundColor: 'white',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+    backgroundColor: 'white'
   },
   posterTitle: {
     marginTop: 8,

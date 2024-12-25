@@ -173,11 +173,6 @@ const styles = StyleSheet.create({
     dataContainer: {
         marginTop: 20,
         borderRadius: 10,
-        shadowColor: '#000',
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        shadowOffset: { width: 0, height: 2 },
-        elevation: 3,
         padding: 20,
     },
     logo: {

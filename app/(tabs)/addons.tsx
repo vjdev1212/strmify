@@ -186,12 +186,7 @@ const styles = StyleSheet.create({
   addonItem: {
     borderRadius: 10,
     padding: 15,
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3,
+    marginBottom: 15
   },
   row: {
     flexDirection: 'row',
