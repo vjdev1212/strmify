@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
   posterYear: {
     marginTop: 4,
     fontSize: 12,
-    color: '#888888',
+    color: '#888',
   },
   skeletonContainer: {
     marginRight: 15,
@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
   skeletonImage: {
     width: 100,
     height: 150,
-    backgroundColor: '#888888',
+    backgroundColor: '#888',
     borderRadius: 8,
   },
 });

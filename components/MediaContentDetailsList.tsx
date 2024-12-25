@@ -64,6 +64,7 @@ const styles = StyleSheet.create({
   value: {
     fontSize: 14,
     marginBottom: 15,
+    color: '#888',
   },
 });
 

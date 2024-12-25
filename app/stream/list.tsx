@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
     streamTitle: {
         fontSize: 13,
         paddingHorizontal: 10,
-        color: '#888888',
+        color: '#888',
     },
     playerIconsContainer: {
         flexDirection: 'row',

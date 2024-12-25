@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
   posterYear: {
     marginTop: 4,
     fontSize: 12,
-    color: '#888888',
+    color: '#888',
   },
   activityIndicator: {
     marginBottom: 10,

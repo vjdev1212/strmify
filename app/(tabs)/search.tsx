@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderRadius: 20,
     paddingLeft: 20,
-    borderColor: '#888888',
+    borderColor: '#888',
     fontSize: 16,
   },
   lightSearchInput: {
@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
   posterYear: {
     marginTop: 4,
     fontSize: 12,
-    color: '#888888',
+    color: '#888',
   },
 });
 
