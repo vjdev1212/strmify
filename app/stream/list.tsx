@@ -1,37 +1,30 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, Image, StyleSheet, Pressable, View as RNView, Alert, Linking, Platform, useColorScheme } from 'react-native';
+import { FlatList, StyleSheet, Pressable, View as RNView, Alert, Platform } from 'react-native';
 import { ActivityIndicator, Card, Text, View } from '@/components/Themed';
 import { useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Haptics from 'expo-haptics'; // Import Haptics
-
-const playerIcons: any = {
-    vlc: require('../../assets/images/players/vlc.png'),
-    vidhub: require('../../assets/images/players/vidhub.png'),
-    outplayer: require('../../assets/images/players/outplayer.png'),
-    infuse: require('../../assets/images/players/infuse.png'),
-};
+import * as Haptics from 'expo-haptics'; 
 
 const StreamScreen = () => {
     const { imdbid, type, season, episode } = useLocalSearchParams();
-    const [addons, setAddons] = useState<any[]>([]); // Addons for selection
-    const [selectedAddon, setSelectedAddon] = useState<any | null>(null); // Track selected addon
-    const [streams, setStreams] = useState<any[]>([]); // Streams for selected addon
-    const [expandedStream, setExpandedStream] = useState<any | null>(null); // Track expanded stream
-    const [loading, setLoading] = useState(false); // Set loading state false initially
-    // Fetch all addons on mount (without showing loading initially)
+    const [addons, setAddons] = useState<any[]>([]); 
+    const [selectedAddon, setSelectedAddon] = useState<any | null>(null); 
+    const [streams, setStreams] = useState<any[]>([]); 
+    const [expandedStream, setExpandedStream] = useState<any | null>(null); 
+    const [loading, setLoading] = useState(false); 
+    
     useEffect(() => {
         const fetchAddons = async () => {
             try {
                 const storedAddons = await AsyncStorage.getItem('addons');
                 const addonsData = storedAddons ? JSON.parse(storedAddons) : {};
-                const addonList = Object.values(addonsData); // Set the addon list
-                setAddons(addonList); // Set all addons
+                const addonList = Object.values(addonsData); 
+                setAddons(addonList); 
 
-                // Automatically select the first addon if available
+                
                 if (addonList.length > 0) {
                     setSelectedAddon(addonList[0]);
-                    fetchStreams(addonList); // Fetch streams in the background after initial render
+                    fetchStreams(addonList); 
                 }
             } catch (error) {
                 console.error('Error fetching addons:', error);
@@ -43,7 +36,7 @@ const StreamScreen = () => {
     }, []);
 
     const fetchStreams = async (addonList: any[]) => {
-        setLoading(true); // Start loading when fetching streams
+        setLoading(true); 
         const fetchWithTimeout = (url: string, timeout = 10000) => {
             return Promise.race([
                 fetch(url).then((response) => response.json()),
@@ -55,11 +48,11 @@ const StreamScreen = () => {
 
         try {
             const addonPromises = addonList.map(async (addon) => {
-                const addonTypes = addon?.types || []; // Get supported types for the addon
+                const addonTypes = addon?.types || []; 
 
-                // Skip addons that don't support the requested type
+                
                 if (!addonTypes.includes(type)) {
-                    return { addon, streams: [] }; // Return empty streams for unsupported addons
+                    return { addon, streams: [] }; 
                 }
 
                 const addonUrl = addon?.url || '';
@@ -73,46 +66,42 @@ const StreamScreen = () => {
                 }
 
                 try {
-                    const data = await fetchWithTimeout(streamUrl, 10000); // Fetch with timeout
-                    return { addon, streams: data.streams || [] }; // Return streams or empty if none found
+                    const data = await fetchWithTimeout(streamUrl, 10000); 
+                    return { addon, streams: data.streams || [] }; 
                 } catch (error) {
                     console.error(`Error fetching streams for addon "${addon?.name}":`, error);
-                    return { addon, streams: [] }; // Return empty streams on error
+                    return { addon, streams: [] }; 
                 }
             });
 
-            // Run all addon fetches in parallel
+            
             const allStreams = await Promise.all(addonPromises);
 
-            setStreams(allStreams); // Set the collected streams
+            setStreams(allStreams); 
 
-            // Check if no streams were found across all addons
-            const allStreamsData = allStreams.map(stream => stream.streams).flat();
         } catch (error) {
             console.error('Error fetching streams:', error);
             Alert.alert('Error', 'Failed to load streams');
         } finally {
-            setLoading(false); // End loading state
+            setLoading(false); 
         }
     };
 
-    // Handle stream selection (expand or collapse)
+    
     const handleStreamExpand = (stream: any) => {
-        Haptics.selectionAsync(); // Trigger haptics
-        setExpandedStream(expandedStream === stream ? null : stream); // Toggle expand on stream click
+        Haptics.selectionAsync(); 
+        setExpandedStream(expandedStream === stream ? null : stream); 
     };
 
     const renderAddonItem = ({ item }: any) => {
         const { name, logo, types } = item;
 
-        // Check if the addon supports the requested type
+        
         if (!types || !types.includes(type)) {
-            return null; // Skip rendering this addon if it doesn't support the requested type
+            return null; 
         }
 
-        const addonLogo = logo || '';
-        const isSelected = item.name === selectedAddon?.name; // Compare using a unique property like `name`
-
+        const isSelected = item.name === selectedAddon?.name; 
         return (
             <Pressable
                 style={[
@@ -139,36 +128,9 @@ const StreamScreen = () => {
             </Pressable>
         );
     };
-
-    // Handle opening the player with a selected stream
-    const handleOpenPlayer = async (player: string, streamUrl: string) => {
-        if (Platform.OS !== 'web') {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }
-        const playerUrls: { [key: string]: string } = {
-            vlc: `vlc://${streamUrl}`,
-            vidhub: `open-vidhub://x-callback-url/open?url=${encodeURIComponent(streamUrl)}`,
-            outplayer: `outplayer://${streamUrl}`,
-            infuse: `infuse://x-callback-url/play?url=${encodeURIComponent(streamUrl)}`,
-        };
-
-        const playerUrl = playerUrls[player];
-
-        if (!playerUrl) return;
-
-        Linking.openURL(playerUrl).catch((error) => {
-            console.error('Error opening URL:', error);
-            Alert.alert(
-                'Error',
-                `Failed to open ${player}.`
-            );
-        });
-    };
-
+    
     const renderStreamItem = ({ item }: any) => {
-        const { name, title, url, description } = item;
-        const isExpanded = expandedStream === item;
-        const players = ['vlc', 'infuse', 'vidhub', 'outplayer'];
+        const { name, title, url, infoHash, description } = item;
 
         return (
             <RNView style={styles.streamItemContainer}>
@@ -180,23 +142,7 @@ const StreamScreen = () => {
                         </Text>
                         <Text style={styles.streamTitle}>
                             {title || description}
-                        </Text>
-
-                        {isExpanded && (
-                            <RNView style={styles.playerIconsContainer}>
-                                {players.map((player: string) => (
-                                    <Pressable
-                                        key={player}
-                                        onPress={() => handleOpenPlayer(player, url)}
-                                    >
-                                        <Image
-                                            source={playerIcons[player]}
-                                            style={styles.playerIcon}
-                                        />
-                                    </Pressable>
-                                ))}
-                            </RNView>
-                        )}
+                        </Text>                        
                     </Card>
                 </Pressable>
             </RNView>
