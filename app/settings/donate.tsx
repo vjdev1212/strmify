@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity, Linking, Platform } from 'react-native';
+import { StyleSheet, Pressable, Linking, Platform } from 'react-native';
 import { View, Text } from '@/components/Themed';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics'
@@ -23,10 +23,10 @@ const DonateScreen = () => {
             <Text style={styles.subtitle}>
                 If you find this app useful and want to support its continued development, consider buying me a coffee. Your support keeps this project alive and thriving!      </Text>
 
-            <TouchableOpacity style={styles.donateButton} onPress={handleDonate}>
+            <Pressable style={styles.donateButton} onPress={handleDonate}>
                 <Ionicons name="cafe-outline" size={24} color="#fff" style={styles.icon} />
                 <Text style={styles.donateText}>Buy Me a Coffee</Text>
-            </TouchableOpacity>
+            </Pressable>
         </View>
     );
 };

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, FlatList, Image, TouchableOpacity, Platform } from 'react-native';
+import { StyleSheet, FlatList, Image, Pressable, Platform } from 'react-native';
 import { Text, View } from './Themed';
 import * as Haptics from 'expo-haptics';  // Importing Haptics for haptic feedback
 import { formatDate } from '@/utils/Date';
@@ -77,7 +77,7 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
         horizontal
         keyExtractor={(item) => `season-${item}`}
         renderItem={({ item }) => (
-          <TouchableOpacity
+          <Pressable
             style={[
               styles.seasonButton,
               item === selectedSeason && styles.selectedSeasonButton,
@@ -92,14 +92,14 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
             >
               {item === 0 ? 'Specials' : `Season ${item}`}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         )}
         contentContainerStyle={styles.seasonList}
         showsHorizontalScrollIndicator={false}
       />
       <View style={styles.episodeList}>
         {groupedEpisodes[selectedSeason]?.map((item) => (
-          <TouchableOpacity
+          <Pressable
             key={`${item.season}-${item.number}`} // Unique key for each episode
             style={[styles.episodeContainer]}
             onPress={() => handleEpisodeSelect(item.season, item.number)} // Trigger haptic feedback on episode press
@@ -120,7 +120,7 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
                 {item.description}
               </Text>
             </View>
-          </TouchableOpacity>
+          </Pressable>
         ))}
       </View>
     </View>

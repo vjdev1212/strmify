@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity, Linking, Platform } from 'react-native';
+import { StyleSheet, Pressable, Linking, Platform } from 'react-native';
 import { View, Text } from '@/components/Themed';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics'
@@ -23,7 +23,7 @@ const ContactScreen = () => {
         <View style={styles.container}>
             <View style={styles.contactList}>
                 {contactInfo.map((item, index) => (
-                    <TouchableOpacity
+                    <Pressable
                         key={index}
                         style={styles.contactItem}
                         onPress={item.action}
@@ -33,7 +33,7 @@ const ContactScreen = () => {
                             <Text style={styles.type}>{item.type}</Text>
                             <Text style={styles.value}>{item.value}</Text>
                         </View>
-                    </TouchableOpacity>
+                    </Pressable>
                 ))}
             </View>
         </View>

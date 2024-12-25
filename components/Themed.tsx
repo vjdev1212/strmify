@@ -67,7 +67,7 @@ export function Card(props: ViewProps) {
   const colorScheme = useColorScheme();
 
   // Dynamically adjust border and shadow based on the color scheme
-  const backgroundColor = colorScheme === 'dark' ? '#303030' : '#EFEFEF'
+  const backgroundColor = colorScheme === 'dark' ? '#101010' : '#FAFAFA';
   const borderColor = colorScheme === 'dark' ? '#101010' : '#DDDDDD';
   const shadowColor = colorScheme === 'dark' ? '#101010' : '#EFEFEF';
 
@@ -77,7 +77,7 @@ export function Card(props: ViewProps) {
         {
           backgroundColor,
           borderColor,
-          borderWidth: 0.5,
+          borderWidth: 1,
           shadowColor,
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: 1,

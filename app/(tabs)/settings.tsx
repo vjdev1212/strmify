@@ -1,5 +1,5 @@
 import React from 'react';
-import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Platform, StyleSheet, Pressable, View } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'; // Import icons from Expo
 import { Text } from '@/components/Themed'; // Assuming you have a Themed Text component
 import { useRouter } from 'expo-router';
@@ -19,11 +19,11 @@ const SettingsScreen = () => {
 
   // SettingItem Component
   const SettingItem = ({ title, icon, onPress }: { title: string, icon: string, onPress: () => void }) => (
-    <TouchableOpacity style={styles.settingItem} onPress={onPress}>
+    <Pressable style={styles.settingItem} onPress={onPress}>
       <Ionicons name={icon} size={24} color="#535aff" style={styles.icon} />
       <Text style={styles.settingText}>{title}</Text>
       <MaterialIcons name="chevron-right" size={24} color="#535aff" style={styles.chevron} />
-    </TouchableOpacity>
+    </Pressable>
   );
 
   const onSettingsItemPress = async (item: any) => {

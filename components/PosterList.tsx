@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, Image, StyleSheet, TouchableOpacity, View as RNView, Platform } from 'react-native';
+import { FlatList, Image, StyleSheet, Pressable, View as RNView, Platform } from 'react-native';
 import { Text, View } from './Themed';
 import { Link, router } from 'expo-router';
 import * as Haptics from 'expo-haptics'; // Importing Haptics for haptic feedback
@@ -60,7 +60,7 @@ const PosterList = ({
 
     return (
       <RNView>
-        <TouchableOpacity
+        <Pressable
           style={[styles.posterContainer, layout === 'vertical' && styles.verticalContainer]}
           onPress={() => handlePress(item)}
         >
@@ -72,7 +72,7 @@ const PosterList = ({
             {item.name}
           </Text>
           <Text style={styles.posterYear}>{year}</Text>
-        </TouchableOpacity>
+        </Pressable>
       </RNView>
     );
   };
@@ -91,9 +91,9 @@ const PosterList = ({
     <RNView style={styles.container}>
       <RNView style={styles.header}>
         <Text style={styles.title}>{title}</Text>
-        <TouchableOpacity onPress={handleSeeAllPress}>
+        <Pressable onPress={handleSeeAllPress}>
           <Text style={styles.seeAllText}>See All</Text>
-        </TouchableOpacity>
+        </Pressable>
       </RNView>
 
       {loading ? (

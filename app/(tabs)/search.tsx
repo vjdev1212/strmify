@@ -2,7 +2,7 @@ import { Text, ActivityIndicator, TextInput, View } from '@/components/Themed';
 import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { Platform, View as RNView, SafeAreaView } from 'react-native';
-import { StyleSheet, FlatList, Image, TouchableOpacity } from 'react-native';
+import { StyleSheet, FlatList, Image, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from 'react-native';
 import * as Haptics from 'expo-haptics';
@@ -54,17 +54,17 @@ const SearchScreen = () => {
 
   const renderMoviePoster = ({ item }: { item: any }) => {
     return (
-      <TouchableOpacity>
+      <Pressable>
         <PosterContent item={item} type='movie' />
-      </TouchableOpacity>
+      </Pressable>
     );
   };
 
   const renderSeriesPoster = ({ item }: { item: any }) => {
     return (
-      <TouchableOpacity>
+      <Pressable>
         <PosterContent item={item} type='series' />
-      </TouchableOpacity>
+      </Pressable>
     );
   };
 
@@ -83,13 +83,13 @@ const SearchScreen = () => {
     return (
       <SafeAreaView>
         <RNView>
-          <TouchableOpacity style={styles.posterContainer} onPress={handlePress}>
+          <Pressable style={styles.posterContainer} onPress={handlePress}>
             <Image source={{ uri: item.poster }} style={styles.posterImage} />
             <Text numberOfLines={1} ellipsizeMode="tail" style={styles.posterTitle}>
               {item.name}
             </Text>
             <Text style={styles.posterYear}>{item.releaseInfo}</Text>
-          </TouchableOpacity>
+          </Pressable>
         </RNView>
       </SafeAreaView>
     );
@@ -120,9 +120,9 @@ const SearchScreen = () => {
           onChangeText={setQuery}
         />
         {query.length > 0 && (
-          <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
+          <Pressable onPress={clearSearch} style={styles.clearButton}>
             <Ionicons name="close-circle" size={24} color="gray" />
-          </TouchableOpacity>
+          </Pressable>
         )}
       </View>
 

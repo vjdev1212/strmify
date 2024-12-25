@@ -1,10 +1,10 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { Pressable, Text, StyleSheet } from 'react-native';
 
 const PlayButton = ({ onPress }: { onPress: () => void }) => (
-  <TouchableOpacity style={styles.button} onPress={onPress}>
+  <Pressable style={styles.button} onPress={onPress}>
     <Text style={styles.text}>Search Movie</Text>
-  </TouchableOpacity>
+  </Pressable>
 );
 
 const styles = StyleSheet.create({

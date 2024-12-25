@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Switch, Button, Alert, TouchableOpacity } from 'react-native';
+import { StyleSheet, Switch, Button, Alert, Pressable } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, Text, TextInput } from '@/components/Themed';
 
@@ -71,9 +71,9 @@ const TorrServerScreen = () => {
                 autoCapitalize="none"
             />
 
-            <TouchableOpacity onPress={handleSave}>
+            <Pressable onPress={handleSave}>
                 <Text style={styles.saveBtn}>Save</Text>
-            </TouchableOpacity>
+            </Pressable>
         </View>
     );
 };

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, Image, StyleSheet, TouchableOpacity, View as RNView, Alert, Linking, Platform, useColorScheme } from 'react-native';
+import { FlatList, Image, StyleSheet, Pressable, View as RNView, Alert, Linking, Platform, useColorScheme } from 'react-native';
 import { ActivityIndicator, Card, Text, View } from '@/components/Themed';
 import { useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -122,7 +122,7 @@ const StreamScreen = () => {
         const isSelected = item.name === selectedAddon?.name; // Compare using a unique property like `name`
 
         return (
-            <TouchableOpacity
+            <Pressable
                 style={[
                     styles.addonItem,
                     isSelected && styles.selectedAddonItem,
@@ -144,7 +144,7 @@ const StreamScreen = () => {
                 >
                     {name}
                 </Text>
-            </TouchableOpacity>
+            </Pressable>
         );
     };
 
@@ -180,7 +180,7 @@ const StreamScreen = () => {
 
         return (
             <RNView style={styles.streamItemContainer}>
-                <TouchableOpacity onPress={() => handleStreamExpand(item)}
+                <Pressable onPress={() => handleStreamExpand(item)}
                 >
                     <Card style={styles.streamItem}>
                         <Text style={styles.streamName} numberOfLines={2}>
@@ -193,7 +193,7 @@ const StreamScreen = () => {
                         {isExpanded && (
                             <RNView style={styles.playerIconsContainer}>
                                 {players.map((player: string) => (
-                                    <TouchableOpacity
+                                    <Pressable
                                         key={player}
                                         onPress={() => handleOpenPlayer(player, url)}
                                     >
@@ -201,12 +201,12 @@ const StreamScreen = () => {
                                             source={playerIcons[player]}
                                             style={styles.playerIcon}
                                         />
-                                    </TouchableOpacity>
+                                    </Pressable>
                                 ))}
                             </RNView>
                         )}
                     </Card>
-                </TouchableOpacity>
+                </Pressable>
             </RNView>
         );
     };
@@ -229,7 +229,7 @@ const StreamScreen = () => {
                     </View>
                 </RNView>
             ) : (
-                <View style={{ flex: 1 }}>
+                <View style={styles.contentContainer}>
                     <FlatList
                         style={styles.addonList}
                         data={addons}
@@ -253,6 +253,8 @@ const StreamScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+    },
+    contentContainer: {        
     },
     addonList: {
         marginTop: 30,

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, ActivityIndicator, Alert, TouchableOpacity, Image, SafeAreaView, ScrollView } from 'react-native';
+import { StyleSheet, ActivityIndicator, Alert, Pressable, Image, SafeAreaView, ScrollView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Text, View, TextInput } from '@/components/Themed';
 import { router } from 'expo-router';
@@ -92,9 +92,9 @@ export default function AddAddonScreen() {
 
                 {manifestData && (
                     <View style={styles.dataContainer}>
-                        <TouchableOpacity style={styles.addButton} onPress={addAddon}>
+                        <Pressable style={styles.addButton} onPress={addAddon}>
                             <Text style={styles.addButtonText}>+ Add Addon</Text>
-                        </TouchableOpacity>
+                        </Pressable>
 
                         {manifestData.logo && (
                             <Image

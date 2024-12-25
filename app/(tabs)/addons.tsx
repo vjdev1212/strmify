@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
-  TouchableOpacity,
+  Pressable,
   Image,
   Alert,
   ScrollView,
@@ -90,21 +90,21 @@ const AddonsScreen = () => {
       </View>
       <Text style={styles.addonDescription}>{item.description}</Text>
       <View style={styles.actions}>
-        <TouchableOpacity
+        <Pressable
           style={[styles.actionButton, styles.shareButton]}
           onPress={() => shareManifestUrl(item.manifestUrl)}
         >
           <Text style={styles.actionText}>Share</Text>
-        </TouchableOpacity>
+        </Pressable>
         {item.behaviorHints?.configurable && (
-          <TouchableOpacity
+          <Pressable
             style={[styles.actionButton, styles.configureButton]}
             onPress={() => openConfiguration(item.url)}
           >
             <Text style={styles.actionText}>Configure</Text>
-          </TouchableOpacity>
+          </Pressable>
         )}
-        <TouchableOpacity
+        <Pressable
           style={[styles.actionButton, styles.removeButton]}
           onPress={async () => {
             if (Platform.OS !== 'web') {
@@ -125,7 +125,7 @@ const AddonsScreen = () => {
           }
         >
           <Text style={styles.actionText}>Remove</Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
     </View>
   );
@@ -139,9 +139,9 @@ const AddonsScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity style={styles.addButton} onPress={onAddNewPress}>
+      <Pressable style={styles.addButton} onPress={onAddNewPress}>
         <Text style={styles.addButtonText}>Add New</Text>
-      </TouchableOpacity>
+      </Pressable>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.contentContainer}>
         {addons.length > 0 ? (
           addons.map(renderAddonItem)

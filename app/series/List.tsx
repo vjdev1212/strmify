@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, Image, StyleSheet, TouchableOpacity, View as RNView, Platform } from 'react-native';
+import { FlatList, Image, StyleSheet, Pressable, View as RNView, Platform } from 'react-native';
 import { ActivityIndicator, Text, View } from '@/components/Themed';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';  // Importing Haptics for haptic feedback
@@ -42,7 +42,7 @@ const SeriesList = () => {
 
     return (
       <RNView>
-        <TouchableOpacity
+        <Pressable
           style={styles.posterContainer}
           onPress={() => handlePress(item)}  // Handle press and trigger haptic feedback
         >
@@ -51,7 +51,7 @@ const SeriesList = () => {
             {item.name}
           </Text>
           <Text style={styles.posterYear}>{year}</Text>
-        </TouchableOpacity>
+        </Pressable>
       </RNView>
     );
   };
