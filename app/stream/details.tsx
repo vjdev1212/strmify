@@ -3,9 +3,18 @@ import { StyleSheet, Pressable, ScrollView, Alert, Linking } from 'react-native'
 import { Card, Text, View } from '@/components/Themed'; // Replace with your custom themed components
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams } from 'expo-router';
+import Checkbox from 'expo-checkbox';
 
 const StreamDetailsScreen = () => {
     const [servers, setServers] = useState<{ name: string; url: string }[]>([]);
+    const [players] = useState([
+        { name: 'VLC', scheme: 'vlc-x-callback://x-callback-url/stream?url=' },
+        { name: 'Infuse', scheme: 'infuse://x-callback-url/play?url=' },
+        { name: 'VidHub', scheme: 'vidhub://play?url=' },
+        { name: 'OutPlayer', scheme: 'outplayer://x-callback-url/stream?url=' },
+    ]);
+    const [selectedServer, setSelectedServer] = useState<string | null>(null);
+    const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
     const { name, title, description, url, infoHash } = useLocalSearchParams<{
@@ -42,17 +51,32 @@ const StreamDetailsScreen = () => {
         fetchServerConfigs();
     }, []);
 
-    const handlePlay = (streamUrl: string) => {
-        const vlcUrl = `vlc-x-callback://x-callback-url/stream?url=${encodeURIComponent(streamUrl)}`;
-        Linking.canOpenURL(vlcUrl)
+    const handlePlay = () => {
+        if (!selectedServer || !selectedPlayer) {
+            Alert.alert('Error', 'Please select both a server and a media player.');
+            return;
+        }
+
+        const serverUrl = servers.find((server) => server.name === selectedServer)?.url;
+        const playerScheme = players.find((player) => player.name === selectedPlayer)?.scheme;
+
+        if (!serverUrl || !playerScheme) {
+            Alert.alert('Error', 'Invalid server or player selection.');
+            return;
+        }
+
+        const streamUrl = url ? url : `${serverUrl}/stream/${infoHash}`;
+        const playerUrl = `${playerScheme}${encodeURIComponent(streamUrl)}`;
+
+        Linking.canOpenURL(playerUrl)
             .then((supported) => {
                 if (supported) {
-                    Linking.openURL(vlcUrl);
+                    Linking.openURL(playerUrl);
                 } else {
-                    Alert.alert('Error', 'VLC player is not installed or does not support this URL scheme.');
+                    Alert.alert('Error', `${selectedPlayer} is not installed or does not support this URL scheme.`);
                 }
             })
-            .catch((error) => console.error('Error opening VLC:', error));
+            .catch((error) => console.error('Error opening media player:', error));
     };
 
     if (loading) {
@@ -86,29 +110,32 @@ const StreamDetailsScreen = () => {
                         <Text style={styles.value}>{infoHash}</Text>
                     </View>
                 )}
-                {url ? (
-                    <Pressable
-                        style={styles.button}
-                        onPress={() => handlePlay(url)}
-                    >
-                        <Text style={styles.buttonText}>Play with VLC</Text>
-                    </Pressable>
-                ) : infoHash ? (
-                    <View>
-                        <Text style={styles.subtitle}>Choose a server to stream:</Text>
-                        {servers.map((server) => (
-                            <Pressable
-                                key={server.name}
-                                style={styles.button}
-                                onPress={() => handlePlay(`${server.url}/stream/${infoHash}`)}
-                            >
-                                <Text style={styles.buttonText}>{server.name}</Text>
-                            </Pressable>
-                        ))}
+
+                <Text style={styles.subtitle}>Select a server:</Text>
+                {servers.map((server) => (
+                    <View key={server.name} style={styles.checkboxContainer}>
+                        <Checkbox
+                            value={selectedServer === server.name}
+                            onValueChange={() => setSelectedServer(server.name)}
+                        />
+                        <Text style={styles.checkboxLabel}>{server.name}</Text>
                     </View>
-                ) : (
-                    <Text style={styles.errorText}>Invalid media item: No URL or infoHash provided.</Text>
-                )}
+                ))}
+
+                <Text style={styles.subtitle}>Select a media player:</Text>
+                {players.map((player) => (
+                    <View key={player.name} style={styles.checkboxContainer}>
+                        <Checkbox
+                            value={selectedPlayer === player.name}
+                            onValueChange={() => setSelectedPlayer(player.name)}
+                        />
+                        <Text style={styles.checkboxLabel}>{player.name}</Text>
+                    </View>
+                ))}
+
+                <Pressable style={styles.button} onPress={handlePlay}>
+                    <Text style={styles.buttonText}>Play</Text>
+                </Pressable>
             </View>
         </ScrollView>
     );
@@ -126,7 +153,7 @@ const styles = StyleSheet.create({
     },
     row: {
         flexDirection: 'row',
-        marginBottom: 20
+        marginBottom: 20,
     },
     label: {
         fontSize: 14,
@@ -137,8 +164,22 @@ const styles = StyleSheet.create({
         fontSize: 14,
         flex: 3,
     },
-    button: {
+    subtitle: {
         marginTop: 10,
+        fontSize: 14,
+        fontWeight: 'bold',
+    },
+    checkboxContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 10,
+    },
+    checkboxLabel: {
+        marginLeft: 8,
+        fontSize: 14,
+    },
+    button: {
+        marginTop: 20,
         padding: 10,
         borderRadius: 5,
         borderWidth: 1,
@@ -147,16 +188,6 @@ const styles = StyleSheet.create({
     buttonText: {
         fontSize: 14,
         fontWeight: '600',
-    },
-    subtitle: {
-        marginTop: 10,
-        fontSize: 14,
-        fontWeight: 'bold',
-    },
-    errorText: {
-        marginTop: 10,
-        fontSize: 12,
-        color: '#ff4d4d',
     },
     centeredContainer: {
         flex: 1,
