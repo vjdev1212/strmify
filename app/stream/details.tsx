@@ -11,13 +11,20 @@ enum Servers {
     TorrServer = 'TorrServer',
 }
 
+enum Players {
+    VLC = 'VLC',
+    Infuse = 'Infuse',
+    VidHub = 'VidHub',
+    OutPlayer = 'OutPlayer'
+}
+
 const StreamDetailsScreen = () => {
     const [servers, setServers] = useState<{ name: string; url: string }[]>([]);
     const [players] = useState([
-        { name: 'VLC', scheme: 'vlc://', encodeUrl: false, icon: require('@/assets/images/players/vlc.png') },
-        { name: 'Infuse', scheme: 'infuse://x-callback-url/play?url=', encodeUrl: true, icon: require('@/assets/images/players/infuse.png') },
-        { name: 'VidHub', scheme: 'open-vidhub://x-callback-url/open?url=', encodeUrl: true, icon: require('@/assets/images/players/vidhub.png') },
-        { name: 'OutPlayer', scheme: 'outplayer://', encodeUrl: false, icon: require('@/assets/images/players/outplayer.png') },
+        { name: Players.VLC, scheme: 'vlc://', encodeUrl: false, icon: require('@/assets/images/players/vlc.png') },
+        { name: Players.Infuse, scheme: 'infuse://x-callback-url/play?url=', encodeUrl: true, icon: require('@/assets/images/players/infuse.png') },
+        { name: Players.VidHub, scheme: 'open-vidhub://x-callback-url/open?url=', encodeUrl: true, icon: require('@/assets/images/players/vidhub.png') },
+        { name: Players.OutPlayer, scheme: 'outplayer://', encodeUrl: false, icon: require('@/assets/images/players/outplayer.png') },
     ]);
     const [selectedServer, setSelectedServer] = useState<string | null>(null);
     const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
@@ -76,13 +83,12 @@ const StreamDetailsScreen = () => {
         }
     };
 
-    const generatePlayerUrl = async (infoHash: string, server: { name: string; url: string }, player: { scheme: string; encodeUrl: boolean }) => {
+    const generatePlayerUrlWithInfoHash = async (infoHash: string, server: { name: string; url: string }) => {
         try {
             if (server.name === Servers.Stremio) {
                 const data = await callStremioServer(infoHash, server.url);
                 const videoUrl = `${server.url}/${infoHash}/${data.guessedFileIdx || 0}`;
-                const streamUrl = player.encodeUrl ? encodeURIComponent(url || videoUrl) : url || videoUrl;
-                return `${player.scheme}${streamUrl}`;
+                return videoUrl;
             }
 
             if (server.name === Servers.TorrServer) {
@@ -114,11 +120,19 @@ const StreamDetailsScreen = () => {
         }
 
         try {
-            setPlayButtonText('Generating Url..');
-            const playerUrl = infoHash ? await generatePlayerUrl(infoHash, server, player) : '';
-            setTimeout(() => {
-                setPlayButtonText('URL Generated!');
-            }, 500);
+            let videoUrl = '';
+            if (url) {
+                videoUrl = url;
+            } else {
+                setPlayButtonText('Generating Url..');
+                videoUrl = infoHash ? await generatePlayerUrlWithInfoHash(infoHash, server) : '';
+                setTimeout(() => {
+                    setPlayButtonText('URL Generated!');
+                }, 500);
+            }
+            const streamUrl = player.encodeUrl ? encodeURIComponent(videoUrl) : videoUrl;
+            const playerUrl = `${player.scheme}${streamUrl}`;
+
             console.log(playerUrl);
             if (playerUrl) {
                 setTimeout(() => {
