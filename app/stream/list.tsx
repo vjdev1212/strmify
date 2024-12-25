@@ -147,6 +147,18 @@ const StreamScreen = () => {
     const selectedAddonStreams = streams.find((addonData) => addonData.addon === selectedAddon)?.streams || [];
     return (
         <RNView style={styles.container}>
+            <View>
+                <View style={styles.addonListContainer}>
+                    <FlatList
+                        style={styles.addonList}
+                        data={addons}
+                        renderItem={renderAddonItem}
+                        keyExtractor={(item, index) => index.toString()}
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                    />
+                </View>
+            </View>
             {loading ? (
                 <RNView style={styles.loadingContainer}>
                     <View style={styles.centeredContainer}>
@@ -156,16 +168,6 @@ const StreamScreen = () => {
                 </RNView>
             ) : (
                 <View>
-                    <View style={styles.addonListContainer}>
-                        <FlatList
-                            style={styles.addonList}
-                            data={addons}
-                            renderItem={renderAddonItem}
-                            keyExtractor={(item, index) => index.toString()}
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                        />
-                    </View>
                     {
                         selectedAddonStreams.length === 0 ? (
                             <Text style={styles.noStreams}>No streams found</Text>
