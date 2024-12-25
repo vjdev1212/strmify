@@ -19,8 +19,6 @@ const StreamScreen = () => {
     const [streams, setStreams] = useState<any[]>([]); // Streams for selected addon
     const [expandedStream, setExpandedStream] = useState<any | null>(null); // Track expanded stream
     const [loading, setLoading] = useState(false); // Set loading state false initially
-    const [noStreamsFound, setNoStreamsFound] = useState(false); // Flag to track no streams found
-
     // Fetch all addons on mount (without showing loading initially)
     useEffect(() => {
         const fetchAddons = async () => {
@@ -46,8 +44,6 @@ const StreamScreen = () => {
 
     const fetchStreams = async (addonList: any[]) => {
         setLoading(true); // Start loading when fetching streams
-        setNoStreamsFound(false); // Reset "No streams found" flag
-
         const fetchWithTimeout = (url: string, timeout = 10000) => {
             return Promise.race([
                 fetch(url).then((response) => response.json()),
@@ -92,13 +88,9 @@ const StreamScreen = () => {
 
             // Check if no streams were found across all addons
             const allStreamsData = allStreams.map(stream => stream.streams).flat();
-            if (allStreamsData.length === 0) {
-                setNoStreamsFound(true); // Set the flag if no streams found
-            }
         } catch (error) {
             console.error('Error fetching streams:', error);
             Alert.alert('Error', 'Failed to load streams');
-            setNoStreamsFound(true); // Set the flag if an error occurs
         } finally {
             setLoading(false); // End loading state
         }
@@ -212,7 +204,6 @@ const StreamScreen = () => {
     };
 
     const selectedAddonStreams = streams.find((addonData) => addonData.addon === selectedAddon)?.streams || [];
-
     return (
         <RNView style={styles.container}>
             {loading ? (
@@ -220,12 +211,6 @@ const StreamScreen = () => {
                     <View style={styles.centeredContainer}>
                         <ActivityIndicator size="large" style={styles.activityIndicator} color="#535aff" />
                         <Text style={styles.centeredText}>Loading</Text>
-                    </View>
-                </RNView>
-            ) : noStreamsFound ? (
-                <RNView style={styles.loadingContainer}>
-                    <View style={styles.centeredContainer}>
-                        <Text style={styles.centeredText}>No streams found</Text>
                     </View>
                 </RNView>
             ) : (
@@ -238,12 +223,18 @@ const StreamScreen = () => {
                         horizontal
                         showsHorizontalScrollIndicator={false}
                     />
-                    <FlatList
-                        data={selectedAddonStreams}
-                        renderItem={renderStreamItem}
-                        showsVerticalScrollIndicator={false}
-                        keyExtractor={(item, index) => index.toString()}
-                    />
+                    {
+                        selectedAddonStreams.length === 0 ? (
+                            <Text style={styles.noStreams}>No streams found</Text>
+                        ) : (
+                            <FlatList
+                                data={selectedAddonStreams}
+                                renderItem={renderStreamItem}
+                                showsVerticalScrollIndicator={false}
+                                keyExtractor={(item, index) => index.toString()}
+                            />
+                        )
+                    }
                 </View>
             )}
         </RNView>
@@ -254,12 +245,12 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
-    contentContainer: {        
+    contentContainer: {
     },
     addonList: {
         marginTop: 30,
         marginBottom: 20,
-        paddingHorizontal: 10
+        paddingHorizontal: 10,
     },
     addonItem: {
         marginHorizontal: 5,
@@ -330,6 +321,12 @@ const styles = StyleSheet.create({
         padding: 20,
     },
     centeredText: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        textAlign: 'center',
+    },
+    noStreams: {
+        marginTop: '25%',
         fontSize: 18,
         fontWeight: 'bold',
         textAlign: 'center',
