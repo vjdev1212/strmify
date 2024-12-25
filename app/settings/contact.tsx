@@ -12,7 +12,7 @@ const ContactScreen = () => {
             icon: 'mail-outline',
             action: async () => {
                 if (Platform.OS !== 'web') {
-                    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
                 }
                 Linking.openURL('mailto:vcmvijay@gmail.com')
             },

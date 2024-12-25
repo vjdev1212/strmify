@@ -33,7 +33,7 @@ const MoviesList = () => {
 
     const handlePress = async () => {
       if (Platform.OS !== 'web') {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
       } router.push({
         pathname: '/movie/details',
         params: { imdbid: item.imdb_id || item.id },

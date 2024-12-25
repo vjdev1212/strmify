@@ -105,7 +105,7 @@ const StreamScreen = () => {
                 ]}
                 onPress={async () => {
                     if (Platform.OS !== 'web') {
-                        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
                     }
                     setSelectedAddon(item);
                     fetchStreams([item]);

@@ -54,7 +54,7 @@ const MovieDetails = () => {
 
   const handlePlayPress = async () => {
     if (Platform.OS !== 'web') {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
     } router.push({
       pathname: '/stream/list',
       params: { imdbid: data.imdb_id, type: 'movie', season: 0, episode: 0 },

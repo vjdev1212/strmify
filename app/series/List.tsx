@@ -30,7 +30,7 @@ const SeriesList = () => {
 
   const handlePress = async (item: any) => {
     if (Platform.OS !== 'web') {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
     } router.push({
       pathname: '/series/details',
       params: { imdbid: item.imdb_id || item.id },

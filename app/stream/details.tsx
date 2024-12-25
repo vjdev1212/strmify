@@ -4,14 +4,15 @@ import { Text, View } from '@/components/Themed'; // Replace with your custom th
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 
 const StreamDetailsScreen = () => {
     const [servers, setServers] = useState<{ name: string; url: string }[]>([]);
     const [players] = useState([
-        { name: 'VLC', scheme: 'vlc-x-callback://x-callback-url/stream?url=' },
+        { name: 'VLC', scheme: 'vlc://' },
         { name: 'Infuse', scheme: 'infuse://x-callback-url/play?url=' },
-        { name: 'VidHub', scheme: 'vidhub://play?url=' },
-        { name: 'OutPlayer', scheme: 'outplayer://x-callback-url/stream?url=' },
+        { name: 'VidHub', scheme: 'open-vidhub://x-callback-url/open?url=' },
+        { name: 'OutPlayer', scheme: 'outplayer://' },
     ]);
     const [selectedServer, setSelectedServer] = useState<string | null>(null);
     const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
@@ -51,7 +52,9 @@ const StreamDetailsScreen = () => {
         fetchServerConfigs();
     }, []);
 
-    const handlePlay = () => {
+    const handlePlay = async () => {
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+
         if (!selectedServer || !selectedPlayer) {
             Alert.alert('Error', 'Please select both a server and a media player.');
             return;
@@ -65,18 +68,37 @@ const StreamDetailsScreen = () => {
             return;
         }
 
-        const streamUrl = url ? url : `${serverUrl}/stream/${infoHash}`;
-        const playerUrl = `${playerScheme}${encodeURIComponent(streamUrl)}`;
+        try {
+            const stremioServerUrl = servers.find((server) => server.name === 'Stremio Server')?.url;
 
-        Linking.canOpenURL(playerUrl)
-            .then((supported) => {
-                if (supported) {
+            if (stremioServerUrl && infoHash) {
+                const endpointUrl = `${stremioServerUrl}/${infoHash}/create`;
+
+                const payload = {
+                    torrent: { infoHash },
+                    guessFileIdx: {},
+                };
+
+                const response = await fetch(endpointUrl, {
+                    method: 'POST',
+                    body: JSON.stringify(payload),
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const streamUrl = url ? encodeURIComponent(url) : encodeURIComponent(`${serverUrl}/${infoHash}/${data.guessedFileIdx || 0}`);
+                    const playerUrl = `${playerScheme}${streamUrl}`;
                     Linking.openURL(playerUrl);
                 } else {
-                    Alert.alert('Error', `${selectedPlayer} is not installed or does not support this URL scheme.`);
+                    Alert.alert('Error', 'Failed to call the server endpoint. Please try again.');
                 }
-            })
-            .catch((error) => console.error('Error opening media player:', error));
+            } else {
+                Alert.alert('Error', 'Stremio Server URL or InfoHash is missing.');
+            }
+        } catch (error) {
+            console.error('Error calling server endpoint:', error);
+            Alert.alert('Error', 'Failed to contact the server. Please check your connection and try again.');
+        }
     };
 
     if (loading) {
@@ -176,9 +198,11 @@ const StreamDetailsScreen = () => {
                     ))}
                 </View>
 
-                <Pressable style={styles.button} onPress={handlePlay}>
-                    <Text style={styles.buttonText}>Play</Text>
-                </Pressable>
+                <View style={styles.buttonContainer}>
+                    <Pressable style={styles.button} onPress={handlePlay}>
+                        <Text style={styles.buttonText}>Play</Text>
+                    </Pressable>
+                </View>
             </View>
         </ScrollView >
     );
@@ -228,7 +252,7 @@ const styles = StyleSheet.create({
     },
     radioLabel: {
         fontSize: 14,
-        marginRight: 10,        
+        marginRight: 10,
     },
     radioValue: {
         fontSize: 13,
@@ -238,16 +262,24 @@ const styles = StyleSheet.create({
     radioIcon: {
         marginHorizontal: 20
     },
+    buttonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center'
+    },
     button: {
         marginTop: 20,
-        padding: 10,
-        borderRadius: 5,
-        borderWidth: 1,
+        paddingVertical: 15,
+        paddingHorizontal: 20,
         alignItems: 'center',
+        backgroundColor: '#535aff',
+        borderRadius: 30,
+        width: '50%'
     },
     buttonText: {
-        fontSize: 14,
-        fontWeight: '600',
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#ffffff'
     },
     centeredContainer: {
         flex: 1,

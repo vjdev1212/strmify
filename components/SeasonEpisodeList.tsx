@@ -50,7 +50,7 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
 
   const handleSeasonSelect = async (season: number) => {
     if (Platform.OS !== 'web') {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
     }
     setSelectedSeason(season);
     setSelectedEpisode(1);
@@ -58,7 +58,7 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
 
   const handleEpisodeSelect = async (season: number, episode: number) => {
     if (Platform.OS !== 'web') {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
     }
     setSelectedSeason(season);
     setSelectedEpisode(episode);

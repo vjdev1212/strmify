@@ -56,7 +56,7 @@ const AddonsScreen = () => {
 
   const openConfiguration = async (url: string) => {    
     if (Platform.OS !== 'web') {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
     }
     try {
       await WebBrowser.openBrowserAsync(`${url}/configure`);
@@ -67,7 +67,7 @@ const AddonsScreen = () => {
 
   const shareManifestUrl = async (url: string) => {
     if (Platform.OS !== 'web') {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
     } try {
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(url);
@@ -108,7 +108,7 @@ const AddonsScreen = () => {
           style={[styles.actionButton, styles.removeButton]}
           onPress={async () => {
             if (Platform.OS !== 'web') {
-              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
             } Alert.alert(
               'Remove Addon',
               `Are you sure you want to remove "${item.name}"?`,
@@ -132,7 +132,7 @@ const AddonsScreen = () => {
 
   const onAddNewPress = async () => {
     if (Platform.OS !== 'web') {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
     }
     router.push('/addons/add');
   }

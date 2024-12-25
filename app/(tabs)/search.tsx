@@ -71,7 +71,7 @@ const SearchScreen = () => {
   const PosterContent = ({ item, type }: { item: any, type: string }) => {
     const handlePress = async () => {
       if (Platform.OS !== 'web') {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
       }
       router.push(
         {
@@ -97,7 +97,7 @@ const SearchScreen = () => {
 
   const clearSearch = async () => {
     if (Platform.OS !== 'web') {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
     }
     setQuery('');
     setMovies([]);

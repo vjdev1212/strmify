@@ -44,7 +44,7 @@ const PosterList = ({
 
   const handlePress = async (item: any) => {
     if (Platform.OS !== 'web') {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
     }
     router.push({
       pathname: `/${type}/details`,
@@ -79,7 +79,7 @@ const PosterList = ({
 
   const handleSeeAllPress = async (item: any) => {
     if (Platform.OS !== 'web') {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
     }
     router.push({
       pathname: `/${type}/list`,

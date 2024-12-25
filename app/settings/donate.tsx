@@ -8,7 +8,7 @@ const DonateScreen = () => {
 
     const handleDonate = async () => {
         if (Platform.OS !== 'web') {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
         }
         const profileUsername = 'iamvijay91';
         const buyMeACoffeeUrl = `https://www.buymeacoffee.com/${profileUsername}`;
