@@ -3,28 +3,29 @@ import { FlatList, StyleSheet, Pressable, View as RNView, Alert, Platform } from
 import { ActivityIndicator, Card, Text, View } from '@/components/Themed';
 import { useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Haptics from 'expo-haptics'; 
+import * as Haptics from 'expo-haptics';
+import { ScrollView } from 'react-native-gesture-handler';
 
 const StreamScreen = () => {
     const { imdbid, type, season, episode } = useLocalSearchParams();
-    const [addons, setAddons] = useState<any[]>([]); 
-    const [selectedAddon, setSelectedAddon] = useState<any | null>(null); 
-    const [streams, setStreams] = useState<any[]>([]); 
-    const [expandedStream, setExpandedStream] = useState<any | null>(null); 
-    const [loading, setLoading] = useState(false); 
-    
+    const [addons, setAddons] = useState<any[]>([]);
+    const [selectedAddon, setSelectedAddon] = useState<any | null>(null);
+    const [streams, setStreams] = useState<any[]>([]);
+    const [expandedStream, setExpandedStream] = useState<any | null>(null);
+    const [loading, setLoading] = useState(false);
+
     useEffect(() => {
         const fetchAddons = async () => {
             try {
                 const storedAddons = await AsyncStorage.getItem('addons');
                 const addonsData = storedAddons ? JSON.parse(storedAddons) : {};
-                const addonList = Object.values(addonsData); 
-                setAddons(addonList); 
+                const addonList = Object.values(addonsData);
+                setAddons(addonList);
 
-                
+
                 if (addonList.length > 0) {
                     setSelectedAddon(addonList[0]);
-                    fetchStreams(addonList); 
+                    fetchStreams(addonList);
                 }
             } catch (error) {
                 console.error('Error fetching addons:', error);
@@ -36,7 +37,7 @@ const StreamScreen = () => {
     }, []);
 
     const fetchStreams = async (addonList: any[]) => {
-        setLoading(true); 
+        setLoading(true);
         const fetchWithTimeout = (url: string, timeout = 10000) => {
             return Promise.race([
                 fetch(url).then((response) => response.json()),
@@ -48,11 +49,11 @@ const StreamScreen = () => {
 
         try {
             const addonPromises = addonList.map(async (addon) => {
-                const addonTypes = addon?.types || []; 
+                const addonTypes = addon?.types || [];
 
-                
+
                 if (!addonTypes.includes(type)) {
-                    return { addon, streams: [] }; 
+                    return { addon, streams: [] };
                 }
 
                 const addonUrl = addon?.url || '';
@@ -66,24 +67,24 @@ const StreamScreen = () => {
                 }
 
                 try {
-                    const data = await fetchWithTimeout(streamUrl, 10000); 
-                    return { addon, streams: data.streams || [] }; 
+                    const data = await fetchWithTimeout(streamUrl, 10000);
+                    return { addon, streams: data.streams || [] };
                 } catch (error) {
                     console.error(`Error fetching streams for addon "${addon?.name}":`, error);
-                    return { addon, streams: [] }; 
+                    return { addon, streams: [] };
                 }
             });
 
-            
+
             const allStreams = await Promise.all(addonPromises);
 
-            setStreams(allStreams); 
+            setStreams(allStreams);
 
         } catch (error) {
             console.error('Error fetching streams:', error);
             Alert.alert('Error', 'Failed to load streams');
         } finally {
-            setLoading(false); 
+            setLoading(false);
         }
     };
 
@@ -91,12 +92,12 @@ const StreamScreen = () => {
     const renderAddonItem = ({ item }: any) => {
         const { name, logo, types } = item;
 
-        
+
         if (!types || !types.includes(type)) {
-            return null; 
+            return null;
         }
 
-        const isSelected = item.name === selectedAddon?.name; 
+        const isSelected = item.name === selectedAddon?.name;
         return (
             <Pressable
                 style={[
@@ -123,7 +124,7 @@ const StreamScreen = () => {
             </Pressable>
         );
     };
-    
+
     const renderStreamItem = ({ item }: any) => {
         const { name, title, url, infoHash, description } = item;
 
@@ -136,7 +137,7 @@ const StreamScreen = () => {
                         </Text>
                         <Text style={styles.streamTitle}>
                             {title || description}
-                        </Text>                        
+                        </Text>
                     </Card>
                 </Pressable>
             </RNView>
@@ -154,15 +155,17 @@ const StreamScreen = () => {
                     </View>
                 </RNView>
             ) : (
-                <View style={styles.contentContainer}>
-                    <FlatList
-                        style={styles.addonList}
-                        data={addons}
-                        renderItem={renderAddonItem}
-                        keyExtractor={(item, index) => index.toString()}
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                    />
+                <View>
+                    <View style={styles.addonListContainer}>
+                        <FlatList
+                            style={styles.addonList}
+                            data={addons}
+                            renderItem={renderAddonItem}
+                            keyExtractor={(item, index) => index.toString()}
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                        />
+                    </View>
                     {
                         selectedAddonStreams.length === 0 ? (
                             <Text style={styles.noStreams}>No streams found</Text>
@@ -185,16 +188,18 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
-    contentContainer: {
+    addonListContainer: {
+        marginVertical: 20,
+        marginHorizontal: 10,
     },
     addonList: {
-        marginTop: 30,
-        marginBottom: 20,
         paddingHorizontal: 10,
     },
     addonItem: {
         marginHorizontal: 5,
         borderRadius: 25,
+        paddingVertical: 10,
+        paddingHorizontal: 30
     },
     selectedAddonItem: {
         backgroundColor: '#535aff',
@@ -202,9 +207,6 @@ const styles = StyleSheet.create({
     addonName: {
         fontSize: 15,
         fontWeight: 'bold',
-        paddingHorizontal: 20,
-        paddingVertical: 15,
-        marginBottom: 5
     },
     selectedaddonName: {
         fontWeight: 'bold',
@@ -222,7 +224,7 @@ const styles = StyleSheet.create({
     },
     streamName: {
         fontSize: 14,
-        fontWeight: '600',
+        fontWeight: 'bold',
         marginBottom: 10,
         paddingHorizontal: 10,
     },
