@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import { Text, View } from './Themed';
-import { formatDate, getYear } from '@/utils/Date';
+import { getYear } from '@/utils/Date';
 
 
 const MediaContentHeader = ({
