@@ -206,11 +206,10 @@ const styles = StyleSheet.create({
     addonList: {
         paddingHorizontal: 10,
     },
-    addonItem: {
-        marginHorizontal: 5,
+    addonItem: {        
         borderRadius: 25,
         paddingVertical: 10,
-        paddingHorizontal: 30
+        paddingHorizontal: 20
     },
     selectedAddonItem: {
         backgroundColor: '#535aff',
