@@ -150,9 +150,12 @@ const StreamDetailsScreen = () => {
                     selected={selectedPlayer}
                     onSelect={setSelectedPlayer}
                 />
-                <Pressable style={styles.button} onPress={handlePlay}>
-                    <Text style={styles.buttonText}>Play</Text>
-                </Pressable>
+
+                <View style={styles.buttonContainer}>
+                    <Pressable style={styles.button} onPress={handlePlay}>
+                        <Text style={styles.buttonText}>Play</Text>
+                    </Pressable>
+                </View>
             </View>
         </ScrollView>
     );
@@ -188,9 +191,11 @@ const SelectionGroup = ({
                     <View style={styles.radioRow}>
                         <Text style={styles.radioLabel}>{option.name}</Text>
                         {option.url && <Text style={styles.radioValue}>{option.url}</Text>}
+                    </View>
+                    <View>
                         {selected === option.name && (
                             <MaterialIcons
-                                name="check-circle"
+                                name="check"
                                 size={24}
                                 color="#535aff"
                                 style={styles.radioIcon}
@@ -230,9 +235,7 @@ const styles = StyleSheet.create({
         marginVertical: 10
     },
     radioRow: {
-        flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center',
         paddingVertical: 5
     },
     subtitle: {
@@ -255,7 +258,7 @@ const styles = StyleSheet.create({
         color: '#888888'
     },
     radioIcon: {
-        marginHorizontal: 20
+        marginHorizontal: 20,
     },
     buttonContainer: {
         flexDirection: 'row',
