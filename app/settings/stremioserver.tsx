@@ -5,17 +5,14 @@ import { View, Text, TextInput } from '@/components/Themed';
 
 const StremioServerScreen = () => {
     const colorScheme = useColorScheme()
-    const [isEnabled, setIsEnabled] = useState(false);
-    const [serverUrl, setServerUrl] = useState('');
+    const [serverUrl, setServerUrl] = useState('http://192.168.1.10:11470');
 
-    // Load settings from AsyncStorage on component mount
     useEffect(() => {
         const loadSettings = async () => {
             try {
                 const savedConfig = await AsyncStorage.getItem('stremioServerConfig');
                 if (savedConfig) {
-                    const { enabled, url } = JSON.parse(savedConfig);
-                    setIsEnabled(enabled);
+                    const { url } = JSON.parse(savedConfig);
                     setServerUrl(url);
                 }
             } catch (error) {
@@ -27,17 +24,12 @@ const StremioServerScreen = () => {
     }, []);
 
     const handleSave = async () => {
-        if (!isEnabled) {
-            Alert.alert('Error', 'Please enable the server to save.');
-            return;
-        }
-        if (isEnabled && !serverUrl.trim()) {
+        if (!serverUrl.trim()) {
             Alert.alert('Error', 'Please enter a valid server URL.');
             return;
         }
 
         const config = {
-            enabled: isEnabled,
             url: serverUrl.trim(),
         };
 
@@ -52,7 +44,7 @@ const StremioServerScreen = () => {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.header}>Stremio Server Configuration</Text>          
+            <Text style={styles.header}>Stremio Server Configuration</Text>
 
             <TextInput
                 style={[
@@ -66,9 +58,14 @@ const StremioServerScreen = () => {
                 autoCapitalize="none"
             />
 
-            <Pressable onPress={handleSave}>                
+            <Pressable onPress={handleSave}>
                 <Text style={styles.saveBtn}>Save</Text>
             </Pressable>
+
+            <View style={styles.serverDetails}>
+                <Text style={styles.serverLabel}>Server Url:</Text>
+                <Text style={styles.serverValue}>{serverUrl}</Text>
+            </View>
         </View>
     );
 };
@@ -121,6 +118,19 @@ const styles = StyleSheet.create({
         color: '#fff',
         width: '50%',
         margin: 'auto'
+    },
+    serverDetails: {
+        marginHorizontal: 10,
+        marginVertical: 30
+    },
+    serverLabel: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        paddingBottom: 10
+    },
+    serverValue: {
+        fontSize: 15,
+        paddingBottom: 10
     }
 });
 

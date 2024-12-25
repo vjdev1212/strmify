@@ -5,17 +5,14 @@ import { View, Text, TextInput } from '@/components/Themed';
 
 const TorrServerScreen = () => {
     const colorScheme = useColorScheme();
-    const [isEnabled, setIsEnabled] = useState(false);
-    const [serverUrl, setServerUrl] = useState('');
+    const [serverUrl, setServerUrl] = useState('http://192.168.1.10:5665');
 
-    // Load settings from AsyncStorage on component mount
     useEffect(() => {
         const loadSettings = async () => {
             try {
-                const savedConfig = await AsyncStorage.getItem('stremioServerConfig');
+                const savedConfig = await AsyncStorage.getItem('torrServerConfig');
                 if (savedConfig) {
-                    const { enabled, url } = JSON.parse(savedConfig);
-                    setIsEnabled(enabled);
+                    const { url } = JSON.parse(savedConfig);
                     setServerUrl(url);
                 }
             } catch (error) {
@@ -27,23 +24,18 @@ const TorrServerScreen = () => {
     }, []);
 
     const handleSave = async () => {
-        if (!isEnabled) {
-            Alert.alert('Error', 'Please enable the server to save.');
-            return;
-        }
-        if (isEnabled && !serverUrl.trim()) {
+        if (!serverUrl.trim()) {
             Alert.alert('Error', 'Please enter a valid server URL.');
             return;
         }
 
         const config = {
-            enabled: isEnabled,
             url: serverUrl.trim(),
         };
 
         try {
-            await AsyncStorage.setItem('stremioServerConfig', JSON.stringify(config));
-            Alert.alert('Success', 'Stremio server configuration saved.');
+            await AsyncStorage.setItem('torrServerConfig', JSON.stringify(config));
+            Alert.alert('Success', 'Torr server configuration saved.');
         } catch (error) {
             Alert.alert('Error', 'Failed to save configuration.');
             console.error('Error saving settings:', error);
@@ -52,7 +44,7 @@ const TorrServerScreen = () => {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.header}>TorrServer Configuration</Text>           
+            <Text style={styles.header}>TorrServer Configuration</Text>
             <TextInput
                 style={[
                     styles.input,
@@ -68,6 +60,10 @@ const TorrServerScreen = () => {
             <Pressable onPress={handleSave}>
                 <Text style={styles.saveBtn}>Save</Text>
             </Pressable>
+            <View style={styles.serverDetails}>
+                <Text style={styles.serverLabel}>Server Url:</Text>
+                <Text style={styles.serverValue}>{serverUrl}</Text>
+            </View>
         </View>
     );
 };
@@ -120,6 +116,19 @@ const styles = StyleSheet.create({
         color: '#fff',
         width: '50%',
         margin: 'auto'
+    },
+    serverDetails: {
+        marginHorizontal: 10,
+        marginVertical: 30
+    },
+    serverLabel: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        paddingBottom: 10
+    },
+    serverValue: {
+        fontSize: 15,
+        paddingBottom: 10
     }
 });
 
