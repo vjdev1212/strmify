@@ -230,14 +230,14 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
     alignItems: 'center',
   },
-  shareButton: {
-    backgroundColor: '#7F7FFF',
+  shareButton: {    
+    backgroundColor: '#2165da',
   },
   configureButton: {
-    backgroundColor: '#38b040',
+    backgroundColor: '#7F7FFF',
   },
   removeButton: {
-    backgroundColor: '#28b099',
+    backgroundColor: '#2fb1cb',
   },
   actionText: {
     color: '#fff',
