@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 15,
         borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: 'gray',
+        borderBottomColor: '#888888',
     },
     icon: {
         marginRight: 15,

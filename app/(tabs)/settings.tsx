@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 15,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'gray',
+    borderBottomColor: '#888888',
     marginHorizontal: 20,
     justifyContent: 'space-between',
   },

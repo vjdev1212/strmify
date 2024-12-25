@@ -35,7 +35,7 @@ const styles = StyleSheet.create({
   },
   genre: {
     fontSize: 16,
-    color: 'gray',
+    color: '#888888',
     marginBottom: 10,
   },
   info: {

@@ -173,12 +173,12 @@ const styles = StyleSheet.create({
   episodeAired: {
     marginTop: 5,
     fontSize: 13,
-    color: 'gray',
+    color: '#888888',
   },
   episodeDescription: {
     marginTop: 15,
     fontSize: 14,
-    color: 'gray',
+    color: '#888888',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
   },
