@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
     donateButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#ff9f00',
+        backgroundColor: '#535aff',
         paddingVertical: 12,
         paddingHorizontal: 30,
         borderRadius: 8,

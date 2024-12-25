@@ -58,9 +58,7 @@ const styles = StyleSheet.create({
     contactItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 15,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: '#888',
+        paddingVertical: 15
     },
     icon: {
         marginRight: 15,
