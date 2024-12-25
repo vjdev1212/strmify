@@ -115,7 +115,7 @@ const SearchScreen = () => {
             colorScheme === 'dark' ? styles.darkSearchInput : styles.lightSearchInput,
           ]}
           placeholder="Search movies or series..."
-          placeholderTextColor={colorScheme === 'dark' ? '#AAA' : '#333'}
+          placeholderTextColor={'#888888'}
           value={query}
           onChangeText={setQuery}
         />
@@ -169,18 +169,16 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     height: 40,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 20,
+    borderRadius: 12,
     paddingLeft: 20,
-    borderColor: '#888',
     fontSize: 16,
   },
   lightSearchInput: {
-    backgroundColor: '#fff',
+    backgroundColor: '#f0f0f0',
     color: '#000',
   },
   darkSearchInput: {
-    backgroundColor: '#333',
+    backgroundColor: '#1f1f1f',
     color: '#fff',
   },
   clearButton: {

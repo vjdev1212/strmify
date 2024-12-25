@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Switch, Button, Alert, Pressable } from 'react-native';
+import { StyleSheet, Switch, Button, Alert, Pressable, useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, Text, TextInput } from '@/components/Themed';
 
 const StremioServerScreen = () => {
+    const colorScheme = useColorScheme()
     const [isEnabled, setIsEnabled] = useState(false);
     const [serverUrl, setServerUrl] = useState('');
 
@@ -64,15 +65,19 @@ const StremioServerScreen = () => {
             </View>
 
             <TextInput
-                style={[styles.input]}
+                style={[
+                    styles.input,
+                    colorScheme === 'dark' ? styles.darkInput : styles.lightInput,
+                ]}
                 placeholder="Enter Server Base URL"
                 value={serverUrl}
                 onChangeText={setServerUrl}
+                placeholderTextColor={'#888888'}
                 editable={isEnabled}
                 autoCapitalize="none"
             />
 
-            <Pressable onPress={handleSave}>
+            <Pressable onPress={handleSave}>                
                 <Text style={styles.saveBtn}>Save</Text>
             </Pressable>
         </View>
@@ -101,25 +106,31 @@ const styles = StyleSheet.create({
     },
     input: {
         fontSize: 16,
-        borderWidth: 1,
-        borderColor: '#888',
-        borderRadius: 25,
+        borderRadius: 12,
         padding: 10,
         paddingLeft: 20,
         marginTop: 10,
         marginBottom: 30,
     },
+    lightInput: {
+        backgroundColor: '#f0f0f0',
+        color: '#000',
+    },
+    darkInput: {
+        backgroundColor: '#1f1f1f',
+        color: '#fff',
+    },
     saveBtn: {
         marginTop: 10,
         textAlign: 'center',
         backgroundColor: '#535aff',
-        margin: 'auto',
-        paddingHorizontal: 50,
-        paddingVertical: 15,
+        paddingVertical: 12,
         borderRadius: 25,
         fontSize: 16,
         fontWeight: 'bold',
-        color: '#fff'
+        color: '#fff',
+        width: '50%',
+        margin: 'auto'
     }
 });
 
