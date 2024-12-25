@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Pressable, ScrollView, Alert, Linking } from 'react-native';
-import { Card, Text, View } from '@/components/Themed'; // Replace with your custom themed components
+import { StyleSheet, ScrollView, Alert, Pressable, Linking } from 'react-native';
+import { Text, View } from '@/components/Themed'; // Replace with your custom themed components
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams } from 'expo-router';
-import Checkbox from 'expo-checkbox';
+import { MaterialIcons } from '@expo/vector-icons';
 
 const StreamDetailsScreen = () => {
     const [servers, setServers] = useState<{ name: string; url: string }[]>([]);
@@ -94,14 +94,16 @@ const StreamDetailsScreen = () => {
                     <Text style={styles.label}>Name:</Text>
                     <Text style={styles.value}>{name}</Text>
                 </View>
-                <View style={styles.row}>
-                    <Text style={styles.label}>Title:</Text>
-                    <Text style={styles.value}>{title}</Text>
-                </View>
+                {title && (
+                    <View style={styles.row}>
+                        <Text style={styles.label}>Title:</Text>
+                        <Text style={styles.value}>{title}</Text>
+                    </View>
+                )}
                 {description && (
                     <View style={styles.row}>
                         <Text style={styles.label}>Description:</Text>
-                        <Text style={styles.value}>{description}</Text>
+                        <Text style={styles.value} numberOfLines={4}>{description}</Text>
                     </View>
                 )}
                 {infoHash && (
@@ -111,33 +113,74 @@ const StreamDetailsScreen = () => {
                     </View>
                 )}
 
-                <Text style={styles.subtitle}>Select a server:</Text>
-                {servers.map((server) => (
-                    <View key={server.name} style={styles.checkboxContainer}>
-                        <Checkbox
-                            value={selectedServer === server.name}
-                            onValueChange={() => setSelectedServer(server.name)}
-                        />
-                        <Text style={styles.checkboxLabel}>{server.name}</Text>
-                    </View>
-                ))}
+                <Text style={styles.subtitle}>Server:</Text>
+                <View style={styles.radioGroup}>
+                    {servers.map((server) => (
+                        <Pressable
+                            key={server.name}
+                            style={[
+                                styles.radioContainer
+                            ]}
+                            onPress={() => setSelectedServer(server.name)}
+                        >
+                            <View style={styles.radioRow}>
+                                <View>
+                                    <Text style={styles.radioLabel}>{server.name}</Text>
+                                    <Text style={styles.radioValue}>{server.url}</Text>
+                                </View>
+                                <View>
+                                    {
+                                        selectedServer === server.name ? (
+                                            <MaterialIcons
+                                                name={'check-circle'}
+                                                size={24}
+                                                color={'#535aff'}
+                                                style={styles.radioIcon}
+                                            />
+                                        ) : (null)
+                                    }
+                                </View>
+                            </View>
+                        </Pressable>
+                    ))}
+                </View>
 
-                <Text style={styles.subtitle}>Select a media player:</Text>
-                {players.map((player) => (
-                    <View key={player.name} style={styles.checkboxContainer}>
-                        <Checkbox
-                            value={selectedPlayer === player.name}
-                            onValueChange={() => setSelectedPlayer(player.name)}
-                        />
-                        <Text style={styles.checkboxLabel}>{player.name}</Text>
-                    </View>
-                ))}
+                <Text style={styles.subtitle}>Media Player:</Text>
+                <View style={styles.radioGroup}>
+                    {players.map((player) => (
+                        <Pressable
+                            key={player.name}
+                            style={[
+                                styles.radioContainer
+                            ]}
+                            onPress={() => setSelectedPlayer(player.name)}
+                        >
+                            <View style={styles.radioRow}>
+                                <View>
+                                    <Text style={styles.radioLabel}>{player.name}</Text>
+                                </View>
+                                <View>
+                                    {
+                                        selectedPlayer === player.name ? (
+                                            <MaterialIcons
+                                                name={'check-circle'}
+                                                size={24}
+                                                color={'#535aff'}
+                                                style={styles.radioIcon}
+                                            />
+                                        ) : (null)
+                                    }
+                                </View>
+                            </View>
+                        </Pressable>
+                    ))}
+                </View>
 
                 <Pressable style={styles.button} onPress={handlePlay}>
                     <Text style={styles.buttonText}>Play</Text>
                 </Pressable>
             </View>
-        </ScrollView>
+        </ScrollView >
     );
 };
 
@@ -162,21 +205,38 @@ const styles = StyleSheet.create({
     },
     value: {
         fontSize: 14,
-        flex: 3,
+        flex: 2,
+    },
+    radioGroup: {
+        marginVertical: 5
+    },
+    radioRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center'
     },
     subtitle: {
         marginTop: 10,
         fontSize: 14,
         fontWeight: 'bold',
     },
-    checkboxContainer: {
+    radioContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 10,
+        paddingHorizontal: 10,
+        paddingVertical: 10
     },
-    checkboxLabel: {
-        marginLeft: 8,
+    radioLabel: {
         fontSize: 14,
+        marginRight: 10,        
+    },
+    radioValue: {
+        fontSize: 13,
+        paddingTop: 5,
+        color: '#888888'
+    },
+    radioIcon: {
+        marginHorizontal: 20
     },
     button: {
         marginTop: 20,
