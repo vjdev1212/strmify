@@ -21,7 +21,7 @@ export default function TabLayout() {
       screenOptions={{
         tabBarActiveTintColor: '#535aff',
         headerShown: false,
-        tabBarStyle: { height: Platform.OS === 'android' ? 65 : 90, },
+        tabBarStyle: { height: Platform.OS === 'ios' ? 90 : 65, },
       }}
     >
       <Tabs.Screen

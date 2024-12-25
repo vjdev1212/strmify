@@ -7,7 +7,7 @@ import MediaContentDetailsList from '@/components/MediaContentDetailsList';
 import MediaContentHeader from '@/components/MediaContentHeader';
 import MediaContentPoster from '@/components/MediaContentPoster';
 import SeasonEpisodeList from '@/components/SeasonEpisodeList';
-import * as Haptics from 'expo-haptics'; // Import Haptics from Expo
+import BottomSpacing from '@/components/BottomSpacing';
 
 const SeriesDetails = () => {
   const { imdbid } = useLocalSearchParams();
@@ -69,10 +69,6 @@ const SeriesDetails = () => {
         imdbRating={data.imdbRating}
       />
       <MediaContentDescription description={data.description} />
-      <SeasonEpisodeList
-        videos={data.videos}
-        onEpisodeSelect={handleEpisodeSelect} // Pass the haptic feedback function
-      />
       <MediaContentDetailsList
         released={data.released}
         country={data.country}
@@ -80,6 +76,11 @@ const SeriesDetails = () => {
         writer={data.writer}
         cast={data.cast}
       />
+      <SeasonEpisodeList
+        videos={data.videos}
+        onEpisodeSelect={handleEpisodeSelect} // Pass the haptic feedback function
+      />
+      <BottomSpacing space={50} />
     </ScrollView>
   );
 };

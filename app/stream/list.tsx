@@ -87,11 +87,6 @@ const StreamScreen = () => {
         }
     };
 
-    
-    const handleStreamExpand = (stream: any) => {
-        Haptics.selectionAsync(); 
-        setExpandedStream(expandedStream === stream ? null : stream); 
-    };
 
     const renderAddonItem = ({ item }: any) => {
         const { name, logo, types } = item;
@@ -134,8 +129,7 @@ const StreamScreen = () => {
 
         return (
             <RNView style={styles.streamItemContainer}>
-                <Pressable onPress={() => handleStreamExpand(item)}
-                >
+                <Pressable >
                     <Card style={styles.streamItem}>
                         <Text style={styles.streamName} numberOfLines={2}>
                             {name}

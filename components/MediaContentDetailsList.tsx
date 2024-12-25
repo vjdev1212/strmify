@@ -18,34 +18,34 @@ const MediaContentDetailsList = ({
 }) => (
   <View style={styles.container}>
     {released && (
-      <>
+      <View style={styles.row}>
         <Text style={styles.label}>Released:</Text>
         <Text style={styles.value}>{formatDate(released)}</Text>
-      </>
+      </View>
     )}
     {country && (
-      <>
+      <View style={styles.row}>
         <Text style={styles.label}>Country:</Text>
         <Text style={styles.value}>{country}</Text>
-      </>
+      </View>
     )}
     {director?.length > 0 && (
-      <>
+      <View style={styles.row}>
         <Text style={styles.label}>Directors:</Text>
         <Text style={styles.value}>{director?.join(', ')}</Text>
-      </>
+      </View>
     )}
     {writer?.length > 0 && (
-      <>
+      <View style={styles.row}>
         <Text style={styles.label}>Writers:</Text>
         <Text style={styles.value}>{writer?.join(', ')}</Text>
-      </>
+      </View>
     )}
     {cast?.length > 0 && (
-      <>
+      <View style={styles.row}>
         <Text style={styles.label}>Cast:</Text>
         <Text style={styles.value}>{cast?.join(', ')}</Text>
-      </>
+      </View>
     )}
   </View>
 );
@@ -53,17 +53,20 @@ const MediaContentDetailsList = ({
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 20,
-    marginVertical: 10,
-    paddingBottom: 50
+    marginVertical: 20,
+  },
+  row: {
+    flexDirection: 'row',
+    marginBottom: 10
   },
   label: {
     fontSize: 14,
     fontWeight: 'bold',
-    marginBottom: 5,
+    flex: 1,
   },
   value: {
     fontSize: 14,
-    marginBottom: 15,
+    flex: 3,
   },
 });
 

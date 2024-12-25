@@ -8,6 +8,7 @@ import MediaContentHeader from '@/components/MediaContentHeader';
 import MediaContentPoster from '@/components/MediaContentPoster';
 import PlayButton from '@/components/PlayButton';
 import * as Haptics from 'expo-haptics';
+import BottomSpacing from '@/components/BottomSpacing';
 
 const MovieDetails = () => {
   const { imdbid } = useLocalSearchParams();
@@ -79,6 +80,7 @@ const MovieDetails = () => {
         writer={data.writer}
         cast={data.cast}
       />
+      <BottomSpacing space={50} />
     </ScrollView>
   );
 };
