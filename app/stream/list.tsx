@@ -1,18 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { FlatList, StyleSheet, Pressable, View as RNView, Alert, Platform } from 'react-native';
 import { ActivityIndicator, Card, Text, View } from '@/components/Themed';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
-import { ScrollView } from 'react-native-gesture-handler';
 
 const StreamScreen = () => {
     const { imdbid, type, season, episode } = useLocalSearchParams();
     const [addons, setAddons] = useState<any[]>([]);
     const [selectedAddon, setSelectedAddon] = useState<any | null>(null);
     const [streams, setStreams] = useState<any[]>([]);
-    const [expandedStream, setExpandedStream] = useState<any | null>(null);
     const [loading, setLoading] = useState(false);
+    const router = useRouter();
 
     useEffect(() => {
         const fetchAddons = async () => {
@@ -128,9 +127,19 @@ const StreamScreen = () => {
     const renderStreamItem = ({ item }: any) => {
         const { name, title, url, infoHash, description } = item;
 
+        const handleStreamSelected = async () => {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+            router.push({
+                pathname: '/stream/details',
+                params: {
+                    name, title, description, url, infoHash
+                },
+            })
+        }
+
         return (
             <RNView style={styles.streamItemContainer}>
-                <Pressable >
+                <Pressable onPress={handleStreamSelected}>
                     <Card style={styles.streamItem}>
                         <Text style={styles.streamName} numberOfLines={2}>
                             {name}
