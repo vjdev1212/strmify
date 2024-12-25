@@ -9,10 +9,10 @@ import * as Haptics from 'expo-haptics';
 const StreamDetailsScreen = () => {
     const [servers, setServers] = useState<{ name: string; url: string }[]>([]);
     const [players] = useState([
-        { name: 'VLC', scheme: 'vlc://' },
-        { name: 'Infuse', scheme: 'infuse://x-callback-url/play?url=' },
-        { name: 'VidHub', scheme: 'open-vidhub://x-callback-url/open?url=' },
-        { name: 'OutPlayer', scheme: 'outplayer://' },
+        { name: 'VLC', scheme: 'vlc://', encodeUrl: false },
+        { name: 'Infuse', scheme: 'infuse://x-callback-url/play?url=', encodeUrl: true },
+        { name: 'VidHub', scheme: 'open-vidhub://x-callback-url/open?url=', encodeUrl: true },
+        { name: 'OutPlayer', scheme: 'outplayer://', encodeUrl: false },
     ]);
     const [selectedServer, setSelectedServer] = useState<string | null>(null);
     const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
@@ -62,6 +62,7 @@ const StreamDetailsScreen = () => {
 
         const serverUrl = servers.find((server) => server.name === selectedServer)?.url;
         const playerScheme = players.find((player) => player.name === selectedPlayer)?.scheme;
+        const encodeUrl = players.find((player) => player.name === selectedPlayer)?.encodeUrl; // Check if the player has the encodeUrl flag
 
         if (!serverUrl || !playerScheme) {
             Alert.alert('Error', 'Invalid server or player selection.');
@@ -79,15 +80,27 @@ const StreamDetailsScreen = () => {
                     guessFileIdx: {},
                 };
 
-                const response = await fetch(endpointUrl, {
+                const mediaCreateResponse = await fetch(endpointUrl, {
                     method: 'POST',
                     body: JSON.stringify(payload),
                 });
 
-                if (response.ok) {
-                    const data = await response.json();
-                    const streamUrl = url ? encodeURIComponent(url) : encodeURIComponent(`${serverUrl}/${infoHash}/${data.guessedFileIdx || 0}`);
+                if (mediaCreateResponse.ok) {
+                    const data = await mediaCreateResponse.json();
+                    const videoUrl = `${serverUrl}/${infoHash}/${data.guessedFileIdx || 0}`
+                    const streamUrl = url
+                        ? (encodeUrl ? encodeURIComponent(url) : url)
+                        : (encodeUrl
+                            ? encodeURIComponent(videoUrl)
+                            : videoUrl);
+
+                    // const subbtitleApiUrl = `${serverUrl}/opensubHash?videoUrl=${encodeURIComponent(videoUrl)}`
+                    // const subtitleApiResponse = await fetch(subbtitleApiUrl);
+                    // const subtitleData = await subtitleApiResponse.json();
+                    // const size = subtitleData.result.size;
+                    // const subhash = subtitleData.result.hash;
                     const playerUrl = `${playerScheme}${streamUrl}`;
+                    console.log(playerUrl);
                     Linking.openURL(playerUrl);
                 } else {
                     Alert.alert('Error', 'Failed to call the server endpoint. Please try again.');
@@ -126,12 +139,6 @@ const StreamDetailsScreen = () => {
                     <View style={styles.row}>
                         <Text style={styles.label}>Description:</Text>
                         <Text style={styles.value} numberOfLines={4}>{description}</Text>
-                    </View>
-                )}
-                {infoHash && (
-                    <View style={styles.row}>
-                        <Text style={styles.label}>InfoHash:</Text>
-                        <Text style={styles.value}>{infoHash}</Text>
                     </View>
                 )}
 
@@ -232,15 +239,15 @@ const styles = StyleSheet.create({
         flex: 2,
     },
     radioGroup: {
-        marginVertical: 5
+        marginVertical: 10
     },
     radioRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        paddingVertical: 5
     },
     subtitle: {
-        marginTop: 10,
         fontSize: 14,
         fontWeight: 'bold',
     },
