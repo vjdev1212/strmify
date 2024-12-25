@@ -100,6 +100,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         marginBottom: 10,
+        paddingHorizontal: 5
     },
     label: {
         fontSize: 16,
