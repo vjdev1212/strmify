@@ -52,17 +52,7 @@ const StremioServerScreen = () => {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.header}>Stremio Server Configuration</Text>
-
-            <View style={styles.row}>
-                <Text style={styles.label}>Enable Server</Text>
-                <Switch
-                    value={isEnabled}
-                    onValueChange={(value) => setIsEnabled(value)}
-                    trackColor={{ false: '#767577', true: '#edeef2' }}
-                    thumbColor={isEnabled ? '#535aff' : '#f4f3f4'}
-                />
-            </View>
+            <Text style={styles.header}>Stremio Server Configuration</Text>          
 
             <TextInput
                 style={[
@@ -73,7 +63,6 @@ const StremioServerScreen = () => {
                 value={serverUrl}
                 onChangeText={setServerUrl}
                 placeholderTextColor={'#888888'}
-                editable={isEnabled}
                 autoCapitalize="none"
             />
 
