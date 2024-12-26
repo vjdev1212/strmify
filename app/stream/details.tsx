@@ -234,7 +234,10 @@ const StreamDetailsScreen = () => {
                     isPlayer
                 />
 
-                <Text style={styles.statusText}>{statusText}</Text>
+                {
+                    statusText !== null && statusText !== undefined && statusText !== '' ?
+                        (<Text style={styles.statusText}>{statusText}</Text>) : null
+                }
 
                 <View style={styles.buttonContainer}>
                     <Pressable style={styles.button} onPress={handlePlay}>
@@ -242,7 +245,6 @@ const StreamDetailsScreen = () => {
                     </Pressable>
                 </View>
             </View>
-            <BottomSpacing space={100} />
         </ScrollView>
     );
 };
@@ -410,7 +412,7 @@ const styles = StyleSheet.create({
     buttonContainer: {
         flexDirection: 'row',
         justifyContent: 'center',
-        alignItems: 'center'
+        alignItems: 'center',
     },
     button: {
         marginTop: 20,
