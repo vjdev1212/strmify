@@ -1,4 +1,3 @@
-// ServerConfig.js
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Alert, Switch, TextInput, Pressable, useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -13,23 +12,22 @@ const ServerConfig = ({ serverName, serverType, defaultUrl }) => {
     useEffect(() => {
         const loadSettings = async () => {
             try {
-                const savedConfig = await AsyncStorage.getItem(`${serverType}ServerConfig`);
-                const defaultServer = await AsyncStorage.getItem('defaultServer');
-                const enabledServer = await AsyncStorage.getItem(`${serverType}ServerEnabled`);
+                const savedConfigs = await AsyncStorage.getItem('servers');
+                const servers = savedConfigs ? JSON.parse(savedConfigs) : [];
+                const currentServer = servers.find(server => server.serverType === serverType);
 
-                if (savedConfig) {
-                    const { url } = JSON.parse(savedConfig);
-                    setServerUrl(url);
+                if (currentServer) {
+                    setServerUrl(currentServer.serverUrl || defaultUrl);
+                    setIsDefault(currentServer.isDefault);
+                    setIsEnabled(currentServer.enabled);
                 }
-                setIsDefault(defaultServer === serverType);
-                setIsEnabled(enabledServer !== 'false');
             } catch (error) {
                 console.error('Error loading settings:', error);
             }
         };
 
         loadSettings();
-    }, [serverType]);
+    }, [serverType, defaultUrl]);
 
     const handleSave = async () => {
         if (!serverUrl.trim()) {
@@ -37,10 +35,22 @@ const ServerConfig = ({ serverName, serverType, defaultUrl }) => {
             return;
         }
 
-        const config = { url: serverUrl.trim() };
+        const newServerConfig = {
+            serverId: `${serverType}-${Date.now()}`,  // Unique ID based on serverType and timestamp
+            serverType,
+            serverName,
+            serverUrl: serverUrl.trim(),
+            enabled: isEnabled,
+            isDefault,
+        };
 
         try {
-            await AsyncStorage.setItem(`${serverType}ServerConfig`, JSON.stringify(config));
+            const savedConfigs = await AsyncStorage.getItem('servers');
+            const servers = savedConfigs ? JSON.parse(savedConfigs) : [];
+            const updatedServers = servers.filter(server => server.serverType !== serverType); // Remove old server config
+            updatedServers.push(newServerConfig);
+
+            await AsyncStorage.setItem('servers', JSON.stringify(updatedServers));
             Alert.alert('Success', `${serverName} server configuration saved.`);
         } catch (error) {
             Alert.alert('Error', 'Failed to save configuration.');
@@ -48,42 +58,24 @@ const ServerConfig = ({ serverName, serverType, defaultUrl }) => {
         }
     };
 
-    const toggleDefault = async () => {
-        try {
-            if (!isDefault) {
-                await AsyncStorage.setItem('defaultServer', serverType);
-            } else {
-                await AsyncStorage.removeItem('defaultServer');
-            }
-            setIsDefault(!isDefault);
-        } catch (error) {
-            Alert.alert('Error', 'Failed to update default server.');
-            console.error('Error updating default server:', error);
-        }
+    const toggleDefault = () => {
+        setIsDefault(prevState => !prevState);
     };
 
-    const toggleEnabled = async () => {
-        try {
-            const newStatus = !isEnabled;
-            await AsyncStorage.setItem(`${serverType}ServerEnabled`, newStatus.toString());
-            setIsEnabled(newStatus);
-        } catch (error) {
-            Alert.alert('Error', 'Failed to update server status.');
-            console.error('Error updating server status:', error);
-        }
+    const toggleEnabled = () => {
+        setIsEnabled(prevState => !prevState);
     };
 
     return (
         <View style={styles.container}>
             <Text style={styles.header}>{`${serverName} Configuration`}</Text>
             <View style={styles.serverConfigContainer}>
-                <View style={styles.switchContainer}>
-                    <View>
-                        <Text style={styles.switchLabel}>
-                            Enable Server
-                        </Text>
-                    </View>
-                    <View>
+                {/* Server Settings Group */}
+                <View style={styles.configGroup}>
+                    <Text style={styles.configGroupHeader}>Server Settings</Text>
+
+                    <View style={styles.switchContainer}>
+                        <Text style={styles.switchLabel}>Enable Server</Text>
                         <Switch
                             value={isEnabled}
                             onValueChange={toggleEnabled}
@@ -92,40 +84,43 @@ const ServerConfig = ({ serverName, serverType, defaultUrl }) => {
                             trackColor={{ false: '#e0e0e0', true: '#a5afff' }}
                         />
                     </View>
-                </View>
 
-                <View style={styles.switchContainer}>
-                    <Text style={styles.switchLabel}>
-                        Default Server
-                    </Text>
-                    <Switch
-                        value={isDefault}
-                        onValueChange={toggleDefault}
-                        style={styles.switch}
-                        thumbColor={isDefault ? '#535aff' : '#ccc'}
-                        trackColor={{ false: '#e0e0e0', true: '#a5afff' }}
+                    <View style={styles.switchContainer}>
+                        <Text style={styles.switchLabel}>Default Server</Text>
+                        <Switch
+                            value={isDefault}
+                            onValueChange={toggleDefault}
+                            style={styles.switch}
+                            thumbColor={isDefault ? '#535aff' : '#ccc'}
+                            trackColor={{ false: '#e0e0e0', true: '#a5afff' }}
+                        />
+                    </View>
+
+                    <TextInput
+                        style={[styles.input, colorScheme === 'dark' ? styles.darkInput : styles.lightInput]}
+                        placeholder="Enter Server Base URL"
+                        value={serverUrl}
+                        onChangeText={setServerUrl}
+                        placeholderTextColor="#888888"
+                        autoCapitalize="none"
                     />
+
+                    <Pressable onPress={handleSave}>
+                        <Text style={styles.saveBtn}>Save</Text>
+                    </Pressable>
                 </View>
 
-                <TextInput
-                    style={[
-                        styles.input,
-                        colorScheme === 'dark' ? styles.darkInput : styles.lightInput,
-                    ]}
-                    placeholder="Enter Server Base URL"
-                    value={serverUrl}
-                    onChangeText={setServerUrl}
-                    placeholderTextColor="#888888"
-                    autoCapitalize="none"
-                />
+                {/* Display Server Details */}
+                <View style={styles.serverDetails}>
+                    <Text style={styles.serverLabel}>Enabled:</Text>
+                    <Text style={styles.serverValue}>{isEnabled ? 'Yes' : 'No'}</Text>
 
-                <Pressable onPress={handleSave}>
-                    <Text style={styles.saveBtn}>Save</Text>
-                </Pressable>
-            </View>
-            <View style={styles.serverDetails}>
-                <Text style={styles.serverLabel}>Server Url:</Text>
-                <Text style={styles.serverValue}>{serverUrl}</Text>
+                    <Text style={styles.serverLabel}>Server Url:</Text>
+                    <Text style={styles.serverValue}>{serverUrl}</Text>
+
+                    <Text style={styles.serverLabel}>Default Server:</Text>
+                    <Text style={styles.serverValue}>{isDefault ? 'Yes' : 'No'}</Text>
+                </View>
             </View>
         </View>
     );
@@ -147,9 +142,8 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         padding: 10,
         paddingLeft: 20,
-        marginTop: 10,
-        marginBottom: 30,
-        marginHorizontal: 10
+        marginVertical: 30,
+        marginHorizontal: 10,
     },
     lightInput: {
         backgroundColor: '#f0f0f0',
@@ -186,7 +180,7 @@ const styles = StyleSheet.create({
     },
     serverDetails: {
         marginHorizontal: 10,
-        marginVertical: 30,
+        marginVertical: 10,
     },
     serverLabel: {
         fontSize: 16,
@@ -199,6 +193,14 @@ const styles = StyleSheet.create({
     },
     serverConfigContainer: {
         marginVertical: 10,
+    },
+    configGroup: {
+        marginBottom: 20,
+    },
+    configGroupHeader: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 15,
     },
 });
 
