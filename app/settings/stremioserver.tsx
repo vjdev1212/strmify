@@ -1,19 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Switch, Button, Alert, Pressable, useColorScheme } from 'react-native';
+import { StyleSheet, Alert, Pressable, useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, Text, TextInput } from '@/components/Themed';
 
 const StremioServerScreen = () => {
-    const colorScheme = useColorScheme()
+    const colorScheme = useColorScheme();
     const [serverUrl, setServerUrl] = useState('http://192.168.1.10:11470');
+    const [isDefault, setIsDefault] = useState(false);
 
     useEffect(() => {
         const loadSettings = async () => {
             try {
                 const savedConfig = await AsyncStorage.getItem('stremioServerConfig');
+                const defaultServer = await AsyncStorage.getItem('defaultServer');
                 if (savedConfig) {
                     const { url } = JSON.parse(savedConfig);
                     setServerUrl(url);
+                }
+                if (defaultServer === 'stremio') {
+                    setIsDefault(true);
                 }
             } catch (error) {
                 console.error('Error loading settings:', error);
@@ -42,6 +47,17 @@ const StremioServerScreen = () => {
         }
     };
 
+    const handleSetDefault = async () => {
+        try {
+            await AsyncStorage.setItem('defaultServer', 'stremio');
+            setIsDefault(true);
+            Alert.alert('Success', 'Stremio server set as default.');
+        } catch (error) {
+            Alert.alert('Error', 'Failed to set default server.');
+            console.error('Error setting default server:', error);
+        }
+    };
+
     return (
         <View style={styles.container}>
             <Text style={styles.header}>Stremio Server Configuration</Text>
@@ -62,6 +78,12 @@ const StremioServerScreen = () => {
                 <Text style={styles.saveBtn}>Save</Text>
             </Pressable>
 
+            <Pressable onPress={handleSetDefault} disabled={isDefault}>
+                <Text style={[styles.defaultBtn, isDefault && styles.disabledBtn]}>
+                    {isDefault ? 'Default Server' : 'Set as Default'}
+                </Text>
+            </Pressable>
+
             <View style={styles.serverDetails}>
                 <Text style={styles.serverLabel}>Server Url:</Text>
                 <Text style={styles.serverValue}>{serverUrl}</Text>
@@ -80,16 +102,6 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         marginBottom: 20,
         textAlign: 'center',
-    },
-    row: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 10,
-        paddingHorizontal: 5
-    },
-    label: {
-        fontSize: 16,
     },
     input: {
         fontSize: 16,
@@ -117,21 +129,36 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#fff',
         width: '50%',
-        margin: 'auto'
+        marginHorizontal: '25%',
+    },
+    defaultBtn: {
+        marginTop: 20,
+        textAlign: 'center',
+        backgroundColor: '#535aff',
+        paddingVertical: 12,
+        borderRadius: 25,
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#fff',
+        width: '50%',
+        marginHorizontal: '25%',
+    },
+    disabledBtn: {
+        backgroundColor: '#ccc',
     },
     serverDetails: {
         marginHorizontal: 10,
-        marginVertical: 30
+        marginVertical: 30,
     },
     serverLabel: {
         fontSize: 16,
         fontWeight: 'bold',
-        paddingBottom: 10
+        paddingBottom: 10,
     },
     serverValue: {
         fontSize: 15,
-        paddingBottom: 10
-    }
+        paddingBottom: 10,
+    },
 });
 
 export default StremioServerScreen;
