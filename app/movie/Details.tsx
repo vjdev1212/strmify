@@ -9,6 +9,7 @@ import MediaContentPoster from '@/components/MediaContentPoster';
 import PlayButton from '@/components/PlayButton';
 import * as Haptics from 'expo-haptics';
 import BottomSpacing from '@/components/BottomSpacing';
+import { isHapticsSupported } from '@/utils/platform';
 
 const MovieDetails = () => {
   const { imdbid } = useLocalSearchParams();
@@ -53,7 +54,7 @@ const MovieDetails = () => {
   }
 
   const handlePlayPress = async () => {
-    if (Platform.OS !== 'web') {
+    if (isHapticsSupported()) {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
     } router.push({
       pathname: '/stream/list',

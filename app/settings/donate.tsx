@@ -3,11 +3,12 @@ import { StyleSheet, Pressable, Linking, Platform } from 'react-native';
 import { View, Text } from '@/components/Themed';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics'
+import { isHapticsSupported } from '@/utils/platform';
 
 const DonateScreen = () => {
 
     const handleDonate = async () => {
-        if (Platform.OS !== 'web') {
+        if (isHapticsSupported()) {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
         }
         const profileUsername = 'iamvijay91';

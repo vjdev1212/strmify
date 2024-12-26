@@ -15,6 +15,7 @@ import { Text } from '@/components/Themed';
 import { router } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import * as Haptics from 'expo-haptics';
+import { isHapticsSupported } from '@/utils/platform';
 
 const AddonsScreen = () => {
   const [addons, setAddons] = useState<any[]>([]);
@@ -55,7 +56,7 @@ const AddonsScreen = () => {
   };
 
   const openConfiguration = async (url: string) => {    
-    if (Platform.OS !== 'web') {
+    if (isHapticsSupported()) {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
     }
     try {
@@ -66,7 +67,7 @@ const AddonsScreen = () => {
   };
 
   const shareManifestUrl = async (url: string) => {
-    if (Platform.OS !== 'web') {
+    if (isHapticsSupported()) {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
     } try {
       if (await Sharing.isAvailableAsync()) {
@@ -107,7 +108,7 @@ const AddonsScreen = () => {
         <Pressable
           style={[styles.actionButton, styles.removeButton]}
           onPress={async () => {
-            if (Platform.OS !== 'web') {
+            if (isHapticsSupported()) {
               await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
             } Alert.alert(
               'Remove Addon',
@@ -131,7 +132,7 @@ const AddonsScreen = () => {
   );
 
   const onAddNewPress = async () => {
-    if (Platform.OS !== 'web') {
+    if (isHapticsSupported()) {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
     }
     router.push('/addons/add');

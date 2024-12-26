@@ -3,6 +3,7 @@ import { FlatList, Image, StyleSheet, Pressable, View as RNView, Platform } from
 import { Text } from './Themed';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics'; // Importing Haptics for haptic feedback
+import { isHapticsSupported } from '@/utils/platform';
 
 const SkeletonLoader = () => (
   <RNView style={styles.skeletonContainer}>
@@ -41,7 +42,7 @@ const PosterList = ({
   }, [apiUrl]);
 
   const handlePress = async (item: any) => {
-    if (Platform.OS !== 'web') {
+    if (isHapticsSupported()) {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
     }
     router.push({
@@ -76,7 +77,7 @@ const PosterList = ({
   };
 
   const handleSeeAllPress = async (item: any) => {
-    if (Platform.OS !== 'web') {
+    if (isHapticsSupported()) {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
     }
     router.push({

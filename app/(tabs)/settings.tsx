@@ -4,6 +4,7 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons'; // Import icons fr
 import { Text } from '@/components/Themed'; // Assuming you have a Themed Text component
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics'
+import { isHapticsSupported } from '@/utils/platform';
 
 const SettingsScreen = () => {
   const router = useRouter();
@@ -27,7 +28,7 @@ const SettingsScreen = () => {
   );
 
   const onSettingsItemPress = async (item: any) => {
-    if (Platform.OS !== 'web') {
+    if (isHapticsSupported()) {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
     }
     router.push({ pathname: item.route });

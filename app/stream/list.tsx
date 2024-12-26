@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, StyleSheet, Pressable, View as RNView, Alert, Platform } from 'react-native';
+import { FlatList, StyleSheet, Pressable, View as RNView, Alert } from 'react-native';
 import { ActivityIndicator, Card, Text, View } from '@/components/Themed';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
+import { isHapticsSupported } from '@/utils/platform';
 
 const StreamScreen = () => {
     const { imdbid, type, season, episode } = useLocalSearchParams();
@@ -104,7 +105,7 @@ const StreamScreen = () => {
                     isSelected && styles.selectedAddonItem,
                 ]}
                 onPress={async () => {
-                    if (Platform.OS !== 'web') {
+                    if (isHapticsSupported()) {
                         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
                     }
                     setSelectedAddon(item);
@@ -128,7 +129,9 @@ const StreamScreen = () => {
         const { name, title, url, infoHash, description } = item;
 
         const handleStreamSelected = async () => {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+            if (isHapticsSupported()) {
+                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+            }
             router.push({
                 pathname: '/stream/details',
                 params: {

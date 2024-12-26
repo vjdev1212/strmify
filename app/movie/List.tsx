@@ -3,6 +3,7 @@ import { FlatList, Image, StyleSheet, Pressable, View as RNView, Platform } from
 import { ActivityIndicator, Text, View } from '@/components/Themed';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import { isHapticsSupported } from '@/utils/platform';
 
 const MoviesList = () => {
   const router = useRouter();
@@ -32,7 +33,7 @@ const MoviesList = () => {
     const year = item.year?.split('–')[0] || item.year;
 
     const handlePress = async () => {
-      if (Platform.OS !== 'web') {
+      if (isHapticsSupported()) {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
       } router.push({
         pathname: '/movie/details',

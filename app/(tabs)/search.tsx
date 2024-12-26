@@ -6,6 +6,7 @@ import { StyleSheet, FlatList, Image, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import { isHapticsSupported } from '@/utils/platform';
 
 const SearchScreen = () => {
   const router = useRouter();
@@ -70,7 +71,7 @@ const SearchScreen = () => {
 
   const PosterContent = ({ item, type }: { item: any, type: string }) => {
     const handlePress = async () => {
-      if (Platform.OS !== 'web') {
+      if (isHapticsSupported()) {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
       }
       router.push(
@@ -96,7 +97,7 @@ const SearchScreen = () => {
   };
 
   const clearSearch = async () => {
-    if (Platform.OS !== 'web') {
+    if (isHapticsSupported()) {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
     }
     setQuery('');

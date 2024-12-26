@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, FlatList, Image, Pressable, Platform } from 'react-native';
+import { StyleSheet, FlatList, Image, Pressable } from 'react-native';
 import { Text, View } from './Themed';
 import * as Haptics from 'expo-haptics';  // Importing Haptics for haptic feedback
 import { formatDate } from '@/utils/Date';
-import { ScrollView } from 'react-native-gesture-handler';
+import { isHapticsSupported } from '@/utils/platform';
 
 interface Episode {
   name: string;
@@ -52,7 +52,7 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
   }
 
   const handleSeasonSelect = async (season: number) => {
-    if (Platform.OS !== 'web') {
+    if (isHapticsSupported()) {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
     }
     setSelectedSeason(season);
@@ -60,7 +60,7 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
   };
 
   const handleEpisodeSelect = async (season: number, episode: number) => {
-    if (Platform.OS !== 'web') {
+    if (isHapticsSupported()) {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
     }
     setSelectedSeason(season);

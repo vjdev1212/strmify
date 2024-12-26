@@ -4,6 +4,7 @@ import { Tabs } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useColorScheme } from '@/components/useColorScheme';
 import { Platform } from 'react-native';
+import { isHapticsSupported } from '@/utils/platform';
 
 // You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
 function TabBarIcon(props: {
@@ -28,7 +29,7 @@ export default function TabLayout() {
         name="index"
         listeners={{
           tabPress: () => {
-            if (Platform.OS !== 'web') {
+            if (isHapticsSupported()) {
               Haptics.selectionAsync();
             }
           },
@@ -43,7 +44,7 @@ export default function TabLayout() {
         name="search"
         listeners={{
           tabPress: () => {
-            if (Platform.OS !== 'web') {
+            if (isHapticsSupported()) {
               Haptics.selectionAsync();
             }
           },
@@ -58,7 +59,7 @@ export default function TabLayout() {
         name="addons"
         listeners={{
           tabPress: () => {
-            if (Platform.OS !== 'web') {
+            if (isHapticsSupported()) {
               Haptics.selectionAsync();
             }
           },
@@ -73,7 +74,7 @@ export default function TabLayout() {
         name="settings"
         listeners={{
           tabPress: () => {
-            if (Platform.OS !== 'web') {
+            if (isHapticsSupported()) {
               Haptics.selectionAsync();
             }
           },
