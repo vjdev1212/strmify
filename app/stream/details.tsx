@@ -101,6 +101,7 @@ const StreamDetailsScreen = () => {
         if (Platform.OS === 'android') {
             return [
                 { name: Players.VLC, scheme: 'vlc://', encodeUrl: false, icon: require('@/assets/images/players/vlc.png') },
+                { name: Players.VidHub, scheme: 'open-vidhub://x-callback-url/open?url=', encodeUrl: true, icon: require('@/assets/images/players/vidhub.png') },
             ];
         } else if (Platform.OS === 'ios') {
             return [
