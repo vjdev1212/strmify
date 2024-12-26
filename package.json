@@ -19,6 +19,7 @@
     "@react-navigation/native": "^7.0.0",
     "expo": "~52.0.17",
     "expo-checkbox": "^4.0.0",
+    "expo-dev-client": "~5.0.7",
     "expo-font": "~13.0.1",
     "expo-haptics": "~14.0.0",
     "expo-intent-launcher": "~12.0.1",
