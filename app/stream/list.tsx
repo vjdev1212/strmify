@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
     addonList: {
         paddingHorizontal: 10,
     },
-    addonItem: {        
+    addonItem: {
         borderRadius: 25,
         paddingVertical: 10,
         paddingHorizontal: 20
@@ -239,6 +239,7 @@ const styles = StyleSheet.create({
         fontSize: 13,
         paddingHorizontal: 10,
         color: '#888',
+        fontStyle: 'italic'
     },
     playerIconsContainer: {
         flexDirection: 'row',

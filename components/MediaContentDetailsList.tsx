@@ -67,6 +67,7 @@ const styles = StyleSheet.create({
   value: {
     fontSize: 14,
     flex: 3,
+    fontStyle: 'italic'
   },
 });
 

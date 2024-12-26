@@ -175,7 +175,7 @@ const StreamDetailsScreen = () => {
                 {title && <DetailsRow label="Title" value={title} />}
                 {description && <DetailsRow label="Description" value={description} multiline />}
 
-                {!url && (
+                {!url && servers.length > 0 && (
                     <SelectionGroup
                         title="Server"
                         options={servers}
@@ -225,7 +225,7 @@ const SelectionGroup = ({
     isPlayer?: boolean;
 }) => (
     <>
-        <Text style={styles.subtitle}>{title}:</Text>
+        <Text style={styles.header}>{title}</Text>
         <View style={styles.radioGroup}>
             {options.map((option) => (
                 <Pressable
@@ -272,12 +272,12 @@ const styles = StyleSheet.create({
     },
     label: {
         fontSize: 14,
-        fontWeight: 'bold',
         flex: 1,
     },
     value: {
         fontSize: 14,
         flex: 2,
+        fontStyle: 'italic'
     },
     radioGroup: {
         marginVertical: 10
@@ -296,9 +296,12 @@ const styles = StyleSheet.create({
         marginRight: 10,
         borderRadius: 8
     },
-    subtitle: {
-        fontSize: 14,
-        fontWeight: 'bold',
+    header: {
+        fontSize: 16,
+        textAlign: 'center',
+        marginBottom: 10,
+        marginTop: 15,
+        textDecorationLine: 'underline',
     },
     radioContainer: {
         flexDirection: 'row',
@@ -311,7 +314,7 @@ const styles = StyleSheet.create({
         marginRight: 10,
     },
     radioValue: {
-        fontSize: 13,
+        fontSize: 13,        
         paddingTop: 5,
         color: '#888888'
     },

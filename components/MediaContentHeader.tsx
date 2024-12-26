@@ -18,8 +18,16 @@ const MediaContentHeader = ({
   imdbRating: string;
 }) => (
   <View style={styles.container}>
-    <Text style={styles.genre}>{genre?.join(', ')}</Text>
-    <Text style={styles.info}>{getYear(released)}   |   ★ {imdbRating}   |   Runtime: {runtime}</Text>
+    {genre?.length > 0 && <Text style={styles.genre}>{genre.join(', ')}</Text>}
+    {(released || imdbRating || runtime) && (
+      <Text style={styles.info}>
+        {released && `${getYear(released)}`}
+        {released && imdbRating && '   |   '}
+        {imdbRating && `★ ${imdbRating}`}
+        {(released || imdbRating) && runtime && '   |   '}
+        {runtime && `Runtime: ${runtime}`}
+      </Text>
+    )}
   </View>
 );
 
@@ -35,10 +43,12 @@ const styles = StyleSheet.create({
   },
   genre: {
     fontSize: 16,
-     marginBottom: 10,
+    marginBottom: 10,
+    fontStyle: 'italic'
   },
   info: {
     fontSize: 14,
+    fontStyle: 'italic'
   },
 });
 

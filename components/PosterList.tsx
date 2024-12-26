@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
   skeletonImage: {
     width: 100,
     height: 150,
-    backgroundColor: '#888',
+    backgroundColor: '#888888',
     borderRadius: 8,
   },
 });

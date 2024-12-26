@@ -66,7 +66,7 @@ const MovieDetails = () => {
       <MediaContentPoster background={data.background} logo={data.logo} />
       <MediaContentHeader
         name={data.name}
-        genre={data.genre}
+        genre={data.genre || data.genres}
         released={data.released}
         runtime={data.runtime}
         imdbRating={data.imdbRating}
