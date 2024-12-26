@@ -19,7 +19,7 @@ enum Players {
 }
 
 const StreamDetailsScreen = () => {
-    const [servers, setServers] = useState<{ name: string; url: string }[]>([]);
+    const [servers, setServers] = useState<{ name: string; url: string; enabled: boolean }[]>([]);
     const [players, setPlayers] = useState<{ name: string; scheme: string; encodeUrl: boolean; icon: any }[]>([]);
     const [selectedServer, setSelectedServer] = useState<string | null>(null);
     const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
@@ -52,11 +52,18 @@ const StreamDetailsScreen = () => {
             ]);
 
             const loadedServers = [
-                configs[0] && { name: Servers.Stremio, url: JSON.parse(configs[0]).url },
-                configs[1] && { name: Servers.TorrServer, url: JSON.parse(configs[1]).url },
-            ].filter(Boolean) as { name: string; url: string }[];
+                configs[0] && { name: Servers.Stremio, url: JSON.parse(configs[0]).url, enabled: JSON.parse(configs[0]).enabled },
+                configs[1] && { name: Servers.TorrServer, url: JSON.parse(configs[1]).url, enabled: JSON.parse(configs[1]).enabled },
+            ].filter(Boolean) as { name: string; url: string; enabled: boolean }[];
 
-            setServers(loadedServers);
+            // Filter servers by enabled status
+            const enabledServers = loadedServers.filter(server => server.enabled);
+            setServers(enabledServers);
+
+            // Set the default selected server to the first enabled server if available
+            if (enabledServers.length > 0) {
+                setSelectedServer(enabledServers[0].name);
+            }
         } catch (error) {
             console.error('Error loading server configurations:', error);
             Alert.alert('Error', 'Failed to load server configurations');
