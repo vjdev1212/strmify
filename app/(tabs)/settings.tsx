@@ -14,7 +14,7 @@ const SettingsScreen = () => {
 
   const contactList = [
     { title: 'Contact', route: '/settings/contact', icon: 'mail-outline' },
-    { title: 'Donation', route: '/settings/donate', icon: 'cash-outline' },
+    { title: 'Donate', route: '/settings/donate', icon: 'cash-outline' },
   ];
 
   // SettingItem Component
