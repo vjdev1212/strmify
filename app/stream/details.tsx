@@ -8,6 +8,7 @@ import * as Haptics from 'expo-haptics';
 import ServerConfig from '@/components/ServerConfig';
 import { generateStremioPlayerUrl } from '@/clients/stremio';
 import { generateTorrServerPlayerUrl } from '@/clients/torrserver';
+import BottomSpacing from '@/components/BottomSpacing';
 
 enum Servers {
     Stremio = 'Stremio',
@@ -115,7 +116,7 @@ const StreamDetailsScreen = () => {
         }
 
         return [];
-    };    
+    };
 
     const generatePlayerUrlWithInfoHash = async (infoHash: string, serverType: string, serverUrl: string) => {
         try {
@@ -128,7 +129,7 @@ const StreamDetailsScreen = () => {
 
             if (serverType === Servers.TorrServer.toLocaleLowerCase()) {
                 videoUrl = await generateTorrServerPlayerUrl(infoHash, serverUrl, metaData, type);
-                setStatusText('Stream sent to TorrServer. Please wait..');
+                setStatusText('Stream sent to TorrServer. This may take some time. Please wait..');
                 await fetch(videoUrl, { method: 'HEAD' });
                 return videoUrl;
             }
@@ -184,8 +185,13 @@ const StreamDetailsScreen = () => {
             console.log(playerUrl);
             if (playerUrl) {
                 setTimeout(() => {
-                    Linking.openURL(playerUrl);
                     setStatusText('Opening Stream in Media Player...');
+                    Linking.openURL(playerUrl).then(() => {
+                        setStatusText('Stream Openend in Media Player...');
+                        setTimeout(() => {
+                            setStatusText('');
+                        }, 5000);
+                    });
                 }, 500);
             }
         } catch (error) {
@@ -228,13 +234,15 @@ const StreamDetailsScreen = () => {
                     isPlayer
                 />
 
+                <Text style={styles.statusText}>{statusText}</Text>
+
                 <View style={styles.buttonContainer}>
                     <Pressable style={styles.button} onPress={handlePlay}>
                         <Text style={styles.buttonText}>Play</Text>
                     </Pressable>
                 </View>
-                <Text style={styles.statusText}>{statusText}</Text>
             </View>
+            <BottomSpacing space={100} />
         </ScrollView>
     );
 };

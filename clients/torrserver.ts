@@ -9,8 +9,8 @@ export const generateTorrServerPlayerUrl = async (
         const poster = metaData.poster;
         const title = metaData.name || metaData.title;
         const category = type === 'series' ? 'tv' : type;
-        return `${serverUrl}/stream?link=${infoHash}&index=${index}&poster=${poster}&title=${title}&category=${category}&preload&play&save`;
+        return `${serverUrl}/stream?link=${infoHash}&index=${index}&poster=${poster}&title=${title}&category=${category}&play&save`;
     } else {
-        return `${serverUrl}/stream?link=${infoHash}&index=${index}&preload&play`;
+        return `${serverUrl}/stream?link=${infoHash}&index=${index}&play`;
     }
 };
