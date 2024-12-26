@@ -6,6 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icons/streamsrc512x512.png",
     "scheme": "streamsrc",
+    "platforms": ["ios", "android"],
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {

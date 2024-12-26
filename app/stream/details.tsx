@@ -20,7 +20,7 @@ enum Players {
 }
 
 const StreamDetailsScreen = () => {
-    const [servers, setServers] = useState<{ name: string; url: string; enabled: boolean; serverId?: string }[]>([]);
+    const [servers, setServers] = useState<ServerConfig[]>([]);
     const [players, setPlayers] = useState<{ name: string; scheme: string; encodeUrl: boolean; icon: any }[]>([]);
     const [selectedServer, setSelectedServer] = useState<string | null>(null);
     const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
@@ -95,7 +95,7 @@ const StreamDetailsScreen = () => {
         return [];
     };
 
-    const callStremioServer = async (infoHash: string, serverUrl: string) => {
+    const processInfoHashWithStremio = async (infoHash: string, serverUrl: string) => {
         try {
             const response = await fetch(`${serverUrl}/${infoHash}/create`, {
                 method: 'POST',
@@ -114,17 +114,18 @@ const StreamDetailsScreen = () => {
         }
     };
 
-    const generatePlayerUrlWithInfoHash = async (infoHash: string, server: { name: string; url: string }) => {
+    const generatePlayerUrlWithInfoHash = async (infoHash: string, serverType: string, serverUrl: string) => {
         try {
-            if (server.name === Servers.Stremio) {
-                const data = await callStremioServer(infoHash, server.url);
-                const videoUrl = `${server.url}/${infoHash}/${data.guessedFileIdx || 0}`;
+            if (serverType === Servers.Stremio.toLocaleLowerCase()) {
+                const data = await processInfoHashWithStremio(infoHash, serverUrl);
+                const videoUrl = `${serverUrl}/${infoHash}/${data.guessedFileIdx || 0}`;
                 return videoUrl;
             }
 
-            if (server.name === Servers.TorrServer) {
-                // Add TorrServer logic here when applicable.
-                return '';
+            if (serverType === Servers.TorrServer.toLocaleLowerCase()) {
+                const index = 1;
+                const videoUrl = `${serverUrl}/stream?link=${infoHash}&index=${index}&preload&play&save`;
+                return videoUrl;
             }
 
             return '';
@@ -141,6 +142,7 @@ const StreamDetailsScreen = () => {
             Alert.alert('Error', 'Please select a media player.');
             return;
         }
+
 
         if (!url && !selectedServer) {
             Alert.alert('Error', 'Please select a server or provide a valid URL.');
@@ -159,13 +161,14 @@ const StreamDetailsScreen = () => {
             let videoUrl = url || '';
             if (!url && infoHash && server) {
                 setStatusText('Generating Url...');
-                videoUrl = await generatePlayerUrlWithInfoHash(infoHash, server);
+                videoUrl = await generatePlayerUrlWithInfoHash(infoHash, server.serverType, server.serverUrl);
                 setTimeout(() => {
                     setStatusText('Url Generated...');
                 }, 500);
             }
 
             if (!videoUrl) {
+                console.log(videoUrl);
                 Alert.alert('Error', 'Unable to generate a valid video URL.');
                 return;
             }
@@ -246,7 +249,7 @@ const ServerSelectionGroup = ({
     onSelect
 }: {
     title: string;
-    options: any[]; 
+    options: any[];
     selected: string | null;
     onSelect: (name: string) => void;
     isPlayer?: boolean;
@@ -290,7 +293,7 @@ const PlayerSelectionGroup = ({
     isPlayer = false,
 }: {
     title: string;
-    options: { name: string; url?: string; icon?: any }[]; 
+    options: { name: string; url?: string; icon?: any }[];
     selected: string | null;
     onSelect: (name: string) => void;
     isPlayer?: boolean;
