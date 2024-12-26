@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, ScrollView, Alert, Pressable, Linking, Image } from 'react-native';
+import { StyleSheet, ScrollView, Alert, Pressable, Linking, Image, Platform } from 'react-native';
 import { Text, View } from '@/components/Themed'; // Replace with your custom themed components
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams } from 'expo-router';
@@ -20,12 +20,7 @@ enum Players {
 
 const StreamDetailsScreen = () => {
     const [servers, setServers] = useState<{ name: string; url: string }[]>([]);
-    const [players] = useState([
-        { name: Players.VLC, scheme: 'vlc://', encodeUrl: false, icon: require('@/assets/images/players/vlc.png') },
-        { name: Players.Infuse, scheme: 'infuse://x-callback-url/play?url=', encodeUrl: true, icon: require('@/assets/images/players/infuse.png') },
-        { name: Players.VidHub, scheme: 'open-vidhub://x-callback-url/open?url=', encodeUrl: true, icon: require('@/assets/images/players/vidhub.png') },
-        { name: Players.OutPlayer, scheme: 'outplayer://', encodeUrl: false, icon: require('@/assets/images/players/outplayer.png') },
-    ]);
+    const [players, setPlayers] = useState<{ name: string; scheme: string; encodeUrl: boolean; icon: any }[]>([]);
     const [selectedServer, setSelectedServer] = useState<string | null>(null);
     const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
@@ -40,29 +35,56 @@ const StreamDetailsScreen = () => {
     }>();
 
     useEffect(() => {
-        const fetchServerConfigs = async () => {
-            try {
-                const configs = await Promise.all([
-                    AsyncStorage.getItem('stremioServerConfig'),
-                    AsyncStorage.getItem('torrServerConfig'),
-                ]);
-
-                const loadedServers = [
-                    configs[0] && { name: Servers.Stremio, url: JSON.parse(configs[0]).url },
-                    configs[1] && { name: Servers.TorrServer, url: JSON.parse(configs[1]).url },
-                ].filter(Boolean) as { name: string; url: string }[];
-
-                setServers(loadedServers);
-            } catch (error) {
-                console.error('Error loading server configurations:', error);
-                Alert.alert('Error', 'Failed to load server configurations');
-            } finally {
-                setLoading(false);
-            }
+        // Load servers and set platform-specific players
+        const loadInitialData = async () => {
+            await fetchServerConfigs();
+            setPlayers(getPlatformSpecificPlayers());
         };
 
-        fetchServerConfigs();
+        loadInitialData();
     }, []);
+
+    const fetchServerConfigs = async () => {
+        try {
+            const configs = await Promise.all([
+                AsyncStorage.getItem('stremioServerConfig'),
+                AsyncStorage.getItem('torrServerConfig'),
+            ]);
+
+            const loadedServers = [
+                configs[0] && { name: Servers.Stremio, url: JSON.parse(configs[0]).url },
+                configs[1] && { name: Servers.TorrServer, url: JSON.parse(configs[1]).url },
+            ].filter(Boolean) as { name: string; url: string }[];
+
+            setServers(loadedServers);
+        } catch (error) {
+            console.error('Error loading server configurations:', error);
+            Alert.alert('Error', 'Failed to load server configurations');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const getPlatformSpecificPlayers = () => {
+        if (Platform.OS === 'android') {
+            return [
+                { name: Players.VLC, scheme: 'vlc://', encodeUrl: false, icon: require('@/assets/images/players/vlc.png') },
+            ];
+        } else if (Platform.OS === 'ios') {
+            return [
+                { name: Players.VLC, scheme: 'vlc://', encodeUrl: false, icon: require('@/assets/images/players/vlc.png') },
+                { name: Players.Infuse, scheme: 'infuse://x-callback-url/play?url=', encodeUrl: true, icon: require('@/assets/images/players/infuse.png') },
+                { name: Players.VidHub, scheme: 'open-vidhub://x-callback-url/open?url=', encodeUrl: true, icon: require('@/assets/images/players/vidhub.png') },
+                { name: Players.OutPlayer, scheme: 'outplayer://', encodeUrl: false, icon: require('@/assets/images/players/outplayer.png') },
+            ];
+        } else if (Platform.OS === 'web') {
+            return [
+                { name: 'Default Web Player', scheme: '', encodeUrl: false, icon: require('@/assets/images/players/web.png') },
+            ];
+        }
+
+        return [];
+    };
 
     const callStremioServer = async (infoHash: string, serverUrl: string) => {
         try {
@@ -127,10 +149,10 @@ const StreamDetailsScreen = () => {
         try {
             let videoUrl = url || '';
             if (!url && infoHash && server) {
-                setStatusText('Generating Url..');
+                setStatusText('Generating Url...');
                 videoUrl = await generatePlayerUrlWithInfoHash(infoHash, server);
                 setTimeout(() => {
-                    setStatusText('Url Generated..');
+                    setStatusText('Url Generated...');
                 }, 500);
             }
 
@@ -144,18 +166,17 @@ const StreamDetailsScreen = () => {
 
             console.log(playerUrl);
             if (playerUrl) {
-                setStatusText('Opening Stream..');
+                setStatusText('Opening Stream...');
                 setTimeout(() => {
                     Linking.openURL(playerUrl);
-                    setStatusText('Stream Opened in Media Player..');
-                    setStatusText('');
+                    setStatusText('Stream Opened in Media Player...');
                 }, 500);
             }
         } catch (error) {
             console.error('Error during playback process:', error);
             Alert.alert('Error', 'An error occurred while trying to play the stream.');
         } finally {
-            setStatusText('')
+            setStatusText('');
         }
     };
 
@@ -314,7 +335,7 @@ const styles = StyleSheet.create({
         marginRight: 10,
     },
     radioValue: {
-        fontSize: 13,        
+        fontSize: 13,
         paddingTop: 5,
         color: '#888888'
     },
