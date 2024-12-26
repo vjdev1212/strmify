@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { FlatList, Image, StyleSheet, Pressable, View as RNView, Platform } from 'react-native';
-import { Text, View } from './Themed';
-import { Link, router } from 'expo-router';
+import { Text } from './Themed';
+import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics'; // Importing Haptics for haptic feedback
 
 // Skeleton Loader Component
