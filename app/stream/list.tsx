@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { FlatList, StyleSheet, Pressable, View as RNView, Alert, Platform } from 'react-native';
 import { ActivityIndicator, Card, Text, View } from '@/components/Themed';
-import { router, useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 
@@ -132,7 +132,7 @@ const StreamScreen = () => {
             router.push({
                 pathname: '/stream/details',
                 params: {
-                    name, title, description, url, infoHash
+                    imdbid, type, season, episode, name, title, description, url, infoHash
                 },
             })
         }

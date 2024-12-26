@@ -26,8 +26,13 @@ const StreamDetailsScreen = () => {
     const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [statusText, setStatusText] = useState('');
+    const [metaData, setMetaData] = useState<any>(null);
 
-    const { name, title, description, url, infoHash } = useLocalSearchParams<{
+    const { imdbid, type, season, episode, name, title, description, url, infoHash } = useLocalSearchParams<{
+        imdbid: string;
+        type: string;
+        season: string;
+        episode: string;
         name: string;
         title: string;
         description?: string;
@@ -39,11 +44,26 @@ const StreamDetailsScreen = () => {
         // Load servers and set platform-specific players
         const loadInitialData = async () => {
             await fetchServerConfigs();
+            await fetchContentData();
             setPlayers(getPlatformSpecificPlayers());
         };
 
         loadInitialData();
     }, []);
+
+    const fetchContentData = async () => {
+        const stremioMetaDataUrl = `https://cinemeta-live.strem.io/meta/${type}/${imdbid}.json`
+        const metaDataResponse = await fetch(stremioMetaDataUrl);
+        if (metaDataResponse.ok) {
+            const data = await metaDataResponse.json();
+            const meta = data.meta;
+            if (meta) {
+                setMetaData(meta);
+            } else {
+                setMetaData(null);
+            }
+        }
+    }
 
     const fetchServerConfigs = async () => {
         try {
@@ -116,15 +136,25 @@ const StreamDetailsScreen = () => {
 
     const generatePlayerUrlWithInfoHash = async (infoHash: string, serverType: string, serverUrl: string) => {
         try {
+            let videoUrl = ''
             if (serverType === Servers.Stremio.toLocaleLowerCase()) {
                 const data = await processInfoHashWithStremio(infoHash, serverUrl);
-                const videoUrl = `${serverUrl}/${infoHash}/${data.guessedFileIdx || 0}`;
+                videoUrl = `${serverUrl}/${infoHash}/${data.guessedFileIdx || 0}`;
                 return videoUrl;
             }
 
             if (serverType === Servers.TorrServer.toLocaleLowerCase()) {
                 const index = 1;
-                const videoUrl = `${serverUrl}/stream?link=${infoHash}&index=${index}&preload&play&save`;
+                if (metaData) {
+                    const poster = metaData.poster;
+                    const title = metaData.name || metaData.title;
+                    const category = type === 'series' ? 'tv' : type;
+                    videoUrl = `${serverUrl}/stream?link=${infoHash}&index=${index}&poster=${poster}&title=${title}&category=${category}&preload&play&save`;
+                } else {
+                    videoUrl = `${serverUrl}/stream?link=${infoHash}&index=${index}&preload&play`;
+                }
+                setStatusText('Stream sent to TorrServer. Please wait..');
+                await fetch(videoUrl, { method: 'HEAD' });
                 return videoUrl;
             }
 
@@ -134,6 +164,8 @@ const StreamDetailsScreen = () => {
             throw error;
         }
     };
+
+    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
     const handlePlay = async () => {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
@@ -178,10 +210,9 @@ const StreamDetailsScreen = () => {
 
             console.log(playerUrl);
             if (playerUrl) {
-                setStatusText('Opening Stream...');
                 setTimeout(() => {
                     Linking.openURL(playerUrl);
-                    setStatusText('Stream Opened in Media Player...');
+                    setStatusText('Opening Stream in Media Player...');
                 }, 500);
             }
         } catch (error) {
