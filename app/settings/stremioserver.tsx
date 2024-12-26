@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Alert, Pressable, useColorScheme } from 'react-native';
+import { StyleSheet, Alert, Switch, useColorScheme, Pressable } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, Text, TextInput } from '@/components/Themed';
 
@@ -17,9 +17,7 @@ const StremioServerScreen = () => {
                     const { url } = JSON.parse(savedConfig);
                     setServerUrl(url);
                 }
-                if (defaultServer === 'stremio') {
-                    setIsDefault(true);
-                }
+                setIsDefault(defaultServer === 'stremio');
             } catch (error) {
                 console.error('Error loading settings:', error);
             }
@@ -47,43 +45,53 @@ const StremioServerScreen = () => {
         }
     };
 
-    const handleSetDefault = async () => {
+    const toggleDefault = async () => {
         try {
-            await AsyncStorage.setItem('defaultServer', 'stremio');
-            setIsDefault(true);
-            Alert.alert('Success', 'Stremio server set as default.');
+            if (!isDefault) {
+                await AsyncStorage.setItem('defaultServer', 'stremio');
+            } else {
+                await AsyncStorage.removeItem('defaultServer');
+            }
+            setIsDefault(!isDefault);
         } catch (error) {
-            Alert.alert('Error', 'Failed to set default server.');
-            console.error('Error setting default server:', error);
+            Alert.alert('Error', 'Failed to update default server.');
+            console.error('Error updating default server:', error);
         }
     };
 
     return (
         <View style={styles.container}>
             <Text style={styles.header}>Stremio Server Configuration</Text>
+            <View style={styles.serverConfigContainer}>
+                <View style={styles.defaultServerSwitch}>
+                    <Text style={styles.switchLabel}>
+                        {isDefault ? 'Default Server' : 'Set as Default'}
+                    </Text>
+                    <Switch
+                        value={isDefault}
+                        onValueChange={toggleDefault}
+                        style={styles.switch}
+                        thumbColor={isDefault ? '#535aff' : '#ccc'}
+                        trackColor={{ false: '#e0e0e0', true: '#a5afff' }}
+                    />
+                </View>
 
-            <TextInput
-                style={[
-                    styles.input,
-                    colorScheme === 'dark' ? styles.darkInput : styles.lightInput,
-                ]}
-                placeholder="Enter Server Base URL"
-                value={serverUrl}
-                onChangeText={setServerUrl}
-                placeholderTextColor={'#888888'}
-                autoCapitalize="none"
-            />
+                <TextInput
+                    style={[
+                        styles.input,
+                        colorScheme === 'dark' ? styles.darkInput : styles.lightInput,
+                    ]}
+                    placeholder="Enter Server Base URL"
+                    value={serverUrl}
+                    onChangeText={setServerUrl}
+                    placeholderTextColor={'#888888'}
+                    autoCapitalize="none"
+                />
 
-            <Pressable onPress={handleSave}>
-                <Text style={styles.saveBtn}>Save</Text>
-            </Pressable>
-
-            <Pressable onPress={handleSetDefault} disabled={isDefault}>
-                <Text style={[styles.defaultBtn, isDefault && styles.disabledBtn]}>
-                    {isDefault ? 'Default Server' : 'Set as Default'}
-                </Text>
-            </Pressable>
-
+                <Pressable onPress={handleSave}>
+                    <Text style={styles.saveBtn}>Save</Text>
+                </Pressable>
+            </View>
             <View style={styles.serverDetails}>
                 <Text style={styles.serverLabel}>Server Url:</Text>
                 <Text style={styles.serverValue}>{serverUrl}</Text>
@@ -108,7 +116,6 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         padding: 10,
         paddingLeft: 20,
-        marginTop: 10,
         marginBottom: 30,
     },
     lightInput: {
@@ -131,20 +138,19 @@ const styles = StyleSheet.create({
         width: '50%',
         marginHorizontal: '25%',
     },
-    defaultBtn: {
-        marginTop: 20,
-        textAlign: 'center',
-        backgroundColor: '#535aff',
-        paddingVertical: 12,
-        borderRadius: 25,
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#fff',
-        width: '50%',
-        marginHorizontal: '25%',
+    defaultServerSwitch: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+        paddingHorizontal: 20
     },
-    disabledBtn: {
-        backgroundColor: '#ccc',
+    switch: {
+        alignSelf: 'center',
+        marginVertical: 15,
+    },
+    switchLabel: {
+        fontSize: 16,
+        marginBottom: 20,
     },
     serverDetails: {
         marginHorizontal: 10,
@@ -159,6 +165,9 @@ const styles = StyleSheet.create({
         fontSize: 15,
         paddingBottom: 10,
     },
+    serverConfigContainer: {
+        marginVertical: 20
+    }
 });
 
 export default StremioServerScreen;
