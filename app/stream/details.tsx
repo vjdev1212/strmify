@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import ServerConfig from '@/components/ServerConfig';
 
 enum Servers {
     Stremio = 'Stremio',
@@ -19,7 +20,7 @@ enum Players {
 }
 
 const StreamDetailsScreen = () => {
-    const [servers, setServers] = useState<{ name: string; url: string; enabled: boolean }[]>([]);
+    const [servers, setServers] = useState<{ name: string; url: string; enabled: boolean; serverId?: string }[]>([]);
     const [players, setPlayers] = useState<{ name: string; scheme: string; encodeUrl: boolean; icon: any }[]>([]);
     const [selectedServer, setSelectedServer] = useState<string | null>(null);
     const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
@@ -46,23 +47,24 @@ const StreamDetailsScreen = () => {
 
     const fetchServerConfigs = async () => {
         try {
-            const configs = await Promise.all([
-                AsyncStorage.getItem('stremioServerConfig'),
-                AsyncStorage.getItem('torrServerConfig'),
-            ]);
+            const storedServers = await AsyncStorage.getItem('servers');
 
-            const loadedServers = [
-                configs[0] && { name: Servers.Stremio, url: JSON.parse(configs[0]).url, enabled: JSON.parse(configs[0]).enabled },
-                configs[1] && { name: Servers.TorrServer, url: JSON.parse(configs[1]).url, enabled: JSON.parse(configs[1]).enabled },
-            ].filter(Boolean) as { name: string; url: string; enabled: boolean }[];
+            if (!storedServers) {
+                console.error('No server configuration found in AsyncStorage');
+                return;
+            }
 
-            // Filter servers by enabled status
-            const enabledServers = loadedServers.filter(server => server.enabled);
+            const servers: any[] = JSON.parse(storedServers);
+
+            // Filter out only the enabled servers
+            const enabledServers = servers.filter((server) => server.enabled);
+
+            // Set the servers state
             setServers(enabledServers);
 
             // Set the default selected server to the first enabled server if available
             if (enabledServers.length > 0) {
-                setSelectedServer(enabledServers[0].name);
+                setSelectedServer(enabledServers[0].serverId);
             }
         } catch (error) {
             console.error('Error loading server configurations:', error);
@@ -145,7 +147,7 @@ const StreamDetailsScreen = () => {
             return;
         }
 
-        const server = servers.find((s) => s.name === selectedServer);
+        const server = servers.find((s) => s.serverId === selectedServer);
         const player = players.find((p) => p.name === selectedPlayer);
 
         if (!player) {
@@ -187,7 +189,6 @@ const StreamDetailsScreen = () => {
         }
     };
 
-
     if (loading) {
         return (
             <View style={styles.centeredContainer}>
@@ -204,16 +205,16 @@ const StreamDetailsScreen = () => {
                 {description && <DetailsRow label="Description" value={description} multiline />}
 
                 {!url && servers.length > 0 && (
-                    <SelectionGroup
-                        title="Server"
+                    <ServerSelectionGroup
+                        title="Servers"
                         options={servers}
                         selected={selectedServer}
                         onSelect={setSelectedServer}
                     />
                 )}
 
-                <SelectionGroup
-                    title="Media Player"
+                <PlayerSelectionGroup
+                    title="Media Players"
                     options={players}
                     selected={selectedPlayer}
                     onSelect={setSelectedPlayer}
@@ -229,7 +230,6 @@ const StreamDetailsScreen = () => {
             </View>
         </ScrollView>
     );
-
 };
 
 const DetailsRow = ({ label, value, multiline }: { label: string; value: string; multiline?: boolean }) => (
@@ -239,7 +239,50 @@ const DetailsRow = ({ label, value, multiline }: { label: string; value: string;
     </View>
 );
 
-const SelectionGroup = ({
+const ServerSelectionGroup = ({
+    title,
+    options,
+    selected,
+    onSelect
+}: {
+    title: string;
+    options: any[]; 
+    selected: string | null;
+    onSelect: (name: string) => void;
+    isPlayer?: boolean;
+}) => (
+    <>
+        <Text style={styles.header}>{title}</Text>
+        <View style={styles.radioGroup}>
+            {options.map((option) => (
+                <Pressable
+                    key={option.serverId}
+                    style={styles.radioContainer}
+                    onPress={() => onSelect(option.serverId)}
+                >
+                    <View style={styles.radioRow}>
+                        <View style={styles.iconLabel}>
+                            <Text style={styles.radioLabel}>{option.serverName}</Text>
+                        </View>
+                        {option.serverUrl && <Text style={styles.radioValue}>{option.serverUrl}</Text>}
+                    </View>
+                    <View>
+                        {selected === option.serverId && (
+                            <MaterialIcons
+                                name="check"
+                                size={24}
+                                color="#535aff"
+                                style={styles.radioIcon}
+                            />
+                        )}
+                    </View>
+                </Pressable>
+            ))}
+        </View>
+    </>
+);
+
+const PlayerSelectionGroup = ({
     title,
     options,
     selected,
@@ -247,7 +290,7 @@ const SelectionGroup = ({
     isPlayer = false,
 }: {
     title: string;
-    options: { name: string; url?: string; icon?: any }[];
+    options: { name: string; url?: string; icon?: any }[]; 
     selected: string | null;
     onSelect: (name: string) => void;
     isPlayer?: boolean;
@@ -381,7 +424,7 @@ const styles = StyleSheet.create({
         marginTop: 20,
         fontSize: 14,
         textAlign: 'center'
-    }
+    },
 });
 
 export default StreamDetailsScreen;
