@@ -8,20 +8,22 @@ const MediaContentHeader = ({
   name,
   genre,
   released,
+  releaseInfo,
   runtime,
   imdbRating,
 }: {
   name: string;
   genre: string[];
   released: string;
+  releaseInfo: string;
   runtime: string;
   imdbRating: string;
 }) => (
   <View style={styles.container}>
     {genre?.length > 0 && <Text style={styles.genre}>{genre.join(', ')}</Text>}
-    {(released || imdbRating || runtime) && (
+    {(released || releaseInfo || imdbRating || runtime) && (
       <Text style={styles.info}>
-        {released && `${getYear(released)}`}
+        {released && `${getYear(released) || releaseInfo}`}
         {released && imdbRating && '   |   '}
         {imdbRating && `★ ${imdbRating}`}
         {(released || imdbRating) && runtime && '   |   '}

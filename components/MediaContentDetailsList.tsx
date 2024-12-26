@@ -9,18 +9,20 @@ const MediaContentDetailsList = ({
   director,
   writer,
   cast,
+  releaseInfo,
 }: {
   released: string;
   country: string;
   director: string[];
   writer: string[];
   cast: string[];
+  releaseInfo: string;
 }) => (
   <View style={styles.container}>
-    {released && (
+    {(released || releaseInfo) && (
       <View style={styles.row}>
         <Text style={styles.label}>Released:</Text>
-        <Text style={styles.value}>{formatDate(released)}</Text>
+        <Text style={styles.value}>{formatDate(released) || releaseInfo}</Text>
       </View>
     )}
     {country && (
@@ -61,7 +63,6 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontWeight: 'bold',
     flex: 1,
   },
   value: {

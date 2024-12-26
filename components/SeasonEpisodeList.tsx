@@ -7,12 +7,15 @@ import { ScrollView } from 'react-native-gesture-handler';
 
 interface Episode {
   name: string;
+  title: string;
   season: number;
   episode: number;
   number: number;
   thumbnail: string;
   description: string;
+  overview: string;
   firstAired: string;
+  released: string;
 }
 
 interface SeasonEpisodeListProps {
@@ -108,16 +111,16 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
               <Image source={{ uri: item.thumbnail }} style={styles.thumbnail} />
               <View style={{ flex: 1, justifyContent: 'center' }}>
                 <Text style={styles.episodeTitle} numberOfLines={3}>
-                  {item.episode}. {item.name}
+                  {item.episode || item.number}. {item.name || item.title}
                 </Text>
                 <Text style={styles.episodeAired}>
-                  {formatDate(item.firstAired)}
+                  {formatDate(item.firstAired) || formatDate(item.released)}
                 </Text>
               </View>
             </View>
             <View>
               <Text style={styles.episodeDescription} numberOfLines={10}>
-                {item.description}
+                {item.description || item.overview}
               </Text>
             </View>
           </Pressable>

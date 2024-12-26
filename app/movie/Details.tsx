@@ -70,6 +70,7 @@ const MovieDetails = () => {
         released={data.released}
         runtime={data.runtime}
         imdbRating={data.imdbRating}
+        releaseInfo={data.releaseInfo}
       />
       <PlayButton onPress={handlePlayPress} />
       <MediaContentDescription description={data.description} />
@@ -79,6 +80,7 @@ const MovieDetails = () => {
         director={data.director}
         writer={data.writer}
         cast={data.cast}
+        releaseInfo={data.releaseInfo}
       />
       <BottomSpacing space={50} />
     </ScrollView>

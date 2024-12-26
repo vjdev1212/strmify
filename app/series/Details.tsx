@@ -67,6 +67,7 @@ const SeriesDetails = () => {
         released={data.released}
         runtime={data.runtime}
         imdbRating={data.imdbRating}
+        releaseInfo={data.releaseInfo}
       />
       <MediaContentDescription description={data.description} />
       <MediaContentDetailsList
@@ -75,6 +76,7 @@ const SeriesDetails = () => {
         director={data.director}
         writer={data.writer}
         cast={data.cast}
+        releaseInfo={data.releaseInfo}
       />
       <SeasonEpisodeList
         videos={data.videos}
