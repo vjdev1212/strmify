@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Image, StyleSheet, Pressable, View as RNView, Platform, ScrollView } from 'react-native';
+import { FlatList, Image, StyleSheet, Pressable, View as RNView, Platform } from 'react-native';
 import { Text } from './Themed';
 import { router } from 'expo-router';
-import * as Haptics from 'expo-haptics';
+import * as Haptics from 'expo-haptics'; // Importing Haptics for haptic feedback
 
 const SkeletonLoader = () => (
   <RNView style={styles.skeletonContainer}>
@@ -29,7 +29,7 @@ const PosterList = ({
       try {
         const response = await fetch(apiUrl);
         const result = await response.json();
-        setData(result.metas.slice(0, 20));
+        setData(result.metas.slice(0, 20)); // Slice the first 20 items
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -47,18 +47,43 @@ const PosterList = ({
     router.push({
       pathname: `/${type}/details`,
       params: { imdbid: item.imdb_id || item.id },
-    });
+    })
   };
 
-  const handleSeeAllPress = async () => {
+  const renderItem = ({ item }: any) => {
+    const year =
+      item.year && typeof item.year === 'string' && item.year.includes('–')
+        ? item.year.split('–')[0]
+        : item.year;
+
+    return (
+      <RNView>
+        <Pressable
+          style={[styles.posterContainer, layout === 'vertical' && styles.verticalContainer]}
+          onPress={() => handlePress(item)}
+        >
+          <Image
+            source={{ uri: item.poster }}
+            style={[styles.posterImage, layout === 'vertical' && styles.verticalImage]}
+          />
+          <Text numberOfLines={1} ellipsizeMode="tail" style={styles.posterTitle}>
+            {item.name}
+          </Text>
+          <Text style={styles.posterYear}>{year}</Text>
+        </Pressable>
+      </RNView>
+    );
+  };
+
+  const handleSeeAllPress = async (item: any) => {
     if (Platform.OS !== 'web') {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
     }
     router.push({
       pathname: `/${type}/list`,
       params: { apiUrl, title, type },
-    });
-  };
+    })
+  }
 
   return (
     <RNView style={styles.container}>
@@ -70,43 +95,23 @@ const PosterList = ({
       </RNView>
 
       {loading ? (
-        <ScrollView
+        <FlatList
+          data={new Array(10).fill(null)} // Skeleton loader
+          renderItem={() => <SkeletonLoader />}
+          keyExtractor={(item, index) => index.toString()}
           horizontal={layout === 'horizontal'}
           showsHorizontalScrollIndicator={false}
-        >
-          {new Array(10).fill(null).map((_, index) => (
-            <SkeletonLoader key={index} />
-          ))}
-        </ScrollView>
+          numColumns={layout === 'vertical' ? 2 : 1}
+        />
       ) : (
-        <ScrollView
+        <FlatList
+          data={data}
+          renderItem={renderItem}
+          keyExtractor={(item, index) => index.toString()}
           horizontal={layout === 'horizontal'}
           showsHorizontalScrollIndicator={false}
-        >
-          {data.map((item, index) => {
-            const year =
-              item.year && typeof item.year === 'string' && item.year.includes('–')
-                ? item.year.split('–')[0]
-                : item.year;
-
-            return (
-              <Pressable
-                key={index}
-                style={[styles.posterContainer, layout === 'vertical' && styles.verticalContainer]}
-                onPress={() => handlePress(item)}
-              >
-                <Image
-                  source={{ uri: item.poster }}
-                  style={[styles.posterImage, layout === 'vertical' && styles.verticalImage]}
-                />
-                <Text numberOfLines={1} ellipsizeMode="tail" style={styles.posterTitle}>
-                  {item.name}
-                </Text>
-                <Text style={styles.posterYear}>{year}</Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
+          numColumns={layout === 'vertical' ? 2 : 1}
+        />
       )}
     </RNView>
   );
@@ -143,11 +148,13 @@ const styles = StyleSheet.create({
     width: 100,
     height: 150,
     borderRadius: 8,
+    backgroundColor: '#888888'
   },
   verticalImage: {
     width: '100%',
     height: 200,
     borderRadius: 8,
+    backgroundColor: '#888888'
   },
   posterTitle: {
     marginTop: 8,
