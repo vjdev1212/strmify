@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { FlatList, Image, StyleSheet, Pressable, View as RNView, Platform } from 'react-native';
-import { ActivityIndicator, Text, View } from '@/components/Themed';
+import { ActivityIndicator, StatusBar, Text, View } from '@/components/Themed';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { isHapticsSupported } from '@/utils/platform';
@@ -59,6 +59,7 @@ const MoviesList = () => {
 
   return (
     <RNView style={styles.container}>
+      <StatusBar/>
       {loading ? (
         <View style={styles.centeredContainer}>
           <ActivityIndicator size="large" style={styles.activityIndicator} color="#535aff" />

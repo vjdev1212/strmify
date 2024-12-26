@@ -1,12 +1,13 @@
 import { SafeAreaView, ScrollView, StyleSheet } from 'react-native';
 import PosterList from '@/components/PosterList';
 import { CatalogUrl } from '@/constants/Stremio';
-import { View } from '@/components/Themed';
+import { StatusBar, View } from '@/components/Themed';
 
 export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar/>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.contentContainer}>
           <PosterList apiUrl={CatalogUrl.topMovies} title='Movies - Top' type='movie' />

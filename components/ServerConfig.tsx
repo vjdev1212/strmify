@@ -9,7 +9,7 @@ interface ServerConfigProps {
   defaultUrl: string;
 }
 
-interface ServerConfig {
+export interface ServerConfig {
   serverId: string;
   serverType: string;
   serverName: string;
@@ -18,7 +18,7 @@ interface ServerConfig {
   isDefault: boolean;
 }
 
-const ServerConfig: React.FC<ServerConfigProps> = ({ serverName, serverType, defaultUrl }) => {
+const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverType, defaultUrl }) => {
   const colorScheme = useColorScheme();
   const [serverUrl, setServerUrl] = useState<string>(defaultUrl);
   const [isDefault, setIsDefault] = useState<boolean>(false);
@@ -141,7 +141,7 @@ const ServerConfig: React.FC<ServerConfigProps> = ({ serverName, serverType, def
           <Text style={styles.serverValue}>{isEnabled ? 'Yes' : 'No'}</Text>
 
           <Text style={styles.serverLabel}>Server Url:</Text>
-          <Text style={styles.serverValue}>{serverUrl}</Text>
+          <Text style={styles.serverValue}>{serverUrl || 'No URL set'}</Text>
 
           <Text style={styles.serverLabel}>Default Server:</Text>
           <Text style={styles.serverValue}>{isDefault ? 'Yes' : 'No'}</Text>
@@ -229,4 +229,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ServerConfig;
+export default ServerConfiguration;

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, ActivityIndicator, Alert, Pressable, Image, SafeAreaView, ScrollView, useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Text, View, TextInput } from '@/components/Themed';
+import { Text, View, TextInput, StatusBar } from '@/components/Themed';
 import { router } from 'expo-router';
 
 const defaultAddonLogo = 'https://i.ibb.co/fSJ42PJ/addon.png';
@@ -76,6 +76,7 @@ export default function AddAddonScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
+            <StatusBar/>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollViewContent}>
                 <Text style={styles.title}>Add Addon</Text>
                 <TextInput

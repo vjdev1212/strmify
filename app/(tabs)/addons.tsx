@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Text } from '@/components/Themed';
+import { StatusBar, Text } from '@/components/Themed';
 import { router } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import * as Haptics from 'expo-haptics';
@@ -138,8 +138,9 @@ const AddonsScreen = () => {
     router.push('/addons/add');
   }
 
-  return (
+  return (    
     <SafeAreaView style={styles.container}>
+      <StatusBar/>
       <Pressable style={styles.addButton} onPress={onAddNewPress}>
         <Text style={styles.addButtonText}>Add New</Text>
       </Pressable>

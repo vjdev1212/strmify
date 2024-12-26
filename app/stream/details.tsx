@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, ScrollView, Alert, Pressable, Linking, Image, Platform } from 'react-native';
-import { Text, View } from '@/components/Themed'; // Replace with your custom themed components
+import { StatusBar, Text, View } from '@/components/Themed'; // Replace with your custom themed components
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import ServerConfig from '@/components/ServerConfig';
 import { generateStremioPlayerUrl } from '@/clients/stremio';
 import { generateTorrServerPlayerUrl } from '@/clients/torrserver';
-import BottomSpacing from '@/components/BottomSpacing';
+import { ServerConfig } from '@/components/ServerConfig';
 
 enum Servers {
     Stremio = 'Stremio',
@@ -217,6 +216,7 @@ const StreamDetailsScreen = () => {
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
+            <StatusBar />
             <View style={styles.mediaItem}>
                 <DetailsRow label="Name" value={name} />
                 {title && <DetailsRow label="Title" value={title} />}

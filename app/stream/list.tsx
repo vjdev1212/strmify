@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { FlatList, StyleSheet, Pressable, View as RNView, Alert } from 'react-native';
-import { ActivityIndicator, Card, Text, View } from '@/components/Themed';
+import { ActivityIndicator, Card, StatusBar, Text, View } from '@/components/Themed';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
@@ -159,6 +159,7 @@ const StreamScreen = () => {
     const selectedAddonStreams = streams.find((addonData) => addonData.addon === selectedAddon)?.streams || [];
     return (
         <RNView style={styles.container}>
+            <StatusBar />
             <View>
                 <View style={styles.addonListContainer}>
                     <FlatList

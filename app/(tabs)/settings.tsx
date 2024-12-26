@@ -1,7 +1,7 @@
 import React from 'react';
 import { Platform, StyleSheet, Pressable, View } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'; // Import icons from Expo
-import { Text } from '@/components/Themed'; // Assuming you have a Themed Text component
+import { StatusBar, Text } from '@/components/Themed'; // Assuming you have a Themed Text component
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics'
 import { isHapticsSupported } from '@/utils/platform';
@@ -9,14 +9,14 @@ import { isHapticsSupported } from '@/utils/platform';
 const SettingsScreen = () => {
   const router = useRouter();
   const serversList: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [
-      { title: 'Stremio Server', route: '/settings/stremioserver', icon: 'cloud-outline' },
-      { title: 'TorrServer', route: '/settings/torrserver', icon: 'cloud-outline' },
-    ];
-  
-    const contactList: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [
-      { title: 'Contact', route: '/settings/contact', icon: 'mail-outline' },
-      { title: 'Donate', route: '/settings/donate', icon: 'cash-outline' },
-    ];
+    { title: 'Stremio Server', route: '/settings/stremioserver', icon: 'cloud-outline' },
+    { title: 'TorrServer', route: '/settings/torrserver', icon: 'cloud-outline' },
+  ];
+
+  const contactList: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [
+    { title: 'Contact', route: '/settings/contact', icon: 'mail-outline' },
+    { title: 'Donate', route: '/settings/donate', icon: 'cash-outline' },
+  ];
 
   // SettingItem Component
   const SettingItem = ({ title, icon, onPress }: { title: string, icon: keyof typeof Ionicons.glyphMap, onPress: () => void }) => (
@@ -36,7 +36,7 @@ const SettingsScreen = () => {
 
   return (
     <View style={styles.container}>
-      {/* Servers Group */}
+      <StatusBar />
       <View style={styles.settingsGroup}>
         <Text style={styles.header}>Servers</Text>
         {serversList.map((item, index) => (

@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, Pressable, Linking, Platform } from 'react-native';
-import { View, Text } from '@/components/Themed';
+import { View, Text, StatusBar } from '@/components/Themed';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics'
 import { isHapticsSupported } from '@/utils/platform';
@@ -20,6 +20,7 @@ const DonateScreen = () => {
 
     return (
         <View style={styles.container}>
+            <StatusBar/>
             <Text style={styles.title}>Liked the App!</Text>
             <Text style={styles.subtitle}>
                 If you find this app useful and want to support its continued development, consider buying me a coffee. Your support keeps this project alive and thriving!      </Text>

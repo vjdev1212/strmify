@@ -3,7 +3,13 @@
  * https://docs.expo.io/guides/color-schemes/
  */
 
-import { ActivityIndicator as DefaultActivityIndicator, TextInput as DefaultTextInput, Text as DefaultText, View as DefaultView } from 'react-native';
+import {
+  ActivityIndicator as DefaultActivityIndicator,
+  TextInput as DefaultTextInput,
+  Text as DefaultText,
+  View as DefaultView,
+  StatusBar as DefaultStatusBar
+} from 'react-native';
 
 import Colors from '@/constants/Colors';
 import { useColorScheme } from './useColorScheme';
@@ -16,6 +22,7 @@ type ThemeProps = {
 export type TextProps = ThemeProps & DefaultText['props'];
 export type TextInputProps = ThemeProps & DefaultTextInput['props'];
 export type ViewProps = ThemeProps & DefaultView['props'];
+export type StatusBarProps = ThemeProps & DefaultStatusBar['props'];
 export type ActivityIndicatorProps = ThemeProps & DefaultActivityIndicator['props'];
 
 export function useThemeColor(
@@ -60,6 +67,13 @@ export function View(props: ViewProps) {
   return <DefaultView style={[{ backgroundColor }, style]} {...otherProps} />;
 }
 
+export function StatusBar(props: StatusBarProps) {
+  const { ...otherProps } = props;
+  const backgroundColor = useThemeColor({ light: '#ffffff', dark: '#000000' }, 'background');
+
+  return <DefaultStatusBar backgroundColor={backgroundColor} {...otherProps} />;
+}
+
 export function Card(props: ViewProps) {
   const { style, lightColor, darkColor, ...otherProps } = props;
 
@@ -77,8 +91,8 @@ export function Card(props: ViewProps) {
         {
           backgroundColor,
           borderColor,
-          borderWidth: 1,          
-          overflow: 'hidden', 
+          borderWidth: 1,
+          overflow: 'hidden',
         },
         style,
       ]}

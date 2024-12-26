@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ActivityIndicator, Text, View } from '../../components/Themed';
+import { ActivityIndicator, StatusBar, Text, View } from '../../components/Themed';
 import MediaContentDescription from '@/components/MediaContentDescription';
 import MediaContentDetailsList from '@/components/MediaContentDetailsList';
 import MediaContentHeader from '@/components/MediaContentHeader';
@@ -60,6 +60,7 @@ const SeriesDetails = () => {
 
   return (
     <ScrollView showsVerticalScrollIndicator={false} style={styles.container}>
+      <StatusBar/>
       <MediaContentPoster background={data.background} logo={data.logo} />
       <MediaContentHeader
         name={data.name}

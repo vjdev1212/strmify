@@ -1,4 +1,4 @@
-import { Text, ActivityIndicator, TextInput, View } from '@/components/Themed';
+import { Text, ActivityIndicator, TextInput, View, StatusBar } from '@/components/Themed';
 import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { Platform, View as RNView, SafeAreaView } from 'react-native';
@@ -109,6 +109,7 @@ const SearchScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar/>
       <View style={styles.searchInputContainer}>
         <TextInput
           style={[
