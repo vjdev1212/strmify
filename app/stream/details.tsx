@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { StyleSheet, ScrollView, Alert, Pressable, Linking, Image, Platform } from 'react-native';
 import { Text, View } from '@/components/Themed'; // Replace with your custom themed components
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import ServerConfig from '@/components/ServerConfig';
@@ -16,6 +16,7 @@ enum Servers {
 }
 
 enum Players {
+    Browser = 'Browser',
     VLC = 'VLC',
     Infuse = 'Infuse',
     VidHub = 'VidHub',
@@ -100,11 +101,13 @@ const StreamDetailsScreen = () => {
     const getPlatformSpecificPlayers = () => {
         if (Platform.OS === 'android') {
             return [
+                { name: Players.Browser, scheme: '', encodeUrl: false, icon: require('@/assets/images/players/chrome.png') },
                 { name: Players.VLC, scheme: 'vlc://', encodeUrl: false, icon: require('@/assets/images/players/vlc.png') },
                 { name: Players.VidHub, scheme: 'open-vidhub://x-callback-url/open?url=', encodeUrl: true, icon: require('@/assets/images/players/vidhub.png') },
             ];
         } else if (Platform.OS === 'ios') {
             return [
+                { name: Players.Browser, scheme: '', encodeUrl: false, icon: require('@/assets/images/players/safari.png') },
                 { name: Players.VLC, scheme: 'vlc://', encodeUrl: false, icon: require('@/assets/images/players/vlc.png') },
                 { name: Players.Infuse, scheme: 'infuse://x-callback-url/play?url=', encodeUrl: true, icon: require('@/assets/images/players/infuse.png') },
                 { name: Players.VidHub, scheme: 'open-vidhub://x-callback-url/open?url=', encodeUrl: true, icon: require('@/assets/images/players/vidhub.png') },
@@ -112,7 +115,7 @@ const StreamDetailsScreen = () => {
             ];
         } else if (Platform.OS === 'web') {
             return [
-                { name: 'Default Web Player', scheme: '', encodeUrl: false, icon: require('@/assets/images/players/web.png') },
+                { name: Players.Browser, scheme: '', encodeUrl: false, icon: require('@/assets/images/players/chrome.png') },
             ];
         }
 
@@ -143,6 +146,7 @@ const StreamDetailsScreen = () => {
     };
 
     const handlePlay = async () => {
+
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
 
         if (!selectedPlayer) {
