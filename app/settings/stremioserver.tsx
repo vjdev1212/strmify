@@ -7,17 +7,21 @@ const StremioServerScreen = () => {
     const colorScheme = useColorScheme();
     const [serverUrl, setServerUrl] = useState('http://192.168.1.10:11470');
     const [isDefault, setIsDefault] = useState(false);
+    const [isEnabled, setIsEnabled] = useState(true);
 
     useEffect(() => {
         const loadSettings = async () => {
             try {
                 const savedConfig = await AsyncStorage.getItem('stremioServerConfig');
                 const defaultServer = await AsyncStorage.getItem('defaultServer');
+                const enabledServer = await AsyncStorage.getItem('stremioServerEnabled');
+
                 if (savedConfig) {
                     const { url } = JSON.parse(savedConfig);
                     setServerUrl(url);
                 }
                 setIsDefault(defaultServer === 'stremio');
+                setIsEnabled(enabledServer !== 'false'); // Default to enabled if no value is stored
             } catch (error) {
                 console.error('Error loading settings:', error);
             }
@@ -59,10 +63,34 @@ const StremioServerScreen = () => {
         }
     };
 
+    const toggleEnabled = async () => {
+        try {
+            const newStatus = !isEnabled;
+            await AsyncStorage.setItem('stremioServerEnabled', newStatus.toString());
+            setIsEnabled(newStatus);
+        } catch (error) {
+            Alert.alert('Error', 'Failed to update server status.');
+            console.error('Error updating server status:', error);
+        }
+    };
+
     return (
         <View style={styles.container}>
             <Text style={styles.header}>Stremio Server Configuration</Text>
             <View style={styles.serverConfigContainer}>
+                <View style={styles.defaultServerSwitch}>
+                    <Text style={styles.switchLabel}>
+                        {isEnabled ? 'Disable Server' : 'Enable Server'}
+                    </Text>
+                    <Switch
+                        value={isEnabled}
+                        onValueChange={toggleEnabled}
+                        style={styles.switch}
+                        thumbColor={isEnabled ? '#535aff' : '#ccc'}
+                        trackColor={{ false: '#e0e0e0', true: '#a5afff' }}
+                    />
+                </View>
+
                 <View style={styles.defaultServerSwitch}>
                     <Text style={styles.switchLabel}>
                         {isDefault ? 'Default Server' : 'Set as Default'}
@@ -142,7 +170,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         width: '100%',
-        paddingHorizontal: 20
+        paddingHorizontal: 20,
+        marginBottom: 15,
     },
     switch: {
         alignSelf: 'center',
@@ -166,8 +195,8 @@ const styles = StyleSheet.create({
         paddingBottom: 10,
     },
     serverConfigContainer: {
-        marginVertical: 20
-    }
+        marginVertical: 20,
+    },
 });
 
 export default StremioServerScreen;
