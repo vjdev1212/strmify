@@ -19,13 +19,15 @@
     },
     "ios": {
       "supportsTablet": true,
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#ffffff",
+      "bundleIdentifier": "com.vijayyuvi.streamsrc"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.vijayyuvi.streamsrc"
     },
     "web": {
       "bundler": "metro",

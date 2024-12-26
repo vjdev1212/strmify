@@ -36,3 +36,4 @@ yarn-error.*
 *.tsbuildinfo
 package-lock.json
 yarn.lock
+android
