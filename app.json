@@ -6,7 +6,10 @@
     "orientation": "portrait",
     "icon": "./assets/icons/streamsrc512x512.png",
     "scheme": "streamsrc",
-    "platforms": ["ios", "android"],
+    "platforms": [
+      "ios",
+      "android"
+    ],
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
@@ -36,6 +39,15 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "833af164-852e-4115-b090-71f676741562"
+      }
+    },
+    "owner": "vijayvcm"
   }
 }
