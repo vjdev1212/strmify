@@ -62,10 +62,20 @@ const ServerConfig: React.FC<ServerConfigProps> = ({ serverName, serverType, def
     try {
       const savedConfigs = await AsyncStorage.getItem('servers');
       const servers: ServerConfig[] = savedConfigs ? JSON.parse(savedConfigs) : [];
-      const updatedServers = servers.filter(server => server.serverType !== serverType); // Remove old server config
-      updatedServers.push(newServerConfig);
 
-      await AsyncStorage.setItem('servers', JSON.stringify(updatedServers));
+      if (isDefault) {
+        const updatedServers = servers.map(server => ({
+          ...server,
+          isDefault: server.serverType === serverType ? true : false,
+        }));
+        await AsyncStorage.setItem('servers', JSON.stringify(updatedServers));
+      } else {
+        const updatedServers = servers.filter(server => server.serverType !== serverType); // Remove old server config
+        updatedServers.push(newServerConfig);
+
+        await AsyncStorage.setItem('servers', JSON.stringify(updatedServers));
+      }
+
       Alert.alert('Success', `${serverName} server configuration saved.`);
     } catch (error) {
       Alert.alert('Error', 'Failed to save configuration.');
