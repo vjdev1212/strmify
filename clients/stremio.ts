@@ -1,19 +1,22 @@
-
-const baseUrl = 'https://api.stremio.com';
-
-async function getStreamUrl(infoHash: string): Promise<string> {
+export const processInfoHashWithStremio = async (infoHash: string, serverUrl: string) => {
     try {
-        const response = await fetch(`${baseUrl}/stream/${infoHash}`);
+        const response = await fetch(`${serverUrl}/${infoHash}/create`, {
+            method: 'POST',
+            body: JSON.stringify({ torrent: { infoHash }, guessFileIdx: {} }),
+        });
+
         if (!response.ok) {
-            throw new Error('Network response was not ok');
+            throw new Error('Failed to call the Stremio server endpoint.');
         }
-        const data = await response.json();
-        if (data && data.streamUrl) {
-            return data.streamUrl;
-        } else {
-            throw new Error('Stream URL not found in response');
-        }
-    } catch (error: any) {
-        throw new Error(`Failed to fetch stream URL: ${error.message}`);
+
+        return response.json();
+    } catch (error) {
+        console.error('Error calling Stremio server:', error);
+        throw error;
     }
-}
+};
+
+export const generateStremioPlayerUrl = async (infoHash: string, serverUrl: string) => {
+    const data = await processInfoHashWithStremio(infoHash, serverUrl);
+    return `${serverUrl}/${infoHash}/${data.guessedFileIdx || 0}`;
+};

@@ -6,6 +6,8 @@ import { useLocalSearchParams } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import ServerConfig from '@/components/ServerConfig';
+import { generateStremioPlayerUrl } from '@/clients/stremio';
+import { generateTorrServerPlayerUrl } from '@/clients/torrserver';
 
 enum Servers {
     Stremio = 'Stremio',
@@ -113,46 +115,19 @@ const StreamDetailsScreen = () => {
         }
 
         return [];
-    };
-
-    const processInfoHashWithStremio = async (infoHash: string, serverUrl: string) => {
-        try {
-            const response = await fetch(`${serverUrl}/${infoHash}/create`, {
-                method: 'POST',
-                body: JSON.stringify({ torrent: { infoHash }, guessFileIdx: {} }),
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to call the server endpoint.');
-            }
-
-            return response.json();
-        } catch (error) {
-            console.error('Error calling Stremio server:', error);
-            Alert.alert('Error', 'Failed to contact the Stremio server. Please check your connection and try again.');
-            throw error;
-        }
-    };
+    };    
 
     const generatePlayerUrlWithInfoHash = async (infoHash: string, serverType: string, serverUrl: string) => {
         try {
-            let videoUrl = ''
+            let videoUrl = '';
+
             if (serverType === Servers.Stremio.toLocaleLowerCase()) {
-                const data = await processInfoHashWithStremio(infoHash, serverUrl);
-                videoUrl = `${serverUrl}/${infoHash}/${data.guessedFileIdx || 0}`;
+                videoUrl = await generateStremioPlayerUrl(infoHash, serverUrl);
                 return videoUrl;
             }
 
             if (serverType === Servers.TorrServer.toLocaleLowerCase()) {
-                const index = 1;
-                if (metaData) {
-                    const poster = metaData.poster;
-                    const title = metaData.name || metaData.title;
-                    const category = type === 'series' ? 'tv' : type;
-                    videoUrl = `${serverUrl}/stream?link=${infoHash}&index=${index}&poster=${poster}&title=${title}&category=${category}&preload&play&save`;
-                } else {
-                    videoUrl = `${serverUrl}/stream?link=${infoHash}&index=${index}&preload&play`;
-                }
+                videoUrl = await generateTorrServerPlayerUrl(infoHash, serverUrl, metaData, type);
                 setStatusText('Stream sent to TorrServer. Please wait..');
                 await fetch(videoUrl, { method: 'HEAD' });
                 return videoUrl;
@@ -164,8 +139,6 @@ const StreamDetailsScreen = () => {
             throw error;
         }
     };
-
-    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
     const handlePlay = async () => {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
