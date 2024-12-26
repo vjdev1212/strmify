@@ -8,18 +8,18 @@ import { isHapticsSupported } from '@/utils/platform';
 
 const SettingsScreen = () => {
   const router = useRouter();
-  const serversList = [
-    { title: 'Stremio Server', route: '/settings/stremioserver', icon: 'cloud-outline' },
-    { title: 'TorrServer', route: '/settings/torrserver', icon: 'cloud-outline' },
-  ];
-
-  const contactList = [
-    { title: 'Contact', route: '/settings/contact', icon: 'mail-outline' },
-    { title: 'Donate', route: '/settings/donate', icon: 'cash-outline' },
-  ];
+  const serversList: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [
+      { title: 'Stremio Server', route: '/settings/stremioserver', icon: 'cloud-outline' },
+      { title: 'TorrServer', route: '/settings/torrserver', icon: 'cloud-outline' },
+    ];
+  
+    const contactList: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [
+      { title: 'Contact', route: '/settings/contact', icon: 'mail-outline' },
+      { title: 'Donate', route: '/settings/donate', icon: 'cash-outline' },
+    ];
 
   // SettingItem Component
-  const SettingItem = ({ title, icon, onPress }: { title: string, icon: string, onPress: () => void }) => (
+  const SettingItem = ({ title, icon, onPress }: { title: string, icon: keyof typeof Ionicons.glyphMap, onPress: () => void }) => (
     <Pressable style={styles.settingItem} onPress={onPress}>
       <Ionicons name={icon} size={24} color="#535aff" style={styles.icon} />
       <Text style={styles.settingText}>{title}</Text>

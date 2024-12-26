@@ -29,7 +29,7 @@ const ContactScreen = () => {
                         style={styles.contactItem}
                         onPress={item.action}
                     >
-                        <Ionicons name={item.icon} size={30} color="#535aff" style={styles.icon} />
+                        <Ionicons name={item.icon as keyof typeof Ionicons.glyphMap} size={30} color="#535aff" style={styles.icon} />
                         <View style={styles.info}>
                             <Text style={styles.type}>{item.type}</Text>
                             <Text style={styles.value}>{item.value}</Text>
