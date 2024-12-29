@@ -91,7 +91,7 @@ const PosterList = ({
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
     }
     router.push({
-      pathname:  type === 'movie' ? '/movie/List': '/series/List',
+      pathname:  type === 'movie' ? '/movie/list': '/series/list',
       params: { apiUrl, title, type },
     });
   };
