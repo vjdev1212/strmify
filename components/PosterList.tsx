@@ -46,7 +46,7 @@ const PosterList = ({
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
     }
     router.push({
-      pathname: `/${type}/details`,
+      pathname: type === 'movie' ? '/movie/details': '/series/details',
       params: { imdbid: item.imdb_id || item.id },
     })
   };
