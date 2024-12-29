@@ -1,9 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, Image, StyleSheet, Pressable, View as RNView, Platform } from 'react-native';
+import { FlatList, Image, StyleSheet, Pressable, View as RNView, Dimensions } from 'react-native';
 import { Text } from './Themed';
 import { router } from 'expo-router';
-import * as Haptics from 'expo-haptics'; // Importing Haptics for haptic feedback
+import * as Haptics from 'expo-haptics';
 import { isHapticsSupported } from '@/utils/platform';
+
+let { width: deviceWidth, height: deviceHeight } = Dimensions.get('window');
+
+// Swap width and height if in landscape mode
+if (deviceWidth > deviceHeight) {
+  [deviceWidth, deviceHeight] = [deviceHeight, deviceWidth];
+}
 
 const SkeletonLoader = () => (
   <RNView style={styles.skeletonContainer}>
@@ -48,7 +55,7 @@ const PosterList = ({
     router.push({
       pathname: `/${type}/details`,
       params: { imdbid: item.imdb_id || item.id },
-    })
+    });
   };
 
   const renderItem = ({ item }: any) => {
@@ -65,7 +72,10 @@ const PosterList = ({
         >
           <Image
             source={{ uri: item.poster }}
-            style={[styles.posterImage, layout === 'vertical' && styles.verticalImage]}
+            style={[
+              styles.posterImage,
+              layout === 'vertical' && styles.verticalImage,
+            ]}
           />
           <Text numberOfLines={1} ellipsizeMode="tail" style={styles.posterTitle}>
             {item.name}
@@ -76,15 +86,15 @@ const PosterList = ({
     );
   };
 
-  const handleSeeAllPress = async (item: any) => {
+  const handleSeeAllPress = async () => {
     if (isHapticsSupported()) {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
     }
     router.push({
-      pathname: `/${type}/list`,
+      pathname:  type === 'movie' ? '/movie/List': '/series/List',
       params: { apiUrl, title, type },
-    })
-  }
+    });
+  };
 
   return (
     <RNView style={styles.container}>
@@ -146,21 +156,21 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   posterImage: {
-    width: 100,
-    height: 150,
+    width: deviceWidth * 0.3,
+    height: deviceHeight * 0.2,
     borderRadius: 8,
-    backgroundColor: '#888888'
+    backgroundColor: '#888888',
   },
   verticalImage: {
-    width: '100%',
-    height: 200,
+    width: deviceWidth * 0.45,
+    height: deviceHeight * 0.3,
     borderRadius: 8,
-    backgroundColor: '#888888'
+    backgroundColor: '#888888',
   },
   posterTitle: {
     marginTop: 8,
     fontSize: 14,
-    maxWidth: 100,
+    maxWidth: deviceWidth * 0.3,
   },
   posterYear: {
     marginTop: 4,
@@ -169,12 +179,12 @@ const styles = StyleSheet.create({
   },
   skeletonContainer: {
     marginRight: 15,
-    width: 100,
+    width: deviceWidth * 0.3,
     alignItems: 'center',
   },
   skeletonImage: {
-    width: 100,
-    height: 150,
+    width: deviceWidth * 0.3,
+    height: deviceHeight * 0.2,
     backgroundColor: '#888888',
     borderRadius: 8,
   },
