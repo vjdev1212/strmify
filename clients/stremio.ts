@@ -29,7 +29,7 @@ export const generateStremioPlayerUrl = async (infoHash: string, serverUrl: stri
                 fileName = data.files[fileIndex].name;
             }
             else if (type === 'series') {
-                const file = getEpisodeFile(data.files, season, episode)
+                const file = getStremioEpisodeFile(data.files, season, episode)
                 if (file) {
                     fileName = file.name;
                 }
@@ -42,7 +42,8 @@ export const generateStremioPlayerUrl = async (infoHash: string, serverUrl: stri
     return `${serverUrl}/${infoHash}/${fileName}`;
 };
 
-function getEpisodeFile(files: any[], season: string, episode: string) {
+
+function getStremioEpisodeFile(files: any[], season: string, episode: string) {
     const seasonEpisodePattern = new RegExp(`S${season.padStart(2, '0')}E${episode.padStart(2, '0')}`, 'i');
     const altSeasonEpisodePattern = new RegExp(`S${season}E${episode}`, 'i');
 
