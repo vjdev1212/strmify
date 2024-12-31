@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { StyleSheet, ScrollView, Alert, Pressable, Linking, Image, Platform, useColorScheme } from 'react-native';
-import { StatusBar, Text, View } from '@/components/Themed'; // Replace with your custom themed components
+import { StyleSheet, ScrollView, Alert, Pressable, Linking, Image, Platform, useColorScheme, Modal } from 'react-native';
+import { ActivityIndicator, StatusBar, Text, View } from '@/components/Themed';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -31,6 +31,8 @@ const StreamDetailsScreen = () => {
     const [statusText, setStatusText] = useState('');
     const [metaData, setMetaData] = useState<any>(null);
     const [playBtnDisabled, setPlayBtnDisabled] = useState<boolean>(false);
+    const [isModalVisible, setModalVisible] = useState(false);
+    const colorScheme = useColorScheme();
 
     const { imdbid, type, season, episode, name, title, description, url, infoHash } = useLocalSearchParams<{
         imdbid: string;
@@ -113,11 +115,12 @@ const StreamDetailsScreen = () => {
     const generatePlayerUrlWithInfoHash = async (infoHash: string, serverType: string, serverUrl: string) => {
         try {
             if (serverType === Servers.Stremio.toLocaleLowerCase()) {
+                setStatusText('Stream sent to StremioServer. This may take some time. Please wait..');
                 return await generateStremioPlayerUrl(infoHash, serverUrl, type, season, episode);
             }
             if (serverType === Servers.TorrServer.toLocaleLowerCase()) {
                 const videoUrl = await generateTorrServerPlayerUrl(infoHash, serverUrl, metaData, type);
-                appendStatusText('Stream sent to TorrServer. This may take some time. Please wait..');
+                setStatusText('Stream sent to TorrServer. This may take some time. Please wait..');
                 await fetch(videoUrl, { method: 'HEAD' });
                 return videoUrl;
             }
@@ -130,12 +133,14 @@ const StreamDetailsScreen = () => {
 
     const handlePlay = async () => {
         setPlayBtnDisabled(true);
+        setModalVisible(true); // Show modal on play
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
 
         if (!selectedPlayer || (!url && !selectedServer)) {
-            appendStatusText('Error: Please select a media player and server.');
+            setStatusText('Error: Please select a media player and server.');
             Alert.alert('Error', 'Please select a media player and server.');
             setPlayBtnDisabled(false);
+            setModalVisible(false);
             return;
         }
 
@@ -143,46 +148,44 @@ const StreamDetailsScreen = () => {
         const player = players.find((p) => p.name === selectedPlayer);
 
         if (!player) {
-            appendStatusText('Error: Invalid media player selection.');
+            setStatusText('Error: Invalid media player selection.');
             Alert.alert('Error', 'Invalid media player selection.');
             setPlayBtnDisabled(false);
+            setModalVisible(false);
             return;
         }
 
         try {
             let videoUrl = url || '';
             if (!url && infoHash && server) {
-                appendStatusText('Generating URL...');
+                setStatusText('Processing the InfoHash...');
                 videoUrl = await generatePlayerUrlWithInfoHash(infoHash, server.serverType, server.serverUrl);
-                appendStatusText('URL Generated...');
+                setStatusText('URL Generated...');
             }
 
             if (!videoUrl) {
-                appendStatusText('Error: Unable to generate a valid video URL.');
+                setStatusText('Error: Unable to generate a valid video URL.');
                 Alert.alert('Error', 'Unable to generate a valid video URL.');
                 setPlayBtnDisabled(false);
+                setModalVisible(false);
                 return;
             }
 
             const streamUrl = player.encodeUrl ? encodeURIComponent(videoUrl) : videoUrl;
             const playerUrl = `${player.scheme}${streamUrl}`;
             if (playerUrl) {
-                appendStatusText('Opening Stream in Media Player...');
+                setStatusText('Opening Stream in Media Player...');
                 await Linking.openURL(playerUrl);
-                appendStatusText('Stream Opened in Media Player...');
+                setStatusText('Stream Opened in Media Player...');
             }
         } catch (error) {
             console.error('Error during playback process:', error);
-            appendStatusText('Error: An error occurred while trying to play the stream.');
+            setStatusText('Error: An error occurred while trying to play the stream.');
             Alert.alert('Error', 'An error occurred while trying to play the stream.');
         } finally {
             setPlayBtnDisabled(false);
-            setStatusText('');
+            setModalVisible(false); // Hide modal after play finishes
         }
-    };
-
-    const appendStatusText = (newText: string) => {
-        setStatusText((prev) => (prev ? `${prev}\n${newText}` : newText));
     };
 
     if (loading) {
@@ -225,8 +228,22 @@ const StreamDetailsScreen = () => {
                         <Text style={styles.buttonText}>Play</Text>
                     </Pressable>
                 </View>
-                {statusText && <Text style={styles.statusText}>{statusText}</Text>}
             </View>
+
+            {/* Status Modal */}
+            <Modal
+                transparent={true}
+                visible={isModalVisible}
+                animationType="fade"
+                onRequestClose={() => setModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={[styles.modalContainer, { backgroundColor: colorScheme === 'dark' ? '#1f1f1f' : '#f0f0f0' }]}>
+                        <ActivityIndicator size="large" color="#535aff" style={styles.activityIndicator} />
+                        <Text style={styles.modalText}>{statusText}</Text>
+                    </View>
+                </View>
+            </Modal>
         </ScrollView>
     );
 };
@@ -370,7 +387,7 @@ const styles = StyleSheet.create({
     playerContainer: {
         alignItems: 'center',
         justifyContent: 'center',
-        margin: 5,        
+        margin: 5,
         padding: 8,
         borderRadius: 10,
     },
@@ -390,7 +407,7 @@ const styles = StyleSheet.create({
         marginVertical: 5
     },
     header: {
-        fontSize: 16,        
+        fontSize: 16,
         marginVertical: 10,
         fontWeight: 'bold'
     },
@@ -443,7 +460,32 @@ const styles = StyleSheet.create({
     },
     statusText: {
         marginTop: 20,
-        fontSize: 14
+        fontSize: 14,
+        paddingBottom: 30,
+    },
+    modalOverlay: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    modalContainer: {
+        padding: 20,
+        borderRadius: 10,
+        minWidth: 250,
+        maxWidth: 300,
+        minHeight: 100,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalText: {
+        fontSize: 16,
+        textAlign: 'center',
+        marginVertical: 20
+    },
+    activityIndicator: {
+        marginVertical: 10,
+        color: '#535aff',
     },
 });
 
