@@ -1,15 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, Image, StyleSheet, Pressable, View as RNView, Animated } from 'react-native';
+import { FlatList, StyleSheet, Pressable, View as RNView, Animated, useColorScheme } from 'react-native';
 import { Text } from './Themed';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics'; // Importing Haptics for haptic feedback
 import { isHapticsSupported } from '@/utils/platform';
 
-const SkeletonLoader = () => (
-  <RNView style={styles.skeletonContainer}>
-    <RNView style={styles.skeletonImage} />
-  </RNView>
-);
+const SkeletonLoader = () => {
+  const colorScheme = useColorScheme();
+  return (
+    <RNView style={styles.skeletonContainer}>
+      <RNView style={[styles.skeletonImage, { backgroundColor: colorScheme === 'dark' ? '#0f0f0f' : '#f0f0f0' }]} />
+    </RNView>
+  )
+};
 
 const PosterList = ({
   apiUrl,
@@ -24,9 +27,8 @@ const PosterList = ({
 }) => {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-
-  // Fade animation for the poster images
   const [fadeAnim] = useState(new Animated.Value(0));
+  const colorScheme = useColorScheme();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -80,9 +82,9 @@ const PosterList = ({
             style={[
               styles.posterImage,
               layout === 'vertical' && styles.verticalImage,
-              { opacity: fadeAnim }, // Apply animated opacity
+              { opacity: fadeAnim, backgroundColor: colorScheme === 'dark' ? '#0f0f0f' : '#f0f0f0' },
             ]}
-            onLoad={handleImageLoad} // Trigger animation when image is loaded
+            onLoad={handleImageLoad}
           />
           <Text numberOfLines={1} ellipsizeMode="tail" style={styles.posterTitle}>
             {item.name}
@@ -166,13 +168,11 @@ const styles = StyleSheet.create({
     width: 100,
     height: 150,
     borderRadius: 8,
-    backgroundColor: '#888888',
   },
   verticalImage: {
     width: '100%',
     height: 200,
     borderRadius: 8,
-    backgroundColor: '#888888',
   },
   posterTitle: {
     marginTop: 8,

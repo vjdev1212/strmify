@@ -94,11 +94,11 @@ const StreamDetailsScreen = () => {
             ];
         } else if (Platform.OS === 'ios') {
             return [
-                { name: Players.Browser, scheme: '', encodeUrl: false, icon: require('@/assets/images/players/safari.png') },
                 { name: Players.VLC, scheme: 'vlc://', encodeUrl: false, icon: require('@/assets/images/players/vlc.png') },
                 { name: Players.Infuse, scheme: 'infuse://x-callback-url/play?url=', encodeUrl: true, icon: require('@/assets/images/players/infuse.png') },
                 { name: Players.VidHub, scheme: 'open-vidhub://x-callback-url/open?url=', encodeUrl: true, icon: require('@/assets/images/players/vidhub.png') },
                 { name: Players.OutPlayer, scheme: 'outplayer://', encodeUrl: false, icon: require('@/assets/images/players/outplayer.png') },
+                { name: Players.Browser, scheme: '', encodeUrl: false, icon: require('@/assets/images/players/safari.png') },
             ];
         } else if (Platform.OS === 'web') {
             return [{ name: Players.Browser, scheme: '', encodeUrl: false, icon: require('@/assets/images/players/chrome.png') }];
@@ -305,7 +305,7 @@ const PlayerSelectionGroup = ({
                             style={[
                                 styles.playerContainer,
                                 selected === option.name && {
-                                    backgroundColor: isDarkMode ? '#2e2e34' : '#eaeaea',
+                                    backgroundColor: isDarkMode ? '#2f2f2f' : '#eaeaea',
                                 },
                             ]}
                             onPress={() => onSelect(option.name)}
@@ -379,6 +379,7 @@ const styles = StyleSheet.create({
         height: 50,
         padding: 5,
         borderRadius: 10,
+        resizeMode: 'cover'
     },
     playerName: {
         fontSize: 14,
@@ -404,8 +405,7 @@ const styles = StyleSheet.create({
     },
     radioValue: {
         fontSize: 13,
-        paddingTop: 5,
-        color: '#888888'
+        paddingTop: 5
     },
     radioIcon: {
         marginHorizontal: 20,

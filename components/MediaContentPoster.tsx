@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Image, StyleSheet, View as RNView, Animated } from 'react-native';
+import { Image, StyleSheet, View as RNView, Animated, useColorScheme } from 'react-native';
 import { View } from './Themed';
 
 const MediaContentPoster = ({ background, logo, title }: { background: string, logo: string, title: string }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [fadeAnim] = useState(new Animated.Value(0)); // Fade animation for the background image
   const [titleFadeAnim] = useState(new Animated.Value(0)); // Fade animation for the title
+  const colorScheme = useColorScheme(); // Detect color scheme (light or dark)
 
   useEffect(() => {
     const imageLoader = setTimeout(() => {
@@ -26,9 +27,11 @@ const MediaContentPoster = ({ background, logo, title }: { background: string, l
     return () => clearTimeout(imageLoader);
   }, [fadeAnim, titleFadeAnim]);
 
+  const backgroundColor = colorScheme === 'dark' ? '#0f0f0f' : '#f0f0f0';
+
   return (
     <>
-      <View style={styles.posterContainer}>
+      <View style={[styles.posterContainer, { backgroundColor }]}>
         {isLoading ? (
           <RNView style={styles.skeletonBackground} />
         ) : (
