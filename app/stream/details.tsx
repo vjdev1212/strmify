@@ -60,11 +60,15 @@ const StreamDetailsScreen = () => {
                 console.error('No server configuration found in AsyncStorage');
                 return;
             }
-
             const servers: ServerConfig[] = JSON.parse(storedServers);
             const enabledServers = servers.filter((server) => server.enabled);
+            const defaultServer = enabledServers.find((server) => server.isDefault);
+            if (defaultServer) {
+                setSelectedServer(defaultServer.serverId);
+            } else if (enabledServers.length > 0) {
+                setSelectedServer(enabledServers[0].serverId);
+            }
             setServers(enabledServers);
-            if (enabledServers.length > 0) setSelectedServer(enabledServers[0].serverId);
         } catch (error) {
             console.error('Error loading server configurations:', error);
             Alert.alert('Error', 'Failed to load server configurations');
@@ -190,9 +194,10 @@ const StreamDetailsScreen = () => {
     }
 
     return (
-        <ScrollView contentContainerStyle={styles.container}>
+        <ScrollView contentContainerStyle={[styles.container, { paddingBottom: 30 }]}>
             <StatusBar />
             <View style={styles.mediaItem}>
+                <Text style={[styles.header, { marginBottom: 30 }]}>Stream Details</Text>
                 <DetailsRow label="Name" value={name} />
                 {title && <DetailsRow label="Title" value={title} />}
                 {description && <DetailsRow label="Description" value={description} multiline />}
@@ -387,10 +392,8 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     header: {
-        fontSize: 16,
-        textAlign: 'center',
-        marginBottom: 10,
-        marginTop: 15,
+        fontSize: 16,        
+        marginVertical: 10,
         fontWeight: 'bold'
     },
     radioContainer: {
