@@ -1,10 +1,11 @@
 workflows:
   expo-build:
-    name: Expo Build (Unsigned IPA)
+    name: Expo EAS Build (Unsigned IPA)
     environment:
       vars:
         EXPO_CLI: latest    # Ensure you are using the latest Expo CLI
         NODE_VERSION: 16    # Specify the Node.js version
+        CI: 1               # Set CI variable for non-interactive mode
     scripts:
       # Install dependencies
       - name: Install dependencies
@@ -12,12 +13,16 @@ workflows:
           echo "Setting up Node.js..."
           nvm install $NODE_VERSION
           npm install
-
-      # Build the Expo project for iOS
-      - name: Build Expo project for iOS
-        script: |
-          npx expo install
-          npx expo build:ios --no-wait --release-channel default --non-interactive
           
+      # Install EAS CLI
+      - name: Install EAS CLI
+        script: |
+          npm install -g eas-cli
+          
+      # Build the Expo project for iOS using EAS Build
+      - name: Build Expo project for iOS using EAS Build
+        script: |
+          eas build --platform ios --non-interactive --profile release
+
     artifacts:
       - ./dist/*.ipa
