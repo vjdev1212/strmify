@@ -129,36 +129,47 @@ const StreamDetailsScreen = () => {
         }
     };
 
+    const [isPlaying, setIsPlaying] = useState(false);  // New state to track playback status
+
     const handleCancel = () => {
         setPlayBtnDisabled(false);
         setModalVisible(false);
         setStatusText('');
+        setIsPlaying(false);  // Stop playback process when cancel is pressed
     };
 
     const handlePlay = async () => {
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+        if (isPlaying) {
+            return;
+        }
+    
+        setIsPlaying(true);
         setPlayBtnDisabled(true);
         setModalVisible(true);
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
-
+    
         if (!selectedPlayer || (!url && !selectedServer)) {
             setStatusText('Error: Please select a media player and server.');
             Alert.alert('Error', 'Please select a media player and server.');
             setPlayBtnDisabled(false);
             setModalVisible(false);
+            setIsPlaying(false);  // Stop playback if error occurs
             return;
         }
-
+    
         const server = servers.find((s) => s.serverId === selectedServer);
         const player = players.find((p) => p.name === selectedPlayer);
-
+    
         if (!player) {
             setStatusText('Error: Invalid media player selection.');
             Alert.alert('Error', 'Invalid media player selection.');
             setPlayBtnDisabled(false);
             setModalVisible(false);
+            setIsPlaying(false);  // Stop playback if error occurs
             return;
         }
-
+    
         try {
             let videoUrl = url || '';
             if (!url && infoHash && server) {
@@ -166,15 +177,16 @@ const StreamDetailsScreen = () => {
                 videoUrl = await generatePlayerUrlWithInfoHash(infoHash, server.serverType, server.serverUrl);
                 setStatusText('URL Generated...');
             }
-
+    
             if (!videoUrl) {
                 setStatusText('Error: Unable to generate a valid video URL.');
                 Alert.alert('Error', 'Unable to generate a valid video URL.');
                 setPlayBtnDisabled(false);
                 setModalVisible(false);
+                setIsPlaying(false);  // Stop playback if error occurs
                 return;
             }
-
+    
             const streamUrl = player.encodeUrl ? encodeURIComponent(videoUrl) : videoUrl;
             const playerUrl = `${player.scheme}${streamUrl}`;
             if (playerUrl) {
@@ -189,14 +201,9 @@ const StreamDetailsScreen = () => {
         } finally {
             setPlayBtnDisabled(false);
             setModalVisible(false);
+            setIsPlaying(false);  // Reset playback state
         }
-    };
-
-    const handleModalClose = () => {
-        setModalVisible(false);
-        setStatusText('');
-        setPlayBtnDisabled(false);
-    };
+    };    
 
     if (loading) {
         return (
