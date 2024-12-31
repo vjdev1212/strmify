@@ -2,20 +2,19 @@
   "build": {
     "development": {
       "android": {
-        "buildType": "development"
+        "buildType": "apk"
       },
       "ios": {
-        "buildType": "development"
+        "simulator": true
       }
     },
     "production": {
       "android": {
-        "buildType": "apk",
-        "distribution": "store"
+        "buildType": "app-bundle"
       },
       "ios": {
-        "buildType": "release",
-        "distribution": "store"
+        "distribution": "app-store",
+        "credentialsSource": "remote"
       }
     }
   }

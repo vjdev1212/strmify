@@ -1,26 +1,22 @@
 workflows:
   expo-build:
-    name: Expo EAS Build (Unsigned IPA)
+    name: Expo EAS Build (Signed IPA for iOS, APK for Android)
     environment:
       groups:
-        - expo-env-vars  # Reference the variable group here
+        - expo-env-vars
     scripts:
-      # Install dependencies
       - name: Install dependencies
         script: |
           echo "Setting up Node.js..."
           nvm install $NODE_VERSION
           npm install
-          
-      # Install EAS CLI
       - name: Install EAS CLI
         script: |
           npm install -g eas-cli
-          
-      # Build the Expo project for iOS using EAS Build
-      - name: Build Expo project for iOS using EAS Build
+      - name: Build Expo project using EAS Build
         script: |
-          eas build --platform ios --profile production --non-interactive  # Builds using production profile
-
+          eas build --platform ios --profile production --non-interactive
+          eas build --platform android --profile production --non-interactive
     artifacts:
-      - ./dist/*.ipa  # Collect the IPA file generated during the build
+      - ./dist/*.ipa
+      - ./dist/*.apk
