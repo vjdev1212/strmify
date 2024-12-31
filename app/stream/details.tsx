@@ -48,7 +48,11 @@ const StreamDetailsScreen = () => {
         const loadInitialData = async () => {
             await fetchServerConfigs();
             await fetchContentData();
-            setPlayers(getPlatformSpecificPlayers());
+            const platformPlayers = getPlatformSpecificPlayers();
+            setPlayers(platformPlayers);
+            if (platformPlayers.length > 0) {
+                setSelectedPlayer(platformPlayers[0].name);
+            }
         };
 
         loadInitialData();
@@ -239,10 +243,18 @@ const StreamDetailsScreen = () => {
                     isPlayer
                 />
                 <View style={styles.buttonContainer}>
-                    <Pressable style={styles.button} onPress={handlePlay}>
+                    <Pressable
+                        style={[
+                            styles.button,
+                            (!selectedPlayer || (infoHash && !selectedServer)) && styles.buttonDisabled,
+                        ]}
+                        onPress={handlePlay}
+                        disabled={!selectedPlayer || (infoHash && !selectedServer) || false}
+                    >
                         <Text style={styles.buttonText}>Play</Text>
                     </Pressable>
                 </View>
+
                 {
                     statusText !== null && statusText !== undefined && statusText !== '' ?
                         (<Text style={styles.statusText}>{statusText}</Text>) : null
@@ -455,6 +467,9 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#ffffff',
         paddingHorizontal: 10
+    },
+    buttonDisabled: {
+        backgroundColor: '#888888',
     },
     centeredContainer: {
         flex: 1,
