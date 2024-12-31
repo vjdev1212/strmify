@@ -2,10 +2,8 @@ workflows:
   expo-build:
     name: Expo EAS Build (Unsigned IPA)
     environment:
-      vars:
-        EXPO_CLI: latest    # Ensure you are using the latest Expo CLI
-        NODE_VERSION: 16    # Specify the Node.js version
-        CI: 1               # Set CI variable for non-interactive mode
+      groups:
+        - expo-env-vars  # Reference the variable group here
     scripts:
       # Install dependencies
       - name: Install dependencies
@@ -22,7 +20,7 @@ workflows:
       # Build the Expo project for iOS using EAS Build
       - name: Build Expo project for iOS using EAS Build
         script: |
-          eas build --platform ios --non-interactive --profile release
+          eas build --platform ios --profile production --non-interactive  # Builds using production profile
 
     artifacts:
-      - ./dist/*.ipa
+      - ./dist/*.ipa  # Collect the IPA file generated during the build
