@@ -1,11 +1,10 @@
 workflows:
-  ios-build:
-    name: iOS Build (Unsigned IPA)
+  expo-build:
+    name: Expo Build (Unsigned IPA)
     environment:
       vars:
-        NODE_VERSION: 16 # Specify the Node.js version
-      xcode: latest       # Use the latest Xcode version
-      cocoapods: default  # Use the default CocoaPods version
+        EXPO_CLI: latest    # Ensure you are using the latest Expo CLI
+        NODE_VERSION: 16    # Specify the Node.js version
     scripts:
       # Install dependencies
       - name: Install dependencies
@@ -13,18 +12,12 @@ workflows:
           echo "Setting up Node.js..."
           nvm install $NODE_VERSION
           npm install
-          cd ios && pod install
 
-      # Build the IPA without signing
-      - name: Build unsigned IPA
+      # Build the Expo project for iOS
+      - name: Build Expo project for iOS
         script: |
-          xcodebuild -workspace ios/MyApp.xcworkspace \
-            -scheme MyApp \
-            -configuration Release \
-            -archivePath $CM_BUILD_DIR/build/MyApp.xcarchive archive
-          xcodebuild -exportArchive \
-            -archivePath $CM_BUILD_DIR/build/MyApp.xcarchive \
-            -exportPath $CM_BUILD_DIR/build/ \
-            -exportOptionsPlist ios/ExportOptions.plist
+          npx expo install
+          npx expo build:ios --no-wait --release-channel default --non-interactive
+          
     artifacts:
-      - $CM_BUILD_DIR/build/*.ipa
+      - ./dist/*.ipa
