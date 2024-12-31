@@ -30,6 +30,7 @@ const StreamDetailsScreen = () => {
     const [loading, setLoading] = useState(true);
     const [statusText, setStatusText] = useState('');
     const [metaData, setMetaData] = useState<any>(null);
+    const [playBtnDisabled, setPlayBtnDisabled] = useState<boolean>(false);
 
     const { imdbid, type, season, episode, name, title, description, url, infoHash } = useLocalSearchParams<{
         imdbid: string;
@@ -145,29 +146,30 @@ const StreamDetailsScreen = () => {
     };
 
     const handlePlay = async () => {
+        setPlayBtnDisabled(true);
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
-    
+
         if (!selectedPlayer) {
             appendStatusText('Error: Please select a media player.');
             Alert.alert('Error', 'Please select a media player.');
             return;
         }
-    
+
         if (!url && !selectedServer) {
             appendStatusText('Error: Please select a server or provide a valid URL.');
             Alert.alert('Error', 'Please select a server or provide a valid URL.');
             return;
         }
-    
+
         const server = servers.find((s) => s.serverId === selectedServer);
         const player = players.find((p) => p.name === selectedPlayer);
-    
+
         if (!player) {
             appendStatusText('Error: Invalid media player selection.');
             Alert.alert('Error', 'Invalid media player selection.');
             return;
         }
-    
+
         try {
             let videoUrl = url || '';
             if (!url && infoHash && server) {
@@ -175,16 +177,16 @@ const StreamDetailsScreen = () => {
                 videoUrl = await generatePlayerUrlWithInfoHash(infoHash, server.serverType, server.serverUrl);
                 appendStatusText('URL Generated...');
             }
-    
+
             if (!videoUrl) {
                 appendStatusText('Error: Unable to generate a valid video URL.');
                 Alert.alert('Error', 'Unable to generate a valid video URL.');
                 return;
             }
-    
+
             const streamUrl = player.encodeUrl ? encodeURIComponent(videoUrl) : videoUrl;
             const playerUrl = `${player.scheme}${streamUrl}`;
-    
+
             if (playerUrl) {
                 appendStatusText('Opening Stream in Media Player...');
                 await Linking.openURL(playerUrl);
@@ -195,15 +197,16 @@ const StreamDetailsScreen = () => {
             appendStatusText('Error: An error occurred while trying to play the stream.');
             Alert.alert('Error', 'An error occurred while trying to play the stream.');
         }
-        finally{
+        finally {
+            setPlayBtnDisabled(false);
             setStatusText('');
         }
     };
-    
+
     const appendStatusText = (newText: string) => {
         setStatusText((prev) => (prev ? `${prev}\n${newText}` : newText));
     };
-    
+
     if (loading) {
         return (
             <View style={styles.centeredContainer}>
@@ -240,10 +243,10 @@ const StreamDetailsScreen = () => {
                     <Pressable
                         style={[
                             styles.button,
-                            (!selectedPlayer || (infoHash && !selectedServer)) && styles.buttonDisabled,
+                            (playBtnDisabled || !selectedPlayer || (infoHash && !selectedServer)) && styles.buttonDisabled,
                         ]}
                         onPress={handlePlay}
-                        disabled={!selectedPlayer || (infoHash && !selectedServer) || false}
+                        disabled={playBtnDisabled || !selectedPlayer || (infoHash && !selectedServer) || false}
                     >
                         <Text style={styles.buttonText}>Play</Text>
                     </Pressable>
@@ -333,7 +336,7 @@ const PlayerSelectionGroup = ({
                 contentContainerStyle={styles.playerList}>
                 {options.map((option) => (
                     <View key={option.name}>
-                        <Pressable                            
+                        <Pressable
                             style={[
                                 styles.playerContainer,
                                 selected === option.name && {
