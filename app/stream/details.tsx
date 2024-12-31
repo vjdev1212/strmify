@@ -289,8 +289,8 @@ const ServerSelectionGroup = ({
                     <View>
                         {selected === option.serverId && (
                             <MaterialIcons
-                                name="check"
-                                size={24}
+                                name="check-circle"
+                                size={26}
                                 color="#535aff"
                                 style={styles.radioIcon}
                             />
@@ -332,7 +332,7 @@ const PlayerSelectionGroup = ({
                             style={[
                                 styles.playerContainer,
                                 selected === option.name && {
-                                    backgroundColor: isDarkMode ? '#535aff' : '#c5d1ff',
+                                    backgroundColor: isDarkMode ? '#2e2e34' : '#eaeaea',
                                 },
                             ]}
                             onPress={() => onSelect(option.name)}
