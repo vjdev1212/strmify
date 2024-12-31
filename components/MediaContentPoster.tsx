@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Image, StyleSheet, View as RNView, Animated, useColorScheme } from 'react-native';
 import { View } from './Themed';
 
-const MediaContentPoster = ({ background, logo, title }: { background: string, logo: string, title: string }) => {
+const MediaContentPoster = ({ background, logo }: { background: string, logo: string }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [fadeAnim] = useState(new Animated.Value(0)); // Fade animation for the background image
   const [titleFadeAnim] = useState(new Animated.Value(0)); // Fade animation for the title
@@ -45,10 +45,6 @@ const MediaContentPoster = ({ background, logo, title }: { background: string, l
       <Animated.View style={[styles.logoContainer, { opacity: titleFadeAnim }]}>
         <Image source={{ uri: logo }} style={styles.logo} />
       </Animated.View>
-
-      <Animated.Text style={[styles.title, { opacity: titleFadeAnim }]}>
-        {title}
-      </Animated.Text>
     </>
   );
 };
