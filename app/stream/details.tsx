@@ -336,9 +336,8 @@ const PlayerSelectionGroup = ({
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.playerList}>
                 {options.map((option) => (
-                    <View>
-                        <Pressable
-                            key={option.name}
+                    <View key={option.name}>
+                        <Pressable                            
                             style={[
                                 styles.playerContainer,
                                 selected === option.name && {
