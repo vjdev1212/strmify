@@ -197,7 +197,7 @@ const StreamDetailsScreen = () => {
         <ScrollView contentContainerStyle={[styles.container, { paddingBottom: 30 }]}>
             <StatusBar />
             <View style={styles.mediaItem}>
-                <Text style={[styles.header, { marginBottom: 30 }]}>Stream Details</Text>
+                <Text style={[styles.header, { marginVertical: 10 }]}>Stream Details</Text>
                 <DetailsRow label="Name" value={name} />
                 {title && <DetailsRow label="Title" value={title} />}
                 {description && <DetailsRow label="Description" value={description} multiline />}
@@ -397,11 +397,10 @@ const styles = StyleSheet.create({
     radioContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 10,
-        paddingVertical: 10
+        marginVertical: 10
     },
     radioLabel: {
-        fontSize: 14,
+        fontSize: 15,
         marginRight: 10,
     },
     radioValue: {
