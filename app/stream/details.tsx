@@ -34,6 +34,16 @@ const StreamDetailsScreen = () => {
     const [isModalVisible, setModalVisible] = useState(false);
     const colorScheme = useColorScheme();
 
+    useEffect(() => {
+        const loadPlayers = async () => {
+            const platformPlayers = getPlatformSpecificPlayers();
+            setPlayers(platformPlayers);
+        };
+
+        loadPlayers();
+    }, []);
+
+
     const { imdbid, type, season, episode, name, title, description, url, infoHash } = useLocalSearchParams<{
         imdbid: string;
         type: string;
@@ -143,12 +153,12 @@ const StreamDetailsScreen = () => {
         if (isPlaying) {
             return;
         }
-    
+
         setIsPlaying(true);
         setPlayBtnDisabled(true);
         setModalVisible(true);
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
-    
+
         if (!selectedPlayer || (!url && !selectedServer)) {
             setStatusText('Error: Please select a media player and server.');
             Alert.alert('Error', 'Please select a media player and server.');
@@ -157,10 +167,10 @@ const StreamDetailsScreen = () => {
             setIsPlaying(false);  // Stop playback if error occurs
             return;
         }
-    
+
         const server = servers.find((s) => s.serverId === selectedServer);
         const player = players.find((p) => p.name === selectedPlayer);
-    
+
         if (!player) {
             setStatusText('Error: Invalid media player selection.');
             Alert.alert('Error', 'Invalid media player selection.');
@@ -169,7 +179,7 @@ const StreamDetailsScreen = () => {
             setIsPlaying(false);  // Stop playback if error occurs
             return;
         }
-    
+
         try {
             let videoUrl = url || '';
             if (!url && infoHash && server) {
@@ -177,7 +187,7 @@ const StreamDetailsScreen = () => {
                 videoUrl = await generatePlayerUrlWithInfoHash(infoHash, server.serverType, server.serverUrl);
                 setStatusText('URL Generated...');
             }
-    
+
             if (!videoUrl) {
                 setStatusText('Error: Unable to generate a valid video URL.');
                 Alert.alert('Error', 'Unable to generate a valid video URL.');
@@ -186,7 +196,7 @@ const StreamDetailsScreen = () => {
                 setIsPlaying(false);  // Stop playback if error occurs
                 return;
             }
-    
+
             const streamUrl = player.encodeUrl ? encodeURIComponent(videoUrl) : videoUrl;
             const playerUrl = `${player.scheme}${streamUrl}`;
             if (playerUrl) {
@@ -203,7 +213,7 @@ const StreamDetailsScreen = () => {
             setModalVisible(false);
             setIsPlaying(false);  // Reset playback state
         }
-    };    
+    };
 
     if (loading) {
         return (
@@ -338,6 +348,11 @@ const PlayerSelectionGroup = ({
     const colorScheme = useColorScheme(); // Determine light or dark mode
     const isDarkMode = colorScheme === 'dark';
 
+    const handleSelectPlayer = async(name: string) => {
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        onSelect(name);
+    };
+
     return (
         <>
             <Text style={styles.header}>{title}</Text>
@@ -354,7 +369,7 @@ const PlayerSelectionGroup = ({
                                     backgroundColor: isDarkMode ? '#2f2f2f' : '#eaeaea',
                                 },
                             ]}
-                            onPress={() => onSelect(option.name)}
+                            onPress={() => handleSelectPlayer(option.name)}
                         >
                             {isPlayer && option.icon && (
                                 <Image source={option.icon} style={styles.playerIcon} />
@@ -367,7 +382,6 @@ const PlayerSelectionGroup = ({
         </>
     )
 };
-
 
 const styles = StyleSheet.create({
     container: {
