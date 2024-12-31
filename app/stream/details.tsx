@@ -340,7 +340,7 @@ const styles = StyleSheet.create({
     },
     row: {
         flexDirection: 'row',
-        marginBottom: 20,
+        marginVertical: 10,
     },
     label: {
         fontSize: 14,
@@ -351,11 +351,10 @@ const styles = StyleSheet.create({
         flex: 4
     },
     radioGroup: {
-        marginVertical: 10
+        marginVertical: 5
     },
     radioRow: {
         justifyContent: 'space-between',
-        paddingVertical: 5
     },
     iconLabel: {
         flexDirection: 'row',
@@ -365,15 +364,14 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'flex-start',
         alignItems: 'center',
-        paddingVertical: 10,
-        marginVertical: 10
+        paddingVertical: 5,
+        marginVertical: 5
     },
     playerContainer: {
         alignItems: 'center',
         justifyContent: 'center',
-        marginHorizontal: 10,
-        marginVertical: 10,
-        padding: 5,
+        margin: 5,        
+        padding: 8,
         borderRadius: 10,
     },
     playerSelected: {
@@ -388,8 +386,8 @@ const styles = StyleSheet.create({
     },
     playerName: {
         fontSize: 14,
-        color: '#000',
         textAlign: 'center',
+        marginVertical: 5
     },
     header: {
         fontSize: 16,        
