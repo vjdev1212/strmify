@@ -1,17 +1,30 @@
-import React from 'react';
-import { Image, StyleSheet } from 'react-native';
-import { Text, View } from './Themed';
+import React, { useState, useEffect } from 'react';
+import { Image, StyleSheet, View as RNView } from 'react-native';
+import { View } from './Themed';
 
-const MediaContentPoster = ({ background, logo }: { background: string, logo: string }) => (
-  <>
-    <View style={styles.posterContainer}>
-      <Image source={{ uri: background }} style={styles.poster} />
-    </View>
-    <View style={styles.logoContainer}>
-      <Image source={{ uri: logo }} style={styles.logo} />
-    </View>
-  </>
-);
+const MediaContentPoster = ({ background, logo }: { background: string, logo: string }) => {
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const imageLoader = setTimeout(() => setIsLoading(false), 100);
+    return () => clearTimeout(imageLoader);
+  }, []);
+
+  return (
+    <>
+      <View style={styles.posterContainer}>
+        {isLoading ? (
+          <RNView style={styles.skeletonBackground} />
+        ) : (
+          <Image source={{ uri: background }} style={styles.poster} />
+        )}
+      </View>
+      <View style={styles.logoContainer}>
+        <Image source={{ uri: logo }} style={styles.logo} />
+      </View>
+    </>
+  );
+};
 
 const styles = StyleSheet.create({
   posterContainer: {
@@ -24,12 +37,11 @@ const styles = StyleSheet.create({
     height: '100%',
     resizeMode: 'cover',
   },
-  gradient: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 100,
+  skeletonBackground: {
+    backgroundColor: '#888888',
+    width: '100%',
+    height: '100%',
+    opacity: 0.1,
   },
   logoContainer: {
     backgroundColor: 'transparent',

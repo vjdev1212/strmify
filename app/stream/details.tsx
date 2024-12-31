@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { StyleSheet, ScrollView, Alert, Pressable, Linking, Image, Platform, useColorScheme } from 'react-native';
 import { StatusBar, Text, View } from '@/components/Themed'; // Replace with your custom themed components
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -44,59 +44,46 @@ const StreamDetailsScreen = () => {
         infoHash?: string;
     }>();
 
-    useEffect(() => {
-        const loadInitialData = async () => {
-            await fetchServerConfigs();
-            await fetchContentData();
-            const platformPlayers = getPlatformSpecificPlayers();
-            setPlayers(platformPlayers);
-            if (platformPlayers.length > 0) {
-                setSelectedPlayer(platformPlayers[0].name);
-            }
-        };
-
-        loadInitialData();
-    }, []);
-
-    const fetchContentData = async () => {
-        const stremioMetaDataUrl = `https://cinemeta-live.strem.io/meta/${type}/${imdbid}.json`
+    const fetchContentData = useCallback(async () => {
+        const stremioMetaDataUrl = `https://cinemeta-live.strem.io/meta/${type}/${imdbid}.json`;
         const metaDataResponse = await fetch(stremioMetaDataUrl);
         if (metaDataResponse.ok) {
             const data = await metaDataResponse.json();
-            const meta = data.meta;
-            if (meta) {
-                setMetaData(meta);
-            } else {
-                setMetaData(null);
-            }
+            setMetaData(data.meta || null);
         }
-    }
+    }, [imdbid, type]);
 
-    const fetchServerConfigs = async () => {
+    const fetchServerConfigs = useCallback(async () => {
         try {
             const storedServers = await AsyncStorage.getItem('servers');
-
             if (!storedServers) {
                 console.error('No server configuration found in AsyncStorage');
                 return;
             }
 
-            const servers: any[] = JSON.parse(storedServers);
-
+            const servers: ServerConfig[] = JSON.parse(storedServers);
             const enabledServers = servers.filter((server) => server.enabled);
-
             setServers(enabledServers);
-
-            if (enabledServers.length > 0) {
-                setSelectedServer(enabledServers[0].serverId);
-            }
+            if (enabledServers.length > 0) setSelectedServer(enabledServers[0].serverId);
         } catch (error) {
             console.error('Error loading server configurations:', error);
             Alert.alert('Error', 'Failed to load server configurations');
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        const loadInitialData = async () => {
+            await fetchServerConfigs();
+            await fetchContentData();
+            const platformPlayers = getPlatformSpecificPlayers();
+            setPlayers(platformPlayers);
+            if (platformPlayers.length > 0) setSelectedPlayer(platformPlayers[0].name);
+        };
+
+        loadInitialData();
+    }, [fetchServerConfigs, fetchContentData]);
 
     const getPlatformSpecificPlayers = () => {
         if (Platform.OS === 'android') {
@@ -114,30 +101,22 @@ const StreamDetailsScreen = () => {
                 { name: Players.OutPlayer, scheme: 'outplayer://', encodeUrl: false, icon: require('@/assets/images/players/outplayer.png') },
             ];
         } else if (Platform.OS === 'web') {
-            return [
-                { name: Players.Browser, scheme: '', encodeUrl: false, icon: require('@/assets/images/players/chrome.png') },
-            ];
+            return [{ name: Players.Browser, scheme: '', encodeUrl: false, icon: require('@/assets/images/players/chrome.png') }];
         }
-
         return [];
     };
 
     const generatePlayerUrlWithInfoHash = async (infoHash: string, serverType: string, serverUrl: string) => {
         try {
-            let videoUrl = '';
-
             if (serverType === Servers.Stremio.toLocaleLowerCase()) {
-                videoUrl = await generateStremioPlayerUrl(infoHash, serverUrl, type, season, episode);
-                return videoUrl;
+                return await generateStremioPlayerUrl(infoHash, serverUrl, type, season, episode);
             }
-
             if (serverType === Servers.TorrServer.toLocaleLowerCase()) {
-                videoUrl = await generateTorrServerPlayerUrl(infoHash, serverUrl, metaData, type);
+                const videoUrl = await generateTorrServerPlayerUrl(infoHash, serverUrl, metaData, type);
                 appendStatusText('Stream sent to TorrServer. This may take some time. Please wait..');
                 await fetch(videoUrl, { method: 'HEAD' });
                 return videoUrl;
             }
-
             return '';
         } catch (error) {
             console.error('Error generating player URL:', error);
@@ -149,15 +128,10 @@ const StreamDetailsScreen = () => {
         setPlayBtnDisabled(true);
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
 
-        if (!selectedPlayer) {
-            appendStatusText('Error: Please select a media player.');
-            Alert.alert('Error', 'Please select a media player.');
-            return;
-        }
-
-        if (!url && !selectedServer) {
-            appendStatusText('Error: Please select a server or provide a valid URL.');
-            Alert.alert('Error', 'Please select a server or provide a valid URL.');
+        if (!selectedPlayer || (!url && !selectedServer)) {
+            appendStatusText('Error: Please select a media player and server.');
+            Alert.alert('Error', 'Please select a media player and server.');
+            setPlayBtnDisabled(false);
             return;
         }
 
@@ -167,6 +141,7 @@ const StreamDetailsScreen = () => {
         if (!player) {
             appendStatusText('Error: Invalid media player selection.');
             Alert.alert('Error', 'Invalid media player selection.');
+            setPlayBtnDisabled(false);
             return;
         }
 
@@ -181,12 +156,12 @@ const StreamDetailsScreen = () => {
             if (!videoUrl) {
                 appendStatusText('Error: Unable to generate a valid video URL.');
                 Alert.alert('Error', 'Unable to generate a valid video URL.');
+                setPlayBtnDisabled(false);
                 return;
             }
 
             const streamUrl = player.encodeUrl ? encodeURIComponent(videoUrl) : videoUrl;
             const playerUrl = `${player.scheme}${streamUrl}`;
-
             if (playerUrl) {
                 appendStatusText('Opening Stream in Media Player...');
                 await Linking.openURL(playerUrl);
@@ -196,8 +171,7 @@ const StreamDetailsScreen = () => {
             console.error('Error during playback process:', error);
             appendStatusText('Error: An error occurred while trying to play the stream.');
             Alert.alert('Error', 'An error occurred while trying to play the stream.');
-        }
-        finally {
+        } finally {
             setPlayBtnDisabled(false);
             setStatusText('');
         }
@@ -222,7 +196,6 @@ const StreamDetailsScreen = () => {
                 <DetailsRow label="Name" value={name} />
                 {title && <DetailsRow label="Title" value={title} />}
                 {description && <DetailsRow label="Description" value={description} multiline />}
-
                 {!url && servers.length > 0 && (
                     <ServerSelectionGroup
                         title="Servers"
@@ -231,7 +204,6 @@ const StreamDetailsScreen = () => {
                         onSelect={setSelectedServer}
                     />
                 )}
-
                 <PlayerSelectionGroup
                     title="Media Players"
                     options={players}
@@ -241,21 +213,14 @@ const StreamDetailsScreen = () => {
                 />
                 <View style={styles.buttonContainer}>
                     <Pressable
-                        style={[
-                            styles.button,
-                            (playBtnDisabled || !selectedPlayer || (infoHash && !selectedServer)) && styles.buttonDisabled,
-                        ]}
+                        style={[styles.button, (playBtnDisabled || !selectedPlayer || (infoHash && !selectedServer)) && styles.buttonDisabled]}
                         onPress={handlePlay}
                         disabled={playBtnDisabled || !selectedPlayer || (infoHash && !selectedServer) || false}
                     >
                         <Text style={styles.buttonText}>Play</Text>
                     </Pressable>
                 </View>
-
-                {
-                    statusText !== null && statusText !== undefined && statusText !== '' ?
-                        (<Text style={styles.statusText}>{statusText}</Text>) : null
-                }
+                {statusText && <Text style={styles.statusText}>{statusText}</Text>}
             </View>
         </ScrollView>
     );
