@@ -1,0 +1,33 @@
+workflows:
+  ios-build:
+    name: iOS Build
+    environment:
+      vars:
+        # Set your desired Node.js version and React Native CLI
+        NODE_VERSION: 16
+      xcode: latest
+      cocoapods: default
+    triggers:
+      - push
+    scripts:
+      # Install dependencies
+      - name: Install dependencies
+        script: |
+          echo "Setting up Node.js..."
+          nvm install $NODE_VERSION
+          npm install
+          cd ios && pod install
+
+      # Build the IPA without signing
+      - name: Build unsigned IPA
+        script: |
+          xcodebuild -workspace ios/MyApp.xcworkspace \
+            -scheme MyApp \
+            -configuration Release \
+            -archivePath $CM_BUILD_DIR/build/MyApp.xcarchive archive
+          xcodebuild -exportArchive \
+            -archivePath $CM_BUILD_DIR/build/MyApp.xcarchive \
+            -exportPath $CM_BUILD_DIR/build/ \
+            -exportOptionsPlist ios/ExportOptions.plist
+    artifacts:
+      - $CM_BUILD_DIR/build/*.ipa
