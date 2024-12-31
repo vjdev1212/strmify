@@ -130,7 +130,7 @@ const StreamDetailsScreen = () => {
             let videoUrl = '';
 
             if (serverType === Servers.Stremio.toLocaleLowerCase()) {
-                videoUrl = await generateStremioPlayerUrl(infoHash, serverUrl);
+                videoUrl = await generateStremioPlayerUrl(infoHash, serverUrl, type, season, episode);
                 return videoUrl;
             }
 
@@ -149,67 +149,65 @@ const StreamDetailsScreen = () => {
     };
 
     const handlePlay = async () => {
-
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
-
+    
         if (!selectedPlayer) {
+            appendStatusText('Error: Please select a media player.');
             Alert.alert('Error', 'Please select a media player.');
             return;
         }
-
-
+    
         if (!url && !selectedServer) {
+            appendStatusText('Error: Please select a server or provide a valid URL.');
             Alert.alert('Error', 'Please select a server or provide a valid URL.');
             return;
         }
-
+    
         const server = servers.find((s) => s.serverId === selectedServer);
         const player = players.find((p) => p.name === selectedPlayer);
-
+    
         if (!player) {
+            appendStatusText('Error: Invalid media player selection.');
             Alert.alert('Error', 'Invalid media player selection.');
             return;
         }
-
+    
         try {
             let videoUrl = url || '';
             if (!url && infoHash && server) {
-                setStatusText('Generating Url...');
+                appendStatusText('Generating URL...');
                 videoUrl = await generatePlayerUrlWithInfoHash(infoHash, server.serverType, server.serverUrl);
-                setTimeout(() => {
-                    setStatusText('Url Generated...');
-                }, 500);
+                appendStatusText('URL Generated...');
             }
-
+    
             if (!videoUrl) {
-                console.log(videoUrl);
+                appendStatusText('Error: Unable to generate a valid video URL.');
                 Alert.alert('Error', 'Unable to generate a valid video URL.');
                 return;
             }
-
+    
             const streamUrl = player.encodeUrl ? encodeURIComponent(videoUrl) : videoUrl;
             const playerUrl = `${player.scheme}${streamUrl}`;
-
-            console.log(playerUrl);
+    
             if (playerUrl) {
-                setTimeout(() => {
-                    setStatusText('Opening Stream in Media Player...');
-                    Linking.openURL(playerUrl).then(() => {
-                        setStatusText('Stream Openend in Media Player...');
-                        setTimeout(() => {
-                            setStatusText('');
-                        }, 5000);
-                    });
-                }, 500);
+                appendStatusText('Opening Stream in Media Player...');
+                await Linking.openURL(playerUrl);
+                appendStatusText('Stream Opened in Media Player...');
             }
         } catch (error) {
             console.error('Error during playback process:', error);
+            appendStatusText('Error: An error occurred while trying to play the stream.');
             Alert.alert('Error', 'An error occurred while trying to play the stream.');
-        } finally {
+        }
+        finally{
             setStatusText('');
         }
     };
-
+    
+    const appendStatusText = (newText: string) => {
+        setStatusText((prev) => (prev ? `${prev}\n${newText}` : newText));
+    };
+    
     if (loading) {
         return (
             <View style={styles.centeredContainer}>
@@ -482,8 +480,7 @@ const styles = StyleSheet.create({
     },
     statusText: {
         marginTop: 20,
-        fontSize: 14,
-        textAlign: 'center'
+        fontSize: 14
     },
 });
 
