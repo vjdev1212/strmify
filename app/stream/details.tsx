@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { StyleSheet, ScrollView, Alert, Pressable, Linking, Image, Platform, useColorScheme, Modal } from 'react-native';
+import { StyleSheet, ScrollView, Alert, Pressable, Linking, Image, Platform, useColorScheme, Modal, TouchableWithoutFeedback } from 'react-native';
 import { ActivityIndicator, StatusBar, Text, View } from '@/components/Themed';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams } from 'expo-router';
@@ -114,13 +114,12 @@ const StreamDetailsScreen = () => {
 
     const generatePlayerUrlWithInfoHash = async (infoHash: string, serverType: string, serverUrl: string) => {
         try {
-            setStatusText('Torrent details sent to StremioServer. This may take some time. Please wait..');
+            setStatusText('Torrent details sent to the server. Please wait while server generates the link...');
             if (serverType === Servers.Stremio.toLocaleLowerCase()) {
                 return await generateStremioPlayerUrl(infoHash, serverUrl, type, season, episode);
             }
             if (serverType === Servers.TorrServer.toLocaleLowerCase()) {
-                const videoUrl = await generateTorrServerPlayerUrl(infoHash, serverUrl, metaData, type);
-                await fetch(videoUrl, { method: 'HEAD' });
+                const videoUrl = await generateTorrServerPlayerUrl(infoHash, serverUrl, type, season, episode);
                 return videoUrl;
             }
             return '';
@@ -130,9 +129,15 @@ const StreamDetailsScreen = () => {
         }
     };
 
+    const handleCancel = () => {
+        setPlayBtnDisabled(false);
+        setModalVisible(false);
+        setStatusText('');
+    };
+
     const handlePlay = async () => {
         setPlayBtnDisabled(true);
-        setModalVisible(true); // Show modal on play
+        setModalVisible(true);
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
 
         if (!selectedPlayer || (!url && !selectedServer)) {
@@ -183,8 +188,14 @@ const StreamDetailsScreen = () => {
             Alert.alert('Error', 'An error occurred while trying to play the stream.');
         } finally {
             setPlayBtnDisabled(false);
-            setModalVisible(false); // Hide modal after play finishes
+            setModalVisible(false);
         }
+    };
+
+    const handleModalClose = () => {
+        setModalVisible(false);
+        setStatusText('');
+        setPlayBtnDisabled(false);
     };
 
     if (loading) {
@@ -234,14 +245,21 @@ const StreamDetailsScreen = () => {
                 transparent={true}
                 visible={isModalVisible}
                 animationType="fade"
-                onRequestClose={() => setModalVisible(false)}
+                onRequestClose={handleCancel}
             >
-                <View style={styles.modalOverlay}>
-                    <View style={[styles.modalContainer, { backgroundColor: colorScheme === 'dark' ? '#1f1f1f' : '#f0f0f0' }]}>
-                        <ActivityIndicator size="large" color="#535aff" style={styles.activityIndicator} />
-                        <Text style={styles.modalText}>{statusText}</Text>
+                <TouchableWithoutFeedback onPress={handleCancel}>
+                    <View style={styles.modalOverlay}>
+                        <View
+                            style={[styles.modalContainer, { backgroundColor: colorScheme === 'dark' ? '#1f1f1f' : '#f0f0f0' }]}
+                        >
+                            <ActivityIndicator size="large" color="#535aff" style={styles.activityIndicator} />
+                            <Text style={styles.modalText}>{statusText}</Text>
+                            <Pressable style={styles.cancelButton} onPress={handleCancel}>
+                                <Text style={styles.cancelButtonText}>Cancel</Text>
+                            </Pressable>
+                        </View>
                     </View>
-                </View>
+                </TouchableWithoutFeedback>
             </Modal>
         </ScrollView>
     );
@@ -485,6 +503,23 @@ const styles = StyleSheet.create({
     activityIndicator: {
         marginVertical: 10,
         color: '#535aff',
+    },
+    closeIcon: {
+        position: 'absolute',
+        top: 10,
+        right: 10,
+    },
+    cancelButton: {
+        marginVertical: 20,
+        paddingVertical: 12,
+        backgroundColor: '#535aff',
+        borderRadius: 30,
+        alignItems: 'center',
+        minWidth: 120,
+    },
+    cancelButtonText: {
+        fontSize: 16,
+        color: '#fff',
     },
 });
 
