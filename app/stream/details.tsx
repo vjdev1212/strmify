@@ -124,7 +124,7 @@ const StreamDetailsScreen = () => {
 
     const generatePlayerUrlWithInfoHash = async (infoHash: string, serverType: string, serverUrl: string) => {
         try {
-            setStatusText('Torrent details sent to the server. Please wait while server generates the link...');
+            setStatusText('Torrent details sent to the server. Please wait while the server generates the link...');
             if (serverType === Servers.Stremio.toLocaleLowerCase()) {
                 return await generateStremioPlayerUrl(infoHash, serverUrl, type, season, episode);
             }
