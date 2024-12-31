@@ -1,14 +1,11 @@
 workflows:
   ios-build:
-    name: iOS Build
+    name: iOS Build (Unsigned IPA)
     environment:
       vars:
-        # Set your desired Node.js version and React Native CLI
-        NODE_VERSION: 16
-      xcode: latest
-      cocoapods: default
-    triggers:
-      - push
+        NODE_VERSION: 16 # Specify the Node.js version
+      xcode: latest       # Use the latest Xcode version
+      cocoapods: default  # Use the default CocoaPods version
     scripts:
       # Install dependencies
       - name: Install dependencies
