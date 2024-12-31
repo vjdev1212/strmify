@@ -12,11 +12,17 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "ios": {
+        "buildType": "archive"
       }
     },
     "preview2": {
       "android": {
         "gradleCommand": ":app:assembleRelease"
+      },
+      "ios": {
+        "buildType": "archive"
       }
     },
     "preview3": {
@@ -26,7 +32,10 @@
       "distribution": "internal"
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "ios": {
+        "buildType": "archive"
+      }
     }
   },
   "submit": {
