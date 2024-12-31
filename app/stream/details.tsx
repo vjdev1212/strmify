@@ -114,13 +114,12 @@ const StreamDetailsScreen = () => {
 
     const generatePlayerUrlWithInfoHash = async (infoHash: string, serverType: string, serverUrl: string) => {
         try {
+            setStatusText('Torrent details sent to StremioServer. This may take some time. Please wait..');
             if (serverType === Servers.Stremio.toLocaleLowerCase()) {
-                setStatusText('Stream sent to StremioServer. This may take some time. Please wait..');
                 return await generateStremioPlayerUrl(infoHash, serverUrl, type, season, episode);
             }
             if (serverType === Servers.TorrServer.toLocaleLowerCase()) {
                 const videoUrl = await generateTorrServerPlayerUrl(infoHash, serverUrl, metaData, type);
-                setStatusText('Stream sent to TorrServer. This may take some time. Please wait..');
                 await fetch(videoUrl, { method: 'HEAD' });
                 return videoUrl;
             }
