@@ -2,22 +2,29 @@ import React, { useState, useEffect } from 'react';
 import { Image, StyleSheet, View as RNView, Animated } from 'react-native';
 import { View } from './Themed';
 
-const MediaContentPoster = ({ background, logo }: { background: string, logo: string }) => {
+const MediaContentPoster = ({ background, logo, title }: { background: string, logo: string, title: string }) => {
   const [isLoading, setIsLoading] = useState(true);
-  const [fadeAnim] = useState(new Animated.Value(0));
+  const [fadeAnim] = useState(new Animated.Value(0)); // Fade animation for the background image
+  const [titleFadeAnim] = useState(new Animated.Value(0)); // Fade animation for the title
 
   useEffect(() => {
     const imageLoader = setTimeout(() => {
       setIsLoading(false);
+      // Animate both the background and the title opacity
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 1000,
         useNativeDriver: true,
       }).start();
+      Animated.timing(titleFadeAnim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }).start();
     }, 100);
     
     return () => clearTimeout(imageLoader);
-  }, [fadeAnim]);
+  }, [fadeAnim, titleFadeAnim]);
 
   return (
     <>
@@ -27,13 +34,18 @@ const MediaContentPoster = ({ background, logo }: { background: string, logo: st
         ) : (
           <Animated.Image
             source={{ uri: background }}
-            style={[styles.poster, { opacity: fadeAnim }]} // Apply animated opacity
+            style={[styles.poster, { opacity: fadeAnim }]} // Apply animated opacity for background
           />
         )}
       </View>
-      <View style={styles.logoContainer}>
+      
+      <Animated.View style={[styles.logoContainer, { opacity: titleFadeAnim }]}>
         <Image source={{ uri: logo }} style={styles.logo} />
-      </View>
+      </Animated.View>
+
+      <Animated.Text style={[styles.title, { opacity: titleFadeAnim }]}>
+        {title}
+      </Animated.Text>
     </>
   );
 };
@@ -66,6 +78,12 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     resizeMode: 'contain',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginTop: 20,
   },
 });
 

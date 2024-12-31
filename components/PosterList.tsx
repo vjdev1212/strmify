@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, Image, StyleSheet, Pressable, View as RNView, Platform } from 'react-native';
+import { FlatList, Image, StyleSheet, Pressable, View as RNView, Animated } from 'react-native';
 import { Text } from './Themed';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics'; // Importing Haptics for haptic feedback
@@ -25,6 +25,9 @@ const PosterList = ({
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
+  // Fade animation for the poster images
+  const [fadeAnim] = useState(new Animated.Value(0));
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -46,9 +49,9 @@ const PosterList = ({
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
     }
     router.push({
-      pathname: type === 'movie' ? '/movie/details': '/series/details',
+      pathname: type === 'movie' ? '/movie/details' : '/series/details',
       params: { imdbid: item.imdb_id || item.id },
-    })
+    });
   };
 
   const renderItem = ({ item }: any) => {
@@ -57,15 +60,29 @@ const PosterList = ({
         ? item.year.split('–')[0]
         : item.year;
 
+    // Trigger the fade-in animation when image is loaded
+    const handleImageLoad = () => {
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    };
+
     return (
       <RNView>
         <Pressable
           style={[styles.posterContainer, layout === 'vertical' && styles.verticalContainer]}
           onPress={() => handlePress(item)}
         >
-          <Image
+          <Animated.Image
             source={{ uri: item.poster }}
-            style={[styles.posterImage, layout === 'vertical' && styles.verticalImage]}
+            style={[
+              styles.posterImage,
+              layout === 'vertical' && styles.verticalImage,
+              { opacity: fadeAnim }, // Apply animated opacity
+            ]}
+            onLoad={handleImageLoad} // Trigger animation when image is loaded
           />
           <Text numberOfLines={1} ellipsizeMode="tail" style={styles.posterTitle}>
             {item.name}
@@ -76,15 +93,15 @@ const PosterList = ({
     );
   };
 
-  const handleSeeAllPress = async (item: any) => {
+  const handleSeeAllPress = async () => {
     if (isHapticsSupported()) {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
     }
     router.push({
       pathname: `/${type}/list`,
       params: { apiUrl, title, type },
-    })
-  }
+    });
+  };
 
   return (
     <RNView style={styles.container}>
@@ -149,13 +166,13 @@ const styles = StyleSheet.create({
     width: 100,
     height: 150,
     borderRadius: 8,
-    backgroundColor: '#888888'
+    backgroundColor: '#888888',
   },
   verticalImage: {
     width: '100%',
     height: 200,
     borderRadius: 8,
-    backgroundColor: '#888888'
+    backgroundColor: '#888888',
   },
   posterTitle: {
     marginTop: 8,
