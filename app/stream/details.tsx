@@ -44,7 +44,6 @@ const StreamDetailsScreen = () => {
     }>();
 
     useEffect(() => {
-        // Load servers and set platform-specific players
         const loadInitialData = async () => {
             await fetchServerConfigs();
             await fetchContentData();
@@ -83,13 +82,10 @@ const StreamDetailsScreen = () => {
 
             const servers: any[] = JSON.parse(storedServers);
 
-            // Filter out only the enabled servers
             const enabledServers = servers.filter((server) => server.enabled);
 
-            // Set the servers state
             setServers(enabledServers);
 
-            // Set the default selected server to the first enabled server if available
             if (enabledServers.length > 0) {
                 setSelectedServer(enabledServers[0].serverId);
             }
@@ -136,7 +132,7 @@ const StreamDetailsScreen = () => {
 
             if (serverType === Servers.TorrServer.toLocaleLowerCase()) {
                 videoUrl = await generateTorrServerPlayerUrl(infoHash, serverUrl, metaData, type);
-                setStatusText('Stream sent to TorrServer. This may take some time. Please wait..');
+                appendStatusText('Stream sent to TorrServer. This may take some time. Please wait..');
                 await fetch(videoUrl, { method: 'HEAD' });
                 return videoUrl;
             }
