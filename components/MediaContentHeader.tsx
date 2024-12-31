@@ -45,12 +45,10 @@ const styles = StyleSheet.create({
   },
   genre: {
     fontSize: 16,
-    marginBottom: 10,
-    fontStyle: 'italic'
+    marginBottom: 10
   },
   info: {
-    fontSize: 14,
-    fontStyle: 'italic'
+    fontSize: 14
   },
 });
 

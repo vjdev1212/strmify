@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, ScrollView, Alert, Pressable, Linking, Image, Platform } from 'react-native';
+import { StyleSheet, ScrollView, Alert, Pressable, Linking, Image, Platform, useColorScheme } from 'react-native';
 import { StatusBar, Text, View } from '@/components/Themed'; // Replace with your custom themed components
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams } from 'expo-router';
@@ -238,17 +238,15 @@ const StreamDetailsScreen = () => {
                     onSelect={setSelectedPlayer}
                     isPlayer
                 />
-
-                {
-                    statusText !== null && statusText !== undefined && statusText !== '' ?
-                        (<Text style={styles.statusText}>{statusText}</Text>) : null
-                }
-
                 <View style={styles.buttonContainer}>
                     <Pressable style={styles.button} onPress={handlePlay}>
                         <Text style={styles.buttonText}>Play</Text>
                     </Pressable>
                 </View>
+                {
+                    statusText !== null && statusText !== undefined && statusText !== '' ?
+                        (<Text style={styles.statusText}>{statusText}</Text>) : null
+                }
             </View>
         </ScrollView>
     );
@@ -316,38 +314,41 @@ const PlayerSelectionGroup = ({
     selected: string | null;
     onSelect: (name: string) => void;
     isPlayer?: boolean;
-}) => (
-    <>
-        <Text style={styles.header}>{title}</Text>
-        <View style={styles.radioGroup}>
-            {options.map((option) => (
-                <Pressable
-                    key={option.name}
-                    style={styles.radioContainer}
-                    onPress={() => onSelect(option.name)}
-                >
-                    <View style={styles.radioRow}>
-                        <View style={styles.iconLabel}>
-                            {isPlayer && option.icon && <Image source={option.icon} style={styles.playerIcon} />}
-                            <Text style={styles.radioLabel}>{option.name}</Text>
-                        </View>
-                        {option.url && <Text style={styles.radioValue}>{option.url}</Text>}
-                    </View>
+}) => {
+    const colorScheme = useColorScheme(); // Determine light or dark mode
+    const isDarkMode = colorScheme === 'dark';
+
+    return (
+        <>
+            <Text style={styles.header}>{title}</Text>
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.playerList}>
+                {options.map((option) => (
                     <View>
-                        {selected === option.name && (
-                            <MaterialIcons
-                                name="check"
-                                size={24}
-                                color="#535aff"
-                                style={styles.radioIcon}
-                            />
-                        )}
+                        <Pressable
+                            key={option.name}
+                            style={[
+                                styles.playerContainer,
+                                selected === option.name && {
+                                    backgroundColor: isDarkMode ? '#535aff' : '#c5d1ff',
+                                },
+                            ]}
+                            onPress={() => onSelect(option.name)}
+                        >
+                            {isPlayer && option.icon && (
+                                <Image source={option.icon} style={styles.playerIcon} />
+                            )}
+                        </Pressable>
+                        <Text style={styles.playerName}>{option.name}</Text>
                     </View>
-                </Pressable>
-            ))}
-        </View>
-    </>
-);
+                ))}
+            </ScrollView>
+        </>
+    )
+};
+
 
 const styles = StyleSheet.create({
     container: {
@@ -369,8 +370,7 @@ const styles = StyleSheet.create({
     },
     value: {
         fontSize: 14,
-        flex: 2,
-        fontStyle: 'italic'
+        flex: 4
     },
     radioGroup: {
         marginVertical: 10
@@ -383,18 +383,41 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center'
     },
+    playerList: {
+        flexDirection: 'row',
+        justifyContent: 'flex-start',
+        alignItems: 'center',
+        paddingVertical: 10,
+        marginVertical: 10
+    },
+    playerContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginHorizontal: 10,
+        marginVertical: 10,
+        padding: 5,
+        borderRadius: 10,
+    },
+    playerSelected: {
+        backgroundColor: '#ffffff',
+    },
     playerIcon: {
-        width: 32,
-        height: 32,
-        marginRight: 10,
-        borderRadius: 8
+        width: 50,
+        height: 50,
+        padding: 5,
+        borderRadius: 10,
+    },
+    playerName: {
+        fontSize: 14,
+        color: '#000',
+        textAlign: 'center',
     },
     header: {
         fontSize: 16,
         textAlign: 'center',
         marginBottom: 10,
         marginTop: 15,
-        textDecorationLine: 'underline',
+        fontWeight: 'bold'
     },
     radioContainer: {
         flexDirection: 'row',
