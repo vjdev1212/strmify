@@ -4,7 +4,7 @@
     "slug": "streamsrc",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "assets/images/icon.png",
     "scheme": "streamsrc",
     "platforms": [
       "ios",
@@ -16,20 +16,21 @@
     "splash": {
       "image": "assets/images/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#000000"
     },
     "ios": {
-      "icon": "assets/icon.png",
+      "icon": "assets/images/icon.png",
       "supportsTablet": true,
-      "backgroundColor": "#ffffff",
+      "backgroundColor": "#000000",
       "bundleIdentifier": "com.vijayyuvi.streamsrc"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "assets/images/icon.png",
+        "foregroundImage": "assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.vijayyuvi.streamsrc"
+      "package": "com.vijayyuvi.streamsrc",
+      "icon":"assets/images/icon.png"
     },
     "web": {
       "bundler": "metro",
