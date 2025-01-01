@@ -5,7 +5,7 @@
         "buildType": "apk"
       },
       "ios": {
-        "simulator": true
+        "buildType": "archive"
       }
     },
     "production": {
