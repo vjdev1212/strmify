@@ -1,35 +1,22 @@
 workflows:
   expo-build:
-    name: Expo EAS Build
+    name: Expo EAS Build (Signed IPA for iOS, APK for Android)
     environment:
       groups:
         - expo-env-vars
-      vars:
-        NODE_VERSION: 16
-        BUILD_ENV: development
     scripts:
-      - name: Install Node.js and dependencies
+      - name: Install dependencies
         script: |
-          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
-          export NVM_DIR="$HOME/.nvm"
-          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          echo "Setting up Node.js..."
           nvm install $NODE_VERSION
-          node -v
           npm install
       - name: Install EAS CLI
         script: |
           npm install -g eas-cli
-          eas --version
       - name: Build Expo project using EAS Build
         script: |
-          if [ "$BUILD_ENV" = "production" ]; then
-            echo "Building for Production Environment..."
-            eas build --platform ios --profile production --non-interactive
-            eas build --platform android --profile production --non-interactive
-          else
-            echo "Building for Development Environment..."
-            eas build --platform ios --profile development --non-interactive
-            eas build --platform android --profile development --non-interactive
+          eas build --platform ios --profile development --non-interactive
+          eas build --platform android --profile development --non-interactive
     artifacts:
-      - /tmp/*.ipa
-      - /tmp/*.apk
+      - ./dist/*.ipa
+      - ./dist/*.apk
