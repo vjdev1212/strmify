@@ -16,6 +16,9 @@
         "distribution": "store",
         "credentialsSource": "remote"
       }
+    },
+    "cli": {
+      "appVersionSource": "remote"
     }
   }
 }
