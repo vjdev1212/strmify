@@ -1,9 +1,12 @@
 workflows:
   expo-build:
-    name: Expo EAS Build (Signed IPA for iOS, APK for Android)
+    name: Expo EAS Build
     environment:
       groups:
         - expo-env-vars
+      vars:
+        NODE_VERSION: 16
+        BUILD_ENV: development  
     scripts:
       - name: Install dependencies
         script: |
@@ -15,8 +18,14 @@ workflows:
           npm install -g eas-cli
       - name: Build Expo project using EAS Build
         script: |
-          eas build --platform ios --profile production --non-interactive
-          eas build --platform android --profile production --non-interactive
+          if [ "$BUILD_ENV" == "production" ]; then
+            echo "Building for Production Environment..."
+            eas build --platform ios --profile production --non-interactive
+            eas build --platform android --profile production --non-interactive
+          else
+            echo "Building for Development Environment..."
+            eas build --platform ios --profile development --non-interactive
+            eas build --platform android --profile development --non-interactive
     artifacts:
       - ./dist/*.ipa
       - ./dist/*.apk
