@@ -105,11 +105,12 @@ const SearchScreen = () => {
     setSeries([]);
   };
 
-  const colorScheme = useColorScheme();
+  const isWeb = Platform.OS === 'web';
+  const colorScheme = isWeb ? 'dark' : useColorScheme();
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar/>
+      <StatusBar />
       <View style={styles.searchInputContainer}>
         <TextInput
           style={[

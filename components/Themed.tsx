@@ -8,7 +8,8 @@ import {
   TextInput as DefaultTextInput,
   Text as DefaultText,
   View as DefaultView,
-  StatusBar as DefaultStatusBar
+  StatusBar as DefaultStatusBar,
+  Platform
 } from 'react-native';
 
 import Colors from '@/constants/Colors';
@@ -29,7 +30,7 @@ export function useThemeColor(
   props: { light?: string; dark?: string },
   colorName: keyof typeof Colors.light & keyof typeof Colors.dark
 ) {
-  const theme = useColorScheme() ?? 'dark';
+  const theme = Platform.OS === 'web' ? 'dark' : useColorScheme() ?? 'dark';
   const colorFromProps = props[theme];
 
   if (colorFromProps) {
@@ -77,10 +78,10 @@ export function StatusBar(props: StatusBarProps) {
 export function Card(props: ViewProps) {
   const { style, lightColor, darkColor, ...otherProps } = props;
 
-  // Use color scheme to decide background color based on light or dark mode
-  const colorScheme = useColorScheme();
-
   // Dynamically adjust border and shadow based on the color scheme
+  const isWeb = Platform.OS === 'web';
+  const colorScheme = isWeb ? 'dark' : useColorScheme();
+  
   const backgroundColor = colorScheme === 'dark' ? '#101010' : '#FAFAFA';
   const borderColor = colorScheme === 'dark' ? '#101010' : '#DDDDDD';
   const shadowColor = colorScheme === 'dark' ? '#101010' : '#EFEFEF';

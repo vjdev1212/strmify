@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Image, StyleSheet, View as RNView, Animated, useColorScheme } from 'react-native';
+import { Image, StyleSheet, View as RNView, Animated, useColorScheme, Platform } from 'react-native';
 import { View } from './Themed';
 
 const MediaContentPoster = ({ background, logo }: { background: string, logo: string }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [fadeAnim] = useState(new Animated.Value(0)); // Fade animation for the background image
   const [titleFadeAnim] = useState(new Animated.Value(0)); // Fade animation for the title
-  const colorScheme = useColorScheme(); // Detect color scheme (light or dark)
-
+  const isWeb = Platform.OS === 'web';
+  const colorScheme = isWeb ? 'dark' : useColorScheme();
+  
   useEffect(() => {
     const imageLoader = setTimeout(() => {
       setIsLoading(false);

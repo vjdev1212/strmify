@@ -6,6 +6,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { useColorScheme } from '@/components/useColorScheme';
+import { Platform } from 'react-native';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -45,8 +46,9 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-  const colorScheme = useColorScheme();
-
+  const isWeb = Platform.OS === 'web';
+  const colorScheme = isWeb ? 'dark' : useColorScheme();
+  
   const LightTheme: Theme = {
     dark: false,
     colors: {
@@ -77,8 +79,12 @@ function RootLayoutNav() {
     }
   };
 
+  const theme = Platform.OS === 'web'
+    ? DarkTheme
+    : (useColorScheme() === 'dark' ? DarkTheme : LightTheme);
+
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : LightTheme}>
+    <ThemeProvider value={theme}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'Home' }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
@@ -87,12 +93,12 @@ function RootLayoutNav() {
         <Stack.Screen name="series/details" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#535aff' }} />
         <Stack.Screen name="series/list" options={{ headerShown: true, headerTitle: '', headerTintColor: '#535aff' }} />
         <Stack.Screen name="addons/add" options={{ headerShown: true, headerTitle: '', headerTintColor: '#535aff' }} />
-        <Stack.Screen name="stream/list" options={{ headerShown: true, headerTitle:"Streams", headerTintColor: '#535aff' }} />
-        <Stack.Screen name="stream/details" options={{ headerShown: true, headerTitle:"", headerTintColor: '#535aff' }} />
-        <Stack.Screen name="settings/stremioserver" options={{ headerShown: true, headerTitle:'', headerTintColor: '#535aff' }} />
-        <Stack.Screen name="settings/torrserver" options={{ headerShown: true, headerTitle:'', headerTintColor: '#535aff' }} />
-        <Stack.Screen name="settings/contact" options={{ headerShown: true, headerTitle:'', headerTintColor: '#535aff' }} />
-        <Stack.Screen name="settings/donate" options={{ headerShown: true, headerTitle:'', headerTintColor: '#535aff' }} />
+        <Stack.Screen name="stream/list" options={{ headerShown: true, headerTitle: "Streams", headerTintColor: '#535aff' }} />
+        <Stack.Screen name="stream/details" options={{ headerShown: true, headerTitle: "", headerTintColor: '#535aff' }} />
+        <Stack.Screen name="settings/stremioserver" options={{ headerShown: true, headerTitle: '', headerTintColor: '#535aff' }} />
+        <Stack.Screen name="settings/torrserver" options={{ headerShown: true, headerTitle: '', headerTintColor: '#535aff' }} />
+        <Stack.Screen name="settings/contact" options={{ headerShown: true, headerTitle: '', headerTintColor: '#535aff' }} />
+        <Stack.Screen name="settings/donate" options={{ headerShown: true, headerTitle: '', headerTintColor: '#535aff' }} />
       </Stack>
     </ThemeProvider>
   );

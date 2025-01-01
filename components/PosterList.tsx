@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, StyleSheet, Pressable, View as RNView, Animated, useColorScheme } from 'react-native';
+import { FlatList, StyleSheet, Pressable, View as RNView, Animated, useColorScheme, Platform } from 'react-native';
 import { Text } from './Themed';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics'; // Importing Haptics for haptic feedback
 import { isHapticsSupported } from '@/utils/platform';
 
 const SkeletonLoader = () => {
-  const colorScheme = useColorScheme();
+  const isWeb = Platform.OS === 'web';
+  const colorScheme = isWeb ? 'dark' : useColorScheme();
   return (
     <RNView style={styles.skeletonContainer}>
       <RNView style={[styles.skeletonImage, { backgroundColor: colorScheme === 'dark' ? '#0f0f0f' : '#f0f0f0' }]} />
@@ -28,7 +29,8 @@ const PosterList = ({
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [fadeAnim] = useState(new Animated.Value(0));
-  const colorScheme = useColorScheme();
+  const isWeb = Platform.OS === 'web';
+  const colorScheme = isWeb ? 'dark' : useColorScheme();
 
   useEffect(() => {
     const fetchData = async () => {

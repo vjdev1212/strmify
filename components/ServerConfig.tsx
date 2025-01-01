@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Alert, Switch, TextInput, Pressable, useColorScheme } from 'react-native';
+import { StyleSheet, Alert, Switch, TextInput, Pressable, useColorScheme, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, Text } from '@/components/Themed';
 
@@ -19,7 +19,8 @@ export interface ServerConfig {
 }
 
 const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverType, defaultUrl }) => {
-  const colorScheme = useColorScheme();
+  const isWeb = Platform.OS === 'web';
+  const colorScheme = isWeb ? 'dark' : useColorScheme();
   const [serverUrl, setServerUrl] = useState<string>(defaultUrl);
   const [isDefault, setIsDefault] = useState<boolean>(false);
   const [isEnabled, setIsEnabled] = useState<boolean>(true);

@@ -8,6 +8,7 @@ import * as Haptics from 'expo-haptics';
 import { generateStremioPlayerUrl } from '@/clients/stremio';
 import { generateTorrServerPlayerUrl } from '@/clients/torrserver';
 import { ServerConfig } from '@/components/ServerConfig';
+import { isHapticsSupported } from '@/utils/platform';
 
 enum Servers {
     Stremio = 'Stremio',
@@ -32,7 +33,8 @@ const StreamDetailsScreen = () => {
     const [metaData, setMetaData] = useState<any>(null);
     const [playBtnDisabled, setPlayBtnDisabled] = useState<boolean>(false);
     const [isModalVisible, setModalVisible] = useState(false);
-    const colorScheme = useColorScheme();
+    const isWeb = Platform.OS === 'web';
+    const colorScheme = isWeb ? 'dark' : useColorScheme();
 
     useEffect(() => {
         const loadPlayers = async () => {
@@ -149,7 +151,9 @@ const StreamDetailsScreen = () => {
     };
 
     const handlePlay = async () => {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+        if (isHapticsSupported()) {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+        }
         if (isPlaying) {
             return;
         }
@@ -157,7 +161,9 @@ const StreamDetailsScreen = () => {
         setIsPlaying(true);
         setPlayBtnDisabled(true);
         setModalVisible(true);
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+        if (isHapticsSupported()) {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+        }
 
         if (!selectedPlayer || (!url && !selectedServer)) {
             setStatusText('Error: Please select a media player and server.');
@@ -345,12 +351,14 @@ const PlayerSelectionGroup = ({
     onSelect: (name: string) => void;
     isPlayer?: boolean;
 }) => {
-    const colorScheme = useColorScheme(); // Determine light or dark mode
+    const isWeb = Platform.OS === 'web';
+    const colorScheme = isWeb ? 'dark' : useColorScheme();
     const isDarkMode = colorScheme === 'dark';
 
-    const handleSelectPlayer = async(name: string) => {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        onSelect(name);
+    const handleSelectPlayer = async (name: string) => {
+        if (isHapticsSupported()) {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+        } onSelect(name);
     };
 
     return (
