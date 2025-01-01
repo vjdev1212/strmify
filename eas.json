@@ -9,6 +9,7 @@
       }
     },
     "production": {
+      "autoIncrement": true,      
       "android": {
         "buildType": "app-bundle"
       },
@@ -17,5 +18,8 @@
         "credentialsSource": "remote"
       }
     }
+  },
+  "cli": {
+    "appVersionSource": "remote"
   }
 }
