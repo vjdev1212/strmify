@@ -7,7 +7,7 @@ import * as Haptics from 'expo-haptics';
 import { isHapticsSupported } from '@/utils/platform';
 
 const StreamScreen = () => {
-    const { imdbid, type, season, episode } = useLocalSearchParams();
+    const { imdbid, type, name: contentTitle, season, episode } = useLocalSearchParams();
     const [addons, setAddons] = useState<any[]>([]);
     const [selectedAddon, setSelectedAddon] = useState<any | null>(null);
     const [streams, setStreams] = useState<any[]>([]);
@@ -135,7 +135,7 @@ const StreamScreen = () => {
             router.push({
                 pathname: '/stream/details',
                 params: {
-                    imdbid, type, season, episode, name, title, description, url, infoHash
+                    imdbid, type, season, episode, contentTitle, name, title, description, url, infoHash
                 },
             })
         }

@@ -48,11 +48,12 @@ const StreamDetailsScreen = () => {
     }, []);
 
 
-    const { imdbid, type, season, episode, name, title, description, url, infoHash } = useLocalSearchParams<{
+    const { imdbid, type, season, episode, contentTitle, name, title, description, url, infoHash } = useLocalSearchParams<{
         imdbid: string;
         type: string;
         season: string;
         episode: string;
+        contentTitle: string;
         name: string;
         title: string;
         description?: string;
@@ -211,13 +212,13 @@ const StreamDetailsScreen = () => {
             const streamUrl = player.encodeUrl ? encodeURIComponent(videoUrl) : videoUrl;
             const playerUrl = `${player.scheme}${streamUrl}`;
             if (playerUrl) {
-                console.log('default player', selectedPlayer);
                 if (selectedPlayer === Players.Default) {
-                    console.log('inside player', selectedPlayer);
                     router.push({
                         pathname: '/stream/player',
                         params: {
-                            videoUrl: playerUrl
+                            videoUrl: playerUrl,
+                            title: contentTitle,
+                            artwork: `https://images.metahub.space/background/medium/${imdbid}/img`
                         },
                     })
                 } else {
@@ -286,7 +287,7 @@ const StreamDetailsScreen = () => {
                 animationType="fade"
                 onRequestClose={handleCancel}
             >
-                <TouchableWithoutFeedback onPress={handleCancel}>
+                <TouchableWithoutFeedback>
                     <View style={styles.modalOverlay}>
                         <View
                             style={[styles.modalContainer, { backgroundColor: colorScheme === 'dark' ? '#1f1f1f' : '#f0f0f0' }]}

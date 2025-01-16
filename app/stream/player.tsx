@@ -1,16 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Dimensions } from 'react-native';
-import { useVideoPlayer, VideoView } from 'expo-video';
+import { useVideoPlayer, VideoSource, VideoView } from 'expo-video';
 import { useLocalSearchParams } from 'expo-router';
 import { View } from '@/components/Themed';
 import * as ScreenOrientation from 'expo-screen-orientation';
 
 const VideoPlayer = () => {
-    const { videoUrl } = useLocalSearchParams();
+    const { videoUrl, title, artwork } = useLocalSearchParams();
     const [orientation, setOrientation] = useState('portrait');
-    const player = useVideoPlayer(videoUrl as string, player => {
+    const videoSource: VideoSource ={
+        uri: videoUrl as string,
+        metadata: {
+            title: title as string,
+            artwork: artwork as string
+        }
+    }
+    const player = useVideoPlayer(videoSource, player => {
         player.loop = true;
         player.allowsExternalPlayback = true;
+        player.showNowPlayingNotification = true;
+        player.staysActiveInBackground = true;
         player.play();
     });
 

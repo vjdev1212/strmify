@@ -58,7 +58,7 @@ const MovieDetails = () => {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
     } router.push({
       pathname: '/stream/list',
-      params: { imdbid: data.imdb_id, type: 'movie', season: 0, episode: 0 },
+      params: { imdbid: data.imdb_id, type: 'movie', name: data.name, season: 0, episode: 0 },
     });
   };
 
