@@ -3,11 +3,13 @@ import { StyleSheet, Dimensions, ScaledSize } from 'react-native';
 import { useVideoPlayer, VideoSource, VideoView } from 'expo-video';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { View } from '@/components/Themed';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ScreenOrientation from 'expo-screen-orientation';
 
 const VideoPlayer = () => {
     const { videoUrl, title, artwork } = useLocalSearchParams();
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const [screenDimensions, setScreenDimensions] = useState<ScaledSize>(Dimensions.get('window'));
     const [isLandscape, setIsLandscape] = useState(screenDimensions.width > screenDimensions.height);
 
@@ -48,13 +50,17 @@ const VideoPlayer = () => {
         router.back();
     };
 
+    const videoHeight = isLandscape
+        ? screenDimensions.height - insets.bottom
+        : (screenDimensions.width * 9) / 16;
+
     return (
         <View style={styles.container}>
             <VideoView
                 player={player}
                 style={{
                     width: screenDimensions.width,
-                    height: isLandscape ? screenDimensions.height : (screenDimensions.width * 9) / 16,
+                    height: videoHeight,
                 }}
                 allowsFullscreen
                 allowsPictureInPicture
