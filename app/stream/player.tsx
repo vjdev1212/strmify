@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { StyleSheet, Dimensions } from 'react-native';
 import { useVideoPlayer, VideoSource, VideoView } from 'expo-video';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -7,15 +7,15 @@ import * as ScreenOrientation from 'expo-screen-orientation';
 
 const VideoPlayer = () => {
     const { videoUrl, title, artwork } = useLocalSearchParams();
-    const [orientation, setOrientation] = useState('portrait');
     const router = useRouter();
-    const videoSource: VideoSource ={
+    const videoSource: VideoSource = {
         uri: videoUrl as string,
         metadata: {
             title: title as string,
             artwork: artwork as string
         }
-    }
+    };
+    
     const player = useVideoPlayer(videoSource, player => {
         player.loop = true;
         player.allowsExternalPlayback = true;
@@ -25,46 +25,27 @@ const VideoPlayer = () => {
     });
 
     useEffect(() => {
-        const lockOrientation = async () => {
-            await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
-        };
-
-        const updateOrientation = () => {
-            const { width, height } = Dimensions.get('window');
-            setOrientation(width > height ? 'landscape' : 'portrait');
-        };
-
-        lockOrientation();
-
-        const subscription = Dimensions.addEventListener('change', updateOrientation);
-        updateOrientation();
+        ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.DEFAULT);
 
         return () => {
-            subscription?.remove();
-            ScreenOrientation.unlockAsync(); 
+            ScreenOrientation.unlockAsync();
         };
     }, []);
 
-    const handleFullscreenExit = () => {
-        ScreenOrientation.unlockAsync(); 
-        router.back()
-    };
-
-    const { width, height } = Dimensions.get('window');
+    const { width } = Dimensions.get('window');
 
     return (
         <View style={styles.container}>
             <VideoView
                 player={player}
                 style={{
-                    width: orientation === 'landscape' ? Math.max(width, height) : width,
-                    height: orientation === 'landscape' ? height : (width * 9) / 16,
+                    width: '100%',
+                    height: (width * 9) / 16,
                 }}
                 allowsFullscreen
                 allowsPictureInPicture
                 allowsVideoFrameAnalysis
-                onFullscreenExit={handleFullscreenExit}
-                contentFit={'contain'}
+                contentFit="contain"
             />
         </View>
     );
