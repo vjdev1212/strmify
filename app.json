@@ -3,7 +3,7 @@
     "name": "StreamSrc",
     "slug": "streamsrc",
     "version": "1.0.0",
-    "orientation": "default",
+    "orientation": "portrait",
     "icon": "assets/images/icon.png",
     "scheme": "streamsrc",
     "platforms": [

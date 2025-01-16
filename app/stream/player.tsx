@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Dimensions } from 'react-native';
 import { useVideoPlayer, VideoSource, VideoView } from 'expo-video';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { View } from '@/components/Themed';
 import * as ScreenOrientation from 'expo-screen-orientation';
 
 const VideoPlayer = () => {
     const { videoUrl, title, artwork } = useLocalSearchParams();
     const [orientation, setOrientation] = useState('portrait');
+    const router = useRouter();
     const videoSource: VideoSource ={
         uri: videoUrl as string,
         metadata: {
@@ -44,6 +45,11 @@ const VideoPlayer = () => {
         };
     }, []);
 
+    const handleFullscreenExit = () => {
+        ScreenOrientation.unlockAsync(); 
+        router.back()
+    };
+
     const { width, height } = Dimensions.get('window');
 
     return (
@@ -57,6 +63,7 @@ const VideoPlayer = () => {
                 allowsFullscreen
                 allowsPictureInPicture
                 allowsVideoFrameAnalysis
+                onFullscreenExit={handleFullscreenExit}
                 contentFit={'contain'}
             />
         </View>
