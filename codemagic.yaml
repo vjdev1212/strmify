@@ -1,9 +1,11 @@
 workflows:
   ios:
-    name: Expo iOS Build
+    name: Expo iOS Build with Free Developer Account
     environment:
       vars:
         EXPO_TOKEN: $EXPO_TOKEN # Add your Expo token in Codemagic environment variables
+        APPLE_ID: $APPLE_ID     # Your Apple ID (free developer account)
+        APPLE_PASSWORD: $APPLE_PASSWORD # Your Apple ID password or app-specific password
       xcode: latest
       node: latest
     scripts:
@@ -11,8 +13,17 @@ workflows:
         script: yarn install
       - name: Log in to Expo
         script: npx expo login -u $EXPO_USERNAME -p $EXPO_PASSWORD
+      - name: Authenticate with Apple
+        script: >
+          xcrun altool --list-providers
+          --username $APPLE_ID
+          --password $APPLE_PASSWORD
       - name: Build Expo app for iOS
         script: npx expo build:ios --non-interactive --release-channel default
+      - name: Download provisioning profile
+        script: |
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          cp ./provisioning_profiles/*.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/
     artifacts:
       - build/ios/*.ipa
     publishing:
