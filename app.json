@@ -3,7 +3,7 @@
     "name": "StreamSrc",
     "slug": "streamsrc",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "assets/images/icon.png",
     "scheme": "streamsrc",
     "platforms": [
@@ -30,7 +30,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.vijayyuvi.streamsrc",
-      "icon":"assets/images/icon.png"
+      "icon": "assets/images/icon.png"
     },
     "web": {
       "bundler": "metro",
@@ -39,7 +39,8 @@
     },
     "plugins": [
       "expo-router",
-      "expo-font"
+      "expo-font",
+      "expo-video"
     ],
     "experiments": {
       "typedRoutes": true

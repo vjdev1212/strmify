@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { StyleSheet, ScrollView, Alert, Pressable, Linking, Image, Platform, useColorScheme, Modal, TouchableWithoutFeedback } from 'react-native';
 import { ActivityIndicator, StatusBar, Text, View } from '@/components/Themed';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { generateStremioPlayerUrl } from '@/clients/stremio';
@@ -16,6 +16,7 @@ enum Servers {
 }
 
 enum Players {
+    Default = 'Default',
     Browser = 'Browser',
     VLC = 'VLC',
     Infuse = 'Infuse',
@@ -28,6 +29,7 @@ const StreamDetailsScreen = () => {
     const [players, setPlayers] = useState<{ name: string; scheme: string; encodeUrl: boolean; icon: any }[]>([]);
     const [selectedServer, setSelectedServer] = useState<string | null>(null);
     const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
+    const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [statusText, setStatusText] = useState('');
     const [metaData, setMetaData] = useState<any>(null);
@@ -106,20 +108,23 @@ const StreamDetailsScreen = () => {
     const getPlatformSpecificPlayers = () => {
         if (Platform.OS === 'android') {
             return [
-                { name: Players.Browser, scheme: '', encodeUrl: false, icon: require('@/assets/images/players/chrome.png') },
+                { name: Players.Default, scheme: '', encodeUrl: false, icon: require('@/assets/images/players/default.png') },
                 { name: Players.VLC, scheme: 'vlc://', encodeUrl: false, icon: require('@/assets/images/players/vlc.png') },
                 { name: Players.VidHub, scheme: 'open-vidhub://x-callback-url/open?url=', encodeUrl: true, icon: require('@/assets/images/players/vidhub.png') },
             ];
         } else if (Platform.OS === 'ios') {
             return [
+                { name: Players.Default, scheme: '', encodeUrl: false, icon: require('@/assets/images/players/default.png') },
                 { name: Players.VLC, scheme: 'vlc://', encodeUrl: false, icon: require('@/assets/images/players/vlc.png') },
                 { name: Players.Infuse, scheme: 'infuse://x-callback-url/play?url=', encodeUrl: true, icon: require('@/assets/images/players/infuse.png') },
                 { name: Players.VidHub, scheme: 'open-vidhub://x-callback-url/open?url=', encodeUrl: true, icon: require('@/assets/images/players/vidhub.png') },
                 { name: Players.OutPlayer, scheme: 'outplayer://', encodeUrl: false, icon: require('@/assets/images/players/outplayer.png') },
-                { name: Players.Browser, scheme: '', encodeUrl: false, icon: require('@/assets/images/players/safari.png') },
             ];
         } else if (Platform.OS === 'web') {
-            return [{ name: Players.Browser, scheme: '', encodeUrl: false, icon: require('@/assets/images/players/chrome.png') }];
+            return [
+                { name: Players.Default, scheme: '', encodeUrl: false, icon: require('@/assets/images/players/default.png') },
+                { name: Players.Browser, scheme: '', encodeUrl: false, icon: require('@/assets/images/players/chrome.png') }
+            ];
         }
         return [];
     };
@@ -206,9 +211,20 @@ const StreamDetailsScreen = () => {
             const streamUrl = player.encodeUrl ? encodeURIComponent(videoUrl) : videoUrl;
             const playerUrl = `${player.scheme}${streamUrl}`;
             if (playerUrl) {
-                setStatusText('Opening Stream in Media Player...');
-                await Linking.openURL(playerUrl);
-                setStatusText('Stream Opened in Media Player...');
+                console.log('default player', selectedPlayer);
+                if (selectedPlayer === Players.Default) {
+                    console.log('inside player', selectedPlayer);
+                    router.push({
+                        pathname: '/stream/player',
+                        params: {
+                            videoUrl: playerUrl
+                        },
+                    })
+                } else {
+                    setStatusText('Opening Stream in Media Player...');
+                    await Linking.openURL(playerUrl);
+                    setStatusText('Stream Opened in Media Player...');
+                }
             }
         } catch (error) {
             console.error('Error during playback process:', error);
