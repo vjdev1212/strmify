@@ -1,22 +1,21 @@
 workflows:
-  expo-build:
-    name: Expo EAS Build (Signed IPA for iOS, APK for Android)
+  ios:
+    name: Expo iOS Build
     environment:
-      groups:
-        - expo-env-vars
+      vars:
+        EXPO_TOKEN: $EXPO_TOKEN # Add your Expo token in Codemagic environment variables
+      xcode: latest
+      node: latest
     scripts:
       - name: Install dependencies
-        script: |
-          echo "Setting up Node.js..."
-          nvm install $NODE_VERSION
-          npm install
-      - name: Install EAS CLI
-        script: |
-          npm install -g eas-cli
-      - name: Build Expo project using EAS Build
-        script: |
-          eas build --platform ios --profile development --non-interactive
-          eas build --platform android --profile development --non-interactive
+        script: yarn install
+      - name: Log in to Expo
+        script: npx expo login -u $EXPO_USERNAME -p $EXPO_PASSWORD
+      - name: Build Expo app for iOS
+        script: npx expo build:ios --non-interactive --release-channel default
     artifacts:
-      - ./dist/*.ipa
-      - ./dist/*.apk
+      - build/ios/*.ipa
+    publishing:
+      scripts:
+        - name: Notify build status
+          script: echo "iOS build completed successfully."
