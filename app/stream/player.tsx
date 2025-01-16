@@ -8,7 +8,6 @@ import * as ScreenOrientation from 'expo-screen-orientation';
 
 const VideoPlayer = () => {
     const { videoUrl, title, artwork } = useLocalSearchParams();
-    const router = useRouter();
     const insets = useSafeAreaInsets();
     const [screenDimensions, setScreenDimensions] = useState<ScaledSize>(Dimensions.get('window'));
     const [isLandscape, setIsLandscape] = useState(screenDimensions.width > screenDimensions.height);
@@ -47,7 +46,6 @@ const VideoPlayer = () => {
 
     const handleFullscreenExit = () => {
         ScreenOrientation.unlockAsync();
-        router.back();
     };
 
     const videoHeight = isLandscape
