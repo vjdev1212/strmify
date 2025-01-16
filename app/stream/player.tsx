@@ -4,7 +4,6 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 import { useLocalSearchParams } from 'expo-router';
 import { View } from '@/components/Themed';
 import * as ScreenOrientation from 'expo-screen-orientation';
-import { useEvent } from 'expo';
 
 const VideoPlayer = () => {
     const { videoUrl } = useLocalSearchParams();
@@ -12,31 +11,28 @@ const VideoPlayer = () => {
     const player = useVideoPlayer(videoUrl as string, player => {
         player.loop = true;
         player.allowsExternalPlayback = true;
-        player.play();        
+        player.play();
     });
-
-    const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing });
 
     useEffect(() => {
         const lockOrientation = async () => {
-            const { width, height } = Dimensions.get('window');
-            if (width > height) {
-                await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
-            } else {
-                await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT);
-            }
+            await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
         };
 
         const updateOrientation = () => {
             const { width, height } = Dimensions.get('window');
             setOrientation(width > height ? 'landscape' : 'portrait');
-            lockOrientation();
         };
+
+        lockOrientation();
 
         const subscription = Dimensions.addEventListener('change', updateOrientation);
         updateOrientation();
 
-        return () => subscription?.remove();
+        return () => {
+            subscription?.remove();
+            ScreenOrientation.unlockAsync(); 
+        };
     }, []);
 
     const { width, height } = Dimensions.get('window');
