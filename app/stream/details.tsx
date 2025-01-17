@@ -460,8 +460,10 @@ const styles = StyleSheet.create({
     },
     playerList: {
         flexDirection: 'row',
-        justifyContent: 'flex-start',
-        alignItems: 'center'
+        justifyContent: 'center',
+        alignItems: 'center',
+        margin: 0,
+        padding: 0
     },
     playerContainer: {
         alignItems: 'center',

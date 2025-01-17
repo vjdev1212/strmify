@@ -159,13 +159,14 @@ const styles = StyleSheet.create({
   },
   episodeContainer: {
     marginHorizontal: 10,
-    marginVertical: 10
+    marginVertical: 10,
   },
   thumbnail: {
-    width: 140,
-    height: 90,
+    width: 150,
+    height: 100,
     borderRadius: 8,
     marginRight: 15,
+    aspectRatio: 16 / 9,
   },
   episodeTitle: {
     fontSize: 14,

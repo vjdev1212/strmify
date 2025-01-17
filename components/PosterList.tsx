@@ -190,11 +190,11 @@ const styles = StyleSheet.create({
   horizontalImage: {
     width: 100,
     height: 150,
-    borderRadius: 8,
+    borderRadius: 8
   },
   verticalImage: {
     flex: 1,
-    aspectRatio: 2 / 3, // Maintain a 2:3 aspect ratio for vertical layout
+    aspectRatio: 2 / 3,
   },
   posterTitle: {
     marginTop: 8,

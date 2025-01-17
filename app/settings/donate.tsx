@@ -38,7 +38,8 @@ const DonateScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 20
+        padding: 20,
+        marginTop: 30
     },
     donateContainer:{
         marginHorizontal: 20,
