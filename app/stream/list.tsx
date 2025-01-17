@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, StyleSheet, Pressable, View as RNView, Alert } from 'react-native';
+import { FlatList, StyleSheet, Pressable, View as RNView, Alert, ScrollView } from 'react-native';
 import { ActivityIndicator, Card, StatusBar, Text, View } from '@/components/Themed';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { isHapticsSupported, showAlert } from '@/utils/platform';
-import { ScrollView } from 'react-native-gesture-handler';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const StreamScreen = () => {
     const { imdbid, type, name: contentTitle, season, episode } = useLocalSearchParams();
@@ -159,7 +159,7 @@ const StreamScreen = () => {
 
     const selectedAddonStreams = streams.find((addonData) => addonData.addon === selectedAddon)?.streams || [];
     return (
-        <RNView style={styles.container}>
+        <SafeAreaView style={styles.container}>
             <StatusBar />
             <View>
                 <View style={styles.addonListContainer}>
@@ -196,7 +196,7 @@ const StreamScreen = () => {
                     }
                 </ScrollView>
             )}
-        </RNView>
+        </SafeAreaView>
     );
 };
 
@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         paddingHorizontal: 20,
         marginHorizontal: 5,
-    },    
+    },
     selectedAddonItem: {
         backgroundColor: '#535aff',
     },
