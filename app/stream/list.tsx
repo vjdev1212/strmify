@@ -5,6 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { isHapticsSupported, showAlert } from '@/utils/platform';
+import { ScrollView } from 'react-native-gesture-handler';
 
 const StreamScreen = () => {
     const { imdbid, type, name: contentTitle, season, episode } = useLocalSearchParams();
@@ -160,7 +161,7 @@ const StreamScreen = () => {
     return (
         <RNView style={styles.container}>
             <StatusBar />
-            <View>
+            <ScrollView>
                 <View style={styles.addonListContainer}>
                     <FlatList
                         style={styles.addonList}
@@ -171,7 +172,7 @@ const StreamScreen = () => {
                         showsHorizontalScrollIndicator={false}
                     />
                 </View>
-            </View>
+            </ScrollView>
             {loading ? (
                 <RNView style={styles.loadingContainer}>
                     <View style={styles.centeredContainer}>
@@ -180,7 +181,7 @@ const StreamScreen = () => {
                     </View>
                 </RNView>
             ) : (
-                <View>
+                <ScrollView>
                     {
                         selectedAddonStreams.length === 0 ? (
                             <Text style={styles.noStreams}>No streams found</Text>
@@ -193,7 +194,7 @@ const StreamScreen = () => {
                             />
                         )
                     }
-                </View>
+                </ScrollView>
             )}
         </RNView>
     );
