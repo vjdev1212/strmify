@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Pressable, Linking, Platform } from 'react-native';
+import { StyleSheet, Pressable, Linking, Platform, SafeAreaView, ScrollView } from 'react-native';
 import { View, Text, StatusBar } from '@/components/Themed';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics'
@@ -19,24 +19,29 @@ const DonateScreen = () => {
     };
 
     return (
-        <View style={styles.container}>
-            <StatusBar/>
-            <Text style={styles.title}>Liked the App!</Text>
-            <Text style={styles.subtitle}>
-                If you find this app useful and want to support its continued development, consider buying me a coffee. Your support keeps this project alive and thriving!      </Text>
+        <SafeAreaView style={styles.container}>
+            <StatusBar />
+            <ScrollView style={styles.donateContainer}>
+                <Text style={styles.title}>Liked the App!</Text>
+                <Text style={styles.subtitle}>
+                    If you find this app useful and want to support its continued development, consider buying me a coffee. Your support keeps this project alive and thriving!      </Text>
 
-            <Pressable style={styles.donateButton} onPress={handleDonate}>
-                <Ionicons name="cafe-outline" size={24} color="#fff" style={styles.icon} />
-                <Text style={styles.donateText}>Buy Me a Coffee</Text>
-            </Pressable>
-        </View>
+                <Pressable style={styles.donateButton} onPress={handleDonate}>
+                    <Ionicons name="cafe-outline" size={24} color="#fff" style={styles.icon} />
+                    <Text style={styles.donateText}>Buy Me a Coffee</Text>
+                </Pressable>
+            </ScrollView>
+        </SafeAreaView>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 20,
+        padding: 20
+    },
+    donateContainer:{
+        marginHorizontal: 20,
     },
     title: {
         fontSize: 24,

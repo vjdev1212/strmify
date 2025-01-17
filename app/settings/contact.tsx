@@ -1,8 +1,8 @@
 import React from 'react';
-import { StyleSheet, Pressable, Linking, Platform } from 'react-native';
-import { View, Text, StatusBar } from '@/components/Themed';
+import { StyleSheet, Pressable, Linking, SafeAreaView, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics'
+import * as Haptics from 'expo-haptics';
+import { View, Text, StatusBar } from '@/components/Themed';
 import { isHapticsSupported } from '@/utils/platform';
 
 const ContactScreen = () => {
@@ -15,15 +15,15 @@ const ContactScreen = () => {
                 if (isHapticsSupported()) {
                     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
                 }
-                Linking.openURL('mailto:vcmvijay@gmail.com')
+                Linking.openURL('mailto:vcmvijay@gmail.com');
             },
         }
     ];
 
     return (
-        <View style={styles.container}>
-            <StatusBar/>
-            <View style={styles.contactList}>
+        <SafeAreaView style={styles.container}>
+            <StatusBar />
+            <ScrollView style={styles.contactList}>
                 {contactInfo.map((item, index) => (
                     <Pressable
                         key={index}
@@ -37,15 +37,15 @@ const ContactScreen = () => {
                         </View>
                     </Pressable>
                 ))}
-            </View>
-        </View>
+            </ScrollView>
+        </SafeAreaView>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 20,
+        padding: 20
     },
     header: {
         fontSize: 20,
@@ -56,6 +56,7 @@ const styles = StyleSheet.create({
     contactList: {
         flexDirection: 'column',
         marginTop: 10,
+        marginHorizontal: 20,
     },
     contactItem: {
         flexDirection: 'row',
