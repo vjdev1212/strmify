@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, StyleSheet, Pressable, View as RNView, Alert, ScrollView } from 'react-native';
+import { FlatList, StyleSheet, Pressable, View as RNView, Alert } from 'react-native';
 import { ActivityIndicator, Card, StatusBar, Text, View } from '@/components/Themed';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -22,7 +22,6 @@ const StreamScreen = () => {
                 const addonsData = storedAddons ? JSON.parse(storedAddons) : {};
                 const addonList = Object.values(addonsData);
                 setAddons(addonList);
-
 
                 if (addonList.length > 0) {
                     setSelectedAddon(addonList[0]);
@@ -52,7 +51,6 @@ const StreamScreen = () => {
             const addonPromises = addonList.map(async (addon) => {
                 const addonTypes = addon?.types || [];
 
-
                 if (!addonTypes.includes(type)) {
                     return { addon, streams: [] };
                 }
@@ -76,11 +74,8 @@ const StreamScreen = () => {
                 }
             });
 
-
             const allStreams = await Promise.all(addonPromises);
-
             setStreams(allStreams);
-
         } catch (error) {
             console.error('Error fetching streams:', error);
             showAlert('Error', 'Failed to load streams');
@@ -89,10 +84,8 @@ const StreamScreen = () => {
         }
     };
 
-
     const renderAddonItem = ({ item }: any) => {
         const { name, logo, types } = item;
-
 
         if (!types || !types.includes(type)) {
             return null;
@@ -181,20 +174,13 @@ const StreamScreen = () => {
                     </View>
                 </RNView>
             ) : (
-                <ScrollView>
-                    {
-                        selectedAddonStreams.length === 0 ? (
-                            <Text style={styles.noStreams}>No streams found</Text>
-                        ) : (
-                            <FlatList
-                                data={selectedAddonStreams}
-                                renderItem={renderStreamItem}
-                                showsVerticalScrollIndicator={false}
-                                keyExtractor={(item, index) => index.toString()}
-                            />
-                        )
-                    }
-                </ScrollView>
+                <FlatList
+                    data={selectedAddonStreams}
+                    renderItem={renderStreamItem}
+                    showsVerticalScrollIndicator={false}
+                    keyExtractor={(item, index) => index.toString()}
+                    ListEmptyComponent={<Text style={styles.noStreams}>No streams found</Text>}
+                />
             )}
         </SafeAreaView>
     );
@@ -247,20 +233,6 @@ const styles = StyleSheet.create({
     streamTitle: {
         fontSize: 13,
         paddingHorizontal: 10,
-    },
-    playerIconsContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-evenly',
-        alignContent: 'center',
-        alignItems: 'center',
-        marginTop: 20,
-        padding: 10,
-        width: '100%',
-    },
-    playerIcon: {
-        width: 40,
-        height: 40,
-        borderRadius: 10,
     },
     loadingContainer: {
         flex: 1,
