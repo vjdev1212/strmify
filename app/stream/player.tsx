@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Dimensions, ScaledSize } from 'react-native';
 import { useVideoPlayer, VideoSource, VideoView } from 'expo-video';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { View } from '@/components/Themed';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ScreenOrientation from 'expo-screen-orientation';
+import { isOrientationSupported } from '@/utils/platform';
 
 const VideoPlayer = () => {
     const { videoUrl, title, artwork } = useLocalSearchParams();
@@ -36,17 +37,17 @@ const VideoPlayer = () => {
 
         const subscription = Dimensions.addEventListener('change', handleDimensionsChange);
 
-        ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.DEFAULT);
+        if (isOrientationSupported()) {
+            ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.DEFAULT);
+        }
 
         return () => {
             subscription?.remove();
-            ScreenOrientation.unlockAsync();
+            if (isOrientationSupported()) {
+                ScreenOrientation.unlockAsync();
+            }
         };
     }, []);
-
-    const handleFullscreenExit = () => {
-        ScreenOrientation.unlockAsync();
-    };
 
     const videoHeight = isLandscape
         ? screenDimensions.height - insets.bottom
@@ -63,7 +64,6 @@ const VideoPlayer = () => {
                 allowsFullscreen
                 allowsPictureInPicture
                 allowsVideoFrameAnalysis
-                onFullscreenExit={handleFullscreenExit}
                 contentFit="contain"
             />
         </View>
