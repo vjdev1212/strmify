@@ -58,8 +58,9 @@ const styles = StyleSheet.create({
   posterContainer: {
     position: 'relative',
     width: '100%',
-    aspectRatio: 16 / 9, // Maintain a 16:9 aspect ratio for the poster
+    aspectRatio: 16 / 9,
     overflow: 'hidden',
+    alignItems: 'center'
   },
   poster: {
     width: '100%',
@@ -73,6 +74,7 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     marginTop: 20,
+    alignItems: 'center'
   },
   logo: {
     width: 200,
