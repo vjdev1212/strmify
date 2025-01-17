@@ -401,7 +401,7 @@ const PlayerSelectionGroup = ({
             <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.playerList}>
+                contentContainerStyle={[styles.playerList]}>
                 {options.map((option) => (
                     <View key={option.name}>
                         <Pressable
@@ -461,9 +461,7 @@ const styles = StyleSheet.create({
     playerList: {
         flexDirection: 'row',
         justifyContent: 'flex-start',
-        alignItems: 'center',
-        paddingVertical: 5,
-        marginVertical: 5
+        alignItems: 'center'
     },
     playerContainer: {
         alignItems: 'center',
