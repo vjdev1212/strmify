@@ -161,7 +161,7 @@ const StreamScreen = () => {
     return (
         <RNView style={styles.container}>
             <StatusBar />
-            <ScrollView>
+            <View>
                 <View style={styles.addonListContainer}>
                     <FlatList
                         style={styles.addonList}
@@ -172,7 +172,7 @@ const StreamScreen = () => {
                         showsHorizontalScrollIndicator={false}
                     />
                 </View>
-            </ScrollView>
+            </View>
             {loading ? (
                 <RNView style={styles.loadingContainer}>
                     <View style={styles.centeredContainer}>
