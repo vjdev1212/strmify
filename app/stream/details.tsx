@@ -414,7 +414,7 @@ const PlayerSelectionGroup = ({
                             onPress={() => handleSelectPlayer(option.name)}
                         >
                             {isPlayer && option.icon && (
-                                <Image source={option.icon} style={styles.playerIcon} />
+                                <Image resizeMode='cover' source={option.icon} style={styles.playerIcon} />
                             )}
                         </Pressable>
                         <Text style={styles.playerName}>{option.name}</Text>
@@ -429,7 +429,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         padding: 10,
-        marginHorizontal: 5
+        marginTop: 30,
     },
     mediaItem: {
         marginBottom: 20,
@@ -459,15 +459,10 @@ const styles = StyleSheet.create({
         alignItems: 'center'
     },
     playerList: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
         margin: 0,
         padding: 0
     },
     playerContainer: {
-        alignItems: 'center',
-        justifyContent: 'center',
         margin: 5,
         padding: 8,
         borderRadius: 10,
@@ -479,8 +474,7 @@ const styles = StyleSheet.create({
         width: 50,
         height: 50,
         padding: 5,
-        borderRadius: 10,
-        resizeMode: 'cover'
+        borderRadius: 10
     },
     playerName: {
         fontSize: 14,
