@@ -203,11 +203,13 @@ const StreamScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        marginTop: 50
+        marginTop: 40
     },
     addonListContainer: {
         marginVertical: 20,
-        marginHorizontal: 10
+        marginHorizontal: 10,
+        alignItems: 'center',
+        justifyContent: 'center'
     },
     addonList: {
         paddingHorizontal: 10,
@@ -215,8 +217,9 @@ const styles = StyleSheet.create({
     addonItem: {
         borderRadius: 25,
         paddingVertical: 10,
-        paddingHorizontal: 20
-    },
+        paddingHorizontal: 20,
+        marginHorizontal: 5,
+    },    
     selectedAddonItem: {
         backgroundColor: '#535aff',
     },
