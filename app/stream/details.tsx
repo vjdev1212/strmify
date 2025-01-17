@@ -107,13 +107,13 @@ const StreamDetailsScreen = () => {
     }, [fetchServerConfigs, fetchContentData]);
 
     const getPlatformSpecificPlayers = () => {
-        if (Platform.OS === 'android') {
+        if (getOriginalPlatform() === 'android') {
             return [
                 { name: Players.Default, scheme: '', encodeUrl: false, icon: require('@/assets/images/players/default.png') },
                 { name: Players.VLC, scheme: 'vlc://', encodeUrl: false, icon: require('@/assets/images/players/vlc.png') },
                 { name: Players.VidHub, scheme: 'open-vidhub://x-callback-url/open?url=', encodeUrl: true, icon: require('@/assets/images/players/vidhub.png') },
             ];
-        } else if (Platform.OS === 'ios') {
+        } else if (getOriginalPlatform() === 'ios') {
             return [
                 { name: Players.Default, scheme: '', encodeUrl: false, icon: require('@/assets/images/players/default.png') },
                 { name: Players.VLC, scheme: 'vlc://', encodeUrl: false, icon: require('@/assets/images/players/vlc.png') },
@@ -121,13 +121,31 @@ const StreamDetailsScreen = () => {
                 { name: Players.VidHub, scheme: 'open-vidhub://x-callback-url/open?url=', encodeUrl: true, icon: require('@/assets/images/players/vidhub.png') },
                 { name: Players.OutPlayer, scheme: 'outplayer://', encodeUrl: false, icon: require('@/assets/images/players/outplayer.png') },
             ];
-        } else if (Platform.OS === 'web') {
+        } else if (getOriginalPlatform() === 'web') {
             return [
                 { name: Players.Default, scheme: '', encodeUrl: false, icon: require('@/assets/images/players/default.png') },
                 { name: Players.Browser, scheme: '', encodeUrl: false, icon: require('@/assets/images/players/chrome.png') }
             ];
         }
         return [];
+    };
+
+    const getOriginalPlatform = () => {
+        if (Platform.OS !== 'web') {
+            return Platform.OS;
+        }
+
+        const userAgent = navigator.userAgent || navigator.vendor || window.opera || '';
+
+        if (/iPad|iPhone|iPod/.test(userAgent)) {
+            return 'ios';
+        }
+
+        if (/android/i.test(userAgent)) {
+            return 'android';
+        }
+
+        return 'web';
     };
 
     const generatePlayerUrlWithInfoHash = async (infoHash: string, serverType: string, serverUrl: string) => {
