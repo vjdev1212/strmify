@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { StyleSheet, ScrollView, Alert, Pressable, Linking, Image, Platform, useColorScheme, Modal, TouchableWithoutFeedback } from 'react-native';
+import { StyleSheet, ScrollView, Pressable, Linking, Image, Platform, useColorScheme, Modal, TouchableWithoutFeedback, SafeAreaView } from 'react-native';
 import { ActivityIndicator, StatusBar, Text, View } from '@/components/Themed';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -258,16 +258,16 @@ const StreamDetailsScreen = () => {
 
     if (loading) {
         return (
-            <View style={styles.centeredContainer}>
+            <SafeAreaView style={styles.centeredContainer}>
                 <Text style={styles.loadingText}>Loading configurations...</Text>
-            </View>
+            </SafeAreaView>
         );
     }
 
     return (
-        <ScrollView contentContainerStyle={[styles.container, { paddingBottom: 30 }]}>
+        <SafeAreaView style={styles.container}>
             <StatusBar />
-            <View style={styles.mediaItem}>
+            <ScrollView contentContainerStyle={[styles.container, { paddingBottom: 30 }]}>
                 <Text style={[styles.header, { marginVertical: 10 }]}>Stream Details</Text>
                 <DetailsRow label="Name" value={name} />
                 {title && <DetailsRow label="Title" value={title} />}
@@ -296,7 +296,7 @@ const StreamDetailsScreen = () => {
                         <Text style={styles.buttonText}>Play</Text>
                     </Pressable>
                 </View>
-            </View>
+            </ScrollView>
 
             {/* Status Modal */}
             <Modal
@@ -308,8 +308,7 @@ const StreamDetailsScreen = () => {
                 <TouchableWithoutFeedback>
                     <View style={styles.modalOverlay}>
                         <View
-                            style={[styles.modalContainer, { backgroundColor: colorScheme === 'dark' ? '#1f1f1f' : '#f0f0f0' }]}
-                        >
+                            style={[styles.modalContainer, { backgroundColor: colorScheme === 'dark' ? '#1f1f1f' : '#f0f0f0' }]}>
                             <ActivityIndicator size="large" color="#535aff" style={styles.activityIndicator} />
                             <Text style={styles.modalText}>{statusText}</Text>
                             <Pressable style={styles.cancelButton} onPress={handleCancel}>
@@ -319,7 +318,7 @@ const StreamDetailsScreen = () => {
                     </View>
                 </TouchableWithoutFeedback>
             </Modal>
-        </ScrollView>
+        </SafeAreaView>
     );
 };
 
@@ -430,6 +429,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         padding: 10,
+        marginHorizontal: 5
     },
     mediaItem: {
         marginBottom: 20,
