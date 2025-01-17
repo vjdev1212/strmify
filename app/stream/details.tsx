@@ -429,7 +429,8 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         padding: 10,
-        marginTop: 30,
+        marginTop: 20,
+        marginHorizontal: 10
     },
     mediaItem: {
         marginBottom: 20,
