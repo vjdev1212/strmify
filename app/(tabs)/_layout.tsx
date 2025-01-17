@@ -84,7 +84,6 @@ export default function TabLayout() {
           title: 'Settings',
           tabBarIcon: ({ color }) => <TabBarIcon name="gear" color={color} />,
           tabBarIconStyle: { marginVertical: 5 },
-          headerShown: true,
         }}
       />
     </Tabs>

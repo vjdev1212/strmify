@@ -5,6 +5,7 @@ import { StatusBar, Text } from '@/components/Themed'; // Assuming you have a Th
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics'
 import { isHapticsSupported } from '@/utils/platform';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const SettingsScreen = () => {
   const router = useRouter();
@@ -35,7 +36,7 @@ const SettingsScreen = () => {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar />
       <View style={styles.settingsGroup}>
         <Text style={styles.header}>Servers</Text>
@@ -60,7 +61,7 @@ const SettingsScreen = () => {
           />
         ))}
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
