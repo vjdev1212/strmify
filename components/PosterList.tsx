@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, StyleSheet, Pressable, View as RNView, Animated, useColorScheme, Platform } from 'react-native';
+import {
+  FlatList,
+  StyleSheet,
+  Pressable,
+  View as RNView,
+  Animated,
+  useColorScheme,
+  Platform,
+} from 'react-native';
 import { Text } from './Themed';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics'; // Importing Haptics for haptic feedback
@@ -10,9 +18,14 @@ const SkeletonLoader = () => {
   const colorScheme = isWeb ? 'dark' : useColorScheme();
   return (
     <RNView style={styles.skeletonContainer}>
-      <RNView style={[styles.skeletonImage, { backgroundColor: colorScheme === 'dark' ? '#0f0f0f' : '#f0f0f0' }]} />
+      <RNView
+        style={[
+          styles.skeletonImage,
+          { backgroundColor: colorScheme === 'dark' ? '#0f0f0f' : '#f0f0f0' },
+        ]}
+      />
     </RNView>
-  )
+  );
 };
 
 const PosterList = ({
@@ -74,26 +87,30 @@ const PosterList = ({
     };
 
     return (
-      <RNView>
-        <Pressable
-          style={[styles.posterContainer, layout === 'vertical' && styles.verticalContainer]}
-          onPress={() => handlePress(item)}
-        >
-          <Animated.Image
-            source={{ uri: item.poster }}
-            style={[
-              styles.posterImage,
-              layout === 'vertical' && styles.verticalImage,
-              { opacity: fadeAnim, backgroundColor: colorScheme === 'dark' ? '#0f0f0f' : '#f0f0f0' },
-            ]}
-            onLoad={handleImageLoad}
-          />
-          <Text numberOfLines={1} ellipsizeMode="tail" style={styles.posterTitle}>
-            {item.name}
-          </Text>
-          <Text style={styles.posterYear}>{year}</Text>
-        </Pressable>
-      </RNView>
+      <Pressable
+        style={[
+          styles.posterContainer,
+          layout === 'vertical' && styles.verticalContainer,
+        ]}
+        onPress={() => handlePress(item)}
+      >
+        <Animated.Image
+          source={{ uri: item.poster }}
+          style={[
+            styles.posterImage,
+            layout === 'vertical' ? styles.verticalImage : styles.horizontalImage,
+            {
+              opacity: fadeAnim,
+              backgroundColor: colorScheme === 'dark' ? '#0f0f0f' : '#f0f0f0',
+            },
+          ]}
+          onLoad={handleImageLoad}
+        />
+        <Text numberOfLines={1} ellipsizeMode="tail" style={styles.posterTitle}>
+          {item.name}
+        </Text>
+        <Text style={styles.posterYear}>{year}</Text>
+      </Pressable>
     );
   };
 
@@ -120,7 +137,7 @@ const PosterList = ({
         <FlatList
           data={new Array(10).fill(null)} // Skeleton loader
           renderItem={() => <SkeletonLoader />}
-          keyExtractor={(item, index) => index.toString()}
+          keyExtractor={(_, index) => index.toString()}
           horizontal={layout === 'horizontal'}
           showsHorizontalScrollIndicator={false}
           numColumns={layout === 'vertical' ? 2 : 1}
@@ -164,17 +181,20 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   verticalContainer: {
+    flex: 1,
     marginBottom: 10,
   },
   posterImage: {
+    borderRadius: 8,
+  },
+  horizontalImage: {
     width: 100,
     height: 150,
     borderRadius: 8,
   },
   verticalImage: {
-    width: '100%',
-    height: 200,
-    borderRadius: 8,
+    flex: 1,
+    aspectRatio: 2 / 3, // Maintain a 2:3 aspect ratio for vertical layout
   },
   posterTitle: {
     marginTop: 8,
@@ -192,7 +212,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   skeletonImage: {
-    width: 100,
+    width: '100%',
     height: 150,
     backgroundColor: '#888888',
     borderRadius: 8,
