@@ -396,7 +396,7 @@ const PlayerSelectionGroup = ({
     };
 
     return (
-        <>
+        <View>
             <Text style={styles.header}>{title}</Text>
             <ScrollView
                 horizontal
@@ -421,7 +421,7 @@ const PlayerSelectionGroup = ({
                     </View>
                 ))}
             </ScrollView>
-        </>
+        </View>
     )
 };
 
@@ -460,8 +460,7 @@ const styles = StyleSheet.create({
         alignItems: 'center'
     },
     playerList: {
-        margin: 0,
-        padding: 0
+        marginVertical: 10,
     },
     playerContainer: {
         margin: 5,
@@ -507,6 +506,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
+        marginTop: 10
     },
     button: {
         marginTop: 20,
