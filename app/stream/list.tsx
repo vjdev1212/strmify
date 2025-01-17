@@ -4,7 +4,7 @@ import { ActivityIndicator, Card, StatusBar, Text, View } from '@/components/The
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
-import { isHapticsSupported } from '@/utils/platform';
+import { isHapticsSupported, showAlert } from '@/utils/platform';
 
 const StreamScreen = () => {
     const { imdbid, type, name: contentTitle, season, episode } = useLocalSearchParams();
@@ -29,7 +29,7 @@ const StreamScreen = () => {
                 }
             } catch (error) {
                 console.error('Error fetching addons:', error);
-                Alert.alert('Error', 'Failed to load addons');
+                showAlert('Error', 'Failed to load addons');
             }
         };
 
@@ -82,7 +82,7 @@ const StreamScreen = () => {
 
         } catch (error) {
             console.error('Error fetching streams:', error);
-            Alert.alert('Error', 'Failed to load streams');
+            showAlert('Error', 'Failed to load streams');
         } finally {
             setLoading(false);
         }

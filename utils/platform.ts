@@ -1,4 +1,4 @@
-import { Platform } from 'react-native';
+import { Alert, Platform } from 'react-native';
 
 export const isHapticsSupported = (): boolean => {
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
@@ -13,3 +13,11 @@ export const isOrientationSupported = (): boolean => {
     }
     return false;
 };
+
+export const showAlert = (title: string, message: string) => {
+    if (Platform.OS === 'ios' || Platform.OS === 'android') {
+        Alert.alert(title, message);
+    } else {
+        window.alert(`${title}\n\n${message}`);
+    }
+}

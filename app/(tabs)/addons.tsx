@@ -15,7 +15,7 @@ import { StatusBar, Text } from '@/components/Themed';
 import { router } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import * as Haptics from 'expo-haptics';
-import { isHapticsSupported } from '@/utils/platform';
+import { isHapticsSupported, showAlert } from '@/utils/platform';
 
 const AddonsScreen = () => {
   const [addons, setAddons] = useState<any[]>([]);
@@ -49,20 +49,20 @@ const AddonsScreen = () => {
         updatedAddons.map(addon => [addon.id, addon])
       );
       await AsyncStorage.setItem('addons', JSON.stringify(updatedAddonsObject));
-      Alert.alert('Success', 'Addon removed successfully!');
+      showAlert('Success', 'Addon removed successfully!');
     } catch (error) {
-      Alert.alert('Error', 'Failed to remove addon.');
+      showAlert('Error', 'Failed to remove addon.');
     }
   };
 
-  const openConfiguration = async (url: string) => {    
+  const openConfiguration = async (url: string) => {
     if (isHapticsSupported()) {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
     }
     try {
       await WebBrowser.openBrowserAsync(`${url}/configure`);
     } catch {
-      Alert.alert('Error', 'Unable to open configuration URL.');
+      showAlert('Error', 'Unable to open configuration URL.');
     }
   };
 
@@ -73,10 +73,10 @@ const AddonsScreen = () => {
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(url);
       } else {
-        Alert.alert('Sharing is not available on this device.');
+        showAlert('Error', 'Sharing is not available on this device.');
       }
     } catch {
-      Alert.alert('Error', 'Failed to share the URL.');
+      showAlert('Error', 'Failed to share the URL.');
     }
   };
 
@@ -110,18 +110,27 @@ const AddonsScreen = () => {
           onPress={async () => {
             if (isHapticsSupported()) {
               await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
-            } Alert.alert(
-              'Remove Addon',
-              `Are you sure you want to remove "${item.name}"?`,
-              [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                  text: 'Remove',
-                  style: 'destructive',
-                  onPress: () => removeAddon(item.id),
-                },
-              ]
-            )
+            }
+            const message = `Are you sure you want to remove "${item.name}"?`;
+            if (Platform.OS === 'ios' || Platform.OS === 'android') {
+              Alert.alert(
+                'Remove Addon',
+                message,
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  {
+                    text: 'Remove',
+                    style: 'destructive',
+                    onPress: () => removeAddon(item.id),
+                  },
+                ]
+              )
+            } else {
+              const isConfirmed = window.confirm(message);
+              if (isConfirmed) {
+                removeAddon(item.id);
+              }
+            }
           }
           }
         >
@@ -138,9 +147,9 @@ const AddonsScreen = () => {
     router.push('/addons/add');
   }
 
-  return (    
+  return (
     <SafeAreaView style={styles.container}>
-      <StatusBar/>
+      <StatusBar />
       <Pressable style={styles.addButton} onPress={onAddNewPress}>
         <Text style={styles.addButtonText}>Add New</Text>
       </Pressable>
@@ -226,7 +235,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
     alignItems: 'center',
   },
-  shareButton: {    
+  shareButton: {
     backgroundColor: '#2165da',
   },
   configureButton: {

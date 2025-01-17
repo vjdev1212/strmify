@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, Alert, Switch, TextInput, Pressable, useColorScheme, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, Text } from '@/components/Themed';
+import { showAlert } from '@/utils/platform';
 
 interface ServerConfigProps {
   serverName: string;
@@ -47,7 +48,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
 
   const handleSave = async () => {
     if (!serverUrl.trim()) {
-      Alert.alert('Error', 'Please enter a valid server URL.');
+      showAlert('Error', 'Please enter a valid server URL.');
       return;
     }
 
@@ -77,9 +78,9 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
         await AsyncStorage.setItem('servers', JSON.stringify(updatedServers));
       }
 
-      Alert.alert('Success', `${serverName} server configuration saved.`);
+      showAlert('Success', `${serverName} server configuration saved.`);
     } catch (error) {
-      Alert.alert('Error', 'Failed to save configuration.');
+      showAlert('Error', 'Failed to save configuration.');
       console.error('Error saving settings:', error);
     }
   };

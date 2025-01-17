@@ -3,6 +3,7 @@ import { StyleSheet, ActivityIndicator, Alert, Pressable, Image, SafeAreaView, S
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Text, View, TextInput, StatusBar } from '@/components/Themed';
 import { router } from 'expo-router';
+import { showAlert } from '@/utils/platform';
 
 const defaultAddonLogo = 'https://i.ibb.co/fSJ42PJ/addon.png';
 
@@ -15,12 +16,12 @@ export default function AddAddonScreen() {
 
     const fetchManifest = async () => {
         if (!url) {
-            Alert.alert('Error', 'Please enter a URL.');
+            showAlert('Error', 'Please enter a URL.');
             return;
         }
 
         if (!url.toLocaleLowerCase().endsWith('manifest.json')) {
-            Alert.alert('Invalid Manifest URL', 'Please enter the valid Addon manifest URL.');
+            showAlert('Invalid Manifest URL', 'Please enter the valid Addon manifest URL.');
             return;
         }
 
@@ -36,7 +37,7 @@ export default function AddAddonScreen() {
             const data = await response.json();
             setManifestData(data);
         } catch (error: any) {
-            Alert.alert('Error', error.message || 'Failed to fetch data.');
+            showAlert('Error', error.message || 'Failed to fetch data.');
         } finally {
             setLoading(false);
         }
@@ -66,12 +67,12 @@ export default function AddAddonScreen() {
             };
 
             await AsyncStorage.setItem('addons', JSON.stringify(updatedAddons));
-            Alert.alert('Success', 'Addon added successfully!');
+            showAlert('Success', 'Addon added successfully!');
             setManifestData(null);
             setUrl('');
             router.navigate({ pathname: '/(tabs)/addons' });
         } catch (error) {
-            Alert.alert('Error', 'Failed to save addon.');
+            showAlert('Error', 'Failed to save addon.');
         }
     };
 

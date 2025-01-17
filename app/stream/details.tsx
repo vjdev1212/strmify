@@ -8,7 +8,7 @@ import * as Haptics from 'expo-haptics';
 import { generateStremioPlayerUrl } from '@/clients/stremio';
 import { generateTorrServerPlayerUrl } from '@/clients/torrserver';
 import { ServerConfig } from '@/components/ServerConfig';
-import { isHapticsSupported } from '@/utils/platform';
+import { isHapticsSupported, showAlert } from '@/utils/platform';
 
 enum Servers {
     Stremio = 'Stremio',
@@ -88,7 +88,7 @@ const StreamDetailsScreen = () => {
             setServers(enabledServers);
         } catch (error) {
             console.error('Error loading server configurations:', error);
-            Alert.alert('Error', 'Failed to load server configurations');
+            showAlert('Error', 'Failed to load server configurations');
         } finally {
             setLoading(false);
         }
@@ -191,7 +191,7 @@ const StreamDetailsScreen = () => {
 
         if (!selectedPlayer || (!url && !selectedServer)) {
             setStatusText('Error: Please select a media player and server.');
-            Alert.alert('Error', 'Please select a media player and server.');
+            showAlert('Error', 'Please select a media player and server.');
             setPlayBtnDisabled(false);
             setModalVisible(false);
             setIsPlaying(false);  // Stop playback if error occurs
@@ -203,7 +203,7 @@ const StreamDetailsScreen = () => {
 
         if (!player) {
             setStatusText('Error: Invalid media player selection.');
-            Alert.alert('Error', 'Invalid media player selection.');
+            showAlert('Error', 'Invalid media player selection.');
             setPlayBtnDisabled(false);
             setModalVisible(false);
             setIsPlaying(false);  // Stop playback if error occurs
@@ -220,7 +220,7 @@ const StreamDetailsScreen = () => {
 
             if (!videoUrl) {
                 setStatusText('Error: Unable to generate a valid video URL.');
-                Alert.alert('Error', 'Unable to generate a valid video URL.');
+                showAlert('Error', 'Unable to generate a valid video URL.');
                 setPlayBtnDisabled(false);
                 setModalVisible(false);
                 setIsPlaying(false);  // Stop playback if error occurs
@@ -248,7 +248,7 @@ const StreamDetailsScreen = () => {
         } catch (error) {
             console.error('Error during playback process:', error);
             setStatusText('Error: An error occurred while trying to play the stream.');
-            Alert.alert('Error', 'An error occurred while trying to play the stream.');
+            showAlert('Error', 'An error occurred while trying to play the stream.');
         } finally {
             setPlayBtnDisabled(false);
             setModalVisible(false);
