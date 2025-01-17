@@ -57,8 +57,9 @@ const MediaContentPoster = ({ background, logo }: { background: string; logo: st
 const styles = StyleSheet.create({
   posterContainer: {
     position: 'relative',
-    height: 300,
     width: '100%',
+    aspectRatio: 16 / 9, // Maintain a 16:9 aspect ratio for the poster
+    overflow: 'hidden',
   },
   poster: {
     width: '100%',
