@@ -1,5 +1,5 @@
 import React from 'react';
-import { Platform, StyleSheet, Pressable, View } from 'react-native';
+import { Platform, StyleSheet, Pressable, View, ScrollView } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'; // Import icons from Expo
 import { StatusBar, Text } from '@/components/Themed'; // Assuming you have a Themed Text component
 import { useRouter } from 'expo-router';
@@ -38,29 +38,31 @@ const SettingsScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar />
-      <View style={styles.settingsGroup}>
-        <Text style={styles.header}>Servers</Text>
-        {serversList.map((item, index) => (
-          <SettingItem
-            key={index}
-            title={item.title}
-            icon={item.icon}
-            onPress={() => onSettingsItemPress(item)}
-          />
-        ))}
-      </View>
+      <ScrollView contentContainerStyle={styles.scrollViewContent}>
+        <View style={styles.settingsGroup}>
+          <Text style={styles.header}>Servers</Text>
+          {serversList.map((item, index) => (
+            <SettingItem
+              key={index}
+              title={item.title}
+              icon={item.icon}
+              onPress={() => onSettingsItemPress(item)}
+            />
+          ))}
+        </View>
 
-      <View style={styles.settingsGroup}>
-        <Text style={styles.header}>Contact</Text>
-        {contactList.map((item, index) => (
-          <SettingItem
-            key={index}
-            title={item.title}
-            icon={item.icon}
-            onPress={() => onSettingsItemPress(item)}
-          />
-        ))}
-      </View>
+        <View style={styles.settingsGroup}>
+          <Text style={styles.header}>Contact</Text>
+          {contactList.map((item, index) => (
+            <SettingItem
+              key={index}
+              title={item.title}
+              icon={item.icon}
+              onPress={() => onSettingsItemPress(item)}
+            />
+          ))}
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -68,7 +70,10 @@ const SettingsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  scrollViewContent: {
     marginTop: 20,
+    paddingBottom: 20,
   },
   header: {
     fontSize: 18,
