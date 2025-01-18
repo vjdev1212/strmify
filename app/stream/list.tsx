@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, StyleSheet, Pressable, View as RNView, Alert } from 'react-native';
+import { FlatList, StyleSheet, Pressable, View as RNView, Alert, ScrollView } from 'react-native';
 import { ActivityIndicator, Card, StatusBar, Text, View } from '@/components/Themed';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -155,7 +155,7 @@ const StreamScreen = () => {
         <SafeAreaView style={styles.container}>
             <StatusBar />
             <View>
-                <View style={styles.addonListContainer}>
+                <ScrollView contentContainerStyle={styles.addonListContainer}>
                     <FlatList
                         style={styles.addonList}
                         data={addons}
@@ -164,7 +164,7 @@ const StreamScreen = () => {
                         horizontal
                         showsHorizontalScrollIndicator={false}
                     />
-                </View>
+                </ScrollView>
             </View>
             {loading ? (
                 <RNView style={styles.loadingContainer}>
