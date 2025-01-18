@@ -8,7 +8,7 @@ import * as Haptics from 'expo-haptics';
 import { generateStremioPlayerUrl } from '@/clients/stremio';
 import { generateTorrServerPlayerUrl } from '@/clients/torrserver';
 import { ServerConfig } from '@/components/ServerConfig';
-import { isHapticsSupported, showAlert } from '@/utils/platform';
+import { getOriginalPlatform, isHapticsSupported, showAlert } from '@/utils/platform';
 
 enum Servers {
     Stremio = 'Stremio',
@@ -130,23 +130,6 @@ const StreamDetailsScreen = () => {
         return [];
     };
 
-    const getOriginalPlatform = () => {
-        if (Platform.OS !== 'web') {
-            return Platform.OS;
-        }
-
-        const userAgent = navigator.userAgent || navigator.vendor || window.opera || '';
-
-        if (/iPad|iPhone|iPod/.test(userAgent)) {
-            return 'ios';
-        }
-
-        if (/android/i.test(userAgent)) {
-            return 'android';
-        }
-
-        return 'web';
-    };
 
     const generatePlayerUrlWithInfoHash = async (infoHash: string, serverType: string, serverUrl: string) => {
         try {
@@ -340,37 +323,40 @@ const ServerSelectionGroup = ({
     selected: string | null;
     onSelect: (name: string) => void;
     isPlayer?: boolean;
-}) => (
-    <>
-        <Text style={styles.header}>{title}</Text>
-        <View style={styles.radioGroup}>
-            {options.map((option) => (
-                <Pressable
-                    key={option.serverId}
-                    style={styles.radioContainer}
-                    onPress={() => onSelect(option.serverId)}
-                >
-                    <View style={styles.radioRow}>
-                        <View style={styles.iconLabel}>
-                            <Text style={styles.radioLabel}>{option.serverName}</Text>
-                        </View>
-                        {option.serverUrl && <Text style={styles.radioValue}>{option.serverUrl}</Text>}
-                    </View>
-                    <View>
-                        {selected === option.serverId && (
+}) => {
+    const isWeb = Platform.OS === 'web';
+    const colorScheme = isWeb ? 'dark' : useColorScheme();
+    const isDarkMode = colorScheme === 'dark';
+    return (
+        <>
+            <Text style={styles.header}>{title}</Text>
+            <View style={styles.radioGroup}>
+                {options.map((option) => (
+                    <Pressable
+                        key={option.serverId}
+                        style={styles.radioContainer}
+                        onPress={() => onSelect(option.serverId)}
+                    >
+                        <View>
                             <MaterialIcons
                                 name="check-circle"
                                 size={26}
-                                color="#535aff"
+                                color={selected === option.serverId ? '#535aff' : (isDarkMode ? '#404040' : '#D0D0D0')}
                                 style={styles.radioIcon}
                             />
-                        )}
-                    </View>
-                </Pressable>
-            ))}
-        </View>
-    </>
-);
+                        </View>
+                        <View style={styles.radioRow}>
+                            <View style={styles.iconLabel}>
+                                <Text style={styles.radioLabel}>{option.serverName}</Text>
+                            </View>
+                            {option.serverUrl && <Text style={styles.radioValue}>{option.serverUrl}</Text>}
+                        </View>
+                    </Pressable>
+                ))}
+            </View>
+        </>
+    );
+}
 
 const PlayerSelectionGroup = ({
     title,
@@ -405,19 +391,28 @@ const PlayerSelectionGroup = ({
                 {options.map((option) => (
                     <View key={option.name}>
                         <Pressable
-                            style={[
-                                styles.playerContainer,
-                                selected === option.name && {
-                                    backgroundColor: isDarkMode ? '#2f2f2f' : '#eaeaea',
-                                },
-                            ]}
+                            style={styles.playerContainer}
                             onPress={() => handleSelectPlayer(option.name)}
                         >
                             {isPlayer && option.icon && (
                                 <Image resizeMode='cover' source={option.icon} style={styles.playerIcon} />
                             )}
                         </Pressable>
-                        <Text style={styles.playerName}>{option.name}</Text>
+                        <View style={styles.inlineContainer}>
+                            {
+                                selected === option.name ? (
+                                    <View>
+                                        <MaterialIcons
+                                            name="verified"
+                                            size={20}
+                                            color={'#535aff'}
+                                            style={styles.checkIcon}
+                                        />
+                                    </View>
+                                ) : null
+                            }
+                            <Text style={styles.playerName}>{option.name}</Text>
+                        </View>
                     </View>
                 ))}
             </ScrollView>
@@ -461,9 +456,10 @@ const styles = StyleSheet.create({
     },
     playerList: {
         marginVertical: 10,
+        paddingHorizontal: 5
     },
     playerContainer: {
-        margin: 5,
+        marginHorizontal: 12,
         padding: 5,
         borderRadius: 10,
     },
@@ -478,7 +474,8 @@ const styles = StyleSheet.create({
     playerName: {
         fontSize: 14,
         textAlign: 'center',
-        marginVertical: 5
+        marginVertical: 10,
+        paddingHorizontal: 7
     },
     header: {
         fontSize: 16,
@@ -499,16 +496,17 @@ const styles = StyleSheet.create({
         paddingTop: 5
     },
     radioIcon: {
-        marginHorizontal: 20,
+        marginRight: 20,
+    },
+    checkIcon: {
     },
     buttonContainer: {
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        marginTop: 10
     },
     button: {
-        marginTop: 20,
+        marginTop: 10,
         paddingVertical: 15,
         paddingHorizontal: 20,
         alignItems: 'center',
@@ -579,6 +577,15 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#fff',
     },
+    inlineContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center'
+    },
+    badge: {
+        position: 'absolute',
+        right: 0
+    }
 });
 
 export default StreamDetailsScreen;

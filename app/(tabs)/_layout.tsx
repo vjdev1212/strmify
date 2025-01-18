@@ -4,7 +4,7 @@ import { Tabs } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useColorScheme } from '@/components/useColorScheme';
 import { Platform } from 'react-native';
-import { isHapticsSupported } from '@/utils/platform';
+import { getOriginalPlatform, isHapticsSupported } from '@/utils/platform';
 
 // You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
 function TabBarIcon(props: {
@@ -23,7 +23,7 @@ export default function TabLayout() {
       screenOptions={{
         tabBarActiveTintColor: '#535aff',
         headerShown: false,
-        tabBarStyle: { height: Platform.OS === 'ios' ? 90 : 65, },
+        tabBarStyle: { height: getOriginalPlatform() === 'ios' ? 90 : 65, },
       }}
     >
       <Tabs.Screen
