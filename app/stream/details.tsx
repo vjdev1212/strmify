@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
     },
     value: {
         fontSize: 14,
-        flex: 4
+        flex: 2
     },
     radioGroup: {
         marginVertical: 5
