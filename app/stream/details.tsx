@@ -464,7 +464,7 @@ const styles = StyleSheet.create({
     },
     playerContainer: {
         margin: 5,
-        padding: 8,
+        padding: 5,
         borderRadius: 10,
     },
     playerSelected: {
@@ -473,8 +473,7 @@ const styles = StyleSheet.create({
     playerIcon: {
         width: 50,
         height: 50,
-        padding: 5,
-        borderRadius: 10
+        borderRadius: 5
     },
     playerName: {
         fontSize: 14,
