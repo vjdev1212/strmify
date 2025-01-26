@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, FlatList, Image, Pressable } from 'react-native';
+import { StyleSheet, FlatList, Image, Pressable, Platform, useColorScheme } from 'react-native';
 import { Text, View } from './Themed';
 import * as Haptics from 'expo-haptics';  // Importing Haptics for haptic feedback
 import { formatDate } from '@/utils/Date';
@@ -26,6 +26,8 @@ interface SeasonEpisodeListProps {
 const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisodeSelect }) => {
   const [selectedSeason, setSelectedSeason] = useState<number>(1);
   const [selectedEpisode, setSelectedEpisode] = useState<number>(1);
+  const isWeb = Platform.OS === 'web';
+  const colorScheme = isWeb ? 'dark' : useColorScheme();
 
   // Group episodes by season
   const groupedEpisodes = videos.reduce((acc, video) => {
@@ -68,6 +70,8 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
     onEpisodeSelect(season, episode);
   };
 
+  const thumbnailBackgroundColor = colorScheme === 'dark' ? '#0f0f0f' : '#f0f0f0';
+
   return (
     <View style={styles.container}>
       <FlatList
@@ -105,10 +109,10 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
           <Pressable
             key={`${item.season}-${item.number}`} // Unique key for each episode
             style={[styles.episodeContainer]}
-            onPress={() => handleEpisodeSelect(item.season, item.number)} // Trigger haptic feedback on episode press
+            onPress={() => handleEpisodeSelect(item.season, item.number)}
           >
             <View style={{ flexDirection: 'row' }}>
-              <Image source={{ uri: item.thumbnail }} style={styles.thumbnail} />
+              <Image source={{ uri: item.thumbnail }} style={[styles.thumbnail, { backgroundColor: thumbnailBackgroundColor }]} />
               <View style={{ flex: 1, justifyContent: 'center' }}>
                 <Text style={styles.episodeTitle} numberOfLines={3}>
                   {item.episode || item.number}. {item.name || item.title}
