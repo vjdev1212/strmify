@@ -18,12 +18,23 @@ export default function TabLayout() {
   const isWeb = Platform.OS === 'web';
   const colorScheme = isWeb ? 'dark' : useColorScheme();
 
+  const getTabBarHeight = () => {
+    switch (Platform.OS) {
+      case 'web':
+        return 70;
+      case 'ios':
+        return 85;
+      default:
+        return 65;
+    }
+  };
+
   return (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: '#535aff',
         headerShown: false,
-        tabBarStyle: { height: Platform.OS === 'web' ? 70 : 65 },
+        tabBarStyle: { height: getTabBarHeight() },
       }}
     >
       <Tabs.Screen

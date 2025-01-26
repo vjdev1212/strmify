@@ -84,7 +84,7 @@ const StreamScreen = () => {
         }
     };
 
-    const renderAddonItem = ({ item }: any) => {
+    const RenderAddonItem = ({ item }: any) => {
         const { name, logo, types } = item;
 
         if (!types || !types.includes(type)) {
@@ -119,7 +119,7 @@ const StreamScreen = () => {
         );
     };
 
-    const renderStreamItem = ({ item }: any) => {
+    const RenderStreamItem = ({ item }: any) => {
         const { name, title, url, infoHash, description } = item;
 
         const handleStreamSelected = async () => {
@@ -155,15 +155,15 @@ const StreamScreen = () => {
         <SafeAreaView style={styles.container}>
             <StatusBar />
             <View>
-                <ScrollView horizontal contentContainerStyle={styles.addonListContainer}>
-                    <FlatList
-                        style={styles.addonList}
-                        data={addons}
-                        renderItem={renderAddonItem}
-                        keyExtractor={(item, index) => index.toString()}
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                    />
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.addonListContainer}>
+                    {
+                        addons.map((item, index) => (
+                            <RenderAddonItem key={index} item={item} />
+                        ))
+                    }
                 </ScrollView>
             </View>
             {loading ? (
@@ -176,7 +176,7 @@ const StreamScreen = () => {
             ) : (
                 <FlatList
                     data={selectedAddonStreams}
-                    renderItem={renderStreamItem}
+                    renderItem={RenderStreamItem}
                     showsVerticalScrollIndicator={false}
                     keyExtractor={(item, index) => index.toString()}
                     ListEmptyComponent={<Text style={styles.noStreams}>No streams found</Text>}

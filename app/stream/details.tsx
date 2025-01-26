@@ -444,7 +444,7 @@ const styles = StyleSheet.create({
     },
     value: {
         fontSize: 14,
-        flex: 2,
+        flex: 2.5,
         paddingHorizontal: 2
     },
     radioGroup: {
