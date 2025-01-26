@@ -439,10 +439,12 @@ const styles = StyleSheet.create({
     label: {
         fontSize: 14,
         flex: 1,
+        paddingHorizontal: 2
     },
     value: {
         fontSize: 14,
-        flex: 2
+        flex: 2,
+        paddingHorizontal: 2
     },
     radioGroup: {
         marginVertical: 5

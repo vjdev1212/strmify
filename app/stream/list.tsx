@@ -155,7 +155,7 @@ const StreamScreen = () => {
         <SafeAreaView style={styles.container}>
             <StatusBar />
             <View>
-                <ScrollView contentContainerStyle={styles.addonListContainer}>
+                <ScrollView horizontal contentContainerStyle={styles.addonListContainer}>
                     <FlatList
                         style={styles.addonList}
                         data={addons}
