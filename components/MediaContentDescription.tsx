@@ -8,7 +8,7 @@ const MediaContentDescription = ({ description }: { description: string }) => (
 
 const styles = StyleSheet.create({
   description: {
-    fontSize: 16,
+    fontSize: 14,
     lineHeight: 22,
     paddingHorizontal: 20,
     marginVertical: 10,
