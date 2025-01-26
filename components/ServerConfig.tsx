@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { StyleSheet, Alert, Switch, TextInput, Pressable, useColorScheme, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, Text } from '@/components/Themed';
@@ -21,7 +21,7 @@ export interface ServerConfig {
 
 const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverType, defaultUrl }) => {
   const isWeb = Platform.OS === 'web';
-  const colorScheme = isWeb ? 'dark' : useColorScheme();
+  const colorScheme = isWeb ? 'dark' : useColorScheme() || 'light';
   const [serverUrl, setServerUrl] = useState<string>(defaultUrl);
   const [isDefault, setIsDefault] = useState<boolean>(false);
   const [isEnabled, setIsEnabled] = useState<boolean>(true);
@@ -46,14 +46,23 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
     loadSettings();
   }, [serverType, defaultUrl]);
 
+  const isValidUrl = (url: string) => {
+    try {
+      new URL(url);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  };
+
   const handleSave = async () => {
-    if (!serverUrl.trim()) {
+    if (!serverUrl.trim() || !isValidUrl(serverUrl)) {
       showAlert('Error', 'Please enter a valid server URL.');
       return;
     }
 
     const newServerConfig: ServerConfig = {
-      serverId: `${serverType}-${Date.now()}`,  // Unique ID based on serverType and timestamp
+      serverId: `${serverType}-${Date.now()}`,
       serverType,
       serverName,
       serverUrl: serverUrl.trim(),
@@ -64,19 +73,17 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
     try {
       const savedConfigs = await AsyncStorage.getItem('servers');
       const servers: ServerConfig[] = savedConfigs ? JSON.parse(savedConfigs) : [];
+      let updatedServers = servers.filter(server => server.serverType !== serverType);
 
       if (isDefault) {
-        const updatedServers = servers.map(server => ({
+        updatedServers = updatedServers.map(server => ({
           ...server,
-          isDefault: server.serverType === serverType ? true : false,
+          isDefault: false,
         }));
-        await AsyncStorage.setItem('servers', JSON.stringify(updatedServers));
-      } else {
-        const updatedServers = servers.filter(server => server.serverType !== serverType); // Remove old server config
-        updatedServers.push(newServerConfig);
-
-        await AsyncStorage.setItem('servers', JSON.stringify(updatedServers));
       }
+
+      updatedServers.push(newServerConfig);
+      await AsyncStorage.setItem('servers', JSON.stringify(updatedServers));
 
       showAlert('Success', `${serverName} server configuration saved.`);
     } catch (error) {
@@ -85,19 +92,13 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
     }
   };
 
-  const toggleDefault = () => {
-    setIsDefault(prevState => !prevState);
-  };
-
-  const toggleEnabled = () => {
-    setIsEnabled(prevState => !prevState);
-  };
+  const toggleDefault = useCallback(() => setIsDefault(prev => !prev), []);
+  const toggleEnabled = useCallback(() => setIsEnabled(prev => !prev), []);
 
   return (
     <View style={styles.container}>
       <Text style={styles.header}>{`${serverName} Configuration`}</Text>
       <View style={styles.serverConfigContainer}>
-        {/* Server Settings Group */}
         <View style={styles.configGroup}>
           <Text style={styles.configGroupHeader}>Server Settings</Text>
 
@@ -109,6 +110,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
               style={styles.switch}
               thumbColor={isEnabled ? '#535aff' : '#ccc'}
               trackColor={{ false: '#e0e0e0', true: '#a5afff' }}
+              accessibilityLabel="Toggle server enable state"
             />
           </View>
 
@@ -120,6 +122,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
               style={styles.switch}
               thumbColor={isDefault ? '#535aff' : '#ccc'}
               trackColor={{ false: '#e0e0e0', true: '#a5afff' }}
+              accessibilityLabel="Toggle default server state"
             />
           </View>
 
@@ -137,7 +140,6 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
           </Pressable>
         </View>
 
-        {/* Display Server Details */}
         <View style={styles.serverDetails}>
           <Text style={styles.serverLabel}>Enabled:</Text>
           <Text style={styles.serverValue}>{isEnabled ? 'Yes' : 'No'}</Text>

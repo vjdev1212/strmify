@@ -79,13 +79,13 @@ const StreamDetailsScreen = () => {
             }
             const servers: ServerConfig[] = JSON.parse(storedServers);
             const enabledServers = servers.filter((server) => server.enabled);
+            setServers(enabledServers);
             const defaultServer = enabledServers.find((server) => server.isDefault);
             if (defaultServer) {
                 setSelectedServer(defaultServer.serverId);
             } else if (enabledServers.length > 0) {
                 setSelectedServer(enabledServers[0].serverId);
             }
-            setServers(enabledServers);
         } catch (error) {
             console.error('Error loading server configurations:', error);
             showAlert('Error', 'Failed to load server configurations');
@@ -101,8 +101,9 @@ const StreamDetailsScreen = () => {
             const platformPlayers = getPlatformSpecificPlayers();
             setPlayers(platformPlayers);
             if (platformPlayers.length > 0) setSelectedPlayer(platformPlayers[0].name);
+            if (servers.length > 0) setSelectedServer(servers[0].serverId);
         };
-
+    
         loadInitialData();
     }, [fetchServerConfigs, fetchContentData]);
 
