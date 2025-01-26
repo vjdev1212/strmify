@@ -17,12 +17,19 @@ import { isHapticsSupported } from '@/utils/platform';
 const SkeletonLoader = () => {
   const isWeb = Platform.OS === 'web';
   const colorScheme = isWeb ? 'dark' : useColorScheme();
+  const { width, height } = useWindowDimensions();
+  const isPortrait = height > width;
+  
   return (
     <RNView style={styles.skeletonContainer}>
       <RNView
         style={[
           styles.skeletonImage,
-          { backgroundColor: colorScheme === 'dark' ? '#0f0f0f' : '#f0f0f0' },
+          {
+            backgroundColor: colorScheme === 'dark' ? '#0f0f0f' : '#f0f0f0',
+            width: isPortrait ? 100 : 140,
+            height: isPortrait ? 150 : 200,
+          },
         ]}
       />
     </RNView>
