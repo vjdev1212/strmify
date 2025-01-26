@@ -7,6 +7,7 @@ import {
   Animated,
   useColorScheme,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { Text } from './Themed';
 import { router } from 'expo-router';
@@ -44,6 +45,8 @@ const PosterList = ({
   const [fadeAnim] = useState(new Animated.Value(0));
   const isWeb = Platform.OS === 'web';
   const colorScheme = isWeb ? 'dark' : useColorScheme();
+  const { width, height } = useWindowDimensions();
+  const isPortrait = height > width;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -102,6 +105,8 @@ const PosterList = ({
             {
               opacity: fadeAnim,
               backgroundColor: colorScheme === 'dark' ? '#0f0f0f' : '#f0f0f0',
+              width: isPortrait ? 100 : 140,
+              height: isPortrait ? 150 : 200,
             },
           ]}
           onLoad={handleImageLoad}
