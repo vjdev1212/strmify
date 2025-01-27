@@ -9,20 +9,55 @@ import MediaContentPoster from '@/components/MediaContentPoster';
 import SeasonEpisodeList from '@/components/SeasonEpisodeList';
 import BottomSpacing from '@/components/BottomSpacing';
 
+const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
+
 const SeriesDetails = () => {
-  const { imdbid } = useLocalSearchParams();
+  const { moviedbid } = useLocalSearchParams();
   const [data, setData] = useState<any>(null);
+  const [imdbid, setImdbId] = useState<string>('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchDetails = async () => {
       try {
         const response = await fetch(
-          `https://v3-cinemeta.strem.io/meta/series/${imdbid}.json`
+          `https://api.themoviedb.org/3/tv/${moviedbid}?api_key=${EXPO_PUBLIC_TMDB_API_KEY}`
         );
         const result = await response.json();
-        if (result.meta) {
-          setData(result.meta);
+        if (result) {
+          const externalIds = await getExternalIds();
+          const logo = `https://images.metahub.space/logo/medium/${externalIds.imdb_id}/img`;
+          setImdbId(externalIds.imdb_id);
+
+          const seasonPromises = result.seasons.map(async (season: any) => {
+            const episodes = await getEpisodes(season.season_number);
+            return episodes.episodes.map((episode: any) => ({
+              season: season.season_number,
+              episode: episode.episode_number,
+              number: episode.episode_number,
+              thumbnail: `https://image.tmdb.org/t/p/w500/${episode.still_path}`,
+              name: episode.name,
+              firstAired: episode.air_date,
+              overview: episode.overview,
+            }));
+          });
+
+          const videosArray = (await Promise.all(seasonPromises)).flat();
+
+          const seriesData = {
+            name: result.name,
+            background: `https://image.tmdb.org/t/p/w500${result.backdrop_path}`,
+            poster: `https://image.tmdb.org/t/p/w500${result.poster_path}`,
+            logo: logo,
+            genre: result.genres.map((genre: any) => genre.name),
+            released: result.first_air_date,
+            runtime: result.episode_run_time?.[0] || 'N/A',
+            imdbRating: result.vote_average,
+            releaseInfo: result.first_air_date,
+            description: result.overview,
+            videos: videosArray,
+          };
+          setData(seriesData);
         }
       } catch (error) {
         console.error('Error fetching series details:', error);
@@ -32,7 +67,23 @@ const SeriesDetails = () => {
     };
 
     fetchDetails();
-  }, [imdbid]);
+  }, [moviedbid]);
+
+  const getExternalIds = async () => {
+    const externalIdsResponse = await fetch(
+      `https://api.themoviedb.org/3/tv/${moviedbid}/external_ids?api_key=${EXPO_PUBLIC_TMDB_API_KEY}`
+    );
+    const externalIdsResult = await externalIdsResponse.json();
+    return externalIdsResult;
+  }
+
+  const getEpisodes = async (season: string) => {
+    const episodesResponse = await fetch(
+      `https://api.themoviedb.org/3/tv/${moviedbid}/season/${season}?api_key=${EXPO_PUBLIC_TMDB_API_KEY}`
+    );
+    const episodesResult = await episodesResponse.json();
+    return episodesResult;
+  }
 
   if (loading) {
     return (
@@ -54,35 +105,24 @@ const SeriesDetails = () => {
   const handleEpisodeSelect = (season: number, episode: number) => {
     router.push({
       pathname: '/stream/list',
-      params: { imdbid: data.imdb_id, type: 'series', name: data.name, season: season, episode: episode },
+      params: { imdbid: imdbid, type: 'series', name: data.name, season: season, episode: episode },
     });
   };
 
   return (
     <ScrollView showsVerticalScrollIndicator={false} style={styles.container}>
-      <StatusBar/>
+      <StatusBar />
       <MediaContentPoster background={data.background} logo={data.logo} />
       <MediaContentHeader
         name={data.name}
-        genre={data.genre || data.genres}
+        genre={data.genre}
         released={data.released}
         runtime={data.runtime}
         imdbRating={data.imdbRating}
         releaseInfo={data.releaseInfo}
       />
       <MediaContentDescription description={data.description} />
-      <MediaContentDetailsList
-        released={data.released}
-        country={data.country}
-        director={data.director}
-        writer={data.writer}
-        cast={data.cast}
-        releaseInfo={data.releaseInfo}
-      />
-      <SeasonEpisodeList
-        videos={data.videos}
-        onEpisodeSelect={handleEpisodeSelect} // Pass the haptic feedback function
-      />
+      <SeasonEpisodeList videos={data.videos} onEpisodeSelect={handleEpisodeSelect} />
       <BottomSpacing space={50} />
     </ScrollView>
   );
@@ -90,7 +130,7 @@ const SeriesDetails = () => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1
+    flex: 1,
   },
   activityIndicator: {
     marginBottom: 10,

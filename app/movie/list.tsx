@@ -4,6 +4,9 @@ import { ActivityIndicator, StatusBar, Text, View } from '@/components/Themed';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { isHapticsSupported } from '@/utils/platform';
+import { getYear } from '@/utils/Date';
+
+const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
 const MoviesList = () => {
   const router = useRouter();
@@ -14,10 +17,20 @@ const MoviesList = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(apiUrl as string);
+        const response = await fetch(`${apiUrl}?api_key=${EXPO_PUBLIC_TMDB_API_KEY}`);
         const result = await response.json();
-        if (result.metas) {
-          setData(result.metas);
+        if (result) {
+          let list = [];
+          if (result.results) {
+            list = result.results.map((item: any) => ({
+              moviedbid: item.id,
+              name: item.title || item.name,
+              year:  getYear(item.release_date || item.first_air_date),
+              poster: `https://image.tmdb.org/t/p/w500${item.poster_path}`,
+              imdbid: item.imdb_id,
+            }));
+          }
+          setData(list);
         }
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -37,7 +50,7 @@ const MoviesList = () => {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
       } router.push({
         pathname: '/movie/details',
-        params: { imdbid: item.imdb_id || item.id },
+        params: { moviedbid: item.moviedbid || item.id },
       })
     };
 
@@ -59,7 +72,7 @@ const MoviesList = () => {
 
   return (
     <RNView style={styles.container}>
-      <StatusBar/>
+      <StatusBar />
       {loading ? (
         <View style={styles.centeredContainer}>
           <ActivityIndicator size="large" style={styles.activityIndicator} color="#535aff" />

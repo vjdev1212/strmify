@@ -77,7 +77,7 @@ const SearchScreen = () => {
       router.push(
         {
           pathname: type === 'movie' ? '/movie/details' : '/series/details',
-          params: { imdbid: item.imdb_id || item.id }
+          params: { moviedbid: item.imdb_id || item.id }
         });
     };
 

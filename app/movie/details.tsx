@@ -11,20 +11,39 @@ import * as Haptics from 'expo-haptics';
 import BottomSpacing from '@/components/BottomSpacing';
 import { isHapticsSupported } from '@/utils/platform';
 
+const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
+
 const MovieDetails = () => {
-  const { imdbid } = useLocalSearchParams();
+  const { moviedbid } = useLocalSearchParams();
   const [data, setData] = useState<any>(null);
+  const [imdbid, setImdbId] = useState<string>('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchDetails = async () => {
       try {
         const response = await fetch(
-          `https://v3-cinemeta.strem.io/meta/movie/${imdbid}.json`
+          `https://api.themoviedb.org/3/movie/${moviedbid}?api_key=${EXPO_PUBLIC_TMDB_API_KEY}`
         );
         const result = await response.json();
-        if (result.meta) {
-          setData(result.meta);
+        if (result) {
+          const externalIds = await getExternalIds();
+          setImdbId(externalIds.imdb_id);
+          const logo = `https://images.metahub.space/logo/medium/${externalIds.imdb_id}/img`
+          const movie = result;
+          const movieData = {
+            name: movie.title,
+            background: `https://image.tmdb.org/t/p/w500${movie.backdrop_path}`,
+            poster: `https://image.tmdb.org/t/p/w500${movie.poster_path}`,
+            logo: logo,
+            genre: movie.genres.map((genre: any) => genre.name),
+            released: movie.release_date,
+            runtime: movie.runtime,
+            imdbRating: movie.vote_average,
+            releaseInfo: movie.release_date,
+            description: movie.overview
+          };
+          setData(movieData);
         }
       } catch (error) {
         console.error('Error fetching movie details:', error);
@@ -34,7 +53,15 @@ const MovieDetails = () => {
     };
 
     fetchDetails();
-  }, [imdbid]);
+  }, [moviedbid]);
+
+  const getExternalIds = async () => {
+    const externalIdsResponse = await fetch(
+      `https://api.themoviedb.org/3/movie/${moviedbid}/external_ids?api_key=${EXPO_PUBLIC_TMDB_API_KEY}`
+    );
+    const externalIdsResult = await externalIdsResponse.json();
+    return externalIdsResult;
+  }
 
   if (loading) {
     return (
@@ -56,15 +83,16 @@ const MovieDetails = () => {
   const handlePlayPress = async () => {
     if (isHapticsSupported()) {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
-    } router.push({
+    }
+    router.push({
       pathname: '/stream/list',
-      params: { imdbid: data.imdb_id, type: 'movie', name: data.name, season: 0, episode: 0 },
+      params: { imdbid: imdbid, type: 'movie', name: data.name, season: 0, episode: 0 },
     });
   };
 
   return (
     <ScrollView showsVerticalScrollIndicator={false} style={styles.container}>
-      <StatusBar/>
+      <StatusBar />
       <MediaContentPoster background={data.background} logo={data.logo} />
       <MediaContentHeader
         name={data.name}
@@ -76,14 +104,6 @@ const MovieDetails = () => {
       />
       <PlayButton onPress={handlePlayPress} />
       <MediaContentDescription description={data.description} />
-      <MediaContentDetailsList
-        released={data.released}
-        country={data.country}
-        director={data.director}
-        writer={data.writer}
-        cast={data.cast}
-        releaseInfo={data.releaseInfo}
-      />
       <BottomSpacing space={50} />
     </ScrollView>
   );

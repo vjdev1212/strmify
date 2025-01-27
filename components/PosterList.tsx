@@ -13,6 +13,9 @@ import { Text } from './Themed';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics'; // Importing Haptics for haptic feedback
 import { isHapticsSupported } from '@/utils/platform';
+import { getYear } from '@/utils/Date';
+
+const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
 const SkeletonLoader = () => {
   const isWeb = Platform.OS === 'web';
@@ -58,9 +61,28 @@ const PosterList = ({
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(apiUrl);
+        const response = await fetch(`${apiUrl}?api_key=${EXPO_PUBLIC_TMDB_API_KEY}`);
         const result = await response.json();
-        setData(result.metas.slice(0, 20)); // Slice the first 20 items
+        const collection = result.results.slice(0, 20);
+        let list = [];
+        if (type === 'movie') {
+          list = collection.map((movie: any) => ({
+            moviedbid: movie.id,
+            name: movie.title,
+            poster: `https://image.tmdb.org/t/p/w500${movie.poster_path}`,
+            background: `https://image.tmdb.org/t/p/w500${movie.backdrop_path}`,
+            year: getYear(movie.release_date),
+          }));
+        } else {
+          list = collection.map((series: any) => ({
+            moviedbid: series.id,
+            name: series.name,
+            poster: `https://image.tmdb.org/t/p/w500${series.poster_path}`,
+            background: `https://image.tmdb.org/t/p/w500${series.backdrop_path}`,
+            year: getYear(series.first_air_date),
+          }));
+        }
+        setData(list);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -77,7 +99,7 @@ const PosterList = ({
     }
     router.push({
       pathname: type === 'movie' ? '/movie/details' : '/series/details',
-      params: { imdbid: item.imdb_id || item.id },
+      params: { moviedbid: item.moviedbid },
     });
   };
 

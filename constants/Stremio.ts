@@ -1,6 +1,9 @@
 export const CatalogUrl = {
-    topMovies: 'https://v3-cinemeta.strem.io/catalog/movie/top.json',
-    topSeries: 'https://v3-cinemeta.strem.io/catalog/series/top.json',
-    popularMovies: 'https://cinemeta-catalogs.strem.io/imdbRating/catalog/movie/imdbRating.json',
-    popularSeries: 'https://cinemeta-catalogs.strem.io/imdbRating/catalog/series/imdbRating.json'
+    nowPlayingMovies: 'https://api.themoviedb.org/3/movie/now_playing',
+    topMovies: 'https://api.themoviedb.org/3/movie/top_rated',
+    popularMovies: 'https://api.themoviedb.org/3/movie/popular',
+    airingTodayTv: 'https://api.themoviedb.org/3/tv/airing_today',
+    onTheAirTv: 'https://api.themoviedb.org/3/tv/on_the_air',
+    topSeries: 'https://api.themoviedb.org/3/tv/top_rated',    
+    popularSeries: 'https://api.themoviedb.org/3/tv/popular'
 }

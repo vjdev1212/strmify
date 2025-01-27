@@ -6,7 +6,6 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { Platform } from 'react-native';
 import { isHapticsSupported } from '@/utils/platform';
 
-// You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];
   color: string;
