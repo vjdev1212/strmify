@@ -44,7 +44,7 @@ const SettingsScreen = () => {
       <ScrollView contentContainerStyle={styles.scrollViewContent}>
         <Text style={styles.header}>Servers</Text>
         <View style={[styles.settingsGroup, {
-          backgroundColor: colorScheme === 'dark' ? '#202020' : '#f0f0f0',
+          backgroundColor: colorScheme === 'dark' ? '#101010' : '#f0f0f0',
         }]}>
           {serversList.map((item, index) => (
             <SettingItem
@@ -58,7 +58,7 @@ const SettingsScreen = () => {
 
         <Text style={styles.header}>Contact</Text>
         <View style={[styles.settingsGroup, {
-          backgroundColor: colorScheme === 'dark' ? '#202020' : '#f0f0f0',
+          backgroundColor: colorScheme === 'dark' ? '#101010' : '#f0f0f0',
         }]}>
           {contactList.map((item, index) => (
             <SettingItem
@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 15,
-    marginHorizontal: 20,
+    marginHorizontal: 5,
     justifyContent: 'space-between',
   },
   settingText: {

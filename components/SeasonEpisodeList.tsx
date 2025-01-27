@@ -123,7 +123,7 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
               </View>
             </View>
             <View>
-              <Text style={styles.episodeDescription} numberOfLines={10}>
+              <Text style={styles.episodeDescription} numberOfLines={5}>
                 {item.description || item.overview}
               </Text>
             </View>

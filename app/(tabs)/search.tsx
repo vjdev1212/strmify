@@ -35,7 +35,7 @@ const SearchScreen = () => {
         moviedbid: movie.id,
         name: movie.title,
         poster: `https://image.tmdb.org/t/p/w500${movie.poster_path}`,
-        background: `https://image.tmdb.org/t/p/w500${movie.backdrop_path}`,
+        background: `https://image.tmdb.org/t/p/original${movie.backdrop_path}`,
         year: getYear(movie.release_date),
       }));
 
@@ -43,7 +43,7 @@ const SearchScreen = () => {
         moviedbid: series.id,
         name: series.name,
         poster: `https://image.tmdb.org/t/p/w500${series.poster_path}`,
-        background: `https://image.tmdb.org/t/p/w500${series.backdrop_path}`,
+        background: `https://image.tmdb.org/t/p/original${series.backdrop_path}`,
         year: getYear(series.first_air_date),
       }));
 
@@ -96,7 +96,7 @@ const SearchScreen = () => {
       router.push(
         {
           pathname: type === 'movie' ? '/movie/details' : '/series/details',
-          params: { id: item.id }
+          params: { moviedbid: item.moviedbid }
         });
     };
 

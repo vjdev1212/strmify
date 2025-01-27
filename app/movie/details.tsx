@@ -33,7 +33,7 @@ const MovieDetails = () => {
           const movie = result;
           const movieData = {
             name: movie.title,
-            background: `https://image.tmdb.org/t/p/w500${movie.backdrop_path}`,
+            background: `https://image.tmdb.org/t/p/original${movie.backdrop_path}`,
             poster: `https://image.tmdb.org/t/p/w500${movie.poster_path}`,
             logo: logo,
             genre: movie.genres.map((genre: any) => genre.name),

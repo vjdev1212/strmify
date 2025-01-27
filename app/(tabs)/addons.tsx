@@ -8,6 +8,7 @@ import {
   SafeAreaView,
   View,
   Platform,
+  useColorScheme,
 } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -19,6 +20,8 @@ import { isHapticsSupported, showAlert } from '@/utils/platform';
 
 const AddonsScreen = () => {
   const [addons, setAddons] = useState<any[]>([]);
+  const isWeb = Platform.OS === 'web';
+  const colorScheme = isWeb ? 'dark' : useColorScheme();
 
   useEffect(() => {
     const fetchAddons = async () => {
@@ -83,7 +86,9 @@ const AddonsScreen = () => {
   const renderAddonItem = (item: any) => (
     <View style={styles.addonItem} key={item.id}>
       <View style={styles.row}>
-        <Image source={{ uri: item.logo }} style={styles.addonLogo} />
+        <Image source={{ uri: item.logo }} style={[styles.addonLogo, {
+          backgroundColor: colorScheme === 'dark' ? '#101010' : '#f0f0f0',
+        }]} />
         <View style={styles.details}>
           <Text style={styles.addonName}>{item.name}</Text>
           <Text style={styles.addonTypes}>{item.types?.join(', ')}</Text>
@@ -226,7 +231,7 @@ const styles = StyleSheet.create({
   },
   actions: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'space-evenly',
   },
   actionButton: {
     flex: 1,

@@ -46,7 +46,7 @@ const SeriesDetails = () => {
 
           const seriesData = {
             name: result.name,
-            background: `https://image.tmdb.org/t/p/w500${result.backdrop_path}`,
+            background: `https://image.tmdb.org/t/p/original${result.backdrop_path}`,
             poster: `https://image.tmdb.org/t/p/w500${result.poster_path}`,
             logo: logo,
             genre: result.genres.map((genre: any) => genre.name),
