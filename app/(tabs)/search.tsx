@@ -7,6 +7,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { isHapticsSupported } from '@/utils/platform';
+import { getYear } from '@/utils/Date';
+
+const TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
 const SearchScreen = () => {
   const router = useRouter();
@@ -21,15 +24,31 @@ const SearchScreen = () => {
     setLoading(true);
     try {
       const [moviesResponse, seriesResponse] = await Promise.all([
-        fetch(`https://v3-cinemeta.strem.io/catalog/movie/top/search=${query}.json`),
-        fetch(`https://v3-cinemeta.strem.io/catalog/series/top/search=${query}.json`),
+        fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}`),
+        fetch(`https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}`),
       ]);
 
       const moviesResult = await moviesResponse.json();
       const seriesResult = await seriesResponse.json();
 
-      setMovies(moviesResult.metas || []);
-      setSeries(seriesResult.metas || []);
+      const movieList = moviesResult.results.map((movie: any) => ({
+        moviedbid: movie.id,
+        name: movie.title,
+        poster: `https://image.tmdb.org/t/p/w500${movie.poster_path}`,
+        background: `https://image.tmdb.org/t/p/w500${movie.backdrop_path}`,
+        year: getYear(movie.release_date),
+      }));
+
+      const seriesList = seriesResult.results.map((series: any) => ({
+        moviedbid: series.id,
+        name: series.name,
+        poster: `https://image.tmdb.org/t/p/w500${series.poster_path}`,
+        background: `https://image.tmdb.org/t/p/w500${series.backdrop_path}`,
+        year: getYear(series.first_air_date),
+      }));
+
+      setMovies(movieList);
+      setSeries(seriesList);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -77,7 +96,7 @@ const SearchScreen = () => {
       router.push(
         {
           pathname: type === 'movie' ? '/movie/details' : '/series/details',
-          params: { moviedbid: item.imdb_id || item.id }
+          params: { id: item.id }
         });
     };
 
@@ -87,9 +106,9 @@ const SearchScreen = () => {
           <Pressable style={styles.posterContainer} onPress={handlePress}>
             <Image source={{ uri: item.poster }} style={styles.posterImage} />
             <Text numberOfLines={1} ellipsizeMode="tail" style={styles.posterTitle}>
-              {item.name}
+              {item.title || item.name}
             </Text>
-            <Text style={styles.posterYear}>{item.releaseInfo}</Text>
+            <Text style={styles.posterYear}>{item.year}</Text>
           </Pressable>
         </RNView>
       </SafeAreaView>
