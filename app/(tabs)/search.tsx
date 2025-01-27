@@ -7,7 +7,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { isHapticsSupported } from '@/utils/platform';
-import { getColorScheme } from '@/components/Utils';
 
 const SearchScreen = () => {
   const router = useRouter();
@@ -106,6 +105,9 @@ const SearchScreen = () => {
     setSeries([]);
   };
 
+  const isWeb = Platform.OS === 'web';
+  const colorScheme = isWeb ? 'dark' : useColorScheme();
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar />
@@ -113,7 +115,7 @@ const SearchScreen = () => {
         <TextInput
           style={[
             styles.searchInput,
-            getColorScheme() === 'dark' ? styles.darkSearchInput : styles.lightSearchInput,
+            colorScheme === 'dark' ? styles.darkSearchInput : styles.lightSearchInput,
           ]}
           placeholder="Search movies or series..."
           placeholderTextColor={'#888888'}

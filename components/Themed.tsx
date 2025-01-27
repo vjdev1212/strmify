@@ -14,7 +14,6 @@ import {
 
 import Colors from '@/constants/Colors';
 import { useColorScheme } from './useColorScheme';
-import { getColorScheme } from './Utils';
 
 type ThemeProps = {
   lightColor?: string;
@@ -79,10 +78,13 @@ export function StatusBar(props: StatusBarProps) {
 export function Card(props: ViewProps) {
   const { style, lightColor, darkColor, ...otherProps } = props;
 
+  // Dynamically adjust border and shadow based on the color scheme
+  const isWeb = Platform.OS === 'web';
+  const colorScheme = isWeb ? 'dark' : useColorScheme();
   
-  const backgroundColor = getColorScheme() === 'dark' ? '#101010' : '#FAFAFA';
-  const borderColor = getColorScheme() === 'dark' ? '#101010' : '#DDDDDD';
-  const shadowColor = getColorScheme() === 'dark' ? '#101010' : '#EFEFEF';
+  const backgroundColor = colorScheme === 'dark' ? '#101010' : '#FAFAFA';
+  const borderColor = colorScheme === 'dark' ? '#101010' : '#DDDDDD';
+  const shadowColor = colorScheme === 'dark' ? '#101010' : '#EFEFEF';
 
   return (
     <DefaultView

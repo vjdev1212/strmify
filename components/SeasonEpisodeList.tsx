@@ -4,7 +4,6 @@ import { Text, View } from './Themed';
 import * as Haptics from 'expo-haptics';  // Importing Haptics for haptic feedback
 import { formatDate } from '@/utils/Date';
 import { isHapticsSupported } from '@/utils/platform';
-import { getColorScheme } from './Utils';
 
 interface Episode {
   name: string;
@@ -27,7 +26,10 @@ interface SeasonEpisodeListProps {
 const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisodeSelect }) => {
   const [selectedSeason, setSelectedSeason] = useState<number>(1);
   const [selectedEpisode, setSelectedEpisode] = useState<number>(1);
+  const isWeb = Platform.OS === 'web';
+  const colorScheme = isWeb ? 'dark' : useColorScheme();
 
+  // Group episodes by season
   const groupedEpisodes = videos.reduce((acc, video) => {
     if (!acc[video.season]) {
       acc[video.season] = [];
@@ -68,7 +70,7 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
     onEpisodeSelect(season, episode);
   };
 
-  const thumbnailBackgroundColor = getColorScheme() === 'dark' ? '#0f0f0f' : '#f0f0f0';
+  const thumbnailBackgroundColor = colorScheme === 'dark' ? '#0f0f0f' : '#f0f0f0';
 
   return (
     <View style={styles.container}>

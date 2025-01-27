@@ -9,7 +9,6 @@ import { generateStremioPlayerUrl } from '@/clients/stremio';
 import { generateTorrServerPlayerUrl } from '@/clients/torrserver';
 import { ServerConfig } from '@/components/ServerConfig';
 import { getOriginalPlatform, isHapticsSupported, showAlert } from '@/utils/platform';
-import { getColorScheme } from '@/components/Utils';
 
 enum Servers {
     Stremio = 'Stremio',
@@ -36,6 +35,8 @@ const StreamDetailsScreen = () => {
     const [metaData, setMetaData] = useState<any>(null);
     const [playBtnDisabled, setPlayBtnDisabled] = useState<boolean>(false);
     const [isModalVisible, setModalVisible] = useState(false);
+    const isWeb = Platform.OS === 'web';
+    const colorScheme = isWeb ? 'dark' : useColorScheme();
 
     useEffect(() => {
         const loadPlayers = async () => {
@@ -291,7 +292,7 @@ const StreamDetailsScreen = () => {
                 <TouchableWithoutFeedback>
                     <View style={styles.modalOverlay}>
                         <View
-                            style={[styles.modalContainer, { backgroundColor: getColorScheme() === 'dark' ? '#1f1f1f' : '#f0f0f0' }]}>
+                            style={[styles.modalContainer, { backgroundColor: colorScheme === 'dark' ? '#1f1f1f' : '#f0f0f0' }]}>
                             <ActivityIndicator size="large" color="#535aff" style={styles.activityIndicator} />
                             <Text style={styles.modalText}>{statusText}</Text>
                             <Pressable style={styles.cancelButton} onPress={handleCancel}>
@@ -324,7 +325,9 @@ const ServerSelectionGroup = ({
     onSelect: (name: string) => void;
     isPlayer?: boolean;
 }) => {
-    const isDarkMode = getColorScheme() === 'dark';
+    const isWeb = Platform.OS === 'web';
+    const colorScheme = isWeb ? 'dark' : useColorScheme();
+    const isDarkMode = colorScheme === 'dark';
     return (
         <>
             <Text style={styles.header}>{title}</Text>
@@ -369,6 +372,9 @@ const PlayerSelectionGroup = ({
     onSelect: (name: string) => void;
     isPlayer?: boolean;
 }) => {
+    const isWeb = Platform.OS === 'web';
+    const colorScheme = isWeb ? 'dark' : useColorScheme();
+    const isDarkMode = colorScheme === 'dark';
 
     const handleSelectPlayer = async (name: string) => {
         if (isHapticsSupported()) {

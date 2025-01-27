@@ -7,14 +7,18 @@ import {
   Animated,
   useColorScheme,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { Text } from './Themed';
 import { router } from 'expo-router';
-import * as Haptics from 'expo-haptics';
+import * as Haptics from 'expo-haptics'; // Importing Haptics for haptic feedback
 import { isHapticsSupported } from '@/utils/platform';
-import { getColorScheme, isPortrait } from './Utils';
 
 const SkeletonLoader = () => {
+  const isWeb = Platform.OS === 'web';
+  const colorScheme = isWeb ? 'dark' : useColorScheme();
+  const { width, height } = useWindowDimensions();
+  const isPortrait = height > width;
   
   return (
     <RNView style={styles.skeletonContainer}>
@@ -22,9 +26,9 @@ const SkeletonLoader = () => {
         style={[
           styles.skeletonImage,
           {
-            backgroundColor: getColorScheme() === 'dark' ? '#0f0f0f' : '#f0f0f0',
-            width: isPortrait() ? 100 : 140,
-            height: isPortrait() ? 150 : 200,
+            backgroundColor: colorScheme === 'dark' ? '#0f0f0f' : '#f0f0f0',
+            width: isPortrait ? 100 : 140,
+            height: isPortrait ? 150 : 200,
           },
         ]}
       />
@@ -46,6 +50,10 @@ const PosterList = ({
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [fadeAnim] = useState(new Animated.Value(0));
+  const isWeb = Platform.OS === 'web';
+  const colorScheme = isWeb ? 'dark' : useColorScheme();
+  const { width, height } = useWindowDimensions();
+  const isPortrait = height > width;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -103,9 +111,9 @@ const PosterList = ({
             layout === 'vertical' ? styles.verticalImage : styles.horizontalImage,
             {
               opacity: fadeAnim,
-              backgroundColor: getColorScheme() === 'dark' ? '#0f0f0f' : '#f0f0f0',
-              width: isPortrait() ? 100 : 140,
-              height: isPortrait() ? 150 : 200,
+              backgroundColor: colorScheme === 'dark' ? '#0f0f0f' : '#f0f0f0',
+              width: isPortrait ? 100 : 140,
+              height: isPortrait ? 150 : 200,
             },
           ]}
           onLoad={handleImageLoad}
