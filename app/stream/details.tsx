@@ -103,7 +103,7 @@ const StreamDetailsScreen = () => {
             if (platformPlayers.length > 0) setSelectedPlayer(platformPlayers[0].name);
             if (servers.length > 0) setSelectedServer(servers[0].serverId);
         };
-    
+
         loadInitialData();
     }, [fetchServerConfigs, fetchContentData]);
 
@@ -111,12 +111,14 @@ const StreamDetailsScreen = () => {
         if (getOriginalPlatform() === 'android') {
             return [
                 { name: Players.Default, scheme: '', encodeUrl: false, icon: require('@/assets/images/players/default.png') },
+                { name: Players.Browser, scheme: '', encodeUrl: false, icon: require('@/assets/images/players/chrome.png') },
                 { name: Players.VLC, scheme: 'vlc://', encodeUrl: false, icon: require('@/assets/images/players/vlc.png') },
                 { name: Players.VidHub, scheme: 'open-vidhub://x-callback-url/open?url=', encodeUrl: true, icon: require('@/assets/images/players/vidhub.png') },
             ];
         } else if (getOriginalPlatform() === 'ios') {
             return [
                 { name: Players.Default, scheme: '', encodeUrl: false, icon: require('@/assets/images/players/default.png') },
+                { name: Players.Browser, scheme: '', encodeUrl: false, icon: require('@/assets/images/players/chrome.png') },
                 { name: Players.VLC, scheme: 'vlc://', encodeUrl: false, icon: require('@/assets/images/players/vlc.png') },
                 { name: Players.Infuse, scheme: 'infuse://x-callback-url/play?url=', encodeUrl: true, icon: require('@/assets/images/players/infuse.png') },
                 { name: Players.VidHub, scheme: 'open-vidhub://x-callback-url/open?url=', encodeUrl: true, icon: require('@/assets/images/players/vidhub.png') },
