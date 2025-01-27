@@ -4,12 +4,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Text, View, TextInput, StatusBar } from '@/components/Themed';
 import { router } from 'expo-router';
 import { showAlert } from '@/utils/platform';
+import { getColorScheme } from '@/components/Utils';
 
 const defaultAddonLogo = 'https://i.ibb.co/fSJ42PJ/addon.png';
 
 export default function AddAddonScreen() {
-    const isWeb = Platform.OS === 'web';
-    const colorScheme = isWeb ? 'dark' : useColorScheme();
     const [url, setUrl] = useState('');
     const [loading, setLoading] = useState(false);
     const [manifestData, setManifestData] = useState<any>(null);
@@ -84,7 +83,7 @@ export default function AddAddonScreen() {
                 <TextInput
                     style={[
                         styles.input,
-                        colorScheme === 'dark' ? styles.darkInput : styles.lightInput,
+                        getColorScheme() === 'dark' ? styles.darkInput : styles.lightInput,
                     ]}
                     placeholder="Enter manifest.json URL"
                     placeholderTextColor="#B0B0B0"

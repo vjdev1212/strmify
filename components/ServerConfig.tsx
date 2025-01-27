@@ -3,6 +3,7 @@ import { StyleSheet, Alert, Switch, TextInput, Pressable, useColorScheme, Platfo
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, Text } from '@/components/Themed';
 import { showAlert } from '@/utils/platform';
+import { getColorScheme } from './Utils';
 
 interface ServerConfigProps {
   serverName: string;
@@ -20,8 +21,6 @@ export interface ServerConfig {
 }
 
 const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverType, defaultUrl }) => {
-  const isWeb = Platform.OS === 'web';
-  const colorScheme = isWeb ? 'dark' : useColorScheme() || 'light';
   const [serverUrl, setServerUrl] = useState<string>(defaultUrl);
   const [isDefault, setIsDefault] = useState<boolean>(false);
   const [isEnabled, setIsEnabled] = useState<boolean>(true);
@@ -127,7 +126,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
           </View>
 
           <TextInput
-            style={[styles.input, colorScheme === 'dark' ? styles.darkInput : styles.lightInput]}
+            style={[styles.input, getColorScheme() === 'dark' ? styles.darkInput : styles.lightInput]}
             placeholder="Enter Server Base URL"
             value={serverUrl}
             onChangeText={setServerUrl}

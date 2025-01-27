@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, View as RNView, Animated, useColorScheme, Platform } from 'react-native';
 import { View } from './Themed';
+import { getColorScheme } from './Utils';
 
 const MediaContentPoster = ({ background, logo }: { background: string; logo: string }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [fadeAnim] = useState(new Animated.Value(0));
   const [titleFadeAnim] = useState(new Animated.Value(0));
-  const isWeb = Platform.OS === 'web';
-  const colorScheme = isWeb ? 'dark' : useColorScheme();
 
   useEffect(() => {
     const imageLoader = setTimeout(() => {
@@ -27,7 +26,7 @@ const MediaContentPoster = ({ background, logo }: { background: string; logo: st
     return () => clearTimeout(imageLoader);
   }, [fadeAnim, titleFadeAnim]);
 
-  const backgroundColor = colorScheme === 'dark' ? '#0f0f0f' : '#f0f0f0';
+  const backgroundColor = getColorScheme() === 'dark' ? '#0f0f0f' : '#f0f0f0';
 
   return (
     <>
@@ -45,7 +44,7 @@ const MediaContentPoster = ({ background, logo }: { background: string; logo: st
       <Animated.View
         style={[
           styles.logoContainer,
-          { opacity: titleFadeAnim, alignSelf: isWeb ? 'center' : 'auto' },
+          { opacity: titleFadeAnim, alignSelf: Platform.OS === 'web' ? 'center' : 'auto' },
         ]}
       >
         <Animated.Image resizeMode="contain" source={{ uri: logo }} style={styles.logo} />
