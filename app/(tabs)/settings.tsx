@@ -1,5 +1,5 @@
 import React from 'react';
-import { Platform, StyleSheet, Pressable, View, ScrollView } from 'react-native';
+import { Platform, StyleSheet, Pressable, View, ScrollView, useColorScheme } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'; // Import icons from Expo
 import { StatusBar, Text } from '@/components/Themed'; // Assuming you have a Themed Text component
 import { useRouter } from 'expo-router';
@@ -9,6 +9,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 const SettingsScreen = () => {
   const router = useRouter();
+  const isWeb = Platform.OS === 'web';
+  const colorScheme = isWeb ? 'dark' : useColorScheme();
+
   const serversList: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [
     { title: 'Stremio Server', route: '/settings/stremioserver', icon: 'cloud-outline' },
     { title: 'TorrServer', route: '/settings/torrserver', icon: 'cloud-outline' },
@@ -39,8 +42,10 @@ const SettingsScreen = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar />
       <ScrollView contentContainerStyle={styles.scrollViewContent}>
-        <View style={styles.settingsGroup}>
-          <Text style={styles.header}>Servers</Text>
+        <Text style={styles.header}>Servers</Text>
+        <View style={[styles.settingsGroup, {
+          backgroundColor: colorScheme === 'dark' ? '#202020' : '#f0f0f0',
+        }]}>
           {serversList.map((item, index) => (
             <SettingItem
               key={index}
@@ -51,8 +56,10 @@ const SettingsScreen = () => {
           ))}
         </View>
 
-        <View style={styles.settingsGroup}>
-          <Text style={styles.header}>Contact</Text>
+        <Text style={styles.header}>Contact</Text>
+        <View style={[styles.settingsGroup, {
+          backgroundColor: colorScheme === 'dark' ? '#202020' : '#f0f0f0',
+        }]}>
           {contactList.map((item, index) => (
             <SettingItem
               key={index}
@@ -76,14 +83,17 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   header: {
-    fontSize: 18,
+    fontWeight: 'bold',
+    fontSize: 17,
     paddingVertical: 5,
     paddingHorizontal: 20,
-    marginBottom: 5,
-    fontWeight: 'bold',
+    marginTop: 25,
+    marginLeft: 10,
   },
   settingsGroup: {
-    marginVertical: 15,
+    marginVertical: 10,
+    marginHorizontal: 25,
+    borderRadius: 12,
   },
   settingItem: {
     flexDirection: 'row',
@@ -95,6 +105,7 @@ const styles = StyleSheet.create({
   settingText: {
     fontSize: 15,
     flex: 1,
+    width: '100%'
   },
   icon: {
     paddingHorizontal: 10,
