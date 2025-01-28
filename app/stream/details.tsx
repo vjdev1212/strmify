@@ -427,7 +427,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         padding: 10,
-        marginTop: 20,
         marginHorizontal: 10
     },
     mediaItem: {
@@ -484,7 +483,7 @@ const styles = StyleSheet.create({
     },
     header: {
         fontSize: 16,
-        marginVertical: 10,
+        marginVertical: 15,
         fontWeight: 'bold'
     },
     radioContainer: {
@@ -511,7 +510,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     button: {
-        marginTop: 10,
+        marginTop: 20,
         paddingVertical: 15,
         paddingHorizontal: 20,
         alignItems: 'center',

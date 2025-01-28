@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, StyleSheet, Pressable, View as RNView, Alert, ScrollView } from 'react-native';
+import { FlatList, StyleSheet, Pressable, View as RNView, Alert, ScrollView, useColorScheme, Platform } from 'react-native';
 import { ActivityIndicator, Card, StatusBar, Text, View } from '@/components/Themed';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -14,6 +14,8 @@ const StreamScreen = () => {
     const [streams, setStreams] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const router = useRouter();
+    const isWeb = Platform.OS === 'web';
+    const colorScheme = isWeb ? 'dark' : useColorScheme();
 
     useEffect(() => {
         const fetchAddons = async () => {
@@ -96,6 +98,9 @@ const StreamScreen = () => {
             <Pressable
                 style={[
                     styles.addonItem,
+                    {
+                        backgroundColor: !isSelected && colorScheme === 'dark' ? '#101010' : '#f0f0f0',
+                    },
                     isSelected && styles.selectedAddonItem,
                 ]}
                 onPress={async () => {
