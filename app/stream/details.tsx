@@ -255,7 +255,7 @@ const StreamDetailsScreen = () => {
             <StatusBar />
             <ScrollView contentContainerStyle={[styles.container, { paddingBottom: 30 }]}>
                 <Text style={[styles.header, { marginVertical: 10 }]}>Stream Details</Text>
-                <DetailsRow label="Name" value={name} />
+                <DetailsRow label="Name" value={name} numOfLines={3} />
                 {title && <DetailsRow label="Title" value={title} />}
                 {description && <DetailsRow label="Description" value={description} multiline />}
                 {!url && servers.length > 0 && (
@@ -275,7 +275,9 @@ const StreamDetailsScreen = () => {
                 />
                 <View style={styles.buttonContainer}>
                     <Pressable
-                        style={[styles.button, (playBtnDisabled || !selectedPlayer || (infoHash && !selectedServer)) && styles.buttonDisabled]}
+                        style={[styles.button, (playBtnDisabled || !selectedPlayer || (infoHash && !selectedServer)) && {
+                            backgroundColor: colorScheme === 'dark' ? '#101010' : '#f0f0f0'
+                        }]}
                         onPress={handlePlay}
                         disabled={playBtnDisabled || !selectedPlayer || (infoHash && !selectedServer) || false}
                     >
@@ -308,10 +310,10 @@ const StreamDetailsScreen = () => {
     );
 };
 
-const DetailsRow = ({ label, value, multiline }: { label: string; value: string; multiline?: boolean }) => (
+const DetailsRow = ({ label, value, multiline, numOfLines }: { label: string; value: string; multiline?: boolean, numOfLines?: number }) => (
     <View style={styles.row}>
         <Text style={styles.label}>{label}:</Text>
-        <Text style={[styles.value, multiline && { flexWrap: 'wrap' }]}>{value}</Text>
+        <Text numberOfLines={numOfLines ?? 8} style={[styles.value, multiline && { flexWrap: 'wrap' }]}>{value}</Text>
     </View>
 );
 
