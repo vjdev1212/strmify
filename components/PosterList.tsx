@@ -72,6 +72,7 @@ const PosterList = ({
             poster: `https://image.tmdb.org/t/p/w500${movie.poster_path}`,
             background: `https://image.tmdb.org/t/p/original${movie.backdrop_path}`,
             year: getYear(movie.release_date),
+            imdbRating: movie.vote_average?.toFixed(1),
           }));
         } else {
           list = collection.map((series: any) => ({
@@ -80,6 +81,7 @@ const PosterList = ({
             poster: `https://image.tmdb.org/t/p/w500${series.poster_path}`,
             background: `https://image.tmdb.org/t/p/original${series.backdrop_path}`,
             year: getYear(series.first_air_date),
+            imdbRating: series.vote_average?.toFixed(1),
           }));
         }
         setData(list);
@@ -148,7 +150,7 @@ const PosterList = ({
           </Text>
           <Text style={[styles.posterYear, {
             color: colorScheme === 'dark' ? '#afafaf' : '#303030',
-          }]}>{year}</Text>
+          }]}>{`★ ${item.imdbRating}   ${year}`}</Text>
         </View>
       </Pressable>
     );

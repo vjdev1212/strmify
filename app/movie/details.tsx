@@ -42,7 +42,7 @@ const MovieDetails = () => {
             genre: movie.genres.map((genre: any) => genre.name),
             released: movie.release_date,
             runtime: movie.runtime,
-            imdbRating: movie.vote_average,
+            imdbRating: movie.vote_average?.toFixed(1),
             releaseInfo: movie.release_date,
             description: movie.overview
           };

@@ -12,10 +12,12 @@ export default function HomeScreen() {
         <View style={styles.contentContainer}>
           <PosterList apiUrl={CatalogUrl.popularMovies} title='Movies - Popular' type='movie' />
           <PosterList apiUrl={CatalogUrl.popularSeries} title='Series - Popular' type='series' />
-          <PosterList apiUrl={CatalogUrl.topMovies} title='Movies - Top' type='movie' />
-          <PosterList apiUrl={CatalogUrl.topSeries} title='Series - Top' type='series' />
+          <PosterList apiUrl={CatalogUrl.topMovies} title='Movies - Top Rated' type='movie' />
+          <PosterList apiUrl={CatalogUrl.topSeries} title='Series - Top Rated' type='series' />
           <PosterList apiUrl={CatalogUrl.nowPlayingMovies} title='Movies - Now Playing' type='movie' />
           <PosterList apiUrl={CatalogUrl.onTheAirTv} title='Series - On the Air' type='series' />
+          <PosterList apiUrl={CatalogUrl.upcomingMovies} title='Movies - Upcoming' type='movie' />
+          <PosterList apiUrl={CatalogUrl.airingTodayTv} title='Series - Airing Today' type='series' />
         </View>
       </ScrollView>
     </SafeAreaView>

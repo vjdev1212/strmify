@@ -30,6 +30,7 @@ const SeriesList = () => {
               year: getYear(item.release_date || item.first_air_date),
               poster: `https://image.tmdb.org/t/p/w500${item.poster_path}`,
               background: `https://image.tmdb.org/t/p/w500${item.backdrop_path}`,
+              imdbRating: item.vote_average?.toFixed(1),
               imdbid: item.imdb_id,
             }));
           }
@@ -71,7 +72,7 @@ const SeriesList = () => {
           <Text numberOfLines={1} ellipsizeMode="tail" style={styles.posterTitle}>
             {item.name}
           </Text>
-          <Text style={styles.posterYear}>{year}</Text>
+          <Text style={styles.posterYear}>{`★ ${item.imdbRating}   ${year}`}</Text>
         </Pressable>
       </RNView>
     );

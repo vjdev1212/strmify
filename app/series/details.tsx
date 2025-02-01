@@ -55,7 +55,7 @@ const SeriesDetails = () => {
             genre: result.genres.map((genre: any) => genre.name),
             released: result.first_air_date,
             runtime: result.episode_run_time?.[0] || 'N/A',
-            imdbRating: result.vote_average,
+            imdbRating: result.vote_average.toFixed(1),
             releaseInfo: result.first_air_date,
             description: result.overview,
             videos: videosArray,
