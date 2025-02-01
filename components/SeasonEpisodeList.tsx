@@ -116,8 +116,8 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
             style={[
               styles.episodeContainer,
               {
-                flexBasis: isPortrait ? '100%' : '30%',
-                maxWidth: isPortrait ? '100%' : '30%',
+                flexBasis: isPortrait ? '99%' : '30%',
+                maxWidth: isPortrait ? '99%' : '30%',
                 flexGrow: 0,
               },
             ]}
@@ -169,6 +169,9 @@ const styles = StyleSheet.create({
   seasonList: {
     paddingHorizontal: 5,
     marginVertical: 10,
+    justifyContent: 'flex-start',
+    flexDirection:'row',
+    flexGrow: 1
   },
   seasonButton: {
     marginHorizontal: 5,
