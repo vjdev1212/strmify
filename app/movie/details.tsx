@@ -116,7 +116,7 @@ const MovieDetails = () => {
             imdbRating={data.imdbRating}
             releaseInfo={data.releaseInfo}
           />
-          <PlayButton onPress={handlePlayPress} />
+          <PlayButton onPress={handlePlayPress} text="Movie" />
           <MediaContentDescription description={data.description} />
           {/* <MediaContentDetailsList
             released={data.released}

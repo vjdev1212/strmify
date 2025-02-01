@@ -3,7 +3,7 @@ import { StyleSheet } from 'react-native';
 import { Text, View } from './Themed';
 
 const MediaContentDescription = ({ description }: { description: string }) => (
-  <Text style={styles.description}>{description}</Text>
+  <Text style={styles.description} numberOfLines={10}>{description}</Text>
 );
 
 const styles = StyleSheet.create({

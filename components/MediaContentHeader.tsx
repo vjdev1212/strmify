@@ -23,11 +23,11 @@ const MediaContentHeader = ({
     {genre?.length > 0 && <Text numberOfLines={1} style={styles.genre}>{genre.join(', ')}</Text>}
     {(released || releaseInfo || imdbRating || runtime) && (
       <Text style={styles.info}>
-        {released && `${getYear(released) || releaseInfo}`}
+        {released && `📅  ${getYear(released) || releaseInfo}`}
         {released && imdbRating && '   |   '}
-        {imdbRating && `★ ${imdbRating}`}
+        {imdbRating && `★  ${imdbRating}`}
         {(released || imdbRating) && runtime && '   |   '}
-        {runtime && `Runtime: ${runtime}`}
+        {runtime && `🕒 ${runtime} mins`}
       </Text>
     )}
   </View>
@@ -45,7 +45,8 @@ const styles = StyleSheet.create({
   },
   genre: {
     fontSize: 16,
-    marginBottom: 10
+    marginBottom: 10,
+    paddingBottom: 10
   },
   info: {
     fontSize: 14
