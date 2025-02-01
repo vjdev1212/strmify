@@ -9,11 +9,11 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar />
       <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.contentContainer}>          
-          <PosterList apiUrl={CatalogUrl.topMovies} title='Movies - Top' type='movie' />
-          <PosterList apiUrl={CatalogUrl.topSeries} title='Series - Top' type='series' />
+        <View style={styles.contentContainer}>
           <PosterList apiUrl={CatalogUrl.popularMovies} title='Movies - Popular' type='movie' />
           <PosterList apiUrl={CatalogUrl.popularSeries} title='Series - Popular' type='series' />
+          <PosterList apiUrl={CatalogUrl.topMovies} title='Movies - Top' type='movie' />
+          <PosterList apiUrl={CatalogUrl.topSeries} title='Series - Top' type='series' />
           <PosterList apiUrl={CatalogUrl.nowPlayingMovies} title='Movies - Now Playing' type='movie' />
           <PosterList apiUrl={CatalogUrl.onTheAirTv} title='Series - On the Air' type='series' />
         </View>
