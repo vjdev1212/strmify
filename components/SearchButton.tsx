@@ -2,7 +2,7 @@ import React from 'react';
 import { Pressable, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const PlayButton = ({ onPress, text }: { onPress: () => void, text: string }) => (
+const SearchButton = ({ onPress, text }: { onPress: () => void, text: string }) => (
   <Pressable style={styles.button} onPress={onPress}>
     <Ionicons name="search" size={20} color="#fff" style={styles.icon} />
     <Text style={styles.text}>Search {text}</Text>
@@ -30,4 +30,4 @@ const styles = StyleSheet.create({
   }
 });
 
-export default PlayButton;
+export default SearchButton;

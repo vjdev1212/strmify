@@ -6,7 +6,7 @@ import MediaContentDescription from '@/components/MediaContentDescription';
 import MediaContentDetailsList from '@/components/MediaContentDetailsList';
 import MediaContentHeader from '@/components/MediaContentHeader';
 import MediaContentPoster from '@/components/MediaContentPoster';
-import PlayButton from '@/components/PlayButton';
+import SearchButton from '@/components/SearchButton';
 import * as Haptics from 'expo-haptics';
 import BottomSpacing from '@/components/BottomSpacing';
 import { isHapticsSupported } from '@/utils/platform';
@@ -116,7 +116,7 @@ const MovieDetails = () => {
             imdbRating={data.imdbRating}
             releaseInfo={data.releaseInfo}
           />
-          <PlayButton onPress={handlePlayPress} text="Movie" />
+          <SearchButton onPress={handlePlayPress} text="Movie" />
           <MediaContentDescription description={data.description} />
           {/* <MediaContentDetailsList
             released={data.released}
