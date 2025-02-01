@@ -149,8 +149,8 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
                 <Text style={[styles.episodeDescription,
                 {
                   maxWidth: 300,
-                  color: colorScheme === 'dark' ? '#afafaf' : '#101010',
-                }]} numberOfLines={3}>
+                  color: colorScheme === 'dark' ? '#dfdfdf' : '#101010',
+                }]} numberOfLines={5}>
                   {item.description || item.overview}
                 </Text>
               </View>
@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
     marginVertical: 10,
     justifyContent: 'flex-start',
-    flexDirection:'row',
+    flexDirection: 'row',
     flexGrow: 1
   },
   seasonButton: {

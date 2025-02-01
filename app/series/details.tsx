@@ -143,7 +143,7 @@ const SeriesDetails = () => {
         </View>
       </View>
       <View>
-        <View style={{ justifyContent: 'center', marginTop: 50 }}>
+        <View style={{ justifyContent: 'center', marginTop: isPortrait ? 5 : 50 }}>
           <SeasonEpisodeList videos={data.videos} onEpisodeSelect={handleEpisodeSelect} />
         </View>
         <BottomSpacing space={50} />

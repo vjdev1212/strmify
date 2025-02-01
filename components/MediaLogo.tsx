@@ -29,7 +29,7 @@ const MediaLogo = ({ logo }: { logo: string }) => {
 
 const styles = StyleSheet.create({
     logoContainer: {
-        marginTop: 20,
+        marginTop: 10,
         alignItems: 'center',
     },
     logo: {
