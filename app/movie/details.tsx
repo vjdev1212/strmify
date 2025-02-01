@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Dimensions, Platform, ScrollView, StyleSheet } from 'react-native';
+import { Dimensions, Platform, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, StatusBar, Text, View } from '../../components/Themed';
 import MediaContentDescription from '@/components/MediaContentDescription';
@@ -19,7 +19,7 @@ const MovieDetails = () => {
   const [data, setData] = useState<any>(null);
   const [imdbid, setImdbId] = useState<string>('');
   const [loading, setLoading] = useState(true);
-  const { width, height } = Dimensions.get('window');
+  const { width, height } = useWindowDimensions();
   const isPortrait = height > width;
 
   useEffect(() => {
@@ -144,7 +144,6 @@ const styles = StyleSheet.create({
   landscapePosterContainer: {
   },
   detailsContainer: {
-    marginTop: 20,
   },
   landscapeDetailsContainer: {
     flexWrap: 'wrap',

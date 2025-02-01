@@ -63,7 +63,7 @@ const PosterList = ({
       try {
         const response = await fetch(`${apiUrl}?api_key=${EXPO_PUBLIC_TMDB_API_KEY}`);
         const result = await response.json();
-        const collection = result.results.slice(0, 20);
+        const collection = result.results;
         let list = [];
         if (type === 'movie') {
           list = collection.map((movie: any) => ({

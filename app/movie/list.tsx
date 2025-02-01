@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, Image, StyleSheet, Pressable, View as RNView, Platform } from 'react-native';
+import { FlatList, Image, StyleSheet, Pressable, View as RNView, Platform, useWindowDimensions } from 'react-native';
 import { ActivityIndicator, StatusBar, Text, View } from '@/components/Themed';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -13,6 +13,8 @@ const MoviesList = () => {
   const { apiUrl } = useLocalSearchParams();
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const { width, height } = useWindowDimensions();
+  const isPortrait = height > width;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -25,8 +27,9 @@ const MoviesList = () => {
             list = result.results.map((item: any) => ({
               moviedbid: item.id,
               name: item.title || item.name,
-              year:  getYear(item.release_date || item.first_air_date),
+              year: getYear(item.release_date || item.first_air_date),
               poster: `https://image.tmdb.org/t/p/w500${item.poster_path}`,
+              background: `https://image.tmdb.org/t/p/w500${item.backdrop_path}`,
               imdbid: item.imdb_id,
             }));
           }
@@ -60,7 +63,10 @@ const MoviesList = () => {
           style={styles.posterContainer}
           onPress={handlePress}
         >
-          <Image source={{ uri: item.poster }} style={styles.posterImage} />
+          <Image source={{ uri: isPortrait ? item.poster : item.background }} style={[styles.posterImage, {
+            width: isPortrait ? 100 : 200,
+            height: isPortrait ? 150 : 110,
+          }]} />
           <Text numberOfLines={1} ellipsizeMode="tail" style={styles.posterTitle}>
             {item.name}
           </Text>
@@ -83,7 +89,7 @@ const MoviesList = () => {
           data={data}
           renderItem={renderItem}
           keyExtractor={(item, index) => index.toString()}
-          numColumns={3}
+          numColumns={isPortrait ? 3 : 6}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.posterList}
         />
@@ -112,8 +118,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   posterImage: {
-    width: 100,
-    height: 150,
     borderRadius: 8,
   },
   posterTitle: {

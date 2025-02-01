@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Animated, StyleSheet, Platform, Dimensions } from 'react-native';
+import { Animated, StyleSheet, Platform, Dimensions, useWindowDimensions } from 'react-native';
 
 const MediaLogo = ({ logo }: { logo: string }) => {
     const [titleFadeAnim] = useState(new Animated.Value(0));
     const isWeb = Platform.OS === 'web';
-    const { width, height } = Dimensions.get('window');
+    const { width, height } = useWindowDimensions();
     const isPortrait = height > width;
 
     useEffect(() => {

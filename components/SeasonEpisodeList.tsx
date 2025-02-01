@@ -115,7 +115,11 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
             key={`${item.season}-${item.number}`}
             style={[
               styles.episodeContainer,
-              { flexGrow: 1 },
+              {
+                flexBasis: isPortrait ? '100%' : '30%',
+                maxWidth: isPortrait ? '100%' : '30%',
+                flexGrow: 0,
+              },
             ]}
             onPress={() => handleEpisodeSelect(item.season, item.number)}
           >
@@ -142,7 +146,9 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
                 </View>
               </View>
               <View style={{ flex: 1, justifyContent: 'center' }}>
-                <Text style={[styles.episodeDescription, { maxWidth: 300 }, {
+                <Text style={[styles.episodeDescription,
+                {
+                  maxWidth: 300,
                   color: colorScheme === 'dark' ? '#afafaf' : '#101010',
                 }]} numberOfLines={3}>
                   {item.description || item.overview}
@@ -184,7 +190,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
   },
   episodeContainer: {
     marginHorizontal: 10,
