@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Platform, ScrollView, StyleSheet } from 'react-native';
+import { Dimensions, Platform, ScrollView, StyleSheet } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, StatusBar, Text, View } from '../../components/Themed';
 import MediaContentDescription from '@/components/MediaContentDescription';
@@ -10,6 +10,7 @@ import PlayButton from '@/components/PlayButton';
 import * as Haptics from 'expo-haptics';
 import BottomSpacing from '@/components/BottomSpacing';
 import { isHapticsSupported } from '@/utils/platform';
+import MediaLogo from '@/components/MediaLogo';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -18,6 +19,8 @@ const MovieDetails = () => {
   const [data, setData] = useState<any>(null);
   const [imdbid, setImdbId] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const { width, height } = Dimensions.get('window');
+  const isPortrait = height > width;
 
   useEffect(() => {
     const fetchDetails = async () => {
@@ -93,18 +96,39 @@ const MovieDetails = () => {
   return (
     <ScrollView showsVerticalScrollIndicator={false} style={styles.container}>
       <StatusBar />
-      <MediaContentPoster background={data.background} logo={data.logo} />
-      <MediaContentHeader
-        name={data.name}
-        genre={data.genre || data.genres}
-        released={data.released}
-        runtime={data.runtime}
-        imdbRating={data.imdbRating}
-        releaseInfo={data.releaseInfo}
-      />
-      <PlayButton onPress={handlePlayPress} />
-      <MediaContentDescription description={data.description} />
-      <BottomSpacing space={50} />
+
+      <View style={[{
+        flex: 1,
+        flexDirection: isPortrait ? 'column' : 'row',
+        marginTop: isPortrait ? 0 : 50
+      }]}>
+        <View style={[styles.posterContainer, { width: isPortrait ? '100%' : '50%' }]}>
+          <MediaContentPoster background={isPortrait ? data.background : data.poster} isPortrait={isPortrait} />
+        </View>
+
+        <View style={[styles.detailsContainer, { width: isPortrait ? '100%' : '50%' }]}>
+          <MediaLogo logo={data.logo} />
+          <MediaContentHeader
+            name={data.name}
+            genre={data.genre || data.genres}
+            released={data.released}
+            runtime={data.runtime}
+            imdbRating={data.imdbRating}
+            releaseInfo={data.releaseInfo}
+          />
+          <PlayButton onPress={handlePlayPress} />
+          <MediaContentDescription description={data.description} />
+          {/* <MediaContentDetailsList
+            released={data.released}
+            country={data.country}
+            director={data.director}
+            writer={data.writer}
+            cast={data.cast}
+            releaseInfo={data.releaseInfo}
+          /> */}
+          <BottomSpacing space={50} />
+        </View>
+      </View>
     </ScrollView>
   );
 };
@@ -112,6 +136,18 @@ const MovieDetails = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1
+  },
+  posterContainer: {
+    flexDirection: 'column',
+    alignItems: 'center',
+  },
+  landscapePosterContainer: {
+  },
+  detailsContainer: {
+    marginTop: 20,
+  },
+  landscapeDetailsContainer: {
+    flexWrap: 'wrap',
   },
   activityIndicator: {
     marginBottom: 10,

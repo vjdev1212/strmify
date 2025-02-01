@@ -119,22 +119,29 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
             ]}
             onPress={() => handleEpisodeSelect(item.season, item.number)}
           >
-            <View style={{ flexDirection: isPortrait ? 'column' : 'row' }}>
-              <Image
-                source={{ uri: item.thumbnail }}
-                style={[styles.thumbnail, {
-                  backgroundColor: thumbnailBackgroundColor,
-                  height: isPortrait ? 150 : 100,
-                }]}
-              />
+            <View>
+              <View style={{ flexDirection: 'row' }}>
+                <Image
+                  source={{ uri: item.thumbnail }}
+                  style={[styles.thumbnail, {
+                    backgroundColor: thumbnailBackgroundColor,
+                    height: isPortrait ? 100 : null,
+                    width: isPortrait ? null : 200,
+                    aspectRatio: 16 / 9,
+                  }]}
+                />
+                <View style={{ flex: 1, justifyContent: 'center' }}>
+                  <Text style={[styles.episodeTitle]} numberOfLines={3}>
+                    {item.episode || item.number}. {item.name || item.title}
+                  </Text>
+                  <Text style={[styles.episodeAired, {
+                    color: colorScheme === 'dark' ? '#afafaf' : '#101010',
+                  }]}>{
+                      formatDate(item.firstAired) || formatDate(item.released)}
+                  </Text>
+                </View>
+              </View>
               <View style={{ flex: 1, justifyContent: 'center' }}>
-                <Text style={[styles.episodeTitle]} numberOfLines={3}>
-                  {item.episode || item.number}. {item.name || item.title}
-                </Text>
-                <Text style={[styles.episodeAired, {
-
-                  color: colorScheme === 'dark' ? '#afafaf' : '#101010',
-                }]}>{formatDate(item.firstAired) || formatDate(item.released)}</Text>
                 <Text style={[styles.episodeDescription, { maxWidth: 300 }, {
                   color: colorScheme === 'dark' ? '#afafaf' : '#101010',
                 }]} numberOfLines={3}>
@@ -183,7 +190,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
     marginVertical: 10
   },
-  thumbnail: {   
+  thumbnail: {
     borderRadius: 6,
     marginRight: 15,
     aspectRatio: 16 / 9,
