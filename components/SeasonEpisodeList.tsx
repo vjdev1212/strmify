@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, FlatList, Image, Pressable, Platform, useColorScheme } from 'react-native';
+import { StyleSheet, FlatList, Image, Pressable, Platform, useColorScheme, useWindowDimensions } from 'react-native';
 import { Text, View } from './Themed';
 import * as Haptics from 'expo-haptics';  // Importing Haptics for haptic feedback
 import { formatDate } from '@/utils/Date';
@@ -28,6 +28,8 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
   const [selectedEpisode, setSelectedEpisode] = useState<number>(1);
   const isWeb = Platform.OS === 'web';
   const colorScheme = isWeb ? 'dark' : useColorScheme();
+  const { width, height } = useWindowDimensions();
+  const isPortrait = height > width;
 
   // Group episodes by season
   const groupedEpisodes = videos.reduce((acc, video) => {
@@ -110,30 +112,40 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
       <View style={styles.episodeList}>
         {groupedEpisodes[selectedSeason]?.map((item) => (
           <Pressable
-            key={`${item.season}-${item.number}`} // Unique key for each episode
-            style={[styles.episodeContainer]}
+            key={`${item.season}-${item.number}`}
+            style={[
+              styles.episodeContainer,
+              { flexGrow: 1 },
+            ]}
             onPress={() => handleEpisodeSelect(item.season, item.number)}
           >
-            <View style={{ flexDirection: 'row' }}>
-              <Image source={{ uri: item.thumbnail }} style={[styles.thumbnail, { backgroundColor: thumbnailBackgroundColor }]} />
+            <View style={{ flexDirection: isPortrait ? 'column' : 'row' }}>
+              <Image
+                source={{ uri: item.thumbnail }}
+                style={[styles.thumbnail, {
+                  backgroundColor: thumbnailBackgroundColor,
+                  height: isPortrait ? 150 : 100,
+                }]}
+              />
               <View style={{ flex: 1, justifyContent: 'center' }}>
-                <Text style={styles.episodeTitle} numberOfLines={3}>
+                <Text style={[styles.episodeTitle]} numberOfLines={3}>
                   {item.episode || item.number}. {item.name || item.title}
                 </Text>
-                <Text style={styles.episodeAired}>
-                  {formatDate(item.firstAired) || formatDate(item.released)}
+                <Text style={[styles.episodeAired, {
+
+                  color: colorScheme === 'dark' ? '#afafaf' : '#101010',
+                }]}>{formatDate(item.firstAired) || formatDate(item.released)}</Text>
+                <Text style={[styles.episodeDescription, { maxWidth: 300 }, {
+                  color: colorScheme === 'dark' ? '#afafaf' : '#101010',
+                }]} numberOfLines={3}>
+                  {item.description || item.overview}
                 </Text>
               </View>
-            </View>
-            <View>
-              <Text style={styles.episodeDescription} numberOfLines={5}>
-                {item.description || item.overview}
-              </Text>
             </View>
           </Pressable>
         ))}
       </View>
-    </View>
+    </View >
   );
 };
 
@@ -163,17 +175,19 @@ const styles = StyleSheet.create({
   episodeList: {
     paddingHorizontal: 5,
     paddingVertical: 10,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
   },
   episodeContainer: {
     marginHorizontal: 10,
-    marginVertical: 10,
+    marginVertical: 10
   },
-  thumbnail: {
-    width: 150,
-    height: 100,
-    borderRadius: 8,
+  thumbnail: {   
+    borderRadius: 6,
     marginRight: 15,
     aspectRatio: 16 / 9,
+    marginVertical: 20
   },
   episodeTitle: {
     fontSize: 14,
@@ -182,12 +196,10 @@ const styles = StyleSheet.create({
   episodeAired: {
     marginTop: 5,
     fontSize: 13,
-    color: '#888',
   },
   episodeDescription: {
-    marginTop: 15,
+    marginTop: 5,
     fontSize: 14,
-    color: '#888',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
   },

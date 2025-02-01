@@ -9,7 +9,7 @@ import {
   Platform,
   useWindowDimensions,
 } from 'react-native';
-import { Text } from './Themed';
+import { Text, View } from './Themed';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics'; // Importing Haptics for haptic feedback
 import { isHapticsSupported } from '@/utils/platform';
@@ -22,7 +22,7 @@ const SkeletonLoader = () => {
   const colorScheme = isWeb ? 'dark' : useColorScheme();
   const { width, height } = useWindowDimensions();
   const isPortrait = height > width;
-  
+
   return (
     <RNView style={styles.skeletonContainer}>
       <RNView
@@ -126,24 +126,30 @@ const PosterList = ({
         ]}
         onPress={() => handlePress(item)}
       >
-        <Animated.Image
-          source={{ uri: item.poster }}
-          style={[
-            styles.posterImage,
-            layout === 'vertical' ? styles.verticalImage : styles.horizontalImage,
-            {
-              opacity: fadeAnim,
-              backgroundColor: colorScheme === 'dark' ? '#0f0f0f' : '#f0f0f0',
-              width: isPortrait ? 100 : 140,
-              height: isPortrait ? 150 : 200,
-            },
-          ]}
-          onLoad={handleImageLoad}
-        />
-        <Text numberOfLines={1} ellipsizeMode="tail" style={styles.posterTitle}>
-          {item.name}
-        </Text>
-        <Text style={styles.posterYear}>{year}</Text>
+        <View>
+          <Animated.Image
+            source={{ uri: isPortrait ? item.poster : item.background }}
+            style={[
+              styles.posterImage,
+              layout === 'vertical' ? styles.verticalImage : styles.horizontalImage,
+              {
+                opacity: fadeAnim,
+                backgroundColor: colorScheme === 'dark' ? '#0f0f0f' : '#f0f0f0',
+                width: isPortrait ? 100 : 200,
+                height: isPortrait ? 150 : 110,
+              },
+            ]}
+            onLoad={handleImageLoad}
+          />
+          <Text numberOfLines={1} ellipsizeMode="tail" style={[styles.posterTitle, {
+            maxWidth: isPortrait ? 100 : 200,
+          }]}>
+            {item.name}
+          </Text>
+          <Text style={[styles.posterYear, {
+            color: colorScheme === 'dark' ? '#afafaf' : '#303030',
+          }]}>{year}</Text>
+        </View>
       </Pressable>
     );
   };
@@ -232,8 +238,9 @@ const styles = StyleSheet.create({
   },
   posterTitle: {
     marginTop: 8,
+    width: '100%',
+    overflow: 'hidden',
     fontSize: 14,
-    maxWidth: 100,
   },
   posterYear: {
     marginTop: 4,
