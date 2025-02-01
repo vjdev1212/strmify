@@ -195,6 +195,7 @@ const styles = StyleSheet.create({
         height: 100,
         alignSelf: 'center',
         marginBottom: 20,
+        borderRadius: 8,
     },
     dataInfo: {
         marginTop: 10,
