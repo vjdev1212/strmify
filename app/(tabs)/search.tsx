@@ -1,7 +1,7 @@
 import { Text, ActivityIndicator, TextInput, View, StatusBar } from '@/components/Themed';
 import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
-import { Platform, View as RNView, SafeAreaView } from 'react-native';
+import { Platform, View as RNView, SafeAreaView, ScrollView, useWindowDimensions } from 'react-native';
 import { StyleSheet, FlatList, Image, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from 'react-native';
@@ -18,6 +18,8 @@ const SearchScreen = () => {
   const [movies, setMovies] = useState<any[]>([]);
   const [series, setSeries] = useState<any[]>([]);
   const [debounceTimeout, setDebounceTimeout] = useState<NodeJS.Timeout | null>(null);
+  const { width, height } = useWindowDimensions();
+  const isPortrait = height > width;
 
   const fetchData = async () => {
     if (!query.trim()) return;
@@ -104,7 +106,10 @@ const SearchScreen = () => {
       <SafeAreaView>
         <RNView>
           <Pressable style={styles.posterContainer} onPress={handlePress}>
-            <Image source={{ uri: item.poster }} style={styles.posterImage} />
+            <Image source={{ uri: isPortrait ? item.poster : item.background }} style={[styles.posterImage, {
+              width: isPortrait ? 100 : 200,
+              height: isPortrait ? 150 : 110,
+            }]} />
             <Text numberOfLines={1} ellipsizeMode="tail" style={styles.posterTitle}>
               {item.title || item.name}
             </Text>
@@ -150,31 +155,33 @@ const SearchScreen = () => {
 
       {loading && <ActivityIndicator size="large" color="#535aff" style={styles.loader} />}
 
-      {!loading && movies.length > 0 && (
-        <View>
-          <Text style={styles.sectionTitle}>Movies</Text>
-          <FlatList
-            data={movies}
-            keyExtractor={(item, index) => `movie-${index}`}
-            renderItem={renderMoviePoster}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-          />
-        </View>
-      )}
+      <ScrollView style={styles.searchResulstContainer}>
+        {!loading && movies.length > 0 && (
+          <View>
+            <Text style={styles.sectionTitle}>Movies</Text>
+            <FlatList
+              data={movies}
+              keyExtractor={(item, index) => `movie-${index}`}
+              renderItem={renderMoviePoster}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+            />
+          </View>
+        )}
 
-      {!loading && series.length > 0 && (
-        <View>
-          <Text style={styles.sectionTitle}>Series</Text>
-          <FlatList
-            data={series}
-            keyExtractor={(item, index) => `series-${index}`}
-            renderItem={renderSeriesPoster}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-          />
-        </View>
-      )}
+        {!loading && series.length > 0 && (
+          <View>
+            <Text style={styles.sectionTitle}>Series</Text>
+            <FlatList
+              data={series}
+              keyExtractor={(item, index) => `series-${index}`}
+              renderItem={renderSeriesPoster}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+            />
+          </View>
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -211,6 +218,10 @@ const styles = StyleSheet.create({
   },
   loader: {
     marginTop: 20,
+  },
+  searchResulstContainer: {
+    marginVertical: 20,
+    marginHorizontal: 10
   },
   sectionTitle: {
     fontSize: 20,
