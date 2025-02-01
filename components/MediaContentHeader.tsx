@@ -20,7 +20,7 @@ const MediaContentHeader = ({
   imdbRating: string;
 }) => (
   <View style={styles.container}>
-    {genre?.length > 0 && <Text style={styles.genre}>{genre.join(', ')}</Text>}
+    {genre?.length > 0 && <Text numberOfLines={1} style={styles.genre}>{genre.join(', ')}</Text>}
     {(released || releaseInfo || imdbRating || runtime) && (
       <Text style={styles.info}>
         {released && `${getYear(released) || releaseInfo}`}

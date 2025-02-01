@@ -35,7 +35,7 @@ const MediaContentPoster = ({ background, isPortrait }: { background: string, is
           <RNView style={styles.skeletonBackground} />
         ) : (
           <Animated.Image
-            resizeMode="contain"
+            resizeMode={isPortrait ? 'cover' : 'contain'}
             source={{ uri: background }}
             style={[styles.poster, {
               opacity: fadeAnim,
