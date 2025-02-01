@@ -129,7 +129,7 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
                   source={{ uri: item.thumbnail }}
                   style={[styles.thumbnail, {
                     backgroundColor: thumbnailBackgroundColor,
-                    height: isPortrait ? 100 : null,
+                    height: isPortrait ? 80 : null,
                     width: isPortrait ? null : 200,
                     aspectRatio: 16 / 9,
                   }]}
