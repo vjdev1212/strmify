@@ -16,7 +16,6 @@ export default function AddAddonScreen() {
 
     const fetchManifest = async () => {
         if (!url) {
-            showAlert('Error', 'Please enter a URL.');
             return;
         }
 
@@ -79,7 +78,7 @@ export default function AddAddonScreen() {
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar />
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollViewContent}>
+            <View style={styles.inputContainer}>
                 <Text style={styles.title}>Add Addon</Text>
                 <TextInput
                     style={[
@@ -95,15 +94,16 @@ export default function AddAddonScreen() {
                     onBlur={fetchManifest}
                     numberOfLines={3}
                 />
+            </View>
 
-                {loading && <ActivityIndicator size="large" color="#535aff" style={styles.loading} />}
+            {loading && <ActivityIndicator size="large" color="#535aff" style={styles.loading} />}
 
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollViewContent}>
                 {manifestData && (
                     <View style={styles.dataContainer}>
                         <Pressable style={styles.addButton} onPress={addAddon}>
                             <Text style={styles.addButtonText}>+ Add Addon</Text>
                         </Pressable>
-
                         {manifestData.logo && (
                             <Image
                                 source={{
@@ -160,10 +160,15 @@ const styles = StyleSheet.create({
         width: '100%',
         maxWidth: 780,
         margin: 'auto',
-        marginTop: 10,
+        paddingTop: 30,
+        marginTop: 30,
+    },
+    inputContainer: {
+        paddingHorizontal: 20,
+        paddingBottom: 20
     },
     scrollViewContent: {
-        padding: 20,
+        paddingHorizontal: 20,
     },
     title: {
         fontSize: 24,
@@ -189,9 +194,8 @@ const styles = StyleSheet.create({
         marginVertical: 20,
     },
     dataContainer: {
-        marginTop: 20,
         borderRadius: 10,
-        padding: 20,
+        paddingHorizontal: 20,
     },
     logo: {
         width: 100,
@@ -219,7 +223,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#535aff',
         paddingVertical: 12,
         borderRadius: 50,
-        marginBottom: 20,
+        marginVertical: 20,
         paddingHorizontal: 30,
         margin: 'auto'
     },
