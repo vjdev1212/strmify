@@ -158,6 +158,9 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         paddingTop: 10,
+        width: '100%',
+        maxWidth: 560,
+        margin: 'auto'
     },
     scrollViewContent: {
         padding: 20,
@@ -216,8 +219,9 @@ const styles = StyleSheet.create({
         backgroundColor: '#535aff',
         paddingVertical: 12,
         borderRadius: 50,
-        alignItems: 'center',
         marginBottom: 20,
+        paddingHorizontal: 30,
+        margin: 'auto'
     },
     addButtonText: {
         color: '#fff',

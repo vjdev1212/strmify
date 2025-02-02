@@ -172,7 +172,10 @@ const AddonsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    marginTop: 20
+    marginTop: 20,
+    width: '100%',
+    maxWidth: 560,
+    margin: 'auto'
   },
   contentContainer: {
     padding: 20,
@@ -181,11 +184,10 @@ const styles = StyleSheet.create({
   addButton: {
     backgroundColor: '#535aff',
     borderRadius: 25,
-    marginHorizontal: 20,
+    paddingHorizontal: 30,
     marginVertical: 20,
     alignSelf: 'center',
-    padding: 12,
-    width: '40%',
+    padding: 12
   },
   addButtonText: {
     color: '#fff',
@@ -238,7 +240,8 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 20,
     marginHorizontal: 5,
-    alignItems: 'center',
+    margin: 'auto',
+    textAlign: 'center'
   },
   shareButton: {
     backgroundColor: '#2165da',
@@ -252,6 +255,7 @@ const styles = StyleSheet.create({
   actionText: {
     color: '#fff',
     fontSize: 14,
+    textAlign: 'center'
   },
 });
 

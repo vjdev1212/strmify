@@ -42,32 +42,36 @@ const SettingsScreen = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar />
       <ScrollView contentContainerStyle={styles.scrollViewContent}>
-        <Text style={styles.header}>Servers</Text>
-        <View style={[styles.settingsGroup, {
-          backgroundColor: colorScheme === 'dark' ? '#101010' : '#f0f0f0',
-        }]}>
-          {serversList.map((item, index) => (
-            <SettingItem
-              key={index}
-              title={item.title}
-              icon={item.icon}
-              onPress={() => onSettingsItemPress(item)}
-            />
-          ))}
+        <View>
+          <Text style={styles.header}>Servers</Text>
+          <View style={[styles.settingsGroup, {
+            backgroundColor: colorScheme === 'dark' ? '#101010' : '#f0f0f0',
+          }]}>
+            {serversList.map((item, index) => (
+              <SettingItem
+                key={index}
+                title={item.title}
+                icon={item.icon}
+                onPress={() => onSettingsItemPress(item)}
+              />
+            ))}
+          </View>
         </View>
 
-        <Text style={styles.header}>Contact</Text>
-        <View style={[styles.settingsGroup, {
-          backgroundColor: colorScheme === 'dark' ? '#101010' : '#f0f0f0',
-        }]}>
-          {contactList.map((item, index) => (
-            <SettingItem
-              key={index}
-              title={item.title}
-              icon={item.icon}
-              onPress={() => onSettingsItemPress(item)}
-            />
-          ))}
+        <View>
+          <Text style={styles.header}>Contact</Text>
+          <View style={[styles.settingsGroup, {
+            backgroundColor: colorScheme === 'dark' ? '#101010' : '#f0f0f0',
+          }]}>
+            {contactList.map((item, index) => (
+              <SettingItem
+                key={index}
+                title={item.title}
+                icon={item.icon}
+                onPress={() => onSettingsItemPress(item)}
+              />
+            ))}
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -77,6 +81,9 @@ const SettingsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    width: '100%',
+    maxWidth: 780,
+    margin: 'auto'
   },
   scrollViewContent: {
     marginTop: 20,
@@ -97,7 +104,6 @@ const styles = StyleSheet.create({
   },
   settingItem: {
     flexDirection: 'row',
-    alignItems: 'center',
     paddingVertical: 15,
     marginHorizontal: 5,
     justifyContent: 'space-between',

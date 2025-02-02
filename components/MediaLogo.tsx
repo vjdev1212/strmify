@@ -29,8 +29,7 @@ const MediaLogo = ({ logo }: { logo: string }) => {
 
 const styles = StyleSheet.create({
     logoContainer: {
-        marginTop: 10,
-        alignItems: 'center',
+        marginTop: 10
     },
     logo: {
         aspectRatio: 16 / 9
