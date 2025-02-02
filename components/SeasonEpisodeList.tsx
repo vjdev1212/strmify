@@ -111,50 +111,53 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
       />
       <View style={styles.episodeList}>
         {groupedEpisodes[selectedSeason]?.map((item) => (
-          <Pressable
-            key={`${item.season}-${item.number}`}
-            style={[
-              styles.episodeContainer,
-              {
-                flexBasis: isPortrait ? '99%' : '30%',
-                maxWidth: isPortrait ? '99%' : '30%',
-                flexGrow: 0,
-              },
-            ]}
-            onPress={() => handleEpisodeSelect(item.season, item.number)}
-          >
-            <View>
-              <View style={{ flexDirection: 'row' }}>
-                <Image
-                  source={{ uri: item.thumbnail }}
-                  style={[styles.thumbnail, {
-                    backgroundColor: thumbnailBackgroundColor,
-                    height: isPortrait ? 80 : null,
-                    width: isPortrait ? null : 200,
-                    aspectRatio: 16 / 9,
-                  }]}
-                />
-                <View style={{ flex: 1, justifyContent: 'center' }}>
-                  <Text style={[styles.episodeTitle]} numberOfLines={3}>
-                    {item.episode || item.number}. {item.name || item.title}
-                  </Text>
-                  <Text style={[styles.episodeAired, {
-                    color: colorScheme === 'dark' ? '#afafaf' : '#101010',
-                  }]}>{
-                      formatDate(item.firstAired) || formatDate(item.released)}
+          <View style={[
+            styles.episodeContainer,
+            {
+              margin: 10,
+              width: isPortrait ? '100%' : '30%',
+              maxWidth: 350
+            },
+          ]}>
+            <Pressable
+              key={`${item.season}-${item.number}`}
+              onPress={() => handleEpisodeSelect(item.season, item.number)}
+            >
+              <View>
+                <View style={{ flexDirection: 'row', marginRight: 5 }}>
+                  <View style={{ width: '50%' }}>
+                    <Image
+                      source={{ uri: item.thumbnail }}
+                      style={[styles.thumbnail, {
+                        backgroundColor: thumbnailBackgroundColor,
+                        height: isPortrait ? 80 : null,
+                        width: isPortrait ? null : 160,
+                        aspectRatio: 16 / 9,
+                      }]}
+                    />
+                  </View>
+                  <View style={{ justifyContent: 'center', width: '50%' }}>
+                    <Text style={[styles.episodeTitle]} numberOfLines={3}>
+                      {item.episode || item.number}. {item.name || item.title}
+                    </Text>
+                    <Text style={[styles.episodeAired, {
+                      color: colorScheme === 'dark' ? '#afafaf' : '#101010',
+                    }]}>{
+                        formatDate(item.firstAired) || formatDate(item.released)}
+                    </Text>
+                  </View>
+                </View>
+                <View style={{ justifyContent: 'center', width: '100%', marginRight: 5 }}>
+                  <Text style={[styles.episodeDescription,
+                  {
+                    color: colorScheme === 'dark' ? '#dfdfdf' : '#101010',
+                  }]} numberOfLines={5}>
+                    {item.description || item.overview}
                   </Text>
                 </View>
               </View>
-              <View style={{ flex: 1, justifyContent: 'center' }}>
-                <Text style={[styles.episodeDescription,
-                {
-                  color: colorScheme === 'dark' ? '#dfdfdf' : '#101010',
-                }]} numberOfLines={5}>
-                  {item.description || item.overview}
-                </Text>
-              </View>
-            </View>
-          </Pressable>
+            </Pressable>
+          </View>
         ))}
       </View>
     </View >
@@ -188,14 +191,16 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   episodeList: {
-    paddingHorizontal: 5,
+    paddingHorizontal: 10,
     paddingVertical: 10,
     flexDirection: 'row',
     flexWrap: 'wrap',
+    justifyContent: 'space-evenly',
+    alignItems: 'flex-start'
   },
   episodeContainer: {
     marginHorizontal: 10,
-    marginVertical: 10
+    marginVertical: 10,
   },
   thumbnail: {
     borderRadius: 6,
@@ -204,8 +209,7 @@ const styles = StyleSheet.create({
     marginVertical: 20
   },
   episodeTitle: {
-    fontSize: 14,
-    width: '100%',
+    fontSize: 14
   },
   episodeAired: {
     marginTop: 5,
@@ -214,7 +218,7 @@ const styles = StyleSheet.create({
   episodeDescription: {
     marginTop: 5,
     fontSize: 14,
-    marginRight: 10
+    marginRight: 10,
   },
 });
 
