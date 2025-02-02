@@ -200,7 +200,10 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 12,
     paddingLeft: 20,
-    fontSize: 16,
+    fontSize: 16,    
+    width: '100%',
+    maxWidth: 780,
+    margin: 'auto',
   },
   lightSearchInput: {
     backgroundColor: '#f0f0f0',

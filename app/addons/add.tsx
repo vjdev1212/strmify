@@ -157,10 +157,10 @@ export default function AddAddonScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        paddingTop: 10,
         width: '100%',
-        maxWidth: 560,
-        margin: 'auto'
+        maxWidth: 780,
+        margin: 'auto',
+        marginTop: 10,
     },
     scrollViewContent: {
         padding: 20,

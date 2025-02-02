@@ -172,10 +172,10 @@ const AddonsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    marginTop: 20,
     width: '100%',
-    maxWidth: 560,
-    margin: 'auto'
+    maxWidth: 780,
+    margin: 'auto',
+    marginTop: 20,
   },
   contentContainer: {
     padding: 20,
