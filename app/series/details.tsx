@@ -118,7 +118,7 @@ const SeriesDetails = () => {
       <View style={[{
         flex: 1,
         flexDirection: isPortrait ? 'column' : 'row',
-        marginTop: isPortrait ? 0 : '10%',
+        marginTop: isPortrait ? 0 : '5%',
         justifyContent: 'center',
         alignItems: 'center',
       }]}>

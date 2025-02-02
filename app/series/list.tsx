@@ -102,7 +102,7 @@ const SeriesList = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingVertical: 20,
+    marginTop: 40,
     padding: 10,
   },
   title: {

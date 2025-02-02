@@ -102,7 +102,7 @@ const MoviesList = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    marginTop: 30,
+    marginTop: 40,
     padding: 10,
   },
   title: {
