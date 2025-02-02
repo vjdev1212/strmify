@@ -194,9 +194,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 10,
     flexDirection: 'row',
-    flexWrap: 'wrap',
     justifyContent: 'space-evenly',
-    alignItems: 'flex-start'
+    flexWrap: 'wrap',
   },
   episodeContainer: {
     marginHorizontal: 10,

@@ -23,11 +23,11 @@ const MediaContentHeader = ({
     {genre?.length > 0 && <Text numberOfLines={1} style={styles.genre}>{genre.join(', ')}</Text>}
     {(released || releaseInfo || imdbRating || runtime) && (
       <Text style={styles.info}>
-        {released && `📅  ${getYear(released) || releaseInfo}`}
+        {released && `${getYear(released) || releaseInfo}`}
         {released && imdbRating && '   |   '}
         {imdbRating && `★  ${imdbRating}`}
         {(released || imdbRating) && runtime && '   |   '}
-        {runtime && `🕒 ${runtime} mins`}
+        {runtime && `${runtime} mins`}
       </Text>
     )}
   </View>

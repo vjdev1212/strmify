@@ -100,7 +100,9 @@ const MovieDetails = () => {
       <View style={[{
         flex: 1,
         flexDirection: isPortrait ? 'column' : 'row',
-        marginTop: isPortrait ? 0 : 50
+        marginTop: isPortrait ? 0 : '10%',
+        justifyContent: 'center',
+        alignItems: 'center',
       }]}>
         <View style={[styles.posterContainer, { width: isPortrait ? '100%' : '50%' }]}>
           <MediaContentPoster background={isPortrait ? data.background : data.poster} isPortrait={isPortrait} />
