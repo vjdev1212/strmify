@@ -253,36 +253,38 @@ const StreamDetailsScreen = () => {
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar />
-            <ScrollView contentContainerStyle={[styles.container, { paddingBottom: 30 }]}>
-                <Text style={[styles.header, { marginVertical: 10 }]}>Stream Details</Text>
-                <DetailsRow label="Name" value={name} numOfLines={3} />
-                {title && <DetailsRow label="Title" value={title} />}
-                {description && <DetailsRow label="Description" value={description} multiline />}
-                {!url && servers.length > 0 && (
-                    <ServerSelectionGroup
-                        title="Servers"
-                        options={servers}
-                        selected={selectedServer}
-                        onSelect={setSelectedServer}
+            <ScrollView showsVerticalScrollIndicator={false}>
+                <View style={styles.contentContainer}>
+                    <Text style={[styles.header, { marginVertical: 10 }]}>Stream Details</Text>
+                    <DetailsRow label="Name" value={name} numOfLines={3} />
+                    {title && <DetailsRow label="Title" value={title} />}
+                    {description && <DetailsRow label="Description" value={description} multiline />}
+                    {!url && servers.length > 0 && (
+                        <ServerSelectionGroup
+                            title="Servers"
+                            options={servers}
+                            selected={selectedServer}
+                            onSelect={setSelectedServer}
+                        />
+                    )}
+                    <PlayerSelectionGroup
+                        title="Media Players"
+                        options={players}
+                        selected={selectedPlayer}
+                        onSelect={setSelectedPlayer}
+                        isPlayer
                     />
-                )}
-                <PlayerSelectionGroup
-                    title="Media Players"
-                    options={players}
-                    selected={selectedPlayer}
-                    onSelect={setSelectedPlayer}
-                    isPlayer
-                />
-                <View style={styles.buttonContainer}>
-                    <Pressable
-                        style={[styles.button, (playBtnDisabled || !selectedPlayer || (infoHash && !selectedServer)) && {
-                            backgroundColor: colorScheme === 'dark' ? '#101010' : '#f0f0f0'
-                        }]}
-                        onPress={handlePlay}
-                        disabled={playBtnDisabled || !selectedPlayer || (infoHash && !selectedServer) || false}
-                    >
-                        <Text style={styles.buttonText}>Play</Text>
-                    </Pressable>
+                    <View style={styles.buttonContainer}>
+                        <Pressable
+                            style={[styles.button, (playBtnDisabled || !selectedPlayer || (infoHash && !selectedServer)) && {
+                                backgroundColor: colorScheme === 'dark' ? '#101010' : '#f0f0f0'
+                            }]}
+                            onPress={handlePlay}
+                            disabled={playBtnDisabled || !selectedPlayer || (infoHash && !selectedServer) || false}
+                        >
+                            <Text style={styles.buttonText}>Play</Text>
+                        </Pressable>
+                    </View>
                 </View>
             </ScrollView>
 
@@ -306,7 +308,7 @@ const StreamDetailsScreen = () => {
                     </View>
                 </TouchableWithoutFeedback>
             </Modal>
-        </SafeAreaView>
+        </SafeAreaView >
     );
 };
 
@@ -428,9 +430,15 @@ const PlayerSelectionGroup = ({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 10,
-        marginHorizontal: 10,
-        marginTop: 25,
+        marginTop: 30,
+        width: '100%',
+        margin: 'auto',
+        maxWidth: 780
+    },
+    contentContainer: {
+        marginHorizontal: 20,
+        marginVertical: 20,
+        marginTop: 30
     },
     mediaItem: {
         marginBottom: 20,

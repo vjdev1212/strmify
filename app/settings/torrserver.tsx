@@ -6,7 +6,7 @@ const TorrServerScreen = () => {
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar />
-            <ScrollView>
+            <ScrollView showsVerticalScrollIndicator={false}>
                 <ServerConfiguration serverName="TorrServer" serverType="torrserver" defaultUrl="http://127.0.0.1:5665" />
             </ScrollView>
         </SafeAreaView>

@@ -21,7 +21,7 @@ const DonateScreen = () => {
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar />
-            <ScrollView style={styles.donateContainer}>
+            <ScrollView style={styles.donateContainer} showsVerticalScrollIndicator={false}>
                 <Text style={styles.title}>Liked the App!</Text>
                 <Text style={styles.subtitle}>
                     If you find this app useful and want to support its continued development, consider buying me a coffee. Your support keeps this project alive and thriving!      </Text>

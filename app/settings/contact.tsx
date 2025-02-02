@@ -23,7 +23,7 @@ const ContactScreen = () => {
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar />
-            <ScrollView style={styles.contactList}>
+            <ScrollView style={styles.contactList} showsVerticalScrollIndicator={false}>
                 {contactInfo.map((item, index) => (
                     <Pressable
                         key={index}
