@@ -114,7 +114,8 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
           <View style={[
             styles.episodeContainer,
             {
-              margin: 10,
+              marginHorizontal: 'auto',
+              marginVertical: 10,
               width: isPortrait ? '100%' : '30%',
               maxWidth: 350
             },

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, StyleSheet, Pressable, View as RNView, Alert, ScrollView, useColorScheme, Platform } from 'react-native';
+import { FlatList, StyleSheet, Pressable, View as RNView, Alert, ScrollView, useColorScheme, Platform, useWindowDimensions } from 'react-native';
 import { ActivityIndicator, Card, StatusBar, Text, View } from '@/components/Themed';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -16,6 +16,8 @@ const StreamScreen = () => {
     const router = useRouter();
     const isWeb = Platform.OS === 'web';
     const colorScheme = isWeb ? 'dark' : useColorScheme();
+    const { width, height } = useWindowDimensions();
+    const isPortrait = height > width;
 
     useEffect(() => {
         const fetchAddons = async () => {
@@ -140,7 +142,13 @@ const StreamScreen = () => {
         }
 
         return (
-            <RNView style={styles.streamItemContainer}>
+            <RNView style={[{
+                marginHorizontal: 'auto',
+                marginVertical: 10,
+                width: isPortrait ? '100%' : '30%',
+                justifyContent:'space-evenly',
+                maxWidth: 360
+            }]}>
                 <Pressable onPress={handleStreamSelected}>
                     <Card style={styles.streamItem}>
                         <Text style={styles.streamName} numberOfLines={2}>
@@ -179,13 +187,13 @@ const StreamScreen = () => {
                     </View>
                 </RNView>
             ) : (
-                <FlatList
-                    data={selectedAddonStreams}
-                    renderItem={RenderStreamItem}
-                    showsVerticalScrollIndicator={false}
-                    keyExtractor={(item, index) => index.toString()}
-                    ListEmptyComponent={<Text style={styles.noStreams}>No streams found</Text>}
-                />
+                <ScrollView>
+                    <View style={styles.streamsContainer}>
+                        {selectedAddonStreams.map((item: any, index: number) => (
+                            <RenderStreamItem key={index} item={item} />
+                        ))}
+                    </View>
+                </ScrollView>
             )}
         </SafeAreaView>
     );
@@ -220,8 +228,11 @@ const styles = StyleSheet.create({
     selectedaddonName: {
         color: '#fff',
     },
-    streamItemContainer: {
-        width: '100%',
+    streamsContainer: {
+        flexGrow: 0,
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-evenly',
     },
     streamItem: {
         paddingHorizontal: 10,
