@@ -13,8 +13,8 @@ const SettingsScreen = () => {
   const colorScheme = isWeb ? 'dark' : useColorScheme();
 
   const serversList: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [
-    { title: 'Stremio Server', route: '/settings/stremioserver', icon: 'cloud-outline' },
-    { title: 'TorrServer', route: '/settings/torrserver', icon: 'cloud-outline' },
+    { title: 'Stremio Server', route: '/settings/stremioserver', icon: 'server-outline' },
+    { title: 'TorrServer', route: '/settings/torrserver', icon: 'server-outline' },
   ];
 
   const contactList: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [
@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     paddingHorizontal: 20,
     marginTop: 25,
-    marginLeft: 10,
+    marginLeft: 25,
   },
   settingsGroup: {
     marginVertical: 10,

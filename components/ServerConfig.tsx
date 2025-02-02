@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
   header: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: 20,    
     textAlign: 'center',
   },
   input: {
@@ -230,6 +230,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 15,
+    marginHorizontal: 15
   },
 });
 

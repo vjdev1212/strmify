@@ -63,6 +63,11 @@ const SearchScreen = () => {
       clearTimeout(debounceTimeout);
     }
 
+    if (query.trim().length === 0) {
+      clearSearch();
+      return;
+    }
+
     const timeout = setTimeout(() => {
       fetchData();
     }, 500);
@@ -146,11 +151,6 @@ const SearchScreen = () => {
           value={query}
           onChangeText={setQuery}
         />
-        {query.length > 0 && (
-          <Pressable onPress={clearSearch} style={styles.clearButton}>
-            <Ionicons name="close-circle" size={24} color="gray" />
-          </Pressable>
-        )}
       </View>
 
       {loading && <ActivityIndicator size="large" color="#535aff" style={styles.loader} />}
@@ -192,18 +192,17 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   searchInputContainer: {
-    position: 'relative',
     marginTop: 30,
     paddingHorizontal: 20,
+    width: '100%',
+    maxWidth: 780,
+    margin: 'auto',
   },
   searchInput: {
     height: 40,
     borderRadius: 12,
     paddingLeft: 20,
-    fontSize: 16,    
-    width: '100%',
-    maxWidth: 780,
-    margin: 'auto',
+    fontSize: 16,
   },
   lightSearchInput: {
     backgroundColor: '#f0f0f0',
@@ -212,12 +211,6 @@ const styles = StyleSheet.create({
   darkSearchInput: {
     backgroundColor: '#1f1f1f',
     color: '#fff',
-  },
-  clearButton: {
-    position: 'absolute',
-    right: 35,
-    top: '50%',
-    transform: [{ translateY: -12 }],
   },
   loader: {
     marginTop: 20,
