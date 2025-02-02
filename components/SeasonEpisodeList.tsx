@@ -151,7 +151,7 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
                 <View style={{ justifyContent: 'center', width: '100%', marginRight: 5 }}>
                   <Text style={[styles.episodeDescription,
                   {
-                    color: colorScheme === 'dark' ? '#dfdfdf' : '#101010',
+                    color: colorScheme === 'dark' ? '#afafaf' : '#101010',
                   }]} numberOfLines={5}>
                     {item.description || item.overview}
                   </Text>
