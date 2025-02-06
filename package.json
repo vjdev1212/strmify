@@ -7,7 +7,8 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "test": "jest --watchAll"
+    "test": "jest --watchAll",
+    "docker-push:latest": "npx expo export -p web && docker buildx build --tag=jarvisnexus/streamsrc:latest --platform=linux/arm64,linux/amd64,linux/arm/v7 --push ."
   },
   "jest": {
     "preset": "jest-expo"

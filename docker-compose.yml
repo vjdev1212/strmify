@@ -1,0 +1,11 @@
+version: '3.0'
+
+name: StreamSrc
+services:
+  vidsrcflix:
+    container_name: streamsrc
+    hostname: streamsrc
+    image: jarvisnexus/streamsrc:latest
+    ports:
+      - "3333:80"
+    restart: unless-stopped
