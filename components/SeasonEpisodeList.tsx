@@ -76,39 +76,41 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
 
   return (
     <View style={styles.container}>
-      <FlatList
-        data={[
-          ...Object.keys(groupedEpisodes)
-            .map(Number)
-            .filter((season) => season !== 0),
-          0,
-        ]}
-        horizontal
-        keyExtractor={(item) => `season-${item}`}
-        renderItem={({ item }) => (
-          <Pressable
-            style={[
-              styles.seasonButton,
-              {
-                backgroundColor: item !== selectedSeason && colorScheme === 'dark' ? '#101010' : '#f0f0f0',
-              },
-              item === selectedSeason && styles.selectedSeasonButton,
-            ]}
-            onPress={() => handleSeasonSelect(item)}  // Trigger haptic feedback on season press
-          >
-            <Text
+      <View>
+        <FlatList
+          data={[
+            ...Object.keys(groupedEpisodes)
+              .map(Number)
+              .filter((season) => season !== 0),
+            0,
+          ]}
+          horizontal
+          keyExtractor={(item) => `season-${item}`}
+          renderItem={({ item }) => (
+            <Pressable
               style={[
-                styles.seasonText,
-                item === selectedSeason && styles.selectedSeasonText,
+                styles.seasonButton,
+                {
+                  backgroundColor: item !== selectedSeason && colorScheme === 'dark' ? '#101010' : '#f0f0f0',
+                },
+                item === selectedSeason && styles.selectedSeasonButton,
               ]}
+              onPress={() => handleSeasonSelect(item)}  // Trigger haptic feedback on season press
             >
-              {item === 0 ? 'Specials' : `Season ${item}`}
-            </Text>
-          </Pressable>
-        )}
-        contentContainerStyle={styles.seasonList}
-        showsHorizontalScrollIndicator={false}
-      />
+              <Text
+                style={[
+                  styles.seasonText,
+                  item === selectedSeason && styles.selectedSeasonText,
+                ]}
+              >
+                {item === 0 ? 'Specials' : `Season ${item}`}
+              </Text>
+            </Pressable>
+          )}
+          contentContainerStyle={styles.seasonList}
+          showsHorizontalScrollIndicator={false}
+        />
+      </View>
       <View style={styles.episodeList}>
         {groupedEpisodes[selectedSeason]?.map((item) => (
           <View style={[
@@ -170,14 +172,14 @@ const styles = StyleSheet.create({
     margin: 10,
   },
   seasonList: {
-    paddingHorizontal: 5,
+    paddingHorizontal: '3%',
     marginVertical: 10,
     justifyContent: 'flex-start',
     flexDirection: 'row',
     flexGrow: 1
   },
   seasonButton: {
-    marginHorizontal: 5,
+    marginRight: 10,
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 25,
