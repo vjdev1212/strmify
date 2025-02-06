@@ -28,8 +28,8 @@ const MoviesList = () => {
               moviedbid: item.id,
               name: item.title || item.name,
               year: getYear(item.release_date || item.first_air_date),
-              poster: `https://image.tmdb.org/t/p/w500${item.poster_path}`,
-              background: `https://image.tmdb.org/t/p/w500${item.backdrop_path}`,
+              poster: `https://image.tmdb.org/t/p/w780${item.poster_path}`,
+              background: `https://image.tmdb.org/t/p/w1280${item.backdrop_path}`,
               imdbRating: item.vote_average?.toFixed(1),
               imdbid: item.imdb_id,
             }));

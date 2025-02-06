@@ -69,7 +69,7 @@ const PosterList = ({
           list = collection.map((movie: any) => ({
             moviedbid: movie.id,
             name: movie.title,
-            poster: `https://image.tmdb.org/t/p/w500${movie.poster_path}`,
+            poster: `https://image.tmdb.org/t/p/w780${movie.poster_path}`,
             background: `https://image.tmdb.org/t/p/original${movie.backdrop_path}`,
             year: getYear(movie.release_date),
             imdbRating: movie.vote_average?.toFixed(1),
@@ -78,7 +78,7 @@ const PosterList = ({
           list = collection.map((series: any) => ({
             moviedbid: series.id,
             name: series.name,
-            poster: `https://image.tmdb.org/t/p/w500${series.poster_path}`,
+            poster: `https://image.tmdb.org/t/p/w780${series.poster_path}`,
             background: `https://image.tmdb.org/t/p/original${series.backdrop_path}`,
             year: getYear(series.first_air_date),
             imdbRating: series.vote_average?.toFixed(1),

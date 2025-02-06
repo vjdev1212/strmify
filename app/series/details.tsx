@@ -38,7 +38,7 @@ const SeriesDetails = () => {
               season: season.season_number,
               episode: episode.episode_number,
               number: episode.episode_number,
-              thumbnail: `https://image.tmdb.org/t/p/w500/${episode.still_path}`,
+              thumbnail: `https://image.tmdb.org/t/p/original/${episode.still_path}`,
               name: episode.name,
               firstAired: episode.air_date,
               overview: episode.overview,
@@ -50,7 +50,7 @@ const SeriesDetails = () => {
           const seriesData = {
             name: result.name,
             background: `https://image.tmdb.org/t/p/original${result.backdrop_path}`,
-            poster: `https://image.tmdb.org/t/p/w500${result.poster_path}`,
+            poster: `https://image.tmdb.org/t/p/w780${result.poster_path}`,
             logo: logo,
             genre: result.genres.map((genre: any) => genre.name),
             released: result.first_air_date,
