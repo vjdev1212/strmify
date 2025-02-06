@@ -45,7 +45,7 @@ const SettingsScreen = () => {
         <View>
           <Text style={styles.header}>Servers</Text>
           <View style={[styles.settingsGroup, {
-            backgroundColor: colorScheme === 'dark' ? '#101010' : '#f0f0f0',
+            backgroundColor: colorScheme === 'dark' ? '#101010' : '#f6f6f6',
           }]}>
             {serversList.map((item, index) => (
               <SettingItem
@@ -61,7 +61,7 @@ const SettingsScreen = () => {
         <View>
           <Text style={styles.header}>Contact</Text>
           <View style={[styles.settingsGroup, {
-            backgroundColor: colorScheme === 'dark' ? '#101010' : '#f0f0f0',
+            backgroundColor: colorScheme === 'dark' ? '#101010' : '#f6f6f6',
           }]}>
             {contactList.map((item, index) => (
               <SettingItem
