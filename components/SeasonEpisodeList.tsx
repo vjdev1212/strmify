@@ -118,8 +118,8 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
             {
               marginHorizontal: 'auto',
               marginVertical: 10,
-              width: isPortrait ? '100%' : '30%',
-              maxWidth: 350
+              width: '99%',
+              maxWidth: 350,
             },
           ]}>
             <Pressable
@@ -153,7 +153,7 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
                 <View style={{ justifyContent: 'center', width: '100%', marginRight: 5 }}>
                   <Text style={[styles.episodeDescription,
                   {
-                    color: colorScheme === 'dark' ? '#afafaf' : '#101010',
+                    color: colorScheme === 'dark' ? '#dfdfdf' : '#101010',
                   }]} numberOfLines={5}>
                     {item.description || item.overview}
                   </Text>
@@ -221,6 +221,7 @@ const styles = StyleSheet.create({
     marginTop: 5,
     fontSize: 14,
     marginRight: 10,
+    textAlign: 'auto'
   },
 });
 
