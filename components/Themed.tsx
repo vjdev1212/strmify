@@ -8,10 +8,9 @@ import {
   TextInput as DefaultTextInput,
   Text as DefaultText,
   View as DefaultView,
-  StatusBar as DefaultStatusBar,
   Platform
 } from 'react-native';
-
+import { StatusBar as DefaultStatusBar } from 'expo-status-bar';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from './useColorScheme';
 
@@ -23,7 +22,7 @@ type ThemeProps = {
 export type TextProps = ThemeProps & DefaultText['props'];
 export type TextInputProps = ThemeProps & DefaultTextInput['props'];
 export type ViewProps = ThemeProps & DefaultView['props'];
-export type StatusBarProps = ThemeProps & DefaultStatusBar['props'];
+export type StatusBarProps = ThemeProps & React.ComponentProps<typeof DefaultStatusBar>;
 export type ActivityIndicatorProps = ThemeProps & DefaultActivityIndicator['props'];
 
 export function useThemeColor(
