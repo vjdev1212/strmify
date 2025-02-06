@@ -145,9 +145,10 @@ const StreamScreen = () => {
             <RNView style={[{
                 marginHorizontal: 'auto',
                 marginVertical: 10,
-                width: isPortrait ? '100%' : '30%',
-                justifyContent:'space-evenly',
-                maxWidth: 360
+                justifyContent: 'space-evenly',
+                width: '98%',
+                maxWidth: 560,
+                alignSelf: 'center'
             }]}>
                 <Pressable onPress={handleStreamSelected}>
                     <Card style={styles.streamItem}>
@@ -187,7 +188,7 @@ const StreamScreen = () => {
                     </View>
                 </RNView>
             ) : (
-                <ScrollView>
+                <ScrollView showsVerticalScrollIndicator={false}>
                     <View style={styles.streamsContainer}>
                         {selectedAddonStreams.map((item: any, index: number) => (
                             <RenderStreamItem key={index} item={item} />
@@ -206,7 +207,7 @@ const styles = StyleSheet.create({
     },
     addonListContainer: {
         marginVertical: 20,
-        marginHorizontal: 10,
+        marginHorizontal: '5%',
         alignItems: 'center',
         justifyContent: 'center'
     },
