@@ -2,7 +2,7 @@ version: '3.0'
 
 name: StreamSrc
 services:
-  vidsrcflix:
+  streamsrc:
     container_name: streamsrc
     hostname: streamsrc
     image: jarvisnexus/streamsrc:latest
