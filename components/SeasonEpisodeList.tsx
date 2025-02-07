@@ -215,13 +215,13 @@ const styles = StyleSheet.create({
   },
   episodeAired: {
     marginTop: 5,
-    fontSize: 13,
+    fontSize: 12,
   },
   episodeDescription: {
     marginTop: 5,
     fontSize: 14,
     marginRight: 10,
-    textAlign: 'auto'
+    textAlign: 'justify'
   },
 });
 

@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { isHapticsSupported, showAlert } from '@/utils/platform';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
 
 const StreamScreen = () => {
     const { imdbid, type, name: contentTitle, season, episode } = useLocalSearchParams();
@@ -186,7 +186,7 @@ const StreamScreen = () => {
                 ) : (
                     <RNView style={styles.loadingContainer}>
                         <View style={styles.centeredContainer}>
-                            <Ionicons style={styles.noAddons} name='warning-outline' color="#535aff" size={70} />
+                            <Feather style={styles.noAddons} name='alert-circle' color="#535aff" size={70} />
                             <Text style={[styles.noAddonsText, {
                                 color: colorScheme === 'dark' ? '#a0a0a0' : '#303030'
                             }]}>
@@ -207,9 +207,30 @@ const StreamScreen = () => {
                 ) : (
                     <ScrollView showsVerticalScrollIndicator={false}>
                         <View style={styles.streamsContainer}>
-                            {selectedAddonStreams.map((item: any, index: number) => (
-                                <RenderStreamItem key={index} item={item} />
-                            ))}
+                            {
+                                selectedAddonStreams.length > 0 ? (
+                                    selectedAddonStreams.map((item: any, index: number) =>
+                                    (
+                                        <RenderStreamItem key={index} item={item} />
+                                    ))
+                                ) : (
+                                    <>
+                                        {
+                                            addons.length > 0 && (
+                                                <View style={styles.centeredContainer}>
+                                                    <Feather style={styles.noStreams} name='alert-circle' color="#535aff" size={50} />
+                                                    <Text style={[styles.noStreamsText, {
+                                                        color: colorScheme === 'dark' ? '#a0a0a0' : '#303030'
+                                                    }]}>
+                                                        No streams found!
+                                                    </Text>
+                                                </View>
+                                            )
+                                        }
+
+                                    </>
+                                )
+                            }
                         </View>
                     </ScrollView>
                 )
@@ -289,10 +310,14 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     noStreams: {
-        marginTop: '25%',
-        fontSize: 18,
-        fontWeight: 'bold',
+        marginTop: 150,
+        paddingBottom: 20
+    },
+    noStreamsText: {
+        fontSize: 16,
         textAlign: 'center',
+        marginHorizontal: '10%',
+        color: '#888'
     },
     noAddons: {
         marginTop: 100,

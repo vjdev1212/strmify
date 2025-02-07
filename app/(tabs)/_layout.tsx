@@ -5,12 +5,20 @@ import * as Haptics from 'expo-haptics';
 import { useColorScheme } from '@/components/useColorScheme';
 import { Platform } from 'react-native';
 import { isHapticsSupported } from '@/utils/platform';
+import { Ionicons } from '@expo/vector-icons';
 
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];
   color: string;
 }) {
   return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
+}
+
+function TabBarIconIonIcon(props: {
+  name: React.ComponentProps<typeof Ionicons>['name'];
+  color: string;
+}) {
+  return <Ionicons size={28} style={{ marginBottom: -3 }} {...props} />;
 }
 
 export default function TabLayout() {
@@ -77,7 +85,7 @@ export default function TabLayout() {
         }}
         options={{
           title: 'Addons',
-          tabBarIcon: ({ color }) => <TabBarIcon name="puzzle-piece" color={color} />,
+          tabBarIcon: ({ color }) => <TabBarIconIonIcon name="extension-puzzle-sharp" color={color} />,
           tabBarIconStyle: { marginVertical: 5 },
         }}
       />
