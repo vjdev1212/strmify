@@ -9,9 +9,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 const SettingsScreen = () => {
   const router = useRouter();
-  const isWeb = Platform.OS === 'web';
-  const colorScheme = isWeb ? 'dark' : useColorScheme();
-
+  
+  const colorScheme = useColorScheme();
   const serversList: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [
     { title: 'Stremio Server', route: '/settings/stremioserver', icon: 'server-outline' },
     { title: 'TorrServer', route: '/settings/torrserver', icon: 'server-outline' },

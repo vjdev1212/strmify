@@ -18,8 +18,7 @@ import { getYear } from '@/utils/Date';
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
 const SkeletonLoader = () => {
-  const isWeb = Platform.OS === 'web';
-  const colorScheme = isWeb ? 'dark' : useColorScheme();
+  const colorScheme = useColorScheme();
   const { width, height } = useWindowDimensions();
   const isPortrait = height > width;
 
@@ -53,8 +52,7 @@ const PosterList = ({
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [fadeAnim] = useState(new Animated.Value(0));
-  const isWeb = Platform.OS === 'web';
-  const colorScheme = isWeb ? 'dark' : useColorScheme();
+  const colorScheme = useColorScheme();
   const { width, height } = useWindowDimensions();
   const isPortrait = height > width;
 

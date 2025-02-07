@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, FlatList, Image, Pressable, Platform, useColorScheme, useWindowDimensions } from 'react-native';
+import { StyleSheet, FlatList, Image, Pressable, useWindowDimensions, useColorScheme } from 'react-native';
 import { Text, View } from './Themed';
 import * as Haptics from 'expo-haptics';  // Importing Haptics for haptic feedback
 import { formatDate } from '@/utils/Date';
@@ -26,8 +26,7 @@ interface SeasonEpisodeListProps {
 const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisodeSelect }) => {
   const [selectedSeason, setSelectedSeason] = useState<number>(1);
   const [selectedEpisode, setSelectedEpisode] = useState<number>(1);
-  const isWeb = Platform.OS === 'web';
-  const colorScheme = isWeb ? 'dark' : useColorScheme();
+  const colorScheme = useColorScheme();
   const { width, height } = useWindowDimensions();
   const isPortrait = height > width;
 
@@ -146,7 +145,7 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
                     <Text style={[styles.episodeAired, {
                       color: colorScheme === 'dark' ? '#afafaf' : '#101010',
                     }]}>{
-                        formatDate(item.firstAired) || formatDate(item.released)}
+                      formatDate(item.firstAired) || formatDate(item.released)}
                     </Text>
                   </View>
                 </View>

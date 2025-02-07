@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View as RNView, Animated, useColorScheme, Platform } from 'react-native';
+import { StyleSheet, View as RNView, Animated } from 'react-native';
 import { View } from './Themed';
 
 const MediaContentPoster = ({ background, isPortrait }: { background: string, isPortrait: boolean }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [fadeAnim] = useState(new Animated.Value(0));
   const [titleFadeAnim] = useState(new Animated.Value(0));
-  const isWeb = Platform.OS === 'web';
-  const colorScheme = isWeb ? 'dark' : useColorScheme();
 
   useEffect(() => {
     const imageLoader = setTimeout(() => {

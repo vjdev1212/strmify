@@ -134,8 +134,8 @@ const SearchScreen = () => {
     setSeries([]);
   };
 
-  const isWeb = Platform.OS === 'web';
-  const colorScheme = isWeb ? 'dark' : useColorScheme();
+  
+  const colorScheme = useColorScheme();
 
   return (
     <SafeAreaView style={styles.container}>

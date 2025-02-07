@@ -22,9 +22,8 @@ function TabBarIconIonIcon(props: {
 }
 
 export default function TabLayout() {
-  const isWeb = Platform.OS === 'web';
-  const colorScheme = isWeb ? 'dark' : useColorScheme();
 
+  const colorScheme = useColorScheme();
   const getTabBarHeight = () => {
     switch (Platform.OS) {
       case 'web':

@@ -20,9 +20,8 @@ const MediaContentHeader = ({
   imdbRating: string;
 }) => {
 
-  const isWeb = Platform.OS === 'web';
-  const colorScheme = isWeb ? 'dark' : useColorScheme();
-
+  
+  const colorScheme = useColorScheme();
   return (
     <View style={styles.container}>
       {genre?.length > 0 && <Text numberOfLines={1} style={styles.genre}>{genre.join(', ')}</Text>}

@@ -1,6 +1,6 @@
 import React from 'react';
-import { StyleSheet, Pressable, Linking, Platform, SafeAreaView, ScrollView } from 'react-native';
-import { View, Text, StatusBar } from '@/components/Themed';
+import { StyleSheet, Pressable, Linking, SafeAreaView, ScrollView } from 'react-native';
+import { Text, StatusBar } from '@/components/Themed';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics'
 import { isHapticsSupported } from '@/utils/platform';

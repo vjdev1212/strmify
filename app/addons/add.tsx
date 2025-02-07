@@ -8,9 +8,8 @@ import { showAlert } from '@/utils/platform';
 const defaultAddonLogo = 'https://i.ibb.co/fSJ42PJ/addon.png';
 
 export default function AddAddonScreen() {
-    const isWeb = Platform.OS === 'web';
-    const colorScheme = isWeb ? 'dark' : useColorScheme();
-    const [url, setUrl] = useState('');
+    
+    const colorScheme = useColorScheme();    const [url, setUrl] = useState('');
     const [loading, setLoading] = useState(false);
     const [manifestData, setManifestData] = useState<any>(null);
 

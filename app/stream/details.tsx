@@ -35,9 +35,8 @@ const StreamDetailsScreen = () => {
     const [metaData, setMetaData] = useState<any>(null);
     const [playBtnDisabled, setPlayBtnDisabled] = useState<boolean>(false);
     const [isModalVisible, setModalVisible] = useState(false);
-    const isWeb = Platform.OS === 'web';
-    const colorScheme = isWeb ? 'dark' : useColorScheme();
-
+    
+    const colorScheme = useColorScheme();
     useEffect(() => {
         const loadPlayers = async () => {
             const platformPlayers = getPlatformSpecificPlayers();
@@ -345,9 +344,8 @@ const ServerSelectionGroup = ({
     onSelect: (name: string) => void;
     isPlayer?: boolean;
 }) => {
-    const isWeb = Platform.OS === 'web';
-    const colorScheme = isWeb ? 'dark' : useColorScheme();
-    const isDarkMode = colorScheme === 'dark';
+    
+    const colorScheme = useColorScheme();    const isDarkMode = colorScheme === 'dark';
     return (
         <>
             <Text style={styles.header}>{title}</Text>
@@ -392,9 +390,8 @@ const PlayerSelectionGroup = ({
     onSelect: (name: string) => void;
     isPlayer?: boolean;
 }) => {
-    const isWeb = Platform.OS === 'web';
-    const colorScheme = isWeb ? 'dark' : useColorScheme();
-    const isDarkMode = colorScheme === 'dark';
+    
+    const colorScheme = useColorScheme();    const isDarkMode = colorScheme === 'dark';
 
     const handleSelectPlayer = async (name: string) => {
         if (isHapticsSupported()) {

@@ -46,8 +46,6 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-  const isWeb = Platform.OS === 'web';
-  const colorScheme = isWeb ? 'dark' : useColorScheme();
 
   const LightTheme: Theme = {
     dark: false,
@@ -79,9 +77,7 @@ function RootLayoutNav() {
     }
   };
 
-  const theme = Platform.OS === 'web'
-    ? DarkTheme
-    : (useColorScheme() === 'dark' ? DarkTheme : LightTheme);
+  const theme = (useColorScheme() === 'dark' ? DarkTheme : LightTheme);
 
   return (
     <ThemeProvider value={theme}>

@@ -3,7 +3,7 @@ import { Animated, StyleSheet, Platform, Dimensions, useWindowDimensions } from 
 
 const MediaLogo = ({ logo }: { logo: string }) => {
     const [titleFadeAnim] = useState(new Animated.Value(0));
-    const isWeb = Platform.OS === 'web';
+    
     const { width, height } = useWindowDimensions();
     const isPortrait = height > width;
 
@@ -17,7 +17,7 @@ const MediaLogo = ({ logo }: { logo: string }) => {
 
     return (
         <Animated.View
-            style={[styles.logoContainer, { opacity: titleFadeAnim, alignSelf: isWeb ? 'center' : 'auto' }]}
+            style={[styles.logoContainer, { opacity: titleFadeAnim, alignSelf: isPortrait ? 'center' : 'auto' }]}
         >
             <Animated.Image resizeMode="contain" source={{ uri: logo }} style={[styles.logo, {
                 width: isPortrait ? 120 : null,

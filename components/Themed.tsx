@@ -29,7 +29,7 @@ export function useThemeColor(
   props: { light?: string; dark?: string },
   colorName: keyof typeof Colors.light & keyof typeof Colors.dark
 ) {
-  const theme = Platform.OS === 'web' ? 'dark' : useColorScheme() ?? 'dark';
+  const theme = useColorScheme() ?? 'dark';
   const colorFromProps = props[theme];
 
   if (colorFromProps) {
@@ -78,9 +78,8 @@ export function Card(props: ViewProps) {
   const { style, lightColor, darkColor, ...otherProps } = props;
 
   // Dynamically adjust border and shadow based on the color scheme
-  const isWeb = Platform.OS === 'web';
-  const colorScheme = isWeb ? 'dark' : useColorScheme();
-  
+
+  const colorScheme = useColorScheme();
   const backgroundColor = colorScheme === 'dark' ? '#101010' : '#FAFAFA';
   const borderColor = colorScheme === 'dark' ? '#101010' : '#DDDDDD';
   const shadowColor = colorScheme === 'dark' ? '#101010' : '#EFEFEF';

@@ -21,9 +21,8 @@ import { Ionicons } from '@expo/vector-icons';
 
 const AddonsScreen = () => {
   const [addons, setAddons] = useState<any[]>([]);
-  const isWeb = Platform.OS === 'web';
-  const colorScheme = isWeb ? 'dark' : useColorScheme();
-
+  
+  const colorScheme = useColorScheme();
   useEffect(() => {
     const fetchAddons = async () => {
       try {

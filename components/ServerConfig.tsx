@@ -20,8 +20,8 @@ export interface ServerConfig {
 }
 
 const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverType, defaultUrl }) => {
-  const isWeb = Platform.OS === 'web';
-  const colorScheme = isWeb ? 'dark' : useColorScheme() || 'light';
+
+  const colorScheme = useColorScheme();
   const [serverUrl, setServerUrl] = useState<string>(defaultUrl);
   const [isDefault, setIsDefault] = useState<boolean>(false);
   const [isEnabled, setIsEnabled] = useState<boolean>(true);
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
   header: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 20,    
+    marginBottom: 20,
     textAlign: 'center',
   },
   input: {

@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Dimensions, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
+import { ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, StatusBar, Text, View } from '../../components/Themed';
 import MediaContentDescription from '@/components/MediaContentDescription';
-import MediaContentDetailsList from '@/components/MediaContentDetailsList';
 import MediaContentHeader from '@/components/MediaContentHeader';
 import MediaContentPoster from '@/components/MediaContentPoster';
 import SeasonEpisodeList from '@/components/SeasonEpisodeList';

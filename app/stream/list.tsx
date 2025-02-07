@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Pressable, View as RNView, ScrollView, useColorScheme, Platform, useWindowDimensions } from 'react-native';
+import { StyleSheet, Pressable, View as RNView, ScrollView, useColorScheme, useWindowDimensions } from 'react-native';
 import { ActivityIndicator, Card, StatusBar, Text, View } from '@/components/Themed';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { isHapticsSupported, showAlert } from '@/utils/platform';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 
 const StreamScreen = () => {
     const { imdbid, type, name: contentTitle, season, episode } = useLocalSearchParams();
@@ -15,8 +15,7 @@ const StreamScreen = () => {
     const [streams, setStreams] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const router = useRouter();
-    const isWeb = Platform.OS === 'web';
-    const colorScheme = isWeb ? 'dark' : useColorScheme();
+    const colorScheme = useColorScheme();
     const { width, height } = useWindowDimensions();
     const isPortrait = height > width;
 

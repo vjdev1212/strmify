@@ -1,10 +1,9 @@
-import React, { useEffect } from "react";
+import React from "react";
 import {
-  Platform,
   StyleSheet,
-  useColorScheme,
   ScrollView,
   Image,
+  useColorScheme,
 } from "react-native";
 import { View, Text } from "./Themed";
 
@@ -12,10 +11,7 @@ const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w200"; // TMDB image URL
 
 const MediaCastAndCrews = ({ cast }: { cast: any[] }) => {
 
-
-  const isWeb = Platform.OS === "web";
-  const colorScheme = isWeb ? "dark" : useColorScheme();
-
+  const colorScheme = useColorScheme();
   return (
     <View style={styles.container}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -34,7 +30,7 @@ const MediaCastAndCrews = ({ cast }: { cast: any[] }) => {
             }]} numberOfLines={1}>
               {member.name}
             </Text>
-            <Text style={[styles.character, , {
+            <Text style={[styles.character, {
               color: colorScheme === 'dark' ? '#ffffff' : '#000000'
             }]} numberOfLines={1}>
               {member.character || member.name}
