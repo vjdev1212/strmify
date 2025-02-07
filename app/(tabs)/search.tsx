@@ -1,7 +1,7 @@
 import { Text, ActivityIndicator, TextInput, View, StatusBar } from '@/components/Themed';
 import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
-import { Platform, View as RNView, SafeAreaView, ScrollView, useWindowDimensions } from 'react-native';
+import { View as RNView, SafeAreaView, ScrollView, useWindowDimensions } from 'react-native';
 import { StyleSheet, FlatList, Image, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from 'react-native';

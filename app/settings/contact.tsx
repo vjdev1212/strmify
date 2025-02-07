@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, Pressable, Linking, SafeAreaView, ScrollView } from 'react-native';
-import { AntDesign, Feather, Ionicons } from '@expo/vector-icons';
+import { AntDesign } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { View, Text, StatusBar } from '@/components/Themed';
 import { isHapticsSupported } from '@/utils/platform';

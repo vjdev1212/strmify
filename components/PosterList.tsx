@@ -5,7 +5,6 @@ import {
   Pressable,
   View as RNView,
   Animated,
-  useColorScheme,
   Platform,
   useWindowDimensions,
 } from 'react-native';
@@ -14,6 +13,7 @@ import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics'; // Importing Haptics for haptic feedback
 import { isHapticsSupported } from '@/utils/platform';
 import { getYear } from '@/utils/Date';
+import { useColorScheme } from './useColorScheme';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 

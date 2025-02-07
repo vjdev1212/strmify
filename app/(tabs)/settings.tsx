@@ -1,11 +1,12 @@
 import React from 'react';
-import { Platform, StyleSheet, Pressable, View, ScrollView, useColorScheme } from 'react-native';
+import { StyleSheet, Pressable, View, ScrollView } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'; // Import icons from Expo
 import { StatusBar, Text } from '@/components/Themed'; // Assuming you have a Themed Text component
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics'
 import { isHapticsSupported } from '@/utils/platform';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useColorScheme } from '@/components/useColorScheme';
 
 const SettingsScreen = () => {
   const router = useRouter();

@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, FlatList, Image, Pressable, useWindowDimensions, useColorScheme } from 'react-native';
+import { StyleSheet, FlatList, Image, Pressable, useWindowDimensions } from 'react-native';
 import { Text, View } from './Themed';
 import * as Haptics from 'expo-haptics';  // Importing Haptics for haptic feedback
 import { formatDate } from '@/utils/Date';
 import { isHapticsSupported } from '@/utils/platform';
+import { useColorScheme } from './useColorScheme';
 
 interface Episode {
   name: string;

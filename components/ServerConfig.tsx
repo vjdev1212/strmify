@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, Alert, Switch, TextInput, Pressable, useColorScheme, Platform } from 'react-native';
+import { StyleSheet, Switch, TextInput, Pressable } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, Text } from '@/components/Themed';
 import { showAlert } from '@/utils/platform';
+import { useColorScheme } from './useColorScheme';
 
 interface ServerConfigProps {
   serverName: string;

@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import { StyleSheet, ActivityIndicator, Alert, Pressable, Image, SafeAreaView, ScrollView, useColorScheme, Platform } from 'react-native';
+import { StyleSheet, ActivityIndicator, Alert, Pressable, Image, SafeAreaView, ScrollView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Text, View, TextInput, StatusBar } from '@/components/Themed';
 import { router } from 'expo-router';
 import { showAlert } from '@/utils/platform';
+import { useColorScheme } from '@/components/useColorScheme';
 
 const defaultAddonLogo = 'https://i.ibb.co/fSJ42PJ/addon.png';
 
 export default function AddAddonScreen() {
-    
-    const colorScheme = useColorScheme();    const [url, setUrl] = useState('');
+
+    const colorScheme = useColorScheme();
+    const [url, setUrl] = useState('');
     const [loading, setLoading] = useState(false);
     const [manifestData, setManifestData] = useState<any>(null);
 

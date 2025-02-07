@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Animated, StyleSheet, Platform, Dimensions, useWindowDimensions } from 'react-native';
+import { Animated, StyleSheet, useWindowDimensions } from 'react-native';
 
 const MediaLogo = ({ logo }: { logo: string }) => {
     const [titleFadeAnim] = useState(new Animated.Value(0));

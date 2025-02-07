@@ -3,9 +3,9 @@ import {
   StyleSheet,
   ScrollView,
   Image,
-  useColorScheme,
 } from "react-native";
 import { View, Text } from "./Themed";
+import { useColorScheme } from "./useColorScheme";
 
 const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w200"; // TMDB image URL
 

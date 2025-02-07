@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Pressable, View as RNView, ScrollView, useColorScheme, useWindowDimensions } from 'react-native';
+import { StyleSheet, Pressable, View as RNView, ScrollView, useWindowDimensions } from 'react-native';
 import { ActivityIndicator, Card, StatusBar, Text, View } from '@/components/Themed';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -7,6 +7,7 @@ import * as Haptics from 'expo-haptics';
 import { isHapticsSupported, showAlert } from '@/utils/platform';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
+import { useColorScheme } from '@/components/useColorScheme';
 
 const StreamScreen = () => {
     const { imdbid, type, name: contentTitle, season, episode } = useLocalSearchParams();

@@ -7,8 +7,7 @@ import {
   ScrollView,
   SafeAreaView,
   View,
-  Platform,
-  useColorScheme,
+  Platform
 } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -18,6 +17,7 @@ import * as Sharing from 'expo-sharing';
 import * as Haptics from 'expo-haptics';
 import { isHapticsSupported, showAlert } from '@/utils/platform';
 import { Ionicons } from '@expo/vector-icons';
+import { useColorScheme } from '@/components/useColorScheme';
 
 const AddonsScreen = () => {
   const [addons, setAddons] = useState<any[]>([]);

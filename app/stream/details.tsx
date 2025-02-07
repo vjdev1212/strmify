@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { StyleSheet, ScrollView, Pressable, Linking, Image, Platform, useColorScheme, Modal, TouchableWithoutFeedback, SafeAreaView } from 'react-native';
+import { StyleSheet, ScrollView, Pressable, Linking, Image, Modal, TouchableWithoutFeedback, SafeAreaView } from 'react-native';
 import { ActivityIndicator, StatusBar, Text, View } from '@/components/Themed';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -9,6 +9,7 @@ import { generateStremioPlayerUrl } from '@/clients/stremio';
 import { generateTorrServerPlayerUrl } from '@/clients/torrserver';
 import { ServerConfig } from '@/components/ServerConfig';
 import { getOriginalPlatform, isHapticsSupported, showAlert } from '@/utils/platform';
+import { useColorScheme } from '@/components/useColorScheme';
 
 enum Servers {
     Stremio = 'Stremio',

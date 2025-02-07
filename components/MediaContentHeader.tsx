@@ -1,8 +1,9 @@
 import React from 'react';
-import { Platform, StyleSheet, useColorScheme } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 import { Text, View } from './Themed';
 import { getYear } from '@/utils/Date';
 import { MaterialIcons, FontAwesome, Feather } from '@expo/vector-icons';
+import { useColorScheme } from './useColorScheme';
 
 const MediaContentHeader = ({
   name,
