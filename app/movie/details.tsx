@@ -147,7 +147,7 @@ const MovieDetails = () => {
           /> */}
           <MediaCastAndCrews cast={cast}></MediaCastAndCrews>
         </View>
-        <BottomSpacing space={100} />
+        <BottomSpacing space={50} />
       </View>
     </ScrollView>
   );

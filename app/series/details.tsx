@@ -167,7 +167,7 @@ const SeriesDetails = () => {
           <SeasonEpisodeList videos={data.videos} onEpisodeSelect={handleEpisodeSelect} />
         </View>
       </View>
-      <BottomSpacing space={100} />
+      <BottomSpacing space={50} />
     </ScrollView>
   );
 };
