@@ -451,8 +451,7 @@ const styles = StyleSheet.create({
     },
     contentContainer: {
         marginHorizontal: 20,
-        marginVertical: 20,
-        marginTop: 30
+        marginVertical: 20
     },
     mediaItem: {
         marginBottom: 20,

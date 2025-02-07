@@ -154,8 +154,30 @@ const SearchScreen = () => {
       </View>
 
       {loading && <ActivityIndicator size="large" color="#535aff" style={styles.loader} />}
-
-      <ScrollView style={styles.searchResulstContainer}>
+      <ScrollView showsVerticalScrollIndicator={false} style={styles.searchResulstContainer}>
+        {
+          !loading && movies.length === 0 && series.length === 0 &&
+          (
+            <View style={styles.centeredContainer}>
+              <Ionicons style={styles.noResults} name='search-outline' color="#535aff" size={70} />
+              {
+                query.length > 0 ? (
+                  <Text style={[styles.noResultsText, {
+                    color: colorScheme === 'dark' ? '#a0a0a0' : '#303030'
+                  }]}>
+                    No results found.
+                  </Text>
+                ) : (
+                  <Text style={[styles.noResultsText, {
+                    color: colorScheme === 'dark' ? '#a0a0a0' : '#303030',
+                  }]}>
+                    What would you like to watch today?
+                  </Text>
+                )
+              }
+            </View>
+          )
+        }
         {!loading && movies.length > 0 && (
           <View>
             <Text style={styles.sectionTitle}>Movies</Text>
@@ -190,6 +212,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     marginTop: 20,
+  },
+  centeredContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
   },
   searchInputContainer: {
     marginTop: 30,
@@ -242,6 +270,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#888',
   },
+  noResults: {
+    marginTop: 100,
+    paddingBottom: 20
+  },
+  noResultsText: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginHorizontal: '5%',
+    color: '#888'
+  }
 });
 
 export default SearchScreen;

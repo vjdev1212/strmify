@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, StyleSheet, Pressable, View as RNView, Alert, ScrollView, useColorScheme, Platform, useWindowDimensions } from 'react-native';
+import { StyleSheet, Pressable, View as RNView, ScrollView, useColorScheme, Platform, useWindowDimensions } from 'react-native';
 import { ActivityIndicator, Card, StatusBar, Text, View } from '@/components/Themed';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { isHapticsSupported, showAlert } from '@/utils/platform';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 
 const StreamScreen = () => {
     const { imdbid, type, name: contentTitle, season, episode } = useLocalSearchParams();
@@ -168,35 +169,52 @@ const StreamScreen = () => {
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar />
-            <View>
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.addonListContainer}>
-                    {
-                        addons.map((item, index) => (
-                            <RenderAddonItem key={index} item={item} />
-                        ))
-                    }
-                </ScrollView>
-            </View>
-            {loading ? (
-                <RNView style={styles.loadingContainer}>
-                    <View style={styles.centeredContainer}>
-                        <ActivityIndicator size="large" style={styles.activityIndicator} color="#535aff" />
-                        <Text style={styles.centeredText}>Loading</Text>
+            {
+                addons?.length > 0 ? (
+                    <View>
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.addonListContainer}>
+                            {
+                                addons.map((item, index) => (
+                                    <RenderAddonItem key={index} item={item} />
+                                ))
+                            }
+                        </ScrollView>
                     </View>
-                </RNView>
-            ) : (
-                <ScrollView showsVerticalScrollIndicator={false}>
-                    <View style={styles.streamsContainer}>
-                        {selectedAddonStreams.map((item: any, index: number) => (
-                            <RenderStreamItem key={index} item={item} />
-                        ))}
-                    </View>
-                </ScrollView>
-            )}
-        </SafeAreaView>
+                ) : (
+                    <RNView style={styles.loadingContainer}>
+                        <View style={styles.centeredContainer}>
+                            <Ionicons style={styles.noAddons} name='warning-outline' color="#535aff" size={70} />
+                            <Text style={[styles.noAddonsText, {
+                                color: colorScheme === 'dark' ? '#a0a0a0' : '#303030'
+                            }]}>
+                                No addons have been found. Please ensure that you have configured the addons before searching.
+                            </Text>
+                        </View>
+                    </RNView>
+                )
+            }
+            {
+                loading ? (
+                    <RNView style={styles.loadingContainer}>
+                        <View style={styles.centeredContainer}>
+                            <ActivityIndicator size="large" style={styles.activityIndicator} color="#535aff" />
+                            <Text style={styles.centeredText}>Loading</Text>
+                        </View>
+                    </RNView>
+                ) : (
+                    <ScrollView showsVerticalScrollIndicator={false}>
+                        <View style={styles.streamsContainer}>
+                            {selectedAddonStreams.map((item: any, index: number) => (
+                                <RenderStreamItem key={index} item={item} />
+                            ))}
+                        </View>
+                    </ScrollView>
+                )
+            }
+        </SafeAreaView >
     );
 };
 
@@ -276,6 +294,16 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
     },
+    noAddons: {
+        marginTop: 100,
+        paddingBottom: 20
+    },
+    noAddonsText: {
+        fontSize: 16,
+        textAlign: 'center',
+        marginHorizontal: '10%',
+        color: '#888'
+    }
 });
 
 export default StreamScreen;

@@ -17,6 +17,7 @@ import { router } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import * as Haptics from 'expo-haptics';
 import { isHapticsSupported, showAlert } from '@/utils/platform';
+import { Ionicons } from '@expo/vector-icons';
 
 const AddonsScreen = () => {
   const [addons, setAddons] = useState<any[]>([]);
@@ -162,10 +163,18 @@ const AddonsScreen = () => {
         {addons.length > 0 ? (
           addons.map(renderAddonItem)
         ) : (
-          <Text style={styles.emptyText}>No addons available. Add one now!</Text>
+          <View style={styles.centeredContainer}>
+            <Ionicons style={styles.noAddons} name='extension-puzzle-outline' color="#535aff" size={70} />
+            <Text style={[styles.noAddonsText,
+            {
+              color: colorScheme === 'dark' ? '#a0a0a0' : '#303030'
+            }]}>
+              No addons available. Add one now!
+            </Text>
+          </View>
         )}
       </ScrollView>
-    </SafeAreaView>
+    </SafeAreaView >
   );
 };
 
@@ -176,6 +185,12 @@ const styles = StyleSheet.create({
     maxWidth: 780,
     margin: 'auto',
     marginTop: 20,
+  },
+  centeredContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
   },
   contentContainer: {
     padding: 20,
@@ -194,10 +209,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 16,
   },
-  emptyText: {
+  noAddonsText: {
     textAlign: 'center',
     fontSize: 16,
-    color: '#999',
     marginTop: 20,
   },
   addonItem: {
@@ -257,6 +271,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center'
   },
+  noAddons: {
+    marginTop: 100,
+    paddingBottom: 20
+  }
 });
 
 export default AddonsScreen;
