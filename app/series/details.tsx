@@ -154,6 +154,13 @@ const SeriesDetails = () => {
           />
           <MediaContentDescription description={data.description} />
           <MediaCastAndCrews cast={cast}></MediaCastAndCrews>
+          {
+            isPortrait ? (null) : (
+              <>
+                <BottomSpacing space={80} />
+              </>
+            )
+          }
           {/* <MediaContentDetailsList
             released={data.released}
             country={data.country}
