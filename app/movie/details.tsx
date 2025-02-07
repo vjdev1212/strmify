@@ -11,6 +11,7 @@ import * as Haptics from 'expo-haptics';
 import BottomSpacing from '@/components/BottomSpacing';
 import { isHapticsSupported } from '@/utils/platform';
 import MediaLogo from '@/components/MediaLogo';
+import MediaCastAndCrews from '@/components/MediaCastAndCrews';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -19,6 +20,7 @@ const MovieDetails = () => {
   const [data, setData] = useState<any>(null);
   const [imdbid, setImdbId] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [cast, setCast] = useState<any[]>([]);
   const { width, height } = useWindowDimensions();
   const isPortrait = height > width;
 
@@ -31,12 +33,14 @@ const MovieDetails = () => {
         const result = await response.json();
         if (result) {
           const externalIds = await getExternalIds();
+          const castAndCrews = await getCastandCrew();
+          setCast(castAndCrews);
           setImdbId(externalIds.imdb_id);
           const logo = `https://images.metahub.space/logo/medium/${externalIds.imdb_id}/img`
           const movie = result;
           const movieData = {
             name: movie.title,
-            background: `https://image.tmdb.org/t/p/original${movie.backdrop_path}`,
+            background: `https://image.tmdb.org/t/p/w1280${movie.backdrop_path}`,
             poster: `https://image.tmdb.org/t/p/w780${movie.poster_path}`,
             logo: logo,
             genre: movie.genres.map((genre: any) => genre.name),
@@ -64,6 +68,14 @@ const MovieDetails = () => {
     );
     const externalIdsResult = await externalIdsResponse.json();
     return externalIdsResult;
+  }
+
+  const getCastandCrew = async () => {
+    const castAndCrewsResponse = await fetch(
+      `https://api.themoviedb.org/3/movie/${moviedbid}/credits?api_key=${EXPO_PUBLIC_TMDB_API_KEY}`
+    );
+    const castAndCrewResult = await castAndCrewsResponse.json();
+    return castAndCrewResult.cast || [];
   }
 
   if (loading) {
@@ -98,17 +110,22 @@ const MovieDetails = () => {
       <StatusBar />
 
       <View style={[{
-        flex: 1,
+        flex: 1,        
         flexDirection: isPortrait ? 'column' : 'row',
         marginTop: isPortrait ? 0 : '5%',
         justifyContent: 'center',
-        alignItems: 'center',
       }]}>
-        <View style={[styles.posterContainer, { width: isPortrait ? '100%' : '50%' }]}>
+        <View style={[styles.posterContainer, {
+          width: isPortrait ? '100%' : '30%',
+          padding: isPortrait ? null : '3%'
+        }]}>
           <MediaContentPoster background={isPortrait ? data.background : data.poster} isPortrait={isPortrait} />
         </View>
 
-        <View style={[styles.detailsContainer, { width: isPortrait ? '100%' : '50%' }]}>
+        <View style={[styles.detailsContainer, {
+          width: isPortrait ? '100%' : '60%',
+          paddingHorizontal: isPortrait ? null : 5
+        }]}>
           <MediaLogo logo={data.logo} />
           <MediaContentHeader
             name={data.name}
@@ -128,8 +145,9 @@ const MovieDetails = () => {
             cast={data.cast}
             releaseInfo={data.releaseInfo}
           /> */}
-          <BottomSpacing space={50} />
+          <MediaCastAndCrews cast={cast}></MediaCastAndCrews>
         </View>
+        <BottomSpacing space={100} />
       </View>
     </ScrollView>
   );

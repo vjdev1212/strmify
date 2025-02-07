@@ -57,7 +57,7 @@ const MediaContentHeader = ({
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    padding: 20,
+    padding: 10,
   },
   title: {
     fontSize: 24,

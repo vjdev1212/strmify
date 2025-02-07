@@ -9,6 +9,7 @@ import MediaContentPoster from '@/components/MediaContentPoster';
 import SeasonEpisodeList from '@/components/SeasonEpisodeList';
 import BottomSpacing from '@/components/BottomSpacing';
 import MediaLogo from '@/components/MediaLogo';
+import MediaCastAndCrews from '@/components/MediaCastAndCrews';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -17,6 +18,7 @@ const SeriesDetails = () => {
   const [data, setData] = useState<any>(null);
   const [imdbid, setImdbId] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [cast, setCast] = useState<any[]>([]);
   const { width, height } = useWindowDimensions();
   const isPortrait = height > width;
 
@@ -29,6 +31,8 @@ const SeriesDetails = () => {
         const result = await response.json();
         if (result) {
           const externalIds = await getExternalIds();
+          const castAndCrews = await getCastandCrew();
+          setCast(castAndCrews);
           const logo = `https://images.metahub.space/logo/medium/${externalIds.imdb_id}/img`;
           setImdbId(externalIds.imdb_id);
 
@@ -49,7 +53,7 @@ const SeriesDetails = () => {
 
           const seriesData = {
             name: result.name,
-            background: `https://image.tmdb.org/t/p/original${result.backdrop_path}`,
+            background: `https://image.tmdb.org/t/p/w1280${result.backdrop_path}`,
             poster: `https://image.tmdb.org/t/p/w780${result.poster_path}`,
             logo: logo,
             genre: result.genres.map((genre: any) => genre.name),
@@ -88,6 +92,14 @@ const SeriesDetails = () => {
     return episodesResult;
   }
 
+  const getCastandCrew = async () => {
+    const castAndCrewsResponse = await fetch(
+      `https://api.themoviedb.org/3/tv/${moviedbid}/credits?api_key=${EXPO_PUBLIC_TMDB_API_KEY}`
+    );
+    const castAndCrewResult = await castAndCrewsResponse.json();
+    return castAndCrewResult.cast || [];
+  }
+
   if (loading) {
     return (
       <View style={styles.centeredContainer}>
@@ -120,12 +132,17 @@ const SeriesDetails = () => {
         flexDirection: isPortrait ? 'column' : 'row',
         marginTop: isPortrait ? 0 : '5%',
         justifyContent: 'center',
-        alignItems: 'center',
       }]}>
-        <View style={[styles.posterContainer, { width: isPortrait ? '100%' : '50%' }]}>
+        <View style={[styles.posterContainer, {
+          width: isPortrait ? '100%' : '30%',
+          padding: isPortrait ? null : '3%'
+        }]}>
           <MediaContentPoster background={isPortrait ? data.background : data.poster} isPortrait={isPortrait} />
         </View>
-        <View style={[styles.detailsContainer, { width: isPortrait ? '100%' : '50%' }]}>
+        <View style={[styles.detailsContainer, {
+          width: isPortrait ? '100%' : '60%',
+          paddingHorizontal: isPortrait ? null : 5
+        }]}>
           <MediaLogo logo={data.logo} />
           <MediaContentHeader
             name={data.name}
@@ -136,6 +153,7 @@ const SeriesDetails = () => {
             releaseInfo={data.releaseInfo}
           />
           <MediaContentDescription description={data.description} />
+          <MediaCastAndCrews cast={cast}></MediaCastAndCrews>
           {/* <MediaContentDetailsList
             released={data.released}
             country={data.country}
@@ -148,15 +166,15 @@ const SeriesDetails = () => {
         <View style={{ justifyContent: 'center', marginTop: isPortrait ? 5 : '10%' }}>
           <SeasonEpisodeList videos={data.videos} onEpisodeSelect={handleEpisodeSelect} />
         </View>
-        <BottomSpacing space={50} />
       </View>
+      <BottomSpacing space={100} />
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flex: 1
   },
   posterContainer: {
     flexDirection: 'column',
@@ -165,7 +183,6 @@ const styles = StyleSheet.create({
   landscapePosterContainer: {
   },
   detailsContainer: {
-    marginTop: 20,
   },
   landscapeDetailsContainer: {
     flexWrap: 'wrap',
