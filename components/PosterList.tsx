@@ -113,7 +113,7 @@ const PosterList = ({
     const handleImageLoad = () => {
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 300,
+        duration: 500,
         useNativeDriver: true,
       }).start();
     };

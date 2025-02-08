@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, FlatList, Image, Pressable, useWindowDimensions } from 'react-native';
+import { StyleSheet, FlatList, Image, Pressable, useWindowDimensions, Animated } from 'react-native';
 import { Text, View } from './Themed';
 import * as Haptics from 'expo-haptics';  // Importing Haptics for haptic feedback
 import { formatDate } from '@/utils/Date';
@@ -27,6 +27,8 @@ interface SeasonEpisodeListProps {
 const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisodeSelect }) => {
   const [selectedSeason, setSelectedSeason] = useState<number>(1);
   const [selectedEpisode, setSelectedEpisode] = useState<number>(1);
+  const [isLoading, setIsLoading] = useState(true);
+  const [fadeAnim] = useState(new Animated.Value(0));
   const colorScheme = useColorScheme();
   const { width, height } = useWindowDimensions();
   const isPortrait = height > width;
@@ -39,6 +41,19 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
     acc[video.season].push(video);
     return acc;
   }, {} as Record<number, Episode[]>);
+
+  useEffect(() => {
+    const imageLoader = setTimeout(() => {
+      setIsLoading(false);
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }).start();
+    }, 100);
+
+    return () => clearTimeout(imageLoader);
+  }, [fadeAnim]);
 
   // Handle initial selection when videos load
   useEffect(() => {
@@ -129,15 +144,19 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
               <View>
                 <View style={{ flexDirection: 'row', marginRight: 5 }}>
                   <View style={{ width: '50%' }}>
-                    <Image
-                      source={{ uri: item.thumbnail }}
-                      style={[styles.thumbnail, {
-                        backgroundColor: thumbnailBackgroundColor,
-                        height: isPortrait ? 80 : null,
-                        width: isPortrait ? null : 160,
-                        aspectRatio: 16 / 9,
-                      }]}
-                    />
+                    {isLoading ? (
+                      <View style={styles.skeletonBackground} />
+                    ) : (
+                      <Animated.Image
+                        source={{ uri: item.thumbnail }}
+                        style={[styles.thumbnail, {
+                          backgroundColor: thumbnailBackgroundColor,
+                          height: isPortrait ? 80 : null,
+                          width: isPortrait ? null : 160,
+                          aspectRatio: 16 / 9,
+                        }]}
+                      />
+                    )}
                   </View>
                   <View style={{ justifyContent: 'center', width: '50%' }}>
                     <Text style={[styles.episodeTitle]} numberOfLines={3}>
@@ -146,7 +165,7 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
                     <Text style={[styles.episodeAired, {
                       color: colorScheme === 'dark' ? '#afafaf' : '#101010',
                     }]}>{
-                      formatDate(item.firstAired) || formatDate(item.released)}
+                        formatDate(item.firstAired) || formatDate(item.released)}
                     </Text>
                   </View>
                 </View>
@@ -222,6 +241,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginRight: 10,
     textAlign: 'justify'
+  },
+  skeletonBackground: {
+    width: '100%',
+    height: '100%',
+    opacity: 0.1,
   },
 });
 

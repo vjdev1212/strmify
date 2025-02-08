@@ -12,7 +12,7 @@ const MediaContentPoster = ({ background, isPortrait }: { background: string, is
       setIsLoading(false);
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 1000,
+        duration: 500,
         useNativeDriver: true,
       }).start();
       Animated.timing(titleFadeAnim, {
