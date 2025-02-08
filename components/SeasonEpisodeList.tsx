@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, FlatList, Image, Pressable, useWindowDimensions, Animated } from 'react-native';
+import { StyleSheet, FlatList, Pressable, useWindowDimensions, Animated } from 'react-native';
 import { Text, View } from './Themed';
 import * as Haptics from 'expo-haptics';  // Importing Haptics for haptic feedback
 import { formatDate } from '@/utils/Date';
 import { isHapticsSupported } from '@/utils/platform';
 import { useColorScheme } from './useColorScheme';
+import { SvgXml } from 'react-native-svg';
+import { DefaultEpisodeThumbnailImgXml } from '@/utils/Svg';
 
 interface Episode {
   name: string;
@@ -24,23 +26,15 @@ interface SeasonEpisodeListProps {
   onEpisodeSelect: (season: number, episode: number) => void;
 }
 
-const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisodeSelect }) => {
-  const [selectedSeason, setSelectedSeason] = useState<number>(1);
+const EpisodeItem = ({ item, onEpisodeSelect }: { item: any, onEpisodeSelect: any }) => {
+  const colorScheme = useColorScheme();
   const [selectedEpisode, setSelectedEpisode] = useState<number>(1);
   const [isLoading, setIsLoading] = useState(true);
   const [fadeAnim] = useState(new Animated.Value(0));
-  const colorScheme = useColorScheme();
   const { width, height } = useWindowDimensions();
+  const [imgError, setImgError] = useState(false);
   const isPortrait = height > width;
 
-  // Group episodes by season
-  const groupedEpisodes = videos.reduce((acc, video) => {
-    if (!acc[video.season]) {
-      acc[video.season] = [];
-    }
-    acc[video.season].push(video);
-    return acc;
-  }, {} as Record<number, Episode[]>);
 
   useEffect(() => {
     const imageLoader = setTimeout(() => {
@@ -55,13 +49,109 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
     return () => clearTimeout(imageLoader);
   }, [fadeAnim]);
 
+  const handleEpisodeSelect = async (season: number, episode: number) => {
+    if (isHapticsSupported()) {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+    }
+    setSelectedEpisode(episode);
+    onEpisodeSelect(season, episode);
+  };
+
+  const thumbnailBackgroundColor = colorScheme === 'dark' ? '#0f0f0f' : '#f0f0f0';
+
+  return (
+    <View style={[
+      styles.episodeContainer,
+      {
+        marginHorizontal: 'auto',
+        marginVertical: 10,
+        width: '99%',
+        maxWidth: 350,
+      },
+    ]}>
+      <Pressable
+        key={`${item.season}-${item.number}`}
+        onPress={() => handleEpisodeSelect(item.season, item.number)}
+      >
+        <View>
+          <View style={{ flexDirection: 'row', marginRight: 5 }}>
+            <View style={{ width: '50%' }}>
+              {isLoading ? (
+                <View style={styles.skeletonBackground} />
+              ) : (
+                <>
+                  {
+                    !imgError ? (
+                      <Animated.Image
+                        source={{ uri: item.thumbnail }}
+                        onError={() => setImgError(true)}
+                        style={[styles.thumbnail, {
+                          backgroundColor: thumbnailBackgroundColor,
+                          height: isPortrait ? 80 : null,
+                          width: isPortrait ? null : 160,
+                          aspectRatio: 16 / 9,
+                        }]}
+                      />
+                    ) : (
+                      <View style={[styles.thumbnailPlaceHolder,
+                      {
+                        backgroundColor: thumbnailBackgroundColor,
+                        height: isPortrait ? 80 : null,
+                        width: isPortrait ? null : 160,
+                        aspectRatio: 16 / 9,
+                      }]}>
+                        <SvgXml xml={DefaultEpisodeThumbnailImgXml} />
+                      </View>
+                    )
+                  }
+                </>
+              )}
+            </View>
+            <View style={{ justifyContent: 'center', width: '50%' }}>
+              <Text style={[styles.episodeTitle]} numberOfLines={3}>
+                {item.episode || item.number}. {item.name || item.title}
+              </Text>
+              <Text style={[styles.episodeAired, {
+                color: colorScheme === 'dark' ? '#afafaf' : '#101010',
+              }]}>{
+                  formatDate(item.firstAired) || formatDate(item.released)}
+              </Text>
+            </View>
+          </View>
+          <View style={{ justifyContent: 'center', width: '100%', marginRight: 5 }}>
+            <Text style={[styles.episodeDescription,
+            {
+              color: colorScheme === 'dark' ? '#dfdfdf' : '#101010',
+            }]} numberOfLines={5}>
+              {item.description || item.overview}
+            </Text>
+          </View>
+        </View>
+      </Pressable>
+    </View>
+  )
+}
+
+const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisodeSelect }) => {
+  const [selectedSeason, setSelectedSeason] = useState<number>(1);
+  const colorScheme = useColorScheme();
+
+  // Group episodes by season
+  const groupedEpisodes = videos.reduce((acc, video) => {
+    if (!acc[video.season]) {
+      acc[video.season] = [];
+    }
+    acc[video.season].push(video);
+    return acc;
+  }, {} as Record<number, Episode[]>);
+
+
   // Handle initial selection when videos load
   useEffect(() => {
     if (videos.length > 0) {
       const defaultEpisode = videos.find((video) => video.season === 1 && video.number === 1);
       if (defaultEpisode) {
         setSelectedSeason(1);
-        setSelectedEpisode(1);
       }
     }
   }, [videos]);
@@ -75,19 +165,7 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
     }
     setSelectedSeason(season);
-    setSelectedEpisode(1);
   };
-
-  const handleEpisodeSelect = async (season: number, episode: number) => {
-    if (isHapticsSupported()) {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
-    }
-    setSelectedSeason(season);
-    setSelectedEpisode(episode);
-    onEpisodeSelect(season, episode);
-  };
-
-  const thumbnailBackgroundColor = colorScheme === 'dark' ? '#0f0f0f' : '#f0f0f0';
 
   return (
     <View style={styles.container}>
@@ -128,58 +206,7 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
       </View>
       <View style={styles.episodeList}>
         {groupedEpisodes[selectedSeason]?.map((item) => (
-          <View style={[
-            styles.episodeContainer,
-            {
-              marginHorizontal: 'auto',
-              marginVertical: 10,
-              width: '99%',
-              maxWidth: 350,
-            },
-          ]}>
-            <Pressable
-              key={`${item.season}-${item.number}`}
-              onPress={() => handleEpisodeSelect(item.season, item.number)}
-            >
-              <View>
-                <View style={{ flexDirection: 'row', marginRight: 5 }}>
-                  <View style={{ width: '50%' }}>
-                    {isLoading ? (
-                      <View style={styles.skeletonBackground} />
-                    ) : (
-                      <Animated.Image
-                        source={{ uri: item.thumbnail }}
-                        style={[styles.thumbnail, {
-                          backgroundColor: thumbnailBackgroundColor,
-                          height: isPortrait ? 80 : null,
-                          width: isPortrait ? null : 160,
-                          aspectRatio: 16 / 9,
-                        }]}
-                      />
-                    )}
-                  </View>
-                  <View style={{ justifyContent: 'center', width: '50%' }}>
-                    <Text style={[styles.episodeTitle]} numberOfLines={3}>
-                      {item.episode || item.number}. {item.name || item.title}
-                    </Text>
-                    <Text style={[styles.episodeAired, {
-                      color: colorScheme === 'dark' ? '#afafaf' : '#101010',
-                    }]}>{
-                        formatDate(item.firstAired) || formatDate(item.released)}
-                    </Text>
-                  </View>
-                </View>
-                <View style={{ justifyContent: 'center', width: '100%', marginRight: 5 }}>
-                  <Text style={[styles.episodeDescription,
-                  {
-                    color: colorScheme === 'dark' ? '#dfdfdf' : '#101010',
-                  }]} numberOfLines={5}>
-                    {item.description || item.overview}
-                  </Text>
-                </View>
-              </View>
-            </Pressable>
-          </View>
+          <EpisodeItem item={item} onEpisodeSelect={onEpisodeSelect}></EpisodeItem>
         ))}
       </View>
     </View >
@@ -222,6 +249,14 @@ const styles = StyleSheet.create({
   episodeContainer: {
     marginHorizontal: 10,
     marginVertical: 10,
+  },
+  thumbnailPlaceHolder: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 6,
+    marginRight: 15,
+    aspectRatio: 16 / 9,
+    marginVertical: 20
   },
   thumbnail: {
     borderRadius: 6,
