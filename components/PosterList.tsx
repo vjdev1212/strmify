@@ -148,7 +148,6 @@ const PosterList = ({
 }) => {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const colorScheme = useColorScheme();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -189,10 +188,23 @@ const PosterList = ({
     fetchData();
   }, [apiUrl]);
 
+  const handleSeeAllPress = async () => {
+    if (isHapticsSupported()) {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+    }
+    router.push({
+      pathname: `/${type}/list`,
+      params: { apiUrl, title, type },
+    });
+  };
+
   return (
     <RNView style={styles.container}>
       <RNView style={styles.header}>
         <Text style={styles.title}>{title}</Text>
+        <Pressable onPress={handleSeeAllPress}>
+          <Text style={styles.seeAllText}>See All</Text>
+        </Pressable>
       </RNView>
 
       {loading ? (
