@@ -5,15 +5,16 @@ import {
   Pressable,
   View as RNView,
   Animated,
-  Platform,
   useWindowDimensions,
 } from 'react-native';
 import { Text, View } from './Themed';
 import { router } from 'expo-router';
-import * as Haptics from 'expo-haptics'; // Importing Haptics for haptic feedback
+import * as Haptics from 'expo-haptics';
 import { isHapticsSupported } from '@/utils/platform';
 import { getYear } from '@/utils/Date';
 import { useColorScheme } from './useColorScheme';
+import { SvgXml } from 'react-native-svg';
+import { DefaultPosterImgXml } from '@/utils/Svg';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -38,6 +39,102 @@ const SkeletonLoader = () => {
   );
 };
 
+const PosterItem = ({ item, layout, type }: { item: any, layout?: 'horizontal' | 'vertical', type: string }) => {
+  const [imgError, setImgError] = useState(false);
+  const fadeAnim = useState(new Animated.Value(0))[0];
+  const colorScheme = useColorScheme();
+  const { width, height } = useWindowDimensions();
+  const isPortrait = height > width;
+
+  const year =
+    item.year && typeof item.year === 'string' && item.year.includes('–')
+      ? item.year.split('–')[0]
+      : item.year;
+
+  const posterUri = isPortrait ? item.poster : item.background;
+
+  const handleImageLoad = () => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handlePress = async () => {
+    if (isHapticsSupported()) {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+    }
+    router.push({
+      pathname: type === 'movie' ? '/movie/details' : '/series/details',
+      params: { moviedbid: item.moviedbid },
+    });
+  };
+
+  return (
+    <Pressable
+      style={[
+        styles.posterContainer,
+        layout === 'vertical' && styles.verticalContainer,
+      ]}
+      onPress={handlePress}
+    >
+      <View>
+        {!imgError ? (
+          <Animated.Image
+            source={{ uri: posterUri }}
+            onError={() => setImgError(true)}
+            style={[
+              styles.posterImage,
+              layout === 'vertical' ? styles.verticalImage : styles.horizontalImage,
+              {
+                opacity: fadeAnim,
+                backgroundColor: colorScheme === 'dark' ? '#0f0f0f' : '#f0f0f0',
+                width: isPortrait ? 100 : 200,
+                height: isPortrait ? 150 : 110,
+              },
+            ]}
+            onLoad={handleImageLoad}
+          />
+        ) : (
+          <View style={[styles.posterImagePlaceHolder,
+          layout === 'vertical' ? styles.verticalImage : styles.horizontalImage,
+          {
+            opacity: fadeAnim,
+            backgroundColor: colorScheme === 'dark' ? '#0f0f0f' : '#f0f0f0',
+            width: isPortrait ? 100 : 200,
+            height: isPortrait ? 150 : 110,
+          }]}>
+            <SvgXml xml={DefaultPosterImgXml} />
+          </View>
+        )}
+        <Text
+          numberOfLines={1}
+          ellipsizeMode="tail"
+          style={[
+            styles.posterTitle,
+            {
+              maxWidth: isPortrait ? 100 : 200,
+            },
+          ]}
+        >
+          {item.name}
+        </Text>
+        <Text
+          style={[
+            styles.posterYear,
+            {
+              color: colorScheme === 'dark' ? '#afafaf' : '#303030',
+            },
+          ]}
+        >
+          {`★ ${item.imdbRating}   ${year}`}
+        </Text>
+      </View>
+    </Pressable >
+  );
+};
+
 const PosterList = ({
   apiUrl,
   title,
@@ -50,11 +147,8 @@ const PosterList = ({
   layout?: 'horizontal' | 'vertical';
 }) => {
   const [data, setData] = useState<any[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [fadeAnim] = useState(new Animated.Value(0));
+  const [loading, setLoading] = useState(true);
   const colorScheme = useColorScheme();
-  const { width, height } = useWindowDimensions();
-  const isPortrait = height > width;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -63,6 +157,7 @@ const PosterList = ({
         const result = await response.json();
         const collection = result.results;
         let list = [];
+
         if (type === 'movie') {
           list = collection.map((movie: any) => ({
             moviedbid: movie.id,
@@ -82,6 +177,7 @@ const PosterList = ({
             imdbRating: series.vote_average?.toFixed(1),
           }));
         }
+
         setData(list);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -93,89 +189,15 @@ const PosterList = ({
     fetchData();
   }, [apiUrl]);
 
-  const handlePress = async (item: any) => {
-    if (isHapticsSupported()) {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
-    }
-    router.push({
-      pathname: type === 'movie' ? '/movie/details' : '/series/details',
-      params: { moviedbid: item.moviedbid },
-    });
-  };
-
-  const renderItem = ({ item }: any) => {
-    const year =
-      item.year && typeof item.year === 'string' && item.year.includes('–')
-        ? item.year.split('–')[0]
-        : item.year;
-
-    // Trigger the fade-in animation when image is loaded
-    const handleImageLoad = () => {
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }).start();
-    };
-
-    return (
-      <Pressable
-        style={[
-          styles.posterContainer,
-          layout === 'vertical' && styles.verticalContainer,
-        ]}
-        onPress={() => handlePress(item)}
-      >
-        <View>
-          <Animated.Image
-            source={{ uri: isPortrait ? item.poster : item.background }}
-            style={[
-              styles.posterImage,
-              layout === 'vertical' ? styles.verticalImage : styles.horizontalImage,
-              {
-                opacity: fadeAnim,
-                backgroundColor: colorScheme === 'dark' ? '#0f0f0f' : '#f0f0f0',
-                width: isPortrait ? 100 : 200,
-                height: isPortrait ? 150 : 110,
-              },
-            ]}
-            onLoad={handleImageLoad}
-          />
-          <Text numberOfLines={1} ellipsizeMode="tail" style={[styles.posterTitle, {
-            maxWidth: isPortrait ? 100 : 200,
-          }]}>
-            {item.name}
-          </Text>
-          <Text style={[styles.posterYear, {
-            color: colorScheme === 'dark' ? '#afafaf' : '#303030',
-          }]}>{`★ ${item.imdbRating}   ${year}`}</Text>
-        </View>
-      </Pressable>
-    );
-  };
-
-  const handleSeeAllPress = async () => {
-    if (isHapticsSupported()) {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
-    }
-    router.push({
-      pathname: `/${type}/list`,
-      params: { apiUrl, title, type },
-    });
-  };
-
   return (
     <RNView style={styles.container}>
       <RNView style={styles.header}>
         <Text style={styles.title}>{title}</Text>
-        <Pressable onPress={handleSeeAllPress}>
-          <Text style={styles.seeAllText}>See All</Text>
-        </Pressable>
       </RNView>
 
       {loading ? (
         <FlatList
-          data={new Array(10).fill(null)} // Skeleton loader
+          data={new Array(10).fill(null)}
           renderItem={() => <SkeletonLoader />}
           keyExtractor={(_, index) => index.toString()}
           horizontal={layout === 'horizontal'}
@@ -185,7 +207,7 @@ const PosterList = ({
       ) : (
         <FlatList
           data={data}
-          renderItem={renderItem}
+          renderItem={({ item }) => <PosterItem item={item} layout={layout} type={type} />}
           keyExtractor={(item, index) => index.toString()}
           horizontal={layout === 'horizontal'}
           showsHorizontalScrollIndicator={false}
@@ -223,6 +245,10 @@ const styles = StyleSheet.create({
   verticalContainer: {
     flex: 1,
     marginBottom: 10,
+  },
+  posterImagePlaceHolder: {
+    justifyContent: 'center',
+    alignItems: 'center'
   },
   posterImage: {
     borderRadius: 8,
