@@ -22,6 +22,8 @@ enum Players {
     VLC = 'VLC',
     Infuse = 'Infuse',
     VidHub = 'VidHub',
+    MXPlayer = "MX Player",
+    MXPlayerPro = "MX PRO",
     OutPlayer = 'OutPlayer'
 }
 
@@ -36,7 +38,7 @@ const StreamDetailsScreen = () => {
     const [metaData, setMetaData] = useState<any>(null);
     const [playBtnDisabled, setPlayBtnDisabled] = useState<boolean>(false);
     const [isModalVisible, setModalVisible] = useState(false);
-    
+
     const colorScheme = useColorScheme();
     useEffect(() => {
         const loadPlayers = async () => {
@@ -110,42 +112,44 @@ const StreamDetailsScreen = () => {
     const getPlatformSpecificPlayers = () => {
         if (getOriginalPlatform() === 'android') {
             return [
-                { name: Players.Default, scheme: '', encodeUrl: false, icon: require('@/assets/images/players/default.png') },
-                { name: Players.Browser, scheme: '', encodeUrl: false, icon: require('@/assets/images/players/chrome.png') },
-                { name: Players.VLC, scheme: 'vlc://', encodeUrl: false, icon: require('@/assets/images/players/vlc.png') },
-                { name: Players.VidHub, scheme: 'open-vidhub://x-callback-url/open?url=', encodeUrl: true, icon: require('@/assets/images/players/vidhub.png') },
+                { name: Players.Default, scheme: 'STREAMURL', encodeUrl: false, icon: require('@/assets/images/players/default.png') },
+                { name: Players.Browser, scheme: 'STREAMURL', encodeUrl: false, icon: require('@/assets/images/players/chrome.png') },
+                { name: Players.VLC, scheme: 'vlc://STREAMURL', encodeUrl: false, icon: require('@/assets/images/players/vlc.png') },
+                { name: Players.MXPlayer, scheme: 'intent:STREAMURL?sign=Yva5dQp8cFQpVAMUh1QxNWbZAZ2h05lYQ4qAxqf717w=:0#Intent;package=com.mxtech.videoplayer.ad;S.title=STREAMTITLE;end', encodeUrl: false, icon: require('@/assets/images/players/mxplayer.png') },
+                { name: Players.MXPlayerPro, scheme: 'intent:STREAMURL?sign=Yva5dQp8cFQpVAMUh1QxNWbZAZ2h05lYQ4qAxqf717w=:0#Intent;package=com.mxtech.videoplayer.pro;S.title=STREAMTITLE;end', encodeUrl: false, icon: require('@/assets/images/players/mxplayer.png') },
+                { name: Players.VidHub, scheme: 'open-vidhub://x-callback-url/open?url=STREAMURL', encodeUrl: true, icon: require('@/assets/images/players/vidhub.png') },
             ];
         } else if (getOriginalPlatform() === 'ios') {
             return [
-                { name: Players.Default, scheme: '', encodeUrl: false, icon: require('@/assets/images/players/default.png') },
-                { name: Players.Browser, scheme: '', encodeUrl: false, icon: require('@/assets/images/players/chrome.png') },
-                { name: Players.VLC, scheme: 'vlc://', encodeUrl: false, icon: require('@/assets/images/players/vlc.png') },
-                { name: Players.Infuse, scheme: 'infuse://x-callback-url/play?url=', encodeUrl: true, icon: require('@/assets/images/players/infuse.png') },
-                { name: Players.VidHub, scheme: 'open-vidhub://x-callback-url/open?url=', encodeUrl: true, icon: require('@/assets/images/players/vidhub.png') },
-                { name: Players.OutPlayer, scheme: 'outplayer://', encodeUrl: false, icon: require('@/assets/images/players/outplayer.png') },
+                { name: Players.Default, scheme: 'STREAMURL', encodeUrl: false, icon: require('@/assets/images/players/default.png') },
+                { name: Players.Browser, scheme: 'STREAMURL', encodeUrl: false, icon: require('@/assets/images/players/chrome.png') },
+                { name: Players.VLC, scheme: 'vlc://STREAMURL', encodeUrl: false, icon: require('@/assets/images/players/vlc.png') },
+                { name: Players.Infuse, scheme: 'infuse://x-callback-url/play?url=STREAMURL', encodeUrl: true, icon: require('@/assets/images/players/infuse.png') },
+                { name: Players.VidHub, scheme: 'open-vidhub://x-callback-url/open?url=STREAMURL', encodeUrl: true, icon: require('@/assets/images/players/vidhub.png') },
+                { name: Players.OutPlayer, scheme: 'outplayer://STREAMURL', encodeUrl: false, icon: require('@/assets/images/players/outplayer.png') },
             ];
         } else if (getOriginalPlatform() === 'web') {
             return [
-                { name: Players.Default, scheme: '', encodeUrl: false, icon: require('@/assets/images/players/default.png') },
-                { name: Players.Browser, scheme: '', encodeUrl: false, icon: require('@/assets/images/players/chrome.png') }
+                { name: Players.Default, scheme: 'STREAMURL', encodeUrl: false, icon: require('@/assets/images/players/default.png') },
+                { name: Players.Browser, scheme: 'STREAMURL', encodeUrl: false, icon: require('@/assets/images/players/chrome.png') }
             ];
         } else if (getOriginalPlatform() === 'windows') {
             return [
-                { name: Players.Default, scheme: '', encodeUrl: false, icon: require('@/assets/images/players/default.png') },
-                { name: Players.Browser, scheme: '', encodeUrl: false, icon: require('@/assets/images/players/chrome.png') },
+                { name: Players.Default, scheme: 'STREAMURL', encodeUrl: false, icon: require('@/assets/images/players/default.png') },
+                { name: Players.Browser, scheme: 'STREAMURL', encodeUrl: false, icon: require('@/assets/images/players/chrome.png') },
             ];
         } else if (getOriginalPlatform() === 'macos') {
             return [
-                { name: Players.Default, scheme: '', encodeUrl: false, icon: require('@/assets/images/players/default.png') },
-                { name: Players.Browser, scheme: '', encodeUrl: false, icon: require('@/assets/images/players/chrome.png') },
-                { name: Players.VLC, scheme: 'vlc://', encodeUrl: false, icon: require('@/assets/images/players/vlc.png') },
-                { name: Players.Infuse, scheme: 'infuse://x-callback-url/play?url=', encodeUrl: true, icon: require('@/assets/images/players/infuse.png') },
-                { name: Players.VidHub, scheme: 'open-vidhub://x-callback-url/open?url=', encodeUrl: true, icon: require('@/assets/images/players/vidhub.png') },
+                { name: Players.Default, scheme: 'STREAMURL', encodeUrl: false, icon: require('@/assets/images/players/default.png') },
+                { name: Players.Browser, scheme: 'STREAMURL', encodeUrl: false, icon: require('@/assets/images/players/chrome.png') },
+                { name: Players.VLC, scheme: 'vlc://STREAMURL', encodeUrl: false, icon: require('@/assets/images/players/vlc.png') },
+                { name: Players.Infuse, scheme: 'infuse://x-callback-url/play?url=STREAMURL', encodeUrl: true, icon: require('@/assets/images/players/infuse.png') },
+                { name: Players.VidHub, scheme: 'open-vidhub://x-callback-url/open?url=STREAMURL', encodeUrl: true, icon: require('@/assets/images/players/vidhub.png') },
             ];
         }
         return [];
     };
-    
+
 
 
     const generatePlayerUrlWithInfoHash = async (infoHash: string, serverType: string, serverUrl: string) => {
@@ -228,7 +232,9 @@ const StreamDetailsScreen = () => {
             }
 
             const streamUrl = player.encodeUrl ? encodeURIComponent(videoUrl) : videoUrl;
-            const playerUrl = `${player.scheme}${streamUrl}`;
+            const urlJs = new URL(streamUrl);
+            const filename = urlJs?.pathname?.split('/')?.pop() || '';
+            const playerUrl = player.scheme.replace('STREAMURL', streamUrl)?.replace('STREAMTITLE', filename);
             if (playerUrl) {
                 if (selectedPlayer === Players.Default) {
                     router.push({
@@ -345,8 +351,8 @@ const ServerSelectionGroup = ({
     onSelect: (name: string) => void;
     isPlayer?: boolean;
 }) => {
-    
-    const colorScheme = useColorScheme();    const isDarkMode = colorScheme === 'dark';
+
+    const colorScheme = useColorScheme(); const isDarkMode = colorScheme === 'dark';
     return (
         <>
             <Text style={styles.header}>{title}</Text>
@@ -391,8 +397,8 @@ const PlayerSelectionGroup = ({
     onSelect: (name: string) => void;
     isPlayer?: boolean;
 }) => {
-    
-    const colorScheme = useColorScheme();    const isDarkMode = colorScheme === 'dark';
+
+    const colorScheme = useColorScheme(); const isDarkMode = colorScheme === 'dark';
 
     const handleSelectPlayer = async (name: string) => {
         if (isHapticsSupported()) {
