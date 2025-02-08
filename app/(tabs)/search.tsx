@@ -4,10 +4,10 @@ import { useState, useEffect } from 'react';
 import { View as RNView, SafeAreaView, ScrollView, useWindowDimensions } from 'react-native';
 import { StyleSheet, FlatList, Image, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useColorScheme } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { isHapticsSupported } from '@/utils/platform';
 import { getYear } from '@/utils/Date';
+import { useColorScheme } from '@/components/useColorScheme';
 
 const TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
