@@ -250,6 +250,7 @@ const StreamDetailsScreen = () => {
                     })
                 } else {
                     setStatusText('Opening Stream in Media Player...');
+                    console.log('PlayerUrl', playerUrl);
                     await Linking.openURL(playerUrl);
                     setStatusText('Stream Opened in Media Player...');
                 }
