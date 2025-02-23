@@ -232,12 +232,12 @@ const StreamDetailsScreen = () => {
                 return;
             }
 
-            videoUrl = decodeURIComponent(videoUrl);
-            const streamUrl = player.encodeUrl ? encodeURIComponent(videoUrl) : videoUrl;
-            const urlJs = new URL(streamUrl);
+            console.log('Url before encoding', videoUrl);
+            const urlJs = new URL(videoUrl);
             const filename = urlJs?.pathname?.split('/')?.pop() || '';
+            const streamUrl = player.encodeUrl ? encodeURIComponent(videoUrl) : videoUrl;
             const playerUrl = player.scheme.replace('STREAMURL', streamUrl)?.replace('STREAMTITLE', filename);
-            console.log(playerUrl);
+            console.log('Player URL', playerUrl);
             if (playerUrl) {
                 if (selectedPlayer === Players.Default) {
                     router.push({
