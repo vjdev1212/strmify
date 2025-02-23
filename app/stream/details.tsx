@@ -203,16 +203,7 @@ const StreamDetailsScreen = () => {
         }
 
         const server = servers.find((s) => s.serverId === selectedServer);
-        const player = players.find((p) => p.name === selectedPlayer);
-
-        const encodeUrl = (url: string) => {
-            try {
-                console.log('URL:', url);
-                return url === decodeURI(url) ? encodeURI(url) : url;
-            } catch {
-                return encodeURI(url);
-            }
-        };        
+        const player = players.find((p) => p.name === selectedPlayer);   
         
 
         if (!player) {
@@ -241,7 +232,8 @@ const StreamDetailsScreen = () => {
                 return;
             }
 
-            const streamUrl = player.encodeUrl ? encodeUrl(videoUrl) : videoUrl;
+            videoUrl = decodeURIComponent(videoUrl);
+            const streamUrl = player.encodeUrl ? encodeURIComponent(videoUrl) : videoUrl;
             const urlJs = new URL(streamUrl);
             const filename = urlJs?.pathname?.split('/')?.pop() || '';
             const playerUrl = player.scheme.replace('STREAMURL', streamUrl)?.replace('STREAMTITLE', filename);
