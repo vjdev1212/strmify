@@ -11,6 +11,7 @@ import BottomSpacing from '@/components/BottomSpacing';
 import { isHapticsSupported } from '@/utils/platform';
 import MediaLogo from '@/components/MediaLogo';
 import MediaCastAndCrews from '@/components/MediaCastAndCrews';
+import PosterList from '@/components/PosterList';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -53,7 +54,7 @@ const MovieDetails = () => {
         }
       } catch (error) {
         console.error('Error fetching movie details:', error);
-      } finally {
+      } finally {       
         setLoading(false);
       }
     };
@@ -109,7 +110,7 @@ const MovieDetails = () => {
       <StatusBar />
 
       <View style={[{
-        flex: 1,        
+        flex: 1,
         flexDirection: isPortrait ? 'column' : 'row',
         marginTop: isPortrait ? 0 : '5%',
         justifyContent: 'center',
@@ -146,6 +147,10 @@ const MovieDetails = () => {
           /> */}
           <MediaCastAndCrews cast={cast}></MediaCastAndCrews>
         </View>
+        <BottomSpacing space={20} />
+      </View>
+      <View style={styles.recommendationsContainer}>
+        <PosterList apiUrl={`https://api.themoviedb.org/3/movie/${moviedbid}/recommendations`} title='More like this' type='movie' />
         <BottomSpacing space={50} />
       </View>
     </ScrollView>
@@ -181,6 +186,8 @@ const styles = StyleSheet.create({
     fontSize: 18,
     textAlign: 'center',
   },
+  recommendationsContainer: {
+  }
 });
 
 export default MovieDetails;

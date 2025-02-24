@@ -9,6 +9,7 @@ import SeasonEpisodeList from '@/components/SeasonEpisodeList';
 import BottomSpacing from '@/components/BottomSpacing';
 import MediaLogo from '@/components/MediaLogo';
 import MediaCastAndCrews from '@/components/MediaCastAndCrews';
+import PosterList from '@/components/PosterList';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -173,6 +174,9 @@ const SeriesDetails = () => {
           <SeasonEpisodeList videos={data.videos} onEpisodeSelect={handleEpisodeSelect} />
         </View>
       </View>
+      <View style={styles.recommendationsContainer}>
+        <PosterList apiUrl={`https://api.themoviedb.org/3/tv/${moviedbid}/recommendations`} title='More like this' type='series' />
+      </View>
       <BottomSpacing space={50} />
     </ScrollView>
   );
@@ -207,6 +211,8 @@ const styles = StyleSheet.create({
     fontSize: 18,
     textAlign: 'center',
   },
+  recommendationsContainer: {
+  }
 });
 
 export default SeriesDetails;
