@@ -17,10 +17,12 @@
     "preset": "jest-expo"
   },
   "dependencies": {
+    "@bounceapp/iframe": "^0.4.0",
     "@expo/vector-icons": "^14.0.2",
     "@react-native-async-storage/async-storage": "1.23.1",
     "@react-navigation/native": "^7.0.0",
     "expo": "~52.0.31",
+    "expo-build-properties": "~0.13.2",
     "expo-dev-client": "~5.0.11",
     "expo-font": "~13.0.1",
     "expo-haptics": "~14.0.1",
@@ -41,8 +43,7 @@
     "react-native-screens": "~4.4.0",
     "react-native-svg": "15.8.0",
     "react-native-web": "~0.19.13",
-    "react-native-webview": "13.12.5",
-    "expo-build-properties": "~0.13.2"
+    "react-native-webview": "13.12.5"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

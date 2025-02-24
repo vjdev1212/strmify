@@ -91,6 +91,7 @@ function RootLayoutNav() {
         <Stack.Screen name="stream/list" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#535aff' }} />
         <Stack.Screen name="stream/details" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#535aff' }} />
         <Stack.Screen name="stream/player" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#535aff' }} />
+        <Stack.Screen name="stream/embed" options={{ headerShown: false, headerTransparent: true, headerTitle: '', headerTintColor: '#535aff' }} />
         <Stack.Screen name="settings/stremioserver" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#535aff' }} />
         <Stack.Screen name="settings/torrserver" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#535aff' }} />
         <Stack.Screen name="settings/contact" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#535aff' }} />
