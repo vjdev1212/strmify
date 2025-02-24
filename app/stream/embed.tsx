@@ -1,14 +1,11 @@
-import { useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Platform } from 'react-native';
-import { WebView } from 'react-native-webview';
-import { Iframe } from "@bounceapp/iframe"
-import { movieUrlTemplate, seriesUrlTemplate } from '@/constants/Embed';
+import { useLocalSearchParams } from "expo-router";
+import React, { useEffect } from "react";
+import { View, Text, StyleSheet, Platform } from "react-native";
+import { WebView } from "react-native-webview";
 
 const EmbedPlayer = () => {
-    const { url } = useLocalSearchParams();
+    const { url, sandbox } = useLocalSearchParams();
 
-    // HTML structure with iframe and popup-blocking JavaScript
     const iframeHtml = `
         <!DOCTYPE html>
         <html lang="en">
@@ -22,14 +19,12 @@ const EmbedPlayer = () => {
                     margin: 0 !important;
                     background-color: #000;
                 }
-
                 .iframe-container {
                     height: 100vh;
                     width: 100%;
                     margin: auto;
                     border: none;
                 }
-
                 @media (orientation: portrait) {
                     .iframe-container {
                         height: 95vh;
@@ -45,13 +40,11 @@ const EmbedPlayer = () => {
                     style="width: 100%; height: 100%;"
                     allow="autoplay; fullscreen" 
                     referrerPolicy="no-referrer-when-downgrade"
-                    sandbox="allow-forms allow-scripts allow-same-origin allowfullscreen allow-presentation"
+                    ${sandbox === "true" ? 'sandbox="allow-forms allow-scripts allow-same-origin allowfullscreen allow-presentation"' : ""}
                     allowfullscreen>
                 </iframe>
             </div>
-
             <script>
-                // Block popups by overriding window.open
                 window.open = function() { return null; };
             </script>
         </body>
@@ -61,19 +54,28 @@ const EmbedPlayer = () => {
     return (
         <View style={styles.container}>
             {url ? (
-                Platform.OS === 'web' ? (
-                    <Iframe uri={url as string} style={{ flex: 1 }} />
+                Platform.OS === "web" ? (
+                    <iframe
+                        src={url as string}
+                        style={{ flex: 1, width: "100%", height: "100%" }}
+                        referrerPolicy="no-referrer-when-downgrade"
+                        {...(sandbox === undefined || sandbox === "true"
+                            ? { sandbox: "allow-same-origin allow-scripts allow-forms allow-presentation" }
+                            : {})}
+                        allow="autoplay; fullscreen"
+                        frameBorder={0}
+                        allowFullScreen
+                    />
                 ) : (
                     <WebView
-                        originWhitelist={['*']}
+                        originWhitelist={["*"]}
                         source={{ html: iframeHtml }}
                         style={{ flex: 1 }}
                         javaScriptEnabled
                         domStorageEnabled
-                        startInLoadingState
-                        javaScriptEnabledAndroid
                         allowUniversalAccessFromFileURLs
                         allowFileAccess
+                        startInLoadingState
                     />
                 )
             ) : (
@@ -86,7 +88,7 @@ const EmbedPlayer = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        paddingBottom: 20
+        paddingBottom: 20,
     },
 });
 
