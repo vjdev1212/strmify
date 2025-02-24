@@ -38,8 +38,8 @@ const StreamDetailsScreen = () => {
     const [metaData, setMetaData] = useState<any>(null);
     const [playBtnDisabled, setPlayBtnDisabled] = useState<boolean>(false);
     const [isModalVisible, setModalVisible] = useState(false);
-
     const colorScheme = useColorScheme();
+
     useEffect(() => {
         const loadPlayers = async () => {
             const platformPlayers = getPlatformSpecificPlayers();
@@ -203,8 +203,8 @@ const StreamDetailsScreen = () => {
         }
 
         const server = servers.find((s) => s.serverId === selectedServer);
-        const player = players.find((p) => p.name === selectedPlayer);   
-        
+        const player = players.find((p) => p.name === selectedPlayer);
+
 
         if (!player) {
             setStatusText('Error: Invalid media player selection.');
@@ -336,12 +336,22 @@ const StreamDetailsScreen = () => {
     );
 };
 
-const DetailsRow = ({ label, value, multiline, numOfLines }: { label: string; value: string; multiline?: boolean, numOfLines?: number }) => (
-    <View style={styles.row}>
-        <Text style={styles.label}>{label}:</Text>
-        <Text numberOfLines={numOfLines ?? 8} style={[styles.value, multiline && { flexWrap: 'wrap' }]}>{value}</Text>
-    </View>
-);
+const DetailsRow = ({ label, value, multiline, numOfLines }: { label: string; value: string; multiline?: boolean, numOfLines?: number }) => {
+    const colorScheme = useColorScheme();
+
+    return (
+        <View style={styles.detailsItem}>
+            <Text style={styles.label}>{label}:</Text>
+            <Text numberOfLines={numOfLines ?? 8} style={[
+                styles.value,
+                multiline && { flexWrap: 'wrap' },
+                {
+                    color: colorScheme === 'dark' ? '#f0f0f0' : '#101010',
+                }
+            ]}>{value}</Text>
+        </View>
+    );
+};
 
 const ServerSelectionGroup = ({
     title,
@@ -466,18 +476,18 @@ const styles = StyleSheet.create({
         padding: 15,
         borderRadius: 10,
     },
-    row: {
-        flexDirection: 'row',
-        marginVertical: 10,
+    detailsItem: {
+        marginBottom: 20,
+        marginHorizontal: 5
     },
     label: {
-        fontSize: 14,
-        flex: 1,
-        paddingHorizontal: 2
+        fontSize: 15,
+        fontWeight: 'bold',
+        paddingHorizontal: 2,
+        marginBottom: 5
     },
     value: {
         fontSize: 14,
-        flex: 2.5,
         paddingHorizontal: 2
     },
     radioGroup: {
