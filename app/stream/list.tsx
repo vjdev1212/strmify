@@ -128,7 +128,7 @@ const StreamScreen = () => {
     };
 
     const RenderStreamItem = ({ item }: any) => {
-        const { name, title, url, embed, infoHash, description, sandbox } = item;
+        const { name, title, url, embed, infoHash, description } = item;
 
         const handleStreamSelected = async () => {
             if (isHapticsSupported()) {
@@ -138,8 +138,7 @@ const StreamScreen = () => {
                 router.push({
                     pathname: '/stream/embed',
                     params: {
-                        url: embed,
-                        sandbox: sandbox
+                        url: embed
                     },
                 })
                 return;

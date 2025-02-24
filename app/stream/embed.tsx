@@ -4,7 +4,7 @@ import { View, Text, StyleSheet, Platform } from "react-native";
 import { WebView } from "react-native-webview";
 
 const EmbedPlayer = () => {
-    const { url, sandbox } = useLocalSearchParams();
+    const { url } = useLocalSearchParams();
 
     const iframeHtml = `
         <!DOCTYPE html>
@@ -40,7 +40,7 @@ const EmbedPlayer = () => {
                     style="width: 100%; height: 100%;"
                     allow="autoplay; fullscreen" 
                     referrerPolicy="no-referrer-when-downgrade"
-                    ${sandbox === "true" ? 'sandbox="allow-forms allow-scripts allow-same-origin allowfullscreen allow-presentation"' : ""}
+                    sandbox="allow-forms allow-scripts allow-same-origin allowfullscreen allow-presentation"
                     allowfullscreen>
                 </iframe>
             </div>
@@ -59,9 +59,7 @@ const EmbedPlayer = () => {
                         src={url as string}
                         style={{ flex: 1, width: "100%", height: "100%" }}
                         referrerPolicy="no-referrer-when-downgrade"
-                        {...(sandbox === undefined || sandbox === "true"
-                            ? { sandbox: "allow-same-origin allow-scripts allow-forms allow-presentation" }
-                            : {})}
+                        sandbox="allow-same-origin allow-scripts allow-forms allow-presentation"
                         allow="autoplay; fullscreen"
                         frameBorder={0}
                         allowFullScreen
