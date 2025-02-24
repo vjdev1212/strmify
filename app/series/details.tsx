@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, StatusBar, Text, View } from '../../components/Themed';
 import MediaContentDescription from '@/components/MediaContentDescription';
 import MediaContentHeader from '@/components/MediaContentHeader';
@@ -21,6 +21,13 @@ const SeriesDetails = () => {
   const [cast, setCast] = useState<any[]>([]);
   const { width, height } = useWindowDimensions();
   const isPortrait = height > width;
+  const ref = useRef<ScrollView | null>(null);
+
+  useFocusEffect(() => {
+    if (ref.current) {
+      ref.current.scrollTo({ y: 0, animated: true });
+    }
+  });
 
   useEffect(() => {
     const fetchDetails = async () => {
@@ -125,7 +132,7 @@ const SeriesDetails = () => {
   };
 
   return (
-    <ScrollView showsVerticalScrollIndicator={false} style={styles.container}>
+    <ScrollView showsVerticalScrollIndicator={false} style={styles.container} ref={ref}>
       <StatusBar />
       <View style={[{
         flex: 1,
