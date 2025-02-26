@@ -206,7 +206,11 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
       </View>
       <View style={styles.episodeList}>
         {groupedEpisodes[selectedSeason]?.map((item) => (
-          <EpisodeItem item={item} onEpisodeSelect={onEpisodeSelect}></EpisodeItem>
+          <EpisodeItem
+            key={`${item.season}-${item.number}`}
+            item={item}
+            onEpisodeSelect={onEpisodeSelect}
+          />
         ))}
       </View>
     </View >
