@@ -27,7 +27,7 @@ const EmbedPlayer = () => {
                 }
                 @media (orientation: portrait) {
                     .iframe-container {
-                        height: 95vh;
+                        height: 100vh;
                     }
                 }
             </style>
