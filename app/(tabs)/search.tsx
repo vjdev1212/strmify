@@ -150,6 +150,7 @@ const SearchScreen = () => {
           placeholderTextColor={'#888888'}
           value={query}
           onChangeText={setQuery}
+          submitBehavior={'blurAndSubmit'}
         />
       </View>
 

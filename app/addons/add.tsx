@@ -94,6 +94,7 @@ export default function AddAddonScreen() {
                     keyboardType="url"
                     onBlur={fetchManifest}
                     numberOfLines={3}
+                    submitBehavior={'blurAndSubmit'}
                 />
             </View>
 

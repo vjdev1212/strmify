@@ -134,6 +134,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
             onChangeText={setServerUrl}
             placeholderTextColor="#888888"
             autoCapitalize="none"
+            submitBehavior={'blurAndSubmit'}
           />
 
           <Pressable onPress={handleSave}>
