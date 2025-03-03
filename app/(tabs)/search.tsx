@@ -134,7 +134,7 @@ const SearchScreen = () => {
     setSeries([]);
   };
 
-  
+
   const colorScheme = useColorScheme();
 
   return (
@@ -152,6 +152,11 @@ const SearchScreen = () => {
           onChangeText={setQuery}
           submitBehavior={'blurAndSubmit'}
         />
+        {query.length > 0 && (
+          <Pressable onPress={clearSearch} style={styles.clearIcon}>
+            <Ionicons name="close-circle" size={20} color="#888" />
+          </Pressable>
+        )}
       </View>
 
       {loading && <ActivityIndicator size="large" color="#535aff" style={styles.loader} />}
@@ -232,6 +237,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingLeft: 20,
     fontSize: 16,
+  },
+  clearIcon: {
+    position: 'absolute',
+    right: 30,
+    justifyContent: 'center',
+    height: 40,
   },
   lightSearchInput: {
     backgroundColor: '#f0f0f0',
