@@ -236,6 +236,7 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 12,
     paddingLeft: 20,
+    paddingRight: 40,
     fontSize: 16,
   },
   clearIcon: {
