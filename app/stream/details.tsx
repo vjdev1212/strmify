@@ -303,11 +303,9 @@ const StreamDetailsScreen = () => {
                         <View style={styles.buttonContainer}>
                             <Pressable
                                 style={[styles.button, (playBtnDisabled || !selectedPlayer || (infoHash && !selectedServer)) && {
-                                    backgroundColor: colorScheme === 'dark' ? '#101010' : '#f0f0f0'
                                 }]}
                                 onPress={handlePlay}
-                                disabled={playBtnDisabled || !selectedPlayer || (infoHash && !selectedServer) || false}
-                            >
+                                disabled={playBtnDisabled || !selectedPlayer || (infoHash && !selectedServer) || false}>
                                 <Text style={styles.buttonText}>Play</Text>
                             </Pressable>
                         </View>
@@ -559,9 +557,10 @@ const styles = StyleSheet.create({
         paddingVertical: 15,
         paddingHorizontal: 20,
         alignItems: 'center',
-        backgroundColor: '#ffffff',
         borderRadius: 30,
-        minWidth: 150
+        minWidth: 150,
+        borderColor: '#ffffff',
+        borderWidth: StyleSheet.hairlineWidth
     },
     buttonText: {
         fontSize: 16,
