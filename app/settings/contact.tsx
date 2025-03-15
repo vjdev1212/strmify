@@ -4,6 +4,7 @@ import { AntDesign } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { View, Text, StatusBar } from '@/components/Themed';
 import { isHapticsSupported } from '@/utils/platform';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const ContactScreen = () => {
     const feedbackUrl = 'https://form.jotform.com/250372743622454'
@@ -22,24 +23,27 @@ const ContactScreen = () => {
     ];
 
     return (
-        <SafeAreaView style={styles.container}>
-            <StatusBar />
-            <ScrollView style={styles.contactList} showsVerticalScrollIndicator={false}>
-                {contactInfo.map((item, index) => (
-                    <Pressable
-                        key={index}
-                        style={styles.contactItem}
-                        onPress={item.action}
-                    >
-                        <AntDesign name={item.icon} size={30} color="#535aff" style={styles.icon} />
-                        <View style={styles.info}>
-                            <Text style={styles.type}>{item.type}</Text>
-                            <Text style={styles.value}>{item.value}</Text>
-                        </View>
-                    </Pressable>
-                ))}
-            </ScrollView>
-        </SafeAreaView>
+        <LinearGradient colors={['#111111', '#222222']} start={[0, 0]} end={[1, 0]} style={{ flex: 1 }}>
+
+            <SafeAreaView style={styles.container}>
+                <StatusBar />
+                <ScrollView style={styles.contactList} showsVerticalScrollIndicator={false}>
+                    {contactInfo.map((item, index) => (
+                        <Pressable
+                            key={index}
+                            style={styles.contactItem}
+                            onPress={item.action}
+                        >
+                            <AntDesign name={item.icon} size={30} color="#535aff" style={styles.icon} />
+                            <View style={styles.info}>
+                                <Text style={styles.type}>{item.type}</Text>
+                                <Text style={styles.value}>{item.value}</Text>
+                            </View>
+                        </Pressable>
+                    ))}
+                </ScrollView>
+            </SafeAreaView>
+        </LinearGradient>
     );
 };
 
@@ -50,7 +54,7 @@ const styles = StyleSheet.create({
         width: '100%',
         maxWidth: 780,
         margin: 'auto',
-        marginTop: 30,       
+        marginTop: 30,
     },
     header: {
         fontSize: 20,

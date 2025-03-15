@@ -18,10 +18,11 @@ import * as Haptics from 'expo-haptics';
 import { isHapticsSupported, showAlert } from '@/utils/platform';
 import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from '@/components/useColorScheme';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const AddonsScreen = () => {
   const [addons, setAddons] = useState<any[]>([]);
-  
+
   const colorScheme = useColorScheme();
   useEffect(() => {
     const fetchAddons = async () => {
@@ -97,21 +98,21 @@ const AddonsScreen = () => {
       <Text style={styles.addonDescription}>{item.description}</Text>
       <View style={styles.actions}>
         <Pressable
-          style={[styles.actionButton, styles.shareButton]}
+          style={[styles.actionButton]}
           onPress={() => shareManifestUrl(item.manifestUrl)}
         >
           <Text style={styles.actionText}>Share</Text>
         </Pressable>
         {item.behaviorHints?.configurable && (
           <Pressable
-            style={[styles.actionButton, styles.configureButton]}
+            style={[styles.actionButton]}
             onPress={() => openConfiguration(item.baseUrl)}
           >
             <Text style={styles.actionText}>Configure</Text>
           </Pressable>
         )}
         <Pressable
-          style={[styles.actionButton, styles.removeButton]}
+          style={[styles.actionButton]}
           onPress={async () => {
             if (isHapticsSupported()) {
               await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
@@ -153,27 +154,26 @@ const AddonsScreen = () => {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar />
-      <Pressable style={styles.addButton} onPress={onAddNewPress}>
-        <Text style={styles.addButtonText}>Add New</Text>
-      </Pressable>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.contentContainer}>
-        {addons.length > 0 ? (
-          addons.map(renderAddonItem)
-        ) : (
-          <View style={styles.centeredContainer}>
-            <Ionicons style={styles.noAddons} name='extension-puzzle-outline' color="#535aff" size={70} />
-            <Text style={[styles.noAddonsText,
-            {
-              color: colorScheme === 'dark' ? '#a0a0a0' : '#303030'
-            }]}>
-              No addons available. Add one now!
-            </Text>
-          </View>
-        )}
-      </ScrollView>
-    </SafeAreaView >
+    <LinearGradient colors={['#111111', '#222222']} start={[0, 0]} end={[1, 0]} style={{ flex: 1 }}>
+      <SafeAreaView style={styles.container}>
+        <StatusBar />
+        <Pressable style={styles.addButton} onPress={onAddNewPress}>
+          <Text style={styles.addButtonText}>Add New</Text>
+        </Pressable>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.contentContainer}>
+          {addons.length > 0 ? (
+            addons.map(renderAddonItem)
+          ) : (
+            <View style={styles.centeredContainer}>
+              <Ionicons style={styles.noAddons} name='extension-puzzle-outline' color="#535aff" size={70} />
+              <Text style={[styles.noAddonsText]}>
+                No addons available. Add one now!
+              </Text>
+            </View>
+          )}
+        </ScrollView>
+      </SafeAreaView >
+    </LinearGradient>
   );
 };
 
@@ -196,12 +196,13 @@ const styles = StyleSheet.create({
     paddingBottom: 50,
   },
   addButton: {
-    backgroundColor: '#535aff',
     borderRadius: 25,
     paddingHorizontal: 30,
     marginVertical: 20,
     alignSelf: 'center',
-    padding: 12
+    padding: 12,
+    borderColor: '#fff',
+    borderWidth: StyleSheet.hairlineWidth
   },
   addButtonText: {
     color: '#fff',
@@ -254,16 +255,9 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginHorizontal: 5,
     margin: 'auto',
-    textAlign: 'center'
-  },
-  shareButton: {
-    backgroundColor: '#2165da',
-  },
-  configureButton: {
-    backgroundColor: '#7F7FFF',
-  },
-  removeButton: {
-    backgroundColor: '#2fb1cb',
+    textAlign: 'center',
+    borderColor: '#fff',
+    borderWidth: StyleSheet.hairlineWidth
   },
   actionText: {
     color: '#fff',

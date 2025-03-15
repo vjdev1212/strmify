@@ -7,10 +7,11 @@ import * as Haptics from 'expo-haptics'
 import { isHapticsSupported } from '@/utils/platform';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useColorScheme } from '@/components/useColorScheme';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const SettingsScreen = () => {
   const router = useRouter();
-  
+
   const colorScheme = useColorScheme();
   const serversList: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [
     { title: 'Stremio Server', route: '/settings/stremioserver', icon: 'server-outline' },
@@ -39,42 +40,40 @@ const SettingsScreen = () => {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar />
-      <ScrollView contentContainerStyle={styles.scrollViewContent}>
-        <View>
-          <Text style={styles.header}>Servers</Text>
-          <View style={[styles.settingsGroup, {
-            backgroundColor: colorScheme === 'dark' ? '#101010' : '#f6f6f6',
-          }]}>
-            {serversList.map((item, index) => (
-              <SettingItem
-                key={index}
-                title={item.title}
-                icon={item.icon}
-                onPress={() => onSettingsItemPress(item)}
-              />
-            ))}
+    <LinearGradient colors={['#111111', '#222222']} start={[0, 0]} end={[1, 0]} style={{ flex: 1 }}>
+      <SafeAreaView style={styles.container}>
+        <StatusBar />
+        <ScrollView contentContainerStyle={styles.scrollViewContent}>
+          <View>
+            <Text style={styles.header}>Servers</Text>
+            <View style={[styles.settingsGroup]}>
+              {serversList.map((item, index) => (
+                <SettingItem
+                  key={index}
+                  title={item.title}
+                  icon={item.icon}
+                  onPress={() => onSettingsItemPress(item)}
+                />
+              ))}
+            </View>
           </View>
-        </View>
 
-        <View>
-          <Text style={styles.header}>Contact</Text>
-          <View style={[styles.settingsGroup, {
-            backgroundColor: colorScheme === 'dark' ? '#101010' : '#f6f6f6',
-          }]}>
-            {contactList.map((item, index) => (
-              <SettingItem
-                key={index}
-                title={item.title}
-                icon={item.icon}
-                onPress={() => onSettingsItemPress(item)}
-              />
-            ))}
+          <View>
+            <Text style={styles.header}>Contact</Text>
+            <View style={[styles.settingsGroup]}>
+              {contactList.map((item, index) => (
+                <SettingItem
+                  key={index}
+                  title={item.title}
+                  icon={item.icon}
+                  onPress={() => onSettingsItemPress(item)}
+                />
+              ))}
+            </View>
           </View>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+        </ScrollView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 

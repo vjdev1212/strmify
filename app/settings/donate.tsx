@@ -4,6 +4,7 @@ import { Text, StatusBar } from '@/components/Themed';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics'
 import { isHapticsSupported } from '@/utils/platform';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const DonateScreen = () => {
 
@@ -19,19 +20,22 @@ const DonateScreen = () => {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
-            <StatusBar />
-            <ScrollView style={styles.donateContainer} showsVerticalScrollIndicator={false}>
-                <Text style={styles.title}>Liked the App!</Text>
-                <Text style={styles.subtitle}>
-                    If you find this app useful and want to support its continued development, consider buying me a coffee. Your support keeps this project alive and thriving!      </Text>
+        <LinearGradient colors={['#111111', '#222222']} start={[0, 0]} end={[1, 0]} style={{ flex: 1 }}>
 
-                <Pressable style={styles.donateButton} onPress={handleDonate}>
-                    <Ionicons name="cafe-outline" size={24} color="#fff" style={styles.icon} />
-                    <Text style={styles.donateText}>Buy Me a Coffee</Text>
-                </Pressable>
-            </ScrollView>
-        </SafeAreaView>
+            <SafeAreaView style={styles.container}>
+                <StatusBar />
+                <ScrollView style={styles.donateContainer} showsVerticalScrollIndicator={false}>
+                    <Text style={styles.title}>Liked the App!</Text>
+                    <Text style={styles.subtitle}>
+                        If you find this app useful and want to support its continued development, consider buying me a coffee. Your support keeps this project alive and thriving!      </Text>
+
+                    <Pressable style={styles.donateButton} onPress={handleDonate}>
+                        <Ionicons name="cafe-outline" size={24} color="#fff" style={styles.icon} />
+                        <Text style={styles.donateText}>Buy Me a Coffee</Text>
+                    </Pressable>
+                </ScrollView>
+            </SafeAreaView>
+        </LinearGradient>
     );
 };
 
@@ -44,7 +48,7 @@ const styles = StyleSheet.create({
         margin: 'auto',
         marginTop: 30
     },
-    donateContainer:{
+    donateContainer: {
         marginHorizontal: 20,
     },
     title: {

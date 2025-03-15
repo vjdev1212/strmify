@@ -7,9 +7,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 export default function HomeScreen() {
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <LinearGradient colors={['#111111', '#444444']} start={[0, 0]} end={[1, 0]}>
+    <ScrollView showsVerticalScrollIndicator={false}>
+      <LinearGradient colors={['#111111', '#222222']} start={[0, 0]} end={[1, 0]}>
+        <SafeAreaView style={styles.container}>
           <StatusBar />
           <View style={styles.contentContainer}>
             <PosterList apiUrl={CatalogUrl.popularMovies} title='Movies - Popular' type='movie' />
@@ -21,9 +21,9 @@ export default function HomeScreen() {
             <PosterList apiUrl={CatalogUrl.upcomingMovies} title='Movies - Upcoming' type='movie' />
             <PosterList apiUrl={CatalogUrl.airingTodayTv} title='Series - Airing Today' type='series' />
           </View>
-        </LinearGradient>
-      </ScrollView>
-    </SafeAreaView>
+        </SafeAreaView>
+      </LinearGradient>
+    </ScrollView>
   );
 }
 

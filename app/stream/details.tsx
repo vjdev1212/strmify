@@ -10,6 +10,7 @@ import { generateTorrServerPlayerUrl } from '@/clients/torrserver';
 import { ServerConfig } from '@/components/ServerConfig';
 import { getOriginalPlatform, isHapticsSupported, showAlert } from '@/utils/platform';
 import { useColorScheme } from '@/components/useColorScheme';
+import { LinearGradient } from 'expo-linear-gradient';
 
 enum Servers {
     Stremio = 'Stremio',
@@ -275,64 +276,66 @@ const StreamDetailsScreen = () => {
     }
 
     return (
-        <SafeAreaView style={styles.container}>
-            <StatusBar />
-            <ScrollView showsVerticalScrollIndicator={false}>
-                <View style={styles.contentContainer}>
-                    <Text style={[styles.header, { marginVertical: 10 }]}>Stream Details</Text>
-                    <DetailsRow label="Name" value={name} numOfLines={3} />
-                    {title && <DetailsRow label="Title" value={title} />}
-                    {description && <DetailsRow label="Description" value={description} multiline />}
-                    {!url && servers.length > 0 && (
-                        <ServerSelectionGroup
-                            title="Servers"
-                            options={servers}
-                            selected={selectedServer}
-                            onSelect={setSelectedServer}
+        <LinearGradient colors={['#111111', '#222222']} start={[0, 0]} end={[1, 0]} style={{ flex: 1 }}>
+            <SafeAreaView style={styles.container}>
+                <StatusBar />
+                <ScrollView showsVerticalScrollIndicator={false}>
+                    <View style={styles.contentContainer}>
+                        <Text style={[styles.header, { marginVertical: 10 }]}>Stream Details</Text>
+                        <DetailsRow label="Name" value={name} numOfLines={3} />
+                        {title && <DetailsRow label="Title" value={title} />}
+                        {description && <DetailsRow label="Description" value={description} multiline />}
+                        {!url && servers.length > 0 && (
+                            <ServerSelectionGroup
+                                title="Servers"
+                                options={servers}
+                                selected={selectedServer}
+                                onSelect={setSelectedServer}
+                            />
+                        )}
+                        <PlayerSelectionGroup
+                            title="Media Players"
+                            options={players}
+                            selected={selectedPlayer}
+                            onSelect={setSelectedPlayer}
+                            isPlayer
                         />
-                    )}
-                    <PlayerSelectionGroup
-                        title="Media Players"
-                        options={players}
-                        selected={selectedPlayer}
-                        onSelect={setSelectedPlayer}
-                        isPlayer
-                    />
-                    <View style={styles.buttonContainer}>
-                        <Pressable
-                            style={[styles.button, (playBtnDisabled || !selectedPlayer || (infoHash && !selectedServer)) && {
-                                backgroundColor: colorScheme === 'dark' ? '#101010' : '#f0f0f0'
-                            }]}
-                            onPress={handlePlay}
-                            disabled={playBtnDisabled || !selectedPlayer || (infoHash && !selectedServer) || false}
-                        >
-                            <Text style={styles.buttonText}>Play</Text>
-                        </Pressable>
-                    </View>
-                </View>
-            </ScrollView>
-
-            {/* Status Modal */}
-            <Modal
-                transparent={true}
-                visible={isModalVisible}
-                animationType="fade"
-                onRequestClose={handleCancel}
-            >
-                <TouchableWithoutFeedback>
-                    <View style={styles.modalOverlay}>
-                        <View
-                            style={[styles.modalContainer, { backgroundColor: colorScheme === 'dark' ? '#1f1f1f' : '#f0f0f0' }]}>
-                            <ActivityIndicator size="large" color="#535aff" style={styles.activityIndicator} />
-                            <Text style={styles.modalText}>{statusText}</Text>
-                            <Pressable style={styles.cancelButton} onPress={handleCancel}>
-                                <Text style={styles.cancelButtonText}>Cancel</Text>
+                        <View style={styles.buttonContainer}>
+                            <Pressable
+                                style={[styles.button, (playBtnDisabled || !selectedPlayer || (infoHash && !selectedServer)) && {
+                                    backgroundColor: colorScheme === 'dark' ? '#101010' : '#f0f0f0'
+                                }]}
+                                onPress={handlePlay}
+                                disabled={playBtnDisabled || !selectedPlayer || (infoHash && !selectedServer) || false}
+                            >
+                                <Text style={styles.buttonText}>Play</Text>
                             </Pressable>
                         </View>
                     </View>
-                </TouchableWithoutFeedback>
-            </Modal>
-        </SafeAreaView >
+                </ScrollView>
+
+                {/* Status Modal */}
+                <Modal
+                    transparent={true}
+                    visible={isModalVisible}
+                    animationType="fade"
+                    onRequestClose={handleCancel}
+                >
+                    <TouchableWithoutFeedback>
+                        <View style={styles.modalOverlay}>
+                            <View
+                                style={[styles.modalContainer, { backgroundColor: colorScheme === 'dark' ? '#1f1f1f' : '#f0f0f0' }]}>
+                                <ActivityIndicator size="large" color="#535aff" style={styles.activityIndicator} />
+                                <Text style={styles.modalText}>{statusText}</Text>
+                                <Pressable style={styles.cancelButton} onPress={handleCancel}>
+                                    <Text style={styles.cancelButtonText}>Cancel</Text>
+                                </Pressable>
+                            </View>
+                        </View>
+                    </TouchableWithoutFeedback>
+                </Modal>
+            </SafeAreaView >
+        </LinearGradient>
     );
 };
 

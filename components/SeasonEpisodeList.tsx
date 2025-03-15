@@ -177,10 +177,7 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
           renderItem={({ item }) => (
             <Pressable
               style={[
-                styles.seasonButton,
-                {
-                  backgroundColor: item !== selectedSeason && colorScheme === 'dark' ? '#101010' : '#f0f0f0',
-                },
+                styles.seasonButton,                
                 item === selectedSeason && styles.selectedSeasonButton,
               ]}
               onPress={() => handleSeasonSelect(item)}  // Trigger haptic feedback on season press
@@ -227,10 +224,11 @@ const styles = StyleSheet.create({
     marginRight: 10,
     paddingVertical: 10,
     paddingHorizontal: 20,
-    borderRadius: 25,
+    borderRadius: 25
   },
   selectedSeasonButton: {
-    backgroundColor: '#535aff',
+    borderColor: '#ffffff',
+    borderWidth: StyleSheet.hairlineWidth
   },
   seasonText: {
     fontSize: 16,

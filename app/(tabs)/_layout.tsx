@@ -43,7 +43,7 @@ export default function TabLayout() {
         tabBarStyle: { height: getTabBarHeight(), backgroundColor: 'transparent' },
         tabBarBackground: () => (
           <LinearGradient
-            colors={['#444444', '#111111']}
+            colors={['#222222', '#111111']}
             start={[0, 0]}
             end={[1, 1]}
             style={{ flex: 1 }}

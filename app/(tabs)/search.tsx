@@ -8,6 +8,7 @@ import * as Haptics from 'expo-haptics';
 import { isHapticsSupported } from '@/utils/platform';
 import { getYear } from '@/utils/Date';
 import { useColorScheme } from '@/components/useColorScheme';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -138,79 +139,77 @@ const SearchScreen = () => {
   const colorScheme = useColorScheme();
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar />
-      <View style={styles.searchInputContainer}>
-        <TextInput
-          style={[
-            styles.searchInput,
-            colorScheme === 'dark' ? styles.darkSearchInput : styles.lightSearchInput,
-          ]}
-          placeholder="Search movies or series..."
-          placeholderTextColor={'#fff888'}
-          value={query}
-          onChangeText={setQuery}
-          submitBehavior={'blurAndSubmit'}
-        />
-        {query.length > 0 && (
-          <Pressable onPress={clearSearch} style={styles.clearIcon}>
-            <Ionicons name="close-circle" size={20} color="#fff" />
-          </Pressable>
-        )}
-      </View>
+    <LinearGradient colors={['#111111', '#222222']} start={[0, 0]} end={[1, 0]} style={{ flex: 1 }}>
+      <SafeAreaView style={styles.container}>
+        <StatusBar />
+        <View style={styles.searchInputContainer}>
+          <TextInput
+            style={[
+              styles.searchInput,
+              colorScheme === 'dark' ? styles.darkSearchInput : styles.lightSearchInput,
+            ]}
+            placeholder="Search movies or series..."
+            placeholderTextColor={'#fff'}
+            value={query}
+            onChangeText={setQuery}
+            submitBehavior={'blurAndSubmit'}
+          />
+          {query.length > 0 && (
+            <Pressable onPress={clearSearch} style={styles.clearIcon}>
+              <Ionicons name="close-circle" size={20} color="#fff" />
+            </Pressable>
+          )}
+        </View>
 
-      {loading && <ActivityIndicator size="large" color="#535aff" style={styles.loader} />}
-      <ScrollView showsVerticalScrollIndicator={false} style={styles.searchResulstContainer}>
-        {
-          !loading && movies.length === 0 && series.length === 0 &&
-          (
-            <View style={styles.centeredContainer}>
-              <Ionicons style={styles.noResults} name='search-outline' color="#535aff" size={70} />
-              {
-                query.length > 0 ? (
-                  <Text style={[styles.noResultsText, {
-                    color: colorScheme === 'dark' ? '#a0a0a0' : '#303030'
-                  }]}>
-                    No results found.
-                  </Text>
-                ) : (
-                  <Text style={[styles.noResultsText, {
-                    color: colorScheme === 'dark' ? '#a0a0a0' : '#303030',
-                  }]}>
-                    What would you like to watch today?
-                  </Text>
-                )
-              }
+        {loading && <ActivityIndicator size="large" color="#535aff" style={styles.loader} />}
+        <ScrollView showsVerticalScrollIndicator={false} style={styles.searchResulstContainer}>
+          {
+            !loading && movies.length === 0 && series.length === 0 &&
+            (
+              <View style={styles.centeredContainer}>
+                <Ionicons style={styles.noResults} name='search-outline' color="#535aff" size={70} />
+                {
+                  query.length > 0 ? (
+                    <Text style={[styles.noResultsText]}>
+                      No results found.
+                    </Text>
+                  ) : (
+                    <Text style={[styles.noResultsText]}>
+                      What would you like to watch today?
+                    </Text>
+                  )
+                }
+              </View>
+            )
+          }
+          {!loading && movies.length > 0 && (
+            <View>
+              <Text style={styles.sectionTitle}>Movies</Text>
+              <FlatList
+                data={movies}
+                keyExtractor={(item, index) => `movie-${index}`}
+                renderItem={renderMoviePoster}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+              />
             </View>
-          )
-        }
-        {!loading && movies.length > 0 && (
-          <View>
-            <Text style={styles.sectionTitle}>Movies</Text>
-            <FlatList
-              data={movies}
-              keyExtractor={(item, index) => `movie-${index}`}
-              renderItem={renderMoviePoster}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-            />
-          </View>
-        )}
+          )}
 
-        {!loading && series.length > 0 && (
-          <View>
-            <Text style={styles.sectionTitle}>Series</Text>
-            <FlatList
-              data={series}
-              keyExtractor={(item, index) => `series-${index}`}
-              renderItem={renderSeriesPoster}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-            />
-          </View>
-        )}
-      </ScrollView>
-    </SafeAreaView>
+          {!loading && series.length > 0 && (
+            <View>
+              <Text style={styles.sectionTitle}>Series</Text>
+              <FlatList
+                data={series}
+                keyExtractor={(item, index) => `series-${index}`}
+                renderItem={renderSeriesPoster}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+              />
+            </View>
+          )}
+        </ScrollView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
@@ -291,7 +290,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     marginHorizontal: '5%',
-    color: '#fff'
+    color: '#fff',
   }
 });
 

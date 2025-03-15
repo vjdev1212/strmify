@@ -5,6 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { isHapticsSupported } from '@/utils/platform';
 import { getYear } from '@/utils/Date';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -78,24 +79,26 @@ const MoviesList = () => {
   };
 
   return (
-    <RNView style={styles.container}>
-      <StatusBar />
-      {loading ? (
-        <View style={styles.centeredContainer}>
-          <ActivityIndicator size="large" style={styles.activityIndicator} color="#535aff" />
-          <Text style={styles.centeredText}>Loading</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={data}
-          renderItem={renderItem}
-          keyExtractor={(item, index) => index.toString()}
-          numColumns={isPortrait ? 3 : 6}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.posterList}
-        />
-      )}
-    </RNView>
+    <LinearGradient colors={['#111111', '#222222']} start={[0, 0]} end={[1, 0]} style={{ flex: 1 }}>
+      <RNView style={styles.container}>
+        <StatusBar />
+        {loading ? (
+          <View style={styles.centeredContainer}>
+            <ActivityIndicator size="large" style={styles.activityIndicator} color="#535aff" />
+            <Text style={styles.centeredText}>Loading</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={data}
+            renderItem={renderItem}
+            keyExtractor={(item, index) => index.toString()}
+            numColumns={isPortrait ? 3 : 6}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.posterList}
+          />
+        )}
+      </RNView>
+    </LinearGradient>
   );
 };
 

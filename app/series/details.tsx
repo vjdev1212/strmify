@@ -80,10 +80,10 @@ const SeriesDetails = () => {
           const colors = await getColors(isPortrait ? seriesData.background : seriesData.poster, { cache: true });
           let extractedColors: [string, string] = ['', ''];
           if (colors.platform === 'ios') {
-            extractedColors = [colors.primary || '#000', colors.secondary || '#000'];
+            extractedColors = [colors.primary || '#111111', colors.secondary || '#444444'];
           }
           else {
-            extractedColors = [colors.vibrant || '#000', colors.darkMuted || '#000'];
+            extractedColors = [colors.vibrant || '#111111', colors.darkMuted || '#444444'];
           }
           setGradientColors(extractedColors);
         }
@@ -123,18 +123,22 @@ const SeriesDetails = () => {
 
   if (loading) {
     return (
-      <View style={styles.centeredContainer}>
-        <ActivityIndicator size="large" style={styles.activityIndicator} color="#535aff" />
-        <Text style={styles.centeredText}>Loading</Text>
-      </View>
+      <LinearGradient colors={['#111111', '#222222']} start={[0, 0]} end={[1, 0]} style={{ flex: 1 }}>
+        <View style={styles.centeredContainer}>
+          <ActivityIndicator size="large" style={styles.activityIndicator} color="#535aff" />
+          <Text style={styles.centeredText}>Loading</Text>
+        </View>
+      </LinearGradient>
     );
   }
 
   if (!data) {
     return (
-      <View style={styles.centeredContainer}>
-        <Text style={styles.centeredText}>No series details available</Text>
-      </View>
+      <LinearGradient colors={['#111111', '#222222']} start={[0, 0]} end={[1, 0]} style={{ flex: 1 }}>
+        <View style={styles.centeredContainer}>
+          <Text style={styles.centeredText}>No series details available</Text>
+        </View>
+      </LinearGradient>
     );
   }
 

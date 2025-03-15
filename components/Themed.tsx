@@ -7,7 +7,9 @@ import {
   ActivityIndicator as DefaultActivityIndicator,
   TextInput as DefaultTextInput,
   Text as DefaultText,
-  View as DefaultView} from 'react-native';
+  View as DefaultView,
+  StyleSheet
+} from 'react-native';
 import { StatusBar as DefaultStatusBar } from 'expo-status-bar';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from './useColorScheme';
@@ -67,4 +69,20 @@ export function StatusBar(props: StatusBarProps) {
   const { ...otherProps } = props;
 
   return <DefaultStatusBar {...otherProps} />;
+}
+
+export function Card(props: ViewProps) {
+  const { style, lightColor, darkColor, ...otherProps } = props;
+
+  return (
+    <DefaultView
+      style={[
+        {
+          overflow: 'hidden',
+        },
+        style,
+      ]}
+      {...otherProps}
+    />
+  );
 }
