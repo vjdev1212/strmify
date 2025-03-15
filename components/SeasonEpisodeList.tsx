@@ -57,8 +57,6 @@ const EpisodeItem = ({ item, onEpisodeSelect }: { item: any, onEpisodeSelect: an
     onEpisodeSelect(season, episode);
   };
 
-  const thumbnailBackgroundColor = colorScheme === 'dark' ? '#0f0f0f' : '#f0f0f0';
-
   return (
     <View style={[
       styles.episodeContainer,
@@ -86,7 +84,6 @@ const EpisodeItem = ({ item, onEpisodeSelect }: { item: any, onEpisodeSelect: an
                         source={{ uri: item.thumbnail }}
                         onError={() => setImgError(true)}
                         style={[styles.thumbnail, {
-                          backgroundColor: thumbnailBackgroundColor,
                           height: isPortrait ? 80 : null,
                           width: isPortrait ? null : 160,
                           aspectRatio: 16 / 9,
@@ -95,7 +92,6 @@ const EpisodeItem = ({ item, onEpisodeSelect }: { item: any, onEpisodeSelect: an
                     ) : (
                       <View style={[styles.thumbnailPlaceHolder,
                       {
-                        backgroundColor: thumbnailBackgroundColor,
                         height: isPortrait ? 80 : null,
                         width: isPortrait ? null : 160,
                         aspectRatio: 16 / 9,
@@ -253,7 +249,8 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     marginRight: 15,
     aspectRatio: 16 / 9,
-    marginVertical: 20
+    marginVertical: 20,
+    borderColor: '#fff',
   },
   thumbnail: {
     borderRadius: 6,
