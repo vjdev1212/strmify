@@ -161,13 +161,13 @@ const SearchScreen = () => {
           )}
         </View>
 
-        {loading && <ActivityIndicator size="large" color="#535aff" style={styles.loader} />}
+        {loading && <ActivityIndicator size="large" color="#ffffff" style={styles.loader} />}
         <ScrollView showsVerticalScrollIndicator={false} style={styles.searchResulstContainer}>
           {
             !loading && movies.length === 0 && series.length === 0 &&
             (
               <View style={styles.centeredContainer}>
-                <Ionicons style={styles.noResults} name='search-outline' color="#535aff" size={70} />
+                <Ionicons style={styles.noResults} name='search-outline' color="#ffffff" size={70} />
                 {
                   query.length > 0 ? (
                     <Text style={[styles.noResultsText]}>

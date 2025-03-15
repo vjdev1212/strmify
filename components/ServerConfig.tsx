@@ -109,7 +109,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
               value={isEnabled}
               onValueChange={toggleEnabled}
               style={styles.switch}
-              thumbColor={isEnabled ? '#535aff' : '#ccc'}
+              thumbColor={isEnabled ? '#ffffff' : '#ccc'}
               trackColor={{ false: '#e0e0e0', true: '#a5afff' }}
               accessibilityLabel="Toggle server enable state"
             />
@@ -121,7 +121,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
               value={isDefault}
               onValueChange={toggleDefault}
               style={styles.switch}
-              thumbColor={isDefault ? '#535aff' : '#ccc'}
+              thumbColor={isDefault ? '#ffffff' : '#ccc'}
               trackColor={{ false: '#e0e0e0', true: '#a5afff' }}
               accessibilityLabel="Toggle default server state"
             />
@@ -187,7 +187,6 @@ const styles = StyleSheet.create({
   saveBtn: {
     marginTop: 10,
     textAlign: 'center',
-    backgroundColor: '#535aff',
     paddingVertical: 12,
     borderRadius: 25,
     fontSize: 16,
@@ -195,6 +194,8 @@ const styles = StyleSheet.create({
     color: '#fff',
     width: '50%',
     marginHorizontal: '25%',
+    borderColor: '#ffffff',
+    borderWidth: StyleSheet.hairlineWidth
   },
   switchContainer: {
     flexDirection: 'row',

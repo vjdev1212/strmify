@@ -194,7 +194,7 @@ const StreamScreen = () => {
                     ) : (
                         <RNView style={styles.loadingContainer}>
                             <View style={styles.centeredContainer}>
-                                <Feather style={styles.noAddons} name='alert-circle' color="#535aff" size={70} />
+                                <Feather style={styles.noAddons} name='alert-circle' color="#ffffff" size={70} />
                                 <Text style={[styles.noAddonsText]}>
                                     No addons have been found. Please ensure that you have configured the addons before searching.
                                 </Text>
@@ -206,7 +206,7 @@ const StreamScreen = () => {
                     loading ? (
                         <RNView style={styles.loadingContainer}>
                             <View style={styles.centeredContainer}>
-                                <ActivityIndicator size="large" style={styles.activityIndicator} color="#535aff" />
+                                <ActivityIndicator size="large" style={styles.activityIndicator} color="#ffffff" />
                                 <Text style={styles.centeredText}>Loading</Text>
                             </View>
                         </RNView>
@@ -224,7 +224,7 @@ const StreamScreen = () => {
                                             {
                                                 addons.length > 0 && (
                                                     <View style={styles.centeredContainer}>
-                                                        <Feather style={styles.noStreams} name='alert-circle' color="#535aff" size={50} />
+                                                        <Feather style={styles.noStreams} name='alert-circle' color="#ffffff" size={50} />
                                                         <Text style={[styles.noStreamsText]}>
                                                             No streams found!
                                                         </Text>
@@ -303,7 +303,7 @@ const styles = StyleSheet.create({
     },
     activityIndicator: {
         marginBottom: 10,
-        color: '#535aff',
+        color: '#ffffff',
     },
     centeredContainer: {
         flex: 1,

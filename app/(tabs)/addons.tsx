@@ -165,7 +165,7 @@ const AddonsScreen = () => {
             addons.map(renderAddonItem)
           ) : (
             <View style={styles.centeredContainer}>
-              <Ionicons style={styles.noAddons} name='extension-puzzle-outline' color="#535aff" size={70} />
+              <Ionicons style={styles.noAddons} name='extension-puzzle-outline' color="#ffffff" size={70} />
               <Text style={[styles.noAddonsText]}>
                 No addons available. Add one now!
               </Text>

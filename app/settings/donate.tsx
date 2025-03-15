@@ -65,12 +65,13 @@ const styles = StyleSheet.create({
     donateButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#535aff',
         paddingVertical: 12,
         paddingHorizontal: 30,
-        borderRadius: 8,
+        borderRadius: 30,
         marginVertical: 20,
-        marginHorizontal: 'auto'
+        marginHorizontal: 'auto',        
+        borderColor: '#ffffff',
+        borderWidth: StyleSheet.hairlineWidth,
     },
     donateText: {
         color: '#fff',

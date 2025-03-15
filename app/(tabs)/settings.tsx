@@ -26,9 +26,9 @@ const SettingsScreen = () => {
   // SettingItem Component
   const SettingItem = ({ title, icon, onPress }: { title: string, icon: keyof typeof Ionicons.glyphMap, onPress: () => void }) => (
     <Pressable style={styles.settingItem} onPress={onPress}>
-      <Ionicons name={icon} size={24} color="#535aff" style={styles.icon} />
+      <Ionicons name={icon} size={24} color="#ffffff" style={styles.icon} />
       <Text style={styles.settingText}>{title}</Text>
-      <MaterialIcons name="chevron-right" size={24} color="#535aff" style={styles.chevron} />
+      <MaterialIcons name="chevron-right" size={24} color="#ffffff" style={styles.chevron} />
     </Pressable>
   );
 

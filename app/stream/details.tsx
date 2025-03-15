@@ -325,7 +325,7 @@ const StreamDetailsScreen = () => {
                         <View style={styles.modalOverlay}>
                             <View
                                 style={[styles.modalContainer, { backgroundColor: colorScheme === 'dark' ? '#1f1f1f' : '#f0f0f0' }]}>
-                                <ActivityIndicator size="large" color="#535aff" style={styles.activityIndicator} />
+                                <ActivityIndicator size="large" color="#ffffff" style={styles.activityIndicator} />
                                 <Text style={styles.modalText}>{statusText}</Text>
                                 <Pressable style={styles.cancelButton} onPress={handleCancel}>
                                     <Text style={styles.cancelButtonText}>Cancel</Text>
@@ -384,7 +384,7 @@ const ServerSelectionGroup = ({
                             <MaterialIcons
                                 name="check-circle"
                                 size={26}
-                                color={selected === option.serverId ? '#535aff' : (isDarkMode ? '#404040' : '#D0D0D0')}
+                                color={selected === option.serverId ? '#ffffff' : (isDarkMode ? '#404040' : '#D0D0D0')}
                                 style={styles.radioIcon}
                             />
                         </View>
@@ -447,7 +447,7 @@ const PlayerSelectionGroup = ({
                                         <MaterialIcons
                                             name="verified"
                                             size={20}
-                                            color={'#535aff'}
+                                            color={'#ffffff'}
                                             style={styles.checkIcon}
                                         />
                                     </View>
@@ -559,7 +559,7 @@ const styles = StyleSheet.create({
         paddingVertical: 15,
         paddingHorizontal: 20,
         alignItems: 'center',
-        backgroundColor: '#535aff',
+        backgroundColor: '#ffffff',
         borderRadius: 30,
         minWidth: 150
     },
@@ -607,7 +607,7 @@ const styles = StyleSheet.create({
     },
     activityIndicator: {
         marginVertical: 10,
-        color: '#535aff',
+        color: '#ffffff',
     },
     closeIcon: {
         position: 'absolute',
@@ -617,7 +617,7 @@ const styles = StyleSheet.create({
     cancelButton: {
         marginVertical: 20,
         paddingVertical: 12,
-        backgroundColor: '#535aff',
+        backgroundColor: '#ffffff',
         borderRadius: 30,
         alignItems: 'center',
         minWidth: 120,

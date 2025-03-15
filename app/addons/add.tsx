@@ -101,7 +101,7 @@ export default function AddAddonScreen() {
                     />
                 </View>
 
-                {loading && <ActivityIndicator size="large" color="#535aff" style={styles.loading} />}
+                {loading && <ActivityIndicator size="large" color="#ffffff" style={styles.loading} />}
 
                 <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollViewContent}>
                     {manifestData && (

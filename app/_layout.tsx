@@ -83,19 +83,19 @@ function RootLayoutNav() {
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'Home' }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="movie/details" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#535aff' }} />
-        <Stack.Screen name="movie/list" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#535aff' }} />
-        <Stack.Screen name="series/details" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#535aff' }} />
-        <Stack.Screen name="series/list" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#535aff' }} />
-        <Stack.Screen name="addons/add" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#535aff' }} />
-        <Stack.Screen name="stream/list" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#535aff' }} />
-        <Stack.Screen name="stream/details" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#535aff' }} />
-        <Stack.Screen name="stream/player" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#535aff' }} />
-        <Stack.Screen name="stream/embed" options={{ headerShown: false, headerTransparent: true, headerTitle: '', headerTintColor: '#535aff' }} />
-        <Stack.Screen name="settings/stremioserver" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#535aff' }} />
-        <Stack.Screen name="settings/torrserver" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#535aff' }} />
-        <Stack.Screen name="settings/contact" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#535aff' }} />
-        <Stack.Screen name="settings/donate" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#535aff' }} />
+        <Stack.Screen name="movie/details" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#ffffff' }} />
+        <Stack.Screen name="movie/list" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#ffffff' }} />
+        <Stack.Screen name="series/details" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#ffffff' }} />
+        <Stack.Screen name="series/list" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#ffffff' }} />
+        <Stack.Screen name="addons/add" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#ffffff' }} />
+        <Stack.Screen name="stream/list" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#ffffff' }} />
+        <Stack.Screen name="stream/details" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#ffffff' }} />
+        <Stack.Screen name="stream/player" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#ffffff' }} />
+        <Stack.Screen name="stream/embed" options={{ headerShown: false, headerTransparent: true, headerTitle: '', headerTintColor: '#ffffff' }} />
+        <Stack.Screen name="settings/stremioserver" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#ffffff' }} />
+        <Stack.Screen name="settings/torrserver" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#ffffff' }} />
+        <Stack.Screen name="settings/contact" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#ffffff' }} />
+        <Stack.Screen name="settings/donate" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#ffffff' }} />
       </Stack>
     </ThemeProvider>
   );

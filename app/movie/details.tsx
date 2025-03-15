@@ -102,7 +102,7 @@ const MovieDetails = () => {
     return (
       <LinearGradient colors={['#111111', '#222222']} start={[0, 0]} end={[1, 0]} style={{ flex: 1 }}>
         <View style={styles.centeredContainer}>
-          <ActivityIndicator size="large" style={styles.activityIndicator} color="#535aff" />
+          <ActivityIndicator size="large" style={styles.activityIndicator} color="#ffffff" />
           <Text style={styles.centeredText}>Loading</Text>
         </View>
       </LinearGradient>
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
   },
   activityIndicator: {
     marginBottom: 10,
-    color: '#535aff',
+    color: '#ffffff',
   },
   centeredContainer: {
     flex: 1,
