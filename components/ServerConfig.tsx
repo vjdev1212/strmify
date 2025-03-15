@@ -132,7 +132,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
             placeholder="Enter Server Base URL"
             value={serverUrl}
             onChangeText={setServerUrl}
-            placeholderTextColor="#888888"
+            placeholderTextColor="#fff888"
             autoCapitalize="none"
             submitBehavior={'blurAndSubmit'}
           />

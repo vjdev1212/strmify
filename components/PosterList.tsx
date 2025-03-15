@@ -121,13 +121,7 @@ const PosterItem = ({ item, layout, type }: { item: any, layout?: 'horizontal' |
           {item.name}
         </Text>
         <Text
-          style={[
-            styles.posterYear,
-            {
-              color: colorScheme === 'dark' ? '#afafaf' : '#303030',
-            },
-          ]}
-        >
+          style={[styles.posterYear]}>
           {`★ ${item.imdbRating}   ${year}`}
         </Text>
       </View>
@@ -283,7 +277,7 @@ const styles = StyleSheet.create({
   posterYear: {
     marginTop: 4,
     fontSize: 12,
-    color: '#888',
+    color: '#fff',
   },
   skeletonContainer: {
     marginRight: 15,
@@ -293,7 +287,7 @@ const styles = StyleSheet.create({
   skeletonImage: {
     width: '100%',
     height: 150,
-    backgroundColor: '#888888',
+    backgroundColor: '#fff888',
     borderRadius: 8,
   },
 });

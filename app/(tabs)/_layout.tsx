@@ -2,10 +2,10 @@ import React from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Tabs } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { useColorScheme } from '@/components/useColorScheme';
-import { Platform } from 'react-native';
+import { Platform, View } from 'react-native';
 import { isHapticsSupported } from '@/utils/platform';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];
@@ -23,7 +23,6 @@ function TabBarIconIonIcon(props: {
 
 export default function TabLayout() {
 
-  const colorScheme = useColorScheme();
   const getTabBarHeight = () => {
     switch (Platform.OS) {
       case 'web':
@@ -38,9 +37,18 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#535aff',
+        tabBarActiveTintColor: '#ffffff',
+        tabBarInactiveTintColor: '#ffffff',
         headerShown: false,
-        tabBarStyle: { height: getTabBarHeight() },
+        tabBarStyle: { height: getTabBarHeight(), backgroundColor: 'transparent' },
+        tabBarBackground: () => (
+          <LinearGradient
+            colors={['#444444', '#111111']}
+            start={[0, 0]}
+            end={[1, 1]}
+            style={{ flex: 1 }}
+          />
+        ),
       }}
     >
       <Tabs.Screen

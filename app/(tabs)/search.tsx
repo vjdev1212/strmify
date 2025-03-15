@@ -147,14 +147,14 @@ const SearchScreen = () => {
             colorScheme === 'dark' ? styles.darkSearchInput : styles.lightSearchInput,
           ]}
           placeholder="Search movies or series..."
-          placeholderTextColor={'#888888'}
+          placeholderTextColor={'#fff888'}
           value={query}
           onChangeText={setQuery}
           submitBehavior={'blurAndSubmit'}
         />
         {query.length > 0 && (
           <Pressable onPress={clearSearch} style={styles.clearIcon}>
-            <Ionicons name="close-circle" size={20} color="#888" />
+            <Ionicons name="close-circle" size={20} color="#fff" />
           </Pressable>
         )}
       </View>
@@ -281,7 +281,7 @@ const styles = StyleSheet.create({
   posterYear: {
     marginTop: 4,
     fontSize: 12,
-    color: '#888',
+    color: '#fff',
   },
   noResults: {
     marginTop: 100,
@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     marginHorizontal: '5%',
-    color: '#888'
+    color: '#fff'
   }
 });
 

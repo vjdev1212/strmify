@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, StatusBar, Text, View } from '../../components/Themed';
 import MediaContentDescription from '@/components/MediaContentDescription';
@@ -12,6 +13,7 @@ import { isHapticsSupported } from '@/utils/platform';
 import MediaLogo from '@/components/MediaLogo';
 import MediaCastAndCrews from '@/components/MediaCastAndCrews';
 import PosterList from '@/components/PosterList';
+import { getColors } from 'react-native-image-colors';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -21,6 +23,7 @@ const MovieDetails = () => {
   const [imdbid, setImdbId] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [cast, setCast] = useState<any[]>([]);
+  const [gradientColors, setGradientColors] = useState<string[]>(['#000', '#000']);
   const { width, height } = useWindowDimensions();
   const isPortrait = height > width;
   const ref = useRef<ScrollView | null>(null);
@@ -43,7 +46,7 @@ const MovieDetails = () => {
           const castAndCrews = await getCastandCrew();
           setCast(castAndCrews);
           setImdbId(externalIds.imdb_id);
-          const logo = `https://images.metahub.space/logo/medium/${externalIds.imdb_id}/img`
+          const logo = `https://images.metahub.space/logo/medium/${externalIds.imdb_id}/img`;
           const movie = result;
           const movieData = {
             name: movie.title,
@@ -58,10 +61,20 @@ const MovieDetails = () => {
             description: movie.overview
           };
           setData(movieData);
+
+          const colors = await getColors(isPortrait ? movieData.background : movieData.poster, { cache: true });
+          let extractedColors: [string, string] = ['', ''];
+          if (colors.platform === 'ios') {
+            extractedColors = [colors.primary || '#000', colors.secondary || '#000'];
+          }
+          else {
+            extractedColors = [colors.vibrant || '#000', colors.darkMuted || '#000'];
+          }
+          setGradientColors(extractedColors);
         }
       } catch (error) {
         console.error('Error fetching movie details:', error);
-      } finally {       
+      } finally {
         setLoading(false);
       }
     };
@@ -75,7 +88,7 @@ const MovieDetails = () => {
     );
     const externalIdsResult = await externalIdsResponse.json();
     return externalIdsResult;
-  }
+  };
 
   const getCastandCrew = async () => {
     const castAndCrewsResponse = await fetch(
@@ -83,7 +96,7 @@ const MovieDetails = () => {
     );
     const castAndCrewResult = await castAndCrewsResponse.json();
     return castAndCrewResult.cast || [];
-  }
+  };
 
   if (loading) {
     return (
@@ -113,38 +126,40 @@ const MovieDetails = () => {
   };
 
   return (
+
     <ScrollView showsVerticalScrollIndicator={false} style={styles.container} ref={ref}>
-      <StatusBar />
+      <LinearGradient colors={gradientColors as [string, string]}>
+        <StatusBar />
 
-      <View style={[{
-        flex: 1,
-        flexDirection: isPortrait ? 'column' : 'row',
-        marginTop: isPortrait ? 0 : '5%',
-        justifyContent: 'center',
-      }]}>
-        <View style={[styles.posterContainer, {
-          width: isPortrait ? '100%' : '30%',
-          padding: isPortrait ? null : '3%'
+        <View style={[{
+          flex: 1,
+          flexDirection: isPortrait ? 'column' : 'row',
+          marginTop: isPortrait ? 0 : '5%',
+          justifyContent: 'center',
         }]}>
-          <MediaContentPoster background={isPortrait ? data.background : data.poster} isPortrait={isPortrait} />
-        </View>
+          <View style={[styles.posterContainer, {
+            width: isPortrait ? '100%' : '30%',
+            padding: isPortrait ? null : '3%'
+          }]}>
+            <MediaContentPoster background={isPortrait ? data.background : data.poster} isPortrait={isPortrait} />
+          </View>
 
-        <View style={[styles.detailsContainer, {
-          width: isPortrait ? '100%' : '60%',
-          paddingHorizontal: isPortrait ? null : 5
-        }]}>
-          <MediaLogo logo={data.logo} />
-          <MediaContentHeader
-            name={data.name}
-            genre={data.genre || data.genres}
-            released={data.released}
-            runtime={data.runtime}
-            imdbRating={data.imdbRating}
-            releaseInfo={data.releaseInfo}
-          />
-          <SearchButton onPress={handlePlayPress} text="Movie" />
-          <MediaContentDescription description={data.description} />
-          {/* <MediaContentDetailsList
+          <View style={[styles.detailsContainer, {
+            width: isPortrait ? '100%' : '60%',
+            paddingHorizontal: isPortrait ? null : 5
+          }]}>
+            <MediaLogo logo={data.logo} />
+            <MediaContentHeader
+              name={data.name}
+              genre={data.genre || data.genres}
+              released={data.released}
+              runtime={data.runtime}
+              imdbRating={data.imdbRating}
+              releaseInfo={data.releaseInfo}
+            />
+            <SearchButton onPress={handlePlayPress} text="Movie" />
+            <MediaContentDescription description={data.description} />
+            {/* <MediaContentDetailsList
             released={data.released}
             country={data.country}
             director={data.director}
@@ -152,14 +167,15 @@ const MovieDetails = () => {
             cast={data.cast}
             releaseInfo={data.releaseInfo}
           /> */}
-          <MediaCastAndCrews cast={cast}></MediaCastAndCrews>
+            <MediaCastAndCrews cast={cast}></MediaCastAndCrews>
+          </View>
+          <BottomSpacing space={20} />
         </View>
-        <BottomSpacing space={20} />
-      </View>
-      <View style={styles.recommendationsContainer}>
-        <PosterList apiUrl={`https://api.themoviedb.org/3/movie/${moviedbid}/recommendations`} title='More like this' type='movie' />
-        <BottomSpacing space={50} />
-      </View>
+        <View style={styles.recommendationsContainer}>
+          <PosterList apiUrl={`https://api.themoviedb.org/3/movie/${moviedbid}/recommendations`} title='More like this' type='movie' />
+          <BottomSpacing space={50} />
+        </View>
+      </LinearGradient>
     </ScrollView>
   );
 };

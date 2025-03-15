@@ -33,6 +33,7 @@ body {
 }
 @media (prefers-color-scheme: dark) {
   body {
-    background-color: #000;
+    background: linear-gradient(#111111, #444444);
   }
-}`;
+}
+`;

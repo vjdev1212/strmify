@@ -10,6 +10,9 @@ import BottomSpacing from '@/components/BottomSpacing';
 import MediaLogo from '@/components/MediaLogo';
 import MediaCastAndCrews from '@/components/MediaCastAndCrews';
 import PosterList from '@/components/PosterList';
+import { LinearGradient } from 'expo-linear-gradient';
+import { getColors } from 'react-native-image-colors';
+
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -19,6 +22,7 @@ const SeriesDetails = () => {
   const [imdbid, setImdbId] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [cast, setCast] = useState<any[]>([]);
+  const [gradientColors, setGradientColors] = useState<string[]>(['#000', '#000']);
   const { width, height } = useWindowDimensions();
   const isPortrait = height > width;
   const ref = useRef<ScrollView | null>(null);
@@ -72,6 +76,16 @@ const SeriesDetails = () => {
             videos: videosArray,
           };
           setData(seriesData);
+
+          const colors = await getColors(isPortrait ? seriesData.background : seriesData.poster, { cache: true });
+          let extractedColors: [string, string] = ['', ''];
+          if (colors.platform === 'ios') {
+            extractedColors = [colors.primary || '#000', colors.secondary || '#000'];
+          }
+          else {
+            extractedColors = [colors.vibrant || '#000', colors.darkMuted || '#000'];
+          }
+          setGradientColors(extractedColors);
         }
       } catch (error) {
         console.error('Error fetching series details:', error);
@@ -133,58 +147,54 @@ const SeriesDetails = () => {
 
   return (
     <ScrollView showsVerticalScrollIndicator={false} style={styles.container} ref={ref}>
-      <StatusBar />
-      <View style={[{
-        flex: 1,
-        flexDirection: isPortrait ? 'column' : 'row',
-        marginTop: isPortrait ? 0 : '5%',
-        justifyContent: 'center',
-      }]}>
-        <View style={[styles.posterContainer, {
-          width: isPortrait ? '100%' : '30%',
-          padding: isPortrait ? null : '3%'
+      <LinearGradient colors={gradientColors as [string, string]}>
+        <StatusBar />
+        <View style={[{
+          flex: 1,
+          flexDirection: isPortrait ? 'column' : 'row',
+          marginTop: isPortrait ? 0 : '5%',
+          justifyContent: 'center',
         }]}>
-          <MediaContentPoster background={isPortrait ? data.background : data.poster} isPortrait={isPortrait} />
+          <View style={[styles.posterContainer, {
+            width: isPortrait ? '100%' : '30%',
+            padding: isPortrait ? null : '3%'
+          }]}>
+            <MediaContentPoster background={isPortrait ? data.background : data.poster} isPortrait={isPortrait} />
+          </View>
+          <View style={[styles.detailsContainer, {
+            width: isPortrait ? '100%' : '60%',
+            paddingHorizontal: isPortrait ? null : 5
+          }]}>
+            <MediaLogo logo={data.logo} />
+            <MediaContentHeader
+              name={data.name}
+              genre={data.genre}
+              released={data.released}
+              runtime={data.runtime}
+              imdbRating={data.imdbRating}
+              releaseInfo={data.releaseInfo}
+            />
+            <MediaContentDescription description={data.description} />
+            <MediaCastAndCrews cast={cast}></MediaCastAndCrews>
+            {
+              isPortrait ? (null) : (
+                <>
+                  <BottomSpacing space={80} />
+                </>
+              )
+            }
+          </View>
         </View>
-        <View style={[styles.detailsContainer, {
-          width: isPortrait ? '100%' : '60%',
-          paddingHorizontal: isPortrait ? null : 5
-        }]}>
-          <MediaLogo logo={data.logo} />
-          <MediaContentHeader
-            name={data.name}
-            genre={data.genre}
-            released={data.released}
-            runtime={data.runtime}
-            imdbRating={data.imdbRating}
-            releaseInfo={data.releaseInfo}
-          />
-          <MediaContentDescription description={data.description} />
-          <MediaCastAndCrews cast={cast}></MediaCastAndCrews>
-          {
-            isPortrait ? (null) : (
-              <>
-                <BottomSpacing space={80} />
-              </>
-            )
-          }
-          {/* <MediaContentDetailsList
-            released={data.released}
-            country={data.country}
-            director={data.director}
-            writer={data.writer}
-            cast={data.cast} releaseInfo={''} /> */}
+        <View>
+          <View style={{ justifyContent: 'center', marginTop: isPortrait ? 5 : '10%' }}>
+            <SeasonEpisodeList videos={data.videos} onEpisodeSelect={handleEpisodeSelect} />
+          </View>
         </View>
-      </View>
-      <View>
-        <View style={{ justifyContent: 'center', marginTop: isPortrait ? 5 : '10%' }}>
-          <SeasonEpisodeList videos={data.videos} onEpisodeSelect={handleEpisodeSelect} />
+        <View style={styles.recommendationsContainer}>
+          <PosterList apiUrl={`https://api.themoviedb.org/3/tv/${moviedbid}/recommendations`} title='More like this' type='series' />
         </View>
-      </View>
-      <View style={styles.recommendationsContainer}>
-        <PosterList apiUrl={`https://api.themoviedb.org/3/tv/${moviedbid}/recommendations`} title='More like this' type='series' />
-      </View>
-      <BottomSpacing space={50} />
+        <BottomSpacing space={50} />
+      </LinearGradient>
     </ScrollView>
   );
 };

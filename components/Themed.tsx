@@ -7,9 +7,7 @@ import {
   ActivityIndicator as DefaultActivityIndicator,
   TextInput as DefaultTextInput,
   Text as DefaultText,
-  View as DefaultView,
-  Platform
-} from 'react-native';
+  View as DefaultView} from 'react-native';
 import { StatusBar as DefaultStatusBar } from 'expo-status-bar';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from './useColorScheme';
@@ -61,41 +59,12 @@ export function ActivityIndicator(props: ActivityIndicatorProps) {
 }
 
 export function View(props: ViewProps) {
-  const { style, lightColor, darkColor, ...otherProps } = props;
-  const backgroundColor = useThemeColor({ light: lightColor, dark: darkColor }, 'background');
-
-  return <DefaultView style={[{ backgroundColor }, style]} {...otherProps} />;
+  const { style, ...otherProps } = props;
+  return <DefaultView style={[style]} {...otherProps} />;
 }
 
 export function StatusBar(props: StatusBarProps) {
   const { ...otherProps } = props;
-  const backgroundColor = useThemeColor({ light: '#ffffff', dark: '#000000' }, 'background');
 
-  return <DefaultStatusBar backgroundColor={backgroundColor} {...otherProps} />;
-}
-
-export function Card(props: ViewProps) {
-  const { style, lightColor, darkColor, ...otherProps } = props;
-
-  // Dynamically adjust border and shadow based on the color scheme
-
-  const colorScheme = useColorScheme();
-  const backgroundColor = colorScheme === 'dark' ? '#101010' : '#FAFAFA';
-  const borderColor = colorScheme === 'dark' ? '#101010' : '#DDDDDD';
-  const shadowColor = colorScheme === 'dark' ? '#101010' : '#EFEFEF';
-
-  return (
-    <DefaultView
-      style={[
-        {
-          backgroundColor,
-          borderColor,
-          borderWidth: 1,
-          overflow: 'hidden',
-        },
-        style,
-      ]}
-      {...otherProps}
-    />
-  );
+  return <DefaultStatusBar {...otherProps} />;
 }

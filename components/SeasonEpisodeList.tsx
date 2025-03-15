@@ -111,18 +111,13 @@ const EpisodeItem = ({ item, onEpisodeSelect }: { item: any, onEpisodeSelect: an
               <Text style={[styles.episodeTitle]} numberOfLines={3}>
                 {item.episode || item.number}. {item.name || item.title}
               </Text>
-              <Text style={[styles.episodeAired, {
-                color: colorScheme === 'dark' ? '#afafaf' : '#101010',
-              }]}>{
-                  formatDate(item.firstAired) || formatDate(item.released)}
+              <Text style={[styles.episodeAired]}>{
+                formatDate(item.firstAired) || formatDate(item.released)}
               </Text>
             </View>
           </View>
           <View style={{ justifyContent: 'center', width: '100%', marginRight: 5 }}>
-            <Text style={[styles.episodeDescription,
-            {
-              color: colorScheme === 'dark' ? '#dfdfdf' : '#101010',
-            }]} numberOfLines={5}>
+            <Text style={[styles.episodeDescription]} numberOfLines={5}>
               {item.description || item.overview}
             </Text>
           </View>

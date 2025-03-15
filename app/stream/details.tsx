@@ -566,7 +566,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10
     },
     buttonDisabled: {
-        backgroundColor: '#888888',
+        backgroundColor: '#fff888',
     },
     centeredContainer: {
         flex: 1,
