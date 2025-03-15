@@ -163,17 +163,13 @@ const MovieDetails = () => {
             />
             <SearchButton onPress={handlePlayPress} text="Movie" />
             <MediaContentDescription description={data.description} />
-            {/* <MediaContentDetailsList
-            released={data.released}
-            country={data.country}
-            director={data.director}
-            writer={data.writer}
-            cast={data.cast}
-            releaseInfo={data.releaseInfo}
-          /> */}
             <MediaCastAndCrews cast={cast}></MediaCastAndCrews>
           </View>
           <BottomSpacing space={20} />
+        </View>
+        <View>
+          <View style={{ justifyContent: 'center', marginTop: isPortrait ? 5 : '10%' }}>
+          </View>
         </View>
         <View style={styles.recommendationsContainer}>
           <PosterList apiUrl={`https://api.themoviedb.org/3/movie/${moviedbid}/recommendations`} title='More like this' type='movie' />
