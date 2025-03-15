@@ -50,9 +50,7 @@ const styles = StyleSheet.create({
   profileImage: {
     width: 75,
     height: 75,
-    borderRadius: 40,
-    borderColor: '#ffffff',
-    borderWidth: StyleSheet.hairlineWidth
+    borderRadius: 40
   },
   name: {
     marginTop: 5,
