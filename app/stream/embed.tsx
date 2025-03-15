@@ -1,3 +1,4 @@
+import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams } from "expo-router";
 import React, { useEffect } from "react";
 import { View, Text, StyleSheet, Platform } from "react-native";
@@ -52,33 +53,35 @@ const EmbedPlayer = () => {
     `;
 
     return (
-        <View style={styles.container}>
-            {url ? (
-                Platform.OS === "web" ? (
-                    <iframe
-                        src={url as string}
-                        style={{ flex: 1, width: "100%", height: "100%" }}
-                        referrerPolicy="no-referrer-when-downgrade"
-                        allow="autoplay; fullscreen"
-                        frameBorder={0}
-                        allowFullScreen
-                    />
+        <LinearGradient colors={['#111111', '#222222']} start={[0, 0]} end={[1, 0]} style={{ flex: 1 }}>
+            <View style={styles.container}>
+                {url ? (
+                    Platform.OS === "web" ? (
+                        <iframe
+                            src={url as string}
+                            style={{ flex: 1, width: "100%", height: "100%" }}
+                            referrerPolicy="no-referrer-when-downgrade"
+                            allow="autoplay; fullscreen"
+                            frameBorder={0}
+                            allowFullScreen
+                        />
+                    ) : (
+                        <WebView
+                            originWhitelist={["*"]}
+                            source={{ html: iframeHtml }}
+                            style={{ flex: 1 }}
+                            javaScriptEnabled
+                            domStorageEnabled
+                            allowUniversalAccessFromFileURLs
+                            allowFileAccess
+                            startInLoadingState
+                        />
+                    )
                 ) : (
-                    <WebView
-                        originWhitelist={["*"]}
-                        source={{ html: iframeHtml }}
-                        style={{ flex: 1 }}
-                        javaScriptEnabled
-                        domStorageEnabled
-                        allowUniversalAccessFromFileURLs
-                        allowFileAccess
-                        startInLoadingState
-                    />
-                )
-            ) : (
-                <Text>No video URL available.</Text>
-            )}
-        </View>
+                    <Text>No video URL available.</Text>
+                )}
+            </View>
+        </LinearGradient>
     );
 };
 

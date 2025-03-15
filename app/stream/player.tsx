@@ -6,6 +6,7 @@ import { View } from '@/components/Themed';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import { isOrientationSupported } from '@/utils/platform';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const VideoPlayer = () => {
     const { videoUrl, title, artwork } = useLocalSearchParams();
@@ -54,19 +55,21 @@ const VideoPlayer = () => {
         : (screenDimensions.width * 9) / 16;
 
     return (
-        <View style={styles.container}>
-            <VideoView
-                player={player}
-                style={{
-                    width: screenDimensions.width,
-                    height: videoHeight,
-                }}
-                allowsFullscreen
-                allowsPictureInPicture
-                allowsVideoFrameAnalysis
-                contentFit="contain"
-            />
-        </View>
+        <LinearGradient colors={['#111111', '#222222']} start={[0, 0]} end={[1, 0]} style={{ flex: 1 }}>
+            <View style={styles.container}>
+                <VideoView
+                    player={player}
+                    style={{
+                        width: screenDimensions.width,
+                        height: videoHeight,
+                    }}
+                    allowsFullscreen
+                    allowsPictureInPicture
+                    allowsVideoFrameAnalysis
+                    contentFit="contain"
+                />
+            </View>
+        </LinearGradient>
     );
 };
 
