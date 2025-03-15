@@ -21,13 +21,9 @@ const MediaCastAndCrews = ({ cast }: { cast: any[] }) => {
               source={{
                 uri: `${IMAGE_BASE_URL}${member.profile_path}`
               }}
-              style={[styles.profileImage, {
-                backgroundColor: colorScheme === 'dark' ? '#0f0f0f' : '#f0f0f0',
-              }]}
+              style={[styles.profileImage]}
             />
-            <Text style={[styles.name, {
-              color: colorScheme === 'dark' ? '#ffffff' : '#000000'
-            }]} numberOfLines={1}>
+            <Text style={[styles.name]} numberOfLines={1}>
               {member.name}
             </Text>
             <Text style={[styles.character, {
@@ -54,7 +50,9 @@ const styles = StyleSheet.create({
   profileImage: {
     width: 75,
     height: 75,
-    borderRadius: 40
+    borderRadius: 40,
+    borderColor: '#ffffff',
+    borderWidth: StyleSheet.hairlineWidth
   },
   name: {
     marginTop: 5,
