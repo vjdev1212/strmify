@@ -224,7 +224,6 @@ const styles = StyleSheet.create({
   },
   selectedSeasonButton: {
     borderColor: '#ffffff',
-    borderWidth: StyleSheet.hairlineWidth
   },
   seasonText: {
     fontSize: 16,

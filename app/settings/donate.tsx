@@ -69,9 +69,8 @@ const styles = StyleSheet.create({
         paddingHorizontal: 30,
         borderRadius: 30,
         marginVertical: 20,
-        marginHorizontal: 'auto',        
+        marginHorizontal: 'auto',
         borderColor: '#ffffff',
-        borderWidth: StyleSheet.hairlineWidth,
     },
     donateText: {
         color: '#fff',

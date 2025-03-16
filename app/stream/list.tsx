@@ -266,8 +266,7 @@ const styles = StyleSheet.create({
     },
     selectedAddonItem: {
         borderColor: '#fff',
-        borderWidth: StyleSheet.hairlineWidth
-    },
+        },
     addonName: {
         fontSize: 15,
     },

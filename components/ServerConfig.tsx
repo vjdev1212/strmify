@@ -195,7 +195,6 @@ const styles = StyleSheet.create({
     width: '50%',
     marginHorizontal: '25%',
     borderColor: '#ffffff',
-    borderWidth: StyleSheet.hairlineWidth
   },
   switchContainer: {
     flexDirection: 'row',

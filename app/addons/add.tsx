@@ -232,8 +232,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 30,
         margin: 'auto',        
         borderColor: '#fff',
-        borderWidth: StyleSheet.hairlineWidth
-    },
+        },
     addButtonText: {
         color: '#fff',
         fontSize: 16,

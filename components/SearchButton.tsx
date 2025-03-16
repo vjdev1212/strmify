@@ -20,7 +20,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',    
     borderColor: '#fff',
-    borderWidth: StyleSheet.hairlineWidth
   },
   text: {
     color: '#fff',
