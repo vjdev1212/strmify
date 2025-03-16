@@ -166,7 +166,7 @@ const SeriesDetails = () => {
 
   return (
     <ScrollView showsVerticalScrollIndicator={false} style={styles.container} ref={ref}>
-      <LinearGradient colors={gradientColors as [string, string]}>
+      <LinearGradient colors={gradientColors as [string, string]} start={[0, 0]} end={[1, 0]} style={{ flex: 1 }}>
         <StatusBar />
         <View style={[{
           flex: 1,
