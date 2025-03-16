@@ -4,7 +4,7 @@ import { Animated, StyleSheet, useWindowDimensions, Image, Text, View } from 're
 const MediaLogo = ({ logo, title }: { logo: string, title: string }) => {
     const [titleFadeAnim] = useState(new Animated.Value(0));
     const [logoError, setLogoError] = useState(false);
-    
+
     const { width, height } = useWindowDimensions();
     const isPortrait = height > width;
 
@@ -21,9 +21,9 @@ const MediaLogo = ({ logo, title }: { logo: string, title: string }) => {
             style={[styles.logoContainer, { opacity: titleFadeAnim, alignSelf: isPortrait ? 'center' : 'auto' }]}
         >
             {!logoError ? (
-                <Image 
-                    resizeMode="contain" 
-                    source={{ uri: logo }} 
+                <Image
+                    resizeMode="contain"
+                    source={{ uri: logo }}
                     style={[styles.logo, {
                         width: isPortrait ? 120 : null,
                         height: isPortrait ? null : 100,
@@ -32,7 +32,10 @@ const MediaLogo = ({ logo, title }: { logo: string, title: string }) => {
                 />
             ) : (
                 <View style={styles.titleContainer}>
-                    <Text style={styles.titleText}>{title}</Text>
+                    <Text style={[styles.titleText,
+                    {
+                        fontSize: isPortrait ? 25 : 35
+                    }]} numberOfLines={1} ellipsizeMode="tail">{title}</Text>
                 </View>
             )}
         </Animated.View>
@@ -55,8 +58,9 @@ const styles = StyleSheet.create({
     },
     titleText: {
         color: '#ffffff',
-        fontSize: 30,
-        fontWeight: 'bold'
+        fontWeight: 'bold',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis'
     },
 });
 
