@@ -23,7 +23,7 @@ const ContactScreen = () => {
     ];
 
     return (
-        <LinearGradient colors={['#111111', '#222222']} start={[0, 0]} end={[1, 0]} style={{ flex: 1 }}>
+        <LinearGradient colors={['#111111', '#222222']} start={[0, 0]} end={[1, 1]} style={{ flex: 1 }}>
 
             <SafeAreaView style={styles.container}>
                 <StatusBar />

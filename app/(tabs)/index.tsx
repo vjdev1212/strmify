@@ -8,7 +8,7 @@ export default function HomeScreen() {
 
   return (
     <ScrollView showsVerticalScrollIndicator={false}>
-      <LinearGradient colors={['#111111', '#222222']} start={[0, 0]} end={[1, 0]}>
+      <LinearGradient colors={['#111111', '#222222']} start={[0, 0]} end={[1, 1]}>
         <SafeAreaView style={styles.container}>
           <StatusBar />
           <View style={styles.contentContainer}>
