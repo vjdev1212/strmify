@@ -268,8 +268,7 @@ const styles = StyleSheet.create({
   episodeDescription: {
     marginTop: 5,
     fontSize: 14,
-    marginRight: 10,
-    textAlign: 'justify'
+    marginRight: 10
   },
   skeletonBackground: {
     width: '100%',
