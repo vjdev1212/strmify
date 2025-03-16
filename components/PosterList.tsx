@@ -89,7 +89,6 @@ const PosterItem = ({ item, layout, type }: { item: any, layout?: 'horizontal' |
               layout === 'vertical' ? styles.verticalImage : styles.horizontalImage,
               {
                 opacity: fadeAnim,
-                backgroundColor: colorScheme === 'dark' ? '#0f0f0f' : '#f0f0f0',
                 width: isPortrait ? 100 : 200,
                 height: isPortrait ? 150 : 110,
               },
@@ -101,7 +100,6 @@ const PosterItem = ({ item, layout, type }: { item: any, layout?: 'horizontal' |
           layout === 'vertical' ? styles.verticalImage : styles.horizontalImage,
           {
             opacity: fadeAnim,
-            backgroundColor: colorScheme === 'dark' ? '#0f0f0f' : '#f0f0f0',
             width: isPortrait ? 100 : 200,
             height: isPortrait ? 150 : 110,
           }]}>
