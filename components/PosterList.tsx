@@ -15,6 +15,7 @@ import { getYear } from '@/utils/Date';
 import { useColorScheme } from './useColorScheme';
 import { SvgXml } from 'react-native-svg';
 import { DefaultPosterImgXml } from '@/utils/Svg';
+import { FontAwesome } from '@expo/vector-icons';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -118,9 +119,8 @@ const PosterItem = ({ item, layout, type }: { item: any, layout?: 'horizontal' |
         >
           {item.name}
         </Text>
-        <Text
-          style={[styles.posterYear]}>
-          {`★ ${item.imdbRating}   ${year}`}
+        <Text style={styles.posterYear}>
+          <FontAwesome name="star-o" size={14} color="#fffffff" />  {item.imdbRating}   {year}
         </Text>
       </View>
     </Pressable >

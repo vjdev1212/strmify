@@ -34,15 +34,16 @@ const MediaContentHeader = ({
               <Text style={styles.infoText}> {getYear(released) || releaseInfo}</Text>
             </View>
           )}
-          {released && imdbRating && <Text style={styles.separator}>|   </Text>}
-          {imdbRating && (
+          {released && imdbRating && imdbRating !== "0.0" && <Text style={styles.separator}>|   </Text>}
+          {imdbRating && imdbRating !== "0.0"  && (
             <View style={styles.infoItem}>
               <FontAwesome name="imdb" size={15} color={'#ffffff'} />
-              <Text style={styles.infoText}> {imdbRating}</Text>
+              <Text style={styles.infoText}>{imdbRating}</Text>
+              <FontAwesome name="star-o" size={14} color={'#ffffff'} />
             </View>
           )}
-          {(released || imdbRating) && runtime && <Text style={styles.separator}>|   </Text>}
-          {runtime && (
+          {(released || imdbRating) && runtime && runtime !== '0' && <Text style={styles.separator}>|   </Text>}
+          {runtime && runtime !== '0' && (
             <View style={styles.infoItem}>
               <Feather name="clock" size={14} color={'#ffffff'} />
               <Text style={styles.infoText}>{runtime} mins</Text>
@@ -82,6 +83,7 @@ const styles = StyleSheet.create({
   infoText: {
     fontSize: 14,
     marginLeft: 5,
+    paddingRight: 5
   },
   separator: {
     fontSize: 14,
