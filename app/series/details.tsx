@@ -109,7 +109,7 @@ const SeriesDetails = () => {
     };
 
     fetchDetails();
-  }, [moviedbid]);
+  }, []);
 
   const getExternalIds = async () => {
     const externalIdsResponse = await fetch(

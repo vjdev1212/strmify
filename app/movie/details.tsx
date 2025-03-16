@@ -93,7 +93,7 @@ const MovieDetails = () => {
     };
 
     fetchDetails();
-  }, [moviedbid]);
+  }, []);
 
   const getExternalIds = async () => {
     const externalIdsResponse = await fetch(
