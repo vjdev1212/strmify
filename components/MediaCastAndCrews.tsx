@@ -26,9 +26,7 @@ const MediaCastAndCrews = ({ cast }: { cast: any[] }) => {
             <Text style={[styles.name]} numberOfLines={1}>
               {member.name}
             </Text>
-            <Text style={[styles.character, {
-              color: colorScheme === 'dark' ? '#ffffff' : '#000000'
-            }]} numberOfLines={1}>
+            <Text style={[styles.character]} numberOfLines={1}>
               {member.character || member.name}
             </Text>
           </View>

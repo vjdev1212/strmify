@@ -21,7 +21,7 @@ const MediaContentHeader = ({
   imdbRating: string;
 }) => {
 
-  
+
   const colorScheme = useColorScheme();
   return (
     <View style={styles.container}>
@@ -30,21 +30,21 @@ const MediaContentHeader = ({
         <View style={styles.infoContainer}>
           {released && (
             <View style={styles.infoItem}>
-              <MaterialIcons name="date-range" size={17} color={colorScheme === 'dark' ? '#ffffff' : '#000000'} />
+              <MaterialIcons name="date-range" size={17} color={'#ffffff'} />
               <Text style={styles.infoText}> {getYear(released) || releaseInfo}</Text>
             </View>
           )}
           {released && imdbRating && <Text style={styles.separator}>|   </Text>}
           {imdbRating && (
             <View style={styles.infoItem}>
-              <FontAwesome name="imdb" size={15} color={colorScheme === 'dark' ? '#ffffff' : '#000000'} />
+              <FontAwesome name="imdb" size={15} color={'#ffffff'} />
               <Text style={styles.infoText}> {imdbRating}</Text>
             </View>
           )}
           {(released || imdbRating) && runtime && <Text style={styles.separator}>|   </Text>}
           {runtime && (
             <View style={styles.infoItem}>
-              <Feather name="clock" size={14} color={colorScheme === 'dark' ? '#ffffff' : '#000000'} />
+              <Feather name="clock" size={14} color={'#ffffff'} />
               <Text style={styles.infoText}>{runtime} mins</Text>
             </View>
           )}

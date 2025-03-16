@@ -345,10 +345,7 @@ const DetailsRow = ({ label, value, multiline, numOfLines }: { label: string; va
             <Text style={styles.label}>{label}:</Text>
             <Text numberOfLines={numOfLines ?? 8} style={[
                 styles.value,
-                multiline && { flexWrap: 'wrap' },
-                {
-                    color: colorScheme === 'dark' ? '#f0f0f0' : '#101010',
-                }
+                multiline && { flexWrap: 'wrap' }                
             ]}>{value}</Text>
         </View>
     );

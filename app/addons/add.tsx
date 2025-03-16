@@ -116,9 +116,7 @@ export default function AddAddonScreen() {
                                             ? manifestData.logo
                                             : defaultAddonLogo,
                                     }}
-                                    style={[styles.logo, {
-                                        backgroundColor: colorScheme === 'dark' ? '#101010' : '#f0f0f0',
-                                    }]}
+                                    style={[styles.logo]}
                                     resizeMode="contain"
                                 />
                             )}

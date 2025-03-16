@@ -87,9 +87,7 @@ const AddonsScreen = () => {
   const renderAddonItem = (item: any) => (
     <View style={styles.addonItem} key={item.id}>
       <View style={styles.row}>
-        <Image source={{ uri: item.logo }} style={[styles.addonLogo, {
-          backgroundColor: colorScheme === 'dark' ? '#101010' : '#f0f0f0',
-        }]} />
+        <Image source={{ uri: item.logo }} style={[styles.addonLogo]} />
         <View style={styles.details}>
           <Text style={styles.addonName}>{item.name}</Text>
           <Text style={styles.addonTypes}>{item.types?.join(', ')}</Text>
