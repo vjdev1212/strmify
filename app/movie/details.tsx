@@ -72,8 +72,8 @@ const MovieDetails = () => {
             const blob = await response.blob();
             const objectURL = URL.createObjectURL(blob);
             const colors = await getColors(objectURL, {
-              cache: true,
-              key: imdbid,
+              cache: false,
+              key: `${imdbid}-${Date.now()}`,
               fallback: '#111111'
             });
             if (colors.platform === 'ios') {
