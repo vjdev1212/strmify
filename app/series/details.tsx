@@ -184,7 +184,7 @@ const SeriesDetails = () => {
             width: isPortrait ? '100%' : '60%',
             paddingHorizontal: isPortrait ? null : 5
           }]}>
-            <MediaLogo logo={data.logo} />
+            <MediaLogo logo={data.logo} title={data.name}/>
             <MediaContentHeader
               name={data.name}
               genre={data.genre}
