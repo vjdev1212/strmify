@@ -77,13 +77,18 @@ const SeriesDetails = () => {
           };
           setData(seriesData);
 
-          const colors = await getColors(isPortrait ? seriesData.background : seriesData.poster, { cache: true });
+          const colors = await getColors(isPortrait ? seriesData.background : seriesData.poster,
+            {
+              cache: true,
+              key: imdbid,
+              fallback: '#111111'
+            });
           let extractedColors: [string, string] = ['', ''];
           if (colors.platform === 'ios') {
-            extractedColors = [colors.primary || '#111111', colors.secondary || '#444444'];
+            extractedColors = [colors.primary || '#111111', colors.secondary || '#222222'];
           }
           else {
-            extractedColors = [colors.vibrant || '#111111', colors.darkMuted || '#444444'];
+            extractedColors = [colors.vibrant || '#111111', colors.darkMuted || '#222222'];
           }
           setGradientColors(extractedColors);
         }
