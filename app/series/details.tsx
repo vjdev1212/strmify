@@ -77,7 +77,7 @@ const SeriesDetails = () => {
           };
           setData(seriesData);
 
-          let extractedColors: [string, string] = ['', ''];
+          let extractedColors: [string, string] | [string, string, string] = ['#111111', '#222222'];
           const response = await fetch(isPortrait ? seriesData.background : seriesData.poster, { mode: 'cors' });
           if (!response.ok) {
             console.log('Failed to fetch image for colors', response)
@@ -97,7 +97,7 @@ const SeriesDetails = () => {
               extractedColors = [colors.primary || '#111111', colors.secondary || '#222222'];
             }
             else {
-              extractedColors = [colors.vibrant || '#111111', colors.darkMuted || '#222222'];
+              extractedColors = [colors.muted || '#111111', colors.vibrant || '#111111', colors.dominant || '#222222'];
             }
             setGradientColors(extractedColors);
           }
