@@ -560,7 +560,8 @@ const styles = StyleSheet.create({
         borderRadius: 30,
         minWidth: 150,
         borderColor: '#ffffff',
-        },
+        borderWidth: 1
+    },
     buttonText: {
         fontSize: 16,
         color: '#ffffff',

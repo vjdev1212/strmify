@@ -202,6 +202,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     padding: 12,
     borderColor: '#fff',
+    borderWidth: 1
   },
   addButtonText: {
     color: '#fff',
@@ -256,6 +257,7 @@ const styles = StyleSheet.create({
     margin: 'auto',
     textAlign: 'center',
     borderColor: '#fff',
+    borderWidth: 1
   },
   actionText: {
     color: '#fff',

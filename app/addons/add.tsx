@@ -230,9 +230,10 @@ const styles = StyleSheet.create({
         borderRadius: 50,
         marginVertical: 20,
         paddingHorizontal: 30,
-        margin: 'auto',        
+        margin: 'auto',
         borderColor: '#fff',
-        },
+        borderWidth: 1
+    },
     addButtonText: {
         color: '#fff',
         fontSize: 16,

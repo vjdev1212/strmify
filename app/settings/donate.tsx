@@ -71,6 +71,7 @@ const styles = StyleSheet.create({
         marginVertical: 20,
         marginHorizontal: 'auto',
         borderColor: '#ffffff',
+        borderWidth: 1,
     },
     donateText: {
         color: '#fff',

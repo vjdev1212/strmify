@@ -18,8 +18,9 @@ const styles = StyleSheet.create({
     marginVertical: 20,
     alignSelf: 'center',
     flexDirection: 'row',
-    justifyContent: 'center',    
+    justifyContent: 'center',
     borderColor: '#fff',
+    borderWidth: 1
   },
   text: {
     color: '#fff',

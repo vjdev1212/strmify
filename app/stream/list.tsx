@@ -101,7 +101,7 @@ const StreamScreen = () => {
         return (
             <Pressable
                 style={[
-                    styles.addonItem,                    
+                    styles.addonItem,
                     isSelected && styles.selectedAddonItem,
                 ]}
                 onPress={async () => {
@@ -266,7 +266,8 @@ const styles = StyleSheet.create({
     },
     selectedAddonItem: {
         borderColor: '#fff',
-        },
+        borderWidth: 1
+    },
     addonName: {
         fontSize: 15,
     },
