@@ -74,7 +74,8 @@ const MovieDetails = () => {
             const colors = await getColors(objectURL, {
               cache: false,
               key: `${imdbid}-${Date.now()}`,
-              fallback: '#111111'
+              fallback: '#111111',
+              pixelSpacing: 5
             });
             if (colors.platform === 'ios') {
               extractedColors = [colors.primary || '#111111', colors.secondary || '#222222'];
