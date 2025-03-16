@@ -146,7 +146,6 @@ const SearchScreen = () => {
           <TextInput
             style={[
               styles.searchInput,
-              colorScheme === 'dark' ? styles.darkSearchInput : styles.lightSearchInput,
             ]}
             placeholder="Search movies or series..."
             placeholderTextColor={'#fff'}
@@ -237,6 +236,8 @@ const styles = StyleSheet.create({
     paddingLeft: 20,
     paddingRight: 40,
     fontSize: 16,
+    borderColor: '#ffffff',
+    borderWidth: 1
   },
   clearIcon: {
     position: 'absolute',

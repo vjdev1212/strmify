@@ -322,7 +322,7 @@ const StreamDetailsScreen = () => {
                     <TouchableWithoutFeedback>
                         <View style={styles.modalOverlay}>
                             <View
-                                style={[styles.modalContainer, { backgroundColor: colorScheme === 'dark' ? '#1f1f1f' : '#f0f0f0' }]}>
+                                style={[styles.modalContainer]}>
                                 <ActivityIndicator size="large" color="#ffffff" style={styles.activityIndicator} />
                                 <Text style={styles.modalText}>{statusText}</Text>
                                 <Pressable style={styles.cancelButton} onPress={handleCancel}>
@@ -345,7 +345,7 @@ const DetailsRow = ({ label, value, multiline, numOfLines }: { label: string; va
             <Text style={styles.label}>{label}:</Text>
             <Text numberOfLines={numOfLines ?? 8} style={[
                 styles.value,
-                multiline && { flexWrap: 'wrap' }                
+                multiline && { flexWrap: 'wrap' }
             ]}>{value}</Text>
         </View>
     );
@@ -377,9 +377,9 @@ const ServerSelectionGroup = ({
                     >
                         <View>
                             <MaterialIcons
-                                name="check-circle"
+                                name={selected === option.serverId ? 'check-circle' : 'check-circle-outline'}
                                 size={26}
-                                color={selected === option.serverId ? '#ffffff' : (isDarkMode ? '#404040' : '#D0D0D0')}
+                                color={'#ffffff'}
                                 style={styles.radioIcon}
                             />
                         </View>
@@ -585,7 +585,6 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
     },
     modalContainer: {
         padding: 20,
@@ -595,6 +594,8 @@ const styles = StyleSheet.create({
         minHeight: 100,
         justifyContent: 'center',
         alignItems: 'center',
+        borderColor: '#ffffff',
+        borderWidth: 1
     },
     modalText: {
         fontSize: 16,
@@ -613,14 +614,14 @@ const styles = StyleSheet.create({
     cancelButton: {
         marginVertical: 20,
         paddingVertical: 12,
-        backgroundColor: '#ffffff',
         borderRadius: 30,
         alignItems: 'center',
         minWidth: 120,
+        borderColor: '#ffffff',
+        borderWidth: 1
     },
     cancelButtonText: {
-        fontSize: 16,
-        color: '#fff',
+        fontSize: 16
     },
     inlineContainer: {
         flexDirection: 'row',

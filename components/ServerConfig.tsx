@@ -128,7 +128,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
           </View>
 
           <TextInput
-            style={[styles.input, colorScheme === 'dark' ? styles.darkInput : styles.lightInput]}
+            style={[styles.input]}
             placeholder="Enter Server Base URL"
             value={serverUrl}
             onChangeText={setServerUrl}
@@ -175,6 +175,9 @@ const styles = StyleSheet.create({
     paddingLeft: 20,
     marginVertical: 30,
     marginHorizontal: 10,
+    color: '#ffffff',
+    borderColor: '#ffffff',
+    borderWidth: 1
   },
   lightInput: {
     backgroundColor: '#f0f0f0',

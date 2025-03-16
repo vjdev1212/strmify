@@ -41,14 +41,14 @@ export function useThemeColor(
 
 export function Text(props: TextProps) {
   const { style, lightColor, darkColor, ...otherProps } = props;
-  const color = useThemeColor({ light: lightColor, dark: darkColor }, 'text');
+  const color = '#ffffff';
 
   return <DefaultText style={[{ color }, style]} {...otherProps} />;
 }
 
 export function TextInput(props: TextInputProps) {
   const { style, lightColor, darkColor, ...otherProps } = props;
-  const color = useThemeColor({ light: lightColor, dark: darkColor }, 'text');
+  const color = '#ffffff';
 
   return <DefaultTextInput style={[{ color }, style]} {...otherProps} />;
 }

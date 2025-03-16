@@ -40,7 +40,7 @@ export default function TabLayout() {
         tabBarActiveTintColor: '#ffffff',
         tabBarInactiveTintColor: '#ffffff',
         headerShown: false,
-        tabBarStyle: { height: getTabBarHeight(), backgroundColor: 'transparent' },
+        tabBarStyle: { height: getTabBarHeight(), backgroundColor: 'transparent', borderColor: '#191919' },
         tabBarBackground: () => (
           <LinearGradient
             colors={['#222222', '#111111']}
