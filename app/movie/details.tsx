@@ -94,7 +94,7 @@ const MovieDetails = () => {
     };
 
     fetchDetails();
-  }, []);
+  }, [moviedbid]);
 
   const getExternalIds = async () => {
     const externalIdsResponse = await fetch(
@@ -114,7 +114,7 @@ const MovieDetails = () => {
 
   if (loading) {
     return (
-      <LinearGradient colors={['#111111', '#222222']} start={[0, 0]} end={[1, 0]} style={{ flex: 1 }}>
+      <LinearGradient colors={['#111111', '#222222']} start={[0, 0]} end={[1, 1]} style={{ flex: 1 }}>
         <View style={styles.centeredContainer}>
           <ActivityIndicator size="large" style={styles.activityIndicator} color="#ffffff" />
           <Text style={styles.centeredText}>Loading</Text>
@@ -125,7 +125,7 @@ const MovieDetails = () => {
 
   if (!data) {
     return (
-      <LinearGradient colors={['#111111', '#222222']} start={[0, 0]} end={[1, 0]} style={{ flex: 1 }}>
+      <LinearGradient colors={['#111111', '#222222']} start={[0, 0]} end={[1, 1]} style={{ flex: 1 }}>
         <View style={styles.centeredContainer}>
           <Text style={styles.centeredText}>No movie details available</Text>
         </View>
@@ -145,7 +145,7 @@ const MovieDetails = () => {
 
   return (
     <ScrollView showsVerticalScrollIndicator={false} style={styles.container} ref={ref}>
-      <LinearGradient colors={gradientColors as [string, string]} start={[0, 0]} end={[1, 0]} style={{ flex: 1 }}>
+      <LinearGradient colors={gradientColors as [string, string]} start={[0, 0]} end={[1, 1]} style={{ flex: 1 }}>
         <StatusBar />
         <View style={[{
           flex: 1,
