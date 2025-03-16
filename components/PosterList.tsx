@@ -193,34 +193,40 @@ const PosterList = ({
   };
 
   return (
-    <RNView style={styles.container}>
-      <RNView style={styles.header}>
-        <Text style={styles.title}>{title}</Text>
-        <Pressable onPress={handleSeeAllPress}>
-          <Text style={styles.seeAllText}>See All</Text>
-        </Pressable>
-      </RNView>
+    <>
+      {
+        data && data.length > 0 &&
+        <RNView style={styles.container}>
+          <RNView style={styles.header}>
+            <Text style={styles.title}>{title}</Text>
+            <Pressable onPress={handleSeeAllPress}>
+              <Text style={styles.seeAllText}>See All</Text>
+            </Pressable>
+          </RNView>
 
-      {loading ? (
-        <FlatList
-          data={new Array(10).fill(null)}
-          renderItem={() => <SkeletonLoader />}
-          keyExtractor={(_, index) => index.toString()}
-          horizontal={layout === 'horizontal'}
-          showsHorizontalScrollIndicator={false}
-          numColumns={layout === 'vertical' ? 2 : 1}
-        />
-      ) : (
-        <FlatList
-          data={data}
-          renderItem={({ item }) => <PosterItem item={item} layout={layout} type={type} />}
-          keyExtractor={(item, index) => index.toString()}
-          horizontal={layout === 'horizontal'}
-          showsHorizontalScrollIndicator={false}
-          numColumns={layout === 'vertical' ? 2 : 1}
-        />
-      )}
-    </RNView>
+          {loading ? (
+            <FlatList
+              data={new Array(10).fill(null)}
+              renderItem={() => <SkeletonLoader />}
+              keyExtractor={(_, index) => index.toString()}
+              horizontal={layout === 'horizontal'}
+              showsHorizontalScrollIndicator={false}
+              numColumns={layout === 'vertical' ? 2 : 1}
+            />
+          ) : (
+            <FlatList
+              data={data}
+              renderItem={({ item }) => <PosterItem item={item} layout={layout} type={type} />}
+              keyExtractor={(item, index) => index.toString()}
+              horizontal={layout === 'horizontal'}
+              showsHorizontalScrollIndicator={false}
+              numColumns={layout === 'vertical' ? 2 : 1}
+            />
+          )}
+        </RNView>
+      }
+    </>
+
   );
 };
 
