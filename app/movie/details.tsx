@@ -61,20 +61,29 @@ const MovieDetails = () => {
             description: movie.overview
           };
           setData(movieData);
-
-          const colors = await getColors(isPortrait ? movieData.background : movieData.poster, {
-            cache: false,
-            key: imdbid,
-            fallback: '#111111'
-          });
           let extractedColors: [string, string] = ['', ''];
-          if (colors.platform === 'ios') {
-            extractedColors = [colors.primary || '#111111', colors.secondary || '#222222'];
+          const response = await fetch(isPortrait ? movieData.background : movieData.poster, { mode: 'cors' });
+          if (!response.ok) {
+            console.log('Failed to fetch image for colors', response)
+            extractedColors = ['#111111', '#222222'];
+            setGradientColors(extractedColors);
           }
           else {
-            extractedColors = [colors.vibrant || '#111111', colors.darkMuted || '#222222'];
+            const blob = await response.blob();
+            const objectURL = URL.createObjectURL(blob);
+            const colors = await getColors(objectURL, {
+              cache: true,
+              key: imdbid,
+              fallback: '#111111'
+            });
+            if (colors.platform === 'ios') {
+              extractedColors = [colors.primary || '#111111', colors.secondary || '#222222'];
+            }
+            else {
+              extractedColors = [colors.vibrant || '#111111', colors.darkMuted || '#222222'];
+            }
+            setGradientColors(extractedColors);
           }
-          setGradientColors(extractedColors);
         }
       } catch (error) {
         console.error('Error fetching movie details:', error);

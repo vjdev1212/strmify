@@ -77,20 +77,29 @@ const SeriesDetails = () => {
           };
           setData(seriesData);
 
-          const colors = await getColors(isPortrait ? seriesData.background : seriesData.poster,
-            {
-              cache: false,
+          let extractedColors: [string, string] = ['', ''];
+          const response = await fetch(isPortrait ? seriesData.background : seriesData.poster, { mode: 'cors' });
+          if (!response.ok) {
+            console.log('Failed to fetch image for colors', response)
+            extractedColors = ['#111111', '#222222'];
+            setGradientColors(extractedColors);
+          }
+          else {
+            const blob = await response.blob();
+            const objectURL = URL.createObjectURL(blob);
+            const colors = await getColors(objectURL, {
+              cache: true,
               key: imdbid,
               fallback: '#111111'
             });
-          let extractedColors: [string, string] = ['', ''];
-          if (colors.platform === 'ios') {
-            extractedColors = [colors.primary || '#111111', colors.secondary || '#222222'];
+            if (colors.platform === 'ios') {
+              extractedColors = [colors.primary || '#111111', colors.secondary || '#222222'];
+            }
+            else {
+              extractedColors = [colors.vibrant || '#111111', colors.darkMuted || '#222222'];
+            }
+            setGradientColors(extractedColors);
           }
-          else {
-            extractedColors = [colors.vibrant || '#111111', colors.darkMuted || '#222222'];
-          }
-          setGradientColors(extractedColors);
         }
       } catch (error) {
         console.error('Error fetching series details:', error);
