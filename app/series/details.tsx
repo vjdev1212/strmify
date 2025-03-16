@@ -79,7 +79,7 @@ const SeriesDetails = () => {
 
           const colors = await getColors(isPortrait ? seriesData.background : seriesData.poster,
             {
-              cache: true,
+              cache: false,
               key: imdbid,
               fallback: '#111111'
             });

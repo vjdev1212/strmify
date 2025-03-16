@@ -63,7 +63,7 @@ const MovieDetails = () => {
           setData(movieData);
 
           const colors = await getColors(isPortrait ? movieData.background : movieData.poster, {
-            cache: true,
+            cache: false,
             key: imdbid,
             fallback: '#111111'
           });
