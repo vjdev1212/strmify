@@ -88,8 +88,8 @@ const SeriesDetails = () => {
             const blob = await response.blob();
             const objectURL = URL.createObjectURL(blob);
             const colors = await getColors(objectURL, {
-              cache: false,
-              key: `${imdbid}-${Date.now()}`,
+              cache: true,
+              key: imdbid,
               fallback: '#111111',
               pixelSpacing: 5
             });
