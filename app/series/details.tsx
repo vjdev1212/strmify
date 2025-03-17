@@ -98,6 +98,7 @@ const SeriesDetails = () => {
             }
             else {
               extractedColors = [colors.muted || '#111111', colors.vibrant || '#111111', colors.dominant || '#222222'];
+              console.log(extractedColors);
             }
             setGradientColors(extractedColors);
           }
