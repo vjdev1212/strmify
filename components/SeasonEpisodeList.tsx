@@ -250,8 +250,7 @@ const styles = StyleSheet.create({
     marginRight: 15,
     aspectRatio: 16 / 9,
     marginVertical: 20,
-    borderColor: '#fff',
-    borderWidth: 1
+    borderColor: '#fff'
   },
   thumbnail: {
     borderRadius: 6,

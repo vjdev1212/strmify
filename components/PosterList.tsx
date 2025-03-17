@@ -259,8 +259,7 @@ const styles = StyleSheet.create({
   posterImagePlaceHolder: {
     justifyContent: 'center',
     alignItems: 'center',
-    borderColor: '#ffffff',
-    borderWidth: 1
+    borderColor: '#ffffff'
   },
   posterImage: {
     borderRadius: 8,
