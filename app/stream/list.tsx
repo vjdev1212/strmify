@@ -20,14 +20,14 @@ const StreamScreen = () => {
     const colorScheme = useColorScheme();
     const { width, height } = useWindowDimensions();
     const isPortrait = height > width;
-    const parsedColors = typeof colors === 'string'
-        ? colors.split(',')
-        : Array.isArray(colors) ? colors : [];
+    // const parsedColors = typeof colors === 'string'
+    //     ? colors.split(',')
+    //     : Array.isArray(colors) ? colors : [];
 
-    const gradientColors: [string, string, ...string[]] =
-        parsedColors.length >= 2
-            ? [parsedColors[0], parsedColors[1], ...parsedColors.slice(2)]
-            : ['#111111', '#999999', '#222222'];
+    // const gradientColors: [string, string, ...string[]] =
+    //     parsedColors.length >= 2
+    //         ? [parsedColors[0], parsedColors[1], ...parsedColors.slice(2)]
+    //         : ['#111111', '#999999', '#222222'];
 
     useEffect(() => {
         const fetchAddons = async () => {
@@ -182,75 +182,71 @@ const StreamScreen = () => {
 
     const selectedAddonStreams = streams.find((addonData) => addonData.addon === selectedAddon)?.streams || [];
     return (
-        <LinearGradient
-            colors={gradientColors}
-            start={[0, 0]} end={[1, 1]} style={{ flex: 1 }}>
-            <SafeAreaView style={styles.container}>
-                <StatusBar />
-                {
-                    addons?.length > 0 ? (
-                        <View>
-                            <ScrollView
-                                horizontal
-                                showsHorizontalScrollIndicator={false}
-                                contentContainerStyle={styles.addonListContainer}>
-                                {
-                                    addons.map((item, index) => (
-                                        <RenderAddonItem key={index} item={item} />
-                                    ))
-                                }
-                            </ScrollView>
-                        </View>
-                    ) : (
-                        <RNView style={styles.loadingContainer}>
-                            <View style={styles.centeredContainer}>
-                                <Feather style={styles.noAddons} name='alert-circle' color="#ffffff" size={70} />
-                                <Text style={[styles.noAddonsText]}>
-                                    No addons have been found. Please ensure that you have configured the addons before searching.
-                                </Text>
-                            </View>
-                        </RNView>
-                    )
-                }
-                {
-                    loading ? (
-                        <RNView style={styles.loadingContainer}>
-                            <View style={styles.centeredContainer}>
-                                <ActivityIndicator size="large" style={styles.activityIndicator} color="#ffffff" />
-                                <Text style={styles.centeredText}>Loading</Text>
-                            </View>
-                        </RNView>
-                    ) : (
-                        <ScrollView showsVerticalScrollIndicator={false}>
-                            <View style={styles.streamsContainer}>
-                                {
-                                    selectedAddonStreams.length > 0 ? (
-                                        selectedAddonStreams.map((item: any, index: number) =>
-                                        (
-                                            <RenderStreamItem key={index} item={item} />
-                                        ))
-                                    ) : (
-                                        <>
-                                            {
-                                                addons.length > 0 && (
-                                                    <View style={styles.centeredContainer}>
-                                                        <Feather style={styles.noStreams} name='alert-circle' color="#ffffff" size={50} />
-                                                        <Text style={[styles.noStreamsText]}>
-                                                            No streams found!
-                                                        </Text>
-                                                    </View>
-                                                )
-                                            }
-
-                                        </>
-                                    )
-                                }
-                            </View>
+        <SafeAreaView style={styles.container}>
+            <StatusBar />
+            {
+                addons?.length > 0 ? (
+                    <View>
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.addonListContainer}>
+                            {
+                                addons.map((item, index) => (
+                                    <RenderAddonItem key={index} item={item} />
+                                ))
+                            }
                         </ScrollView>
-                    )
-                }
-            </SafeAreaView >
-        </LinearGradient>
+                    </View>
+                ) : (
+                    <RNView style={styles.loadingContainer}>
+                        <View style={styles.centeredContainer}>
+                            <Feather style={styles.noAddons} name='alert-circle' color="#ffffff" size={70} />
+                            <Text style={[styles.noAddonsText]}>
+                                No addons have been found. Please ensure that you have configured the addons before searching.
+                            </Text>
+                        </View>
+                    </RNView>
+                )
+            }
+            {
+                loading ? (
+                    <RNView style={styles.loadingContainer}>
+                        <View style={styles.centeredContainer}>
+                            <ActivityIndicator size="large" style={styles.activityIndicator} color="#ffffff" />
+                            <Text style={styles.centeredText}>Loading</Text>
+                        </View>
+                    </RNView>
+                ) : (
+                    <ScrollView showsVerticalScrollIndicator={false}>
+                        <View style={styles.streamsContainer}>
+                            {
+                                selectedAddonStreams.length > 0 ? (
+                                    selectedAddonStreams.map((item: any, index: number) =>
+                                    (
+                                        <RenderStreamItem key={index} item={item} />
+                                    ))
+                                ) : (
+                                    <>
+                                        {
+                                            addons.length > 0 && (
+                                                <View style={styles.centeredContainer}>
+                                                    <Feather style={styles.noStreams} name='alert-circle' color="#ffffff" size={50} />
+                                                    <Text style={[styles.noStreamsText]}>
+                                                        No streams found!
+                                                    </Text>
+                                                </View>
+                                            )
+                                        }
+
+                                    </>
+                                )
+                            }
+                        </View>
+                    </ScrollView>
+                )
+            }
+        </SafeAreaView >
     );
 };
 
@@ -275,8 +271,7 @@ const styles = StyleSheet.create({
         marginHorizontal: 5,
     },
     selectedAddonItem: {
-        borderColor: '#fff',
-        borderWidth: 1
+        backgroundColor: '#535aff'
     },
     addonName: {
         fontSize: 15,
@@ -296,6 +291,7 @@ const styles = StyleSheet.create({
         marginVertical: 10,
         marginHorizontal: 20,
         borderRadius: 10,
+        backgroundColor: '#111111'
     },
     streamName: {
         fontSize: 14,

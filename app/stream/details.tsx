@@ -65,14 +65,14 @@ const StreamDetailsScreen = () => {
         colors: any;
     }>();
 
-    const parsedColors = typeof colors === 'string'
-        ? colors.split(',')
-        : Array.isArray(colors) ? colors : [];
+    // const parsedColors = typeof colors === 'string'
+    //     ? colors.split(',')
+    //     : Array.isArray(colors) ? colors : [];
 
-    const gradientColors: [string, string, ...string[]] =
-        parsedColors.length >= 2
-            ? [parsedColors[0], parsedColors[1], ...parsedColors.slice(2)]
-            : ['#111111', '#999999', '#222222'];
+    // const gradientColors: [string, string, ...string[]] =
+    //     parsedColors.length >= 2
+    //         ? [parsedColors[0], parsedColors[1], ...parsedColors.slice(2)]
+    //         : ['#111111', '#999999', '#222222'];
 
     const fetchContentData = useCallback(async () => {
         const stremioMetaDataUrl = `https://cinemeta-live.strem.io/meta/${type}/${imdbid}.json`;
@@ -286,64 +286,62 @@ const StreamDetailsScreen = () => {
     }
 
     return (
-        <LinearGradient colors={gradientColors} start={[0, 0]} end={[1, 1]} style={{ flex: 1 }}>
-            <SafeAreaView style={styles.container}>
-                <StatusBar />
-                <ScrollView showsVerticalScrollIndicator={false}>
-                    <View style={styles.contentContainer}>
-                        <Text style={[styles.header, { marginVertical: 10 }]}>Stream Details</Text>
-                        <DetailsRow label="Name" value={name} numOfLines={3} />
-                        {title && <DetailsRow label="Title" value={title} />}
-                        {description && <DetailsRow label="Description" value={description} multiline />}
-                        {!url && servers.length > 0 && (
-                            <ServerSelectionGroup
-                                title="Servers"
-                                options={servers}
-                                selected={selectedServer}
-                                onSelect={setSelectedServer}
-                            />
-                        )}
-                        <PlayerSelectionGroup
-                            title="Media Players"
-                            options={players}
-                            selected={selectedPlayer}
-                            onSelect={setSelectedPlayer}
-                            isPlayer
+        <SafeAreaView style={styles.container}>
+            <StatusBar />
+            <ScrollView showsVerticalScrollIndicator={false}>
+                <View style={styles.contentContainer}>
+                    <Text style={[styles.header, { marginVertical: 10 }]}>Stream Details</Text>
+                    <DetailsRow label="Name" value={name} numOfLines={3} />
+                    {title && <DetailsRow label="Title" value={title} />}
+                    {description && <DetailsRow label="Description" value={description} multiline />}
+                    {!url && servers.length > 0 && (
+                        <ServerSelectionGroup
+                            title="Servers"
+                            options={servers}
+                            selected={selectedServer}
+                            onSelect={setSelectedServer}
                         />
-                        <View style={styles.buttonContainer}>
-                            <Pressable
-                                style={[styles.button, (playBtnDisabled || !selectedPlayer || (infoHash && !selectedServer)) && {
-                                }]}
-                                onPress={handlePlay}
-                                disabled={playBtnDisabled || !selectedPlayer || (infoHash && !selectedServer) || false}>
-                                <Text style={styles.buttonText}>Play</Text>
+                    )}
+                    <PlayerSelectionGroup
+                        title="Media Players"
+                        options={players}
+                        selected={selectedPlayer}
+                        onSelect={setSelectedPlayer}
+                        isPlayer
+                    />
+                    <View style={styles.buttonContainer}>
+                        <Pressable
+                            style={[styles.button, (playBtnDisabled || !selectedPlayer || (infoHash && !selectedServer)) && {
+                            }]}
+                            onPress={handlePlay}
+                            disabled={playBtnDisabled || !selectedPlayer || (infoHash && !selectedServer) || false}>
+                            <Text style={styles.buttonText}>Play</Text>
+                        </Pressable>
+                    </View>
+                </View>
+            </ScrollView>
+
+            {/* Status Modal */}
+            <Modal
+                transparent={true}
+                visible={isModalVisible}
+                animationType="fade"
+                onRequestClose={handleCancel}
+            >
+                <TouchableWithoutFeedback>
+                    <View style={styles.modalOverlay}>
+                        <View
+                            style={[styles.modalContainer]}>
+                            <ActivityIndicator size="large" color="#ffffff" style={styles.activityIndicator} />
+                            <Text style={styles.modalText}>{statusText}</Text>
+                            <Pressable style={styles.cancelButton} onPress={handleCancel}>
+                                <Text style={styles.cancelButtonText}>Cancel</Text>
                             </Pressable>
                         </View>
                     </View>
-                </ScrollView>
-
-                {/* Status Modal */}
-                <Modal
-                    transparent={true}
-                    visible={isModalVisible}
-                    animationType="fade"
-                    onRequestClose={handleCancel}
-                >
-                    <TouchableWithoutFeedback>
-                        <View style={styles.modalOverlay}>
-                            <View
-                                style={[styles.modalContainer]}>
-                                <ActivityIndicator size="large" color="#ffffff" style={styles.activityIndicator} />
-                                <Text style={styles.modalText}>{statusText}</Text>
-                                <Pressable style={styles.cancelButton} onPress={handleCancel}>
-                                    <Text style={styles.cancelButtonText}>Cancel</Text>
-                                </Pressable>
-                            </View>
-                        </View>
-                    </TouchableWithoutFeedback>
-                </Modal>
-            </SafeAreaView >
-        </LinearGradient>
+                </TouchableWithoutFeedback>
+            </Modal>
+        </SafeAreaView >
     );
 };
 
@@ -566,8 +564,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderRadius: 30,
         minWidth: 150,
-        borderColor: '#ffffff',
-        borderWidth: 1
+        backgroundColor: '#535aff'
     },
     buttonText: {
         fontSize: 16,
@@ -604,8 +601,7 @@ const styles = StyleSheet.create({
         minHeight: 100,
         justifyContent: 'center',
         alignItems: 'center',
-        borderColor: '#ffffff',
-        borderWidth: 1
+        backgroundColor: '#111111'
     },
     modalText: {
         fontSize: 16,
@@ -627,8 +623,7 @@ const styles = StyleSheet.create({
         borderRadius: 30,
         alignItems: 'center',
         minWidth: 120,
-        borderColor: '#ffffff',
-        borderWidth: 1
+        backgroundColor: '#535aff'
     },
     cancelButtonText: {
         fontSize: 16

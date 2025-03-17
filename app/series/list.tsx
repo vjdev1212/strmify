@@ -80,7 +80,6 @@ const SeriesList = () => {
   };
 
   return (
-    <LinearGradient colors={['#111111', '#999999', '#222222']} start={[0, 0]} end={[1, 1]} style={{ flex: 1 }}>
       <RNView style={styles.container}>
         <StatusBar />
         {loading ? (
@@ -98,7 +97,6 @@ const SeriesList = () => {
           />
         )}
       </RNView>
-    </LinearGradient>
   );
 };
 
@@ -123,6 +121,7 @@ const styles = StyleSheet.create({
   },
   posterImage: {
     borderRadius: 8,
+    backgroundColor: '#111111'
   },
   posterTitle: {
     marginTop: 8,

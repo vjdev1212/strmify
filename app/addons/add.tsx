@@ -78,83 +78,81 @@ export default function AddAddonScreen() {
     };
 
     return (
-        <LinearGradient colors={['#111111', '#999999', '#222222']} start={[0, 0]} end={[1, 1]} style={{ flex: 1 }}>
 
-            <SafeAreaView style={styles.container}>
-                <StatusBar />
-                <View style={styles.inputContainer}>
-                    <Text style={styles.title}>Add Addon</Text>
-                    <TextInput
-                        style={[
-                            styles.input,
-                            colorScheme === 'dark' ? styles.darkInput : styles.lightInput,
-                        ]}
-                        placeholder="Enter manifest.json URL"
-                        placeholderTextColor="#B0B0B0"
-                        value={url}
-                        onChangeText={setUrl}
-                        autoCapitalize="none"
-                        keyboardType="url"
-                        onBlur={fetchManifest}
-                        numberOfLines={3}
-                        submitBehavior={'blurAndSubmit'}
-                    />
-                </View>
+        <SafeAreaView style={styles.container}>
+            <StatusBar />
+            <View style={styles.inputContainer}>
+                <Text style={styles.title}>Add Addon</Text>
+                <TextInput
+                    style={[
+                        styles.input,
+                        colorScheme === 'dark' ? styles.darkInput : styles.lightInput,
+                    ]}
+                    placeholder="Enter manifest.json URL"
+                    placeholderTextColor="#B0B0B0"
+                    value={url}
+                    onChangeText={setUrl}
+                    autoCapitalize="none"
+                    keyboardType="url"
+                    onBlur={fetchManifest}
+                    numberOfLines={3}
+                    submitBehavior={'blurAndSubmit'}
+                />
+            </View>
 
-                {loading && <ActivityIndicator size="large" color="#ffffff" style={styles.loading} />}
+            {loading && <ActivityIndicator size="large" color="#ffffff" style={styles.loading} />}
 
-                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollViewContent}>
-                    {manifestData && (
-                        <View style={styles.dataContainer}>
-                            <Pressable style={styles.addButton} onPress={addAddon}>
-                                <Text style={styles.addButtonText}>+ Add Addon</Text>
-                            </Pressable>
-                            {manifestData.logo && (
-                                <Image
-                                    source={{
-                                        uri: manifestData.logo.match(/\.(png|jpg|jpeg)$/i)
-                                            ? manifestData.logo
-                                            : defaultAddonLogo,
-                                    }}
-                                    style={[styles.logo]}
-                                    resizeMode="contain"
-                                />
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollViewContent}>
+                {manifestData && (
+                    <View style={styles.dataContainer}>
+                        <Pressable style={styles.addButton} onPress={addAddon}>
+                            <Text style={styles.addButtonText}>+ Add Addon</Text>
+                        </Pressable>
+                        {manifestData.logo && (
+                            <Image
+                                source={{
+                                    uri: manifestData.logo.match(/\.(png|jpg|jpeg)$/i)
+                                        ? manifestData.logo
+                                        : defaultAddonLogo,
+                                }}
+                                style={[styles.logo]}
+                                resizeMode="contain"
+                            />
+                        )}
+
+                        <View style={styles.dataInfo}>
+                            {manifestData.name && (
+                                <View style={styles.dataRow}>
+                                    <Text style={styles.label}>Name:</Text>
+                                    <Text style={styles.value}>{manifestData.name}</Text>
+                                </View>
                             )}
 
-                            <View style={styles.dataInfo}>
-                                {manifestData.name && (
-                                    <View style={styles.dataRow}>
-                                        <Text style={styles.label}>Name:</Text>
-                                        <Text style={styles.value}>{manifestData.name}</Text>
-                                    </View>
-                                )}
+                            {manifestData.version && (
+                                <View style={styles.dataRow}>
+                                    <Text style={styles.label}>Version:</Text>
+                                    <Text style={styles.value}>{manifestData.version}</Text>
+                                </View>
+                            )}
 
-                                {manifestData.version && (
-                                    <View style={styles.dataRow}>
-                                        <Text style={styles.label}>Version:</Text>
-                                        <Text style={styles.value}>{manifestData.version}</Text>
-                                    </View>
-                                )}
+                            {manifestData.description && (
+                                <View style={styles.dataRow}>
+                                    <Text style={styles.label}>Description:</Text>
+                                    <Text style={styles.value}>{manifestData.description}</Text>
+                                </View>
+                            )}
 
-                                {manifestData.description && (
-                                    <View style={styles.dataRow}>
-                                        <Text style={styles.label}>Description:</Text>
-                                        <Text style={styles.value}>{manifestData.description}</Text>
-                                    </View>
-                                )}
-
-                                {manifestData.types && manifestData.types.length > 0 && (
-                                    <View style={styles.dataRow}>
-                                        <Text style={styles.label}>Types:</Text>
-                                        <Text style={styles.value}>{manifestData.types.join(', ')}</Text>
-                                    </View>
-                                )}
-                            </View>
+                            {manifestData.types && manifestData.types.length > 0 && (
+                                <View style={styles.dataRow}>
+                                    <Text style={styles.label}>Types:</Text>
+                                    <Text style={styles.value}>{manifestData.types.join(', ')}</Text>
+                                </View>
+                            )}
                         </View>
-                    )}
-                </ScrollView>
-            </SafeAreaView>
-        </LinearGradient>
+                    </View>
+                )}
+            </ScrollView>
+        </SafeAreaView>
     );
 }
 
@@ -229,8 +227,7 @@ const styles = StyleSheet.create({
         marginVertical: 20,
         paddingHorizontal: 30,
         margin: 'auto',
-        borderColor: '#fff',
-        borderWidth: 1
+        backgroundColor: '#535aff'
     },
     addButtonText: {
         color: '#fff',

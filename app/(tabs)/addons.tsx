@@ -152,26 +152,24 @@ const AddonsScreen = () => {
   }
 
   return (
-    <LinearGradient colors={['#111111', '#999999', '#222222']} start={[0, 0]} end={[1, 1]} style={{ flex: 1 }}>
-      <SafeAreaView style={styles.container}>
-        <StatusBar />
-        <Pressable style={styles.addButton} onPress={onAddNewPress}>
-          <Text style={styles.addButtonText}>Add New</Text>
-        </Pressable>
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.contentContainer}>
-          {addons.length > 0 ? (
-            addons.map(renderAddonItem)
-          ) : (
-            <View style={styles.centeredContainer}>
-              <Ionicons style={styles.noAddons} name='extension-puzzle-outline' color="#ffffff" size={70} />
-              <Text style={[styles.noAddonsText]}>
-                No addons available. Add one now!
-              </Text>
-            </View>
-          )}
-        </ScrollView>
-      </SafeAreaView >
-    </LinearGradient>
+    <SafeAreaView style={styles.container}>
+      <StatusBar />
+      <Pressable style={styles.addButton} onPress={onAddNewPress}>
+        <Text style={styles.addButtonText}>Add New</Text>
+      </Pressable>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.contentContainer}>
+        {addons.length > 0 ? (
+          addons.map(renderAddonItem)
+        ) : (
+          <View style={styles.centeredContainer}>
+            <Ionicons style={styles.noAddons} name='extension-puzzle-outline' color="#ffffff" size={70} />
+            <Text style={[styles.noAddonsText]}>
+              No addons available. Add one now!
+            </Text>
+          </View>
+        )}
+      </ScrollView>
+    </SafeAreaView >
   );
 };
 
@@ -199,13 +197,12 @@ const styles = StyleSheet.create({
     marginVertical: 20,
     alignSelf: 'center',
     padding: 12,
-    borderColor: '#fff',
-    borderWidth: 1
+    backgroundColor: '#535aff'
   },
   addButtonText: {
     color: '#fff',
     textAlign: 'center',
-    fontSize: 16,
+    fontSize: 16
   },
   noAddonsText: {
     textAlign: 'center',

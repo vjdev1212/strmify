@@ -176,8 +176,7 @@ const styles = StyleSheet.create({
     marginVertical: 30,
     marginHorizontal: 10,
     color: '#ffffff',
-    borderColor: '#ffffff',
-    borderWidth: 1
+    backgroundColor: '#111111'
   },
   lightInput: {
     backgroundColor: '#f0f0f0',
@@ -197,8 +196,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     width: '50%',
     marginHorizontal: '25%',
-    borderColor: '#ffffff',
-    borderWidth: 1
+    backgroundColor: '#535aff'
   },
   switchContainer: {
     flexDirection: 'row',

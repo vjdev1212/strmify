@@ -5,15 +5,13 @@ import { SafeAreaView, ScrollView, StyleSheet } from 'react-native';
 
 const TorrServerScreen = () => {
     return (
-        <LinearGradient colors={['#111111', '#999999', '#222222']} start={[0, 0]} end={[1, 1]} style={{ flex: 1 }}>
-            <SafeAreaView style={styles.container}>
+                <SafeAreaView style={styles.container}>
                 <StatusBar />
                 <ScrollView showsVerticalScrollIndicator={false}>
                     <ServerConfiguration serverName="TorrServer" serverType="torrserver" defaultUrl="http://torrserver:5665" />
                 </ScrollView>
             </SafeAreaView>
-        </LinearGradient>
-    );
+        );
 };
 
 const styles = StyleSheet.create({

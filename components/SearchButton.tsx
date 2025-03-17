@@ -19,8 +19,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     flexDirection: 'row',
     justifyContent: 'center',
-    borderColor: '#fff',
-    borderWidth: 1
+    backgroundColor: '#535aff'
   },
   text: {
     color: '#fff',

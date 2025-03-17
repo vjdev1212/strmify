@@ -139,76 +139,74 @@ const SearchScreen = () => {
   const colorScheme = useColorScheme();
 
   return (
-    <LinearGradient colors={['#111111', '#999999', '#222222']} start={[0, 0]} end={[1, 1]} style={{ flex: 1 }}>
-      <SafeAreaView style={styles.container}>
-        <StatusBar />
-        <View style={styles.searchInputContainer}>
-          <TextInput
-            style={[
-              styles.searchInput,
-            ]}
-            placeholder="Search movies or series..."
-            placeholderTextColor={'#fff'}
-            value={query}
-            onChangeText={setQuery}
-            submitBehavior={'blurAndSubmit'}
-          />
-          {query.length > 0 && (
-            <Pressable onPress={clearSearch} style={styles.clearIcon}>
-              <Ionicons name="close-circle" size={20} color="#fff" />
-            </Pressable>
-          )}
-        </View>
+    <SafeAreaView style={styles.container}>
+      <StatusBar />
+      <View style={styles.searchInputContainer}>
+        <TextInput
+          style={[
+            styles.searchInput,
+          ]}
+          placeholder="Search movies or series..."
+          placeholderTextColor={'#fff'}
+          value={query}
+          onChangeText={setQuery}
+          submitBehavior={'blurAndSubmit'}
+        />
+        {query.length > 0 && (
+          <Pressable onPress={clearSearch} style={styles.clearIcon}>
+            <Ionicons name="close-circle" size={20} color="#fff" />
+          </Pressable>
+        )}
+      </View>
 
-        {loading && <ActivityIndicator size="large" color="#ffffff" style={styles.loader} />}
-        <ScrollView showsVerticalScrollIndicator={false} style={styles.searchResulstContainer}>
-          {
-            !loading && movies.length === 0 && series.length === 0 &&
-            (
-              <View style={styles.centeredContainer}>
-                <Ionicons style={styles.noResults} name='search-outline' color="#ffffff" size={70} />
-                {
-                  query.length > 0 ? (
-                    <Text style={[styles.noResultsText]}>
-                      No results found.
-                    </Text>
-                  ) : (
-                    <Text style={[styles.noResultsText]}>
-                      What would you like to watch today?
-                    </Text>
-                  )
-                }
-              </View>
-            )
-          }
-          {!loading && movies.length > 0 && (
-            <View>
-              <Text style={styles.sectionTitle}>Movies</Text>
-              <FlatList
-                data={movies}
-                keyExtractor={(item, index) => `movie-${index}`}
-                renderItem={renderMoviePoster}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-              />
+      {loading && <ActivityIndicator size="large" color="#ffffff" style={styles.loader} />}
+      <ScrollView showsVerticalScrollIndicator={false} style={styles.searchResulstContainer}>
+        {
+          !loading && movies.length === 0 && series.length === 0 &&
+          (
+            <View style={styles.centeredContainer}>
+              <Ionicons style={styles.noResults} name='search-outline' color="#ffffff" size={70} />
+              {
+                query.length > 0 ? (
+                  <Text style={[styles.noResultsText]}>
+                    No results found.
+                  </Text>
+                ) : (
+                  <Text style={[styles.noResultsText]}>
+                    What would you like to watch today?
+                  </Text>
+                )
+              }
             </View>
-          )}
+          )
+        }
+        {!loading && movies.length > 0 && (
+          <View>
+            <Text style={styles.sectionTitle}>Movies</Text>
+            <FlatList
+              data={movies}
+              keyExtractor={(item, index) => `movie-${index}`}
+              renderItem={renderMoviePoster}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+            />
+          </View>
+        )}
 
-          {!loading && series.length > 0 && (
-            <View>
-              <Text style={styles.sectionTitle}>Series</Text>
-              <FlatList
-                data={series}
-                keyExtractor={(item, index) => `series-${index}`}
-                renderItem={renderSeriesPoster}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-              />
-            </View>
-          )}
-        </ScrollView>
-      </SafeAreaView>
-    </LinearGradient>
+        {!loading && series.length > 0 && (
+          <View>
+            <Text style={styles.sectionTitle}>Series</Text>
+            <FlatList
+              data={series}
+              keyExtractor={(item, index) => `series-${index}`}
+              renderItem={renderSeriesPoster}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+            />
+          </View>
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
@@ -236,8 +234,8 @@ const styles = StyleSheet.create({
     paddingLeft: 20,
     paddingRight: 40,
     fontSize: 16,
-    borderColor: '#ffffff',
-    borderWidth: 1
+    backgroundColor: '#111111',
+    outline: 'none'
   },
   clearIcon: {
     position: 'absolute',

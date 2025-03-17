@@ -223,8 +223,7 @@ const styles = StyleSheet.create({
     borderRadius: 25
   },
   selectedSeasonButton: {
-    borderColor: '#ffffff',
-    borderWidth: 1
+    backgroundColor: '#535aff'
   },
   seasonText: {
     fontSize: 16,

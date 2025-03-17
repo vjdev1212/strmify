@@ -20,22 +20,20 @@ const DonateScreen = () => {
     };
 
     return (
-        <LinearGradient colors={['#111111', '#999999', '#222222']} start={[0, 0]} end={[1, 1]} style={{ flex: 1 }}>
 
-            <SafeAreaView style={styles.container}>
-                <StatusBar />
-                <ScrollView style={styles.donateContainer} showsVerticalScrollIndicator={false}>
-                    <Text style={styles.title}>Liked the App!</Text>
-                    <Text style={styles.subtitle}>
-                        If you find this app useful and want to support its continued development, consider buying me a coffee. Your support keeps this project alive and thriving!      </Text>
+        <SafeAreaView style={styles.container}>
+            <StatusBar />
+            <ScrollView style={styles.donateContainer} showsVerticalScrollIndicator={false}>
+                <Text style={styles.title}>Liked the App!</Text>
+                <Text style={styles.subtitle}>
+                    If you find this app useful and want to support its continued development, consider buying me a coffee. Your support keeps this project alive and thriving!      </Text>
 
-                    <Pressable style={styles.donateButton} onPress={handleDonate}>
-                        <Ionicons name="cafe-outline" size={24} color="#fff" style={styles.icon} />
-                        <Text style={styles.donateText}>Buy Me a Coffee</Text>
-                    </Pressable>
-                </ScrollView>
-            </SafeAreaView>
-        </LinearGradient>
+                <Pressable style={styles.donateButton} onPress={handleDonate}>
+                    <Ionicons name="cafe-outline" size={24} color="#fff" style={styles.icon} />
+                    <Text style={styles.donateText}>Buy Me a Coffee</Text>
+                </Pressable>
+            </ScrollView>
+        </SafeAreaView>
     );
 };
 
@@ -70,8 +68,7 @@ const styles = StyleSheet.create({
         borderRadius: 30,
         marginVertical: 20,
         marginHorizontal: 'auto',
-        borderColor: '#ffffff',
-        borderWidth: 1,
+        backgroundColor: '#535aff'
     },
     donateText: {
         color: '#fff',

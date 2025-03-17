@@ -61,31 +61,31 @@ const MovieDetails = () => {
             description: movie.overview
           };
           setData(movieData);
-          let extractedColors: [string, string] | [string, string, string] = ['#111111', '#999999', '#222222'];
-          const response = await fetch(isPortrait ? movieData.background : movieData.poster, { mode: 'cors' });
-          if (!response.ok) {
-            console.log('Failed to fetch image for colors', response)
-            extractedColors = ['#111111', '#999999', '#222222'];
-            setGradientColors(extractedColors);
-          }
-          else {
-            const blob = await response.blob();
-            const objectURL = URL.createObjectURL(blob);
-            const colors = await getColors(objectURL, {
-              cache: true,
-              key: imdbid,
-              fallback: '#111111',
-              pixelSpacing: 5
-            });
-            if (colors.platform === 'ios') {
-              extractedColors = [colors.primary || '#111111', colors.secondary || '#222222'];
-            }
-            else {
-              extractedColors = [colors.muted || '#111111', colors.vibrant || '#111111', colors.dominant || '#222222'];
-              console.log(extractedColors);
-            }
-            setGradientColors(extractedColors);
-          }
+          // let extractedColors: [string, string] | [string, string, string] = ['#111111', '#999999', '#222222'];
+          // const response = await fetch(isPortrait ? movieData.background : movieData.poster, { mode: 'cors' });
+          // if (!response.ok) {
+          //   console.log('Failed to fetch image for colors', response)
+          //   extractedColors = ['#111111', '#999999', '#222222'];
+          //   setGradientColors(extractedColors);
+          // }
+          // else {
+          //   const blob = await response.blob();
+          //   const objectURL = URL.createObjectURL(blob);
+          //   const colors = await getColors(objectURL, {
+          //     cache: true,
+          //     key: imdbid,
+          //     fallback: '#111111',
+          //     pixelSpacing: 5
+          //   });
+          //   if (colors.platform === 'ios') {
+          //     extractedColors = [colors.primary || '#111111', colors.secondary || '#222222'];
+          //   }
+          //   else {
+          //     extractedColors = [colors.muted || '#111111', colors.vibrant || '#111111', colors.dominant || '#222222'];
+          //     console.log(extractedColors);
+          //   }
+          //   setGradientColors(extractedColors);
+          // }
         }
       } catch (error) {
         console.error('Error fetching movie details:', error);
@@ -115,22 +115,18 @@ const MovieDetails = () => {
 
   if (loading) {
     return (
-      <LinearGradient colors={['#111111', '#999999', '#222222']} start={[0, 0]} end={[1, 1]} style={{ flex: 1 }}>
-        <View style={styles.centeredContainer}>
-          <ActivityIndicator size="large" style={styles.activityIndicator} color="#ffffff" />
-          <Text style={styles.centeredText}>Loading</Text>
-        </View>
-      </LinearGradient>
+      <View style={styles.centeredContainer}>
+        <ActivityIndicator size="large" style={styles.activityIndicator} color="#ffffff" />
+        <Text style={styles.centeredText}>Loading</Text>
+      </View>
     );
   }
 
   if (!data) {
     return (
-      <LinearGradient colors={['#111111', '#999999', '#222222']} start={[0, 0]} end={[1, 1]} style={{ flex: 1 }}>
-        <View style={styles.centeredContainer}>
-          <Text style={styles.centeredText}>No movie details available</Text>
-        </View>
-      </LinearGradient>
+      <View style={styles.centeredContainer}>
+        <Text style={styles.centeredText}>No movie details available</Text>
+      </View>
     );
   }
 
@@ -140,55 +136,53 @@ const MovieDetails = () => {
     }
     router.push({
       pathname: '/stream/list',
-      params: { imdbid: imdbid, type: 'movie', name: data.name, season: 0, episode: 0, colors: gradientColors },
+      params: { imdbid: imdbid, type: 'movie', name: data.name, season: 0, episode: 0 },
     });
   };
 
   return (
     <ScrollView showsVerticalScrollIndicator={false} style={styles.container} ref={ref}>
-      <LinearGradient colors={gradientColors as [string, string]} start={[0, 0]} end={[1, 1]} style={{ flex: 1 }}>
-        <StatusBar translucent backgroundColor={gradientColors[0]}/>
-        <View style={[{
-          flex: 1,
-          flexDirection: isPortrait ? 'column' : 'row',
-          marginTop: isPortrait ? 0 : '5%',
-          justifyContent: 'center',
+      <StatusBar translucent backgroundColor={gradientColors[0]} />
+      <View style={[{
+        flex: 1,
+        flexDirection: isPortrait ? 'column' : 'row',
+        marginTop: isPortrait ? 0 : '5%',
+        justifyContent: 'center',
+      }]}>
+        <View style={[styles.posterContainer, {
+          width: isPortrait ? '100%' : '30%',
+          padding: isPortrait ? null : '3%'
         }]}>
-          <View style={[styles.posterContainer, {
-            width: isPortrait ? '100%' : '30%',
-            padding: isPortrait ? null : '3%'
-          }]}>
-            <MediaContentPoster background={isPortrait ? data.background : data.poster} isPortrait={isPortrait} />
-          </View>
+          <MediaContentPoster background={isPortrait ? data.background : data.poster} isPortrait={isPortrait} />
+        </View>
 
-          <View style={[styles.detailsContainer, {
-            width: isPortrait ? '100%' : '60%',
-            paddingHorizontal: isPortrait ? null : 5
-          }]}>
-            <MediaLogo logo={data.logo} title={data.name} />
-            <MediaContentHeader
-              name={data.name}
-              genre={data.genre || data.genres}
-              released={data.released}
-              runtime={data.runtime}
-              imdbRating={data.imdbRating}
-              releaseInfo={data.releaseInfo}
-            />
-            <SearchButton onPress={handlePlayPress} text="Movie" />
-            <MediaContentDescription description={data.description} />
-            <MediaCastAndCrews cast={cast}></MediaCastAndCrews>
-          </View>
-          <BottomSpacing space={20} />
+        <View style={[styles.detailsContainer, {
+          width: isPortrait ? '100%' : '60%',
+          paddingHorizontal: isPortrait ? null : 5
+        }]}>
+          <MediaLogo logo={data.logo} title={data.name} />
+          <MediaContentHeader
+            name={data.name}
+            genre={data.genre || data.genres}
+            released={data.released}
+            runtime={data.runtime}
+            imdbRating={data.imdbRating}
+            releaseInfo={data.releaseInfo}
+          />
+          <SearchButton onPress={handlePlayPress} text="Movie" />
+          <MediaContentDescription description={data.description} />
+          <MediaCastAndCrews cast={cast}></MediaCastAndCrews>
         </View>
-        <View>
-          <View style={{ justifyContent: 'center', marginTop: isPortrait ? 5 : '10%' }}>
-          </View>
+        <BottomSpacing space={20} />
+      </View>
+      <View>
+        <View style={{ justifyContent: 'center', marginTop: isPortrait ? 5 : '10%' }}>
         </View>
-        <View style={styles.recommendationsContainer}>
-          <PosterList apiUrl={`https://api.themoviedb.org/3/movie/${moviedbid}/recommendations`} title='More like this' type='movie' />
-          <BottomSpacing space={50} />
-        </View>
-      </LinearGradient>
+      </View>
+      <View style={styles.recommendationsContainer}>
+        <PosterList apiUrl={`https://api.themoviedb.org/3/movie/${moviedbid}/recommendations`} title='More like this' type='movie' />
+        <BottomSpacing space={50} />
+      </View>
     </ScrollView>
   );
 };

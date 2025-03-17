@@ -41,14 +41,6 @@ export default function TabLayout() {
         tabBarInactiveTintColor: '#ffffff',
         headerShown: false,
         tabBarStyle: { height: getTabBarHeight(), backgroundColor: 'transparent', borderColor: '#191919' },
-        tabBarBackground: () => (
-          <LinearGradient
-            colors={['#222222', '#999999', '#111111']}
-            start={[0, 0]}
-            end={[1, 1]}
-            style={{ flex: 1 }}
-          />
-        ),
       }}
     >
       <Tabs.Screen

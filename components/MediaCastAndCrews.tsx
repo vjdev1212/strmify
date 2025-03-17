@@ -68,8 +68,7 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     justifyContent: "center",
     alignItems: "center",
-    borderColor: '#ffffff',
-    borderWidth: 1
+    backgroundColor: '#111111'
   },
   initials: {
     fontSize: 25,

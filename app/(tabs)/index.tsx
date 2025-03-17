@@ -8,7 +8,6 @@ export default function HomeScreen() {
 
   return (
     <ScrollView showsVerticalScrollIndicator={false}>
-      <LinearGradient colors={['#111111', '#999999', '#222222']} start={[0, 0]} end={[1, 1]}>
         <SafeAreaView style={styles.container}>
           <StatusBar />
           <View style={styles.contentContainer}>
@@ -22,8 +21,7 @@ export default function HomeScreen() {
             <PosterList apiUrl={CatalogUrl.airingTodayTv} title='Series - Airing Today' type='series' />
           </View>
         </SafeAreaView>
-      </LinearGradient>
-    </ScrollView>
+      </ScrollView>
   );
 }
 
