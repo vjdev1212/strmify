@@ -1,11 +1,11 @@
 version: '3.0'
 
-name: StreamSrc
+name: Strmify
 services:
-  streamsrc:
-    container_name: streamsrc
-    hostname: streamsrc
-    image: jarvisnexus/streamsrc:latest
+  strmify:
+    container_name: strmify
+    hostname: strmify
+    image: jarvisnexus/strmify:latest
     ports:
       - "3333:80"
     restart: unless-stopped

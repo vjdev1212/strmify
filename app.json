@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "StreamSrc",
-    "slug": "streamsrc",
+    "name": "Strmify",
+    "slug": "strmify",
     "version": "1.0.0",
     "orientation": "default",
     "icon": "assets/images/icon.png",
-    "scheme": "streamsrc",
+    "scheme": "strmify",
     "platforms": [
       "ios",
       "android",
@@ -22,7 +22,7 @@
       "icon": "assets/images/icon.png",
       "supportsTablet": true,
       "backgroundColor": "#000000",
-      "bundleIdentifier": "com.vijayyuvi.streamsrc",
+      "bundleIdentifier": "com.vijayyuvi.strmify",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -32,7 +32,7 @@
         "foregroundImage": "assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.vijayyuvi.streamsrc",
+      "package": "com.vijayyuvi.strmify",
       "icon": "assets/images/icon.png"
     },
     "web": {
@@ -63,7 +63,7 @@
         "origin": false
       },
       "eas": {
-        "projectId": "833af164-852e-4115-b090-71f676741562"
+        "projectId": "d5580e97-7f37-4396-b166-98f416aab366"
       }
     },
     "owner": "vijayvcm"
