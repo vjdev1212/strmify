@@ -96,21 +96,21 @@ const AddonsScreen = () => {
       <Text style={styles.addonDescription}>{item.description}</Text>
       <View style={styles.actions}>
         <Pressable
-          style={[styles.actionButton]}
+          style={[styles.actionButton, styles.shareButton]}
           onPress={() => shareManifestUrl(item.manifestUrl)}
         >
           <Text style={styles.actionText}>Share</Text>
         </Pressable>
         {item.behaviorHints?.configurable && (
           <Pressable
-            style={[styles.actionButton]}
+            style={[styles.actionButton, styles.configureButton]}
             onPress={() => openConfiguration(item.baseUrl)}
           >
             <Text style={styles.actionText}>Configure</Text>
           </Pressable>
         )}
         <Pressable
-          style={[styles.actionButton]}
+          style={[styles.actionButton, styles.removeButton]}
           onPress={async () => {
             if (isHapticsSupported()) {
               await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
@@ -250,9 +250,16 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginHorizontal: 5,
     margin: 'auto',
-    textAlign: 'center',
-    borderColor: '#fff',
-    borderWidth: 1
+    textAlign: 'center'
+  },
+  shareButton: {
+    backgroundColor: '#2165da',
+  },
+  configureButton: {
+    backgroundColor: '#7F7FFF',
+  },
+  removeButton: {
+    backgroundColor: '#2fb1cb',
   },
   actionText: {
     color: '#fff',
