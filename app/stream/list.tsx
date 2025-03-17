@@ -11,7 +11,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const StreamScreen = () => {
-    const { imdbid, type, name: contentTitle, season, episode } = useLocalSearchParams();
+    const { imdbid, type, name: contentTitle, season, episode, colors } = useLocalSearchParams();
     const [addons, setAddons] = useState<any[]>([]);
     const [selectedAddon, setSelectedAddon] = useState<any | null>(null);
     const [streams, setStreams] = useState<any[]>([]);
@@ -20,6 +20,14 @@ const StreamScreen = () => {
     const colorScheme = useColorScheme();
     const { width, height } = useWindowDimensions();
     const isPortrait = height > width;
+    const parsedColors = typeof colors === 'string'
+        ? colors.split(',')
+        : Array.isArray(colors) ? colors : [];
+
+    const gradientColors: [string, string, ...string[]] =
+        parsedColors.length >= 2
+            ? [parsedColors[0], parsedColors[1], ...parsedColors.slice(2)]
+            : ['#111111', '#222222'];
 
     useEffect(() => {
         const fetchAddons = async () => {
@@ -144,7 +152,7 @@ const StreamScreen = () => {
             router.push({
                 pathname: '/stream/details',
                 params: {
-                    imdbid, type, season, episode, contentTitle, name, title, description, url, infoHash
+                    imdbid, type, season, episode, contentTitle, name, title, description, url, infoHash, colors
                 },
             })
         }
@@ -174,7 +182,9 @@ const StreamScreen = () => {
 
     const selectedAddonStreams = streams.find((addonData) => addonData.addon === selectedAddon)?.streams || [];
     return (
-        <LinearGradient colors={['#111111', '#222222']} start={[0, 0]} end={[1, 1]} style={{ flex: 1 }}>
+        <LinearGradient
+            colors={gradientColors}
+            start={[0, 0]} end={[1, 1]} style={{ flex: 1 }}>
             <SafeAreaView style={styles.container}>
                 <StatusBar />
                 {

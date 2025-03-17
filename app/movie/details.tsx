@@ -139,7 +139,7 @@ const MovieDetails = () => {
     }
     router.push({
       pathname: '/stream/list',
-      params: { imdbid: imdbid, type: 'movie', name: data.name, season: 0, episode: 0 },
+      params: { imdbid: imdbid, type: 'movie', name: data.name, season: 0, episode: 0, colors: gradientColors },
     });
   };
 

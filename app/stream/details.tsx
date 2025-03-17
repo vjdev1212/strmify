@@ -51,7 +51,7 @@ const StreamDetailsScreen = () => {
     }, []);
 
 
-    const { imdbid, type, season, episode, contentTitle, name, title, description, url, infoHash } = useLocalSearchParams<{
+    const { imdbid, type, season, episode, contentTitle, name, title, description, url, infoHash, colors } = useLocalSearchParams<{
         imdbid: string;
         type: string;
         season: string;
@@ -62,7 +62,17 @@ const StreamDetailsScreen = () => {
         description?: string;
         url?: string;
         infoHash?: string;
+        colors: any;
     }>();
+
+    const parsedColors = typeof colors === 'string'
+        ? colors.split(',')
+        : Array.isArray(colors) ? colors : [];
+
+    const gradientColors: [string, string, ...string[]] =
+        parsedColors.length >= 2
+            ? [parsedColors[0], parsedColors[1], ...parsedColors.slice(2)]
+            : ['#111111', '#222222'];
 
     const fetchContentData = useCallback(async () => {
         const stremioMetaDataUrl = `https://cinemeta-live.strem.io/meta/${type}/${imdbid}.json`;
@@ -276,7 +286,7 @@ const StreamDetailsScreen = () => {
     }
 
     return (
-        <LinearGradient colors={['#111111', '#222222']} start={[0, 0]} end={[1, 1]} style={{ flex: 1 }}>
+        <LinearGradient colors={gradientColors} start={[0, 0]} end={[1, 1]} style={{ flex: 1 }}>
             <SafeAreaView style={styles.container}>
                 <StatusBar />
                 <ScrollView showsVerticalScrollIndicator={false}>
