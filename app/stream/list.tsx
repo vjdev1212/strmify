@@ -163,7 +163,7 @@ const StreamScreen = () => {
                 marginVertical: 10,
                 justifyContent: 'space-evenly',
                 width: '98%',
-                maxWidth: 560,
+                maxWidth: 380,
                 alignSelf: 'center'
             }]}>
                 <Pressable onPress={handleStreamSelected}>
