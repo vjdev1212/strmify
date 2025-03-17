@@ -62,6 +62,7 @@ const EmbedPlayer = () => {
                             style={{ flex: 1, width: "100%", height: "100%" }}
                             referrerPolicy="no-referrer-when-downgrade"
                             allow="autoplay; fullscreen"
+                            sandbox="allow-forms allow-scripts allow-same-origin allowfullscreen allow-presentation"
                             frameBorder={0}
                             allowFullScreen
                         />
