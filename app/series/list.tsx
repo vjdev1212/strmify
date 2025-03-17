@@ -85,7 +85,6 @@ const SeriesList = () => {
         {loading ? (
           <View style={styles.centeredContainer}>
             <ActivityIndicator size="large" style={styles.activityIndicator} color="#ffffff" />
-            <Text style={styles.centeredText}>Loading</Text>
           </View>) : (
           <FlatList
             data={data}
