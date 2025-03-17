@@ -79,7 +79,7 @@ const MoviesList = () => {
   };
 
   return (
-    <LinearGradient colors={['#111111', '#222222']} start={[0, 0]} end={[1, 1]} style={{ flex: 1 }}>
+    <LinearGradient colors={['#111111', '#999999', '#222222']} start={[0, 0]} end={[1, 1]} style={{ flex: 1 }}>
       <RNView style={styles.container}>
         <StatusBar />
         {loading ? (

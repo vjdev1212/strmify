@@ -27,7 +27,7 @@ const StreamScreen = () => {
     const gradientColors: [string, string, ...string[]] =
         parsedColors.length >= 2
             ? [parsedColors[0], parsedColors[1], ...parsedColors.slice(2)]
-            : ['#111111', '#222222'];
+            : ['#111111', '#999999', '#222222'];
 
     useEffect(() => {
         const fetchAddons = async () => {

@@ -77,11 +77,11 @@ const SeriesDetails = () => {
           };
           setData(seriesData);
 
-          let extractedColors: [string, string] | [string, string, string] = ['#111111', '#222222'];
+          let extractedColors: [string, string] | [string, string, string] = ['#111111', '#999999', '#222222'];
           const response = await fetch(isPortrait ? seriesData.background : seriesData.poster, { mode: 'cors' });
           if (!response.ok) {
             console.log('Failed to fetch image for colors', response)
-            extractedColors = ['#111111', '#222222'];
+            extractedColors = ['#111111', '#999999', '#222222'];
             setGradientColors(extractedColors);
           }
           else {
@@ -139,7 +139,7 @@ const SeriesDetails = () => {
 
   if (loading) {
     return (
-      <LinearGradient colors={['#111111', '#222222']} start={[0, 0]} end={[1, 1]} style={{ flex: 1 }}>
+      <LinearGradient colors={['#111111', '#999999', '#222222']} start={[0, 0]} end={[1, 1]} style={{ flex: 1 }}>
         <View style={styles.centeredContainer}>
           <ActivityIndicator size="large" style={styles.activityIndicator} color="#ffffff" />
           <Text style={styles.centeredText}>Loading</Text>
@@ -150,7 +150,7 @@ const SeriesDetails = () => {
 
   if (!data) {
     return (
-      <LinearGradient colors={['#111111', '#222222']} start={[0, 0]} end={[1, 1]} style={{ flex: 1 }}>
+      <LinearGradient colors={['#111111', '#999999', '#222222']} start={[0, 0]} end={[1, 1]} style={{ flex: 1 }}>
         <View style={styles.centeredContainer}>
           <Text style={styles.centeredText}>No series details available</Text>
         </View>

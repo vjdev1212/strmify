@@ -72,7 +72,7 @@ const StreamDetailsScreen = () => {
     const gradientColors: [string, string, ...string[]] =
         parsedColors.length >= 2
             ? [parsedColors[0], parsedColors[1], ...parsedColors.slice(2)]
-            : ['#111111', '#222222'];
+            : ['#111111', '#999999', '#222222'];
 
     const fetchContentData = useCallback(async () => {
         const stremioMetaDataUrl = `https://cinemeta-live.strem.io/meta/${type}/${imdbid}.json`;

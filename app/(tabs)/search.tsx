@@ -139,7 +139,7 @@ const SearchScreen = () => {
   const colorScheme = useColorScheme();
 
   return (
-    <LinearGradient colors={['#111111', '#222222']} start={[0, 0]} end={[1, 1]} style={{ flex: 1 }}>
+    <LinearGradient colors={['#111111', '#999999', '#222222']} start={[0, 0]} end={[1, 1]} style={{ flex: 1 }}>
       <SafeAreaView style={styles.container}>
         <StatusBar />
         <View style={styles.searchInputContainer}>
