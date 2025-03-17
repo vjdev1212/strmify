@@ -160,14 +160,14 @@ const SeriesDetails = () => {
   const handleEpisodeSelect = (season: number, episode: number) => {
     router.push({
       pathname: '/stream/list',
-      params: { imdbid: imdbid, type: 'series', name: data.name, season: season, episode: episode },
+      params: { imdbid: imdbid, type: 'series', name: data.name, season: season, episode: episode, colors: gradientColors },
     });
   };
 
   return (
     <ScrollView showsVerticalScrollIndicator={false} style={styles.container} ref={ref}>
       <LinearGradient colors={gradientColors as [string, string]} start={[0, 0]} end={[1, 1]} style={{ flex: 1 }}>
-        <StatusBar translucent backgroundColor={gradientColors[0]}/>
+        <StatusBar translucent backgroundColor={gradientColors[0]} />
         <View style={[{
           flex: 1,
           flexDirection: isPortrait ? 'column' : 'row',
@@ -184,7 +184,7 @@ const SeriesDetails = () => {
             width: isPortrait ? '100%' : '60%',
             paddingHorizontal: isPortrait ? null : 5
           }]}>
-            <MediaLogo logo={data.logo} title={data.name}/>
+            <MediaLogo logo={data.logo} title={data.name} />
             <MediaContentHeader
               name={data.name}
               genre={data.genre}
