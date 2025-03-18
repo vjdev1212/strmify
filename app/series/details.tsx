@@ -10,8 +10,7 @@ import BottomSpacing from '@/components/BottomSpacing';
 import MediaLogo from '@/components/MediaLogo';
 import MediaCastAndCrews from '@/components/MediaCastAndCrews';
 import PosterList from '@/components/PosterList';
-
-import { getColors } from 'react-native-image-colors';
+import MediaContentDetailsList from '@/components/MediaContentDetailsList';
 
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
@@ -69,6 +68,9 @@ const SeriesDetails = () => {
             logo: logo,
             genre: result.genres.map((genre: any) => genre.name),
             released: result.first_air_date,
+            country: result.origin_country,
+            languages: result.spoken_languages,
+            status: result.status,
             runtime: result.episode_run_time?.[0] || null,
             imdbRating: result.vote_average?.toFixed(1),
             releaseInfo: result.first_air_date,
@@ -189,6 +191,7 @@ const SeriesDetails = () => {
             releaseInfo={data.releaseInfo}
           />
           <MediaContentDescription description={data.description} />
+          <MediaContentDetailsList released={data.released} country={data.country} languages={data.languages} status={data.status} />
           <MediaCastAndCrews cast={cast}></MediaCastAndCrews>
           {
             isPortrait ? (null) : (

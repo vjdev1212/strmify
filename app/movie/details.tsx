@@ -13,7 +13,7 @@ import { isHapticsSupported } from '@/utils/platform';
 import MediaLogo from '@/components/MediaLogo';
 import MediaCastAndCrews from '@/components/MediaCastAndCrews';
 import PosterList from '@/components/PosterList';
-import { getColors } from 'react-native-image-colors';
+import MediaContentDetailsList from '@/components/MediaContentDetailsList';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -55,37 +55,15 @@ const MovieDetails = () => {
             logo: logo,
             genre: movie.genres.map((genre: any) => genre.name),
             released: movie.release_date,
+            country: movie.origin_country,
+            languages: movie.spoken_languages,
+            status: movie.status,
             runtime: movie.runtime,
             imdbRating: movie.vote_average?.toFixed(1),
             releaseInfo: movie.release_date,
             description: movie.overview
           };
           setData(movieData);
-          // let extractedColors: [string, string] | [string, string, string] = ['#111111', '#999999', '#222222'];
-          // const response = await fetch(isPortrait ? movieData.background : movieData.poster, { mode: 'cors' });
-          // if (!response.ok) {
-          //   console.log('Failed to fetch image for colors', response)
-          //   extractedColors = ['#111111', '#999999', '#222222'];
-          //   setGradientColors(extractedColors);
-          // }
-          // else {
-          //   const blob = await response.blob();
-          //   const objectURL = URL.createObjectURL(blob);
-          //   const colors = await getColors(objectURL, {
-          //     cache: true,
-          //     key: imdbid,
-          //     fallback: '#111111',
-          //     pixelSpacing: 5
-          //   });
-          //   if (colors.platform === 'ios') {
-          //     extractedColors = [colors.primary || '#111111', colors.secondary || '#222222'];
-          //   }
-          //   else {
-          //     extractedColors = [colors.muted || '#111111', colors.vibrant || '#111111', colors.dominant || '#222222'];
-          //     console.log(extractedColors);
-          //   }
-          //   setGradientColors(extractedColors);
-          // }
         }
       } catch (error) {
         console.error('Error fetching movie details:', error);
@@ -170,6 +148,7 @@ const MovieDetails = () => {
           />
           <SearchButton onPress={handlePlayPress} text="Movie" />
           <MediaContentDescription description={data.description} />
+          <MediaContentDetailsList released={data.released} country={data.country} languages={data.languages} status={data.status} />
           <MediaCastAndCrews cast={cast}></MediaCastAndCrews>
         </View>
         <BottomSpacing space={20} />
