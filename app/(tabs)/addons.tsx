@@ -18,7 +18,7 @@ import * as Haptics from 'expo-haptics';
 import { isHapticsSupported, showAlert } from '@/utils/platform';
 import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from '@/components/useColorScheme';
-import { LinearGradient } from 'expo-linear-gradient';
+
 
 const AddonsScreen = () => {
   const [addons, setAddons] = useState<any[]>([]);

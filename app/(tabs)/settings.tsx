@@ -7,7 +7,7 @@ import * as Haptics from 'expo-haptics'
 import { isHapticsSupported } from '@/utils/platform';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useColorScheme } from '@/components/useColorScheme';
-import { LinearGradient } from 'expo-linear-gradient';
+
 
 const SettingsScreen = () => {
   const router = useRouter();

@@ -1,7 +1,7 @@
 import ServerConfiguration from '@/components/ServerConfig';
 import { SafeAreaView, ScrollView, StyleSheet } from 'react-native';
 import { StatusBar } from '@/components/Themed';
-import { LinearGradient } from 'expo-linear-gradient';
+
 
 const StremioServerScreen = () => {
     return (

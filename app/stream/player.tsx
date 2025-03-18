@@ -6,7 +6,7 @@ import { View } from '@/components/Themed';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import { isOrientationSupported } from '@/utils/platform';
-import { LinearGradient } from 'expo-linear-gradient';
+
 
 const VideoPlayer = () => {
     const { videoUrl, title, artwork } = useLocalSearchParams();

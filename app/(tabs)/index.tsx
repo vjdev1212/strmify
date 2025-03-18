@@ -2,7 +2,7 @@ import { SafeAreaView, ScrollView, StyleSheet } from 'react-native';
 import PosterList from '@/components/PosterList';
 import { CatalogUrl } from '@/constants/Stremio';
 import { StatusBar, View } from '@/components/Themed';
-import { LinearGradient } from 'expo-linear-gradient';
+
 
 export default function HomeScreen() {
 

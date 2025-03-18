@@ -4,7 +4,7 @@ import { AntDesign } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { View, Text, StatusBar } from '@/components/Themed';
 import { isHapticsSupported } from '@/utils/platform';
-import { LinearGradient } from 'expo-linear-gradient';
+
 
 const ContactScreen = () => {
     const feedbackUrl = 'https://form.jotform.com/250372743622454'

@@ -8,7 +8,7 @@ import { isHapticsSupported, showAlert } from '@/utils/platform';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { useColorScheme } from '@/components/useColorScheme';
-import { LinearGradient } from 'expo-linear-gradient';
+
 
 const StreamScreen = () => {
     const { imdbid, type, name: contentTitle, season, episode, colors } = useLocalSearchParams();

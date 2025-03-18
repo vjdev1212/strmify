@@ -10,7 +10,7 @@ import BottomSpacing from '@/components/BottomSpacing';
 import MediaLogo from '@/components/MediaLogo';
 import MediaCastAndCrews from '@/components/MediaCastAndCrews';
 import PosterList from '@/components/PosterList';
-import { LinearGradient } from 'expo-linear-gradient';
+
 import { getColors } from 'react-native-image-colors';
 
 

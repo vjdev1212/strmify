@@ -5,7 +5,7 @@ import { Text, View, TextInput, StatusBar } from '@/components/Themed';
 import { router } from 'expo-router';
 import { showAlert } from '@/utils/platform';
 import { useColorScheme } from '@/components/useColorScheme';
-import { LinearGradient } from 'expo-linear-gradient';
+
 
 const defaultAddonLogo = 'https://i.ibb.co/fSJ42PJ/addon.png';
 

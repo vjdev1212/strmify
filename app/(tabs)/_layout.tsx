@@ -5,7 +5,7 @@ import * as Haptics from 'expo-haptics';
 import { Platform, View } from 'react-native';
 import { isHapticsSupported } from '@/utils/platform';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+
 
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];

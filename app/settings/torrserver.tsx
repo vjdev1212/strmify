@@ -1,17 +1,17 @@
 import ServerConfiguration from '@/components/ServerConfig';
 import { StatusBar } from '@/components/Themed';
-import { LinearGradient } from 'expo-linear-gradient';
+
 import { SafeAreaView, ScrollView, StyleSheet } from 'react-native';
 
 const TorrServerScreen = () => {
     return (
-                <SafeAreaView style={styles.container}>
-                <StatusBar />
-                <ScrollView showsVerticalScrollIndicator={false}>
-                    <ServerConfiguration serverName="TorrServer" serverType="torrserver" defaultUrl="http://torrserver:5665" />
-                </ScrollView>
-            </SafeAreaView>
-        );
+        <SafeAreaView style={styles.container}>
+            <StatusBar />
+            <ScrollView showsVerticalScrollIndicator={false}>
+                <ServerConfiguration serverName="TorrServer" serverType="torrserver" defaultUrl="http://torrserver:5665" />
+            </ScrollView>
+        </SafeAreaView>
+    );
 };
 
 const styles = StyleSheet.create({
