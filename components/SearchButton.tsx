@@ -11,7 +11,7 @@ const SearchButton = ({ onPress, text }: { onPress: () => void, text: string }) 
 
 const styles = StyleSheet.create({
   button: {
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 30,
     alignItems: 'center',
