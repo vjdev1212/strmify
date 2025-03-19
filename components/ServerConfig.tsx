@@ -110,7 +110,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
               onValueChange={toggleEnabled}
               style={styles.switch}
               thumbColor={isEnabled ? '#ffffff' : '#ccc'}
-              trackColor={{ false: '#e0e0e0', true: '#a5afff' }}
+              trackColor={{ false: '#e0e0e0', true: '#535aff' }}
               accessibilityLabel="Toggle server enable state"
             />
           </View>
@@ -122,7 +122,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
               onValueChange={toggleDefault}
               style={styles.switch}
               thumbColor={isDefault ? '#ffffff' : '#ccc'}
-              trackColor={{ false: '#e0e0e0', true: '#a5afff' }}
+              trackColor={{ false: '#e0e0e0', true: '#535aff' }}
               accessibilityLabel="Toggle default server state"
             />
           </View>
