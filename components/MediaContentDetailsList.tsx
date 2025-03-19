@@ -28,7 +28,7 @@ const MediaContentDetailsList = ({
       <View style={styles.gridItem}>
         <View style={styles.row}>
           <View style={styles.labelContainer}>
-            <Text style={styles.label}>{type === 'movie' ? 'Released On:' : 'Aired On'}</Text>
+            <Text style={styles.label}>{type === 'movie' ? 'Released On:' : 'First Aired On:'}</Text>
           </View>
           <Text style={styles.value}>{formatDate(released)}</Text>
         </View>
@@ -40,7 +40,7 @@ const MediaContentDetailsList = ({
           </View>
           <View style={[styles.value, { flexDirection: 'row', alignItems: 'center' }]}>
             <Text style={styles.infoText}>{imdbRating !== "0.0" ? imdbRating : 'Not Rated'}</Text>
-            <FontAwesome name="star-o" size={14} color={'#ffffff'} />
+            <FontAwesome name="star" size={13} color={'#ffffff'} />
           </View>
         </View>
       </View>
@@ -49,7 +49,7 @@ const MediaContentDetailsList = ({
           <View style={styles.labelContainer}>
             <Text style={styles.label}>Genre:</Text>
           </View>
-          <Text style={styles.value}>{genre.length > 0 ? genre.join(', ') : 'Unknown'}</Text>
+          <Text numberOfLines={1} style={styles.value}>{genre.length > 0 ? genre.join(', ') : 'Unknown'}</Text>
         </View>
       </View>
       <View style={styles.gridItem}>
@@ -60,14 +60,18 @@ const MediaContentDetailsList = ({
           <Text style={styles.value}>{status}</Text>
         </View>
       </View>
-      <View style={styles.gridItem}>
-        <View style={styles.row}>
-          <View style={styles.labelContainer}>
-            <Text style={styles.label}>Runtime:</Text>
+      {
+        type === 'movie' && (
+          <View style={styles.gridItem}>
+            <View style={styles.row}>
+              <View style={styles.labelContainer}>
+                <Text style={styles.label}>Runtime:</Text>
+              </View>
+              <Text style={styles.value}>{runtime !== '0' ? runtime : 'Unknown'} mins</Text>
+            </View>
           </View>
-          <Text style={styles.value}>{runtime !== '0' ? runtime : 'Unknown'} mins</Text>
-        </View>
-      </View>
+        )
+      }
       <View style={styles.gridItem}>
         <View style={styles.row}>
           <View style={styles.labelContainer}>
@@ -99,9 +103,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   gridItem: {
-    width: '48%',
-    minWidth: 300,
-    borderRadius: 8,
+    width: '100%',
+    maxWidth: 320,
   },
   row: {
     flexDirection: 'row',
@@ -109,22 +112,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   labelContainer: {
-    minWidth: 90,
+    minWidth: 120,
     alignItems: 'flex-start',
   },
   label: {
-    fontSize: 13,
+    fontSize: 14,
     paddingVertical: 4,
     borderRadius: 4,
     alignSelf: 'flex-start',
   },
   value: {
-    fontSize: 13,
-    flex: 1,
+    fontSize: 14,
+    flex: 1
   },
   infoText: {
     fontSize: 14,
-    marginLeft: 5,
     paddingRight: 5
   },
 });

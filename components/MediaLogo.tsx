@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     logo: {
-        aspectRatio: 16 / 9,
+        aspectRatio: 21 / 9,
     },
     titleContainer: {
         justifyContent: 'center',

@@ -162,6 +162,14 @@ const SeriesDetails = () => {
     });
   };
 
+  const Divider = () => {
+    return (
+      <View>
+        <Text style={styles.divider}>...</Text>
+      </View>
+    )
+  };
+
   return (
     <ScrollView showsVerticalScrollIndicator={false} style={styles.container} ref={ref}>
       <StatusBar translucent backgroundColor={gradientColors[0]} />
@@ -183,6 +191,7 @@ const SeriesDetails = () => {
         }]}>
           <MediaLogo logo={data.logo} title={data.name} />
           <MediaContentDescription description={data.description} />
+          <Divider />
           <MediaContentDetailsList type='series' released={data.released} country={data.country} languages={data.languages} status={data.status} genre={data.genre} runtime={data.runtime} imdbRating={data.imdbRating} />
           <MediaCastAndCrews cast={cast}></MediaCastAndCrews>
           {
@@ -237,6 +246,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   recommendationsContainer: {
+  },
+  divider: {
+    textAlign: 'center',
+    fontSize: 20,
+    color: '#535aff',
+    fontWeight: 'bold',
+    paddingBottom: 10
   }
 });
 

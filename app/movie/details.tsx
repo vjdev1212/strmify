@@ -117,6 +117,14 @@ const MovieDetails = () => {
     });
   };
 
+  const Divider = () => {
+    return (
+      <View>
+        <Text style={styles.divider}>...</Text>
+      </View>
+    )
+  };
+
   return (
     <ScrollView showsVerticalScrollIndicator={false} style={styles.container} ref={ref}>
       <StatusBar translucent backgroundColor={gradientColors[0]} />
@@ -140,6 +148,7 @@ const MovieDetails = () => {
           <MediaLogo logo={data.logo} title={data.name} />
           <SearchButton onPress={handlePlayPress} text="Movie" />
           <MediaContentDescription description={data.description} />
+          <Divider />
           <MediaContentDetailsList type='movie' released={data.released} country={data.country} languages={data.languages} status={data.status} genre={data.genre || data.genres} runtime={data.runtime} imdbRating={data.imdbRating} />
           <MediaCastAndCrews cast={cast}></MediaCastAndCrews>
         </View>
@@ -187,6 +196,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   recommendationsContainer: {
+  },
+  divider: {
+    textAlign: 'center',
+    fontSize: 20,
+    color: '#535aff',
+    fontWeight: 'bold',
+    paddingBottom: 10
   }
 });
 
