@@ -45,6 +45,7 @@ const MediaLogo = ({ logo, title }: { logo: string, title: string }) => {
 const styles = StyleSheet.create({
     logoContainer: {
         alignItems: 'center',
+        marginTop: 10,
     },
     logo: {
         aspectRatio: 16 / 9,
@@ -53,6 +54,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         borderRadius: 5,
+        padding: 10,
     },
     titleText: {
         color: '#ffffff',
