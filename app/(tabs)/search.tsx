@@ -34,22 +34,26 @@ const SearchScreen = () => {
       const moviesResult = await moviesResponse.json();
       const seriesResult = await seriesResponse.json();
 
-      const movieList = moviesResult.results.map((movie: any) => ({
+      const movieList = moviesResult.results
+      .filter((movie: any) => movie.poster_path && movie.backdrop_path) // Remove items with missing images
+      .map((movie: any) => ({
         moviedbid: movie.id,
         name: movie.title,
         poster: `https://image.tmdb.org/t/p/w780${movie.poster_path}`,
         background: `https://image.tmdb.org/t/p/w1280${movie.backdrop_path}`,
         year: getYear(movie.release_date),
       }));
-
-      const seriesList = seriesResult.results.map((series: any) => ({
+    
+    const seriesList = seriesResult.results
+      .filter((series: any) => series.poster_path && series.backdrop_path) // Remove items with missing images
+      .map((series: any) => ({
         moviedbid: series.id,
         name: series.name,
         poster: `https://image.tmdb.org/t/p/w780${series.poster_path}`,
         background: `https://image.tmdb.org/t/p/w1280${series.backdrop_path}`,
         year: getYear(series.first_air_date),
       }));
-
+    
       setMovies(movieList);
       setSeries(seriesList);
     } catch (error) {

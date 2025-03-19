@@ -41,13 +41,6 @@ const JsonBinConfigScreen = () => {
       <View style={styles.configContainer}>
         <View style={styles.configGroup}>
           <Text style={styles.configGroupHeader}>JsonBin Settings</Text>
-          <Text style={styles.configHelpText}>
-          We recommend using JsonBin to store user configurations, such as add-ons, server settings, and other preferences. This ensures seamless syncing across devices while keeping your data in your control.{"\n\n"}
-            Please visit{' '}
-            <Text style={{ color: '#535aff' }} onPress={() => Linking.openURL('https://jsonbin.io')}>
-              https://jsonbin.io
-            </Text>{' '}
-            create an account if you haven't already, navigate to API Keys, copy your X-Master-Key, and paster it below.</Text>
           <TextInput
             style={styles.input}
             placeholder="Enter X-Master-Key"
@@ -64,6 +57,15 @@ const JsonBinConfigScreen = () => {
         <View style={styles.configDetails}>
           <Text style={styles.configLabel}>X-Master-Key:</Text>
           <Text style={styles.configValue}>{masterKey}</Text>
+        </View>
+        <View>
+          <Text style={styles.configHelpText}>
+            We recommend using JsonBin to store user configurations, such as add-ons, server settings, and other preferences. This ensures seamless syncing across devices while keeping your data in your control.{"\n\n"}
+            Please visit{' '}
+            <Text style={{ color: '#535aff' }} onPress={() => Linking.openURL('https://jsonbin.io')}>
+              https://jsonbin.io
+            </Text>{' '}
+            create an account if you haven't already, navigate to API Keys, copy your X-Master-Key, and paster it below.</Text>
         </View>
       </View>
     </View>
@@ -129,8 +131,8 @@ const styles = StyleSheet.create({
   },
   configHelpText: {
     fontSize: 14,
-    color: '#777777',
-    paddingHorizontal: 15
+    color: '#f0f0f0',
+    paddingHorizontal: 10
   }
 });
 

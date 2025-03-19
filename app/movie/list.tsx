@@ -25,7 +25,9 @@ const MoviesList = () => {
         if (result) {
           let list = [];
           if (result.results) {
-            list = result.results.map((item: any) => ({
+            list = result.results
+            .filter((item: any) => item.poster_path && item.backdrop_path)
+            .map((item: any) => ({
               moviedbid: item.id,
               name: item.title || item.name,
               year: getYear(item.release_date || item.first_air_date),

@@ -81,16 +81,13 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 13,
-    paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 4,
-    backgroundColor: '#111111',
     alignSelf: 'flex-start',
   },
   value: {
     fontSize: 13,
     flex: 1,
-    paddingHorizontal: 10
   },
 });
 

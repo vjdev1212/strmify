@@ -25,15 +25,17 @@ const SeriesList = () => {
         if (result) {
           let list = [];
           if (result.results) {
-            list = result.results.map((item: any) => ({
-              moviedbid: item.id,
-              name: item.title || item.name,
-              year: getYear(item.release_date || item.first_air_date),
-              poster: `https://image.tmdb.org/t/p/w780${item.poster_path}`,
-              background: `https://image.tmdb.org/t/p/w1280${item.backdrop_path}`,
-              imdbRating: item.vote_average?.toFixed(1),
-              imdbid: item.imdb_id,
-            }));
+            list = result.results
+              .filter((item: any) => item.poster_path && item.backdrop_path)
+              .map((item: any) => ({
+                moviedbid: item.id,
+                name: item.title || item.name,
+                year: getYear(item.release_date || item.first_air_date),
+                poster: `https://image.tmdb.org/t/p/w780${item.poster_path}`,
+                background: `https://image.tmdb.org/t/p/w1280${item.backdrop_path}`,
+                imdbRating: item.vote_average?.toFixed(1),
+                imdbid: item.imdb_id,
+              }));
           }
           setData(list);
         }
@@ -80,22 +82,22 @@ const SeriesList = () => {
   };
 
   return (
-      <RNView style={styles.container}>
-        <StatusBar />
-        {loading ? (
-          <View style={styles.centeredContainer}>
-            <ActivityIndicator size="large" style={styles.activityIndicator} color="#ffffff" />
-          </View>) : (
-          <FlatList
-            data={data}
-            renderItem={renderItem}
-            keyExtractor={(item, index) => index.toString()}
-            numColumns={isPortrait ? 3 : 6}
-            contentContainerStyle={styles.posterList}
-            showsVerticalScrollIndicator={false}
-          />
-        )}
-      </RNView>
+    <RNView style={styles.container}>
+      <StatusBar />
+      {loading ? (
+        <View style={styles.centeredContainer}>
+          <ActivityIndicator size="large" style={styles.activityIndicator} color="#ffffff" />
+        </View>) : (
+        <FlatList
+          data={data}
+          renderItem={renderItem}
+          keyExtractor={(item, index) => index.toString()}
+          numColumns={isPortrait ? 3 : 6}
+          contentContainerStyle={styles.posterList}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
+    </RNView>
   );
 };
 
