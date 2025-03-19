@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 4,
-    backgroundColor: '#111111',
+    backgroundColor: '#222222',
     alignSelf: 'flex-start',
   },
   value: {
