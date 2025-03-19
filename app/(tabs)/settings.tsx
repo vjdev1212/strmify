@@ -47,7 +47,7 @@ const SettingsScreen = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar />
       <ScrollView contentContainerStyle={styles.scrollViewContent} showsVerticalScrollIndicator={false}>
-        <View>
+        {/* <View>
           <Text style={styles.header}>General</Text>
           <View style={[styles.settingsGroup]}>
             {General.map((item, index) => (
@@ -59,8 +59,8 @@ const SettingsScreen = () => {
               />
             ))}
           </View>
-        </View>
-        
+        </View> */}
+
         <View>
           <Text style={styles.header}>Servers</Text>
           <View style={[styles.settingsGroup]}>
