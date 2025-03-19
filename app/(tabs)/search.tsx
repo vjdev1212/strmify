@@ -158,7 +158,7 @@ const SearchScreen = () => {
         />
         {query.length > 0 && (
           <Pressable onPress={clearSearch} style={styles.clearIcon}>
-            <Ionicons name="close-circle" size={20} color="#fff" />
+            <Ionicons name="close-circle" size={20} color="#777777" />
           </Pressable>
         )}
       </View>
