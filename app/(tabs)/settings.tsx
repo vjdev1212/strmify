@@ -12,11 +12,15 @@ import { useColorScheme } from '@/components/useColorScheme';
 const SettingsScreen = () => {
   const router = useRouter();
 
-  const colorScheme = useColorScheme();
   const serversList: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [
     { title: 'Stremio Server', route: '/settings/stremioserver', icon: 'server-outline' },
     { title: 'TorrServer', route: '/settings/torrserver', icon: 'server-outline' },
   ];
+
+  const General: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [
+    { title: 'Sync', route: '/settings/sync', icon: 'sync-outline' },
+  ];
+
 
   const contactList: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [
     { title: 'Contact', route: '/settings/contact', icon: 'mail-outline' },
@@ -40,38 +44,52 @@ const SettingsScreen = () => {
   }
 
   return (
-      <SafeAreaView style={styles.container}>
-        <StatusBar />
-        <ScrollView contentContainerStyle={styles.scrollViewContent}>
-          <View>
-            <Text style={styles.header}>Servers</Text>
-            <View style={[styles.settingsGroup]}>
-              {serversList.map((item, index) => (
-                <SettingItem
-                  key={index}
-                  title={item.title}
-                  icon={item.icon}
-                  onPress={() => onSettingsItemPress(item)}
-                />
-              ))}
-            </View>
+    <SafeAreaView style={styles.container}>
+      <StatusBar />
+      <ScrollView contentContainerStyle={styles.scrollViewContent} showsVerticalScrollIndicator={false}>
+        <View>
+          <Text style={styles.header}>General</Text>
+          <View style={[styles.settingsGroup]}>
+            {General.map((item, index) => (
+              <SettingItem
+                key={index}
+                title={item.title}
+                icon={item.icon}
+                onPress={() => onSettingsItemPress(item)}
+              />
+            ))}
           </View>
+        </View>
+        
+        <View>
+          <Text style={styles.header}>Servers</Text>
+          <View style={[styles.settingsGroup]}>
+            {serversList.map((item, index) => (
+              <SettingItem
+                key={index}
+                title={item.title}
+                icon={item.icon}
+                onPress={() => onSettingsItemPress(item)}
+              />
+            ))}
+          </View>
+        </View>
 
-          <View>
-            <Text style={styles.header}>Contact</Text>
-            <View style={[styles.settingsGroup]}>
-              {contactList.map((item, index) => (
-                <SettingItem
-                  key={index}
-                  title={item.title}
-                  icon={item.icon}
-                  onPress={() => onSettingsItemPress(item)}
-                />
-              ))}
-            </View>
+        <View>
+          <Text style={styles.header}>Contact</Text>
+          <View style={[styles.settingsGroup]}>
+            {contactList.map((item, index) => (
+              <SettingItem
+                key={index}
+                title={item.title}
+                icon={item.icon}
+                onPress={() => onSettingsItemPress(item)}
+              />
+            ))}
           </View>
-        </ScrollView>
-      </SafeAreaView>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 

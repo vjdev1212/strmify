@@ -96,6 +96,7 @@ function RootLayoutNav() {
         <Stack.Screen name="settings/torrserver" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#ffffff' }} />
         <Stack.Screen name="settings/contact" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#ffffff' }} />
         <Stack.Screen name="settings/donate" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#ffffff' }} />
+        <Stack.Screen name="settings/sync" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#ffffff' }} />
       </Stack>
     </ThemeProvider>
   );
