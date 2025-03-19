@@ -151,7 +151,7 @@ const SearchScreen = () => {
             styles.searchInput,
           ]}
           placeholder="Search movies or series..."
-          placeholderTextColor={'#fff'}
+          placeholderTextColor={'#777777'}
           value={query}
           onChangeText={setQuery}
           submitBehavior={'blurAndSubmit'}
