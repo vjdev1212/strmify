@@ -50,7 +50,8 @@ const MediaCastAndCrews = ({ cast }: { cast: any[] }) => {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
   },
   castContainer: {
     alignItems: "center",
@@ -58,13 +59,13 @@ const styles = StyleSheet.create({
     width: 110,
   },
   profileImage: {
-    width: 75,
-    height: 75,
+    width: 70,
+    height: 70,
     borderRadius: 40,
   },
   placeholderImage: {
-    width: 75,
-    height: 75,
+    width: 70,
+    height: 70,
     borderRadius: 40,
     justifyContent: "center",
     alignItems: "center",

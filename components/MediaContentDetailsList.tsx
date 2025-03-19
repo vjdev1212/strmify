@@ -18,25 +18,33 @@ const MediaContentDetailsList = ({
     <View style={styles.gridContainer}>
       <View style={styles.gridItem}>
         <View style={styles.row}>
-          <Text style={styles.label}>Released On:</Text>
+          <View style={styles.labelContainer}>
+            <Text style={styles.label}>Released On:</Text>
+          </View>
           <Text style={styles.value}>{formatDate(released)}</Text>
         </View>
       </View>
       <View style={styles.gridItem}>
         <View style={styles.row}>
-          <Text style={styles.label}>Country:</Text>
+          <View style={styles.labelContainer}>
+            <Text style={styles.label}>Country:</Text>
+          </View>
           <Text style={styles.value}>{country.length > 0 ? country.join(', ') : 'Unknown'}</Text>
         </View>
       </View>
       <View style={styles.gridItem}>
         <View style={styles.row}>
-          <Text style={styles.label}>Languages:</Text>
+          <View style={styles.labelContainer}>
+            <Text style={styles.label}>Languages:</Text>
+          </View>
           <Text style={styles.value}>{languages.length > 0 ? languages.map(l => l.english_name).join(', ') : 'Unknown'}</Text>
         </View>
       </View>
       <View style={styles.gridItem}>
         <View style={styles.row}>
-          <Text style={styles.label}>Status:</Text>
+          <View style={styles.labelContainer}>
+            <Text style={styles.label}>Status:</Text>
+          </View>
           <Text style={styles.value}>{status}</Text>
         </View>
       </View>
@@ -49,6 +57,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   gridContainer: {
+    paddingVertical: 10,
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
@@ -64,15 +73,20 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  label: {
-    fontSize: 12,    
-    paddingHorizontal: 8,
-    paddingVertical: 2,
+  labelContainer: {
+    minWidth: 120,
+    alignItems: 'flex-start',
+  },
+  label: {        
+    fontSize: 13,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: 4,
-    backgroundColor: '#111111'
+    backgroundColor: '#111111',
+    alignSelf: 'flex-start',
   },
   value: {
-    fontSize: 12,
+    fontSize: 13,
     flex: 1,
     paddingHorizontal: 10
   },
