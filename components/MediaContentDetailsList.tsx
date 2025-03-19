@@ -4,11 +4,13 @@ import { Text, View } from './Themed';
 import { formatDate } from '@/utils/Date';
 
 const MediaContentDetailsList = ({
+  type = "movie",
   released = 'Unknown',
   country = [],
   languages = [],
   status = 'Unknown',
 }: {
+  type: string;
   released: string;
   country: string[];
   languages: any[];
@@ -19,9 +21,17 @@ const MediaContentDetailsList = ({
       <View style={styles.gridItem}>
         <View style={styles.row}>
           <View style={styles.labelContainer}>
-            <Text style={styles.label}>Released On:</Text>
+            <Text style={styles.label}>{type === 'movie' ? 'Released On:' : 'First Aired On'}</Text>
           </View>
           <Text style={styles.value}>{formatDate(released)}</Text>
+        </View>
+      </View>
+      <View style={styles.gridItem}>
+        <View style={styles.row}>
+          <View style={styles.labelContainer}>
+            <Text style={styles.label}>Status:</Text>
+          </View>
+          <Text style={styles.value}>{status}</Text>
         </View>
       </View>
       <View style={styles.gridItem}>
@@ -35,17 +45,9 @@ const MediaContentDetailsList = ({
       <View style={styles.gridItem}>
         <View style={styles.row}>
           <View style={styles.labelContainer}>
-            <Text style={styles.label}>Languages:</Text>
+            <Text style={styles.label}>Spoken Languages:</Text>
           </View>
           <Text style={styles.value}>{languages.length > 0 ? languages.map(l => l.english_name).join(', ') : 'Unknown'}</Text>
-        </View>
-      </View>
-      <View style={styles.gridItem}>
-        <View style={styles.row}>
-          <View style={styles.labelContainer}>
-            <Text style={styles.label}>Status:</Text>
-          </View>
-          <Text style={styles.value}>{status}</Text>
         </View>
       </View>
     </View>
@@ -74,15 +76,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   labelContainer: {
-    minWidth: 120,
+    minWidth: 140,
     alignItems: 'flex-start',
   },
-  label: {        
+  label: {
     fontSize: 13,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 4,
-    backgroundColor: '#222222',
+    backgroundColor: '#111111',
     alignSelf: 'flex-start',
   },
   value: {

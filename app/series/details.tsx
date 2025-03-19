@@ -191,7 +191,7 @@ const SeriesDetails = () => {
             releaseInfo={data.releaseInfo}
           />
           <MediaContentDescription description={data.description} />
-          <MediaContentDetailsList released={data.released} country={data.country} languages={data.languages} status={data.status} />
+          <MediaContentDetailsList type='series' released={data.released} country={data.country} languages={data.languages} status={data.status} />
           <MediaCastAndCrews cast={cast}></MediaCastAndCrews>
           {
             isPortrait ? (null) : (

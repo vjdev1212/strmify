@@ -148,7 +148,7 @@ const MovieDetails = () => {
           />
           <SearchButton onPress={handlePlayPress} text="Movie" />
           <MediaContentDescription description={data.description} />
-          <MediaContentDetailsList released={data.released} country={data.country} languages={data.languages} status={data.status} />
+          <MediaContentDetailsList type='movie' released={data.released} country={data.country} languages={data.languages} status={data.status} />
           <MediaCastAndCrews cast={cast}></MediaCastAndCrews>
         </View>
         <BottomSpacing space={20} />
