@@ -12,7 +12,6 @@ const MediaContentDetailsList = ({
   released = 'Unknown',
   country = [],
   languages = [],
-  status = 'Unknown',
 }: {
   type: string;
   genre: string[];
@@ -21,7 +20,6 @@ const MediaContentDetailsList = ({
   released: string;
   country: string[];
   languages: any[];
-  status: string;
 }) => (
   <View style={styles.container}>
     <View style={styles.gridContainer}>
@@ -50,14 +48,6 @@ const MediaContentDetailsList = ({
             <Text style={styles.label}>Genre:</Text>
           </View>
           <Text numberOfLines={1} style={styles.value}>{genre.length > 0 ? genre.join(', ') : 'Unknown'}</Text>
-        </View>
-      </View>
-      <View style={styles.gridItem}>
-        <View style={styles.row}>
-          <View style={styles.labelContainer}>
-            <Text style={styles.label}>Status:</Text>
-          </View>
-          <Text style={styles.value}>{status}</Text>
         </View>
       </View>
       {

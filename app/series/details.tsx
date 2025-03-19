@@ -192,7 +192,7 @@ const SeriesDetails = () => {
           <MediaLogo logo={data.logo} title={data.name} />
           <MediaContentDescription description={data.description} />
           <Divider />
-          <MediaContentDetailsList type='series' released={data.released} country={data.country} languages={data.languages} status={data.status} genre={data.genre} runtime={data.runtime} imdbRating={data.imdbRating} />
+          <MediaContentDetailsList type='series' released={data.released} country={data.country} languages={data.languages} genre={data.genre} runtime={data.runtime} imdbRating={data.imdbRating} />
           <MediaCastAndCrews cast={cast}></MediaCastAndCrews>
           {
             isPortrait ? (null) : (

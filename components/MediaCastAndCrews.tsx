@@ -19,6 +19,9 @@ const getInitials = (name: string) => {
 const MediaCastAndCrews = ({ cast }: { cast: any[] }) => {
   return (
     <View style={styles.container}>
+      <View style={styles.castCrewContainer}>
+        <Text style={styles.castCrew}>Cast & Crew</Text>
+      </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         {cast.map((member) => {
           const hasImage = !!member.profile_path;
@@ -57,15 +60,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: 15,
     width: 110,
+    marginTop: 30
   },
   profileImage: {
-    width: 70,
-    height: 70,
+    width: 60,
+    height: 60,
     borderRadius: 40,
   },
   placeholderImage: {
-    width: 70,
-    height: 70,
+    width: 60,
+    height: 60,
     borderRadius: 40,
     justifyContent: "center",
     alignItems: "center",
@@ -87,6 +91,13 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: "white",
   },
+  castCrewContainer: {
+    flex: 1,
+  },
+  castCrew: {
+    fontWeight: 'bold',
+    marginVertical: 10,
+  }
 });
 
 export default MediaCastAndCrews;

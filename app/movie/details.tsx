@@ -136,7 +136,7 @@ const MovieDetails = () => {
       }]}>
         <View style={[styles.posterContainer, {
           width: isPortrait ? '100%' : '30%',
-          padding: isPortrait ? null : '3%'
+          padding: isPortrait ? null : '2%'
         }]}>
           <MediaContentPoster background={isPortrait ? data.background : data.poster} isPortrait={isPortrait} />
         </View>
@@ -149,7 +149,7 @@ const MovieDetails = () => {
           <SearchButton onPress={handlePlayPress} text="Movie" />
           <MediaContentDescription description={data.description} />
           <Divider />
-          <MediaContentDetailsList type='movie' released={data.released} country={data.country} languages={data.languages} status={data.status} genre={data.genre || data.genres} runtime={data.runtime} imdbRating={data.imdbRating} />
+          <MediaContentDetailsList type='movie' released={data.released} country={data.country} languages={data.languages} genre={data.genre || data.genres} runtime={data.runtime} imdbRating={data.imdbRating} />
           <MediaCastAndCrews cast={cast}></MediaCastAndCrews>
         </View>
         <BottomSpacing space={20} />

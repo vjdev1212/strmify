@@ -20,7 +20,7 @@ const MediaLogo = ({ logo, title }: { logo: string, title: string }) => {
         <Animated.View
             style={[styles.logoContainer, {
                 opacity: titleFadeAnim,
-                marginTop: isPortrait ? 10 : 0,
+                marginTop: isPortrait ? 20 : 0,
                 alignSelf: isPortrait ? 'center' : 'auto'
             }]}
         >
