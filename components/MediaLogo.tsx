@@ -39,7 +39,7 @@ const MediaLogo = ({ logo, title }: { logo: string, title: string }) => {
                     <Text style={[styles.titleText,
                     {
                         fontSize: isPortrait ? 25 : 35
-                    }]} numberOfLines={1} ellipsizeMode="tail">{title}</Text>
+                    }]} ellipsizeMode="tail">{title}</Text>
                 </View>
             )}
         </Animated.View>
@@ -63,7 +63,9 @@ const styles = StyleSheet.create({
         color: '#ffffff',
         fontWeight: 'bold',
         overflow: 'hidden',
-        textOverflow: 'ellipsis'
+        textOverflow: 'ellipsis',
+        textAlign: 'center',
+        paddingHorizontal: 10,
     },
 });
 
