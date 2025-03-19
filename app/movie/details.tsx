@@ -138,17 +138,9 @@ const MovieDetails = () => {
           paddingHorizontal: isPortrait ? null : 5
         }]}>
           <MediaLogo logo={data.logo} title={data.name} />
-          <MediaContentHeader
-            name={data.name}
-            genre={data.genre || data.genres}
-            released={data.released}
-            runtime={data.runtime}
-            imdbRating={data.imdbRating}
-            releaseInfo={data.releaseInfo}
-          />
           <SearchButton onPress={handlePlayPress} text="Movie" />
           <MediaContentDescription description={data.description} />
-          <MediaContentDetailsList type='movie' released={data.released} country={data.country} languages={data.languages} status={data.status} />
+          <MediaContentDetailsList type='movie' released={data.released} country={data.country} languages={data.languages} status={data.status} genre={data.genre || data.genres} runtime={data.runtime} imdbRating={data.imdbRating} />
           <MediaCastAndCrews cast={cast}></MediaCastAndCrews>
         </View>
         <BottomSpacing space={20} />

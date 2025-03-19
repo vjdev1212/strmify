@@ -182,16 +182,8 @@ const SeriesDetails = () => {
           paddingHorizontal: isPortrait ? null : 5
         }]}>
           <MediaLogo logo={data.logo} title={data.name} />
-          <MediaContentHeader
-            name={data.name}
-            genre={data.genre}
-            released={data.released}
-            runtime={data.runtime}
-            imdbRating={data.imdbRating}
-            releaseInfo={data.releaseInfo}
-          />
           <MediaContentDescription description={data.description} />
-          <MediaContentDetailsList type='series' released={data.released} country={data.country} languages={data.languages} status={data.status} />
+          <MediaContentDetailsList type='series' released={data.released} country={data.country} languages={data.languages} status={data.status} genre={data.genre} runtime={data.runtime} imdbRating={data.imdbRating} />
           <MediaCastAndCrews cast={cast}></MediaCastAndCrews>
           {
             isPortrait ? (null) : (

@@ -18,7 +18,11 @@ const MediaLogo = ({ logo, title }: { logo: string, title: string }) => {
 
     return (
         <Animated.View
-            style={[styles.logoContainer, { opacity: titleFadeAnim, alignSelf: isPortrait ? 'center' : 'auto' }]}
+            style={[styles.logoContainer, {
+                opacity: titleFadeAnim,
+                marginTop: isPortrait ? 10 : 0,
+                alignSelf: isPortrait ? 'center' : 'auto'
+            }]}
         >
             {!logoError ? (
                 <Image
@@ -45,7 +49,6 @@ const MediaLogo = ({ logo, title }: { logo: string, title: string }) => {
 const styles = StyleSheet.create({
     logoContainer: {
         alignItems: 'center',
-        marginTop: 10,
     },
     logo: {
         aspectRatio: 16 / 9,

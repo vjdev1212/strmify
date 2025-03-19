@@ -13,7 +13,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    minHeight: 100,
+    minHeight: 50,
   },
   description: {
     fontSize: 14,
