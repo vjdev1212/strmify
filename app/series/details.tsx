@@ -21,7 +21,6 @@ const SeriesDetails = () => {
   const [imdbid, setImdbId] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [cast, setCast] = useState<any[]>([]);
-  const [gradientColors, setGradientColors] = useState<string[]>(['#000', '#000']);
   const { width, height } = useWindowDimensions();
   const isPortrait = height > width;
   const ref = useRef<ScrollView | null>(null);
@@ -77,33 +76,7 @@ const SeriesDetails = () => {
             description: result.overview,
             videos: videosArray,
           };
-          setData(seriesData);
-
-          // let extractedColors: [string, string] | [string, string, string] = ['#111111', '#999999', '#222222'];
-          // const response = await fetch(isPortrait ? seriesData.background : seriesData.poster, { mode: 'cors' });
-          // if (!response.ok) {
-          //   console.log('Failed to fetch image for colors', response)
-          //   extractedColors = ['#111111', '#999999', '#222222'];
-          //   setGradientColors(extractedColors);
-          // }
-          // else {
-          //   const blob = await response.blob();
-          //   const objectURL = URL.createObjectURL(blob);
-          //   const colors = await getColors(objectURL, {
-          //     cache: true,
-          //     key: imdbid,
-          //     fallback: '#111111',
-          //     pixelSpacing: 5
-          //   });
-          //   if (colors.platform === 'ios') {
-          //     extractedColors = [colors.primary || '#111111', colors.secondary || '#222222'];
-          //   }
-          //   else {
-          //     extractedColors = [colors.muted || '#111111', colors.vibrant || '#111111', colors.dominant || '#222222'];
-          //     console.log(extractedColors);
-          //   }
-          //   setGradientColors(extractedColors);
-          // }
+          setData(seriesData);          
         }
       } catch (error) {
         console.error('Error fetching series details:', error);
@@ -172,7 +145,7 @@ const SeriesDetails = () => {
 
   return (
     <ScrollView showsVerticalScrollIndicator={false} style={styles.container} ref={ref}>
-      <StatusBar translucent backgroundColor={gradientColors[0]} />
+      <StatusBar translucent />
       <View style={[{
         flex: 1,
         flexDirection: isPortrait ? 'column' : 'row',

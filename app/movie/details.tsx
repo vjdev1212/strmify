@@ -23,7 +23,6 @@ const MovieDetails = () => {
   const [imdbid, setImdbId] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [cast, setCast] = useState<any[]>([]);
-  const [gradientColors, setGradientColors] = useState<string[]>(['#000', '#000']);
   const { width, height } = useWindowDimensions();
   const isPortrait = height > width;
   const ref = useRef<ScrollView | null>(null);
@@ -127,7 +126,7 @@ const MovieDetails = () => {
 
   return (
     <ScrollView showsVerticalScrollIndicator={false} style={styles.container} ref={ref}>
-      <StatusBar translucent backgroundColor={gradientColors[0]} />
+      <StatusBar translucent/>
       <View style={[{
         flex: 1,
         flexDirection: isPortrait ? 'column' : 'row',

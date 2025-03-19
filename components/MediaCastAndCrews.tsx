@@ -97,6 +97,7 @@ const styles = StyleSheet.create({
   castCrew: {
     fontWeight: 'bold',
     marginVertical: 10,
+    fontSize: 15
   }
 });
 
