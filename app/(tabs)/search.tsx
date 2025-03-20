@@ -131,7 +131,7 @@ const SearchScreen = () => {
     return (
       <SafeAreaView>
         <RNView>
-          <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+          <Animated.View>
             <Pressable style={styles.posterContainer}
               onPress={handlePress}
               onHoverIn={handleHoverIn}

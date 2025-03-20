@@ -97,7 +97,7 @@ const PosterItem = ({ item, layout, type }: { item: any, layout?: 'horizontal' |
       onHoverOut={handleHoverOut}
     >
       <View>
-        <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+        <Animated.View>
           {!imgError ? (
             <Animated.Image
               source={{ uri: posterUri }}
