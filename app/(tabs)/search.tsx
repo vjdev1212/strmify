@@ -1,7 +1,7 @@
 import { Text, ActivityIndicator, TextInput, View, StatusBar } from '@/components/Themed';
 import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
-import { View as RNView, SafeAreaView, ScrollView, useWindowDimensions } from 'react-native';
+import { Animated, View as RNView, SafeAreaView, ScrollView, useWindowDimensions } from 'react-native';
 import { StyleSheet, FlatList, Image, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -35,25 +35,25 @@ const SearchScreen = () => {
       const seriesResult = await seriesResponse.json();
 
       const movieList = moviesResult.results
-      .filter((movie: any) => movie.poster_path && movie.backdrop_path) // Remove items with missing images
-      .map((movie: any) => ({
-        moviedbid: movie.id,
-        name: movie.title,
-        poster: `https://image.tmdb.org/t/p/w780${movie.poster_path}`,
-        background: `https://image.tmdb.org/t/p/w1280${movie.backdrop_path}`,
-        year: getYear(movie.release_date),
-      }));
-    
-    const seriesList = seriesResult.results
-      .filter((series: any) => series.poster_path && series.backdrop_path) // Remove items with missing images
-      .map((series: any) => ({
-        moviedbid: series.id,
-        name: series.name,
-        poster: `https://image.tmdb.org/t/p/w780${series.poster_path}`,
-        background: `https://image.tmdb.org/t/p/w1280${series.backdrop_path}`,
-        year: getYear(series.first_air_date),
-      }));
-    
+        .filter((movie: any) => movie.poster_path && movie.backdrop_path) // Remove items with missing images
+        .map((movie: any) => ({
+          moviedbid: movie.id,
+          name: movie.title,
+          poster: `https://image.tmdb.org/t/p/w780${movie.poster_path}`,
+          background: `https://image.tmdb.org/t/p/w1280${movie.backdrop_path}`,
+          year: getYear(movie.release_date),
+        }));
+
+      const seriesList = seriesResult.results
+        .filter((series: any) => series.poster_path && series.backdrop_path) // Remove items with missing images
+        .map((series: any) => ({
+          moviedbid: series.id,
+          name: series.name,
+          poster: `https://image.tmdb.org/t/p/w780${series.poster_path}`,
+          background: `https://image.tmdb.org/t/p/w1280${series.backdrop_path}`,
+          year: getYear(series.first_air_date),
+        }));
+
       setMovies(movieList);
       setSeries(seriesList);
     } catch (error) {
@@ -101,6 +101,8 @@ const SearchScreen = () => {
   };
 
   const PosterContent = ({ item, type }: { item: any, type: string }) => {
+    const scaleAnim = new Animated.Value(1);
+
     const handlePress = async () => {
       if (isHapticsSupported()) {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
@@ -112,19 +114,38 @@ const SearchScreen = () => {
         });
     };
 
+    const handleHoverIn = () => {
+      Animated.spring(scaleAnim, {
+        toValue: 1.1,
+        useNativeDriver: true,
+      }).start();
+    };
+
+    const handleHoverOut = () => {
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        useNativeDriver: true,
+      }).start();
+    };
+
     return (
       <SafeAreaView>
         <RNView>
-          <Pressable style={styles.posterContainer} onPress={handlePress}>
-            <Image source={{ uri: isPortrait ? item.poster : item.background }} style={[styles.posterImage, {
-              width: isPortrait ? 100 : 200,
-              height: isPortrait ? 150 : 110,
-            }]} />
-            <Text numberOfLines={1} ellipsizeMode="tail" style={styles.posterTitle}>
-              {item.title || item.name}
-            </Text>
-            <Text style={styles.posterYear}>{item.year}</Text>
-          </Pressable>
+          <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+            <Pressable style={styles.posterContainer}
+              onPress={handlePress}
+              onHoverIn={handleHoverIn}
+              onHoverOut={handleHoverOut}>
+              <Image source={{ uri: isPortrait ? item.poster : item.background }} style={[styles.posterImage, {
+                width: isPortrait ? 100 : 200,
+                height: isPortrait ? 150 : 110,
+              }]} />
+              <Text numberOfLines={1} ellipsizeMode="tail" style={styles.posterTitle}>
+                {item.title || item.name}
+              </Text>
+              <Text style={styles.posterYear}>{item.year}</Text>
+            </Pressable>
+          </Animated.View>
         </RNView>
       </SafeAreaView>
     );

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   FlatList,
   StyleSheet,
@@ -43,16 +43,19 @@ const SkeletonLoader = () => {
 const PosterItem = ({ item, layout, type }: { item: any, layout?: 'horizontal' | 'vertical', type: string }) => {
   const [imgError, setImgError] = useState(false);
   const fadeAnim = useState(new Animated.Value(0))[0];
+  const scaleAnim = useState(new Animated.Value(1))[0];
   const colorScheme = useColorScheme();
   const { width, height } = useWindowDimensions();
   const isPortrait = height > width;
 
-  const year =
-    item.year && typeof item.year === 'string' && item.year.includes('–')
-      ? item.year.split('–')[0]
-      : item.year;
+  const year = useMemo(() => {
+    if (item.year && typeof item.year === 'string' && item.year.includes('–')) {
+      return item.year.split('–')[0];
+    }
+    return item.year;
+  }, [item.year]);
 
-  const posterUri = isPortrait ? item.poster : item.background;
+  const posterUri = useMemo(() => (isPortrait ? item.poster : item.background), [isPortrait, item]);
 
   const handleImageLoad = () => {
     Animated.timing(fadeAnim, {
@@ -72,41 +75,57 @@ const PosterItem = ({ item, layout, type }: { item: any, layout?: 'horizontal' |
     });
   };
 
+  const handleHoverIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1.1,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handleHoverOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+    }).start();
+  };
+
   return (
     <Pressable
-      style={[
-        styles.posterContainer,
-        layout === 'vertical' && styles.verticalContainer,
-      ]}
+      style={[styles.posterContainer, layout === 'vertical' && styles.verticalContainer]}
       onPress={handlePress}
+      onHoverIn={handleHoverIn}
+      onHoverOut={handleHoverOut}
     >
       <View>
-        {!imgError ? (
-          <Animated.Image
-            source={{ uri: posterUri }}
-            onError={() => setImgError(true)}
-            style={[
-              styles.posterImage,
-              layout === 'vertical' ? styles.verticalImage : styles.horizontalImage,
-              {
-                opacity: fadeAnim,
-                width: isPortrait ? 100 : 200,
-                height: isPortrait ? 150 : 110,
-              },
-            ]}
-            onLoad={handleImageLoad}
-          />
-        ) : (
-          <View style={[styles.posterImagePlaceHolder,
-          layout === 'vertical' ? styles.verticalImage : styles.horizontalImage,
-          {
-            opacity: fadeAnim,
-            width: isPortrait ? 100 : 200,
-            height: isPortrait ? 150 : 110,
-          }]}>
-            <SvgXml xml={DefaultPosterImgXml} />
-          </View>
-        )}
+        <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+          {!imgError ? (
+            <Animated.Image
+              source={{ uri: posterUri }}
+              onError={() => setImgError(true)}
+              onLoad={handleImageLoad}
+              style={[
+                styles.posterImage,
+                layout === 'vertical' ? styles.verticalImage : styles.horizontalImage,
+                {
+                  opacity: fadeAnim,
+                  width: isPortrait ? 100 : 200,
+                  height: isPortrait ? 150 : 110,
+                },
+              ]}
+            />
+          ) : (
+            <View style={[styles.posterImagePlaceHolder,
+            layout === 'vertical' ? styles.verticalImage : styles.horizontalImage,
+            {
+              opacity: fadeAnim,
+              width: isPortrait ? 100 : 200,
+              height: isPortrait ? 150 : 110,
+            }]}>
+              <SvgXml xml={DefaultPosterImgXml} />
+            </View>
+          )}
+        </Animated.View>
+
         <Text
           numberOfLines={1}
           ellipsizeMode="tail"
@@ -123,7 +142,7 @@ const PosterItem = ({ item, layout, type }: { item: any, layout?: 'horizontal' |
           <FontAwesome name="star-o" size={14} color="#fffffff" />  {item.imdbRating}   {year}
         </Text>
       </View>
-    </Pressable >
+    </Pressable>
   );
 };
 
@@ -147,9 +166,9 @@ const PosterList = ({
         const response = await fetch(`${apiUrl}?api_key=${EXPO_PUBLIC_TMDB_API_KEY}`);
         const result = await response.json();
         const collection = result.results;
-  
+
         let list = [];
-  
+
         if (type === 'movie') {
           list = collection
             .filter((movie: any) => movie.poster_path && movie.backdrop_path) // Filter out null images
@@ -173,7 +192,7 @@ const PosterList = ({
               imdbRating: series.vote_average?.toFixed(1),
             }));
         }
-  
+
         setData(list);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -181,10 +200,10 @@ const PosterList = ({
         setLoading(false);
       }
     };
-  
+
     fetchData();
   }, [apiUrl]);
-  
+
 
   const handleSeeAllPress = async () => {
     if (isHapticsSupported()) {

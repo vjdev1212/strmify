@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, Image, StyleSheet, Pressable, View as RNView, useWindowDimensions } from 'react-native';
+import { FlatList, Image, StyleSheet, Pressable, View as RNView, useWindowDimensions, Animated } from 'react-native';
 import { ActivityIndicator, StatusBar, Text, View } from '@/components/Themed';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -59,24 +59,43 @@ const SeriesList = () => {
   };
 
   const renderItem = ({ item }: any) => {
+    const scaleAnim = new Animated.Value(1);
     const year = item.year?.split('–')[0] || item.year;
+
+    const handleHoverIn = () => {
+      Animated.spring(scaleAnim, {
+        toValue: 1.1,
+        useNativeDriver: true,
+      }).start();
+    };
+
+    const handleHoverOut = () => {
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        useNativeDriver: true,
+      }).start();
+    };
 
     return (
       <RNView>
-        <Pressable
-          style={styles.posterContainer}
-          onPress={() => handlePress(item)}
-        >
-          <Image source={{ uri: isPortrait ? item.poster : item.background }}
-            style={[styles.posterImage, {
-              width: isPortrait ? 100 : 200,
-              height: isPortrait ? 150 : 110,
-            }]} />
-          <Text numberOfLines={1} ellipsizeMode="tail" style={styles.posterTitle}>
-            {item.name}
-          </Text>
-          <Text style={styles.posterYear}>{`★ ${item.imdbRating}   ${year}`}</Text>
-        </Pressable>
+        <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+          <Pressable
+            style={styles.posterContainer}
+            onPress={() => handlePress(item)}
+            onHoverIn={handleHoverIn}
+            onHoverOut={handleHoverOut}
+          >
+            <Image source={{ uri: isPortrait ? item.poster : item.background }}
+              style={[styles.posterImage, {
+                width: isPortrait ? 100 : 200,
+                height: isPortrait ? 150 : 110,
+              }]} />
+            <Text numberOfLines={1} ellipsizeMode="tail" style={styles.posterTitle}>
+              {item.name}
+            </Text>
+            <Text style={styles.posterYear}>{`★ ${item.imdbRating}   ${year}`}</Text>
+          </Pressable>
+        </Animated.View>
       </RNView>
     );
   };
