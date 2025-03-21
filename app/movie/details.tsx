@@ -126,7 +126,7 @@ const MovieDetails = () => {
 
   return (
     <ScrollView showsVerticalScrollIndicator={false} style={styles.container} ref={ref}>
-      <StatusBar translucent/>
+      <StatusBar translucent />
       <View style={[{
         flex: 1,
         flexDirection: isPortrait ? 'column' : 'row',
@@ -145,6 +145,18 @@ const MovieDetails = () => {
           paddingHorizontal: isPortrait ? null : 5
         }]}>
           <MediaLogo logo={data.logo} title={data.name} />
+          {
+            isPortrait && (
+              <MediaContentHeader
+                name={data.name}
+                genre={data.genre || data.genres}
+                released={data.released}
+                runtime={data.runtime}
+                imdbRating={data.imdbRating}
+                releaseInfo={data.releaseInfo}
+              />
+            )
+          }
           <SearchButton onPress={handlePlayPress} text="Movie" />
           <MediaContentDescription description={data.description} />
           <Divider />
