@@ -18,7 +18,8 @@ const SettingsScreen = () => {
   ];
 
   const General: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [
-    { title: 'Sync', route: '/settings/sync', icon: 'sync-outline' },
+    { title: 'Addons', route: '/settings/addons', icon: 'extension-puzzle-outline' },
+    // { title: 'Sync', route: '/settings/sync', icon: 'sync-outline' },
   ];
 
 
@@ -47,7 +48,7 @@ const SettingsScreen = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar />
       <ScrollView contentContainerStyle={styles.scrollViewContent} showsVerticalScrollIndicator={false}>
-        {/* <View>
+        <View>
           <Text style={styles.header}>General</Text>
           <View style={[styles.settingsGroup]}>
             {General.map((item, index) => (
@@ -59,7 +60,7 @@ const SettingsScreen = () => {
               />
             ))}
           </View>
-        </View> */}
+        </View>
 
         <View>
           <Text style={styles.header}>Servers</Text>
@@ -122,6 +123,7 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     marginHorizontal: 5,
     justifyContent: 'space-between',
+    alignItems: 'center',
   },
   settingText: {
     fontSize: 15,

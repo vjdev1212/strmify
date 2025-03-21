@@ -71,7 +71,7 @@ export default function AddAddonScreen() {
             showAlert('Success', 'Addon added successfully!');
             setManifestData(null);
             setUrl('');
-            router.navigate({ pathname: '/(tabs)/addons' });
+            router.navigate({ pathname: '/settings/addons' });
         } catch (error) {
             showAlert('Error', 'Failed to save addon.');
         }

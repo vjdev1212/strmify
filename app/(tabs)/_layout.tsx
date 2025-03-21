@@ -73,7 +73,7 @@ export default function TabLayout() {
           tabBarIconStyle: { marginVertical: 5 },
         }}
       />
-      <Tabs.Screen
+      {/* <Tabs.Screen
         name="addons"
         listeners={{
           tabPress: () => {
@@ -87,7 +87,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <TabBarIconIonIcon name="extension-puzzle-sharp" color={color} />,
           tabBarIconStyle: { marginVertical: 5 },
         }}
-      />
+      /> */}
       <Tabs.Screen
         name="settings"
         listeners={{
