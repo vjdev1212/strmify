@@ -7,7 +7,7 @@ import { isHapticsSupported } from '@/utils/platform';
 
 
 const ContactScreen = () => {
-    const feedbackUrl = 'https://form.jotform.com/250372743622454'
+    const feedbackUrl =  process.env.EXPO_PUBLIC_FEEDBACK_URL || '';
     const contactInfo = [
         {
             type: 'Feedback',
