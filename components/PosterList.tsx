@@ -15,14 +15,14 @@ import { getYear } from '@/utils/Date';
 import { useColorScheme } from './useColorScheme';
 import { SvgXml } from 'react-native-svg';
 import { DefaultPosterImgXml } from '@/utils/Svg';
-import { FontAwesome } from '@expo/vector-icons';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
 const SkeletonLoader = () => {
-  const colorScheme = useColorScheme();
   const { width, height } = useWindowDimensions();
   const isPortrait = height > width;
+
+  const skeletonBgColor = '#0f0f0f';
 
   return (
     <RNView style={styles.skeletonContainer}>
@@ -30,9 +30,10 @@ const SkeletonLoader = () => {
         style={[
           styles.skeletonImage,
           {
-            backgroundColor: colorScheme === 'dark' ? '#0f0f0f' : '#f0f0f0',
-            width: isPortrait ? 100 : 140,
-            height: isPortrait ? 150 : 200,
+            backgroundColor: skeletonBgColor,
+            width: isPortrait ? 100 : 150,
+            height: isPortrait ? 150 : 220,
+            aspectRatio: 9 / 16
           },
         ]}
       />
@@ -40,11 +41,11 @@ const SkeletonLoader = () => {
   );
 };
 
+
 const PosterItem = ({ item, layout, type }: { item: any, layout?: 'horizontal' | 'vertical', type: string }) => {
   const [imgError, setImgError] = useState(false);
   const fadeAnim = useState(new Animated.Value(0))[0];
   const scaleAnim = useState(new Animated.Value(1))[0];
-  const colorScheme = useColorScheme();
   const { width, height } = useWindowDimensions();
   const isPortrait = height > width;
 
@@ -55,7 +56,7 @@ const PosterItem = ({ item, layout, type }: { item: any, layout?: 'horizontal' |
     return item.year;
   }, [item.year]);
 
-  const posterUri = useMemo(() => (isPortrait ? item.poster : item.background), [isPortrait, item]);
+  const posterUri = item.poster; // Always use poster
 
   const handleImageLoad = () => {
     Animated.timing(fadeAnim, {
@@ -89,6 +90,11 @@ const PosterItem = ({ item, layout, type }: { item: any, layout?: 'horizontal' |
     }).start();
   };
 
+  const posterImageBgColor = '#0f0f0f';
+  const posterYearColor = {
+    color: '#afafaf',
+  };
+
   return (
     <Pressable
       style={[styles.posterContainer, layout === 'vertical' && styles.verticalContainer]}
@@ -96,55 +102,55 @@ const PosterItem = ({ item, layout, type }: { item: any, layout?: 'horizontal' |
       onHoverIn={handleHoverIn}
       onHoverOut={handleHoverOut}
     >
-      <View>
-        <Animated.View>
-          {!imgError ? (
-            <Animated.Image
-              source={{ uri: posterUri }}
-              onError={() => setImgError(true)}
-              onLoad={handleImageLoad}
-              style={[
-                styles.posterImage,
-                layout === 'vertical' ? styles.verticalImage : styles.horizontalImage,
-                {
-                  opacity: fadeAnim,
-                  width: isPortrait ? 100 : 200,
-                  height: isPortrait ? 150 : 110,
-                },
-              ]}
-            />
-          ) : (
-            <View style={[styles.posterImagePlaceHolder,
-            layout === 'vertical' ? styles.verticalImage : styles.horizontalImage,
-            {
-              opacity: fadeAnim,
-              width: isPortrait ? 100 : 200,
-              height: isPortrait ? 150 : 110,
-            }]}>
-              <SvgXml xml={DefaultPosterImgXml} />
-            </View>
-          )}
-        </Animated.View>
+      <Animated.View>
+        {!imgError ? (
+          <Animated.Image
+            source={{ uri: posterUri }}
+            onError={() => setImgError(true)}
+            onLoad={handleImageLoad}
+            style={[
+              styles.posterImage,
+              layout === 'vertical' ? styles.verticalImage : styles.horizontalImage,
+              {
+                opacity: fadeAnim,
+                backgroundColor: posterImageBgColor,
+                width: isPortrait ? 100 : 150,
+                height: isPortrait ? 150 : 220,
+                aspectRatio: 9 / 16
+              },
+            ]}
+          />
+        ) : (
+          <View
+            style={[
+              styles.posterImagePlaceHolder,
+              layout === 'vertical' ? styles.verticalImage : styles.horizontalImage,
+              {
+                backgroundColor: posterImageBgColor,
+                width: 100,
+                height: 150,
+              },
+            ]}
+          >
+            <SvgXml xml={DefaultPosterImgXml} />
+          </View>
+        )}
+      </Animated.View>
 
-        <Text
-          numberOfLines={1}
-          ellipsizeMode="tail"
-          style={[
-            styles.posterTitle,
-            {
-              maxWidth: isPortrait ? 100 : 200,
-            },
-          ]}
-        >
-          {item.name}
-        </Text>
-        <Text style={styles.posterYear}>
-          <FontAwesome name="star-o" size={14} color="#fffffff" />  {item.imdbRating}   {year}
-        </Text>
-      </View>
+      <Text
+        numberOfLines={1}
+        ellipsizeMode="tail"
+        style={[styles.posterTitle, { maxWidth: 100 }]}
+      >
+        {item.name}
+      </Text>
+      <Text style={[styles.posterYear, posterYearColor]}>
+        {`★ ${item.imdbRating}   ${year}`}
+      </Text>
     </Pressable>
   );
 };
+
 
 const PosterList = ({
   apiUrl,
@@ -166,7 +172,6 @@ const PosterList = ({
         const response = await fetch(`${apiUrl}?api_key=${EXPO_PUBLIC_TMDB_API_KEY}`);
         const result = await response.json();
         const collection = result.results;
-
         let list = [];
 
         if (type === 'movie') {
@@ -202,8 +207,7 @@ const PosterList = ({
     };
 
     fetchData();
-  }, [apiUrl]);
-
+  }, [apiUrl]);  
 
   const handleSeeAllPress = async () => {
     if (isHapticsSupported()) {
@@ -249,7 +253,6 @@ const PosterList = ({
         </RNView>
       }
     </>
-
   );
 };
 
@@ -283,9 +286,7 @@ const styles = StyleSheet.create({
   },
   posterImagePlaceHolder: {
     justifyContent: 'center',
-    alignItems: 'center',
-    borderColor: '#ffffff',
-    backgroundColor: '#111111'
+    alignItems: 'center'
   },
   posterImage: {
     borderRadius: 8,
@@ -308,7 +309,7 @@ const styles = StyleSheet.create({
   posterYear: {
     marginTop: 4,
     fontSize: 12,
-    color: '#fff',
+    color: '#888',
   },
   skeletonContainer: {
     marginRight: 15,
@@ -318,7 +319,7 @@ const styles = StyleSheet.create({
   skeletonImage: {
     width: '100%',
     height: 150,
-    backgroundColor: '#fff888',
+    backgroundColor: '#888888',
     borderRadius: 8,
   },
 });

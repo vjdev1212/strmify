@@ -4,7 +4,6 @@ import { Animated, StyleSheet, useWindowDimensions, Image, Text, View } from 're
 const MediaLogo = ({ logo, title }: { logo: string, title: string }) => {
     const [titleFadeAnim] = useState(new Animated.Value(0));
     const [logoError, setLogoError] = useState(false);
-
     const { width, height } = useWindowDimensions();
     const isPortrait = height > width;
 
@@ -16,13 +15,10 @@ const MediaLogo = ({ logo, title }: { logo: string, title: string }) => {
         }).start();
     }, [titleFadeAnim]);
 
+    const logoTextColor = '#ffffff';
     return (
         <Animated.View
-            style={[styles.logoContainer, {
-                opacity: titleFadeAnim,
-                marginTop: isPortrait ? 20 : 0,
-                alignSelf: isPortrait ? 'center' : 'auto'
-            }]}
+            style={[styles.logoContainer, { opacity: titleFadeAnim, alignSelf: isPortrait ? 'center' : 'auto' }]}
         >
             {!logoError ? (
                 <Image
@@ -38,6 +34,7 @@ const MediaLogo = ({ logo, title }: { logo: string, title: string }) => {
                 <View style={styles.titleContainer}>
                     <Text style={[styles.titleText,
                     {
+                        color: logoTextColor,
                         fontSize: isPortrait ? 25 : 35
                     }]} ellipsizeMode="tail">{title}</Text>
                 </View>
@@ -48,10 +45,11 @@ const MediaLogo = ({ logo, title }: { logo: string, title: string }) => {
 
 const styles = StyleSheet.create({
     logoContainer: {
+        marginTop: 10,
         alignItems: 'center',
     },
     logo: {
-        aspectRatio: 21 / 9,
+        aspectRatio: 16 / 9,
     },
     titleContainer: {
         justifyContent: 'center',
@@ -60,13 +58,12 @@ const styles = StyleSheet.create({
         padding: 10,
     },
     titleText: {
-        color: '#ffffff',
         fontWeight: 'bold',
         overflow: 'hidden',
         textOverflow: 'ellipsis',
         textAlign: 'center',
         paddingHorizontal: 10,
-    },
+    }
 });
 
 export default MediaLogo;

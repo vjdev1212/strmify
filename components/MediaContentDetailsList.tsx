@@ -38,7 +38,7 @@ const MediaContentDetailsList = ({
           </View>
           <View style={[styles.value, { flexDirection: 'row', alignItems: 'center' }]}>
             <Text style={styles.infoText}>{imdbRating !== "0.0" ? imdbRating : 'Not Rated'}</Text>
-            <FontAwesome name="star" size={13} color={'#ffffff'} />
+            {imdbRating !== "0.0" && (<FontAwesome name="star" size={13} color={'#ffffff'} />)}
           </View>
         </View>
       </View>

@@ -10,16 +10,15 @@ const MediaContentDescription = ({ description }: { description: string }) => (
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    minHeight: 50,
+    minHeight: 10,
   },
   description: {
     fontSize: 14,
     lineHeight: 22,
     paddingHorizontal: 20,
-    marginVertical: 10,
+    marginVertical: 10
   },
 });
 

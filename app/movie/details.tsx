@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
-
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, StatusBar, Text, View } from '../../components/Themed';
 import MediaContentDescription from '@/components/MediaContentDescription';
@@ -14,6 +13,8 @@ import MediaLogo from '@/components/MediaLogo';
 import MediaCastAndCrews from '@/components/MediaCastAndCrews';
 import PosterList from '@/components/PosterList';
 import MediaContentDetailsList from '@/components/MediaContentDetailsList';
+import { useColorScheme } from '@/components/useColorScheme';
+import PlayButton from '@/components/PlayButton';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -26,6 +27,7 @@ const MovieDetails = () => {
   const { width, height } = useWindowDimensions();
   const isPortrait = height > width;
   const ref = useRef<ScrollView | null>(null);
+  const colorScheme = useColorScheme();
 
   useFocusEffect(() => {
     if (ref.current) {
@@ -49,7 +51,7 @@ const MovieDetails = () => {
           const movie = result;
           const movieData = {
             name: movie.title,
-            background: `https://image.tmdb.org/t/p/w1280${movie.backdrop_path}`,
+            background: `https://image.tmdb.org/t/p/original${movie.backdrop_path}`,
             poster: `https://image.tmdb.org/t/p/w780${movie.poster_path}`,
             logo: logo,
             genre: movie.genres.map((genre: any) => genre.name),
@@ -93,7 +95,8 @@ const MovieDetails = () => {
   if (loading) {
     return (
       <View style={styles.centeredContainer}>
-        <ActivityIndicator size="large" style={styles.activityIndicator} color="#ffffff" />
+        <ActivityIndicator size="large" style={styles.activityIndicator} color="#535aff" />
+        <Text style={styles.centeredText}>Loading</Text>
       </View>
     );
   }
@@ -126,48 +129,48 @@ const MovieDetails = () => {
 
   return (
     <ScrollView showsVerticalScrollIndicator={false} style={styles.container} ref={ref}>
-      <StatusBar translucent />
-      <View style={[{
-        flex: 1,
-        flexDirection: isPortrait ? 'column' : 'row',
+      <StatusBar />
+      <View style={[styles.rootContainer, {
+        flexDirection: isPortrait ? 'column' : 'row-reverse',
         marginTop: isPortrait ? 0 : '5%',
         justifyContent: 'center',
       }]}>
         <View style={[styles.posterContainer, {
-          width: isPortrait ? '100%' : '30%',
-          padding: isPortrait ? null : '2%'
+          width: isPortrait ? '100%' : '50%',
+          padding: isPortrait ? null : '2%',
+          alignItems: isPortrait ? 'center' : 'flex-end',
         }]}>
-          <MediaContentPoster background={isPortrait ? data.background : data.poster} isPortrait={isPortrait} />
+          <MediaContentPoster background={data.background} isPortrait={isPortrait} />
         </View>
 
         <View style={[styles.detailsContainer, {
-          width: isPortrait ? '100%' : '60%',
-          paddingHorizontal: isPortrait ? null : 5
+          width: isPortrait ? '100%' : '50%',
+          paddingHorizontal: isPortrait ? null : 5,
+          zIndex: 10
         }]}>
           <MediaLogo logo={data.logo} title={data.name} />
+          <MediaContentHeader
+            name={data.name}
+            genre={data.genre || data.genres}
+            released={data.released}
+            runtime={data.runtime}
+            imdbRating={data.imdbRating}
+            releaseInfo={data.releaseInfo}
+          />
+          <PlayButton onPress={handlePlayPress}/>
+          <MediaContentDescription description={data.description} />
           {
             isPortrait && (
-              <MediaContentHeader
-                name={data.name}
-                genre={data.genre || data.genres}
-                released={data.released}
-                runtime={data.runtime}
-                imdbRating={data.imdbRating}
-                releaseInfo={data.releaseInfo}
-              />
+              <MediaContentDetailsList type='movie' released={data.released} country={data.country} languages={data.languages} genre={data.genre || data.genres} runtime={data.runtime} imdbRating={data.imdbRating} />
             )
           }
-          <SearchButton onPress={handlePlayPress} text="Movie" />
-          <MediaContentDescription description={data.description} />
-          <Divider />
-          <MediaContentDetailsList type='movie' released={data.released} country={data.country} languages={data.languages} genre={data.genre || data.genres} runtime={data.runtime} imdbRating={data.imdbRating} />
-          <MediaCastAndCrews cast={cast}></MediaCastAndCrews>
         </View>
-        <BottomSpacing space={20} />
       </View>
-      <View>
-        <View style={{ justifyContent: 'center', marginTop: isPortrait ? 5 : '10%' }}>
-        </View>
+      {
+        isPortrait && (<Divider />)
+      }
+      <View style={styles.castContainer}>
+        <MediaCastAndCrews cast={cast}></MediaCastAndCrews>
       </View>
       <View style={styles.recommendationsContainer}>
         <PosterList apiUrl={`https://api.themoviedb.org/3/movie/${moviedbid}/recommendations`} title='More like this' type='movie' />
@@ -180,6 +183,10 @@ const MovieDetails = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1
+  },
+  rootContainer: {
+    flex: 1,
+    flexDirection: 'column',
   },
   posterContainer: {
     flexDirection: 'column',
@@ -194,7 +201,7 @@ const styles = StyleSheet.create({
   },
   activityIndicator: {
     marginBottom: 10,
-    color: '#ffffff',
+    color: '#535aff',
   },
   centeredContainer: {
     flex: 1,
@@ -206,12 +213,14 @@ const styles = StyleSheet.create({
     fontSize: 18,
     textAlign: 'center',
   },
+  castContainer: {
+    marginHorizontal: '1%'
+  },
   recommendationsContainer: {
   },
   divider: {
     textAlign: 'center',
     fontSize: 20,
-    color: '#ffffff',
     paddingBottom: 10
   }
 });

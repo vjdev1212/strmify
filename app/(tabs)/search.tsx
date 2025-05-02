@@ -2,13 +2,12 @@ import { Text, ActivityIndicator, TextInput, View, StatusBar } from '@/component
 import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { Animated, View as RNView, SafeAreaView, ScrollView, useWindowDimensions } from 'react-native';
-import { StyleSheet, FlatList, Image, Pressable } from 'react-native';
+import { StyleSheet, Image, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { isHapticsSupported } from '@/utils/platform';
 import { getYear } from '@/utils/Date';
 import { useColorScheme } from '@/components/useColorScheme';
-
 
 const TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -21,6 +20,9 @@ const SearchScreen = () => {
   const [debounceTimeout, setDebounceTimeout] = useState<NodeJS.Timeout | null>(null);
   const { width, height } = useWindowDimensions();
   const isPortrait = height > width;
+
+  const posterWidth = isPortrait ? 100 : 150;
+  const posterHeight = isPortrait ? 150 : 225;
 
   const fetchData = async () => {
     if (!query.trim()) return;
@@ -84,22 +86,6 @@ const SearchScreen = () => {
     };
   }, [query]);
 
-  const renderMoviePoster = ({ item }: { item: any }) => {
-    return (
-      <Pressable>
-        <PosterContent item={item} type='movie' />
-      </Pressable>
-    );
-  };
-
-  const renderSeriesPoster = ({ item }: { item: any }) => {
-    return (
-      <Pressable>
-        <PosterContent item={item} type='series' />
-      </Pressable>
-    );
-  };
-
   const PosterContent = ({ item, type }: { item: any, type: string }) => {
     const scaleAnim = new Animated.Value(1);
 
@@ -129,25 +115,20 @@ const SearchScreen = () => {
     };
 
     return (
-      <SafeAreaView>
-        <RNView>
-          <Animated.View>
-            <Pressable style={styles.posterContainer}
-              onPress={handlePress}
-              onHoverIn={handleHoverIn}
-              onHoverOut={handleHoverOut}>
-              <Image source={{ uri: isPortrait ? item.poster : item.background }} style={[styles.posterImage, {
-                width: isPortrait ? 100 : 200,
-                height: isPortrait ? 150 : 110,
-              }]} />
-              <Text numberOfLines={1} ellipsizeMode="tail" style={styles.posterTitle}>
-                {item.title || item.name}
-              </Text>
-              <Text style={styles.posterYear}>{item.year}</Text>
-            </Pressable>
-          </Animated.View>
-        </RNView>
-      </SafeAreaView>
+      <Pressable style={styles.posterContainer}
+        onPress={handlePress}
+        onHoverIn={handleHoverIn}
+        onHoverOut={handleHoverOut}>
+        <Image source={{ uri: isPortrait ? item.poster : item.poster }}
+          style={[styles.posterImage, {
+            width: posterWidth,
+            height: posterHeight,
+          }]} />
+        <Text numberOfLines={1} ellipsizeMode="tail" style={styles.posterTitle}>
+          {item.name}
+        </Text>
+        <Text style={styles.posterYear}>{item.year}</Text>
+      </Pressable>
     );
   };
 
@@ -160,8 +141,9 @@ const SearchScreen = () => {
     setSeries([]);
   };
 
-
   const colorScheme = useColorScheme();
+  const searchInputColor = styles.darkSearchInput;
+  const noResultsColor = { color: '#a0a0a0' }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -170,34 +152,36 @@ const SearchScreen = () => {
         <TextInput
           style={[
             styles.searchInput,
+            searchInputColor
           ]}
           placeholder="Search movies or series..."
-          placeholderTextColor={'#777777'}
+          placeholderTextColor={'#888888'}
           value={query}
           onChangeText={setQuery}
           submitBehavior={'blurAndSubmit'}
         />
         {query.length > 0 && (
           <Pressable onPress={clearSearch} style={styles.clearIcon}>
-            <Ionicons name="close-circle" size={20} color="#777777" />
+            <Ionicons name="close-circle" size={20} color="#888" />
           </Pressable>
         )}
       </View>
 
-      {loading && <ActivityIndicator size="large" color="#ffffff" style={styles.loader} />}
-      <ScrollView showsVerticalScrollIndicator={false} style={styles.searchResulstContainer}>
+      {loading && <ActivityIndicator size="large" color="#535aff" style={styles.loader} />}
+
+      <ScrollView showsVerticalScrollIndicator={false} style={styles.searchResultsContainer}>
         {
           !loading && movies.length === 0 && series.length === 0 &&
           (
             <View style={styles.centeredContainer}>
-              <Ionicons style={styles.noResults} name='search-outline' color="#ffffff" size={70} />
+              <Ionicons style={styles.noResults} name='search-outline' color="#535aff" size={70} />
               {
                 query.length > 0 ? (
-                  <Text style={[styles.noResultsText]}>
+                  <Text style={[styles.noResultsText, noResultsColor]}>
                     No results found.
                   </Text>
                 ) : (
-                  <Text style={[styles.noResultsText]}>
+                  <Text style={[styles.noResultsText, noResultsColor]}>
                     What would you like to watch today?
                   </Text>
                 )
@@ -205,29 +189,30 @@ const SearchScreen = () => {
             </View>
           )
         }
+
         {!loading && movies.length > 0 && (
           <View>
             <Text style={styles.sectionTitle}>Movies</Text>
-            <FlatList
-              data={movies}
-              keyExtractor={(item, index) => `movie-${index}`}
-              renderItem={renderMoviePoster}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-            />
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScrollView}>
+              <RNView style={styles.postersRow}>
+                {movies.map((movie, index) => (
+                  <PosterContent key={`movie-${index}`} item={movie} type="movie" />
+                ))}
+              </RNView>
+            </ScrollView>
           </View>
         )}
 
         {!loading && series.length > 0 && (
           <View>
             <Text style={styles.sectionTitle}>Series</Text>
-            <FlatList
-              data={series}
-              keyExtractor={(item, index) => `series-${index}`}
-              renderItem={renderSeriesPoster}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-            />
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScrollView}>
+              <RNView style={styles.postersRow}>
+                {series.map((serie, index) => (
+                  <PosterContent key={`series-${index}`} item={serie} type="series" />
+                ))}
+              </RNView>
+            </ScrollView>
           </View>
         )}
       </ScrollView>
@@ -259,8 +244,6 @@ const styles = StyleSheet.create({
     paddingLeft: 20,
     paddingRight: 40,
     fontSize: 16,
-    backgroundColor: '#111111',
-    outline: 'none'
   },
   clearIcon: {
     position: 'absolute',
@@ -279,9 +262,15 @@ const styles = StyleSheet.create({
   loader: {
     marginTop: 20,
   },
-  searchResulstContainer: {
+  searchResultsContainer: {
     marginVertical: 20,
     marginHorizontal: 10
+  },
+  horizontalScrollView: {
+    flexGrow: 0,
+  },
+  postersRow: {
+    flexDirection: 'row',
   },
   sectionTitle: {
     fontSize: 20,
@@ -292,8 +281,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 15,
   },
   posterImage: {
-    width: 100,
-    height: 150,
     borderRadius: 8,
   },
   posterTitle: {
@@ -304,7 +291,7 @@ const styles = StyleSheet.create({
   posterYear: {
     marginTop: 4,
     fontSize: 12,
-    color: '#fff',
+    color: '#888',
   },
   noResults: {
     marginTop: 100,
@@ -314,7 +301,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     marginHorizontal: '5%',
-    color: '#fff',
+    color: '#888'
   }
 });
 
