@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { StyleSheet, Pressable, View as RNView, ScrollView, useWindowDimensions } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, Pressable, View as RNView, ScrollView } from 'react-native';
 import { ActivityIndicator, Card, StatusBar, Text, View } from '@/components/Themed';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -7,24 +7,44 @@ import * as Haptics from 'expo-haptics';
 import { isHapticsSupported, showAlert } from '@/utils/platform';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
-import { useColorScheme } from '@/components/useColorScheme';
-import { useFocusEffect } from '@react-navigation/native';
+
+interface Stream {
+    name: string;
+    title?: string;
+    url?: string;
+    embed?: string;
+    infoHash?: string;
+    description?: string;
+}
+
+interface Addon {
+    name: string;
+    url?: string;
+    streamBaseUrl?: string;
+    types?: string[];
+}
+
+interface StreamResponse {
+    streams?: Stream[];
+}
 
 const StreamScreen = () => {
-    const { imdbid, type, name: contentTitle, season, episode, colors } = useLocalSearchParams();
-    const [addons, setAddons] = useState<any[]>([]);
-    const [selectedAddon, setSelectedAddon] = useState<any | null>(null);
-    const [streams, setStreams] = useState<any[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [isInitialLoad, setIsInitialLoad] = useState(true);
+    const { imdbid, type, name: contentTitle, season, episode, colors } = useLocalSearchParams<{
+        imdbid: string;
+        type: string;
+        name: string;
+        season?: string;
+        episode?: string;
+        colors?: string;
+    }>();
+    const [addons, setAddons] = useState<Addon[]>([]);
+    const [selectedAddon, setSelectedAddon] = useState<Addon | null>(null);
+    const [streams, setStreams] = useState<Stream[]>([]);
+    const [loading, setLoading] = useState<boolean>(false);
     const router = useRouter();
-    const colorScheme = useColorScheme();
-    const { width, height } = useWindowDimensions();
-    const isPortrait = height > width;
 
-    const fetchAddons = useCallback(async () => {
+    const fetchAddons = async (): Promise<void> => {
         try {
-            console.log("Fetching addons...");
             setLoading(true);
             
             // Get addons from AsyncStorage
@@ -35,7 +55,7 @@ const StreamScreen = () => {
                 return;
             }
             
-            const addonsData = JSON.parse(storedAddons);
+            const addonsData = JSON.parse(storedAddons) as Record<string, Addon>;
             if (!addonsData || Object.keys(addonsData).length === 0) {
                 setAddons([]);
                 setLoading(false);
@@ -43,10 +63,9 @@ const StreamScreen = () => {
             }
             
             const addonList = Object.values(addonsData);
-            console.log(`Found ${addonList.length} addons`);
             
             // Filter addons by type
-            const filteredAddons = addonList.filter((addon: any) => {
+            const filteredAddons = addonList.filter((addon: Addon) => {
                 return addon?.types && addon.types.includes(type);
             });
             
@@ -56,10 +75,8 @@ const StreamScreen = () => {
             if (filteredAddons.length > 0) {
                 const firstAddon = filteredAddons[0];
                 setSelectedAddon(firstAddon);
-                await fetchStreams([firstAddon]);
+                await fetchStreams(firstAddon);
             }
-            
-            setIsInitialLoad(false);
         } catch (error) {
             console.error('Error fetching addons:', error);
             showAlert('Error', 'Failed to load addons');
@@ -67,60 +84,32 @@ const StreamScreen = () => {
         } finally {
             setLoading(false);
         }
-    }, [type]);
+    };
 
-    const fetchStreams = async (addonList: any[]) => {
+    const fetchStreams = async (addon: Addon): Promise<void> => {
         setLoading(true);
         
-        const fetchWithTimeout = (url: string, timeout = 10000) => {
-            return Promise.race([
-                fetch(url).then((response) => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! Status: ${response.status}`);
-                    }
-                    return response.json();
-                }),
-                new Promise((_, reject) =>
-                    setTimeout(() => reject(new Error('Request timed out')), timeout)
-                ),
-            ]);
-        };
-
         try {
-            console.log(`Fetching streams for ${addonList.length} addons...`);
-            const addonPromises = addonList.map(async (addon) => {
-                const addonTypes = addon?.types || [];
+            const addonUrl = addon?.url || '';
+            const streamBaseUrl = addon?.streamBaseUrl || addonUrl;
+            let streamUrl = '';
 
-                if (!addonTypes.includes(type)) {
-                    return { addon, streams: [] };
-                }
+            if (type === 'series') {
+                streamUrl = `${streamBaseUrl}/stream/series/${imdbid}${season && episode ? `:${season}:${episode}` : ''}.json`;
+            } else {
+                streamUrl = `${streamBaseUrl}/stream/${type}/${imdbid}.json`;
+            }
 
-                const addonUrl = addon?.url || '';
-                const streamBaseUrl = addon?.streamBaseUrl || addonUrl;
-                let streamUrl = '';
-
-                if (type === 'series') {
-                    streamUrl = `${streamBaseUrl}/stream/series/${imdbid}${season && episode ? `:${season}:${episode}` : ''}.json`;
-                } else {
-                    streamUrl = `${streamBaseUrl}/stream/${type}/${imdbid}.json`;
-                }
-
-                console.log(`Fetching from: ${streamUrl}`);
-                try {
-                    const data = await fetchWithTimeout(streamUrl, 10000);
-                    console.log(`Got ${data.streams?.length || 0} streams from ${addon?.name}`);
-                    return { addon, streams: data.streams || [] };
-                } catch (error) {
-                    console.error(`Error fetching streams for addon "${addon?.name}":`, error);
-                    return { addon, streams: [] };
-                }
-            });
-
-            const allStreams = await Promise.all(addonPromises);
-            setStreams(allStreams);
+            const response = await fetch(streamUrl);
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            
+            const data = await response.json() as StreamResponse;
+            setStreams(data.streams || []);
         } catch (error) {
             console.error('Error fetching streams:', error);
-            showAlert('Error', 'Failed to load streams');
+            setStreams([]);
         } finally {
             setLoading(false);
         }
@@ -129,27 +118,21 @@ const StreamScreen = () => {
     // Initial load when component mounts
     useEffect(() => {
         fetchAddons();
-    }, [fetchAddons]);
+    }, []);
 
-    // Refresh when screen comes into focus
-    useFocusEffect(
-        useCallback(() => {
-            if (!isInitialLoad) {
-                fetchAddons();
-            }
-            return () => {}; // cleanup function
-        }, [fetchAddons, isInitialLoad])
-    );
-
-    const handleAddonPress = async (item: any) => {
+    const handleAddonPress = async (item: Addon): Promise<void> => {
         if (isHapticsSupported()) {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
         }
         setSelectedAddon(item);
-        fetchStreams([item]);
+        fetchStreams(item);
     };
 
-    const RenderAddonItem = ({ item }: any) => {
+    interface AddonItemProps {
+        item: Addon;
+    }
+
+    const RenderAddonItem = ({ item }: AddonItemProps): React.ReactElement | null => {
         const { name, types } = item;
 
         if (!types || !types.includes(type)) {
@@ -178,10 +161,14 @@ const StreamScreen = () => {
         );
     };
 
-    const RenderStreamItem = ({ item }: any) => {
+    interface StreamItemProps {
+        item: Stream;
+    }
+
+    const RenderStreamItem = ({ item }: StreamItemProps): React.ReactElement => {
         const { name, title, url, embed, infoHash, description } = item;
 
-        const handleStreamSelected = async () => {
+        const handleStreamSelected = async (): Promise<void> => {
             if (isHapticsSupported()) {
                 await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
             }
@@ -224,8 +211,6 @@ const StreamScreen = () => {
             </RNView>
         );
     };
-
-    const selectedAddonStreams = streams.find((addonData) => addonData.addon === selectedAddon)?.streams || [];
     
     return (
         <SafeAreaView style={styles.container}>
@@ -234,7 +219,7 @@ const StreamScreen = () => {
                 loading && addons.length === 0 ? (
                     <RNView style={styles.loadingContainer}>
                         <View style={styles.centeredContainer}>
-                            <ActivityIndicator size="large" style={styles.activityIndicator} color="#ffffff" />
+                            <ActivityIndicator size="large" style={styles.activityIndicator} color="#535aff" />
                             <Text style={styles.loadingText}>Loading addons...</Text>
                         </View>
                     </RNView>
@@ -274,8 +259,8 @@ const StreamScreen = () => {
                     <ScrollView showsVerticalScrollIndicator={false}>
                         <View style={styles.streamsContainer}>
                             {
-                                selectedAddonStreams.length > 0 ? (
-                                    selectedAddonStreams.map((item: any, index: number) => (
+                                streams.length > 0 ? (
+                                    streams.map((item, index) => (
                                         <RenderStreamItem key={`stream-${index}-${item.name}`} item={item} />
                                     ))
                                 ) : (
