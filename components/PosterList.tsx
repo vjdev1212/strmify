@@ -33,7 +33,6 @@ const SkeletonLoader = () => {
             backgroundColor: skeletonBgColor,
             width: isPortrait ? 100 : 150,
             height: isPortrait ? 150 : 220,
-            aspectRatio: 9 / 16
           },
         ]}
       />
@@ -116,7 +115,6 @@ const PosterItem = ({ item, layout, type }: { item: any, layout?: 'horizontal' |
                 backgroundColor: posterImageBgColor,
                 width: isPortrait ? 100 : 150,
                 height: isPortrait ? 150 : 220,
-                aspectRatio: 9 / 16
               },
             ]}
           />
@@ -207,7 +205,7 @@ const PosterList = ({
     };
 
     fetchData();
-  }, [apiUrl]);  
+  }, [apiUrl]);
 
   const handleSeeAllPress = async () => {
     if (isHapticsSupported()) {
