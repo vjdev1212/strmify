@@ -2,26 +2,31 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import { Text, View } from './Themed';
 import { formatDate } from '@/utils/Date';
+import { FontAwesome } from '@expo/vector-icons';
 
 const MediaContentDetailsList = ({
   type = "movie",
+  genre = [],
+  runtime = "Unknown",
+  imdbRating = "Unknown",
   released = 'Unknown',
   country = [],
   languages = [],
-  status = 'Unknown',
 }: {
   type: string;
+  genre: string[];
+  runtime: string;
+  imdbRating: string;
   released: string;
   country: string[];
   languages: any[];
-  status: string;
 }) => (
   <View style={styles.container}>
     <View style={styles.gridContainer}>
       <View style={styles.gridItem}>
         <View style={styles.row}>
           <View style={styles.labelContainer}>
-            <Text style={styles.label}>{type === 'movie' ? 'Released On:' : 'First Aired On'}</Text>
+            <Text style={styles.label}>{type === 'movie' ? 'Released On:' : 'First Aired On:'}</Text>
           </View>
           <Text style={styles.value}>{formatDate(released)}</Text>
         </View>
@@ -29,11 +34,34 @@ const MediaContentDetailsList = ({
       <View style={styles.gridItem}>
         <View style={styles.row}>
           <View style={styles.labelContainer}>
-            <Text style={styles.label}>Status:</Text>
+            <Text style={styles.label}>IMDB Rating:</Text>
           </View>
-          <Text style={styles.value}>{status}</Text>
+          <View style={[styles.value, { flexDirection: 'row', alignItems: 'center' }]}>
+            <Text style={styles.infoText}>{imdbRating !== "0.0" ? imdbRating : 'Not Rated'}</Text>
+            {imdbRating !== "0.0" && (<FontAwesome name="star" size={13} color={'#ffffff'} />)}
+          </View>
         </View>
       </View>
+      <View style={styles.gridItem}>
+        <View style={styles.row}>
+          <View style={styles.labelContainer}>
+            <Text style={styles.label}>Genre:</Text>
+          </View>
+          <Text numberOfLines={1} style={styles.value}>{genre.length > 0 ? genre.join(', ') : 'Unknown'}</Text>
+        </View>
+      </View>
+      {
+        type === 'movie' && (
+          <View style={styles.gridItem}>
+            <View style={styles.row}>
+              <View style={styles.labelContainer}>
+                <Text style={styles.label}>Runtime:</Text>
+              </View>
+              <Text style={styles.value}>{runtime !== '0' ? runtime : 'Unknown'} mins</Text>
+            </View>
+          </View>
+        )
+      }
       <View style={styles.gridItem}>
         <View style={styles.row}>
           <View style={styles.labelContainer}>
@@ -45,7 +73,7 @@ const MediaContentDetailsList = ({
       <View style={styles.gridItem}>
         <View style={styles.row}>
           <View style={styles.labelContainer}>
-            <Text style={styles.label}>Spoken Languages:</Text>
+            <Text style={styles.label}>Languages:</Text>
           </View>
           <Text style={styles.value}>{languages.length > 0 ? languages.map(l => l.english_name).join(', ') : 'Unknown'}</Text>
         </View>
@@ -65,10 +93,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   gridItem: {
-    width: '48%',
-    minWidth: 300,
-    borderRadius: 8,
-    marginBottom: 10,
+    width: '100%',
+    maxWidth: 320,
   },
   row: {
     flexDirection: 'row',
@@ -76,21 +102,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   labelContainer: {
-    minWidth: 140,
+    minWidth: 120,
     alignItems: 'flex-start',
   },
   label: {
-    fontSize: 13,
-    paddingHorizontal: 10,
+    fontSize: 14,
     paddingVertical: 4,
     borderRadius: 4,
-    backgroundColor: '#111111',
     alignSelf: 'flex-start',
   },
   value: {
-    fontSize: 13,
-    flex: 1,
-    paddingHorizontal: 10
+    fontSize: 14,
+    flex: 1
+  },
+  infoText: {
+    fontSize: 14,
+    paddingRight: 5
   },
 });
 

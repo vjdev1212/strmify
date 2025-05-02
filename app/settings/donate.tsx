@@ -12,7 +12,7 @@ const DonateScreen = () => {
         if (isHapticsSupported()) {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
         }
-        const profileUsername = 'iamvijay91';
+        const profileUsername = process.env.EXPO_PUBLIC_BUY_ME_COFFEE || '';
         const buyMeACoffeeUrl = `https://www.buymeacoffee.com/${profileUsername}`;
         Linking.openURL(buyMeACoffeeUrl).catch((err) =>
             console.error('Failed to open URL:', err)

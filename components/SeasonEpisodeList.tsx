@@ -27,7 +27,6 @@ interface SeasonEpisodeListProps {
 }
 
 const EpisodeItem = ({ item, onEpisodeSelect }: { item: any, onEpisodeSelect: any }) => {
-  const colorScheme = useColorScheme();
   const [selectedEpisode, setSelectedEpisode] = useState<number>(1);
   const [isLoading, setIsLoading] = useState(true);
   const [fadeAnim] = useState(new Animated.Value(0));
@@ -57,6 +56,14 @@ const EpisodeItem = ({ item, onEpisodeSelect }: { item: any, onEpisodeSelect: an
     onEpisodeSelect(season, episode);
   };
 
+  const thumbnailBackgroundColor = '#0f0f0f';
+
+  const episodeAiredColor = {
+    color: '#afafaf',
+  };
+  const episodeDescriptionColor = {
+    color: '#efefef',
+  };
   return (
     <View style={[
       styles.episodeContainer,
@@ -84,6 +91,7 @@ const EpisodeItem = ({ item, onEpisodeSelect }: { item: any, onEpisodeSelect: an
                         source={{ uri: item.thumbnail }}
                         onError={() => setImgError(true)}
                         style={[styles.thumbnail, {
+                          backgroundColor: thumbnailBackgroundColor,
                           height: isPortrait ? 80 : null,
                           width: isPortrait ? null : 160,
                           aspectRatio: 16 / 9,
@@ -92,6 +100,7 @@ const EpisodeItem = ({ item, onEpisodeSelect }: { item: any, onEpisodeSelect: an
                     ) : (
                       <View style={[styles.thumbnailPlaceHolder,
                       {
+                        backgroundColor: thumbnailBackgroundColor,
                         height: isPortrait ? 80 : null,
                         width: isPortrait ? null : 160,
                         aspectRatio: 16 / 9,
@@ -107,13 +116,13 @@ const EpisodeItem = ({ item, onEpisodeSelect }: { item: any, onEpisodeSelect: an
               <Text style={[styles.episodeTitle]} numberOfLines={3}>
                 {item.episode || item.number}. {item.name || item.title}
               </Text>
-              <Text style={[styles.episodeAired]}>{
+              <Text style={[styles.episodeAired, episodeAiredColor]}>{
                 formatDate(item.firstAired) || formatDate(item.released)}
               </Text>
             </View>
           </View>
           <View style={{ justifyContent: 'center', width: '100%', marginRight: 5 }}>
-            <Text style={[styles.episodeDescription]} numberOfLines={5}>
+            <Text style={[styles.episodeDescription, episodeDescriptionColor]} numberOfLines={5}>
               {item.description || item.overview}
             </Text>
           </View>
@@ -174,6 +183,9 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
             <Pressable
               style={[
                 styles.seasonButton,
+                {
+                  backgroundColor: item !== selectedSeason && colorScheme === 'dark' ? '#101010' : '#f0f0f0',
+                },
                 item === selectedSeason && styles.selectedSeasonButton,
               ]}
               onPress={() => handleSeasonSelect(item)}  // Trigger haptic feedback on season press
@@ -220,16 +232,16 @@ const styles = StyleSheet.create({
     marginRight: 10,
     paddingVertical: 10,
     paddingHorizontal: 20,
-    borderRadius: 25
+    borderRadius: 25,
   },
   selectedSeasonButton: {
-    backgroundColor: '#535aff'
+    backgroundColor: '#535aff',
   },
   seasonText: {
     fontSize: 16,
   },
   selectedSeasonText: {
-    color: '#fff',
+    color: '#fff'
   },
   episodeList: {
     paddingHorizontal: 10,
@@ -248,8 +260,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     marginRight: 15,
     aspectRatio: 16 / 9,
-    marginVertical: 20,
-    borderColor: '#fff'
+    marginVertical: 20
   },
   thumbnail: {
     borderRadius: 6,
@@ -258,7 +269,8 @@ const styles = StyleSheet.create({
     marginVertical: 20
   },
   episodeTitle: {
-    fontSize: 14
+    fontSize: 14,
+    fontWeight: '500',
   },
   episodeAired: {
     marginTop: 5,
@@ -266,7 +278,7 @@ const styles = StyleSheet.create({
   },
   episodeDescription: {
     marginTop: 5,
-    fontSize: 14,
+    fontSize: 13,
     marginRight: 10
   },
   skeletonBackground: {

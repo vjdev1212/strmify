@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { StyleSheet, Pressable, View as RNView, ScrollView, useWindowDimensions } from 'react-native';
 import { ActivityIndicator, Card, StatusBar, Text, View } from '@/components/Themed';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -8,7 +8,7 @@ import { isHapticsSupported, showAlert } from '@/utils/platform';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { useColorScheme } from '@/components/useColorScheme';
-
+import { useFocusEffect } from '@react-navigation/native';
 
 const StreamScreen = () => {
     const { imdbid, type, name: contentTitle, season, episode, colors } = useLocalSearchParams();
@@ -16,45 +16,70 @@ const StreamScreen = () => {
     const [selectedAddon, setSelectedAddon] = useState<any | null>(null);
     const [streams, setStreams] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
+    const [isInitialLoad, setIsInitialLoad] = useState(true);
     const router = useRouter();
     const colorScheme = useColorScheme();
     const { width, height } = useWindowDimensions();
     const isPortrait = height > width;
-    // const parsedColors = typeof colors === 'string'
-    //     ? colors.split(',')
-    //     : Array.isArray(colors) ? colors : [];
 
-    // const gradientColors: [string, string, ...string[]] =
-    //     parsedColors.length >= 2
-    //         ? [parsedColors[0], parsedColors[1], ...parsedColors.slice(2)]
-    //         : ['#111111', '#999999', '#222222'];
-
-    useEffect(() => {
-        const fetchAddons = async () => {
-            try {
-                const storedAddons = await AsyncStorage.getItem('addons');
-                const addonsData = storedAddons ? JSON.parse(storedAddons) : {};
-                const addonList = Object.values(addonsData);
-                setAddons(addonList);
-
-                if (addonList.length > 0) {
-                    setSelectedAddon(addonList[0]);
-                    fetchStreams(addonList);
-                }
-            } catch (error) {
-                console.error('Error fetching addons:', error);
-                showAlert('Error', 'Failed to load addons');
+    const fetchAddons = useCallback(async () => {
+        try {
+            console.log("Fetching addons...");
+            setLoading(true);
+            
+            // Get addons from AsyncStorage
+            const storedAddons = await AsyncStorage.getItem('addons');
+            if (!storedAddons) {
+                setAddons([]);
+                setLoading(false);
+                return;
             }
-        };
-
-        fetchAddons();
-    }, []);
+            
+            const addonsData = JSON.parse(storedAddons);
+            if (!addonsData || Object.keys(addonsData).length === 0) {
+                setAddons([]);
+                setLoading(false);
+                return;
+            }
+            
+            const addonList = Object.values(addonsData);
+            console.log(`Found ${addonList.length} addons`);
+            
+            // Filter addons by type
+            const filteredAddons = addonList.filter((addon: any) => {
+                return addon?.types && addon.types.includes(type);
+            });
+            
+            setAddons(filteredAddons);
+            
+            // Select first addon and fetch streams if we have addons
+            if (filteredAddons.length > 0) {
+                const firstAddon = filteredAddons[0];
+                setSelectedAddon(firstAddon);
+                await fetchStreams([firstAddon]);
+            }
+            
+            setIsInitialLoad(false);
+        } catch (error) {
+            console.error('Error fetching addons:', error);
+            showAlert('Error', 'Failed to load addons');
+            setAddons([]);
+        } finally {
+            setLoading(false);
+        }
+    }, [type]);
 
     const fetchStreams = async (addonList: any[]) => {
         setLoading(true);
+        
         const fetchWithTimeout = (url: string, timeout = 10000) => {
             return Promise.race([
-                fetch(url).then((response) => response.json()),
+                fetch(url).then((response) => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                }),
                 new Promise((_, reject) =>
                     setTimeout(() => reject(new Error('Request timed out')), timeout)
                 ),
@@ -62,6 +87,7 @@ const StreamScreen = () => {
         };
 
         try {
+            console.log(`Fetching streams for ${addonList.length} addons...`);
             const addonPromises = addonList.map(async (addon) => {
                 const addonTypes = addon?.types || [];
 
@@ -79,8 +105,10 @@ const StreamScreen = () => {
                     streamUrl = `${streamBaseUrl}/stream/${type}/${imdbid}.json`;
                 }
 
+                console.log(`Fetching from: ${streamUrl}`);
                 try {
                     const data = await fetchWithTimeout(streamUrl, 10000);
+                    console.log(`Got ${data.streams?.length || 0} streams from ${addon?.name}`);
                     return { addon, streams: data.streams || [] };
                 } catch (error) {
                     console.error(`Error fetching streams for addon "${addon?.name}":`, error);
@@ -98,8 +126,31 @@ const StreamScreen = () => {
         }
     };
 
+    // Initial load when component mounts
+    useEffect(() => {
+        fetchAddons();
+    }, [fetchAddons]);
+
+    // Refresh when screen comes into focus
+    useFocusEffect(
+        useCallback(() => {
+            if (!isInitialLoad) {
+                fetchAddons();
+            }
+            return () => {}; // cleanup function
+        }, [fetchAddons, isInitialLoad])
+    );
+
+    const handleAddonPress = async (item: any) => {
+        if (isHapticsSupported()) {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+        }
+        setSelectedAddon(item);
+        fetchStreams([item]);
+    };
+
     const RenderAddonItem = ({ item }: any) => {
-        const { name, logo, types } = item;
+        const { name, types } = item;
 
         if (!types || !types.includes(type)) {
             return null;
@@ -112,13 +163,7 @@ const StreamScreen = () => {
                     styles.addonItem,
                     isSelected && styles.selectedAddonItem,
                 ]}
-                onPress={async () => {
-                    if (isHapticsSupported()) {
-                        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
-                    }
-                    setSelectedAddon(item);
-                    fetchStreams([item]);
-                }}
+                onPress={() => handleAddonPress(item)}
             >
                 <Text
                     style={[
@@ -146,7 +191,7 @@ const StreamScreen = () => {
                     params: {
                         url: embed
                     },
-                })
+                });
                 return;
             }
             router.push({
@@ -154,8 +199,8 @@ const StreamScreen = () => {
                 params: {
                     imdbid, type, season, episode, contentTitle, name, title, description, url, infoHash, colors
                 },
-            })
-        }
+            });
+        };
 
         return (
             <RNView style={[{
@@ -181,11 +226,19 @@ const StreamScreen = () => {
     };
 
     const selectedAddonStreams = streams.find((addonData) => addonData.addon === selectedAddon)?.streams || [];
+    
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar />
             {
-                addons?.length > 0 ? (
+                loading && addons.length === 0 ? (
+                    <RNView style={styles.loadingContainer}>
+                        <View style={styles.centeredContainer}>
+                            <ActivityIndicator size="large" style={styles.activityIndicator} color="#ffffff" />
+                            <Text style={styles.loadingText}>Loading addons...</Text>
+                        </View>
+                    </RNView>
+                ) : addons?.length > 0 ? (
                     <View>
                         <ScrollView
                             horizontal
@@ -193,7 +246,7 @@ const StreamScreen = () => {
                             contentContainerStyle={styles.addonListContainer}>
                             {
                                 addons.map((item, index) => (
-                                    <RenderAddonItem key={index} item={item} />
+                                    <RenderAddonItem key={`addon-${index}-${item.name}`} item={item} />
                                 ))
                             }
                         </ScrollView>
@@ -210,10 +263,11 @@ const StreamScreen = () => {
                 )
             }
             {
-                loading ? (
+                loading && addons.length > 0 ? (
                     <RNView style={styles.loadingContainer}>
                         <View style={styles.centeredContainer}>
                             <ActivityIndicator size="large" style={styles.activityIndicator} color="#ffffff" />
+                            <Text style={styles.loadingText}>Loading streams...</Text>
                         </View>
                     </RNView>
                 ) : (
@@ -221,9 +275,8 @@ const StreamScreen = () => {
                         <View style={styles.streamsContainer}>
                             {
                                 selectedAddonStreams.length > 0 ? (
-                                    selectedAddonStreams.map((item: any, index: number) =>
-                                    (
-                                        <RenderStreamItem key={index} item={item} />
+                                    selectedAddonStreams.map((item: any, index: number) => (
+                                        <RenderStreamItem key={`stream-${index}-${item.name}`} item={item} />
                                     ))
                                 ) : (
                                     <>
@@ -237,7 +290,6 @@ const StreamScreen = () => {
                                                 </View>
                                             )
                                         }
-
                                     </>
                                 )
                             }
@@ -245,7 +297,7 @@ const StreamScreen = () => {
                     </ScrollView>
                 )
             }
-        </SafeAreaView >
+        </SafeAreaView>
     );
 };
 
@@ -309,6 +361,10 @@ const styles = StyleSheet.create({
     activityIndicator: {
         marginBottom: 10,
         color: '#ffffff',
+    },
+    loadingText: {
+        fontSize: 16,
+        marginTop: 10,
     },
     centeredContainer: {
         flex: 1,

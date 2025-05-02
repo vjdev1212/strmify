@@ -71,7 +71,7 @@ export default function AddAddonScreen() {
             showAlert('Success', 'Addon added successfully!');
             setManifestData(null);
             setUrl('');
-            router.navigate({ pathname: '/(tabs)/addons' });
+            router.navigate({ pathname: '/settings/addons' });
         } catch (error) {
             showAlert('Error', 'Failed to save addon.');
         }
@@ -89,7 +89,7 @@ export default function AddAddonScreen() {
                         colorScheme === 'dark' ? styles.darkInput : styles.lightInput,
                     ]}
                     placeholder="Enter manifest.json URL"
-                    placeholderTextColor="#B0B0B0"
+                    placeholderTextColor="#777777"
                     value={url}
                     onChangeText={setUrl}
                     autoCapitalize="none"

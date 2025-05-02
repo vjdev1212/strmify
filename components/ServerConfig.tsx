@@ -109,8 +109,8 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
               value={isEnabled}
               onValueChange={toggleEnabled}
               style={styles.switch}
-              thumbColor={isEnabled ? '#ffffff' : '#ccc'}
-              trackColor={{ false: '#e0e0e0', true: '#535aff' }}
+              thumbColor={isEnabled ? '#535aff' : '#ccc'}
+              trackColor={{ false: '#e0e0e0', true: '#a5afff' }}
               accessibilityLabel="Toggle server enable state"
             />
           </View>
@@ -121,8 +121,8 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
               value={isDefault}
               onValueChange={toggleDefault}
               style={styles.switch}
-              thumbColor={isDefault ? '#ffffff' : '#ccc'}
-              trackColor={{ false: '#e0e0e0', true: '#535aff' }}
+              thumbColor={isDefault ? '#535aff' : '#ccc'}
+              trackColor={{ false: '#e0e0e0', true: '#a5afff' }}
               accessibilityLabel="Toggle default server state"
             />
           </View>
@@ -132,8 +132,8 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
             placeholder="Enter Server Base URL"
             value={serverUrl}
             onChangeText={setServerUrl}
-            placeholderTextColor="#fff888"
             autoCapitalize="none"
+            placeholderTextColor={'#777777'}
             submitBehavior={'blurAndSubmit'}
           />
 

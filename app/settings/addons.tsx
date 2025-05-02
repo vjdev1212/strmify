@@ -87,68 +87,74 @@ const AddonsScreen = () => {
   const renderAddonItem = (item: any) => (
     <View style={styles.addonItem} key={item.id}>
       <View style={styles.row}>
-        <Image source={{ uri: item.logo }} style={[styles.addonLogo]} />
-        <View style={styles.details}>
-          <Text style={styles.addonName}>{item.name}</Text>
-          <Text style={styles.addonTypes}>{item.types?.join(', ')}</Text>
+        <View style={styles.addonItemContainer}>
+          <View style={styles.row}>
+            <Image source={{ uri: item.logo }} style={[styles.addonLogo]} />
+            <View style={styles.details}>
+              <Text style={styles.addonName}>{item.name}</Text>
+              <Text style={styles.addonTypes}>{item.types?.join(', ')}</Text>
+            </View>
+          </View>
+          <Text style={styles.addonDescription}>{item.description}</Text>
         </View>
-      </View>
-      <Text style={styles.addonDescription}>{item.description}</Text>
-      <View style={styles.actions}>
-        <Pressable
-          style={[styles.actionButton, styles.shareButton]}
-          onPress={() => shareManifestUrl(item.manifestUrl)}
-        >
-          <Text style={styles.actionText}>Share</Text>
-        </Pressable>
-        {item.behaviorHints?.configurable && (
+        <View style={styles.actions}>
           <Pressable
-            style={[styles.actionButton, styles.configureButton]}
-            onPress={() => openConfiguration(item.baseUrl)}
+            style={[styles.actionButton, styles.shareButton]}
+            onPress={() => shareManifestUrl(item.manifestUrl)}
           >
-            <Text style={styles.actionText}>Configure</Text>
+            <Ionicons name="share-outline" size={22} color="white" />
           </Pressable>
-        )}
-        <Pressable
-          style={[styles.actionButton, styles.removeButton]}
-          onPress={async () => {
-            if (isHapticsSupported()) {
-              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
-            }
-            const message = `Are you sure you want to remove "${item.name}"?`;
-            if (Platform.OS === 'ios' || Platform.OS === 'android') {
-              Alert.alert(
-                'Remove Addon',
-                message,
-                [
-                  { text: 'Cancel', style: 'cancel' },
-                  {
-                    text: 'Remove',
-                    style: 'destructive',
-                    onPress: () => removeAddon(item.id),
-                  },
-                ]
-              )
-            } else {
-              const isConfirmed = window.confirm(message);
-              if (isConfirmed) {
-                removeAddon(item.id);
+
+          {item.behaviorHints?.configurable && (
+            <Pressable
+              style={[styles.actionButton, styles.configureButton]}
+              onPress={() => openConfiguration(item.baseUrl)}
+            >
+              <Ionicons name="settings-outline" size={22} color="white" />
+            </Pressable>
+          )}
+
+          <Pressable
+            style={[styles.actionButton, styles.removeButton]}
+            onPress={async () => {
+              if (isHapticsSupported()) {
+                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
               }
-            }
-          }
-          }
-        >
-          <Text style={styles.actionText}>Remove</Text>
-        </Pressable>
+              const message = `Are you sure you want to remove "${item.name}"?`;
+              if (Platform.OS === 'ios' || Platform.OS === 'android') {
+                Alert.alert(
+                  'Remove Addon',
+                  message,
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                      text: 'Remove',
+                      style: 'destructive',
+                      onPress: () => removeAddon(item.id),
+                    },
+                  ]
+                );
+              } else {
+                const isConfirmed = window.confirm(message);
+                if (isConfirmed) {
+                  removeAddon(item.id);
+                }
+              }
+            }}
+          >
+            <Ionicons name="trash-outline" size={22} color="white" />
+          </Pressable>
+        </View>
       </View>
     </View>
   );
+
 
   const onAddNewPress = async () => {
     if (isHapticsSupported()) {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
     }
-    router.push('/addons/add');
+    router.push('/settings/add');
   }
 
   return (
@@ -190,6 +196,9 @@ const styles = StyleSheet.create({
   contentContainer: {
     padding: 20,
     paddingBottom: 50,
+  },
+  addonItemContainer: {
+    width: '80%'
   },
   addButton: {
     borderRadius: 25,
@@ -241,29 +250,31 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   actions: {
-    flexDirection: 'row',
-    justifyContent: 'space-evenly',
+    flexDirection: 'column',
+    justifyContent: 'space-around',
   },
   actionButton: {
-    flex: 1,
-    padding: 10,
-    borderRadius: 20,
-    marginHorizontal: 5,
-    margin: 'auto',
-    textAlign: 'center'
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    paddingHorizontal: 11,
+    paddingVertical: 10,
+    marginVertical: 10,
+    borderRadius: 50,
+    marginHorizontal: 20,
+    textAlign: 'center',
+    backgroundColor: '#222222',
+    justifyContent: 'space-around'
   },
   shareButton: {
-    backgroundColor: '#2165da',
   },
   configureButton: {
-    backgroundColor: '#7F7FFF',
   },
   removeButton: {
-    backgroundColor: '#2fb1cb',
   },
   actionText: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: 16,
     textAlign: 'center'
   },
   noAddons: {
