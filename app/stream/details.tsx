@@ -371,6 +371,13 @@ const StreamDetailsScreen = () => {
         );
     }
 
+    const handleServerToggle = async (type: string) => {
+        if (isHapticsSupported()) {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+        }
+        setServerType(type);
+    }
+
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar />
@@ -390,7 +397,7 @@ const StreamDetailsScreen = () => {
                                 <Pressable
                                     key={type}
                                     style={styles.radioContainer}
-                                    onPress={() => setServerType(type)}
+                                    onPress={() => handleServerToggle(type)}
                                 >
                                     <View>
                                         <MaterialIcons
@@ -407,7 +414,7 @@ const StreamDetailsScreen = () => {
                                             </Text>
                                         </View>
                                         <Text style={styles.radioValue}>
-                                            {serversMap[type].find(s=> s.serverType === type)?.serverUrl}
+                                            {serversMap[type].find(s => s.serverType === type)?.serverUrl}
                                         </Text>
                                     </View>
                                 </Pressable>
