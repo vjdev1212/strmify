@@ -210,7 +210,7 @@ const StreamDetailsScreen = () => {
     const getPlatformSpecificPlayers = () => {
         if (getOriginalPlatform() === 'android') {
             return [
-                { name: Players.Default, scheme: 'STREAMURL', encodeUrl: false, icon: require('@/assets/images/players/default.png') },
+                // { name: Players.Default, scheme: 'STREAMURL', encodeUrl: false, icon: require('@/assets/images/players/default.png') },
                 { name: Players.Browser, scheme: 'STREAMURL', encodeUrl: false, icon: require('@/assets/images/players/chrome.png') },
                 { name: Players.VLC, scheme: 'vlc://STREAMURL', encodeUrl: false, icon: require('@/assets/images/players/vlc.png') },
                 { name: Players.MXPlayer, scheme: 'intent:STREAMURL?sign=Yva5dQp8cFQpVAMUh1QxNWbZAZ2h05lYQ4qAxqf717w=:0#Intent;package=com.mxtech.videoplayer.ad;S.title=STREAMTITLE;end', encodeUrl: false, icon: require('@/assets/images/players/mxplayer.png') },
@@ -219,7 +219,7 @@ const StreamDetailsScreen = () => {
             ];
         } else if (getOriginalPlatform() === 'ios') {
             return [
-                { name: Players.Default, scheme: 'STREAMURL', encodeUrl: false, icon: require('@/assets/images/players/default.png') },
+                // { name: Players.Default, scheme: 'STREAMURL', encodeUrl: false, icon: require('@/assets/images/players/default.png') },
                 { name: Players.Browser, scheme: 'STREAMURL', encodeUrl: false, icon: require('@/assets/images/players/chrome.png') },
                 { name: Players.VLC, scheme: 'vlc://STREAMURL', encodeUrl: false, icon: require('@/assets/images/players/vlc.png') },
                 { name: Players.Infuse, scheme: 'infuse://x-callback-url/play?url=STREAMURL', encodeUrl: true, icon: require('@/assets/images/players/infuse.png') },
@@ -228,17 +228,17 @@ const StreamDetailsScreen = () => {
             ];
         } else if (getOriginalPlatform() === 'web') {
             return [
-                { name: Players.Default, scheme: 'STREAMURL', encodeUrl: false, icon: require('@/assets/images/players/default.png') },
+                // { name: Players.Default, scheme: 'STREAMURL', encodeUrl: false, icon: require('@/assets/images/players/default.png') },
                 { name: Players.Browser, scheme: 'STREAMURL', encodeUrl: false, icon: require('@/assets/images/players/chrome.png') }
             ];
         } else if (getOriginalPlatform() === 'windows') {
             return [
-                { name: Players.Default, scheme: 'STREAMURL', encodeUrl: false, icon: require('@/assets/images/players/default.png') },
+                // { name: Players.Default, scheme: 'STREAMURL', encodeUrl: false, icon: require('@/assets/images/players/default.png') },
                 { name: Players.Browser, scheme: 'STREAMURL', encodeUrl: false, icon: require('@/assets/images/players/chrome.png') },
             ];
         } else if (getOriginalPlatform() === 'macos') {
             return [
-                { name: Players.Default, scheme: 'STREAMURL', encodeUrl: false, icon: require('@/assets/images/players/default.png') },
+                // { name: Players.Default, scheme: 'STREAMURL', encodeUrl: false, icon: require('@/assets/images/players/default.png') },
                 { name: Players.Browser, scheme: 'STREAMURL', encodeUrl: false, icon: require('@/assets/images/players/chrome.png') },
                 { name: Players.VLC, scheme: 'vlc://STREAMURL', encodeUrl: false, icon: require('@/assets/images/players/vlc.png') },
                 { name: Players.Infuse, scheme: 'infuse://x-callback-url/play?url=STREAMURL', encodeUrl: true, icon: require('@/assets/images/players/infuse.png') },
