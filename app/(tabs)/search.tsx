@@ -79,7 +79,7 @@ const SearchScreen = () => {
       fetchData();
     }, 500);
 
-    setDebounceTimeout(timeout);
+    setDebounceTimeout(timeout as any);
 
     return () => {
       clearTimeout(timeout);

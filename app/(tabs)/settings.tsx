@@ -11,6 +11,8 @@ import { useColorScheme } from '@/components/useColorScheme';
 
 const SettingsScreen = () => {
   const router = useRouter();
+  // Get the environment variable and default to false if not set
+  const showContact = process.env.EXPO_PUBLIC_SHOW_CONTACT === 'true';
 
   const serversList: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [
     { title: 'Stremio Server', route: '/settings/stremioserver', icon: 'server-outline' },
@@ -76,19 +78,22 @@ const SettingsScreen = () => {
           </View>
         </View>
 
-        <View>
-          <Text style={styles.header}>Contact</Text>
-          <View style={[styles.settingsGroup]}>
-            {contactList.map((item, index) => (
-              <SettingItem
-                key={index}
-                title={item.title}
-                icon={item.icon}
-                onPress={() => onSettingsItemPress(item)}
-              />
-            ))}
+        {/* Only render the Contact section if showContact is true */}
+        {showContact && (
+          <View>
+            <Text style={styles.header}>Contact</Text>
+            <View style={[styles.settingsGroup]}>
+              {contactList.map((item, index) => (
+                <SettingItem
+                  key={index}
+                  title={item.title}
+                  icon={item.icon}
+                  onPress={() => onSettingsItemPress(item)}
+                />
+              ))}
+            </View>
           </View>
-        </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
