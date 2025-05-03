@@ -31,7 +31,7 @@ const DEFAULT_STREMIO_URL = 'https://127.0.0.1:12470';
 const DEFAULT_TORRSERVER_URL = 'https://127.0.0.1:5665';
 
 const StreamDetailsScreen = () => {
-    const [serversMap, setServersMap] = useState<{[key: string]: ServerConfig[]}>({
+    const [serversMap, setServersMap] = useState<{ [key: string]: ServerConfig[] }>({
         [Servers.Stremio]: [],
         [Servers.TorrServer]: []
     });
@@ -92,7 +92,7 @@ const StreamDetailsScreen = () => {
                     serverUrl: DEFAULT_STREMIO_URL,
                     current: true
                 };
-                
+
                 const defaultTorrServer: ServerConfig = {
                     serverId: `torrserver-default`,
                     serverType: Servers.TorrServer,
@@ -100,24 +100,24 @@ const StreamDetailsScreen = () => {
                     serverUrl: DEFAULT_TORRSERVER_URL,
                     current: true
                 };
-                
+
                 setServersMap({
                     [Servers.Stremio]: [defaultStremio],
                     [Servers.TorrServer]: [defaultTorrServer]
                 });
-                
+
                 setServerType(Servers.Stremio);
                 setSelectedServerId(defaultStremio.serverId);
                 setLoading(false);
                 return;
             }
-            
+
             const allServers: ServerConfig[] = JSON.parse(storedServers);
-            
+
             // Group servers by serverType
             const stremioServers = allServers.filter(server => server.serverType === Servers.Stremio);
             const torrServerServers = allServers.filter(server => server.serverType === Servers.TorrServer);
-            
+
             // Set the servers map
             setServersMap({
                 [Servers.Stremio]: stremioServers.length > 0 ? stremioServers : [{
@@ -135,12 +135,12 @@ const StreamDetailsScreen = () => {
                     current: true
                 }]
             });
-            
+
             // Set initial server type and selected server
             // First check if we have a current server in either type
             const stremioCurrentServer = stremioServers.find(server => server.current);
             const torrServerCurrentServer = torrServerServers.find(server => server.current);
-            
+
             if (stremioCurrentServer) {
                 setServerType(Servers.Stremio);
                 setSelectedServerId(stremioCurrentServer.serverId);
@@ -158,11 +158,11 @@ const StreamDetailsScreen = () => {
                 setServerType(Servers.Stremio);
                 setSelectedServerId(`stremio-default`);
             }
-            
+
         } catch (error) {
             console.error('Error loading server configurations:', error);
             showAlert('Error', 'Failed to load server configurations');
-            
+
             // Set defaults in case of error
             const defaultStremio: ServerConfig = {
                 serverId: `stremio-default`,
@@ -171,7 +171,7 @@ const StreamDetailsScreen = () => {
                 serverUrl: DEFAULT_STREMIO_URL,
                 current: true
             };
-            
+
             setServersMap({
                 [Servers.Stremio]: [defaultStremio],
                 [Servers.TorrServer]: [{
@@ -182,7 +182,7 @@ const StreamDetailsScreen = () => {
                     current: true
                 }]
             });
-            
+
             setServerType(Servers.Stremio);
             setSelectedServerId(defaultStremio.serverId);
         } finally {
@@ -380,7 +380,7 @@ const StreamDetailsScreen = () => {
                     <DetailsRow label="Name" value={name} numOfLines={3} />
                     {title && <DetailsRow label="Title" value={title} />}
                     {description && <DetailsRow label="Description" value={description} multiline />}
-                    
+
                     {/* Always show server selection options regardless of URL presence */}
                     <>
                         {/* Server Type Selection */}
@@ -406,12 +406,15 @@ const StreamDetailsScreen = () => {
                                                 {type === Servers.Stremio ? 'Stremio' : 'TorrServer'}
                                             </Text>
                                         </View>
+                                        <Text style={styles.radioValue}>
+                                            {serversMap[type].find(s=> s.serverType === type)?.serverUrl}
+                                        </Text>
                                     </View>
                                 </Pressable>
                             ))}
-                        </View>                        
+                        </View>
                     </>
-                    
+
                     <PlayerSelectionGroup
                         title="Media Players"
                         options={players}
@@ -481,7 +484,7 @@ const PlayerSelectionGroup = ({
     const handleSelectPlayer = async (name: string) => {
         if (isHapticsSupported()) {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
-        } 
+        }
         onSelect(name);
     };
 

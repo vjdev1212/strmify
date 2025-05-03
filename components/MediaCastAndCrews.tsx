@@ -80,17 +80,17 @@ const styles = StyleSheet.create({
   castContainer: {
     alignItems: "center",
     marginRight: 15,
-    width: 110,
+    width: 120,
     marginTop: 30
   },
   profileImage: {
-    width: 60,
-    height: 60,
+    width: 70,
+    height: 70,
     borderRadius: 40,
   },
   placeholderImage: {
-    width: 60,
-    height: 60,
+    width: 70,
+    height: 70,
     borderRadius: 40,
     justifyContent: "center",
     alignItems: "center",
