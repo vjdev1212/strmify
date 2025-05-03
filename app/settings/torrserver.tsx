@@ -8,7 +8,7 @@ const TorrServerScreen = () => {
         <SafeAreaView style={styles.container}>
             <StatusBar />
             <ScrollView showsVerticalScrollIndicator={false}>
-                <ServerConfiguration serverName="TorrServer" serverType="torrserver" defaultUrl="http://torrserver:5665" />
+                <ServerConfiguration serverName="TorrServer" serverType="torrserver" defaultUrl="https://127.0.0.1:5665" />
             </ScrollView>
         </SafeAreaView>
     );
