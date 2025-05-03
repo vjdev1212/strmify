@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, Switch, TextInput, Pressable, FlatList } from 'react-native';
+import { StyleSheet, Switch, TextInput, Pressable, FlatList, ScrollView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, Text } from '@/components/Themed';
 import { showAlert } from '@/utils/platform';
@@ -40,9 +40,9 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
       const savedConfigs = await AsyncStorage.getItem('servers');
       const servers: ServerConfig[] = savedConfigs ? JSON.parse(savedConfigs) : [];
       const filteredServers = servers.filter(server => server.serverType === serverType);
-      
+
       setServerConfigs(filteredServers);
-      
+
       // If no servers exist for this type, prepare to add the default one
       if (filteredServers.length === 0) {
         setServerUrl(defaultUrl);
@@ -72,17 +72,17 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
     try {
       const savedConfigs = await AsyncStorage.getItem('servers');
       const allServers: ServerConfig[] = savedConfigs ? JSON.parse(savedConfigs) : [];
-      
+
       let updatedAllServers: ServerConfig[];
       let configToSave: ServerConfig;
 
       // If this server is being set as current, unset all others of this type
-      const otherServersOfSameType = isCurrent ? 
-        allServers.map(server => 
+      const otherServersOfSameType = isCurrent ?
+        allServers.map(server =>
           server.serverType === serverType ? { ...server, current: false } : server
-        ) : 
+        ) :
         allServers;
-      
+
       if (editingId) {
         // Update existing server
         configToSave = {
@@ -92,8 +92,8 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
           serverUrl: serverUrl.trim(),
           current: isCurrent,
         };
-        
-        updatedAllServers = otherServersOfSameType.map(server => 
+
+        updatedAllServers = otherServersOfSameType.map(server =>
           server.serverId === editingId ? configToSave : server
         );
       } else {
@@ -105,12 +105,12 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
           serverUrl: serverUrl.trim(),
           current: isCurrent,
         };
-        
+
         updatedAllServers = [...otherServersOfSameType, configToSave];
       }
 
       await AsyncStorage.setItem('servers', JSON.stringify(updatedAllServers));
-      
+
       // Reset the form and refresh the list
       setEditingId(null);
       setIsAddingNew(false);
@@ -162,17 +162,17 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
     try {
       const savedConfigs = await AsyncStorage.getItem('servers');
       const allServers: ServerConfig[] = savedConfigs ? JSON.parse(savedConfigs) : [];
-      
-      const updatedAllServers = allServers.map(server => 
+
+      const updatedAllServers = allServers.map(server =>
         server.serverId === inlineEditingId ? { ...server, serverUrl: inlineEditValue.trim() } : server
       );
-      
+
       await AsyncStorage.setItem('servers', JSON.stringify(updatedAllServers));
-      
+
       setInlineEditingId(null);
       setInlineEditValue('');
       await loadServers();
-      
+
       showAlert('Success', 'Server URL updated successfully.');
     } catch (error) {
       showAlert('Error', 'Failed to update server URL.');
@@ -184,16 +184,16 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
     try {
       const savedConfigs = await AsyncStorage.getItem('servers');
       const allServers: ServerConfig[] = savedConfigs ? JSON.parse(savedConfigs) : [];
-      
+
       const serverToDelete = allServers.find(server => server.serverId === serverId);
       if (serverToDelete?.current) {
         showAlert('Error', 'Cannot delete the current server. Please set another server as current first.');
         return;
       }
-      
+
       const updatedAllServers = allServers.filter(server => server.serverId !== serverId);
       await AsyncStorage.setItem('servers', JSON.stringify(updatedAllServers));
-      
+
       setSelectedServerId(null);
       await loadServers();
       showAlert('Success', 'Server configuration deleted.');
@@ -207,7 +207,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
     try {
       const savedConfigs = await AsyncStorage.getItem('servers');
       const allServers: ServerConfig[] = savedConfigs ? JSON.parse(savedConfigs) : [];
-      
+
       // Update all servers of this type to be not current
       const updatedServers = allServers.map(server => {
         if (server.serverType === serverType) {
@@ -218,7 +218,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
         }
         return server;
       });
-      
+
       await AsyncStorage.setItem('servers', JSON.stringify(updatedServers));
       await loadServers();
       showAlert('Success', 'Current server updated.');
@@ -261,32 +261,32 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
         // View mode
         <>
           <View style={styles.serverItemHeader}>
-            <Pressable 
+            <Pressable
               onPress={() => toggleServerSelection(item.serverId)}
               style={styles.serverUrlTouchable}
             >
               <Text style={styles.serverItemUrl}>{item.serverUrl}</Text>
             </Pressable>
-            
+
             {item.current ? (
               <MaterialIcons name="check-circle" size={22} color="#535aff" />
             ) : (
-              <Pressable 
-                onPress={() => handleSetAsCurrent(item.serverId)} 
+              <Pressable
+                onPress={() => handleSetAsCurrent(item.serverId)}
                 style={styles.setCurrentButton}
               >
                 <MaterialIcons name="radio-button-unchecked" size={20} color="#535aff" />
               </Pressable>
             )}
           </View>
-          
+
           {selectedServerId === item.serverId && (
             <View style={styles.actionButtonsContainer}>
               <Pressable onPress={() => startInlineEdit(item)} style={styles.actionButton}>
                 <Text style={styles.editText}>Edit</Text>
               </Pressable>
-              <Pressable 
-                onPress={() => handleDelete(item.serverId)} 
+              <Pressable
+                onPress={() => handleDelete(item.serverId)}
                 style={[styles.actionButton, item.current && styles.disabledButton]}
                 disabled={item.current}
               >
@@ -304,7 +304,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
   return (
     <View style={styles.container}>
       <Text style={styles.header}>{`${serverName} Configuration`}</Text>
-      
+
       {(editingId || isAddingNew) ? (
         <View style={styles.configGroup}>
           <Text style={styles.configGroupHeader}>
