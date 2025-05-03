@@ -11,10 +11,9 @@ import { ServerConfig } from '@/components/ServerConfig';
 import { getOriginalPlatform, isHapticsSupported, showAlert } from '@/utils/platform';
 import { useColorScheme } from '@/components/useColorScheme';
 
-
 enum Servers {
-    Stremio = 'Stremio',
-    TorrServer = 'TorrServer',
+    Stremio = 'stremio',
+    TorrServer = 'torrserver',
 }
 
 enum Players {
@@ -28,10 +27,17 @@ enum Players {
     OutPlayer = 'OutPlayer'
 }
 
+const DEFAULT_STREMIO_URL = 'https://127.0.0.1:12470';
+const DEFAULT_TORRSERVER_URL = 'https://127.0.0.1:5665';
+
 const StreamDetailsScreen = () => {
-    const [servers, setServers] = useState<ServerConfig[]>([]);
+    const [serversMap, setServersMap] = useState<{[key: string]: ServerConfig[]}>({
+        [Servers.Stremio]: [],
+        [Servers.TorrServer]: []
+    });
+    const [serverType, setServerType] = useState<string>(Servers.Stremio);
     const [players, setPlayers] = useState<{ name: string; scheme: string; encodeUrl: boolean; icon: any }[]>([]);
-    const [selectedServer, setSelectedServer] = useState<string | null>(null);
+    const [selectedServerId, setSelectedServerId] = useState<string | null>(null);
     const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
     const router = useRouter();
     const [loading, setLoading] = useState(true);
@@ -45,13 +51,13 @@ const StreamDetailsScreen = () => {
         const loadPlayers = async () => {
             const platformPlayers = getPlatformSpecificPlayers();
             setPlayers(platformPlayers);
+            if (platformPlayers.length > 0) setSelectedPlayer(platformPlayers[0].name);
         };
 
         loadPlayers();
     }, []);
 
-
-    const { imdbid, type, season, episode, contentTitle, name, title, description, url, infoHash, colors } = useLocalSearchParams<{
+    const { imdbid, type, season, episode, contentTitle, name, title, description, url, infoHash } = useLocalSearchParams<{
         imdbid: string;
         type: string;
         season: string;
@@ -62,17 +68,7 @@ const StreamDetailsScreen = () => {
         description?: string;
         url?: string;
         infoHash?: string;
-        colors: any;
     }>();
-
-    // const parsedColors = typeof colors === 'string'
-    //     ? colors.split(',')
-    //     : Array.isArray(colors) ? colors : [];
-
-    // const gradientColors: [string, string, ...string[]] =
-    //     parsedColors.length >= 2
-    //         ? [parsedColors[0], parsedColors[1], ...parsedColors.slice(2)]
-    //         : ['#111111', '#999999', '#222222'];
 
     const fetchContentData = useCallback(async () => {
         const stremioMetaDataUrl = `https://cinemeta-live.strem.io/meta/${type}/${imdbid}.json`;
@@ -87,21 +83,108 @@ const StreamDetailsScreen = () => {
         try {
             const storedServers = await AsyncStorage.getItem('servers');
             if (!storedServers) {
-                console.error('No server configuration found in AsyncStorage');
+                console.log('No server configuration found in AsyncStorage, using defaults');
+                // Set default values if no servers are found
+                const defaultStremio: ServerConfig = {
+                    serverId: `stremio-default`,
+                    serverType: Servers.Stremio,
+                    serverName: 'Stremio',
+                    serverUrl: DEFAULT_STREMIO_URL,
+                    current: true
+                };
+                
+                const defaultTorrServer: ServerConfig = {
+                    serverId: `torrserver-default`,
+                    serverType: Servers.TorrServer,
+                    serverName: 'TorrServer',
+                    serverUrl: DEFAULT_TORRSERVER_URL,
+                    current: true
+                };
+                
+                setServersMap({
+                    [Servers.Stremio]: [defaultStremio],
+                    [Servers.TorrServer]: [defaultTorrServer]
+                });
+                
+                setServerType(Servers.Stremio);
+                setSelectedServerId(defaultStremio.serverId);
+                setLoading(false);
                 return;
             }
-            const servers: ServerConfig[] = JSON.parse(storedServers);
-            const enabledServers = servers.filter((server) => server.enabled);
-            setServers(enabledServers);
-            const defaultServer = enabledServers.find((server) => server.isDefault);
-            if (defaultServer) {
-                setSelectedServer(defaultServer.serverId);
-            } else if (enabledServers.length > 0) {
-                setSelectedServer(enabledServers[0].serverId);
+            
+            const allServers: ServerConfig[] = JSON.parse(storedServers);
+            
+            // Group servers by serverType
+            const stremioServers = allServers.filter(server => server.serverType === Servers.Stremio);
+            const torrServerServers = allServers.filter(server => server.serverType === Servers.TorrServer);
+            
+            // Set the servers map
+            setServersMap({
+                [Servers.Stremio]: stremioServers.length > 0 ? stremioServers : [{
+                    serverId: `stremio-default`,
+                    serverType: Servers.Stremio,
+                    serverName: 'Stremio',
+                    serverUrl: DEFAULT_STREMIO_URL,
+                    current: true
+                }],
+                [Servers.TorrServer]: torrServerServers.length > 0 ? torrServerServers : [{
+                    serverId: `torrserver-default`,
+                    serverType: Servers.TorrServer,
+                    serverName: 'TorrServer',
+                    serverUrl: DEFAULT_TORRSERVER_URL,
+                    current: true
+                }]
+            });
+            
+            // Set initial server type and selected server
+            // First check if we have a current server in either type
+            const stremioCurrentServer = stremioServers.find(server => server.current);
+            const torrServerCurrentServer = torrServerServers.find(server => server.current);
+            
+            if (stremioCurrentServer) {
+                setServerType(Servers.Stremio);
+                setSelectedServerId(stremioCurrentServer.serverId);
+            } else if (torrServerCurrentServer) {
+                setServerType(Servers.TorrServer);
+                setSelectedServerId(torrServerCurrentServer.serverId);
+            } else if (stremioServers.length > 0) {
+                setServerType(Servers.Stremio);
+                setSelectedServerId(stremioServers[0].serverId);
+            } else if (torrServerServers.length > 0) {
+                setServerType(Servers.TorrServer);
+                setSelectedServerId(torrServerServers[0].serverId);
+            } else {
+                // Fallback to Stremio default
+                setServerType(Servers.Stremio);
+                setSelectedServerId(`stremio-default`);
             }
+            
         } catch (error) {
             console.error('Error loading server configurations:', error);
             showAlert('Error', 'Failed to load server configurations');
+            
+            // Set defaults in case of error
+            const defaultStremio: ServerConfig = {
+                serverId: `stremio-default`,
+                serverType: Servers.Stremio,
+                serverName: 'Stremio',
+                serverUrl: DEFAULT_STREMIO_URL,
+                current: true
+            };
+            
+            setServersMap({
+                [Servers.Stremio]: [defaultStremio],
+                [Servers.TorrServer]: [{
+                    serverId: `torrserver-default`,
+                    serverType: Servers.TorrServer,
+                    serverName: 'TorrServer',
+                    serverUrl: DEFAULT_TORRSERVER_URL,
+                    current: true
+                }]
+            });
+            
+            setServerType(Servers.Stremio);
+            setSelectedServerId(defaultStremio.serverId);
         } finally {
             setLoading(false);
         }
@@ -111,14 +194,18 @@ const StreamDetailsScreen = () => {
         const loadInitialData = async () => {
             await fetchServerConfigs();
             await fetchContentData();
-            const platformPlayers = getPlatformSpecificPlayers();
-            setPlayers(platformPlayers);
-            if (platformPlayers.length > 0) setSelectedPlayer(platformPlayers[0].name);
-            if (servers.length > 0) setSelectedServer(servers[0].serverId);
         };
 
         loadInitialData();
     }, [fetchServerConfigs, fetchContentData]);
+
+    // Update selected server when server type changes
+    useEffect(() => {
+        if (serversMap[serverType] && serversMap[serverType].length > 0) {
+            const currentServer = serversMap[serverType].find(server => server.current);
+            setSelectedServerId(currentServer ? currentServer.serverId : serversMap[serverType][0].serverId);
+        }
+    }, [serverType, serversMap]);
 
     const getPlatformSpecificPlayers = () => {
         if (getOriginalPlatform() === 'android') {
@@ -161,15 +248,13 @@ const StreamDetailsScreen = () => {
         return [];
     };
 
-
-
     const generatePlayerUrlWithInfoHash = async (infoHash: string, serverType: string, serverUrl: string) => {
         try {
             setStatusText('Torrent details sent to the server. This may take a moment. Please wait...');
-            if (serverType === Servers.Stremio.toLocaleLowerCase()) {
+            if (serverType === Servers.Stremio) {
                 return await generateStremioPlayerUrl(infoHash, serverUrl, type, season, episode);
             }
-            if (serverType === Servers.TorrServer.toLocaleLowerCase()) {
+            if (serverType === Servers.TorrServer) {
                 const videoUrl = await generateTorrServerPlayerUrl(infoHash, serverUrl, type, season, episode);
                 return videoUrl;
             }
@@ -180,7 +265,7 @@ const StreamDetailsScreen = () => {
         }
     };
 
-    const [isPlaying, setIsPlaying] = useState(false);  // New state to track playback status
+    const [isPlaying, setIsPlaying] = useState(false);  // Track playback status
 
     const handleCancel = () => {
         setPlayBtnDisabled(false);
@@ -204,33 +289,34 @@ const StreamDetailsScreen = () => {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
         }
 
-        if (!selectedPlayer || (!url && !selectedServer)) {
+        // Only check for player and server selection, not URL
+        if (!selectedPlayer || (!url && !selectedServerId)) {
             setStatusText('Error: Please select a media player and server.');
             showAlert('Error', 'Please select a media player and server.');
             setPlayBtnDisabled(false);
             setModalVisible(false);
-            setIsPlaying(false);  // Stop playback if error occurs
+            setIsPlaying(false);
             return;
         }
 
-        const server = servers.find((s) => s.serverId === selectedServer);
+        // Find the selected server from the current server type
+        const selectedServer = serversMap[serverType].find(s => s.serverId === selectedServerId);
         const player = players.find((p) => p.name === selectedPlayer);
-
 
         if (!player) {
             setStatusText('Error: Invalid media player selection.');
             showAlert('Error', 'Invalid media player selection.');
             setPlayBtnDisabled(false);
             setModalVisible(false);
-            setIsPlaying(false);  // Stop playback if error occurs
+            setIsPlaying(false);
             return;
         }
 
         try {
             let videoUrl = url || '';
-            if (!url && infoHash && server) {
+            if (!url && infoHash && selectedServer) {
                 setStatusText('Processing the InfoHash...');
-                videoUrl = await generatePlayerUrlWithInfoHash(infoHash, server.serverType, server.serverUrl);
+                videoUrl = await generatePlayerUrlWithInfoHash(infoHash, selectedServer.serverType, selectedServer.serverUrl);
                 setStatusText('URL Generated...');
             }
 
@@ -239,7 +325,7 @@ const StreamDetailsScreen = () => {
                 showAlert('Error', 'Unable to generate a valid video URL.');
                 setPlayBtnDisabled(false);
                 setModalVisible(false);
-                setIsPlaying(false);  // Stop playback if error occurs
+                setIsPlaying(false);
                 return;
             }
 
@@ -258,7 +344,7 @@ const StreamDetailsScreen = () => {
                             title: contentTitle,
                             artwork: `https://images.metahub.space/background/medium/${imdbid}/img`
                         },
-                    })
+                    });
                 } else {
                     setStatusText('Opening Stream in Media Player...');
                     console.log('PlayerUrl', playerUrl);
@@ -273,7 +359,7 @@ const StreamDetailsScreen = () => {
         } finally {
             setPlayBtnDisabled(false);
             setModalVisible(false);
-            setIsPlaying(false);  // Reset playback state
+            setIsPlaying(false);
         }
     };
 
@@ -294,14 +380,71 @@ const StreamDetailsScreen = () => {
                     <DetailsRow label="Name" value={name} numOfLines={3} />
                     {title && <DetailsRow label="Title" value={title} />}
                     {description && <DetailsRow label="Description" value={description} multiline />}
-                    {!url && servers.length > 0 && (
-                        <ServerSelectionGroup
-                            title="Servers"
-                            options={servers}
-                            selected={selectedServer}
-                            onSelect={setSelectedServer}
-                        />
-                    )}
+                    
+                    {/* Always show server selection options regardless of URL presence */}
+                    <>
+                        {/* Server Type Selection */}
+                        <Text style={styles.header}>Server Type</Text>
+                        <View style={styles.radioGroup}>
+                            {Object.keys(serversMap).map((type) => (
+                                <Pressable
+                                    key={type}
+                                    style={styles.radioContainer}
+                                    onPress={() => setServerType(type)}
+                                >
+                                    <View>
+                                        <MaterialIcons
+                                            name={serverType === type ? 'check-circle' : 'check-circle-outline'}
+                                            size={26}
+                                            color={'#ffffff'}
+                                            style={styles.radioIcon}
+                                        />
+                                    </View>
+                                    <View style={styles.radioRow}>
+                                        <View style={styles.iconLabel}>
+                                            <Text style={styles.radioLabel}>
+                                                {type === Servers.Stremio ? 'Stremio' : 'TorrServer'}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                </Pressable>
+                            ))}
+                        </View>
+
+                        {/* Server Selection for the selected Server Type */}
+                        {serversMap[serverType] && serversMap[serverType].length > 0 && (
+                            <>
+                                <Text style={styles.header}>Server URLs</Text>
+                                <View style={styles.radioGroup}>
+                                    {serversMap[serverType].map((server) => (
+                                        <Pressable
+                                            key={server.serverId}
+                                            style={styles.radioContainer}
+                                            onPress={() => setSelectedServerId(server.serverId)}
+                                        >
+                                            <View>
+                                                <MaterialIcons
+                                                    name={selectedServerId === server.serverId ? 'check-circle' : 'check-circle-outline'}
+                                                    size={26}
+                                                    color={'#ffffff'}
+                                                    style={styles.radioIcon}
+                                                />
+                                            </View>
+                                            <View style={styles.radioRow}>
+                                                <View style={styles.iconLabel}>
+                                                    <Text style={styles.radioLabel}>{server.serverName}</Text>
+                                                </View>
+                                                {server.serverUrl && (
+                                                    <Text style={styles.radioValue}>{server.serverUrl}</Text>
+                                                )}
+                                            </View>
+                                        </Pressable>
+                                    ))}
+                                </View>
+                            </>
+                        )}
+                    </>
+                    
                     <PlayerSelectionGroup
                         title="Media Players"
                         options={players}
@@ -311,10 +454,9 @@ const StreamDetailsScreen = () => {
                     />
                     <View style={styles.buttonContainer}>
                         <Pressable
-                            style={[styles.button, (playBtnDisabled || !selectedPlayer || (infoHash && !selectedServer)) && {
-                            }]}
+                            style={[styles.button, (playBtnDisabled || !selectedPlayer || !selectedServerId) && styles.buttonDisabled]}
                             onPress={handlePlay}
-                            disabled={playBtnDisabled || !selectedPlayer || (infoHash && !selectedServer) || false}>
+                            disabled={playBtnDisabled || !selectedPlayer || !selectedServerId}>
                             <Text style={styles.buttonText}>Play</Text>
                         </Pressable>
                     </View>
@@ -330,8 +472,7 @@ const StreamDetailsScreen = () => {
             >
                 <TouchableWithoutFeedback>
                     <View style={styles.modalOverlay}>
-                        <View
-                            style={[styles.modalContainer]}>
+                        <View style={styles.modalContainer}>
                             <ActivityIndicator size="large" color="#ffffff" style={styles.activityIndicator} />
                             <Text style={styles.modalText}>{statusText}</Text>
                             <Pressable style={styles.cancelButton} onPress={handleCancel}>
@@ -346,8 +487,6 @@ const StreamDetailsScreen = () => {
 };
 
 const DetailsRow = ({ label, value, multiline, numOfLines }: { label: string; value: string; multiline?: boolean, numOfLines?: number }) => {
-    const colorScheme = useColorScheme();
-
     return (
         <View style={styles.detailsItem}>
             <Text style={styles.label}>{label}:</Text>
@@ -358,51 +497,6 @@ const DetailsRow = ({ label, value, multiline, numOfLines }: { label: string; va
         </View>
     );
 };
-
-const ServerSelectionGroup = ({
-    title,
-    options,
-    selected,
-    onSelect
-}: {
-    title: string;
-    options: any[];
-    selected: string | null;
-    onSelect: (name: string) => void;
-    isPlayer?: boolean;
-}) => {
-
-    const colorScheme = useColorScheme(); const isDarkMode = colorScheme === 'dark';
-    return (
-        <>
-            <Text style={styles.header}>{title}</Text>
-            <View style={styles.radioGroup}>
-                {options.map((option) => (
-                    <Pressable
-                        key={option.serverId}
-                        style={styles.radioContainer}
-                        onPress={() => onSelect(option.serverId)}
-                    >
-                        <View>
-                            <MaterialIcons
-                                name={selected === option.serverId ? 'check-circle' : 'check-circle-outline'}
-                                size={26}
-                                color={'#ffffff'}
-                                style={styles.radioIcon}
-                            />
-                        </View>
-                        <View style={styles.radioRow}>
-                            <View style={styles.iconLabel}>
-                                <Text style={styles.radioLabel}>{option.serverName}</Text>
-                            </View>
-                            {option.serverUrl && <Text style={styles.radioValue}>{option.serverUrl}</Text>}
-                        </View>
-                    </Pressable>
-                ))}
-            </View>
-        </>
-    );
-}
 
 const PlayerSelectionGroup = ({
     title,
@@ -417,13 +511,11 @@ const PlayerSelectionGroup = ({
     onSelect: (name: string) => void;
     isPlayer?: boolean;
 }) => {
-
-    const colorScheme = useColorScheme(); const isDarkMode = colorScheme === 'dark';
-
     const handleSelectPlayer = async (name: string) => {
         if (isHapticsSupported()) {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
-        } onSelect(name);
+        } 
+        onSelect(name);
     };
 
     return (
@@ -432,7 +524,7 @@ const PlayerSelectionGroup = ({
             <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                contentContainerStyle={[styles.playerList]}>
+                contentContainerStyle={styles.playerList}>
                 {options.map((option) => (
                     <View key={option.name}>
                         <Pressable
@@ -462,7 +554,7 @@ const PlayerSelectionGroup = ({
                 ))}
             </ScrollView>
         </View>
-    )
+    );
 };
 
 const styles = StyleSheet.create({
@@ -572,7 +664,8 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10
     },
     buttonDisabled: {
-        backgroundColor: '#fff888',
+        backgroundColor: '#3b3b3b',
+        opacity: 0.7,
     },
     centeredContainer: {
         flex: 1,
@@ -592,6 +685,7 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)'
     },
     modalContainer: {
         padding: 20,
@@ -626,7 +720,8 @@ const styles = StyleSheet.create({
         backgroundColor: '#535aff'
     },
     cancelButtonText: {
-        fontSize: 16
+        fontSize: 16,
+        color: '#ffffff'
     },
     inlineContainer: {
         flexDirection: 'row',
