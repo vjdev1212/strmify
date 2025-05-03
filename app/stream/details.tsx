@@ -409,40 +409,7 @@ const StreamDetailsScreen = () => {
                                     </View>
                                 </Pressable>
                             ))}
-                        </View>
-
-                        {/* Server Selection for the selected Server Type */}
-                        {serversMap[serverType] && serversMap[serverType].length > 0 && (
-                            <>
-                                <Text style={styles.header}>Server URLs</Text>
-                                <View style={styles.radioGroup}>
-                                    {serversMap[serverType].map((server) => (
-                                        <Pressable
-                                            key={server.serverId}
-                                            style={styles.radioContainer}
-                                            onPress={() => setSelectedServerId(server.serverId)}
-                                        >
-                                            <View>
-                                                <MaterialIcons
-                                                    name={selectedServerId === server.serverId ? 'check-circle' : 'check-circle-outline'}
-                                                    size={26}
-                                                    color={'#ffffff'}
-                                                    style={styles.radioIcon}
-                                                />
-                                            </View>
-                                            <View style={styles.radioRow}>
-                                                <View style={styles.iconLabel}>
-                                                    <Text style={styles.radioLabel}>{server.serverName}</Text>
-                                                </View>
-                                                {server.serverUrl && (
-                                                    <Text style={styles.radioValue}>{server.serverUrl}</Text>
-                                                )}
-                                            </View>
-                                        </Pressable>
-                                    ))}
-                                </View>
-                            </>
-                        )}
+                        </View>                        
                     </>
                     
                     <PlayerSelectionGroup
