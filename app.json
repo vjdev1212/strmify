@@ -16,7 +16,7 @@
     "splash": {
       "image": "assets/images/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "transparent"
+      "backgroundColor": "#ffffff"
     },
     "ios": {
       "icon": "assets/images/icon.png",
@@ -38,8 +38,7 @@
     "web": {
       "bundler": "metro",
       "output": "single",
-      "favicon": "assets/images/favicon.png",
-      "barStyle": "dark-content"
+      "favicon": "assets/images/favicon.png"
     },
     "plugins": [
       "expo-router",
@@ -50,7 +49,10 @@
         "expo-build-properties",
         {
           "android": {
-            "usesCleartextTraffic": true
+            "usesCleartextTraffic": true,
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
+            "buildToolsVersion": "35.0.0"
           }
         }
       ]
