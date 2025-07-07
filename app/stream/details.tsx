@@ -29,6 +29,7 @@ enum Players {
 
 const DEFAULT_STREMIO_URL = 'https://127.0.0.1:12470';
 const DEFAULT_TORRSERVER_URL = 'https://127.0.0.1:5665';
+const STORAGE_KEY = 'defaultMediaPlayer'; // Same key as MediaPlayerConfigScreen
 
 const StreamDetailsScreen = () => {
     const [serversMap, setServersMap] = useState<{ [key: string]: ServerConfig[] }>({
@@ -47,11 +48,44 @@ const StreamDetailsScreen = () => {
     const [isModalVisible, setModalVisible] = useState(false);
     const colorScheme = useColorScheme();
 
+    const loadDefaultPlayer = async () => {
+        try {
+            const savedDefault = await AsyncStorage.getItem(STORAGE_KEY);
+            if (savedDefault) {
+                const defaultPlayerName = JSON.parse(savedDefault);
+                return defaultPlayerName;
+            }
+        } catch (error) {
+            console.error('Error loading default player:', error);
+        }
+        return null;
+    };
+
     useEffect(() => {
         const loadPlayers = async () => {
             const platformPlayers = getPlatformSpecificPlayers();
             setPlayers(platformPlayers);
-            if (platformPlayers.length > 0) setSelectedPlayer(platformPlayers[0].name);
+            
+            // Load the saved default player
+            const defaultPlayerName = await loadDefaultPlayer();
+            
+            if (defaultPlayerName) {
+                // Check if the saved default player is available on current platform
+                const isPlayerAvailable = platformPlayers.some(player => player.name === defaultPlayerName);
+                if (isPlayerAvailable) {
+                    setSelectedPlayer(defaultPlayerName);
+                } else {
+                    // Fallback to first available player if saved default is not available
+                    if (platformPlayers.length > 0) {
+                        setSelectedPlayer(platformPlayers[0].name);
+                    }
+                }
+            } else {
+                // No saved default, use first available player
+                if (platformPlayers.length > 0) {
+                    setSelectedPlayer(platformPlayers[0].name);
+                }
+            }
         };
 
         loadPlayers();

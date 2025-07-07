@@ -27,7 +27,7 @@ export const getOriginalPlatform = () => {
         return Platform.OS;
     }
 
-    const userAgent = navigator.userAgent || navigator.vendor || window.opera || '';
+    const userAgent = navigator.userAgent || navigator.vendor || '';
 
     if (/iPad|iPhone|iPod/.test(userAgent)) {
         return 'ios';
