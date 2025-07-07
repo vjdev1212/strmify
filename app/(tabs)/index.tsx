@@ -4,7 +4,7 @@ import PosterList from '@/components/PosterList';
 import { CatalogUrl } from '@/constants/Stremio';
 import { StatusBar, View } from '@/components/Themed';
 import * as Haptics from 'expo-haptics';
-import { getOriginalPlatform, isHapticsSupported, showAlert } from '@/utils/platform';
+import { isHapticsSupported } from '@/utils/platform';
 
 
 export default function HomeScreen() {
@@ -111,8 +111,7 @@ const styles = StyleSheet.create({
   },
   categoryButtonText: {
     fontSize: 16,
-    color: '#fff',
-    fontWeight: '500',
+    color: '#fff'
   },
   categoryButtonTextActive: {
     color: '#fff',
