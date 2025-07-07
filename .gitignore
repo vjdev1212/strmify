@@ -42,3 +42,4 @@ android
 .env
 .firebase/hosting.ZGlzdA.cache
 firebase-debug.log
+pglite-debug.log
