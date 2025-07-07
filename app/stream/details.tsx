@@ -388,39 +388,40 @@ const StreamDetailsScreen = () => {
                     {title && <DetailsRow label="Title" value={title} />}
                     {description && <DetailsRow label="Description" value={description} multiline />}
 
-                    {/* Always show server selection options regardless of URL presence */}
-                    <>
-                        {/* Server Type Selection */}
-                        <Text style={styles.header}>Server Type</Text>
-                        <View style={styles.radioGroup}>
-                            {Object.keys(serversMap).map((type) => (
-                                <Pressable
-                                    key={type}
-                                    style={styles.radioContainer}
-                                    onPress={() => handleServerToggle(type)}
-                                >
-                                    <View>
-                                        <MaterialIcons
-                                            name={serverType === type ? 'check-circle' : 'check-circle-outline'}
-                                            size={26}
-                                            color={'#ffffff'}
-                                            style={styles.radioIcon}
-                                        />
-                                    </View>
-                                    <View style={styles.radioRow}>
-                                        <View style={styles.iconLabel}>
-                                            <Text style={styles.radioLabel}>
-                                                {type === Servers.Stremio ? 'Stremio' : 'TorrServer'}
+                    {!url && infoHash ? (
+                        <>
+                            {/* Server Type Selection */}
+                            <Text style={styles.header}>Server Type</Text>
+                            <View style={styles.radioGroup}>
+                                {Object.keys(serversMap).map((type) => (
+                                    <Pressable
+                                        key={type}
+                                        style={styles.radioContainer}
+                                        onPress={() => handleServerToggle(type)}
+                                    >
+                                        <View>
+                                            <MaterialIcons
+                                                name={serverType === type ? 'check-circle' : 'check-circle-outline'}
+                                                size={26}
+                                                color={'#ffffff'}
+                                                style={styles.radioIcon}
+                                            />
+                                        </View>
+                                        <View style={styles.radioRow}>
+                                            <View style={styles.iconLabel}>
+                                                <Text style={styles.radioLabel}>
+                                                    {type === Servers.Stremio ? 'Stremio' : 'TorrServer'}
+                                                </Text>
+                                            </View>
+                                            <Text style={styles.radioValue}>
+                                                {serversMap[type].find(s => s.serverType === type)?.serverUrl}
                                             </Text>
                                         </View>
-                                        <Text style={styles.radioValue}>
-                                            {serversMap[type].find(s => s.serverType === type)?.serverUrl}
-                                        </Text>
-                                    </View>
-                                </Pressable>
-                            ))}
-                        </View>
-                    </>
+                                    </Pressable>
+                                ))}
+                            </View>
+                        </>
+                    ) : null}
 
                     <PlayerSelectionGroup
                         title="Media Players"
