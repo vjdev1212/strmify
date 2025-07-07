@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   FlatList,
   StyleSheet,
@@ -18,11 +18,45 @@ import { DefaultPosterImgXml } from '@/utils/Svg';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
-const SkeletonLoader = () => {
+// Types
+interface MovieItem {
+  moviedbid: number;
+  name: string;
+  poster: string;
+  background: string;
+  year: string;
+  imdbRating: string;
+}
+
+interface PosterListProps {
+  apiUrl: string;
+  title: string;
+  type: 'movie' | 'series';
+  layout?: 'horizontal' | 'vertical';
+}
+
+interface PosterItemProps {
+  item: MovieItem;
+  layout?: 'horizontal' | 'vertical';
+  type: string;
+}
+
+// Constants
+const SKELETON_COUNT = 10;
+const POSTER_SIZES = {
+  portrait: { width: 100, height: 150 },
+  landscape: { width: 150, height: 220 },
+};
+const COLORS = {
+  skeleton: '#0f0f0f',
+  posterYear: '#afafaf',
+  fallbackText: '#888',
+};
+
+const SkeletonLoader = React.memo(() => {
   const { width, height } = useWindowDimensions();
   const isPortrait = height > width;
-
-  const skeletonBgColor = '#0f0f0f';
+  const size = isPortrait ? POSTER_SIZES.portrait : POSTER_SIZES.landscape;
 
   return (
     <RNView style={styles.skeletonContainer}>
@@ -30,21 +64,22 @@ const SkeletonLoader = () => {
         style={[
           styles.skeletonImage,
           {
-            backgroundColor: skeletonBgColor,
-            width: isPortrait ? 100 : 150,
-            height: isPortrait ? 150 : 220,
+            backgroundColor: COLORS.skeleton,
+            width: size.width,
+            height: size.height,
           },
         ]}
       />
     </RNView>
   );
-};
+});
 
+SkeletonLoader.displayName = 'SkeletonLoader';
 
-const PosterItem = ({ item, layout, type }: { item: any, layout?: 'horizontal' | 'vertical', type: string }) => {
+const PosterItem = React.memo(({ item, layout, type }: PosterItemProps) => {
   const [imgError, setImgError] = useState(false);
-  const fadeAnim = useState(new Animated.Value(0))[0];
-  const scaleAnim = useState(new Animated.Value(1))[0];
+  const [fadeAnim] = useState(() => new Animated.Value(0));
+  const [scaleAnim] = useState(() => new Animated.Value(1));
   const { width, height } = useWindowDimensions();
   const isPortrait = height > width;
 
@@ -55,17 +90,23 @@ const PosterItem = ({ item, layout, type }: { item: any, layout?: 'horizontal' |
     return item.year;
   }, [item.year]);
 
-  const posterUri = item.poster; // Always use poster
+  const posterSize = useMemo(() => {
+    return isPortrait ? POSTER_SIZES.portrait : POSTER_SIZES.landscape;
+  }, [isPortrait]);
 
-  const handleImageLoad = () => {
+  const handleImageLoad = useCallback(() => {
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 500,
       useNativeDriver: true,
     }).start();
-  };
+  }, [fadeAnim]);
 
-  const handlePress = async () => {
+  const handleImageError = useCallback(() => {
+    setImgError(true);
+  }, []);
+
+  const handlePress = useCallback(async () => {
     if (isHapticsSupported()) {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
     }
@@ -73,26 +114,42 @@ const PosterItem = ({ item, layout, type }: { item: any, layout?: 'horizontal' |
       pathname: type === 'movie' ? '/movie/details' : '/series/details',
       params: { moviedbid: item.moviedbid },
     });
-  };
+  }, [item.moviedbid, type]);
 
-  const handleHoverIn = () => {
+  const handleHoverIn = useCallback(() => {
     Animated.spring(scaleAnim, {
       toValue: 1.1,
       useNativeDriver: true,
     }).start();
-  };
+  }, [scaleAnim]);
 
-  const handleHoverOut = () => {
+  const handleHoverOut = useCallback(() => {
     Animated.spring(scaleAnim, {
       toValue: 1,
       useNativeDriver: true,
     }).start();
-  };
+  }, [scaleAnim]);
 
-  const posterImageBgColor = '#0f0f0f';
-  const posterYearColor = {
-    color: '#afafaf',
-  };
+  const imageStyle = useMemo(() => [
+    styles.posterImage,
+    layout === 'vertical' ? styles.verticalImage : styles.horizontalImage,
+    {
+      opacity: fadeAnim,
+      backgroundColor: COLORS.skeleton,
+      width: posterSize.width,
+      height: posterSize.height,
+    },
+  ], [fadeAnim, layout, posterSize]);
+
+  const placeholderStyle = useMemo(() => [
+    styles.posterImagePlaceHolder,
+    layout === 'vertical' ? styles.verticalImage : styles.horizontalImage,
+    {
+      backgroundColor: COLORS.skeleton,
+      width: 100,
+      height: 150,
+    },
+  ], [layout]);
 
   return (
     <Pressable
@@ -101,35 +158,16 @@ const PosterItem = ({ item, layout, type }: { item: any, layout?: 'horizontal' |
       onHoverIn={handleHoverIn}
       onHoverOut={handleHoverOut}
     >
-      <Animated.View>
+      <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
         {!imgError ? (
           <Animated.Image
-            source={{ uri: posterUri }}
-            onError={() => setImgError(true)}
+            source={{ uri: item.poster }}
+            onError={handleImageError}
             onLoad={handleImageLoad}
-            style={[
-              styles.posterImage,
-              layout === 'vertical' ? styles.verticalImage : styles.horizontalImage,
-              {
-                opacity: fadeAnim,
-                backgroundColor: posterImageBgColor,
-                width: isPortrait ? 100 : 150,
-                height: isPortrait ? 150 : 220,
-              },
-            ]}
+            style={imageStyle}
           />
         ) : (
-          <View
-            style={[
-              styles.posterImagePlaceHolder,
-              layout === 'vertical' ? styles.verticalImage : styles.horizontalImage,
-              {
-                backgroundColor: posterImageBgColor,
-                width: 100,
-                height: 150,
-              },
-            ]}
-          >
+          <View style={placeholderStyle}>
             <SvgXml xml={DefaultPosterImgXml} />
           </View>
         )}
@@ -142,72 +180,79 @@ const PosterItem = ({ item, layout, type }: { item: any, layout?: 'horizontal' |
       >
         {item.name}
       </Text>
-      <Text style={[styles.posterYear, posterYearColor]}>
+      <Text style={[styles.posterYear, { color: COLORS.posterYear }]}>
         {`★ ${item.imdbRating}   ${year}`}
       </Text>
     </Pressable>
   );
-};
+});
 
+PosterItem.displayName = 'PosterItem';
 
 const PosterList = ({
   apiUrl,
   title,
   type,
   layout = 'horizontal',
-}: {
-  apiUrl: string;
-  title: string;
-  type: 'movie' | 'series';
-  layout?: 'horizontal' | 'vertical';
-}) => {
-  const [data, setData] = useState<any[]>([]);
+}: PosterListProps) => {
+  const [data, setData] = useState<MovieItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch(`${apiUrl}?api_key=${EXPO_PUBLIC_TMDB_API_KEY}`);
-        const result = await response.json();
-        const collection = result.results;
-        let list = [];
-
-        if (type === 'movie') {
-          list = collection
-            .filter((movie: any) => movie.poster_path && movie.backdrop_path) // Filter out null images
-            .map((movie: any) => ({
-              moviedbid: movie.id,
-              name: movie.title,
-              poster: `https://image.tmdb.org/t/p/w780${movie.poster_path}`,
-              background: `https://image.tmdb.org/t/p/w1280${movie.backdrop_path}`,
-              year: getYear(movie.release_date),
-              imdbRating: movie.vote_average?.toFixed(1),
-            }));
-        } else {
-          list = collection
-            .filter((series: any) => series.poster_path && series.backdrop_path) // Filter out null images
-            .map((series: any) => ({
-              moviedbid: series.id,
-              name: series.name,
-              poster: `https://image.tmdb.org/t/p/w780${series.poster_path}`,
-              background: `https://image.tmdb.org/t/p/w1280${series.backdrop_path}`,
-              year: getYear(series.first_air_date),
-              imdbRating: series.vote_average?.toFixed(1),
-            }));
-        }
-
-        setData(list);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      } finally {
-        setLoading(false);
+  const fetchData = useCallback(async () => {
+    try {
+      const response = await fetch(`${apiUrl}?api_key=${EXPO_PUBLIC_TMDB_API_KEY}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-    };
+      
+      const result = await response.json();
+      const collection = result.results;
+      
+      if (!collection || !Array.isArray(collection)) {
+        throw new Error('Invalid API response format');
+      }
 
+      let list: MovieItem[] = [];
+
+      if (type === 'movie') {
+        list = collection
+          .filter((movie: any) => movie.poster_path && movie.backdrop_path)
+          .map((movie: any) => ({
+            moviedbid: movie.id,
+            name: movie.title,
+            poster: `https://image.tmdb.org/t/p/w780${movie.poster_path}`,
+            background: `https://image.tmdb.org/t/p/w1280${movie.backdrop_path}`,
+            year: getYear(movie.release_date),
+            imdbRating: movie.vote_average?.toFixed(1) || 'N/A',
+          }));
+      } else {
+        list = collection
+          .filter((series: any) => series.poster_path && series.backdrop_path)
+          .map((series: any) => ({
+            moviedbid: series.id,
+            name: series.name,
+            poster: `https://image.tmdb.org/t/p/w780${series.poster_path}`,
+            background: `https://image.tmdb.org/t/p/w1280${series.backdrop_path}`,
+            year: getYear(series.first_air_date),
+            imdbRating: series.vote_average?.toFixed(1) || 'N/A',
+          }));
+      }
+
+      setData(list);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      setData([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [apiUrl, type]);
+
+  useEffect(() => {
     fetchData();
-  }, [apiUrl]);
+  }, [fetchData]);
 
-  const handleSeeAllPress = async () => {
+  const handleSeeAllPress = useCallback(async () => {
     if (isHapticsSupported()) {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
     }
@@ -215,42 +260,67 @@ const PosterList = ({
       pathname: `/${type}/list`,
       params: { apiUrl, title, type },
     });
-  };
+  }, [apiUrl, title, type]);
+
+  const renderPosterItem = useCallback(({ item }: { item: MovieItem }) => (
+    <PosterItem item={item} layout={layout} type={type} />
+  ), [layout, type]);
+
+  const renderSkeletonItem = useCallback(() => <SkeletonLoader />, []);
+
+  const keyExtractor = useCallback((item: MovieItem, index: number) => 
+    item?.moviedbid?.toString() || index.toString(), []);
+
+  const skeletonKeyExtractor = useCallback((item: any, index: number) => 
+    `skeleton-${index}`, []);
+
+  const skeletonData = useMemo(() => 
+    new Array(SKELETON_COUNT).fill(null), []);
+
+  const numColumns = layout === 'vertical' ? 2 : 1;
+
+  if (!data || data.length === 0) {
+    return null;
+  }
 
   return (
-    <>
-      {
-        data && data.length > 0 &&
-        <RNView style={styles.container}>
-          <RNView style={styles.header}>
-            <Text style={styles.title}>{title}</Text>
-            <Pressable onPress={handleSeeAllPress}>
-              <Text style={styles.seeAllText}>See All</Text>
-            </Pressable>
-          </RNView>
+    <RNView style={styles.container}>
+      <RNView style={styles.header}>
+        <Text style={styles.title}>{title}</Text>
+        <Pressable onPress={handleSeeAllPress}>
+          <Text style={styles.seeAllText}>See All</Text>
+        </Pressable>
+      </RNView>
 
-          {loading ? (
-            <FlatList
-              data={new Array(10).fill(null)}
-              renderItem={() => <SkeletonLoader />}
-              keyExtractor={(_, index) => index.toString()}
-              horizontal={layout === 'horizontal'}
-              showsHorizontalScrollIndicator={false}
-              numColumns={layout === 'vertical' ? 2 : 1}
-            />
-          ) : (
-            <FlatList
-              data={data}
-              renderItem={({ item }) => <PosterItem item={item} layout={layout} type={type} />}
-              keyExtractor={(item, index) => index.toString()}
-              horizontal={layout === 'horizontal'}
-              showsHorizontalScrollIndicator={false}
-              numColumns={layout === 'vertical' ? 2 : 1}
-            />
-          )}
-        </RNView>
-      }
-    </>
+      {loading ? (
+        <FlatList
+          data={skeletonData}
+          renderItem={renderSkeletonItem}
+          keyExtractor={skeletonKeyExtractor}
+          horizontal={layout === 'horizontal'}
+          showsHorizontalScrollIndicator={false}
+          numColumns={numColumns}
+        />
+      ) : (
+        <FlatList
+          data={data}
+          renderItem={renderPosterItem}
+          keyExtractor={keyExtractor}
+          horizontal={layout === 'horizontal'}
+          showsHorizontalScrollIndicator={false}
+          numColumns={numColumns}
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+          windowSize={10}
+          removeClippedSubviews={true}
+          getItemLayout={layout === 'horizontal' ? undefined : (data, index) => ({
+            length: 200, // Approximate item height
+            offset: 200 * index,
+            index,
+          })}
+        />
+      )}
+    </RNView>
   );
 };
 
@@ -284,7 +354,7 @@ const styles = StyleSheet.create({
   },
   posterImagePlaceHolder: {
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
   },
   posterImage: {
     borderRadius: 8,
@@ -292,7 +362,7 @@ const styles = StyleSheet.create({
   horizontalImage: {
     width: 100,
     height: 150,
-    borderRadius: 8
+    borderRadius: 8,
   },
   verticalImage: {
     flex: 1,
@@ -307,7 +377,7 @@ const styles = StyleSheet.create({
   posterYear: {
     marginTop: 4,
     fontSize: 12,
-    color: '#888',
+    color: COLORS.fallbackText,
   },
   skeletonContainer: {
     marginRight: 15,
