@@ -1,51 +1,64 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { StyleSheet, View as RNView, Animated } from 'react-native';
 import { View } from './Themed';
 
-const MediaContentPoster = ({ background, isPortrait }: { background: string, isPortrait: boolean }) => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [fadeAnim] = useState(new Animated.Value(0));
-  const [titleFadeAnim] = useState(new Animated.Value(0));
+interface MediaContentPosterProps {
+  background: string;
+  isPortrait: boolean;
+}
 
-  useEffect(() => {
-    const imageLoader = setTimeout(() => {
-      setIsLoading(false);
+const MediaContentPoster: React.FC<MediaContentPosterProps> = ({ background, isPortrait }) => {
+  const [isLoading, setIsLoading] = useState(true);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const titleFadeAnim = useRef(new Animated.Value(0)).current;
+
+  const startAnimations = useCallback(() => {
+    setIsLoading(false);
+    Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 500,
         useNativeDriver: true,
-      }).start();
+      }),
       Animated.timing(titleFadeAnim, {
         toValue: 1,
         duration: 500,
         useNativeDriver: true,
-      }).start();
-    }, 100);
-
-    return () => clearTimeout(imageLoader);
+      })
+    ]).start();
   }, [fadeAnim, titleFadeAnim]);
 
+  useEffect(() => {
+    const imageLoader = setTimeout(startAnimations, 100);
+    return () => clearTimeout(imageLoader);
+  }, [startAnimations]);
+
+  const containerStyle = [
+    styles.posterContainer,
+    { aspectRatio: isPortrait ? 4 / 3 : 16 / 9 }
+  ];
+
+  const posterStyle = [
+    styles.poster,
+    {
+      opacity: fadeAnim,
+      aspectRatio: 4 / 3,
+      borderRadius: isPortrait ? 0 : 10,
+    }
+  ];
 
   return (
-    <>
-      <View style={[styles.posterContainer, {
-        aspectRatio: isPortrait ? 4 / 3 : 16 / 9,
-      }]}>
-        {isLoading ? (
-          <RNView style={styles.skeletonBackground} />
-        ) : (
-          <Animated.Image
-            resizeMode={isPortrait ? 'cover' : 'contain'}
-            source={{ uri: background }}
-            style={[styles.poster, {
-              opacity: fadeAnim,
-              aspectRatio: 4 / 3,
-              borderRadius: isPortrait ? 0 : 10,
-            }]}
-          />
-        )}
-      </View>
-    </>
+    <View style={containerStyle}>
+      {isLoading ? (
+        <RNView style={styles.skeletonBackground} />
+      ) : (
+        <Animated.Image
+          resizeMode={isPortrait ? 'cover' : 'contain'}
+          source={{ uri: background }}
+          style={posterStyle}
+        />
+      )}
+    </View>
   );
 };
 
