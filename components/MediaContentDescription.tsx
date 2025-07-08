@@ -2,11 +2,24 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import { Text, View } from './Themed';
 
-const MediaContentDescription = ({ description }: { description: string }) => (
-  <View style={styles.container}>
-    <Text style={styles.description} numberOfLines={10}>{description}</Text>
-  </View>
-);
+interface MediaContentDescriptionProps {
+  description: string;
+}
+
+const MediaContentDescription: React.FC<MediaContentDescriptionProps> = ({ description }) => {
+  // Early return if no description
+  if (!description?.trim()) {
+    return null;
+  }
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.description} numberOfLines={10}>
+        {description}
+      </Text>
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -18,7 +31,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 22,
     paddingHorizontal: 20,
-    marginVertical: 10
+    marginVertical: 10,
   },
 });
 
