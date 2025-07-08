@@ -309,7 +309,6 @@ const styles = StyleSheet.create({
     },
     subtitle: {
         fontSize: 15,
-        color: '#666',
         textAlign: 'center',
         marginBottom: 30,
         lineHeight: 22
@@ -362,29 +361,24 @@ const styles = StyleSheet.create({
     },
     button: {
         flex: 1,
-        paddingVertical: 16,
-        paddingHorizontal: 20,
+        paddingVertical: 14,
+        paddingHorizontal: 15,
         borderRadius: 30,
-        alignItems: 'center',
-        minHeight: 52
+        alignItems: 'center'
     },
     primaryButton: {
         backgroundColor: '#535aff'
     },
     secondaryButton: {
-        backgroundColor: 'transparent',
-        borderWidth: 1,
-        borderColor: '#535aff'
+        backgroundColor: '#101010'
     },
     primaryButtonText: {
         fontSize: 16,
         color: '#ffffff',
-        fontWeight: '600'
     },
     secondaryButtonText: {
         fontSize: 16,
-        color: '#535aff',
-        fontWeight: '600'
+        color: '#ffffff',
     },
     buttonDisabled: {
         backgroundColor: '#3b3b3b',
