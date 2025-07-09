@@ -193,7 +193,7 @@ const SeriesDetails = () => {
           <MediaContentDescription description={data.description} />
           {
             isPortrait && (
-              <MediaContentDetailsList type='movie' released={data.released} country={data.country} languages={data.languages} genre={data.genre || data.genres} runtime={data.runtime} imdbRating={data.imdbRating} />
+              <MediaContentDetailsList type='tv' released={data.released} country={data.country} languages={data.languages} genre={data.genre || data.genres} runtime={data.runtime} imdbRating={data.imdbRating} />
             )
           }
           {

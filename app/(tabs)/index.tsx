@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 25,
     marginHorizontal: 8,
-    backgroundColor: '#1f1f1f',
+    backgroundColor: '#101010',
   },
   categoryButtonActive: {
     backgroundColor: '#535aff',

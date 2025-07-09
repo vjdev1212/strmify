@@ -200,15 +200,16 @@ const PosterList = ({
 
   const fetchData = useCallback(async () => {
     try {
-      const response = await fetch(`${apiUrl}?api_key=${EXPO_PUBLIC_TMDB_API_KEY}`);
-      
+      const separator = apiUrl.includes('?') ? '&' : '?';
+      const response = await fetch(`${apiUrl}${separator}api_key=${EXPO_PUBLIC_TMDB_API_KEY}`);
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const result = await response.json();
       const collection = result.results;
-      
+
       if (!collection || !Array.isArray(collection)) {
         throw new Error('Invalid API response format');
       }
@@ -268,13 +269,13 @@ const PosterList = ({
 
   const renderSkeletonItem = useCallback(() => <SkeletonLoader />, []);
 
-  const keyExtractor = useCallback((item: MovieItem, index: number) => 
+  const keyExtractor = useCallback((item: MovieItem, index: number) =>
     item?.moviedbid?.toString() || index.toString(), []);
 
-  const skeletonKeyExtractor = useCallback((item: any, index: number) => 
+  const skeletonKeyExtractor = useCallback((item: any, index: number) =>
     `skeleton-${index}`, []);
 
-  const skeletonData = useMemo(() => 
+  const skeletonData = useMemo(() =>
     new Array(SKELETON_COUNT).fill(null), []);
 
   const numColumns = layout === 'vertical' ? 2 : 1;

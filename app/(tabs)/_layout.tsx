@@ -1,24 +1,17 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Tabs } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { Platform, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { isHapticsSupported } from '@/utils/platform';
-import { Ionicons } from '@expo/vector-icons';
-
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];
   color: string;
 }) {
-  return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
-}
-
-function TabBarIconIonIcon(props: {
-  name: React.ComponentProps<typeof Ionicons>['name'];
-  color: string;
-}) {
-  return <Ionicons size={28} style={{ marginBottom: -3 }} {...props} />;
+  return <FontAwesome size={24} {...props} />;
 }
 
 export default function TabLayout() {
@@ -34,75 +27,66 @@ export default function TabLayout() {
     }
   };
 
+  // Memoize background to avoid re-render crashes
+  const tabBarBackground = useMemo(() => (
+    <View
+      pointerEvents="none"
+      style={[StyleSheet.absoluteFill, { overflow: 'hidden' }]}
+    >
+      <BlurView
+        intensity={50}
+        tint="dark"
+        style={StyleSheet.absoluteFill}
+      />
+      <LinearGradient
+        colors={['rgba(0,0,0,0.2)', 'rgba(0,0,0,0.6)']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+    </View>
+  ), []);
+
   return (
     <Tabs
+      initialRouteName="index"
       screenOptions={{
         tabBarActiveTintColor: '#535aff',
-        tabBarInactiveTintColor: '#aaaaaa',
         headerShown: false,
-        tabBarStyle: { height: getTabBarHeight(), backgroundColor: 'transparent', borderColor: '#191919' },
+        tabBarStyle: {
+          position: 'absolute',
+          height: getTabBarHeight(),
+          backgroundColor: 'transparent',
+          borderTopWidth: 0,
+          elevation: 0,
+        },
+        tabBarBackground: () => tabBarBackground,
       }}
     >
-      <Tabs.Screen
-        name="index"
-        listeners={{
-          tabPress: () => {
-            if (isHapticsSupported()) {
-              Haptics.selectionAsync();
-            }
-          },
-        }}
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
-          tabBarIconStyle: { marginVertical: 5 }
-        }}
-      />
-      <Tabs.Screen
-        name="search"
-        listeners={{
-          tabPress: () => {
-            if (isHapticsSupported()) {
-              Haptics.selectionAsync();
-            }
-          },
-        }}
-        options={{
-          title: 'Search',
-          tabBarIcon: ({ color }) => <TabBarIcon name="search" color={color} />,
-          tabBarIconStyle: { marginVertical: 5 },
-        }}
-      />
-      {/* <Tabs.Screen
-        name="addons"
-        listeners={{
-          tabPress: () => {
-            if (isHapticsSupported()) {
-              Haptics.selectionAsync();
-            }
-          },
-        }}
-        options={{
-          title: 'Addons',
-          tabBarIcon: ({ color }) => <TabBarIconIonIcon name="extension-puzzle-sharp" color={color} />,
-          tabBarIconStyle: { marginVertical: 5 },
-        }}
-      /> */}
-      <Tabs.Screen
-        name="settings"
-        listeners={{
-          tabPress: () => {
-            if (isHapticsSupported()) {
-              Haptics.selectionAsync();
-            }
-          },
-        }}
-        options={{
-          title: 'Settings',
-          tabBarIcon: ({ color }) => <TabBarIcon name="gear" color={color} />,
-          tabBarIconStyle: { marginVertical: 5 },
-        }}
-      />
+      {[
+        { name: 'index', title: 'Home', icon: 'home' },
+        { name: 'movies', title: 'Movies', icon: 'film' },
+        { name: 'series', title: 'TV', icon: 'tv' },
+        { name: 'search', title: 'Search', icon: 'search' },
+        { name: 'settings', title: 'Settings', icon: 'gear' },
+      ].map(({ name, title, icon }) => (
+        <Tabs.Screen
+          key={name}
+          name={name}
+          listeners={{
+            tabPress: () => {
+              if (isHapticsSupported()) {
+                Haptics.selectionAsync();
+              }
+            },
+          }}
+          options={{
+            title,
+            tabBarIcon: ({ color }) => <TabBarIcon name={icon as any} color={color} />,
+            tabBarIconStyle: { marginVertical: 5 },
+          }}
+        />
+      ))}
     </Tabs>
   );
 }
