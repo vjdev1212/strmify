@@ -15,8 +15,8 @@ const SettingsScreen = () => {
   const showContact = process.env.EXPO_PUBLIC_SHOW_CONTACT === 'true';
 
   const serversList: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [
-    { title: 'Stremio', route: '/settings/stremioserver', icon: 'server-outline' },
-    { title: 'TorrServer', route: '/settings/torrserver', icon: 'server-outline' },
+    { title: 'Stremio', route: '/settings/stremioserver', icon: 'magnet-outline' },
+    { title: 'TorrServer', route: '/settings/torrserver', icon: 'magnet-outline' },
   ];
 
   const General: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [
