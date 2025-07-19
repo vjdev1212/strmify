@@ -220,6 +220,7 @@ const styles = StyleSheet.create({
     margin: 'auto',
     marginTop: 20,
     maxWidth: 780,
+    width: '100%'
   },
   centeredContainer: {
     flex: 1,
