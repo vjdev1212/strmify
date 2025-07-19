@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
     paddingBottom: 50,
   },
   addonItemContainer: {
-    width: '80%',
+    width: '90%',
   },
   landscapeAddonContainer: {
     width: '100%',
