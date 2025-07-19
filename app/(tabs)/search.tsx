@@ -141,7 +141,6 @@ const SearchScreen = () => {
     setSeries([]);
   };
 
-  const colorScheme = useColorScheme();
   const searchInputColor = styles.darkSearchInput;
   const noResultsColor = { color: '#a0a0a0' }
 

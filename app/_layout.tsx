@@ -76,7 +76,7 @@ function RootLayoutNav() {
     }
   };
 
-  const theme = (useColorScheme() === 'dark' ? DarkTheme : LightTheme);
+  const theme = DarkTheme;
 
   return (
     <ThemeProvider value={theme}>

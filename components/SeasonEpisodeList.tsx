@@ -59,7 +59,7 @@ const EpisodeItem: React.FC<EpisodeItemProps> = React.memo(({ item, onEpisodeSel
     const episodeTitle = `${item.episode || item.number}. ${item.name || item.title}`;
     const episodeAired = formatDate(item.firstAired) || formatDate(item.released);
     const episodeDescription = item.description || item.overview;
-    
+
     return {
       thumbnailHeight,
       thumbnailWidth,
@@ -185,13 +185,12 @@ const EpisodeItem: React.FC<EpisodeItemProps> = React.memo(({ item, onEpisodeSel
 
 const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisodeSelect }) => {
   const [selectedSeason, setSelectedSeason] = useState<number>(1);
-  const colorScheme = useColorScheme();
   const { width, height } = useWindowDimensions();
 
   // Memoized computed values
   const computedValues = useMemo(() => {
     const isPortrait = height > width;
-    
+
     // Group episodes by season
     const groupedEpisodes = videos.reduce((acc, video) => {
       if (!acc[video.season]) {
@@ -226,11 +225,10 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
 
   const getSeasonButtonStyle = useCallback((season: number) => ({
     ...styles.seasonButton,
-    backgroundColor: season !== selectedSeason && colorScheme === 'dark' 
-      ? DARK_SEASON_BUTTON_COLOR 
-      : LIGHT_SEASON_BUTTON_COLOR,
+    backgroundColor:
+      DARK_SEASON_BUTTON_COLOR,
     ...(season === selectedSeason && styles.selectedSeasonButton),
-  }), [selectedSeason, colorScheme]);
+  }), [selectedSeason]);
 
   const getSeasonTextStyle = useCallback((season: number) => ({
     ...styles.seasonText,

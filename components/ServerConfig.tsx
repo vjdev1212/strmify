@@ -3,7 +3,6 @@ import { StyleSheet, Switch, TextInput, Pressable, FlatList, ScrollView } from '
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, Text } from '@/components/Themed';
 import { showAlert } from '@/utils/platform';
-import { useColorScheme } from './useColorScheme';
 import { AntDesign, Feather, MaterialIcons } from '@expo/vector-icons';
 
 interface ServerConfigProps {
@@ -21,7 +20,6 @@ export interface ServerConfig {
 }
 
 const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverType, defaultUrl }) => {
-  const colorScheme = useColorScheme();
   const [serverUrl, setServerUrl] = useState<string>(defaultUrl);
   const [isCurrent, setIsCurrent] = useState<boolean>(false);
   const [serverConfigs, setServerConfigs] = useState<ServerConfig[]>([]);

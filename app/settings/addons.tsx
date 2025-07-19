@@ -23,7 +23,6 @@ import { useColorScheme } from '@/components/useColorScheme';
 const AddonsScreen = () => {
   const [addons, setAddons] = useState<any[]>([]);
 
-  const colorScheme = useColorScheme();
   useEffect(() => {
     const fetchAddons = async () => {
       try {

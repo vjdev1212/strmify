@@ -9,7 +9,6 @@ import { generateStremioPlayerUrl } from '@/clients/stremio';
 import { generateTorrServerPlayerUrl } from '@/clients/torrserver';
 import { ServerConfig } from '@/components/ServerConfig';
 import { getOriginalPlatform, isHapticsSupported, showAlert } from '@/utils/platform';
-import { useColorScheme } from '@/components/useColorScheme';
 
 enum Servers {
     Stremio = 'stremio',
@@ -46,7 +45,6 @@ const StreamDetailsScreen = () => {
     const [metaData, setMetaData] = useState<any>(null);
     const [playBtnDisabled, setPlayBtnDisabled] = useState<boolean>(false);
     const [isModalVisible, setModalVisible] = useState(false);
-    const colorScheme = useColorScheme();
 
     const loadDefaultPlayer = async () => {
         try {

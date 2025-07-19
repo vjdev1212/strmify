@@ -27,7 +27,6 @@ const MovieDetails = () => {
   const { width, height } = useWindowDimensions();
   const isPortrait = height > width;
   const ref = useRef<ScrollView | null>(null);
-  const colorScheme = useColorScheme();
 
   useFocusEffect(() => {
     if (ref.current) {

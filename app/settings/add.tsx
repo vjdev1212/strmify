@@ -10,8 +10,6 @@ import { useColorScheme } from '@/components/useColorScheme';
 const defaultAddonLogo = 'https://i.ibb.co/fSJ42PJ/addon.png';
 
 export default function AddAddonScreen() {
-
-    const colorScheme = useColorScheme();
     const [url, setUrl] = useState('');
     const [loading, setLoading] = useState(false);
     const [manifestData, setManifestData] = useState<any>(null);
@@ -86,7 +84,7 @@ export default function AddAddonScreen() {
                 <TextInput
                     style={[
                         styles.input,
-                        colorScheme === 'dark' ? styles.darkInput : styles.lightInput,
+                        styles.darkInput,
                     ]}
                     placeholder="Enter manifest.json URL"
                     placeholderTextColor="#777777"
