@@ -153,7 +153,7 @@ const SearchScreen = () => {
             styles.searchInput,
             searchInputColor
           ]}
-          placeholder="Search movies or series..."
+          placeholder="Search for movies or TV shows.."
           placeholderTextColor={'#888888'}
           value={query}
           onChangeText={setQuery}
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     height: 40,
-    borderRadius: 12,
+    borderRadius: 25,
     paddingLeft: 20,
     paddingRight: 40,
     fontSize: 16,

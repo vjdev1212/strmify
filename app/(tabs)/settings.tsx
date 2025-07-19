@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   settingText: {
-    fontSize: 15,
+    fontSize: 16,
     flex: 1,
     width: '100%'
   },

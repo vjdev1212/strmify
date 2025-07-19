@@ -7,7 +7,8 @@ import {
   ScrollView,
   SafeAreaView,
   View,
-  Platform
+  Platform,
+  Dimensions
 } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -19,9 +20,21 @@ import { isHapticsSupported, showAlert } from '@/utils/platform';
 import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from '@/components/useColorScheme';
 
-
 const AddonsScreen = () => {
   const [addons, setAddons] = useState<any[]>([]);
+  const [isLandscape, setIsLandscape] = useState(false);
+
+  useEffect(() => {
+    const updateOrientation = () => {
+      const { width, height } = Dimensions.get('window');
+      setIsLandscape(width > height);
+    };
+
+    const subscription = Dimensions.addEventListener('change', updateOrientation);
+    updateOrientation(); // Set initial orientation
+
+    return () => subscription?.remove();
+  }, []);
 
   useEffect(() => {
     const fetchAddons = async () => {
@@ -72,7 +85,8 @@ const AddonsScreen = () => {
   const shareManifestUrl = async (url: string) => {
     if (isHapticsSupported()) {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
-    } try {
+    }
+    try {
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(url);
       } else {
@@ -83,70 +97,92 @@ const AddonsScreen = () => {
     }
   };
 
-  const renderAddonItem = (item: any) => (
-    <View style={styles.addonItem} key={item.id}>
-      <View style={styles.row}>
-        <View style={styles.addonItemContainer}>
-          <View style={styles.row}>
-            <Image source={{ uri: item.logo }} style={[styles.addonLogo]} />
-            <View style={styles.details}>
-              <Text style={styles.addonName}>{item.name}</Text>
-              <Text style={styles.addonTypes}>{item.types?.join(', ')}</Text>
+  const renderAddonItem = (item: any) => {
+    const configurable = item.behaviorHints?.configurable;
+    return (
+      <View style={styles.addonItem} key={item.id}>
+        <View style={[styles.row, isLandscape && styles.landscapeRow]}>
+          <View style={[styles.addonItemContainer, isLandscape && styles.landscapeAddonContainer]}>
+            <View style={styles.row}>
+              <Image source={{ uri: item.logo }} style={[styles.addonLogo]} />
+              <View style={styles.details}>
+                <Text style={styles.addonName}>{item.name}</Text>
+                <Text style={styles.addonTypes}>{item.types?.join(', ')}</Text>
+              </View>
             </View>
+            <Text style={styles.addonDescription}>{item.description}</Text>
           </View>
-          <Text style={styles.addonDescription}>{item.description}</Text>
-        </View>
-        <View style={styles.actions}>
-          <Pressable
-            style={[styles.actionButton, styles.shareButton]}
-            onPress={() => shareManifestUrl(item.manifestUrl)}
-          >
-            <Ionicons name="share-outline" size={22} color="white" />
-          </Pressable>
-
-          {item.behaviorHints?.configurable && (
+          <View style={[
+            styles.actions,
+            isLandscape ? styles.landscapeActions : styles.portraitActions
+          ]}>
             <Pressable
-              style={[styles.actionButton, styles.configureButton]}
-              onPress={() => openConfiguration(item.baseUrl)}
+              style={[
+                styles.actionButton,
+                styles.shareButton,
+                isLandscape && styles.landscapeActionButton
+              ]}
+              onPress={() => shareManifestUrl(item.manifestUrl)}
             >
-              <Ionicons name="settings-outline" size={22} color="white" />
+              <Ionicons name="share-outline" size={22} color="white" />
+              {isLandscape && <Text style={styles.actionText}>Share</Text>}
             </Pressable>
-          )}
 
-          <Pressable
-            style={[styles.actionButton, styles.removeButton]}
-            onPress={async () => {
-              if (isHapticsSupported()) {
-                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
-              }
-              const message = `Are you sure you want to remove "${item.name}"?`;
-              if (Platform.OS === 'ios' || Platform.OS === 'android') {
-                Alert.alert(
-                  'Remove Addon',
-                  message,
-                  [
-                    { text: 'Cancel', style: 'cancel' },
-                    {
-                      text: 'Remove',
-                      style: 'destructive',
-                      onPress: () => removeAddon(item.id),
-                    },
-                  ]
-                );
-              } else {
-                const isConfirmed = window.confirm(message);
-                if (isConfirmed) {
-                  removeAddon(item.id);
+            <Pressable
+              style={[
+                styles.actionButton,
+                styles.removeButton,
+                isLandscape && styles.landscapeActionButton
+              ]}
+              onPress={async () => {
+                if (isHapticsSupported()) {
+                  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
                 }
-              }
-            }}
-          >
-            <Ionicons name="trash-outline" size={22} color="white" />
-          </Pressable>
+                const message = `Are you sure you want to remove "${item.name}"?`;
+                if (Platform.OS === 'ios' || Platform.OS === 'android') {
+                  Alert.alert(
+                    'Remove Addon',
+                    message,
+                    [
+                      { text: 'Cancel', style: 'cancel' },
+                      {
+                        text: 'Remove',
+                        style: 'destructive',
+                        onPress: () => removeAddon(item.id),
+                      },
+                    ]
+                  );
+                } else {
+                  const isConfirmed = window.confirm(message);
+                  if (isConfirmed) {
+                    removeAddon(item.id);
+                  }
+                }
+              }}
+            >
+              <Ionicons name="trash-outline" size={22} color="white" />
+              {isLandscape && <Text style={styles.actionText}>Remove</Text>}
+            </Pressable>
+
+            <Pressable
+              style={[
+                styles.actionButton,
+                styles.configureButton,
+                isLandscape && styles.landscapeActionButton,
+                !configurable && styles.disabledAction
+              ]}
+              onPress={() => openConfiguration(item.baseUrl)}
+              disabled={!configurable}
+            >
+              <Ionicons name="settings-outline" size={22} color={configurable ? "#ffffff" : '#777777'} />
+              {isLandscape && <Text style={[styles.actionText,
+              !configurable && { color: configurable ? "#ffffff" : '#777777' }]}>Configure</Text>}
+            </Pressable>
+          </View>
         </View>
       </View>
-    </View>
-  );
+    );
+  }
 
 
   const onAddNewPress = async () => {
@@ -181,10 +217,9 @@ const AddonsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    width: '100%',
-    maxWidth: 780,
     margin: 'auto',
     marginTop: 20,
+    maxWidth: 780,
   },
   centeredContainer: {
     flex: 1,
@@ -197,7 +232,10 @@ const styles = StyleSheet.create({
     paddingBottom: 50,
   },
   addonItemContainer: {
-    width: '80%'
+    width: '80%',
+  },
+  landscapeAddonContainer: {
+    width: '100%',
   },
   addButton: {
     borderRadius: 25,
@@ -219,13 +257,19 @@ const styles = StyleSheet.create({
   },
   addonItem: {
     borderRadius: 10,
-    padding: 15,
-    marginBottom: 15
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    marginBottom: 15,
+    backgroundColor: '#101010'
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 10,
+  },
+  landscapeRow: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
   },
   addonLogo: {
     width: 60,
@@ -249,8 +293,15 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   actions: {
-    flexDirection: 'column',
     justifyContent: 'space-around',
+  },
+  portraitActions: {
+    flexDirection: 'column',
+  },
+  landscapeActions: {
+    flexDirection: 'row',
+    marginTop: 15,
+    justifyContent: 'space-between',
   },
   actionButton: {
     flexDirection: 'row',
@@ -263,7 +314,13 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     textAlign: 'center',
     backgroundColor: '#222222',
-    justifyContent: 'space-around'
+    justifyContent: 'center'
+  },
+  landscapeActionButton: {
+    marginHorizontal: 5,
+    marginVertical: 0,
+    paddingHorizontal: 15,
+    alignSelf: 'flex-start',
   },
   shareButton: {
   },
@@ -272,9 +329,11 @@ const styles = StyleSheet.create({
   removeButton: {
   },
   actionText: {
-    color: '#fff',
     fontSize: 16,
-    textAlign: 'center'
+    marginLeft: 8,
+  },
+  disabledAction: {
+    backgroundColor: '#101010'
   },
   noAddons: {
     marginTop: 100,

@@ -9,6 +9,7 @@ import { generateStremioPlayerUrl } from '@/clients/stremio';
 import { generateTorrServerPlayerUrl } from '@/clients/torrserver';
 import { ServerConfig } from '@/components/ServerConfig';
 import { getOriginalPlatform, isHapticsSupported, showAlert } from '@/utils/platform';
+import BottomSpacing from '@/components/BottomSpacing';
 
 enum Servers {
     Stremio = 'stremio',
@@ -63,10 +64,10 @@ const StreamDetailsScreen = () => {
         const loadPlayers = async () => {
             const platformPlayers = getPlatformSpecificPlayers();
             setPlayers(platformPlayers);
-            
+
             // Load the saved default player
             const defaultPlayerName = await loadDefaultPlayer();
-            
+
             if (defaultPlayerName) {
                 // Check if the saved default player is available on current platform
                 const isPlayerAvailable = platformPlayers.some(player => player.name === defaultPlayerName);
@@ -416,9 +417,8 @@ const StreamDetailsScreen = () => {
             <ScrollView showsVerticalScrollIndicator={false}>
                 <View style={styles.contentContainer}>
                     <Text style={[styles.header, { marginVertical: 10 }]}>Stream Details</Text>
-                    <DetailsRow label="Name" value={name} numOfLines={3} />
-                    {title && <DetailsRow label="Title" value={title} />}
-                    {description && <DetailsRow label="Description" value={description} multiline />}
+                    {title && <DetailsRow label={name} value={title} />}
+                    {description && <DetailsRow label={name} value={description} multiline />}
 
                     {!url && infoHash ? (
                         <>
@@ -470,6 +470,7 @@ const StreamDetailsScreen = () => {
                             <Text style={styles.buttonText}>Play</Text>
                         </Pressable>
                     </View>
+                    <BottomSpacing space={50}/>
                 </View>
             </ScrollView>
 
@@ -499,7 +500,7 @@ const StreamDetailsScreen = () => {
 const DetailsRow = ({ label, value, multiline, numOfLines }: { label: string; value: string; multiline?: boolean, numOfLines?: number }) => {
     return (
         <View style={styles.detailsItem}>
-            <Text style={styles.label}>{label}:</Text>
+            <Text style={styles.label} >{label}</Text>
             <Text numberOfLines={numOfLines ?? 8} style={[
                 styles.value,
                 multiline && { flexWrap: 'wrap' }
@@ -585,21 +586,20 @@ const styles = StyleSheet.create({
         borderRadius: 10,
     },
     detailsItem: {
-        marginBottom: 20,
-        marginHorizontal: 5
+        backgroundColor: '#101010',
+        paddingHorizontal: 20,
+        paddingVertical: 20,
+        borderRadius: 8
     },
     label: {
-        fontSize: 15,
-        fontWeight: 'bold',
-        paddingHorizontal: 2,
-        marginBottom: 5
+        fontSize: 14,
+        fontWeight: 500,
+        marginBottom: 10
     },
     value: {
         fontSize: 14,
-        paddingHorizontal: 2
     },
     radioGroup: {
-        marginVertical: 5
     },
     radioRow: {
         justifyContent: 'space-between',
@@ -614,15 +614,16 @@ const styles = StyleSheet.create({
     },
     playerContainer: {
         marginHorizontal: 12,
-        padding: 5,
+        padding: 10,
         borderRadius: 10,
+        backgroundColor: '#101010',
     },
     playerSelected: {
         backgroundColor: '#ffffff',
     },
     playerIcon: {
-        width: 50,
-        height: 50,
+        width: 40,
+        height: 40,
         borderRadius: 5
     },
     playerName: {
@@ -639,7 +640,10 @@ const styles = StyleSheet.create({
     radioContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginVertical: 10
+        marginVertical: 10,
+        backgroundColor: '#101010',
+        padding: 15,
+        borderRadius: 8
     },
     radioLabel: {
         fontSize: 15,
