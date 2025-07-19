@@ -589,7 +589,8 @@ const styles = StyleSheet.create({
         backgroundColor: '#101010',
         paddingHorizontal: 20,
         paddingVertical: 20,
-        borderRadius: 8
+        borderRadius: 8,
+        marginVertical: 10
     },
     label: {
         fontSize: 14,
