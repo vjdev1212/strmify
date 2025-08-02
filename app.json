@@ -16,21 +16,18 @@
     "splash": {
       "image": "assets/images/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#000000"      
+      "backgroundColor": "#000000"
     },
     "ios": {
       "icon": "assets/images/icon.png",
       "supportsTablet": true,
       "backgroundColor": "#000000",
-      "bundleIdentifier": "com.vijayyuvi.strmify",
-      "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": "LaunchScreenBackground"
-      }
+      "bundleIdentifier": "com.vijayyuvi.strmify"      
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#000000"
       },
       "package": "com.vijayyuvi.strmify",
       "icon": "assets/images/icon.png"
@@ -50,10 +47,23 @@
         {
           "android": {
             "usesCleartextTraffic": true,
+            "minSdkVersion": 24,
             "compileSdkVersion": 35,
             "targetSdkVersion": 35,
             "buildToolsVersion": "35.0.0"
           }
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#000000",
+          "image": "assets/images/splash-icon.png",
+          "dark": {
+            "image": "assets/images/splash-icon.png",
+            "backgroundColor": "#000000"
+          },
+          "imageWidth": 200
         }
       ]
     ],
