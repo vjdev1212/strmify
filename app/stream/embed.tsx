@@ -39,7 +39,7 @@ const EmbedPlayer = () => {
                     src="${url}" 
                     frameborder="0" 
                     style="width: 100%; height: 100%;"
-                    allow="autoplay; fullscreen" 
+                    allow="autoplay; fullscreen; encrypted-media"
                     referrerPolicy="no-referrer-when-downgrade"
                     sandbox="allow-forms allow-scripts allow-same-origin allowfullscreen allow-presentation"
                     allowfullscreen>
@@ -53,35 +53,35 @@ const EmbedPlayer = () => {
     `;
 
     return (
-                <View style={styles.container}>
-                {url ? (
-                    Platform.OS === "web" ? (
-                        <iframe
-                            src={url as string}
-                            style={{ flex: 1, width: "100%", height: "100%" }}
-                            referrerPolicy="no-referrer-when-downgrade"
-                            allow="autoplay; fullscreen"
-                            sandbox="allow-forms allow-scripts allow-same-origin allowfullscreen allow-presentation"
-                            frameBorder={0}
-                            allowFullScreen
-                        />
-                    ) : (
-                        <WebView
-                            originWhitelist={["*"]}
-                            source={{ html: iframeHtml }}
-                            style={{ flex: 1 }}
-                            javaScriptEnabled
-                            domStorageEnabled
-                            allowUniversalAccessFromFileURLs
-                            allowFileAccess
-                            startInLoadingState
-                        />
-                    )
+        <View style={styles.container}>
+            {url ? (
+                Platform.OS === "web" ? (
+                    <iframe
+                        src={url as string}
+                        style={{ flex: 1, width: "100%", height: "100%" }}
+                        referrerPolicy="no-referrer-when-downgrade"
+                        allow="encrypted-media; autoplay; fullscreen"
+                        sandbox="allow-forms allow-scripts allow-same-origin allowfullscreen allow-presentation"
+                        frameBorder={0}
+                        allowFullScreen
+                    />
                 ) : (
-                    <Text>No video URL available.</Text>
-                )}
-            </View>
-        );
+                    <WebView
+                        originWhitelist={["*"]}
+                        source={{ html: iframeHtml }}
+                        style={{ flex: 1 }}
+                        javaScriptEnabled
+                        domStorageEnabled
+                        allowUniversalAccessFromFileURLs
+                        allowFileAccess
+                        startInLoadingState
+                    />
+                )
+            ) : (
+                <Text>No video URL available.</Text>
+            )}
+        </View>
+    );
 };
 
 const styles = StyleSheet.create({
