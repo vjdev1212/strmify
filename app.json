@@ -16,7 +16,7 @@
     "splash": {
       "image": "assets/images/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#000000"      
     },
     "ios": {
       "icon": "assets/images/icon.png",
@@ -24,7 +24,7 @@
       "backgroundColor": "#000000",
       "bundleIdentifier": "com.vijayyuvi.strmify",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": "LaunchScreenBackground"
       }
     },
     "android": {

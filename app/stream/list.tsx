@@ -219,22 +219,7 @@ const StreamScreen = () => {
             const platformPlayers = getPlatformSpecificPlayers();
             setPlayers(platformPlayers);
 
-            const defaultPlayerName = await loadDefaultPlayer();
-
-            if (defaultPlayerName) {
-                const isPlayerAvailable = platformPlayers.some(player => player.name === defaultPlayerName);
-                if (isPlayerAvailable) {
-                    setSelectedPlayer(defaultPlayerName);
-                } else {
-                    if (platformPlayers.length > 0) {
-                        setSelectedPlayer(platformPlayers[0].name);
-                    }
-                }
-            } else {
-                if (platformPlayers.length > 0) {
-                    setSelectedPlayer(platformPlayers[0].name);
-                }
-            }
+            setSelectedPlayer(platformPlayers[0].name);
         };
 
         const initializeData = async () => {
@@ -247,9 +232,15 @@ const StreamScreen = () => {
     }, [fetchServerConfigs]);
 
     useEffect(() => {
+        console.log('=== SERVER CONFIG CHANGE ===');
+        console.log('Server type changed to:', serverType);
+        console.log('Available servers for type:', serversMap[serverType]);
+
         if (serversMap[serverType] && serversMap[serverType].length > 0) {
             const currentServer = serversMap[serverType].find(server => server.current);
-            setSelectedServerId(currentServer ? currentServer.serverId : serversMap[serverType][0].serverId);
+            const newServerId = currentServer ? currentServer.serverId : serversMap[serverType][0].serverId;
+            console.log('Setting selectedServerId to:', newServerId);
+            setSelectedServerId(newServerId);
         }
     }, [serverType, serversMap]);
 
@@ -277,7 +268,8 @@ const StreamScreen = () => {
         setIsPlaying(false);
     };
 
-    const handlePlay = async (stream: Stream) => {
+    // Modified handlePlay to accept optional server parameters and better validation
+    const handlePlay = async (stream: Stream, playerName?: string, forceServerType?: string, forceServerId?: string) => {
         if (isHapticsSupported()) {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
         }
@@ -286,6 +278,9 @@ const StreamScreen = () => {
         }
 
         const { url, infoHash } = stream;
+        const playerToUse = playerName || selectedPlayer;
+        const serverTypeToUse = forceServerType || serverType;
+        const serverIdToUse = forceServerId || selectedServerId;
 
         setIsPlaying(true);
         setPlayBtnDisabled(true);
@@ -294,7 +289,16 @@ const StreamScreen = () => {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
         }
 
-        if (!selectedPlayer || (!url && !selectedServerId)) {
+        console.log('=== PLAY ATTEMPT ===');
+        console.log('Using player:', playerToUse);
+        console.log('Using server type:', serverTypeToUse);
+        console.log('Using server ID:', serverIdToUse);
+        console.log('Stream has URL:', !!url);
+        console.log('Stream has infoHash:', !!infoHash);
+        console.log('serversMap:', serversMap);
+
+        if (!playerToUse || (!url && !serverIdToUse)) {
+            console.error('Missing player or server:', { playerToUse, url, serverIdToUse });
             setStatusText('Error: Please select a media player and server.');
             showAlert('Error', 'Please select a media player and server.');
             setPlayBtnDisabled(false);
@@ -303,10 +307,23 @@ const StreamScreen = () => {
             return;
         }
 
-        const selectedServer = serversMap[serverType].find(s => s.serverId === selectedServerId);
-        const player = players.find((p) => p.name === selectedPlayer);
+        const selectedServer = serversMap[serverTypeToUse]?.find(s => s.serverId === serverIdToUse);
+        console.log('Selected server:', selectedServer);
+
+        if (!selectedServer && !url && infoHash) {
+            console.error('No server found for infoHash processing');
+            setStatusText('Error: Server configuration not found.');
+            showAlert('Error', 'Server configuration not found. Please try again.');
+            setPlayBtnDisabled(false);
+            setModalVisible(false);
+            setIsPlaying(false);
+            return;
+        }
+
+        const player = players.find((p) => p.name === playerToUse);
 
         if (!player) {
+            console.error('Player not found:', playerToUse);
             setStatusText('Error: Invalid media player selection.');
             showAlert('Error', 'Invalid media player selection.');
             setPlayBtnDisabled(false);
@@ -319,11 +336,14 @@ const StreamScreen = () => {
             let videoUrl = url || '';
             if (!url && infoHash && selectedServer) {
                 setStatusText('Processing the InfoHash...');
+                console.log('Generating URL with:', { infoHash, serverType: selectedServer.serverType, serverUrl: selectedServer.serverUrl });
                 videoUrl = await generatePlayerUrlWithInfoHash(infoHash, selectedServer.serverType, selectedServer.serverUrl);
                 setStatusText('URL Generated...');
+                console.log('Generated video URL:', videoUrl);
             }
 
             if (!videoUrl) {
+                console.error('No video URL generated');
                 setStatusText('Error: Unable to generate a valid video URL.');
                 showAlert('Error', 'Unable to generate a valid video URL.');
                 setPlayBtnDisabled(false);
@@ -337,10 +357,10 @@ const StreamScreen = () => {
             const filename = urlJs?.pathname?.split('/')?.pop() || '';
             const streamUrl = player.encodeUrl ? encodeURIComponent(videoUrl) : videoUrl;
             const playerUrl = player.scheme.replace('STREAMURL', streamUrl)?.replace('STREAMTITLE', filename);
-            console.log('Player URL', playerUrl);
+            console.log('Final Player URL', playerUrl);
 
             if (playerUrl) {
-                if (selectedPlayer === Players.Default) {
+                if (playerToUse === Players.Default) {
                     router.push({
                         pathname: '/stream/player',
                         params: {
@@ -351,7 +371,7 @@ const StreamScreen = () => {
                     });
                 } else {
                     setStatusText('Opening Stream in Media Player...');
-                    console.log('PlayerUrl', playerUrl);
+                    console.log('Opening URL in external player:', playerUrl);
                     await Linking.openURL(playerUrl);
                     setStatusText('Stream Opened in Media Player...');
                 }
@@ -451,29 +471,23 @@ const StreamScreen = () => {
         const { embed, url, infoHash } = stream;
 
         if (embed) {
-            router.push({
-                pathname: '/stream/embed',
-                params: {
-                    url: embed
-                },
-            });
+            router.push({ pathname: '/stream/embed', params: { url: embed } });
             return;
         }
 
-        // Set selected stream and show configuration options
+        // Keep in state for later reuse
         setSelectedStream(stream);
 
-        // Show server selection first if needed (stream has infoHash but no direct URL)
         if (!url && infoHash) {
-            showServerSelection();
+            showServerSelection(stream); // pass stream directly
         } else {
-            // Skip server selection and go directly to player selection
-            showPlayerSelection();
+            showPlayerSelection(undefined, undefined, stream); // pass stream directly
         }
     };
 
-    const showServerSelection = () => {
-        const serverTypes = Object.keys(serversMap) as string[];
+
+    const showServerSelection = (stream: Stream) => {
+        const serverTypes = Object.keys(serversMap).filter(type => type !== 'cancel') as string[];
         const serverOptions: any = serverTypes.map(type =>
             type === 'stremio' ? 'Stremio' : 'TorrServer'
         );
@@ -489,33 +503,43 @@ const StreamScreen = () => {
                 message: 'Select the Server for Streaming',
                 messageTextStyle: { color: '#ffffff', fontSize: 12 },
                 textStyle: { color: '#ffffff' },
-                titleTextStyle: { color: '#535aff', fontWeight: 500 },
+                titleTextStyle: { color: '#535aff', fontWeight: '500' },
                 containerStyle: { backgroundColor: '#101010' }
             },
             (selectedIndex?: number) => {
                 if (selectedIndex !== undefined && selectedIndex !== cancelButtonIndex) {
                     const selectedServerType = serverTypes[selectedIndex];
-                    setServerType(selectedServerType);
+                    console.log('Server selected:', selectedServerType);
 
-                    // Auto-select the current server or first available server
                     const servers = serversMap[selectedServerType];
                     if (servers && servers.length > 0) {
                         const currentServer = servers.find(server => server.current);
-                        setSelectedServerId(currentServer ? currentServer.serverId : servers[0].serverId);
-                    }
+                        const serverId = currentServer ? currentServer.serverId : servers[0].serverId;
 
-                    // After server selection, show player selection
-                    setTimeout(() => showPlayerSelection(), 500);
+                        console.log('Setting server type:', selectedServerType);
+                        console.log('Setting server ID:', serverId);
+
+                        setServerType(selectedServerType);
+                        setSelectedServerId(serverId);
+
+                        setTimeout(() => {
+                            showPlayerSelection(selectedServerType, serverId, stream); // pass stream directly
+                        }, 300);
+                    } else {
+                        console.error('No servers found for type:', selectedServerType);
+                        showAlert('Error', 'No servers configured for the selected type');
+                    }
                 }
             }
         );
     };
 
-    const showPlayerSelection = () => {
-        const playerOptions = players.map(player => {
-            // Add checkmark for currently selected player
-            return selectedPlayer === player.name ? `✓ ${player.name}` : player.name;
-        });
+    const showPlayerSelection = (
+        selectedServerType?: string,
+        selectedServerIdParam?: string,
+        stream?: Stream
+    ) => {
+        const playerOptions = players.map(player => player.name);
         playerOptions.push('Cancel');
 
         const cancelButtonIndex = playerOptions.length - 1;
@@ -528,25 +552,29 @@ const StreamScreen = () => {
                 message: 'Select the Media Player for Streaming',
                 messageTextStyle: { color: '#ffffff', fontSize: 12 },
                 textStyle: { color: '#ffffff' },
-                titleTextStyle: { color: '#535aff', fontWeight: 500 },
+                titleTextStyle: { color: '#535aff', fontWeight: '500' },
                 containerStyle: { backgroundColor: '#101010' }
             },
             (selectedIndex?: number) => {
                 if (selectedIndex !== undefined && selectedIndex !== cancelButtonIndex) {
                     const selectedPlayerName = players[selectedIndex].name;
+                    console.log('Player selected from action sheet:', selectedPlayerName);
+
                     setSelectedPlayer(selectedPlayerName);
 
-                    // After player selection, start playback
-                    setTimeout(() => {
-                        if (selectedStream) {
-                            handlePlay(selectedStream);
-                        }
-                    }, 500);
+                    console.log('selected stream', stream);
+
+                    if (stream) {
+                        console.log('Starting playback with server info:', {
+                            selectedServerType,
+                            selectedServerIdParam
+                        });
+                        handlePlay(stream, selectedPlayerName, selectedServerType, selectedServerIdParam);
+                    }
                 }
             }
         );
     };
-
     const handleServerToggle = async (type: string) => {
         if (isHapticsSupported()) {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
