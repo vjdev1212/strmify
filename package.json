@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@bounceapp/iframe": "^0.4.0",
+    "@expo/react-native-action-sheet": "^4.1.1",
     "@expo/vector-icons": "^14.1.0",
     "@react-native-async-storage/async-storage": "2.1.2",
     "@react-navigation/native": "^7.0.0-rc.20",
