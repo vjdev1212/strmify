@@ -5,16 +5,14 @@ import { ActivityIndicator, StatusBar, Text, View } from '../../components/Theme
 import MediaContentDescription from '@/components/MediaContentDescription';
 import MediaContentHeader from '@/components/MediaContentHeader';
 import MediaContentPoster from '@/components/MediaContentPoster';
-import SearchButton from '@/components/SearchButton';
 import * as Haptics from 'expo-haptics';
 import BottomSpacing from '@/components/BottomSpacing';
 import { isHapticsSupported } from '@/utils/platform';
 import MediaLogo from '@/components/MediaLogo';
 import MediaCastAndCrews from '@/components/MediaCastAndCrews';
 import PosterList from '@/components/PosterList';
-import MediaContentDetailsList from '@/components/MediaContentDetailsList';
-import { useColorScheme } from '@/components/useColorScheme';
 import PlayButton from '@/components/PlayButton';
+import MediaContentDetailsList from '@/components/MediaContentDetailsList';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -119,9 +117,12 @@ const MovieDetails = () => {
   };
 
   const Divider = () => {
+    const dividerColor = {
+      color: '#ffffff',
+    };
     return (
       <View>
-        <Text style={styles.divider}>...</Text>
+        <Text style={[styles.divider, dividerColor]}>...</Text>
       </View>
     )
   };
@@ -156,7 +157,7 @@ const MovieDetails = () => {
             imdbRating={data.imdbRating}
             releaseInfo={data.releaseInfo}
           />
-          <PlayButton onPress={handlePlayPress}/>
+          <PlayButton onPress={handlePlayPress} />
           <MediaContentDescription description={data.description} />
           {
             isPortrait && (
@@ -172,9 +173,12 @@ const MovieDetails = () => {
         <MediaCastAndCrews cast={cast}></MediaCastAndCrews>
       </View>
       <View style={styles.recommendationsContainer}>
-        <PosterList apiUrl={`https://api.themoviedb.org/3/movie/${moviedbid}/recommendations`} title='More like this' type='movie' />
-        <BottomSpacing space={50} />
+        <PosterList apiUrl={`https://api.themoviedb.org/3/movie/${moviedbid}/recommendations`} title='Recommended' type='movie' />
       </View>
+      <View style={styles.recommendationsContainer}>
+        <PosterList apiUrl={`https://api.themoviedb.org/3/movie/${moviedbid}/similar`} title='Similar to this' type='movie' />
+      </View>
+      <BottomSpacing space={50} />
     </ScrollView>
   );
 };

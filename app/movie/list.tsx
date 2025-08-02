@@ -1,10 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, Image, StyleSheet, Pressable, View as RNView, useWindowDimensions } from 'react-native';
+import {
+  FlatList,
+  Image,
+  StyleSheet,
+  Pressable,
+  useWindowDimensions,
+  SafeAreaView,
+  View as RNView,
+  Platform,
+} from 'react-native';
 import { ActivityIndicator, StatusBar, Text, View } from '@/components/Themed';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { isHapticsSupported } from '@/utils/platform';
 import { getYear } from '@/utils/Date';
+import BottomSpacing from '@/components/BottomSpacing';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -13,11 +23,26 @@ const MoviesList = () => {
   const { apiUrl } = useLocalSearchParams();
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
   const { width, height } = useWindowDimensions();
-  const isPortrait = height > width;
-  
-  const posterWidth = isPortrait ? 100 : 150;
-  const posterHeight = isPortrait ? 150 : 225;
+  const isPortrait = height >= width;
+  const shortSide = Math.min(width, height);
+
+  const isMobile = shortSide < 580;
+  const isTablet = shortSide >= 580 && shortSide < 1024;
+  const isLaptop = shortSide >= 1024 && shortSide < 1440;
+  const isDesktop = shortSide >= 1440;
+
+  const getNumColumns = () => {
+    if (isMobile) return isPortrait ? 3 : 5;
+    if (isTablet) return isPortrait ? 5 : 8;
+    if (isLaptop) return isPortrait ? 6 : 9;
+    if (isDesktop) return isPortrait ? 7 : 10;
+    return 5;
+  };
+
+  const numColumns = getNumColumns();
+  const spacing = 16;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -25,10 +50,8 @@ const MoviesList = () => {
         const separator = apiUrl.includes('?') ? '&' : '?';
         const response = await fetch(`${apiUrl}${separator}api_key=${EXPO_PUBLIC_TMDB_API_KEY}`);
         const result = await response.json();
-        if (result) {
-          let list = [];
-          if (result.results) {
-            list = result.results
+        if (result?.results) {
+          const list = result.results
             .filter((item: any) => item.poster_path && item.backdrop_path)
             .map((item: any) => ({
               moviedbid: item.id,
@@ -39,7 +62,6 @@ const MoviesList = () => {
               imdbRating: item.vote_average?.toFixed(1),
               imdbid: item.imdb_id,
             }));
-          }
           setData(list);
         }
       } catch (error) {
@@ -52,7 +74,7 @@ const MoviesList = () => {
     fetchData();
   }, [apiUrl]);
 
-  const MovieItem = ({ item }: { item: any }) => {
+  const renderItem = ({ item }: { item: any }) => {
     const year = item.year?.split('–')[0] || item.year;
 
     const handlePress = async () => {
@@ -67,15 +89,19 @@ const MoviesList = () => {
 
     return (
       <Pressable
-        style={styles.posterContainer}
+        style={[
+          styles.posterContainer,
+          {
+            flexBasis: `${100 / numColumns}%`,
+            paddingHorizontal: spacing / 2,
+          },
+        ]}
         onPress={handlePress}
       >
-        <Image 
-          source={{ uri: isPortrait ? item.poster : item.poster }} 
-          style={[styles.posterImage, {
-            width: posterWidth,
-            height: posterHeight,
-          }]} 
+        <Image
+          source={{ uri: item.poster }}
+          style={[styles.posterImage, { aspectRatio: 2 / 3, width: '100%' }]}
+          resizeMode="cover"
         />
         <Text numberOfLines={1} ellipsizeMode="tail" style={styles.posterTitle}>
           {item.name}
@@ -86,71 +112,54 @@ const MoviesList = () => {
   };
 
   return (
-    <RNView style={styles.container}>
-      <StatusBar />
-      {loading ? (
-        <View style={styles.centeredContainer}>
-          <ActivityIndicator size="large" style={styles.activityIndicator} color="#535aff" />
-          <Text style={styles.centeredText}>Loading</Text>
-        </View>
-      ) : (
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollViewContent}
-        >
-          <RNView style={styles.moviesGrid}>
-            {data.map((item, index) => (
-              <MovieItem key={index.toString()} item={item} />
-            ))}
-          </RNView>
-        </ScrollView>
-      )}
-    </RNView>
+    <SafeAreaView style={{ flex: 1 }}>
+      <RNView style={[styles.container, {
+        marginTop: Platform.OS === 'web' ? 50 : 0
+      }]}>
+        <StatusBar />
+        {loading ? (
+          <View style={styles.centeredContainer}>
+            <ActivityIndicator size="large" color="#535aff" />
+            <Text style={styles.centeredText}>Loading</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={data}
+            renderItem={renderItem}
+            keyExtractor={(_, index) => index.toString()}
+            numColumns={numColumns}
+            columnWrapperStyle={{ justifyContent: 'flex-start' }}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+          />
+        )}
+      </RNView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    marginTop: 40,
     padding: 5,
   },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 15,
-    textAlign: 'center',
-  },
-  scrollViewContent: {
-    paddingVertical: 20,
-    alignItems: 'center',
-  },
-  moviesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    alignItems: 'flex-start',
+  listContent: {
   },
   posterContainer: {
-    padding: 10,
-    marginBottom: 10,
+    marginVertical: 10,
   },
   posterImage: {
     borderRadius: 8,
+    backgroundColor: '#101010',
   },
   posterTitle: {
     marginTop: 8,
     fontSize: 14,
-    maxWidth: 100,
   },
   posterYear: {
     marginTop: 4,
     fontSize: 12,
-    color: '#888',
-  },
-  activityIndicator: {
-    marginBottom: 10,
-    color: '#535aff',
+    color: '#ccc',
   },
   centeredContainer: {
     flex: 1,

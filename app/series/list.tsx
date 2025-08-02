@@ -1,11 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, Image, StyleSheet, Pressable, View as RNView, useWindowDimensions, Animated } from 'react-native';
+import {
+  FlatList,
+  Image,
+  StyleSheet,
+  Pressable,
+  useWindowDimensions,
+  SafeAreaView, // ✅ Added
+  View as RNView,
+  Platform,
+} from 'react-native';
 import { ActivityIndicator, StatusBar, Text, View } from '@/components/Themed';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { isHapticsSupported } from '@/utils/platform';
 import { getYear } from '@/utils/Date';
-
+import BottomSpacing from '@/components/BottomSpacing';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -14,8 +23,26 @@ const SeriesList = () => {
   const { apiUrl } = useLocalSearchParams();
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
   const { width, height } = useWindowDimensions();
-  const isPortrait = height > width;
+  const isPortrait = height >= width;
+  const shortSide = Math.min(width, height);
+
+  const isMobile = shortSide < 580;
+  const isTablet = shortSide >= 580 && shortSide < 1024;
+  const isLaptop = shortSide >= 1024 && shortSide < 1440;
+  const isDesktop = shortSide >= 1440;
+
+  const getNumColumns = () => {
+    if (isMobile) return isPortrait ? 3 : 5;
+    if (isTablet) return isPortrait ? 5 : 8;
+    if (isLaptop) return isPortrait ? 6 : 9;
+    if (isDesktop) return isPortrait ? 7 : 10;
+    return 5;
+  };
+
+  const numColumns = getNumColumns();
+  const spacing = 16;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -23,21 +50,18 @@ const SeriesList = () => {
         const separator = apiUrl.includes('?') ? '&' : '?';
         const response = await fetch(`${apiUrl}${separator}api_key=${EXPO_PUBLIC_TMDB_API_KEY}`);
         const result = await response.json();
-        if (result) {
-          let list = [];
-          if (result.results) {
-            list = result.results
-              .filter((item: any) => item.poster_path && item.backdrop_path)
-              .map((item: any) => ({
-                moviedbid: item.id,
-                name: item.title || item.name,
-                year: getYear(item.release_date || item.first_air_date),
-                poster: `https://image.tmdb.org/t/p/w780${item.poster_path}`,
-                background: `https://image.tmdb.org/t/p/w1280${item.backdrop_path}`,
-                imdbRating: item.vote_average?.toFixed(1),
-                imdbid: item.imdb_id,
-              }));
-          }
+        if (result?.results) {
+          const list = result.results
+            .filter((item: any) => item.poster_path && item.backdrop_path)
+            .map((item: any) => ({
+              moviedbid: item.id,
+              name: item.title || item.name,
+              year: getYear(item.release_date || item.first_air_date),
+              poster: `https://image.tmdb.org/t/p/w780${item.poster_path}`,
+              background: `https://image.tmdb.org/t/p/w1280${item.backdrop_path}`,
+              imdbRating: item.vote_average?.toFixed(1),
+              imdbid: item.imdb_id,
+            }));
           setData(list);
         }
       } catch (error) {
@@ -50,113 +74,92 @@ const SeriesList = () => {
     fetchData();
   }, [apiUrl]);
 
-  const handlePress = async (item: any) => {
-    if (isHapticsSupported()) {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
-    } router.push({
-      pathname: '/series/details',
-      params: { moviedbid: item.moviedbid || item.id },
-    });
-  };
-
-  const renderItem = ({ item }: any) => {
-    const scaleAnim = new Animated.Value(1);
+  const renderItem = ({ item }: { item: any }) => {
     const year = item.year?.split('–')[0] || item.year;
 
-    const handleHoverIn = () => {
-      Animated.spring(scaleAnim, {
-        toValue: 1.1,
-        useNativeDriver: true,
-      }).start();
-    };
-
-    const handleHoverOut = () => {
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        useNativeDriver: true,
-      }).start();
+    const handlePress = async () => {
+      if (isHapticsSupported()) {
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+      }
+      router.push({
+        pathname: '/series/details',
+        params: { moviedbid: item.moviedbid || item.id },
+      });
     };
 
     return (
-      <RNView>
-        <Animated.View>
-          <Pressable
-            style={styles.posterContainer}
-            onPress={() => handlePress(item)}
-            onHoverIn={handleHoverIn}
-            onHoverOut={handleHoverOut}
-          >
-            <Image source={{ uri: isPortrait ? item.poster : item.background }}
-              style={[styles.posterImage, {
-                width: isPortrait ? 100 : 200,
-                height: isPortrait ? 150 : 110,
-              }]} />
-            <Text numberOfLines={1} ellipsizeMode="tail" style={styles.posterTitle}>
-              {item.name}
-            </Text>
-            <Text style={styles.posterYear}>{`★ ${item.imdbRating}   ${year}`}</Text>
-          </Pressable>
-        </Animated.View>
-      </RNView>
+      <Pressable
+        style={[
+          styles.posterContainer,
+          {
+            flexBasis: `${100 / numColumns}%`,
+            paddingHorizontal: spacing / 2,
+          },
+        ]}
+        onPress={handlePress}
+      >
+        <Image
+          source={{ uri: item.poster }}
+          style={[styles.posterImage, { aspectRatio: 2 / 3, width: '100%' }]}
+          resizeMode="cover"
+        />
+        <Text numberOfLines={1} ellipsizeMode="tail" style={styles.posterTitle}>
+          {item.name}
+        </Text>
+        <Text style={styles.posterYear}>{`★ ${item.imdbRating}   ${year}`}</Text>
+      </Pressable>
     );
   };
 
   return (
-    <RNView style={styles.container}>
-      <StatusBar />
-      {loading ? (
-        <View style={styles.centeredContainer}>
-          <ActivityIndicator size="large" style={styles.activityIndicator} color="#ffffff" />
-        </View>) : (
-        <FlatList
-          data={data}
-          renderItem={renderItem}
-          keyExtractor={(item, index) => index.toString()}
-          numColumns={isPortrait ? 3 : 6}
-          contentContainerStyle={styles.posterList}
-          showsVerticalScrollIndicator={false}
-        />
-      )}
-    </RNView>
+    <SafeAreaView style={{ flex: 1 }}>
+      <RNView style={[styles.container, {
+        marginTop: Platform.OS === 'web' ? 50 : 0
+      }]}>
+        <StatusBar />
+        {loading ? (
+          <View style={styles.centeredContainer}>
+            <ActivityIndicator size="large" color="#535aff" />
+            <Text style={styles.centeredText}>Loading</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={data}
+            renderItem={renderItem}
+            keyExtractor={(_, index) => index.toString()}
+            numColumns={numColumns}
+            columnWrapperStyle={{ justifyContent: 'flex-start' }}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+          />
+        )}
+      </RNView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    marginTop: 40,
-    padding: 10,
+    padding: 5,
   },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 15,
-    textAlign: 'center',
-  },
-  posterList: {
-    paddingVertical: 20
+  listContent: {
   },
   posterContainer: {
-    padding: 10,
-    marginBottom: 10,
+    marginVertical: 10,
   },
   posterImage: {
     borderRadius: 8,
-    backgroundColor: '#111111'
+    backgroundColor: '#101010',
   },
   posterTitle: {
     marginTop: 8,
     fontSize: 14,
-    maxWidth: 100,
   },
   posterYear: {
     marginTop: 4,
     fontSize: 12,
-    color: '#fff',
-  },
-  activityIndicator: {
-    marginBottom: 10,
-    color: '#ffffff',
+    color: '#ccc',
   },
   centeredContainer: {
     flex: 1,

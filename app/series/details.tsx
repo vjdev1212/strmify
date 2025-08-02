@@ -11,10 +11,9 @@ import MediaLogo from '@/components/MediaLogo';
 import MediaCastAndCrews from '@/components/MediaCastAndCrews';
 import PosterList from '@/components/PosterList';
 import MediaContentDetailsList from '@/components/MediaContentDetailsList';
-import { useColorScheme } from '@/components/useColorScheme';
+import PlayButton from '@/components/PlayButton';
 import { isHapticsSupported } from '@/utils/platform';
 import * as Haptics from 'expo-haptics';
-import PlayButton from '@/components/PlayButton';
 
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
@@ -119,7 +118,7 @@ const SeriesDetails = () => {
   if (loading) {
     return (
       <View style={styles.centeredContainer}>
-        <ActivityIndicator size="large" style={styles.activityIndicator} color="#ffffff" />
+        <ActivityIndicator size="large" style={styles.activityIndicator} color="#535aff" />
       </View>
     );
   }
@@ -216,7 +215,10 @@ const SeriesDetails = () => {
         </View>
       </View>
       <View style={styles.recommendationsContainer}>
-        <PosterList apiUrl={`https://api.themoviedb.org/3/tv/${moviedbid}/recommendations`} title='More like this' type='series' />
+        <PosterList apiUrl={`https://api.themoviedb.org/3/tv/${moviedbid}/recommendations`} title='Recommended' type='series' />
+      </View>
+      <View style={styles.recommendationsContainer}>
+        <PosterList apiUrl={`https://api.themoviedb.org/3/tv/${moviedbid}/similar`} title='Similar to this' type='series' />
       </View>
       <BottomSpacing space={50} />
     </ScrollView>
