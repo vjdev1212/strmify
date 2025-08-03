@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 14,
     borderRadius: 50,
-    backgroundColor: '#202020',
+    backgroundColor: '#121212',
     marginRight: 8,
   },
   filterButtonActive: {

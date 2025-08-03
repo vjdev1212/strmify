@@ -441,7 +441,7 @@ const styles = StyleSheet.create({
   },
   configGroup: {
     marginBottom: 20,
-    backgroundColor: '#202020',
+    backgroundColor: '#101010',
     borderRadius: 15,
     padding: 15,
   },
@@ -474,7 +474,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   serverItem: {
-    backgroundColor: '#202020',
+    backgroundColor: '#101010',
     borderRadius: 10,
     padding: 15,
     marginBottom: 12,
