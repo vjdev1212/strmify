@@ -495,8 +495,8 @@ const StreamScreen = () => {
 
         const cancelButtonIndex = serverOptions.length - 1;
 
-        showActionSheetWithOptions(
-            {
+        showActionSheetWithOptions(            
+            {                
                 options: serverOptions,
                 cancelButtonIndex,
                 title: 'Server',
@@ -504,7 +504,8 @@ const StreamScreen = () => {
                 messageTextStyle: { color: '#ffffff', fontSize: 12 },
                 textStyle: { color: '#ffffff' },
                 titleTextStyle: { color: '#535aff', fontWeight: '500' },
-                containerStyle: { backgroundColor: '#101010' }
+                containerStyle: { backgroundColor: '#101010' },
+                userInterfaceStyle: 'dark'
             },
             (selectedIndex?: number) => {
                 if (selectedIndex !== undefined && selectedIndex !== cancelButtonIndex) {
@@ -553,7 +554,8 @@ const StreamScreen = () => {
                 messageTextStyle: { color: '#ffffff', fontSize: 12 },
                 textStyle: { color: '#ffffff' },
                 titleTextStyle: { color: '#535aff', fontWeight: '500' },
-                containerStyle: { backgroundColor: '#101010' }
+                containerStyle: { backgroundColor: '#101010' },
+                userInterfaceStyle: 'dark'
             },
             (selectedIndex?: number) => {
                 if (selectedIndex !== undefined && selectedIndex !== cancelButtonIndex) {
