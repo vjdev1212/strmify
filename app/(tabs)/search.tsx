@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '500',
     marginVertical: 20,
   },
   centeredContainer: {

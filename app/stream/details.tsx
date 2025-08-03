@@ -636,7 +636,7 @@ const styles = StyleSheet.create({
     header: {
         fontSize: 16,
         marginVertical: 15,
-        fontWeight: 'bold'
+        fontWeight: '500'
     },
     radioContainer: {
         flexDirection: 'row',

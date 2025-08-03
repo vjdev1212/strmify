@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
   },
   header: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: '500',
     marginBottom: 20,
     textAlign: 'center',
   },
@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 25,
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '500',
     color: '#fff',
     width: '50%',
     marginHorizontal: '25%',
@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
   },
   configLabel: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '500',
     paddingBottom: 10,
   },
   configValue: {
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
   },
   configGroupHeader: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '500',
     marginBottom: 15,
     marginHorizontal: 15
   },

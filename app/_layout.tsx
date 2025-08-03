@@ -60,19 +60,19 @@ function RootLayoutNav() {
     fonts: {
       regular: {
         fontFamily: '',
-        fontWeight: 'bold'
+        fontWeight: '500'
       },
       medium: {
         fontFamily: '',
-        fontWeight: 'bold'
+        fontWeight: '500'
       },
       bold: {
         fontFamily: '',
-        fontWeight: 'bold'
+        fontWeight: '500'
       },
       heavy: {
         fontFamily: '',
-        fontWeight: 'bold'
+        fontWeight: '500'
       }
     }
   };

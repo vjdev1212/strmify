@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: 24,
-        fontWeight: 'bold',
+        fontWeight: '500',
         marginBottom: 20,
         textAlign: 'center',
     },
@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
     },
     label: {
         fontSize: 16,
-        fontWeight: 'bold',
+        fontWeight: '500',
         paddingVertical: 4
     },
     value: {

@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
   },
   header: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: '500',
     marginBottom: 20,
     textAlign: 'center',
   },
@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
   },
   configGroupHeader: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '500',
     marginBottom: 15,
     marginHorizontal: 15
   },
@@ -460,7 +460,7 @@ const styles = StyleSheet.create({
   },
   serverListTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '500',
   },
   addButton: {
     backgroundColor: '#535aff',
@@ -550,7 +550,7 @@ const styles = StyleSheet.create({
   },
   emptyStateButtonText: {
     color: '#fff',
-    fontWeight: 'bold',
+    fontWeight: '500',
   },
   emptyStateButtonIcon: {
     marginRight: 8,

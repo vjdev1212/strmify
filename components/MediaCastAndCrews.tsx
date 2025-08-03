@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   castCrew: {
-    fontWeight: 'bold',
+    fontWeight: '500',
     marginVertical: 10,
     fontSize: 15,
   }

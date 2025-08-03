@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   titleText: {
-    fontWeight: 'bold',
+    fontWeight: '500',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     textAlign: 'center',
