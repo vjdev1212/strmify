@@ -27,8 +27,8 @@ enum Players {
     OutPlayer = 'OutPlayer'
 }
 
-const DEFAULT_STREMIO_URL = 'https://127.0.0.1:12470';
-const DEFAULT_TORRSERVER_URL = 'https://127.0.0.1:5665';
+const DEFAULT_STREMIO_URL = 'http://127.0.0.1:11470';
+const DEFAULT_TORRSERVER_URL = 'http://127.0.0.1:5665';
 const STORAGE_KEY = 'defaultMediaPlayer'; // Same key as MediaPlayerConfigScreen
 
 const StreamDetailsScreen = () => {
