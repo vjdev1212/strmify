@@ -2,7 +2,7 @@
   "expo": {
     "name": "Strmify",
     "slug": "strmify",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "default",
     "icon": "assets/images/icon.png",
     "scheme": "strmify",
@@ -14,7 +14,7 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
-      "image": "assets/images/splash-icon.png",
+      "image": "assets/images/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#000000"
     },
@@ -52,18 +52,6 @@
             "targetSdkVersion": 35,
             "buildToolsVersion": "35.0.0"
           }
-        }
-      ],
-      [
-        "expo-splash-screen",
-        {
-          "backgroundColor": "#000000",
-          "image": "assets/images/splash-icon.png",
-          "dark": {
-            "image": "assets/images/splash-icon.png",
-            "backgroundColor": "#000000"
-          },
-          "imageWidth": 200
         }
       ]
     ],
