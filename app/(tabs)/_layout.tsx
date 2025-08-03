@@ -47,12 +47,22 @@ export default function TabLayout() {
     </View>
   ), []);
 
+  const webFontFamily = Platform.OS === 'web'
+    ? 'Inter, -apple-system, BlinkMacSystemFont, sans-serif'
+    : undefined;
+
   return (
     <Tabs
       initialRouteName="index"
       screenOptions={{
         tabBarActiveTintColor: '#535aff',
         headerShown: false,
+        tabBarLabelStyle: {
+          fontFamily: webFontFamily,
+        },
+        headerTitleStyle: {
+          fontFamily: webFontFamily,
+        },
         tabBarStyle: {
           position: 'absolute',
           height: getTabBarHeight(),

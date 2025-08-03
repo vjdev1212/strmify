@@ -1,6 +1,7 @@
 import React from 'react';
-import { Pressable, Text, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Text } from './Themed';
 
 const SearchButton = ({ onPress, text }: { onPress: () => void, text: string }) => (
   <Pressable style={styles.button} onPress={onPress}>

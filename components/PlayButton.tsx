@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { Pressable, Text, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
+import { Text } from './Themed';
 
 const PlayButton = ({ onPress }: { onPress: () => void }) => (
   <Pressable style={styles.button} onPress={onPress}>

@@ -1,7 +1,8 @@
+import { Text, View } from "@/components/Themed";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams } from "expo-router";
 import React, { useEffect } from "react";
-import { View, Text, StyleSheet, Platform } from "react-native";
+import { StyleSheet, Platform } from "react-native";
 import { WebView } from "react-native-webview";
 
 const EmbedPlayer = () => {

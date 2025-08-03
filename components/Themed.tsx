@@ -8,7 +8,8 @@ import {
   TextInput as DefaultTextInput,
   Text as DefaultText,
   View as DefaultView,
-  StyleSheet
+  StyleSheet,
+  Platform
 } from 'react-native';
 import { StatusBar as DefaultStatusBar } from 'expo-status-bar';
 import Colors from '@/constants/Colors';
@@ -42,8 +43,8 @@ export function useThemeColor(
 export function Text(props: TextProps) {
   const { style, lightColor, darkColor, ...otherProps } = props;
   const color = '#ffffff';
-
-  return <DefaultText style={[{ color }, style]} {...otherProps} />;
+  const webFontStyle = Platform.OS === 'web' ? { fontFamily: 'SF Pro Display, -apple-system, BlinkMacSystemFont, sans-serif' } : {};
+  return <DefaultText style={[webFontStyle, { color }, style]} {...otherProps} />;
 }
 
 export function TextInput(props: TextInputProps) {

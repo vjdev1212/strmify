@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Animated, StyleSheet, useWindowDimensions, Image, Text, View } from 'react-native';
+import { Animated, StyleSheet, useWindowDimensions, Image } from 'react-native';
+import { Text, View } from './Themed';
 
 // Type definitions
 interface MediaLogoProps {
