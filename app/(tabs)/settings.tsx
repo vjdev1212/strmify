@@ -11,20 +11,28 @@ import { useColorScheme } from '@/components/useColorScheme';
 
 const SettingsScreen = () => {
   const router = useRouter();
-  // Get the environment variable and default to false if not set
+  
+  // Get the environment variables and default to false if not set
   const showContact = process.env.EXPO_PUBLIC_SHOW_CONTACT === 'true';
+  const enableStremio = process.env.EXPO_PUBLIC_ENABLE_STREMIO === 'true';
+  const enableTorrServer = process.env.EXPO_PUBLIC_ENABLE_TORRSERVER === 'true';
 
-  const serversList: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [
-    { title: 'Stremio', route: '/settings/stremioserver', icon: 'magnet-outline' },
-    { title: 'TorrServer', route: '/settings/torrserver', icon: 'magnet-outline' },
-  ];
+  // Build servers list conditionally based on flags
+  const serversList: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [];
+  
+  if (enableStremio) {
+    serversList.push({ title: 'Stremio', route: '/settings/stremioserver', icon: 'magnet-outline' });
+  }
+  
+  if (enableTorrServer) {
+    serversList.push({ title: 'TorrServer', route: '/settings/torrserver', icon: 'magnet-outline' });
+  }
 
   const General: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [
     { title: 'Addons', route: '/settings/addons', icon: 'extension-puzzle-outline' },
     // { title: 'Media Player', route: '/settings/mediaplayer', icon: 'play-circle-outline' },
     // { title: 'Sync', route: '/settings/sync', icon: 'sync-outline' },
   ];
-
 
   const contactList: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [
     { title: 'Contact', route: '/settings/contact', icon: 'mail-outline' },
@@ -65,19 +73,22 @@ const SettingsScreen = () => {
           </View>
         </View>
 
-        <View>
-          <Text style={styles.header}>Servers</Text>
-          <View style={[styles.settingsGroup]}>
-            {serversList.map((item, index) => (
-              <SettingItem
-                key={index}
-                title={item.title}
-                icon={item.icon}
-                onPress={() => onSettingsItemPress(item)}
-              />
-            ))}
+        {/* Only render the Servers section if at least one server is enabled */}
+        {serversList.length > 0 && (
+          <View>
+            <Text style={styles.header}>Servers</Text>
+            <View style={[styles.settingsGroup]}>
+              {serversList.map((item, index) => (
+                <SettingItem
+                  key={index}
+                  title={item.title}
+                  icon={item.icon}
+                  onPress={() => onSettingsItemPress(item)}
+                />
+              ))}
+            </View>
           </View>
-        </View>
+        )}
 
         {/* Only render the Contact section if showContact is true */}
         {showContact && (
