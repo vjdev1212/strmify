@@ -31,7 +31,28 @@ interface EpisodeItemProps {
   item: Episode;
   onEpisodeSelect: (season: number, episode: number) => void;
   isPortrait: boolean;
+  itemWidth: string;
 }
+
+// Device type detection based on screen width
+const getDeviceType = (width: number) => {
+  if (width < 950) return 'mobile';
+  if (width < 1024) return 'tablet';
+  if (width < 1440) return 'laptop';
+  return 'desktop';
+};
+
+// Get number of columns based on device and orientation
+const getColumnsForDevice = (deviceType: string, isPortrait: boolean) => {
+  const columnConfig: any = {
+    mobile: { portrait: 1, landscape: 2 },
+    tablet: { portrait: 2, landscape: 3 },
+    laptop: { portrait: 2, landscape: 3 },
+    desktop: { portrait: 3, landscape: 4 },
+  };
+  
+  return columnConfig[deviceType][isPortrait ? 'portrait' : 'landscape'];
+};
 
 // Constants
 const THUMBNAIL_BACKGROUND_COLOR = '#0f0f0f';
@@ -46,7 +67,7 @@ const THUMBNAIL_ASPECT_RATIO = 16 / 9;
 const PORTRAIT_THUMBNAIL_HEIGHT = 80;
 const LANDSCAPE_THUMBNAIL_WIDTH = 160;
 
-const EpisodeItem: React.FC<EpisodeItemProps> = React.memo(({ item, onEpisodeSelect, isPortrait }) => {
+const EpisodeItem: React.FC<EpisodeItemProps> = React.memo(({ item, onEpisodeSelect, isPortrait, itemWidth }) => {
   const [selectedEpisode, setSelectedEpisode] = useState<number>(1);
   const [isLoading, setIsLoading] = useState(true);
   const [fadeAnim] = useState(() => new Animated.Value(0));
@@ -156,7 +177,7 @@ const EpisodeItem: React.FC<EpisodeItemProps> = React.memo(({ item, onEpisodeSel
   };
 
   return (
-    <View style={styles.episodeContainer}>
+    <View style={[styles.episodeContainer, { width: itemWidth as any }]}>
       <Pressable onPress={handlePress}>
         <View>
           <View style={styles.episodeRow}>
@@ -190,6 +211,9 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
   // Memoized computed values
   const computedValues = useMemo(() => {
     const isPortrait = height > width;
+    const deviceType = getDeviceType(width);
+    const numColumns = getColumnsForDevice(deviceType, isPortrait);
+    const itemWidth = `${(100 / numColumns) - 2}%`; // Subtract 2% for margins
 
     // Group episodes by season
     const groupedEpisodes = videos.reduce((acc, video) => {
@@ -210,6 +234,9 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
 
     return {
       isPortrait,
+      deviceType,
+      numColumns,
+      itemWidth,
       groupedEpisodes,
       seasonData,
     };
@@ -252,8 +279,9 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
       item={episode}
       onEpisodeSelect={onEpisodeSelect}
       isPortrait={computedValues.isPortrait}
+      itemWidth={computedValues.itemWidth}
     />
-  ), [onEpisodeSelect, computedValues.isPortrait]);
+  ), [onEpisodeSelect, computedValues.isPortrait, computedValues.itemWidth]);
 
   const keyExtractor = useCallback((item: number) => `season-${item}`, []);
 
@@ -321,14 +349,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 10,
     flexDirection: 'row',
-    justifyContent: 'space-evenly',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-start',
     flexWrap: 'wrap',
   },
   episodeContainer: {
-    marginHorizontal: 'auto',
+    marginHorizontal: '1%',
     marginVertical: 10,
-    width: '99%',
-    maxWidth: 350,
+    alignSelf: 'flex-start',
   },
   episodeRow: {
     flexDirection: 'row',
