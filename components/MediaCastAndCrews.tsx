@@ -32,6 +32,7 @@ const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
   // Constants moved outside component for better performance
   const CAST_IMAGE_BG_COLOR = '#0f0f0f';
   const CAST_TEXT_COLOR = '#ffffff';
+  const CAST_CHARACTER_TEXT_COLOR = '#eeeeee';
 
   // Memoized cast items to prevent unnecessary re-renders
   const castItems = useMemo(() => {
@@ -87,7 +88,7 @@ const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
               {item.name}
             </Text>
             <Text style={[styles.character, {
-              color: CAST_TEXT_COLOR
+              color: CAST_CHARACTER_TEXT_COLOR
             }]} numberOfLines={1}>
               {item.displayCharacter}
             </Text>

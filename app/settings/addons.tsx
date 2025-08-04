@@ -22,19 +22,21 @@ import { useColorScheme } from '@/components/useColorScheme';
 
 const AddonsScreen = () => {
   const [addons, setAddons] = useState<any[]>([]);
-  const [isLandscape, setIsLandscape] = useState(false);
+  const [screenData, setScreenData] = useState(Dimensions.get('window'));
 
   useEffect(() => {
-    const updateOrientation = () => {
-      const { width, height } = Dimensions.get('window');
-      setIsLandscape(width > height);
+    const onChange = (result: any) => {
+      setScreenData(result.window);
     };
 
-    const subscription = Dimensions.addEventListener('change', updateOrientation);
-    updateOrientation(); // Set initial orientation
-
+    const subscription = Dimensions.addEventListener('change', onChange);
     return () => subscription?.remove();
   }, []);
+
+  const { width, height } = screenData;
+  const isTablet = width >= 768;
+  const isLandscape = width > height;
+  const numColumns = isTablet ? (isLandscape ? 3 : 2) : 1;
 
   useEffect(() => {
     const fetchAddons = async () => {
@@ -97,249 +99,367 @@ const AddonsScreen = () => {
     }
   };
 
-  const renderAddonItem = (item: any) => {
+  const renderAddonCard = (item: any, index: number) => {
     const configurable = item.behaviorHints?.configurable;
+    const cardWidth = numColumns === 1 ? '100%' :
+      numColumns === 2 ? '48%' : '31%';
+
     return (
-      <View style={styles.addonItem} key={item.id}>
-        <View style={[styles.row, isLandscape && styles.landscapeRow]}>
-          <View style={[styles.addonItemContainer, isLandscape && styles.landscapeAddonContainer]}>
-            <View style={styles.row}>
-              <Image source={{ uri: item.logo }} style={[styles.addonLogo]} />
-              <View style={styles.details}>
-                <Text style={styles.addonName}>{item.name}</Text>
-                <Text style={styles.addonTypes}>{item.types?.join(', ')}</Text>
-              </View>
-            </View>
-            <Text style={styles.addonDescription}>{item.description}</Text>
+      <View
+        style={[
+          styles.addonCard,
+          { width: cardWidth },
+          numColumns > 1 && styles.multiColumnCard
+        ]}
+        key={item.id}
+      >
+        {/* Header Section */}
+        <View style={styles.cardHeader}>
+          <Image source={{ uri: item.logo }} style={styles.addonLogo} />
+          <View style={styles.headerInfo}>
+            <Text style={styles.addonName} numberOfLines={2}>{item.name}</Text>
+            <Text style={styles.addonTypes} numberOfLines={1}>
+              {item.types?.join(', ') || 'Unknown'}
+            </Text>
           </View>
-          <View style={[
-            styles.actions,
-            isLandscape ? styles.landscapeActions : styles.portraitActions
-          ]}>
-            <Pressable
-              style={[
-                styles.actionButton,
-                styles.shareButton,
-                isLandscape && styles.landscapeActionButton
-              ]}
-              onPress={() => shareManifestUrl(item.manifestUrl)}
-            >
-              <Ionicons name="share-outline" size={22} color="white" />
-              {isLandscape && <Text style={styles.actionText}>Share</Text>}
-            </Pressable>
+        </View>
 
-            <Pressable
-              style={[
-                styles.actionButton,
-                styles.removeButton,
-                isLandscape && styles.landscapeActionButton
-              ]}
-              onPress={async () => {
-                if (isHapticsSupported()) {
-                  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
-                }
-                const message = `Are you sure you want to remove "${item.name}"?`;
-                if (Platform.OS === 'ios' || Platform.OS === 'android') {
-                  Alert.alert(
-                    'Remove Addon',
-                    message,
-                    [
-                      { text: 'Cancel', style: 'cancel' },
-                      {
-                        text: 'Remove',
-                        style: 'destructive',
-                        onPress: () => removeAddon(item.id),
-                      },
-                    ]
-                  );
-                } else {
-                  const isConfirmed = window.confirm(message);
-                  if (isConfirmed) {
-                    removeAddon(item.id);
-                  }
-                }
-              }}
-            >
-              <Ionicons name="trash-outline" size={22} color="white" />
-              {isLandscape && <Text style={styles.actionText}>Remove</Text>}
-            </Pressable>
+        {/* Description Section */}
+        <View style={styles.cardBody}>
+          <Text style={styles.addonDescription} numberOfLines={5}>
+            {item.description}
+          </Text>
+        </View>
 
-            <Pressable
-              style={[
-                styles.actionButton,
-                styles.configureButton,
-                isLandscape && styles.landscapeActionButton,
-                !configurable && styles.disabledAction
-              ]}
-              onPress={() => openConfiguration(item.baseUrl)}
-              disabled={!configurable}
-            >
-              <Ionicons name="settings-outline" size={22} color={configurable ? "#ffffff" : '#777777'} />
-              {isLandscape && <Text style={[styles.actionText,
-              !configurable && { color: configurable ? "#ffffff" : '#777777' }]}>Configure</Text>}
-            </Pressable>
-          </View>
+        {/* Actions Section */}
+        <View style={styles.cardActions}>
+          <Pressable
+            style={[styles.actionButton, styles.shareButton]}
+            onPress={() => shareManifestUrl(item.manifestUrl)}
+          >
+            <Ionicons name="share-outline" size={18} color="#ffffff" />
+            <Text style={styles.actionButtonText}>Share</Text>
+          </Pressable>
+
+          <Pressable
+            style={[
+              styles.actionButton,
+              styles.configureButton,
+              !configurable && styles.disabledButton
+            ]}
+            onPress={() => openConfiguration(item.baseUrl)}
+            disabled={!configurable}
+          >
+            <Ionicons
+              name="settings-outline"
+              size={18}
+              color={configurable ? "#ffffff" : '#666666'}
+            />
+            <Text style={[
+              styles.actionButtonText,
+              !configurable && styles.disabledButtonText
+            ]}>
+              Config
+            </Text>
+          </Pressable>
+
+          <Pressable
+            style={[styles.actionButton, styles.removeButton]}
+            onPress={async () => {
+              if (isHapticsSupported()) {
+                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+              }
+              const message = `Are you sure you want to remove "${item.name}"?`;
+              if (Platform.OS === 'ios' || Platform.OS === 'android') {
+                Alert.alert(
+                  'Remove Addon',
+                  message,
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                      text: 'Remove',
+                      style: 'destructive',
+                      onPress: () => removeAddon(item.id),
+                    },
+                  ]
+                );
+              } else {
+                const isConfirmed = window.confirm(message);
+                if (isConfirmed) {
+                  removeAddon(item.id);
+                }
+              }
+            }}
+          >
+            <Ionicons name="trash-outline" size={18} color="#ff4757" />
+            <Text style={[styles.actionButtonText, { color: '#ff4757' }]}>
+              Remove
+            </Text>
+          </Pressable>
         </View>
       </View>
     );
-  }
+  };
 
+  const renderAddonGrid = () => {
+    if (numColumns === 1) {
+      return addons.map((item, index) => renderAddonCard(item, index));
+    }
+
+    const rows = [];
+    for (let i = 0; i < addons.length; i += numColumns) {
+      const rowItems = addons.slice(i, i + numColumns);
+      rows.push(
+        <View key={i} style={styles.gridRow}>
+          {rowItems.map((item, index) => renderAddonCard(item, i + index))}
+          {/* Fill empty spaces in incomplete rows */}
+          {rowItems.length < numColumns &&
+            Array(numColumns - rowItems.length).fill(null).map((_, emptyIndex) => (
+              <View key={`empty-${i}-${emptyIndex}`} style={{ width: '31%' }} />
+            ))
+          }
+        </View>
+      );
+    }
+    return rows;
+  };
 
   const onAddNewPress = async () => {
     if (isHapticsSupported()) {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
     }
     router.push('/settings/add');
-  }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar />
-      <Pressable style={styles.addButton} onPress={onAddNewPress}>
-        <Text style={styles.addButtonText}>Add New</Text>
-      </Pressable>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.contentContainer}>
+
+      {/* Header with Add Button */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>My Addons</Text>
+        <Pressable style={styles.addButton} onPress={onAddNewPress}>
+          <Ionicons name="add" size={20} color="#ffffff" />
+          <Text style={styles.addButtonText}>Add New</Text>
+        </Pressable>
+      </View>
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[
+          styles.contentContainer,
+          addons.length === 0 && styles.emptyContentContainer
+        ]}
+      >
         {addons.length > 0 ? (
-          addons.map(renderAddonItem)
+          <View style={styles.addonGrid}>
+            {renderAddonGrid()}
+          </View>
         ) : (
-          <View style={styles.centeredContainer}>
-            <Ionicons style={styles.noAddons} name='extension-puzzle-outline' color="#ffffff" size={70} />
-            <Text style={[styles.noAddonsText]}>
-              No addons available. Add one now!
+          <View style={styles.emptyState}>
+            <View style={styles.emptyIconContainer}>
+              <Ionicons name="extension-puzzle-outline" size={80} color="#535aff" />
+            </View>
+            <Text style={styles.emptyStateTitle}>No Addons Yet</Text>
+            <Text style={styles.emptyStateText}>
+              Get started by adding your first addon to enhance your experience
             </Text>
+            <Pressable style={styles.emptyActionButton} onPress={onAddNewPress}>
+              <Ionicons name="add-circle-outline" size={20} color="#535aff" />
+              <Text style={styles.emptyActionText}>Add Your First Addon</Text>
+            </Pressable>
           </View>
         )}
       </ScrollView>
-    </SafeAreaView >
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    margin: 'auto',
-    marginTop: 20,
-    maxWidth: 780,
-    width: '100%'
+    backgroundColor: '#000000',
   },
-  centeredContainer: {
-    flex: 1,
-    justifyContent: 'center',
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1a1a1a',
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#ffffff',
+  },
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#535aff',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    shadowColor: '#535aff',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  addButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 6,
   },
   contentContainer: {
     padding: 20,
-    paddingBottom: 50,
+    paddingBottom: 40,
   },
-  addonItemContainer: {
-    width: '80%',
+  emptyContentContainer: {
+    flex: 1,
+    justifyContent: 'center',
   },
-  landscapeAddonContainer: {
-    width: '100%',
-  },
-  addButton: {
-    borderRadius: 25,
-    paddingHorizontal: 30,
-    marginVertical: 20,
-    alignSelf: 'center',
-    padding: 12,
-    backgroundColor: '#535aff'
-  },
-  addButtonText: {
-    color: '#fff',
-    textAlign: 'center',
-    fontSize: 16
-  },
-  noAddonsText: {
-    textAlign: 'center',
-    fontSize: 16,
-    marginTop: 20,
-  },
-  addonItem: {
-    borderRadius: 10,
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    marginBottom: 15,
-    backgroundColor: '#101010'
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  landscapeRow: {
-    flexDirection: 'column',
-    alignItems: 'stretch',
-  },
-  addonLogo: {
-    width: 60,
-    height: 60,
-    borderRadius: 8,
-    resizeMode: 'contain',
-    marginRight: 15,
-  },
-  details: {
+  addonGrid: {
     flex: 1,
   },
+  gridRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  addonCard: {
+    backgroundColor: '#101010',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+  },
+  multiColumnCard: {
+    marginBottom: 0,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  addonLogo: {
+    width: 50,
+    height: 50,
+    borderRadius: 12,
+    marginRight: 12,
+    backgroundColor: '#1f1f1f',
+  },
+  headerInfo: {
+    flex: 1,
+    justifyContent: 'center',
+  },
   addonName: {
-    fontSize: 18,
-    fontWeight: '500',
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#ffffff',
+    marginBottom: 4,
   },
   addonTypes: {
-    fontSize: 14,
+    fontSize: 12,
+    color: '#999999',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  cardBody: {
+    marginBottom: 16,
   },
   addonDescription: {
     fontSize: 14,
-    marginBottom: 20,
+    color: '#cccccc',
+    lineHeight: 20,
+    minHeight: 100
   },
-  actions: {
-    justifyContent: 'space-around',
-  },
-  portraitActions: {
-    flexDirection: 'column',
-  },
-  landscapeActions: {
+  cardActions: {
     flexDirection: 'row',
-    marginTop: 15,
     justifyContent: 'space-between',
+    gap: 8,
   },
   actionButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'center',
-    paddingHorizontal: 11,
+    justifyContent: 'center',
+    backgroundColor: '#202020',
     paddingVertical: 10,
-    marginVertical: 10,
-    borderRadius: 50,
-    marginHorizontal: 20,
-    textAlign: 'center',
-    backgroundColor: '#222222',
-    justifyContent: 'center'
-  },
-  landscapeActionButton: {
-    marginHorizontal: 5,
-    marginVertical: 0,
-    paddingHorizontal: 15,
-    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    borderRadius: 8
   },
   shareButton: {
+    backgroundColor: '#2a2a2a',
   },
   configureButton: {
+    backgroundColor: '#2a2a2a',
   },
   removeButton: {
+    backgroundColor: '#2a2a2a',
   },
-  actionText: {
+  disabledButton: {
+    backgroundColor: '#1a1a1a',
+    borderColor: '#2a2a2a',
+  },
+  actionButtonText: {
+    fontSize: 12,
+    color: '#ffffff',
+    fontWeight: '500',
+    marginLeft: 4,
+  },
+  disabledButtonText: {
+    color: '#666666',
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: 40,
+  },
+  emptyIconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#1a1a1a',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+    borderWidth: 2,
+    borderColor: '#535aff',
+    borderStyle: 'dashed',
+  },
+  emptyStateTitle: {
+    fontSize: 22,
+    fontWeight: '600',
+    color: '#ffffff',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  emptyStateText: {
     fontSize: 16,
+    color: '#999999',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 32,
+  },
+  emptyActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderColor: '#535aff',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 25,
+  },
+  emptyActionText: {
+    color: '#535aff',
+    fontSize: 16,
+    fontWeight: '600',
     marginLeft: 8,
   },
-  disabledAction: {
-    backgroundColor: '#101010'
-  },
-  noAddons: {
-    marginTop: 100,
-    paddingBottom: 20
-  }
 });
 
 export default AddonsScreen;

@@ -58,7 +58,7 @@ const SettingsScreen = () => {
         style={[
           styles.settingItem,
           {
-            backgroundColor: '#1C1C1E',
+            backgroundColor: '#101010',
             borderTopLeftRadius: isFirst ? 10 : 0,
             borderTopRightRadius: isFirst ? 10 : 0,
             borderBottomLeftRadius: isLast ? 10 : 0,
