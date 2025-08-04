@@ -159,10 +159,10 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   noResultsText: {
-    fontSize: 16,
+    fontSize: 18,
     textAlign: 'center',
     marginHorizontal: '5%',
-    color: '#888',
+    color: '#ccc',
   },
 });
 

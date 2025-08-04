@@ -561,7 +561,7 @@ const styles = StyleSheet.create({
   inlineEditInput: {
     fontSize: 16,
     padding: 8,
-    backgroundColor: '#111111',
+    backgroundColor: '#000000',
     borderRadius: 6,
     color: '#ffffff',
     marginBottom: 10,

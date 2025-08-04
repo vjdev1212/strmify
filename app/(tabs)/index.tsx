@@ -144,7 +144,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   filtersContainer: {
-    paddingVertical: 12
+    paddingVertical: 12,
+    paddingHorizontal: 5,
   },
   filterRow: {
     paddingHorizontal: 10,
