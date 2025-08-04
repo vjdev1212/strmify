@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
     marginVertical: 20,
     marginHorizontal: 10,
     color: '#ffffff',
-    backgroundColor: '#111111'
+    backgroundColor: '#000000'
   },
   saveBtn: {
     flex: 1,

@@ -5,7 +5,7 @@ import { Text } from './Themed';
 
 const PlayButton = ({ onPress }: { onPress: () => void }) => (
   <Pressable style={styles.button} onPress={onPress}>
-    <Ionicons name="play" size={16} color="#fff" style={styles.icon} />
+    <Ionicons name="play" size={18} color="#fff" style={styles.icon} />
     <Text style={styles.text}>Watch Now</Text>
   </Pressable>
 );
@@ -24,7 +24,8 @@ const styles = StyleSheet.create({
   },
   text: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 18,
+    fontWeight: 500
   },
   icon: {
     marginRight: 8,

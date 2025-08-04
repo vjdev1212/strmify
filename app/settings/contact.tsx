@@ -33,7 +33,7 @@ const ContactScreen = () => {
                             style={styles.contactItem}
                             onPress={item.action}
                         >
-                            <AntDesign name={item.icon} size={30} color="#ffffff" style={styles.icon} />
+                            <AntDesign name={item.icon} size={30} color="#535aff" style={styles.icon} />
                             <View style={styles.info}>
                                 <Text style={styles.type}>{item.type}</Text>
                                 <Text style={styles.value}>{item.value}</Text>

@@ -101,12 +101,11 @@ const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 15,
     paddingVertical: 10,
   },
   castContainer: {
-    alignItems: "center",
-    marginRight: 15,
+    alignItems: "center",    
     width: 120,
     marginTop: 30
   },
@@ -135,7 +134,7 @@ const styles = StyleSheet.create({
   },
   character: {
     marginTop: 2,
-    fontSize: 10,
+    fontSize: 11,
     textAlign: "center",
     color: "#ffffff",
   },
@@ -145,7 +144,7 @@ const styles = StyleSheet.create({
   castCrew: {
     fontWeight: '500',
     marginVertical: 10,
-    fontSize: 15,
+    fontSize: 16,
   }
 });
 

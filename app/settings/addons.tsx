@@ -33,11 +33,6 @@ const AddonsScreen = () => {
     return () => subscription?.remove();
   }, []);
 
-  const { width, height } = screenData;
-  const isTablet = width >= 768;
-  const isLandscape = width > height;
-  const numColumns = isTablet ? (isLandscape ? 3 : 2) : 1;
-
   useEffect(() => {
     const fetchAddons = async () => {
       try {
@@ -101,18 +96,9 @@ const AddonsScreen = () => {
 
   const renderAddonCard = (item: any, index: number) => {
     const configurable = item.behaviorHints?.configurable;
-    const cardWidth = numColumns === 1 ? '100%' :
-      numColumns === 2 ? '48%' : '31%';
 
     return (
-      <View
-        style={[
-          styles.addonCard,
-          { width: cardWidth },
-          numColumns > 1 && styles.multiColumnCard
-        ]}
-        key={item.id}
-      >
+      <View style={styles.addonCard} key={item.id}>
         {/* Header Section */}
         <View style={styles.cardHeader}>
           <Image source={{ uri: item.logo }} style={styles.addonLogo} />
@@ -201,29 +187,6 @@ const AddonsScreen = () => {
     );
   };
 
-  const renderAddonGrid = () => {
-    if (numColumns === 1) {
-      return addons.map((item, index) => renderAddonCard(item, index));
-    }
-
-    const rows = [];
-    for (let i = 0; i < addons.length; i += numColumns) {
-      const rowItems = addons.slice(i, i + numColumns);
-      rows.push(
-        <View key={i} style={styles.gridRow}>
-          {rowItems.map((item, index) => renderAddonCard(item, i + index))}
-          {/* Fill empty spaces in incomplete rows */}
-          {rowItems.length < numColumns &&
-            Array(numColumns - rowItems.length).fill(null).map((_, emptyIndex) => (
-              <View key={`empty-${i}-${emptyIndex}`} style={{ width: '31%' }} />
-            ))
-          }
-        </View>
-      );
-    }
-    return rows;
-  };
-
   const onAddNewPress = async () => {
     if (isHapticsSupported()) {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
@@ -237,7 +200,7 @@ const AddonsScreen = () => {
 
       {/* Header with Add Button */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>My Addons</Text>
+        <Text style={styles.headerTitle}>Addons</Text>
         <Pressable style={styles.addButton} onPress={onAddNewPress}>
           <Ionicons name="add" size={20} color="#ffffff" />
           <Text style={styles.addButtonText}>Add New</Text>
@@ -252,17 +215,17 @@ const AddonsScreen = () => {
         ]}
       >
         {addons.length > 0 ? (
-          <View style={styles.addonGrid}>
-            {renderAddonGrid()}
+          <View style={styles.addonList}>
+            {addons.map((item, index) => renderAddonCard(item, index))}
           </View>
         ) : (
           <View style={styles.emptyState}>
             <View style={styles.emptyIconContainer}>
-              <Ionicons name="extension-puzzle-outline" size={80} color="#535aff" />
+              <Ionicons name="extension-puzzle-outline" size={60} color="#535aff" />
             </View>
             <Text style={styles.emptyStateTitle}>No Addons Yet</Text>
             <Text style={styles.emptyStateText}>
-              Get started by adding your first addon to enhance your experience
+              Add your first addon!
             </Text>
             <Pressable style={styles.emptyActionButton} onPress={onAddNewPress}>
               <Ionicons name="add-circle-outline" size={20} color="#535aff" />
@@ -279,6 +242,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000000',
+    marginTop: 30
   },
   header: {
     flexDirection: 'row',
@@ -290,7 +254,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#1a1a1a',
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '600',
     color: '#ffffff',
   },
@@ -310,33 +274,29 @@ const styles = StyleSheet.create({
   addButtonText: {
     color: '#ffffff',
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '500',
     marginLeft: 6,
   },
   contentContainer: {
-    padding: 20,
-    paddingBottom: 40,
+    paddingHorizontal: 15,
+    paddingTop: 30,
+    paddingBottom: 50,
   },
   emptyContentContainer: {
     flex: 1,
     justifyContent: 'center',
   },
-  addonGrid: {
+  addonList: {
     flex: 1,
-  },
-  gridRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
+    alignItems: 'center',
   },
   addonCard: {
     backgroundColor: '#101010',
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
-  },
-  multiColumnCard: {
-    marginBottom: 0,
+    width: '100%',
+    maxWidth: 600,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -373,7 +333,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#cccccc',
     lineHeight: 20,
-    minHeight: 100
+    maxHeight: 100
   },
   cardActions: {
     flexDirection: 'row',
@@ -422,13 +382,14 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: '#1a1a1a',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 24,
     borderWidth: 2,
     borderColor: '#535aff',
     borderStyle: 'dashed',
+    paddingLeft: 7,
+    paddingBottom: 7
   },
   emptyStateTitle: {
     fontSize: 22,
@@ -448,10 +409,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'transparent',
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: '#535aff',
     paddingHorizontal: 24,
-    paddingVertical: 12,
+    paddingVertical: 15,
     borderRadius: 25,
   },
   emptyActionText: {

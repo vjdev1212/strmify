@@ -6,7 +6,6 @@ import { router } from 'expo-router';
 import { showAlert } from '@/utils/platform';
 import { useColorScheme } from '@/components/useColorScheme';
 
-
 const defaultAddonLogo = 'https://i.ibb.co/fSJ42PJ/addon.png';
 
 export default function AddAddonScreen() {
@@ -48,7 +47,6 @@ export default function AddAddonScreen() {
     };
 
     const addAddon = async () => {
-
         if (!manifestData) return;
 
         try {
@@ -76,77 +74,104 @@ export default function AddAddonScreen() {
     };
 
     return (
-
         <SafeAreaView style={styles.container}>
             <StatusBar />
-            <View style={styles.inputContainer}>
-                <Text style={styles.title}>Add Addon</Text>
-                <TextInput
-                    style={[
-                        styles.input,
-                        styles.darkInput,
-                    ]}
-                    placeholder="Enter manifest.json URL"
-                    placeholderTextColor="#777777"
-                    value={url}
-                    onChangeText={setUrl}
-                    autoCapitalize="none"
-                    keyboardType="url"
-                    onBlur={fetchManifest}
-                    numberOfLines={3}
-                    submitBehavior={'blurAndSubmit'}
-                />
+            
+            {/* Header Section */}
+            <View style={styles.header}>
+                <Text style={styles.title}>Add New Addon</Text>
+                <Text style={styles.subtitle}>Discover and install addons to enhance your experience</Text>
             </View>
 
-            {loading && <ActivityIndicator size="large" color="#ffffff" style={styles.loading} />}
+            {/* Input Section */}
+            <View style={styles.inputSection}>
+                <Text style={styles.inputLabel}>Manifest URL</Text>
+                <View style={styles.inputWrapper}>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="https://example.com/manifest.json"
+                        placeholderTextColor="#666666"
+                        value={url}
+                        onChangeText={setUrl}
+                        autoCapitalize="none"
+                        keyboardType="url"
+                        onSubmitEditing={fetchManifest}
+                        numberOfLines={1}
+                        returnKeyType="go"
+                        submitBehavior={'submit'}
+                    />
+                </View>
+            </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollViewContent}>
+            {/* Loading State */}
+            {loading && (
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#535aff" />
+                    <Text style={styles.loadingText}>Fetching addon details...</Text>
+                </View>
+            )}
+
+            {/* Content Section */}
+            <ScrollView 
+                showsVerticalScrollIndicator={false} 
+                contentContainerStyle={styles.scrollContent}
+                style={styles.scrollView}
+            >
                 {manifestData && (
-                    <View style={styles.dataContainer}>
-                        <Pressable style={styles.addButton} onPress={addAddon}>
-                            <Text style={styles.addButtonText}>+ Add Addon</Text>
-                        </Pressable>
-                        {manifestData.logo && (
-                            <Image
-                                source={{
-                                    uri: manifestData.logo.match(/\.(png|jpg|jpeg)$/i)
-                                        ? manifestData.logo
-                                        : defaultAddonLogo,
-                                }}
-                                style={[styles.logo]}
-                                resizeMode="contain"
-                            />
+                    <View style={styles.addonCard}>
+                        {/* Addon Header */}
+                        <View style={styles.addonHeader}>
+                            <View style={styles.logoContainer}>
+                                <Image
+                                    source={{
+                                        uri: manifestData.logo?.match(/\.(png|jpg|jpeg)$/i)
+                                            ? manifestData.logo
+                                            : defaultAddonLogo,
+                                    }}
+                                    style={styles.logo}
+                                    resizeMode="cover"
+                                />
+                            </View>
+                            <View style={styles.addonTitleContainer}>
+                                <Text style={styles.addonName}>
+                                    {manifestData.name || 'Unknown Addon'}
+                                </Text>
+                                {manifestData.version && (
+                                    <View style={styles.versionBadge}>
+                                        <Text style={styles.versionText}>v{manifestData.version}</Text>
+                                    </View>
+                                )}
+                            </View>
+                        </View>
+
+                        {/* Description */}
+                        {manifestData.description && (
+                            <View style={styles.descriptionContainer}>
+                                <Text style={styles.description}>{manifestData.description}</Text>
+                            </View>
                         )}
 
-                        <View style={styles.dataInfo}>
-                            {manifestData.name && (
-                                <View style={styles.dataRow}>
-                                    <Text style={styles.label}>Name:</Text>
-                                    <Text style={styles.value}>{manifestData.name}</Text>
+                        {/* Types */}
+                        {manifestData.types && manifestData.types.length > 0 && (
+                            <View style={styles.typesContainer}>
+                                <Text style={styles.typesLabel}>Supported Types</Text>
+                                <View style={styles.typesWrapper}>
+                                    {manifestData.types.map((type: string, index: number) => (
+                                        <View key={index} style={styles.typeTag}>
+                                            <Text style={styles.typeText}>{type}</Text>
+                                        </View>
+                                    ))}
                                 </View>
-                            )}
+                            </View>
+                        )}
 
-                            {manifestData.version && (
-                                <View style={styles.dataRow}>
-                                    <Text style={styles.label}>Version:</Text>
-                                    <Text style={styles.value}>{manifestData.version}</Text>
-                                </View>
-                            )}
-
-                            {manifestData.description && (
-                                <View style={styles.dataRow}>
-                                    <Text style={styles.label}>Description:</Text>
-                                    <Text style={styles.value}>{manifestData.description}</Text>
-                                </View>
-                            )}
-
-                            {manifestData.types && manifestData.types.length > 0 && (
-                                <View style={styles.dataRow}>
-                                    <Text style={styles.label}>Types:</Text>
-                                    <Text style={styles.value}>{manifestData.types.join(', ')}</Text>
-                                </View>
-                            )}
-                        </View>
+                        {/* Add Button */}
+                        <Pressable 
+                            style={[styles.addButton, styles.addButtonShadow]} 
+                            onPress={addAddon}
+                        >
+                            <Text style={styles.addButtonText}>Install Addon</Text>
+                        </Pressable>
                     </View>
                 )}
             </ScrollView>
@@ -157,78 +182,176 @@ export default function AddAddonScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        backgroundColor: '#000000',
         width: '100%',
-        maxWidth: 780,
-        margin: 'auto',
-        paddingTop: 30,
         marginTop: 30,
+        maxWidth: 600,
+        alignSelf: 'center',
     },
-    inputContainer: {
-        paddingHorizontal: 20,
-        paddingBottom: 20
-    },
-    scrollViewContent: {
-        paddingHorizontal: 20,
+    header: {
+        paddingHorizontal: 24,
+        paddingTop: 20,
+        paddingBottom: 8,
     },
     title: {
-        fontSize: 24,
-        fontWeight: '500',
-        marginBottom: 20,
-        textAlign: 'center',
+        fontSize: 32,
+        fontWeight: '700',
+        color: '#ffffff',
+        marginBottom: 8,
+    },
+    subtitle: {
+        fontSize: 16,
+        color: '#888888',
+        lineHeight: 22,
+    },
+    inputSection: {
+        paddingHorizontal: 24,
+        paddingVertical: 24,
+    },
+    inputWrapper: {
+        width: '100%',
+    },
+    inputLabel: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#ffffff',
+        marginBottom: 12,
+        letterSpacing: 0.5,
     },
     input: {
-        height: 40,
+        width: '100%',
+        height: 44,
+        backgroundColor: '#1a1a1a',
         borderRadius: 12,
-        paddingLeft: 20,
-        fontSize: 14,
+        paddingHorizontal: 16,
+        fontSize: 15,
+        color: '#ffffff',
+        borderWidth: 1,
+        borderColor: '#2a2a2a',
     },
-    lightInput: {
-        backgroundColor: '#f0f0f0',
-        color: '#000',
+    loadingContainer: {
+        alignItems: 'center',
+        paddingVertical: 40,
     },
-    darkInput: {
-        backgroundColor: '#1f1f1f',
-        color: '#fff',
+    loadingText: {
+        marginTop: 16,
+        fontSize: 16,
+        color: '#888888',
     },
-    loading: {
-        marginVertical: 20,
+    scrollView: {
+        flex: 1,
     },
-    dataContainer: {
-        borderRadius: 10,
-        paddingHorizontal: 20,
+    scrollContent: {
+        paddingHorizontal: 24,
+        paddingBottom: 40,
+    },
+    addonCard: {
+        backgroundColor: '#111111',
+        borderRadius: 24,
+        padding: 24,
+        borderWidth: 1,
+        borderColor: '#222222',
+    },
+    addonHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    logoContainer: {
+        width: 80,
+        height: 80,
+        borderRadius: 20,
+        overflow: 'hidden',
+        backgroundColor: '#1a1a1a',
+        marginRight: 16,
     },
     logo: {
-        width: 100,
-        height: 100,
-        alignSelf: 'center',
-        marginBottom: 20,
-        borderRadius: 8,
+        width: '100%',
+        height: '100%',
     },
-    dataInfo: {
-        marginTop: 10,
+    addonTitleContainer: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
     },
-    dataRow: {
-        marginBottom: 10,
+    addonName: {
+        fontSize: 22,
+        fontWeight: '700',
+        color: '#ffffff',
+        flex: 1,
+        marginRight: 12,
     },
-    label: {
+    versionBadge: {
+        backgroundColor: '#2a2a2a',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 12,
+    },
+    versionText: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#888888',
+    },
+    descriptionContainer: {
+        marginBottom: 24,
+        paddingHorizontal: 4,
+    },
+    description: {
         fontSize: 16,
-        fontWeight: '500',
-        paddingVertical: 4
+        color: '#cccccc',
+        lineHeight: 24,
     },
-    value: {
+    typesContainer: {
+        marginBottom: 32,
+    },
+    typesLabel: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#ffffff',
+        marginBottom: 12,
+    },
+    typesWrapper: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+    },
+    typeTag: {
+        backgroundColor: '#1a1a1a',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: '#333333',
+    },
+    typeText: {
         fontSize: 14,
-        paddingVertical: 4
+        fontWeight: '500',
+        color: '#888888',
     },
     addButton: {
-        paddingVertical: 12,
-        borderRadius: 50,
-        marginVertical: 20,
-        paddingHorizontal: 30,
-        margin: 'auto',
-        backgroundColor: '#535aff'
+        backgroundColor: '#535aff',
+        paddingVertical: 14,
+        paddingHorizontal: 32,
+        borderRadius: 12,
+        alignItems: 'center',
+        alignSelf: 'center',
+        minWidth: 140,
+    },
+    addButtonShadow: {
+        shadowColor: '#535aff',
+        shadowOffset: {
+            width: 0,
+            height: 8,
+        },
+        shadowOpacity: 0.3,
+        shadowRadius: 16,
+        elevation: 8,
     },
     addButtonText: {
-        color: '#fff',
+        color: '#ffffff',
         fontSize: 16,
+        fontWeight: '600',
+        letterSpacing: 0.5,
     },
 });

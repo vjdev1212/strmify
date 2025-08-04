@@ -71,8 +71,8 @@ const SettingsScreen = () => {
         <View style={styles.leftContent}>
           <Ionicons 
             name={icon} 
-            size={22} 
-            color='#007AFF' 
+            size={20} 
+            color='#535aff' 
             style={styles.icon} 
           />
           <Text style={[
@@ -235,9 +235,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   settingText: {
-    fontSize: 17,
-    fontWeight: '400',
-    letterSpacing: -0.41,
+    fontSize: 16,
     flex: 1,
   },
   icon: {
@@ -250,7 +248,7 @@ const styles = StyleSheet.create({
     left: 50, // Start separator from where the title begins (icon width + margin + padding)
     right: 0,
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#38383A',
+    backgroundColor: '#2a2a2a',
   },
 });
 

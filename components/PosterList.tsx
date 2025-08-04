@@ -114,7 +114,7 @@ const PosterList = ({
   const postersPerScreen = getPostersPerScreen();
   const spacing = 12;
 
-  const containerMargin = 10;
+  const containerMargin = 15;
   const posterWidth = useMemo(() => {
     const totalSpacing = spacing * (postersPerScreen - 1);
     const totalMargins = containerMargin * 2; // left + right
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
   container: {
     paddingTop: 10,
     marginBottom: 20,
-    marginHorizontal: 10
+    marginHorizontal: 15
   },
   header: {
     flexDirection: 'row',
