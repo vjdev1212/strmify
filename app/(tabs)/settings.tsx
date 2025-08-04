@@ -1,16 +1,16 @@
 import React from 'react';
 import { StyleSheet, Pressable, View, ScrollView } from 'react-native';
-import { Ionicons, MaterialIcons } from '@expo/vector-icons'; // Import icons from Expo
-import { StatusBar, Text } from '@/components/Themed'; // Assuming you have a Themed Text component
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { StatusBar, Text } from '@/components/Themed';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics'
 import { isHapticsSupported } from '@/utils/platform';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useColorScheme } from '@/components/useColorScheme';
 
-
 const SettingsScreen = () => {
   const router = useRouter();
+  const colorScheme = useColorScheme();
   
   // Get the environment variables and default to false if not set
   const showContact = process.env.EXPO_PUBLIC_SHOW_CONTACT === 'true';
@@ -39,68 +39,143 @@ const SettingsScreen = () => {
     { title: 'Support', route: '/settings/donate', icon: 'cash-outline' },
   ];
 
-  // SettingItem Component
-  const SettingItem = ({ title, icon, onPress }: { title: string, icon: keyof typeof Ionicons.glyphMap, onPress: () => void }) => (
-    <Pressable style={styles.settingItem} onPress={onPress}>
-      <Ionicons name={icon} size={24} color="#ffffff" style={styles.icon} />
-      <Text style={styles.settingText}>{title}</Text>
-      <MaterialIcons name="chevron-right" size={24} color="#ffffff" style={styles.chevron} />
-    </Pressable>
-  );
+  // SettingItem Component with iOS dark styling
+  const SettingItem = ({ 
+    title, 
+    icon, 
+    onPress, 
+    isFirst = false, 
+    isLast = false 
+  }: { 
+    title: string, 
+    icon: keyof typeof Ionicons.glyphMap, 
+    onPress: () => void,
+    isFirst?: boolean,
+    isLast?: boolean
+  }) => {
+    return (
+      <Pressable 
+        style={[
+          styles.settingItem,
+          {
+            backgroundColor: '#1C1C1E',
+            borderTopLeftRadius: isFirst ? 10 : 0,
+            borderTopRightRadius: isFirst ? 10 : 0,
+            borderBottomLeftRadius: isLast ? 10 : 0,
+            borderBottomRightRadius: isLast ? 10 : 0,
+          }
+        ]} 
+        onPress={onPress}
+        android_ripple={{ color: '#2C2C2E' }}
+      >
+        <View style={styles.leftContent}>
+          <Ionicons 
+            name={icon} 
+            size={22} 
+            color='#007AFF' 
+            style={styles.icon} 
+          />
+          <Text style={[
+            styles.settingText,
+            { color: '#FFFFFF' }
+          ]}>
+            {title}
+          </Text>
+        </View>
+        <MaterialIcons 
+          name="chevron-right" 
+          size={20} 
+          color='#8E8E93' 
+        />
+        {!isLast && (
+          <View style={styles.separator} />
+        )}
+      </Pressable>
+    );
+  };
 
   const onSettingsItemPress = async (item: any) => {
     if (isHapticsSupported()) {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     router.push({ pathname: item.route });
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[
+      styles.container,
+      { backgroundColor: '#000000' }
+    ]}>
       <StatusBar />
-      <ScrollView contentContainerStyle={styles.scrollViewContent} showsVerticalScrollIndicator={false}>
-        <View>
-          <Text style={styles.header}>General</Text>
-          <View style={[styles.settingsGroup]}>
+      <ScrollView 
+        contentContainerStyle={styles.scrollViewContent} 
+        showsVerticalScrollIndicator={false}
+        style={{ backgroundColor: '#000000' }}
+      >
+        {/* General Section */}
+        <View style={styles.section}>
+          <Text style={[
+            styles.sectionHeader,
+            { color: '#8E8E93' }
+          ]}>
+            GENERAL
+          </Text>
+          <View style={styles.settingsGroup}>
             {General.map((item, index) => (
               <SettingItem
                 key={index}
                 title={item.title}
                 icon={item.icon}
                 onPress={() => onSettingsItemPress(item)}
+                isFirst={index === 0}
+                isLast={index === General.length - 1}
               />
             ))}
           </View>
         </View>
 
-        {/* Only render the Servers section if at least one server is enabled */}
+        {/* Servers Section - Only render if at least one server is enabled */}
         {serversList.length > 0 && (
-          <View>
-            <Text style={styles.header}>Servers</Text>
-            <View style={[styles.settingsGroup]}>
+          <View style={styles.section}>
+            <Text style={[
+              styles.sectionHeader,
+              { color: '#8E8E93' }
+            ]}>
+              SERVERS
+            </Text>
+            <View style={styles.settingsGroup}>
               {serversList.map((item, index) => (
                 <SettingItem
                   key={index}
                   title={item.title}
                   icon={item.icon}
                   onPress={() => onSettingsItemPress(item)}
+                  isFirst={index === 0}
+                  isLast={index === serversList.length - 1}
                 />
               ))}
             </View>
           </View>
         )}
 
-        {/* Only render the Contact section if showContact is true */}
+        {/* Contact Section - Only render if showContact is true */}
         {showContact && (
-          <View>
-            <Text style={styles.header}>Contact</Text>
-            <View style={[styles.settingsGroup]}>
+          <View style={styles.section}>
+            <Text style={[
+              styles.sectionHeader,
+              { color: '#8E8E93' }
+            ]}>
+              CONTACT
+            </Text>
+            <View style={styles.settingsGroup}>
               {contactList.map((item, index) => (
                 <SettingItem
                   key={index}
                   title={item.title}
                   icon={item.icon}
                   onPress={() => onSettingsItemPress(item)}
+                  isFirst={index === 0}
+                  isLast={index === serversList.length - 1}
                 />
               ))}
             </View>
@@ -119,39 +194,63 @@ const styles = StyleSheet.create({
     margin: 'auto'
   },
   scrollViewContent: {
-    marginTop: 20,
-    paddingBottom: 20,
+    paddingTop: 20,
+    paddingBottom: 40,
   },
-  header: {
-    fontWeight: '500',
-    fontSize: 17,
-    paddingVertical: 5,
-    paddingHorizontal: 20,
-    marginTop: 25,
-    marginLeft: 25,
+  section: {
+    marginBottom: 35,
+  },
+  sectionHeader: {
+    fontSize: 13,
+    fontWeight: '400',
+    textTransform: 'uppercase',
+    marginBottom: 8,
+    marginLeft: 20,
+    marginRight: 20,
   },
   settingsGroup: {
-    marginVertical: 10,
-    marginHorizontal: 25,
-    borderRadius: 12,
+    marginHorizontal: 16,
+    // iOS uses subtle shadow for grouped sections
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 1,
+    elevation: 1,
   },
   settingItem: {
     flexDirection: 'row',
-    paddingVertical: 15,
-    marginHorizontal: 5,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     justifyContent: 'space-between',
     alignItems: 'center',
+    minHeight: 4, // iOS minimum touch target
+    position: 'relative',
+  },
+  leftContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
   },
   settingText: {
-    fontSize: 16,
+    fontSize: 17,
+    fontWeight: '400',
+    letterSpacing: -0.41,
     flex: 1,
-    width: '100%'
   },
   icon: {
-    paddingHorizontal: 10,
+    marginRight: 12,
+    width: 22, // Fixed width for consistent alignment
   },
-  chevron: {
-    paddingHorizontal: 5,
+  separator: {
+    position: 'absolute',
+    bottom: 0,
+    left: 50, // Start separator from where the title begins (icon width + margin + padding)
+    right: 0,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#38383A',
   },
 });
 
