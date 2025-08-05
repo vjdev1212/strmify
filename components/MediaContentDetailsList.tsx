@@ -22,8 +22,8 @@ interface MediaContentDetailsListProps {
 // Constants
 const UNKNOWN_TEXT = 'Unknown';
 const NOT_RATED_TEXT = 'Not Rated';
-const STAR_COLOR = '#ffffff';
-const STAR_SIZE = 13;
+const STAR_COLOR = '#FFD700';
+const STAR_SIZE = 14;
 
 const MediaContentDetailsList: React.FC<MediaContentDetailsListProps> = ({
   type = 'movie',
@@ -60,15 +60,15 @@ const MediaContentDetailsList: React.FC<MediaContentDetailsListProps> = ({
     };
   }, [type, genre, runtime, imdbRating, released, country, languages]);
 
-  // Render helper for grid items
-  const renderGridItem = (label: string, value: string | React.ReactNode, key: string) => (
-    <View key={key} style={styles.gridItem}>
-      <View style={styles.row}>
-        <View style={styles.labelContainer}>
-          <Text style={styles.label}>{label}</Text>
-        </View>
+  // Render helper for table rows
+  const renderTableRow = (label: string, value: string | React.ReactNode, key: string, isLast?: boolean) => (
+    <View key={key} style={[styles.tableRow, !isLast && styles.rowBorder]}>
+      <View style={styles.labelCell}>
+        <Text style={styles.label}>{label}</Text>
+      </View>
+      <View style={styles.valueCell}>
         {typeof value === 'string' ? (
-          <Text numberOfLines={1} style={styles.value}>{value}</Text>
+          <Text numberOfLines={2} style={styles.value}>{value}</Text>
         ) : (
           value
         )}
@@ -78,23 +78,37 @@ const MediaContentDetailsList: React.FC<MediaContentDetailsListProps> = ({
 
   // Render IMDB rating with star
   const renderRatingValue = () => (
-    <View style={[styles.value, styles.ratingContainer]}>
-      <Text style={styles.infoText}>{computedValues.ratingText}</Text>
+    <View style={styles.ratingContainer}>
+      <Text style={styles.value}>{computedValues.ratingText}</Text>
       {computedValues.hasRating && (
-        <FontAwesome name="star" size={STAR_SIZE} color={STAR_COLOR} />
+        <View style={styles.starWrapper}>
+          <FontAwesome name="star" size={STAR_SIZE} color={STAR_COLOR} />
+        </View>
       )}
     </View>
   );
 
+  // Create table data array
+  const tableData = [
+    { key: 'released', label: computedValues.releasedLabel, value: computedValues.formattedDate },
+    { key: 'rating', label: 'IMDB Rating:', value: renderRatingValue() },
+    { key: 'genre', label: 'Genre:', value: computedValues.genreText },
+    ...(computedValues.isMovie ? [{ key: 'runtime', label: 'Runtime:', value: computedValues.runtimeText }] : []),
+    { key: 'country', label: 'Country:', value: computedValues.countryText },
+    { key: 'languages', label: 'Languages:', value: computedValues.languagesText },
+  ];
+
   return (
     <View style={styles.container}>
-      <View style={styles.gridContainer}>
-        {renderGridItem(computedValues.releasedLabel, computedValues.formattedDate, 'released')}
-        {renderGridItem('IMDB Rating:', renderRatingValue(), 'rating')}
-        {renderGridItem('Genre:', computedValues.genreText, 'genre')}
-        {computedValues.isMovie && renderGridItem('Runtime:', computedValues.runtimeText, 'runtime')}
-        {renderGridItem('Country:', computedValues.countryText, 'country')}
-        {renderGridItem('Languages:', computedValues.languagesText, 'languages')}
+      <View style={styles.tableContainer}>
+        {tableData.map((item, index) => 
+          renderTableRow(
+            item.label, 
+            item.value, 
+            item.key, 
+            index === tableData.length - 1
+          )
+        )}
       </View>
     </View>
   );
@@ -102,44 +116,53 @@ const MediaContentDetailsList: React.FC<MediaContentDetailsListProps> = ({
 
 const styles = StyleSheet.create({
   container: {
+    paddingHorizontal: 15,
+    paddingVertical: 16,
+  },
+  tableContainer: {
+    backgroundColor: '#101010',
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  tableRow: {
+    flexDirection: 'row',    
     paddingHorizontal: 20,
-  },
-  gridContainer: {
     paddingVertical: 10,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  gridItem: {
-    width: '100%',
-    maxWidth: 320,
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
   },
-  labelContainer: {
-    minWidth: 120,
-    alignItems: 'flex-start',
+  rowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  labelCell: {
+    width: 120,
+    paddingRight: 16,
+    justifyContent: 'center',
+  },
+  valueCell: {
+    flex: 1,
+    justifyContent: 'center',
   },
   label: {
     fontSize: 14,
-    paddingVertical: 4,
-    borderRadius: 4,
-    alignSelf: 'flex-start',
+    fontWeight: '500',
+    color: '#ddd',
   },
   value: {
-    fontSize: 14,
-    flex: 1,
+    fontSize: 15,
+    fontWeight: '400',
+    color: '#ffffff',
+    lineHeight: 20,
   },
   ratingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  infoText: {
-    fontSize: 14,
-    paddingRight: 5,
+  starWrapper: {
+    marginLeft: 8,
+    paddingTop: 1,
   },
 });
 

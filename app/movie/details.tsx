@@ -166,9 +166,6 @@ const MovieDetails = () => {
           }
         </View>
       </View>
-      {
-        isPortrait && (<Divider />)
-      }
       <View style={styles.castContainer}>
         <MediaCastAndCrews cast={cast}></MediaCastAndCrews>
       </View>

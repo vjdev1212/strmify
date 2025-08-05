@@ -3,6 +3,7 @@ import {
   StyleSheet,
   ScrollView,
   Image,
+  Pressable,
 } from "react-native";
 import { View, Text } from "./Themed";
 
@@ -29,10 +30,15 @@ interface MediaCastAndCrewsProps {
 }
 
 const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
-  // Constants moved outside component for better performance
-  const CAST_IMAGE_BG_COLOR = '#0f0f0f';
-  const CAST_TEXT_COLOR = '#ffffff';
-  const CAST_CHARACTER_TEXT_COLOR = '#eeeeee';
+  // Modern color scheme
+  const COLORS = {
+    background: '#000000',
+    cardBackground: '#101010',
+    primary: '#FFFFFF',
+    secondary: '#B0B0B0',
+    accent: '#2A2A2A',
+    border: '#333333',
+  };
 
   // Memoized cast items to prevent unnecessary re-renders
   const castItems = useMemo(() => {
@@ -60,39 +66,64 @@ const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.castCrewContainer}>
-        <Text style={styles.castCrew}>Cast & Crew</Text>
+      <View style={styles.headerContainer}>
+        <Text style={[styles.sectionTitle, { color: COLORS.primary }]}>
+          Cast & Crew
+        </Text>
       </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        {castItems.map((item) => (
-          <View key={item.id} style={styles.castContainer}>
-            {item.hasImage ? (
-              <Image
-                source={{ uri: item.imageUri! }}
-                style={[styles.profileImage, {
-                  backgroundColor: CAST_IMAGE_BG_COLOR,
-                }]}
-              />
-            ) : (
-              <View style={[styles.placeholderImage, {
-                backgroundColor: CAST_IMAGE_BG_COLOR,
-              }]}>
-                <Text style={[styles.initials, {
-                  color: CAST_TEXT_COLOR
-                }]}>{item.initials}</Text>
-              </View>
-            )}
-            <Text style={[styles.name, {
-              color: CAST_TEXT_COLOR
-            }]} numberOfLines={1}>
-              {item.name}
-            </Text>
-            <Text style={[styles.character, {
-              color: CAST_CHARACTER_TEXT_COLOR
-            }]} numberOfLines={1}>
-              {item.displayCharacter}
-            </Text>
-          </View>
+      
+      <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        style={styles.scrollView}
+      >
+        {castItems.map((item, index) => (
+          <Pressable 
+            key={item.id} 
+            style={[
+              styles.castCard,
+              { backgroundColor: COLORS.cardBackground },
+              index === 0 && styles.firstCard,
+              index === castItems.length - 1 && styles.lastCard,
+            ]}
+            android_ripple={{ color: COLORS.accent, borderless: false }}
+          >
+            <View style={styles.imageContainer}>
+              {item.hasImage ? (
+                <Image
+                  source={{ uri: item.imageUri! }}
+                  style={styles.profileImage}
+                />
+              ) : (
+                <View style={[styles.placeholderImage, {
+                  backgroundColor: COLORS.accent,
+                  borderColor: COLORS.border,
+                }]}>
+                  <Text style={[styles.initials, {
+                    color: COLORS.primary
+                  }]}>{item.initials}</Text>
+                </View>
+              )}
+            </View>
+            
+            <View style={styles.textContainer}>
+              <Text 
+                style={[styles.name, { color: COLORS.primary }]} 
+                numberOfLines={2}
+                ellipsizeMode="tail"
+              >
+                {item.name}
+              </Text>
+              <Text 
+                style={[styles.character, { color: COLORS.secondary }]} 
+                numberOfLines={2}
+                ellipsizeMode="tail"
+              >
+                {item.displayCharacter}
+              </Text>
+            </View>
+          </Pressable>
         ))}
       </ScrollView>
     </View>
@@ -101,51 +132,91 @@ const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 15,
-    paddingVertical: 10,
+    paddingVertical: 15,
   },
-  castContainer: {
-    alignItems: "center",    
-    width: 120,
-    marginTop: 30
+  headerContainer: {
+    paddingHorizontal: 15,
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
+  scrollView: {
+    paddingLeft: 15,
+  },
+  scrollContent: {
+    paddingRight: 15,
+  },
+  castCard: {
+    width: 140,
+    marginRight: 12,
+    borderRadius: 6,
+    padding: 12,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  firstCard: {
+    marginLeft: 0,
+  },
+  lastCard: {
+    marginRight: 0,
+  },
+  imageContainer: {
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
   },
   profileImage: {
-    width: 70,
-    height: 70,
+    width: 80,
+    height: 80,
     borderRadius: 40,
   },
   placeholderImage: {
-    width: 70,
-    height: 70,
+    width: 80,
+    height: 80,
     borderRadius: 40,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: '#111111'
+    borderWidth: 1,
   },
   initials: {
-    fontSize: 25,
-    color: "#ffffff",
+    fontSize: 28,
+    fontWeight: '500',
+    letterSpacing: 1,
+  },
+  textContainer: {
+    alignItems: "center",
+    width: "100%",
+    gap: 4,
   },
   name: {
-    marginTop: 5,
-    fontSize: 12,
+    fontSize: 14,
+    fontWeight: '500',
     textAlign: "center",
-    color: "#ffffff",
+    lineHeight: 18,
   },
   character: {
-    marginTop: 2,
-    fontSize: 11,
+    fontSize: 12,
+    fontWeight: '400',
     textAlign: "center",
-    color: "#ffffff",
+    lineHeight: 16,
+    opacity: 0.8,
   },
-  castCrewContainer: {
-    flex: 1,
-  },
-  castCrew: {
-    fontWeight: '500',
-    marginVertical: 10,
-    fontSize: 16,
-  }
 });
 
 export default MediaCastAndCrews;
