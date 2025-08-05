@@ -7,7 +7,7 @@ import {
 } from "react-native";
 import { View, Text } from "./Themed";
 
-const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w200";
+const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/original";
 
 // Memoized helper function
 const getInitials = (name: string): string => {
@@ -36,8 +36,8 @@ const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
     cardBackground: '#101010',
     primary: '#FFFFFF',
     secondary: '#B0B0B0',
-    accent: '#2A2A2A',
-    border: '#333333',
+    accent: '#191919',
+    border: '#222222',
   };
 
   // Memoized cast items to prevent unnecessary re-renders
@@ -71,16 +71,16 @@ const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
           Cast & Crew
         </Text>
       </View>
-      
-      <ScrollView 
-        horizontal 
+
+      <ScrollView
+        horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
         style={styles.scrollView}
       >
         {castItems.map((item, index) => (
-          <Pressable 
-            key={item.id} 
+          <Pressable
+            key={item.id}
             style={[
               styles.castCard,
               { backgroundColor: COLORS.cardBackground },
@@ -106,18 +106,18 @@ const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
                 </View>
               )}
             </View>
-            
+
             <View style={styles.textContainer}>
-              <Text 
-                style={[styles.name, { color: COLORS.primary }]} 
-                numberOfLines={2}
+              <Text
+                style={[styles.name, { color: COLORS.primary }]}
+                numberOfLines={1}
                 ellipsizeMode="tail"
               >
                 {item.name}
               </Text>
-              <Text 
-                style={[styles.character, { color: COLORS.secondary }]} 
-                numberOfLines={2}
+              <Text
+                style={[styles.character, { color: COLORS.secondary }]}
+                numberOfLines={1}
                 ellipsizeMode="tail"
               >
                 {item.displayCharacter}
@@ -139,8 +139,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '500',
     letterSpacing: 0.5,
   },
   scrollView: {
@@ -150,10 +150,10 @@ const styles = StyleSheet.create({
     paddingRight: 15,
   },
   castCard: {
-    width: 140,
+    width: 120,
     marginRight: 12,
     borderRadius: 6,
-    padding: 12,
+    paddingBottom: 10,
     alignItems: "center",
     shadowColor: "#000",
     shadowOffset: {
@@ -182,20 +182,22 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   profileImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 120,
+    height: 170,
+    borderTopStartRadius: 6,
+    borderTopEndRadius: 6,
   },
   placeholderImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 120,
+    height: 170,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
+    borderTopStartRadius: 6,
+    borderTopEndRadius: 6,
   },
   initials: {
-    fontSize: 28,
+    fontSize: 34,
     fontWeight: '500',
     letterSpacing: 1,
   },
@@ -209,6 +211,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     textAlign: "center",
     lineHeight: 18,
+    paddingHorizontal: 5
   },
   character: {
     fontSize: 12,
@@ -216,6 +219,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 16,
     opacity: 0.8,
+    paddingHorizontal: 5
   },
 });
 
