@@ -425,17 +425,19 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
                     // Inline Edit Mode
                     <View style={[styles.settingsRow, index === serverConfigs.length - 1 && styles.lastRow]}>
                       <View style={styles.inputContainer}>
-                        <Text style={styles.inputLabel}>Server URL</Text>
-                        <TextInput
-                          style={styles.textInput}
-                          value={inlineEditValue}
-                          onChangeText={setInlineEditValue}
-                          placeholder="https://example.com"
-                          placeholderTextColor="#8E8E93"
-                          autoCapitalize="none"
-                          autoCorrect={false}
-                          autoFocus
-                        />
+                        <View style={styles.serverUrlContainer}>
+                          <Text style={styles.inputLabel}>Server URL</Text>
+                          <TextInput
+                            style={styles.textInput}
+                            value={inlineEditValue}
+                            onChangeText={setInlineEditValue}
+                            placeholder="https://example.com"
+                            placeholderTextColor="#8E8E93"
+                            autoCapitalize="none"
+                            autoCorrect={false}
+                            autoFocus
+                          />
+                        </View>
                         <View style={styles.inlineActions}>
                           <Pressable style={styles.inlineActionButton} onPress={cancelInlineEdit}>
                             <Text style={styles.cancelButtonText}>Cancel</Text>
@@ -740,6 +742,12 @@ const styles = StyleSheet.create({
     color: '#007AFF',
     fontWeight: '400',
   },
+  serverUrlContainer:
+  {
+    borderBottomWidth: 0.5,
+    paddingBottom: 10,
+    borderBottomColor: '#2C2C2E',
+  }
 });
 
 export default ServerConfiguration;
