@@ -35,7 +35,7 @@ const MediaContentPoster: React.FC<MediaContentPosterProps> = ({ background, isP
 
   const containerStyle = [
     styles.posterContainer,
-    { aspectRatio: isPortrait ? 4 / 3 : 16 / 9 }
+    { aspectRatio: isPortrait ? 4 / 5 : 16 / 9 }
   ];
 
   const posterStyle = [
