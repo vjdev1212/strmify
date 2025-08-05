@@ -60,47 +60,84 @@ const SearchScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar />
-      <View style={styles.searchInputContainer}>
-        <TextInput
-          style={[styles.searchInput, styles.darkSearchInput]}
-          placeholder="Search movies or series..."
-          placeholderTextColor="#888888"
-          value={query}
-          onChangeText={setQuery}
-        />
-        {query.length > 0 && (
-          <Pressable onPress={clearSearch} style={styles.clearIcon}>
-            <Ionicons name="close-circle" size={20} color="#888" />
-          </Pressable>
-        )}
+
+      {/* Header Section */}
+      <View style={styles.headerContainer}>
+        <Text style={styles.headerTitle}>Search</Text>
+        <Text style={styles.headerSubtitle}>Discover Movies and TV Shows</Text>
       </View>
 
-      {loading && <ActivityIndicator size="large" color="#535aff" style={styles.loader} />}
+      {/* Search Input Section */}
+      <View style={styles.searchSection}>
+        <View style={styles.searchInputContainer}>
+          <View style={styles.searchIconContainer}>
+            <Ionicons name="search-outline" size={20} color="#666" />
+          </View>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search movies or series..."
+            placeholderTextColor="#666"
+            value={query}
+            onChangeText={setQuery}
+          />
+          {query.length > 0 && (
+            <Pressable onPress={clearSearch} style={styles.clearButton}>
+              <View style={styles.clearIconContainer}>
+                <Ionicons name="close" size={16} color="#888" />
+              </View>
+            </Pressable>
+          )}
+        </View>
+      </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} style={styles.searchResultsContainer}>
+      {/* Loading Indicator */}
+      {loading && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#535aff" />
+        </View>
+      )}
+
+      {/* Content Section */}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        style={styles.contentContainer}
+        contentContainerStyle={styles.scrollContent}
+      >
         {!loading && !moviesUrl && !seriesUrl && (
-          <View style={styles.centeredContainer}>
-            <Ionicons name="search-outline" color="#535aff" size={70} style={styles.noResults} />
-            <Text style={styles.noResultsText}>
-              {query.length > 0 ? 'No results found.' : 'What would you like to watch today?'}
+          <View style={styles.emptyStateContainer}>
+            <View style={styles.emptyStateIconContainer}>
+              <Ionicons name="search-outline" color="#535aff" size={64} />
+            </View>
+            <Text style={styles.emptyStateTitle}>
+              {query.length > 0 ? 'No results found' : 'Start your search'}
+            </Text>
+            <Text style={styles.emptyStateSubtitle}>
+              {query.length > 0
+                ? 'Try searching with different keywords'
+                : 'What would you like to watch today?'
+              }
             </Text>
           </View>
         )}
 
         {moviesUrl && (
-          <PosterList
-            apiUrl={moviesUrl}
-            title="Movies"
-            type="movie"
-          />
+          <View style={styles.resultsSection}>
+            <PosterList
+              apiUrl={moviesUrl}
+              title="Movies"
+              type="movie"
+            />
+          </View>
         )}
 
         {seriesUrl && (
-          <PosterList
-            apiUrl={seriesUrl}
-            title="Series"
-            type="series"
-          />
+          <View style={styles.resultsSection}>
+            <PosterList
+              apiUrl={seriesUrl}
+              title="Series"
+              type="series"
+            />
+          </View>
         )}
       </ScrollView>
       <BottomSpacing space={50} />
@@ -111,59 +148,113 @@ const SearchScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    marginTop: 30
+  },
+  headerContainer: {
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: 16,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#ffffff',
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: '#888',
+    fontWeight: '400',
+  },
+  searchSection: {
+    paddingHorizontal: 24,
+    paddingBottom: 24,
   },
   searchInputContainer: {
-    marginTop: 20,
-    paddingHorizontal: 20,
-    width: '100%',
     maxWidth: 780,
+    width: '100%',
     margin: 'auto',
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1a1a1a',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+    height: 40,
+    paddingHorizontal: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  searchIconContainer: {
+    marginRight: 12,
   },
   searchInput: {
-    height: 40,
-    borderRadius: 25,
-    paddingLeft: 20,
-    paddingRight: 40,
+    flex: 1,
     fontSize: 16,
+    color: '#ffffff',
+    fontWeight: '400',
+    outline: 'none'
   },
-  darkSearchInput: {
-    backgroundColor: '#1f1f1f',
-    color: '#fff',
+  clearButton: {
+    marginLeft: 8,
   },
-  clearIcon: {
-    position: 'absolute',
-    right: 30,
+  clearIconContainer: {
+    backgroundColor: '#2a2a2a',
+    borderRadius: 12,
+    width: 24,
+    height: 24,
     justifyContent: 'center',
-    height: 40,
+    alignItems: 'center',
   },
-  loader: {
-    marginTop: 20
+  loadingContainer: {
+    paddingVertical: 32,
+    alignItems: 'center',
   },
-  searchResultsContainer: {
-    marginVertical: 20
+  contentContainer: {
+    flex: 1,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '500',
-    marginVertical: 20,
+  scrollContent: {
+    flexGrow: 1,
   },
-  centeredContainer: {
+  emptyStateContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    paddingHorizontal: 10,
+    marginTop: -100,
   },
-  noResults: {
-    marginTop: 100,
-    paddingBottom: 20,
+  emptyStateIconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(83, 90, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+    paddingLeft: 5,
   },
-  noResultsText: {
-    fontSize: 18,
+  emptyStateTitle: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#ffffff',
     textAlign: 'center',
-    marginHorizontal: '5%',
-    color: '#ccc',
+    marginBottom: 8,
+  },
+  emptyStateSubtitle: {
+    fontSize: 16,
+    color: '#888',
+    textAlign: 'center',
+    lineHeight: 24,
+    maxWidth: 280,
+  },
+  resultsSection: {
+    marginBottom: 24,
   },
 });
 
-export default SearchScreen;
+export default SearchScreen

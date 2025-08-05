@@ -241,8 +241,10 @@ const AddonsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000000',
-    marginTop: 30
+    marginTop: 30,
+    width: '100%',
+    maxWidth: 780,
+    margin: 'auto'
   },
   header: {
     flexDirection: 'row',
@@ -385,9 +387,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 24,
-    borderWidth: 2,
-    borderColor: '#535aff',
-    borderStyle: 'dashed',
+    backgroundColor: 'rgba(83, 90, 255, 0.1)',
     paddingLeft: 7,
     paddingBottom: 7
   },

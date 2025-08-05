@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#000000',
         width: '100%',
         marginTop: 30,
-        maxWidth: 600,
+        maxWidth: 780,
         alignSelf: 'center',
     },
     header: {
