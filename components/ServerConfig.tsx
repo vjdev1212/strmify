@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, Switch, TextInput, Pressable, FlatList, ScrollView } from 'react-native';
+import { StyleSheet, Switch, TextInput, Pressable, FlatList, ScrollView, Alert, Animated } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, Text } from '@/components/Themed';
 import { showAlert } from '@/utils/platform';
@@ -28,10 +28,23 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
   const [selectedServerId, setSelectedServerId] = useState<string | null>(null);
   const [inlineEditingId, setInlineEditingId] = useState<string | null>(null);
   const [inlineEditValue, setInlineEditValue] = useState<string>('');
+  const [animatedValues, setAnimatedValues] = useState<{ [key: string]: { rotation: Animated.Value, height: Animated.Value } }>({});
 
   useEffect(() => {
     loadServers();
   }, [serverType]);
+
+  useEffect(() => {
+    // Initialize animated values for each server
+    const newAnimatedValues: { [key: string]: { rotation: Animated.Value, height: Animated.Value } } = {};
+    serverConfigs.forEach(server => {
+      newAnimatedValues[server.serverId] = {
+        rotation: new Animated.Value(0),
+        height: new Animated.Value(0)
+      };
+    });
+    setAnimatedValues(newAnimatedValues);
+  }, [serverConfigs]);
 
   const loadServers = async () => {
     try {
@@ -41,10 +54,9 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
 
       setServerConfigs(filteredServers);
 
-      // If no servers exist for this type, prepare to add the default one
       if (filteredServers.length === 0) {
         setServerUrl(defaultUrl);
-        setIsCurrent(true); // Make the first server current by default
+        setIsCurrent(true);
         setIsAddingNew(true);
       }
     } catch (error) {
@@ -74,7 +86,6 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
       let updatedAllServers: ServerConfig[];
       let configToSave: ServerConfig;
 
-      // If this server is being set as current, unset all others of this type
       const otherServersOfSameType = isCurrent ?
         allServers.map(server =>
           server.serverType === serverType ? { ...server, current: false } : server
@@ -82,7 +93,6 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
         allServers;
 
       if (editingId) {
-        // Update existing server
         configToSave = {
           serverId: editingId,
           serverType,
@@ -95,7 +105,6 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
           server.serverId === editingId ? configToSave : server
         );
       } else {
-        // Add new server
         configToSave = {
           serverId: `${serverType}-${Date.now()}`,
           serverType,
@@ -109,11 +118,12 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
 
       await AsyncStorage.setItem('servers', JSON.stringify(updatedAllServers));
 
-      // Reset the form and refresh the list
       setEditingId(null);
       setIsAddingNew(false);
       setServerUrl(defaultUrl);
       setIsCurrent(false);
+      setSelectedServerId(null);
+      setInlineEditingId(null);
       await loadServers();
 
       showAlert('Success', `${serverName} server configuration saved.`);
@@ -126,8 +136,10 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
   const handleAddNew = () => {
     setEditingId(null);
     setServerUrl(defaultUrl);
-    setIsCurrent(serverConfigs.length === 0); // Auto-set as current if it's the first server
+    setIsCurrent(serverConfigs.length === 0);
     setIsAddingNew(true);
+    setSelectedServerId(null);
+    setInlineEditingId(null);
   };
 
   const handleCancel = () => {
@@ -135,20 +147,63 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
     setIsAddingNew(false);
     setServerUrl(defaultUrl);
     setIsCurrent(false);
+    setSelectedServerId(null);
+    setInlineEditingId(null);
   };
 
   const toggleCurrent = useCallback(() => setIsCurrent(prev => !prev), []);
 
-  // Inline editing functions
   const startInlineEdit = (server: ServerConfig) => {
     setInlineEditingId(server.serverId);
     setInlineEditValue(server.serverUrl);
-    setSelectedServerId(null); // Close the action menu if open
+    setSelectedServerId(null);
+
+    // Close any expanded rows when starting inline edit
+    if (animatedValues[server.serverId]) {
+      const { rotation, height } = animatedValues[server.serverId];
+      Animated.parallel([
+        Animated.timing(rotation, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(height, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: false,
+        })
+      ]).start();
+    }
   };
 
   const cancelInlineEdit = () => {
     setInlineEditingId(null);
     setInlineEditValue('');
+  };
+
+  const toggleServerSelection = (serverId: string) => {
+    const isCurrentlySelected = selectedServerId === serverId;
+    const newSelectedId = isCurrentlySelected ? null : serverId;
+
+    setSelectedServerId(newSelectedId);
+    setInlineEditingId(null);
+
+    if (animatedValues[serverId]) {
+      const { rotation, height } = animatedValues[serverId];
+
+      Animated.parallel([
+        Animated.timing(rotation, {
+          toValue: isCurrentlySelected ? 0 : 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(height, {
+          toValue: isCurrentlySelected ? 0 : 44,
+          duration: 200,
+          useNativeDriver: false,
+        })
+      ]).start();
+    }
   };
 
   const saveInlineEdit = async () => {
@@ -179,26 +234,36 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
   };
 
   const handleDelete = async (serverId: string) => {
-    try {
-      const savedConfigs = await AsyncStorage.getItem('servers');
-      const allServers: ServerConfig[] = savedConfigs ? JSON.parse(savedConfigs) : [];
-
-      const serverToDelete = allServers.find(server => server.serverId === serverId);
-      if (serverToDelete?.current) {
-        showAlert('Error', 'Cannot delete the current server. Please set another server as current first.');
-        return;
-      }
-
-      const updatedAllServers = allServers.filter(server => server.serverId !== serverId);
-      await AsyncStorage.setItem('servers', JSON.stringify(updatedAllServers));
-
-      setSelectedServerId(null);
-      await loadServers();
-      showAlert('Success', 'Server configuration deleted.');
-    } catch (error) {
-      showAlert('Error', 'Failed to delete configuration.');
-      console.error('Error deleting server:', error);
+    const serverToDelete = serverConfigs.find(server => server.serverId === serverId);
+    if (serverToDelete?.current) {
+      showAlert('Error', 'Cannot delete the current server. Please set another server as current first.');
+      return;
     }
+
+    Alert.alert(
+      'Delete Server',
+      'Are you sure you want to delete this server configuration?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const savedConfigs = await AsyncStorage.getItem('servers');
+              const allServers: ServerConfig[] = savedConfigs ? JSON.parse(savedConfigs) : [];
+              const updatedAllServers = allServers.filter(server => server.serverId !== serverId);
+              await AsyncStorage.setItem('servers', JSON.stringify(updatedAllServers));
+              setSelectedServerId(null);
+              await loadServers();
+              showAlert('Success', 'Server configuration deleted.');
+            } catch (error) {
+              showAlert('Error', 'Failed to delete configuration.');
+            }
+          }
+        }
+      ]
+    );
   };
 
   const handleSetAsCurrent = async (serverId: string) => {
@@ -206,7 +271,6 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
       const savedConfigs = await AsyncStorage.getItem('servers');
       const allServers: ServerConfig[] = savedConfigs ? JSON.parse(savedConfigs) : [];
 
-      // Update all servers of this type to be not current
       const updatedServers = allServers.map(server => {
         if (server.serverType === serverType) {
           return {
@@ -219,366 +283,463 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
 
       await AsyncStorage.setItem('servers', JSON.stringify(updatedServers));
       await loadServers();
-      showAlert('Success', 'Current server updated.');
+
+      // Close the expanded row after setting as current
+      setSelectedServerId(null);
+      if (animatedValues[serverId]) {
+        const { rotation, height } = animatedValues[serverId];
+        Animated.parallel([
+          Animated.timing(rotation, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+          Animated.timing(height, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: false,
+          })
+        ]).start();
+      }
     } catch (error) {
       showAlert('Error', 'Failed to update current server.');
-      console.error('Error updating current server:', error);
     }
   };
 
-  const toggleServerSelection = (serverId: string) => {
-    // If already selected, deselect; otherwise select this server
-    setSelectedServerId(prev => prev === serverId ? null : serverId);
-    setInlineEditingId(null); // Close any open inline edit
-  };
-
   const renderServerItem = ({ item }: { item: ServerConfig }) => (
-    <View style={styles.serverItem}>
-      {inlineEditingId === item.serverId ? (
-        // Inline editing mode
-        <View style={styles.inlineEditContainer}>
-          <TextInput
-            style={styles.inlineEditInput}
-            value={inlineEditValue}
-            onChangeText={setInlineEditValue}
-            autoCapitalize="none"
-            autoFocus
-            placeholder="Enter Server URL"
-            placeholderTextColor="#777777"
-          />
-          <View style={styles.inlineEditActions}>
-            <Pressable onPress={cancelInlineEdit} style={styles.textButton}>
-              <Text style={styles.cancelText}>Cancel</Text>
-            </Pressable>
-            <Pressable onPress={saveInlineEdit} style={styles.textButton}>
-              <AntDesign name="check" size={18} color="#4CAF50" />
-            </Pressable>
+    <View style={styles.settingsRow}>
+      <Pressable
+        style={styles.settingsRowPressable}
+        onPress={() => handleSetAsCurrent(item.serverId)}
+      >
+        <View style={styles.settingsRowContent}>
+          <View style={styles.settingsRowLeft}>
+            <Text style={styles.settingsRowLabel}>Server URL</Text>
+            <Text style={styles.settingsRowValue}>{item.serverUrl}</Text>
+          </View>
+          <View style={styles.settingsRowRight}>
+            {item.current && <MaterialIcons name="check" size={20} color="#007AFF" />}
           </View>
         </View>
-      ) : (
-        // View mode
-        <>
-          <View style={styles.serverItemHeader}>
-            <Pressable
-              onPress={() => toggleServerSelection(item.serverId)}
-              style={styles.serverUrlTouchable}
-            >
-              <Text style={styles.serverItemUrl}>{item.serverUrl}</Text>
-            </Pressable>
+      </Pressable>
 
-            {item.current ? (
-              <MaterialIcons name="check-circle" size={22} color="#535aff" />
-            ) : (
-              <Pressable
-                onPress={() => handleSetAsCurrent(item.serverId)}
-                style={styles.setCurrentButton}
-              >
-                <MaterialIcons name="radio-button-unchecked" size={20} color="#535aff" />
-              </Pressable>
-            )}
-          </View>
+      <View style={styles.settingsRowActions}>
+        <Pressable
+          style={styles.actionButton}
+          onPress={() => startInlineEdit(item)}
+        >
+          <Text style={styles.actionButtonText}>Edit</Text>
+        </Pressable>
 
-          {selectedServerId === item.serverId && (
-            <View style={styles.actionButtonsContainer}>
-              <Pressable onPress={() => startInlineEdit(item)} style={styles.actionButton}>
-                <Text style={styles.editText}>Edit</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => handleDelete(item.serverId)}
-                style={[styles.actionButton, item.current && styles.disabledButton]}
-                disabled={item.current}
-              >
-                <Text style={[styles.deleteText, item.current && styles.disabledText]}>
-                  Delete
-                </Text>
-              </Pressable>
-            </View>
-          )}
-        </>
-      )}
+        <View style={styles.actionDivider} />
+
+        <Pressable
+          style={[styles.actionButton, item.current && styles.disabledActionButton]}
+          onPress={() => handleDelete(item.serverId)}
+          disabled={item.current}
+        >
+          <Text style={[styles.deleteActionText, item.current && styles.disabledActionText]}>
+            Delete
+          </Text>
+        </Pressable>
+      </View>
     </View>
   );
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>{`${serverName} Configuration`}</Text>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>{serverName}</Text>
+      </View>
 
-      {(editingId || isAddingNew) ? (
-        <View style={styles.configGroup}>
-          <Text style={styles.configGroupHeader}>
-            {editingId ? 'Edit Server' : 'Add New Server'}
+      {/* Add/Edit Form */}
+      {(editingId || isAddingNew) && (
+        <View style={styles.settingsSection}>
+          <Text style={styles.sectionHeader}>
+            {editingId ? 'EDIT SERVER' : 'ADD SERVER'}
           </Text>
 
-          <View style={styles.switchContainer}>
-            <Text style={styles.switchLabel}>Set as Current Server</Text>
-            <Switch
-              value={isCurrent}
-              onValueChange={toggleCurrent}
-              style={styles.switch}
-              thumbColor={isCurrent ? '#535aff' : '#ccc'}
-              trackColor={{ false: '#e0e0e0', true: '#a5afff' }}
-              accessibilityLabel="Toggle server current state"
-            />
+          <View style={styles.settingsGroup}>
+            {/* Current Server Toggle */}
+            <View style={styles.settingsRow}>
+              <View style={styles.settingsRowContent}>
+                <View style={styles.settingsRowLeft}>
+                  <Text style={styles.settingsRowLabel}>Current Server</Text>
+                </View>
+                <View style={styles.settingsRowRight}>
+                  <Switch
+                    value={isCurrent}
+                    onValueChange={toggleCurrent}
+                    trackColor={{ false: '#E5E5EA', true: '#007AFF' }}
+                    thumbColor="#FFFFFF"
+                  />
+                </View>
+              </View>
+            </View>
+
+            {/* Server URL Input */}
+            <View style={[styles.settingsRow, styles.lastRow]}>
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Server URL</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={serverUrl}
+                  onChangeText={setServerUrl}
+                  placeholder="https://example.com"
+                  placeholderTextColor="#8E8E93"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
+            </View>
           </View>
 
-          <TextInput
-            style={[styles.input]}
-            placeholder="Enter Server Base URL"
-            value={serverUrl}
-            onChangeText={setServerUrl}
-            autoCapitalize="none"
-            placeholderTextColor={'#777777'}
-            submitBehavior={'blurAndSubmit'}
-          />
-
-          <View style={styles.buttonContainer}>
-            <Pressable onPress={handleCancel} style={styles.cancelBtn}>
-              <AntDesign name="close" size={20} color="#fff" />
-              <Text style={styles.buttonText}>Cancel</Text>
+          {/* Action Buttons */}
+          <View style={styles.buttonGroup}>
+            <Pressable style={styles.cancelButton} onPress={handleCancel}>
+              <Text style={styles.cancelButtonText}>Cancel</Text>
             </Pressable>
-            <Pressable onPress={handleSave} style={styles.saveBtn}>
-              <AntDesign name="check" size={20} color="#fff" />
-              <Text style={styles.buttonText}>Save</Text>
+            <Pressable style={styles.saveButton} onPress={handleSave}>
+              <Text style={styles.saveButtonText}>Save</Text>
             </Pressable>
           </View>
         </View>
-      ) : (
-        <>
-          <View style={styles.serverListHeader}>
-            <Text style={styles.serverListTitle}>Server URLs</Text>
-            <Pressable onPress={handleAddNew} style={styles.addButton}>
-              <AntDesign name="plus" size={16} color="#fff" />
+      )}
+
+      {/* Server List */}
+      {!editingId && !isAddingNew && (
+        <View style={styles.settingsSection}>
+          <View style={styles.sectionHeaderContainer}>
+            <Text style={styles.sectionHeader}>SERVERS</Text>
+            <Pressable style={styles.addButton} onPress={handleAddNew}>
+              <Text style={styles.addButtonText}>Add</Text>
             </Pressable>
           </View>
 
           {serverConfigs.length > 0 ? (
-            <FlatList
-              data={serverConfigs}
-              renderItem={renderServerItem}
-              keyExtractor={(item) => item.serverId}
-              style={styles.serverList}
-            />
+            <View style={styles.settingsGroup}>
+              {serverConfigs.map((item, index) => (
+                <View key={item.serverId}>
+                  {inlineEditingId === item.serverId ? (
+                    // Inline Edit Mode
+                    <View style={[styles.settingsRow, index === serverConfigs.length - 1 && styles.lastRow]}>
+                      <View style={styles.inputContainer}>
+                        <Text style={styles.inputLabel}>Server URL</Text>
+                        <TextInput
+                          style={styles.textInput}
+                          value={inlineEditValue}
+                          onChangeText={setInlineEditValue}
+                          placeholder="https://example.com"
+                          placeholderTextColor="#8E8E93"
+                          autoCapitalize="none"
+                          autoCorrect={false}
+                          autoFocus
+                        />
+                        <View style={styles.inlineActions}>
+                          <Pressable style={styles.inlineActionButton} onPress={cancelInlineEdit}>
+                            <Text style={styles.cancelButtonText}>Cancel</Text>
+                          </Pressable>
+                          <Pressable style={styles.inlineActionButton} onPress={saveInlineEdit}>
+                            <Text style={styles.saveButtonText}>Save</Text>
+                          </Pressable>
+                        </View>
+                      </View>
+                    </View>
+                  ) : (
+                    // Normal View Mode
+                    <View style={[styles.settingsRow, index === serverConfigs.length - 1 && styles.lastRow]}>
+                      <Pressable
+                        style={styles.settingsRowPressable}
+                        onPress={() => toggleServerSelection(item.serverId)}
+                      >
+                        <View style={styles.settingsRowContent}>
+                          <View style={styles.settingsRowLeft}>
+                            <Text style={styles.settingsRowValue}>{item.serverUrl}</Text>
+                          </View>
+                          <View style={styles.settingsRowRight}>
+                            {item.current ? (
+                              <MaterialIcons name="check" size={20} color="#007AFF" />
+                            ) : (
+                              <Animated.View style={{
+                                transform: [{
+                                  rotate: animatedValues[item.serverId]?.rotation.interpolate({
+                                    inputRange: [0, 1],
+                                    outputRange: ['0deg', '90deg']
+                                  }) || '0deg'
+                                }]
+                              }}>
+                                <MaterialIcons name="chevron-right" size={20} color="#C7C7CC" />
+                              </Animated.View>
+                            )}
+                          </View>
+                        </View>
+                      </Pressable>
+
+                      {selectedServerId === item.serverId && (
+                        <Animated.View style={[
+                          styles.settingsRowActions,
+                          {
+                            height: animatedValues[item.serverId]?.height || 44,
+                            opacity: animatedValues[item.serverId]?.height.interpolate({
+                              inputRange: [0, 44],
+                              outputRange: [0, 1]
+                            }) || 1
+                          }
+                        ]}>
+                          <Pressable
+                            style={styles.actionButton}
+                            onPress={() => startInlineEdit(item)}
+                          >
+                            <Text style={styles.actionButtonText}>Edit</Text>
+                          </Pressable>
+
+                          <View style={styles.actionDivider} />
+
+                          {!item.current && (
+                            <>
+                              <Pressable
+                                style={styles.actionButton}
+                                onPress={() => handleSetAsCurrent(item.serverId)}
+                              >
+                                <Text style={styles.actionButtonText}>Set as Current</Text>
+                              </Pressable>
+
+                              <View style={styles.actionDivider} />
+                            </>
+                          )}
+
+                          <Pressable
+                            style={[styles.actionButton, item.current && styles.disabledActionButton]}
+                            onPress={() => handleDelete(item.serverId)}
+                            disabled={item.current}
+                          >
+                            <Text style={[styles.deleteActionText, item.current && styles.disabledActionText]}>
+                              Delete
+                            </Text>
+                          </Pressable>
+                        </Animated.View>
+                      )}
+                    </View>
+                  )}
+                </View>
+              ))}
+            </View>
           ) : (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>No server URLs configured</Text>
-              <Pressable onPress={handleAddNew} style={styles.emptyStateButton}>
-                <AntDesign name="plus" size={16} color="#fff" style={styles.emptyStateButtonIcon} />
+              <Text style={styles.emptyStateText}>No servers configured</Text>
+              <Pressable style={styles.emptyStateButton} onPress={handleAddNew}>
                 <Text style={styles.emptyStateButtonText}>Add Your First Server</Text>
               </Pressable>
             </View>
           )}
-        </>
+        </View>
       )}
-    </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    padding: 20,
+    flex: 1
   },
   header: {
-    fontSize: 20,
-    fontWeight: '500',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  input: {
-    fontSize: 16,
-    borderRadius: 12,
-    padding: 10,
-    paddingLeft: 20,
-    marginVertical: 20,
-    marginHorizontal: 10,
-    color: '#ffffff',
-    backgroundColor: '#000000'
-  },
-  saveBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    backgroundColor: '#535aff',
-    borderRadius: 25,
-    padding: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 10,
-  },
-  cancelBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    backgroundColor: '#454545',
-    borderRadius: 25,
-    padding: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '500',
-    marginLeft: 5,
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginHorizontal: 10,
-    marginTop: 10,
-  },
-  switchContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
     paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 20,
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#2C2C2E',
   },
-  switch: {
-    marginVertical: 5,
+  headerTitle: {
+    fontSize: 30,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
-  switchLabel: {
-    fontSize: 16,
+  settingsSection: {
+    marginTop: 35,
   },
-  configGroup: {
-    marginBottom: 20,
-    backgroundColor: '#101010',
-    borderRadius: 15,
-    padding: 15,
-  },
-  configGroupHeader: {
-    fontSize: 18,
-    fontWeight: '500',
-    marginBottom: 15,
-    marginHorizontal: 15
-  },
-  serverListHeader: {
+  sectionHeaderContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 15,
-    paddingHorizontal: 10,
+    paddingHorizontal: 20,
+    marginBottom: 8,
   },
-  serverListTitle: {
-    fontSize: 18,
-    fontWeight: '500',
+  sectionHeader: {
+    fontSize: 13,
+    fontWeight: '400',
+    color: '#8E8E93',
+    textTransform: 'uppercase',
+    paddingHorizontal: 20,
+    paddingBottom: 10
   },
   addButton: {
-    backgroundColor: '#535aff',
-    borderRadius: 20,
-    width: 32,
-    height: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
   },
-  serverList: {
-    marginBottom: 20,
+  addButtonText: {
+    fontSize: 17,
+    color: '#007AFF',
+    fontWeight: '400',
   },
-  serverItem: {
-    backgroundColor: '#101010',
+  settingsGroup: {
+    backgroundColor: '#1C1C1E',
+    marginHorizontal: 20,
     borderRadius: 10,
-    padding: 15,
-    marginBottom: 12,
-    marginHorizontal: 5,
+    overflow: 'hidden',
   },
-  serverItemHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  settingsRow: {
+    backgroundColor: '#1C1C1E',
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#2C2C2E',
+    minHeight: 44,
   },
-  serverUrlTouchable: {
+  lastRow: {
+    borderBottomWidth: 0,
+  },
+  settingsRowPressable: {
     flex: 1,
-    padding: 5,
   },
-  serverItemUrl: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  setCurrentButton: {
-    width: 34,
-    height: 34,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionButtonsContainer: {
+  settingsRowContent: {
     flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    minHeight: 44,
+  },
+  settingsRowLeft: {
+    flex: 1,
+  },
+  settingsRowRight: {
+    marginLeft: 16,
+  },
+  settingsRowLabel: {
+    fontSize: 17,
+    color: '#FFFFFF',
+    fontWeight: '400',
+  },
+  settingsRowValue: {
+    fontSize: 17,
+    color: '#FFFFFF',
+    fontWeight: '400',
+  },
+  settingsRowActions: {
+    flexDirection: 'row',
+    backgroundColor: '#2C2C2E',
+    paddingHorizontal: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 10,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#333',
+    overflow: 'hidden',
   },
   actionButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  actionDivider: {
+    width: 1,
+    height: 20,
+    backgroundColor: '#48484A',
+  },
+  actionButtonText: {
+    fontSize: 17,
+    color: '#007AFF',
+    fontWeight: '400',
+  },
+  deleteActionText: {
+    fontSize: 17,
+    color: '#FF3B30',
+    fontWeight: '400',
+  },
+  disabledActionButton: {
+    opacity: 0.3,
+  },
+  disabledActionText: {
+    color: '#8E8E93',
+  },
+  inputContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  inputLabel: {
+    fontSize: 13,
+    color: '#8E8E93',
+    marginBottom: 6,
+    textTransform: 'uppercase',
+    fontWeight: '400',
+  },
+  textInput: {
+    fontSize: 17,
+    color: '#FFFFFF',
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderWidth: 0,
+    borderRadius: 12,
+    backgroundColor: '#303030',
+    borderColor: '#48484A',
+    marginVertical: 10
+  },
+  inlineActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 12,
+  },
+  inlineActionButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  buttonGroup: {
+    flexDirection: 'row',
     paddingHorizontal: 20,
-    paddingVertical: 5,
+    paddingTop: 20,
+    gap: 12,
   },
-  editText: {
-    color: '#535aff',
-    fontSize: 16,
-    fontWeight: '500',
+  cancelButton: {
+    flex: 1,
+    backgroundColor: '#2C2C2E',
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: 'center',
   },
-  deleteText: {
-    color: '#ff4d4d',
-    fontSize: 16,
-    fontWeight: '500',
+  saveButton: {
+    flex: 1,
+    backgroundColor: '#007AFF',
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: 'center',
   },
-  disabledButton: {
-    opacity: 0.5,
+  cancelButtonText: {
+    fontSize: 17,
+    color: '#FFFFFF',
+    fontWeight: '400',
   },
-  disabledText: {
-    color: '#777',
+  saveButtonText: {
+    fontSize: 17,
+    color: '#007AFF',
+    fontWeight: '600',
   },
   emptyState: {
-    padding: 30,
+    backgroundColor: '#1C1C1E',
+    marginHorizontal: 20,
+    borderRadius: 10,
+    paddingVertical: 40,
+    paddingHorizontal: 20,
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#1a1a1a',
-    borderRadius: 15,
   },
   emptyStateText: {
-    fontSize: 16,
-    marginBottom: 20,
+    fontSize: 17,
+    color: '#8E8E93',
+    marginBottom: 16,
     textAlign: 'center',
   },
   emptyStateButton: {
-    backgroundColor: '#535aff',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 25,
-    flexDirection: 'row',
-    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
   },
   emptyStateButtonText: {
-    color: '#fff',
-    fontWeight: '500',
+    fontSize: 17,
+    color: '#007AFF',
+    fontWeight: '400',
   },
-  emptyStateButtonIcon: {
-    marginRight: 8,
-  },
-  inlineEditContainer: {
-    width: '100%',
-  },
-  inlineEditInput: {
-    fontSize: 16,
-    padding: 8,
-    backgroundColor: '#000000',
-    borderRadius: 6,
-    color: '#ffffff',
-    marginBottom: 10,
-  },
-  inlineEditActions: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  textButton: {
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-  },
-  cancelText: {
-    color: '#999',
-    fontSize: 16,
-  }
 });
 
 export default ServerConfiguration;

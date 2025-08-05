@@ -91,7 +91,6 @@ function RootLayoutNav() {
           <Stack.Screen name="series/details" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#ffffff' }} />
           <Stack.Screen name="series/list" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#ffffff' }} />
           <Stack.Screen name="stream/list" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#ffffff' }} />
-          <Stack.Screen name="stream/details" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#ffffff' }} />
           <Stack.Screen name="stream/player" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#ffffff' }} />
           <Stack.Screen name="stream/embed" options={{ headerShown: false, headerTransparent: true, headerTitle: '', headerTintColor: '#ffffff' }} />
           <Stack.Screen name="settings/addons" options={{ headerShown: true, headerTransparent: true, headerTitle: '', headerTintColor: '#ffffff' }} />
