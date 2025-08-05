@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, Switch, TextInput, Pressable, FlatList, ScrollView, Alert, Animated } from 'react-native';
+import { StyleSheet, Switch, TextInput, Pressable, FlatList, ScrollView, Alert, Animated, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, Text } from '@/components/Themed';
 import { showAlert } from '@/utils/platform';
@@ -233,37 +233,55 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
     }
   };
 
+  const confirmAction = async (
+    title: string,
+    message: string,
+    confirmText: string
+  ): Promise<boolean> => {
+    if (Platform.OS === 'web') {
+      return window.confirm(`${title}\n\n${message}`);
+    }
+
+    return new Promise((resolve) => {
+      Alert.alert(
+        title,
+        message,
+        [
+          { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
+          { text: confirmText, style: 'destructive', onPress: () => resolve(true) },
+        ]
+      );
+    });
+  };
+
+
   const handleDelete = async (serverId: string) => {
     const serverToDelete = serverConfigs.find(server => server.serverId === serverId);
     if (serverToDelete?.current) {
       showAlert('Error', 'Cannot delete the current server. Please set another server as current first.');
       return;
     }
+    const title = 'Delete Server';
+    const message = 'Are you sure you want to delete this server configuration?';
 
-    Alert.alert(
-      'Delete Server',
-      'Are you sure you want to delete this server configuration?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const savedConfigs = await AsyncStorage.getItem('servers');
-              const allServers: ServerConfig[] = savedConfigs ? JSON.parse(savedConfigs) : [];
-              const updatedAllServers = allServers.filter(server => server.serverId !== serverId);
-              await AsyncStorage.setItem('servers', JSON.stringify(updatedAllServers));
-              setSelectedServerId(null);
-              await loadServers();
-              showAlert('Success', 'Server configuration deleted.');
-            } catch (error) {
-              showAlert('Error', 'Failed to delete configuration.');
-            }
-          }
-        }
-      ]
+    const confirmed = await confirmAction(
+      'Confirm Drop',
+      'Are you sure you want to drop this torrent?',
+      'Drop'
     );
+    if (!confirmed) return;
+
+    try {
+      const savedConfigs = await AsyncStorage.getItem('servers');
+      const allServers: ServerConfig[] = savedConfigs ? JSON.parse(savedConfigs) : [];
+      const updatedAllServers = allServers.filter(server => server.serverId !== serverId);
+      await AsyncStorage.setItem('servers', JSON.stringify(updatedAllServers));
+      setSelectedServerId(null);
+      await loadServers();
+      showAlert('Success', 'Server configuration deleted.');
+    } catch (error) {
+      showAlert('Error', 'Failed to delete configuration.');
+    }
   };
 
   const handleSetAsCurrent = async (serverId: string) => {
@@ -712,12 +730,12 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     fontSize: 17,
     color: '#FFFFFF',
-    fontWeight: '400',
+    fontWeight: '500',
   },
   saveButtonText: {
     fontSize: 17,
-    color: '#007AFF',
-    fontWeight: '600',
+    color: '#ffffff',
+    fontWeight: '500',
   },
   emptyState: {
     backgroundColor: '#1C1C1E',
