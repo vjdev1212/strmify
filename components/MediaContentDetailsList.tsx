@@ -24,7 +24,7 @@ interface MediaContentDetailsListProps {
 // Constants
 const UNKNOWN_TEXT = 'Unknown';
 const NOT_RATED_TEXT = 'Not Rated';
-const STAR_COLOR = '#FFD700';
+const STAR_COLOR = '#E6BD37';
 const STAR_SIZE = 14;
 
 const MediaContentDetailsList: React.FC<MediaContentDetailsListProps> = ({

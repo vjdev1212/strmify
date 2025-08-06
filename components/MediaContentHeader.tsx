@@ -16,7 +16,7 @@ interface MediaContentHeaderProps {
 
 // Constants
 const HEADER_TEXT_COLOR = '#ffffff';
-const STAR_COLOR = '#FFD700'; // Gold color for star rating
+const STAR_COLOR = '#E6BD37'; // Gold color for star rating
 const GENRE_BG_COLOR = 'rgba(255, 255, 255, 0.15)';
 const INFO_BG_COLOR = 'rgba(255, 255, 255, 0.08)';
 const SEPARATOR_COLOR = 'rgba(255, 255, 255, 0.6)';
