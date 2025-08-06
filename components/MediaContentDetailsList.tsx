@@ -3,6 +3,8 @@ import { StyleSheet } from 'react-native';
 import { Text, View } from './Themed';
 import { formatDate } from '@/utils/Date';
 import { FontAwesome } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 
 // Type definitions
 interface Language {
@@ -41,12 +43,14 @@ const MediaContentDetailsList: React.FC<MediaContentDetailsListProps> = ({
     const formattedDate = formatDate(released);
     const genreText = genre.length > 0 ? genre.join(', ') : UNKNOWN_TEXT;
     const countryText = country.length > 0 ? country.join(', ') : UNKNOWN_TEXT;
-    const languagesText = languages.length > 0 
-      ? languages.map(l => l.english_name).join(', ') 
-      : UNKNOWN_TEXT;
-    const runtimeText = runtime !== '0' ? `${runtime} mins` : `${UNKNOWN_TEXT} mins`;
+    const languagesText =
+      languages.length > 0
+        ? languages.map(l => l.english_name).join(', ')
+        : UNKNOWN_TEXT;
+    const runtimeText =
+      runtime !== '0' ? `${runtime} mins` : `${UNKNOWN_TEXT} mins`;
     const ratingText = hasRating ? imdbRating : NOT_RATED_TEXT;
-    
+
     return {
       isMovie,
       hasRating,
@@ -61,14 +65,21 @@ const MediaContentDetailsList: React.FC<MediaContentDetailsListProps> = ({
   }, [type, genre, runtime, imdbRating, released, country, languages]);
 
   // Render helper for table rows
-  const renderTableRow = (label: string, value: string | React.ReactNode, key: string, isLast?: boolean) => (
+  const renderTableRow = (
+    label: string,
+    value: string | React.ReactNode,
+    key: string,
+    isLast?: boolean
+  ) => (
     <View key={key} style={[styles.tableRow, !isLast && styles.rowBorder]}>
       <View style={styles.labelCell}>
         <Text style={styles.label}>{label}</Text>
       </View>
       <View style={styles.valueCell}>
         {typeof value === 'string' ? (
-          <Text numberOfLines={2} style={styles.value}>{value}</Text>
+          <Text numberOfLines={2} style={styles.value}>
+            {value}
+          </Text>
         ) : (
           value
         )}
@@ -100,16 +111,22 @@ const MediaContentDetailsList: React.FC<MediaContentDetailsListProps> = ({
 
   return (
     <View style={styles.container}>
-      <View style={styles.tableContainer}>
-        {tableData.map((item, index) => 
+      {/* Glass background */}
+      <BlurView intensity={50} tint="dark" style={styles.tableContainer}>
+        {/* Subtle gradient overlay for depth */}
+        <LinearGradient
+          colors={['rgba(255,255,255,0)', 'rgba(255,255,255,0.01)']}
+          style={StyleSheet.absoluteFill}
+        />
+        {tableData.map((item, index) =>
           renderTableRow(
-            item.label, 
-            item.value, 
-            item.key, 
+            item.label,
+            item.value,
+            item.key,
             index === tableData.length - 1
           )
         )}
-      </View>
+      </BlurView>
     </View>
   );
 };
@@ -120,20 +137,20 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   tableContainer: {
-    backgroundColor: '#101010',
-    borderRadius: 12,
+    borderRadius: 16,
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: 'rgba(16, 16, 16, 0.4)', // translucent
   },
   tableRow: {
-    flexDirection: 'row',    
+    flexDirection: 'row',
     paddingHorizontal: 20,
     paddingVertical: 10,
     alignItems: 'center',
   },
   rowBorder: {
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: 'rgba(255, 255, 255, 0.05)',
   },
   labelCell: {

@@ -8,7 +8,7 @@ import {
     Image,
     ImageBackground,
 } from 'react-native';
-import { Text } from '@/components/Themed';
+import { ActivityIndicator, Text } from '@/components/Themed';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { getYear } from '@/utils/Date';
@@ -316,8 +316,8 @@ export default function AppleTVCarousel({
         return (
             <View style={[styles.container, styles.loadingContainer, {
                 height: responsiveDims.carouselHeight
-            }]}>
-                <Text style={styles.loadingText}>Loading...</Text>
+            }]}>                
+                <ActivityIndicator></ActivityIndicator>
             </View>
         );
     }
