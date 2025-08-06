@@ -106,9 +106,9 @@ function RootLayoutNav() {
 
   return (
     <View style={styles.container}>
-      {/* Global Background - only the base gradient */}
+      {/* Global Background Gradient */}
       <LinearGradient
-        colors={['#0a0a0a', '#1a1a1a', '#2a2a2a']}
+        colors={['#000000', '#333333', '#666666']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.backgroundGradient}
@@ -363,34 +363,9 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
   },
   screenContent: {
-    backgroundColor: '#0a0a0a', // Solid background for most screens
   },
   modalContent: {
-    backgroundColor: 'rgba(10, 10, 10, 0.95)',
-  },
-  detailsContent: {
-    backgroundColor: 'rgba(10, 10, 10, 0.98)',
-    paddingTop: 100, // Space for transparent header
-  },
-  listContent: {
-    backgroundColor: 'rgba(10, 10, 10, 0.95)',
-    paddingTop: 100, // Space for transparent header
-  },
-  streamContent: {
-    backgroundColor: 'rgba(10, 10, 10, 0.98)',
-    paddingTop: 100, // Space for transparent header
-  },
-  playerContent: {
-    backgroundColor: '#000000', // Solid black for player
-    paddingTop: 100, // Space for transparent header
-  },
-  embedContent: {
-    backgroundColor: '#000000', // Solid black for embed
-    paddingTop: 100, // Space for transparent header
-  },
-  settingsContent: {
-    backgroundColor: 'rgba(10, 10, 10, 0.95)',
-    paddingTop: 100, // Space for transparent header
+    backgroundColor: 'rgba(0, 0, 0, 0.95)',
   },
   glassHeader: {
     backgroundColor: 'transparent',
@@ -414,22 +389,20 @@ const styles = StyleSheet.create({
 // Enhanced global glass styles for use in other components
 export const globalGlassStyles = StyleSheet.create({
   glassContainer: {
-    backgroundColor: 'rgba(18, 18, 18, 0.7)',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: 'rgba(255, 255, 255, 0.15)',
     borderRadius: 15,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
     shadowRadius: 20,
     elevation: 8,
-    // For React Native, we can't use backdropFilter, 
-    // so we rely on BlurView components where needed
   },
   glassCard: {
-    backgroundColor: 'rgba(18, 18, 18, 0.6)',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
     borderRadius: 12,
     padding: 16,
     margin: 8,
@@ -452,7 +425,6 @@ export const globalGlassStyles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 5,
   },
-  // Additional utility styles
   glassOverlay: {
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
     borderRadius: 10,
