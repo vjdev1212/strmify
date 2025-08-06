@@ -11,7 +11,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 const SettingsScreen = () => {
   const router = useRouter();
   const colorScheme = useColorScheme();
-  
+
   // Get the environment variables and default to false if not set
   const showContact = process.env.EXPO_PUBLIC_SHOW_CONTACT === 'true';
   const enableStremio = process.env.EXPO_PUBLIC_ENABLE_STREMIO === 'true';
@@ -19,11 +19,11 @@ const SettingsScreen = () => {
 
   // Build servers list conditionally based on flags
   const serversList: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [];
-  
+
   if (enableStremio) {
     serversList.push({ title: 'Stremio', route: '/settings/stremioserver', icon: 'magnet-outline' });
   }
-  
+
   if (enableTorrServer) {
     serversList.push({ title: 'TorrServer', route: '/settings/torrserver', icon: 'magnet-outline' });
   }
@@ -40,21 +40,21 @@ const SettingsScreen = () => {
   ];
 
   // SettingItem Component with iOS dark styling
-  const SettingItem = ({ 
-    title, 
-    icon, 
-    onPress, 
-    isFirst = false, 
-    isLast = false 
-  }: { 
-    title: string, 
-    icon: keyof typeof Ionicons.glyphMap, 
+  const SettingItem = ({
+    title,
+    icon,
+    onPress,
+    isFirst = false,
+    isLast = false
+  }: {
+    title: string,
+    icon: keyof typeof Ionicons.glyphMap,
     onPress: () => void,
     isFirst?: boolean,
     isLast?: boolean
   }) => {
     return (
-      <Pressable 
+      <Pressable
         style={[
           styles.settingItem,
           {
@@ -64,16 +64,16 @@ const SettingsScreen = () => {
             borderBottomLeftRadius: isLast ? 10 : 0,
             borderBottomRightRadius: isLast ? 10 : 0,
           }
-        ]} 
+        ]}
         onPress={onPress}
         android_ripple={{ color: '#2C2C2E' }}
       >
         <View style={styles.leftContent}>
-          <Ionicons 
-            name={icon} 
-            size={20} 
-            color='#535aff' 
-            style={styles.icon} 
+          <Ionicons
+            name={icon}
+            size={20}
+            color='#535aff'
+            style={styles.icon}
           />
           <Text style={[
             styles.settingText,
@@ -82,10 +82,10 @@ const SettingsScreen = () => {
             {title}
           </Text>
         </View>
-        <MaterialIcons 
-          name="chevron-right" 
-          size={20} 
-          color='#8E8E93' 
+        <MaterialIcons
+          name="chevron-right"
+          size={20}
+          color='#8E8E93'
         />
         {!isLast && (
           <View style={styles.separator} />
@@ -104,13 +104,11 @@ const SettingsScreen = () => {
   return (
     <SafeAreaView style={[
       styles.container,
-      { backgroundColor: '#000000' }
     ]}>
       <StatusBar />
-      <ScrollView 
-        contentContainerStyle={styles.scrollViewContent} 
+      <ScrollView
+        contentContainerStyle={styles.scrollViewContent}
         showsVerticalScrollIndicator={false}
-        style={{ backgroundColor: '#000000' }}
       >
         {/* General Section */}
         <View style={styles.section}>

@@ -182,7 +182,6 @@ export default function AddAddonScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#000000',
         width: '100%',
         marginTop: 30,
         maxWidth: 780,

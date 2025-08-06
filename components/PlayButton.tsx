@@ -20,12 +20,23 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     flexDirection: 'row',
     justifyContent: 'center',
-    backgroundColor: '#535aff'
+    backgroundColor: 'rgba(83, 90, 255, 0.3)',
+    borderWidth: 1,
+    borderColor: 'rgba(83, 90, 255, 0.3)',
+    backdropFilter: 'blur(10px)',
+    shadowColor: '#535aff',
+    shadowOffset: {
+      width: 0,
+      height: 6,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 15,
+    elevation: 8,
   },
   text: {
     color: '#fff',
     fontSize: 18,
-    fontWeight: 500
+    fontWeight: '500'
   },
   icon: {
     marginRight: 8,
