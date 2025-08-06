@@ -317,7 +317,7 @@ export default function AppleTVCarousel({
             <View style={[styles.container, styles.loadingContainer, {
                 height: responsiveDims.carouselHeight
             }]}>                
-                <ActivityIndicator></ActivityIndicator>
+                <ActivityIndicator color="#535aff"></ActivityIndicator>
             </View>
         );
     }
