@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
     left: 50, // Start separator from where the title begins (icon width + margin + padding)
     right: 0,
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#2a2a2a',
+    backgroundColor: 'rgba(42, 42, 42, 0.5)',
   },
 });
 
