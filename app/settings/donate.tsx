@@ -30,7 +30,7 @@ const DonateScreen = () => {
                         </View>
                         <Text style={styles.title}>Enjoying the App?</Text>
                         <Text style={styles.subtitle}>
-                            Your support helps keep this project alive and enables continuous improvements. 
+                            Your support helps keep this project alive and enables continuous improvements.
                             Every contribution makes a difference!
                         </Text>
                     </View>
@@ -53,11 +53,11 @@ const DonateScreen = () => {
 
                     {/* Donation Button */}
                     <View style={styles.donationSection}>
-                        <Pressable 
+                        <Pressable
                             style={({ pressed }) => [
                                 styles.donateButton,
                                 pressed && styles.donateButtonPressed
-                            ]} 
+                            ]}
                             onPress={handleDonate}
                         >
                             <View style={styles.buttonContent}>
@@ -66,7 +66,7 @@ const DonateScreen = () => {
                                 <Ionicons name="arrow-forward" size={20} color="#fff" style={styles.arrowIcon} />
                             </View>
                         </Pressable>
-                        
+
                         <Text style={styles.supportText}>
                             Thank you for supporting this project! ☕
                         </Text>
@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
         width: 80,
         height: 80,
         borderRadius: 40,
-        backgroundColor: '#1f1f1f', // Darker icon background
+        backgroundColor: '#101010', // Darker icon background
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 24,
@@ -126,9 +126,9 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
     },
     featuresSection: {
-        backgroundColor: '#1a1a1a', // Dark card
+        backgroundColor: '#101010',
         borderRadius: 16,
-        padding: 24,
+        padding: 20,
         marginBottom: 32,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
@@ -153,8 +153,8 @@ const styles = StyleSheet.create({
     donateButton: {
         backgroundColor: '#535aff', // Keep brand color
         borderRadius: 16,
-        paddingVertical: 18,
-        paddingHorizontal: 32,
+        paddingVertical: 15,
+        paddingHorizontal: 26,
         marginBottom: 16,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 6 },
