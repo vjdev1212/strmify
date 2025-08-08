@@ -57,6 +57,7 @@ export default function TabLayout() {
       screenOptions={{
         tabBarActiveTintColor: '#535aff',
         headerShown: false,
+        tabBarHideOnKeyboard: Platform.OS === 'ios',
         tabBarLabelStyle: {
           fontFamily: webFontFamily,
         },
