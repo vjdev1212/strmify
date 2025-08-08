@@ -1,10 +1,11 @@
 import { Alert, Platform } from 'react-native';
 
 export const isHapticsSupported = (): boolean => {
-    if (Platform.OS === 'ios' || Platform.OS === 'android') {
-        return true;
-    }
-    return false;
+    // if (Platform.OS === 'ios' || Platform.OS === 'android') {
+    //     return true;
+    // }
+    // return false;
+    return true;
 };
 
 export const isOrientationSupported = (): boolean => {
