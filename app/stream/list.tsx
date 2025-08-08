@@ -12,6 +12,7 @@ import { generateStremioPlayerUrl } from '@/clients/stremio';
 import { generateTorrServerPlayerUrl } from '@/clients/torrserver';
 import { ServerConfig } from '@/components/ServerConfig';
 import { Linking } from 'react-native';
+import BottomSpacing from '@/components/BottomSpacing';
 
 interface Stream {
     name: string;
@@ -759,7 +760,10 @@ const StreamListScreen = () => {
                         </View>
                     </RNView>
                 ) : addons?.length > 0 ? (
-                    <View>
+                    <View style={{
+                        borderBottomWidth: StyleSheet.hairlineWidth,
+                        borderColor: 'rgba(255,255,255, 0.05)'
+                    }}>
                         <ScrollView
                             horizontal
                             showsHorizontalScrollIndicator={false}
@@ -817,6 +821,7 @@ const StreamListScreen = () => {
                     </ScrollView>
                 )
             }
+            <BottomSpacing space={30} />
 
             {/* Status Modal */}
             <Modal
@@ -837,15 +842,14 @@ const StreamListScreen = () => {
                     </View>
                 </TouchableWithoutFeedback>
             </Modal>
-        </SafeAreaView>
+        </SafeAreaView >
     );
 };
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        marginTop: 40,
-        backgroundColor: '#000000',
+        marginTop: 40
     },
     scrollContainer: {
         paddingBottom: 20,
@@ -854,7 +858,7 @@ const styles = StyleSheet.create({
         width: '100%'
     },
     addonListContainer: {
-        marginVertical: 20,
+        marginVertical: 15,
         marginHorizontal: 15,
         alignItems: 'center',
         justifyContent: 'center'
@@ -885,7 +889,7 @@ const styles = StyleSheet.create({
     },
     streamsContainer: {
         paddingHorizontal: 16,
-        paddingTop: 8,
+        paddingVertical: 40,
     },
     streamContainer: {
         marginBottom: 12,
@@ -925,9 +929,9 @@ const styles = StyleSheet.create({
         lineHeight: 22,
     },
     qualityBadge: {
-        backgroundColor: 'rgba(83, 90, 255, 0.5)',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
+        backgroundColor: 'rgba(83, 90, 255, 0.25)',
+        paddingHorizontal: 10,
+        paddingVertical: 6,
         borderRadius: 6,
         marginLeft: 8,
         marginTop: 2,
