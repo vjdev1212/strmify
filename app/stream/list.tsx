@@ -152,7 +152,7 @@ const StreamListScreen = () => {
     const fetchServerConfigs = useCallback(async () => {
         try {
             const enabledServers = getEnabledServers();
-            
+
             if (enabledServers.length === 0) {
                 console.warn('No servers are enabled in environment variables');
                 showAlert('Error', 'No streaming servers are enabled');
@@ -190,7 +190,7 @@ const StreamListScreen = () => {
                 }
             } else {
                 const allServers: ServerConfig[] = JSON.parse(storedServers);
-                
+
                 // Filter servers based on enabled ones
                 if (ENABLE_STREMIO) {
                     const stremioServers = allServers.filter(server => server.serverType === Servers.Stremio);
@@ -507,7 +507,7 @@ const StreamListScreen = () => {
 
     const showServerSelection = (stream: Stream) => {
         const enabledServers = getEnabledServers();
-        
+
         // If no servers are enabled, show error
         if (enabledServers.length === 0) {
             showAlert('Error', 'No streaming servers are enabled');
@@ -518,7 +518,7 @@ const StreamListScreen = () => {
         if (enabledServers.length === 1) {
             const selectedServerType = enabledServers[0];
             const servers = serversMap[selectedServerType];
-            
+
             if (servers && servers.length > 0) {
                 const currentServer = servers.find(server => server.current);
                 const serverId = currentServer ? currentServer.serverId : servers[0].serverId;
@@ -547,8 +547,8 @@ const StreamListScreen = () => {
 
         const cancelButtonIndex = serverOptions.length - 1;
 
-        showActionSheetWithOptions(            
-            {                
+        showActionSheetWithOptions(
+            {
                 options: serverOptions,
                 cancelButtonIndex,
                 title: 'Server',
@@ -630,18 +630,32 @@ const StreamListScreen = () => {
         );
     };
 
-    const handleServerToggle = async (type: string) => {
-        if (isHapticsSupported()) {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+    // Helper function to extract quality from stream name
+    const extractQuality = (name: string): string => {
+        const qualities = ['4K', '2160p', '1440p', '1080p', '720p', '480p', '360p'];
+        for (const quality of qualities) {
+            if (name.includes(quality)) {
+                return quality;
+            }
         }
-        setServerType(type);
+        return '';
     };
 
-    const handlePlayerSelect = async (playerName: string) => {
-        if (isHapticsSupported()) {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+    // Helper function to extract size from description or title
+    const extractSize = (text: string): string => {
+        const sizeMatch = text?.match(/(\d+(?:\.\d+)?)\s*(GB|MB|TB)/i);
+        return sizeMatch ? `${sizeMatch[1]} ${sizeMatch[2]}` : '';
+    };
+
+    // Helper function to check if stream is a torrent
+    const getStreamType = (stream: Stream): string => {
+        if (!!stream.infoHash || stream.name.toLowerCase().includes('torrent')) {
+            return 'Torrent';
         }
-        setSelectedPlayer(playerName);
+        if (!!stream.embed) {
+            return 'Embed';
+        }
+        return 'Direct';
     };
 
     interface AddonItemProps {
@@ -683,27 +697,44 @@ const StreamListScreen = () => {
 
     const RenderStreamItem = ({ item }: StreamItemProps): React.ReactElement => {
         const { name, title, description } = item;
+        const quality = extractQuality(name);
+        const size = extractSize(description || title || '');
+        const streamType = getStreamType(item);
 
         return (
-            <RNView style={[{
-                marginHorizontal: 'auto',
-                marginVertical: 10,
-                justifyContent: 'space-evenly',
-                width: '98%',
-                maxWidth: 380,
-                alignSelf: 'center'
-            }]}>
-                <Pressable onPress={() => handleStreamSelected(item)}>
-                    <Card style={styles.streamItem}>
-                        <Text style={styles.streamName} numberOfLines={2}>
-                            {name}
-                        </Text>
-                        <Text style={styles.streamTitle}>
+            <Pressable onPress={() => handleStreamSelected(item)} style={styles.streamContainer}>
+                <Card style={styles.streamItem}>
+                    <RNView style={styles.streamHeader}>
+                        <RNView style={styles.streamTitleContainer}>
+                            <Text style={styles.streamName} numberOfLines={2}>
+                                {name}
+                            </Text>
+                            {quality && (
+                                <RNView style={styles.qualityBadge}>
+                                    <Text style={styles.qualityText}>{quality}</Text>
+                                </RNView>
+                            )}
+                        </RNView>
+                    </RNView>
+
+                    {(title || description) && (
+                        <Text style={styles.streamDescription} numberOfLines={5}>
                             {title || description}
                         </Text>
-                    </Card>
-                </Pressable>
-            </RNView>
+                    )}
+
+                    <RNView style={styles.streamFooter}>
+                        <RNView style={styles.streamMetadata}>
+                            {size && (
+                                <Text style={styles.streamSize}>{size}</Text>
+                            )}
+                            <Text style={styles.streamType}>
+                                {streamType}
+                            </Text>
+                        </RNView>
+                    </RNView>
+                </Card>
+            </Pressable>
         );
     };
 
@@ -751,7 +782,7 @@ const StreamListScreen = () => {
                         </View>
                     </RNView>
                 ) : (
-                    <ScrollView showsVerticalScrollIndicator={false}>
+                    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer}>
                         <View style={styles.streamsContainer}>
                             {
                                 streams.length > 0 ? (
@@ -804,11 +835,18 @@ const StreamListScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        marginTop: 40
+        marginTop: 40,
+        backgroundColor: '#000000',
+    },
+    scrollContainer: {
+        paddingBottom: 20,
+        maxWidth: 780,
+        margin: 'auto',
+        width: '100%'
     },
     addonListContainer: {
         marginVertical: 20,
-        marginHorizontal: '5%',
+        marginHorizontal: 15,
         alignItems: 'center',
         justifyContent: 'center'
     },
@@ -820,38 +858,108 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         paddingHorizontal: 20,
         marginHorizontal: 5,
+        backgroundColor: '#101010',
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: '#333',
     },
     selectedAddonItem: {
-        backgroundColor: '#535aff'
+        backgroundColor: 'rgba(83, 90, 255, 0.75)',
+        borderColor: '#535aff',
     },
     addonName: {
         fontSize: 15,
+        color: '#ffffff',
     },
     selectedaddonName: {
         color: '#fff',
+        fontWeight: '500',
     },
     streamsContainer: {
-        flexGrow: 0,
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        justifyContent: 'space-evenly',
+        paddingHorizontal: 16,
+        paddingTop: 8,
+    },
+    streamContainer: {
+        marginBottom: 12,
     },
     streamItem: {
-        paddingHorizontal: 10,
-        paddingVertical: 20,
-        marginVertical: 10,
-        marginHorizontal: 20,
-        borderRadius: 10,
-        backgroundColor: '#111111'
+        backgroundColor: '#101010',
+        borderRadius: 12,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: '#1a1a1a',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        elevation: 3,
+    },
+    streamHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: 8,
+    },
+    streamTitleContainer: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        paddingRight: 12,
     },
     streamName: {
-        fontSize: 14,
-        marginBottom: 10,
-        paddingHorizontal: 10,
+        fontSize: 16,
+        fontWeight: '500',
+        color: '#ffffff',
+        flex: 1,
+        lineHeight: 22,
     },
-    streamTitle: {
-        fontSize: 13,
-        paddingHorizontal: 10,
+    qualityBadge: {
+        backgroundColor: 'rgba(83, 90, 255, 0.5)',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 6,
+        marginLeft: 8,
+        marginTop: 2,
+    },
+    qualityText: {
+        color: '#ffffff',
+        fontSize: 12,
+        fontWeight: '500'
+    },
+    streamIconContainer: {
+        padding: 4,
+    },
+    streamDescription: {
+        fontSize: 14,
+        color: '#cccccc',
+        lineHeight: 20,
+        marginBottom: 12,
+    },
+    streamFooter: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    streamMetadata: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    streamSize: {
+        fontSize: 12,
+        color: '#888',
+        marginRight: 12,
+        backgroundColor: '#2a2a2a',
+        paddingHorizontal: 6,
+        paddingVertical: 4,
+        borderRadius: 4,
+    },
+    streamType: {
+        fontSize: 12,
+        color: '#666',
+        textTransform: 'uppercase',
+        fontWeight: '500',
     },
     loadingContainer: {
         flex: 1,
@@ -865,6 +973,7 @@ const styles = StyleSheet.create({
     loadingText: {
         fontSize: 16,
         marginTop: 10,
+        color: '#ffffff',
     },
     centeredContainer: {
         flex: 1,
@@ -875,6 +984,7 @@ const styles = StyleSheet.create({
     centeredText: {
         fontSize: 18,
         textAlign: 'center',
+        color: '#ffffff',
     },
     noStreams: {
         marginTop: 150,
@@ -901,28 +1011,32 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)'
+        backgroundColor: 'rgba(0, 0, 0, 0.8)'
     },
     modalContainer: {
-        padding: 20,
-        borderRadius: 10,
-        minWidth: 250,
-        maxWidth: 300,
-        minHeight: 100,
+        padding: 24,
+        borderRadius: 16,
+        minWidth: 280,
+        maxWidth: 320,
+        minHeight: 120,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#111111'
+        backgroundColor: '#1a1a1a',
+        borderWidth: 1,
+        borderColor: '#333',
     },
     modalText: {
         fontSize: 16,
         textAlign: 'center',
         marginVertical: 20,
         color: '#ffffff',
+        lineHeight: 22,
     },
     cancelButton: {
         marginVertical: 20,
         paddingVertical: 12,
-        borderRadius: 30,
+        paddingHorizontal: 24,
+        borderRadius: 8,
         alignItems: 'center',
         minWidth: 120,
         backgroundColor: '#535aff'
@@ -930,7 +1044,7 @@ const styles = StyleSheet.create({
     cancelButtonText: {
         fontSize: 16,
         color: '#ffffff',
-        fontWeight: 500
+        fontWeight: '600'
     }
 });
 

@@ -79,6 +79,7 @@ const SearchScreen = () => {
             placeholderTextColor="#666"
             value={query}
             onChangeText={setQuery}
+            submitBehavior="blurAndSubmit"
           />
           {query.length > 0 && (
             <Pressable onPress={clearSearch} style={styles.clearButton}>

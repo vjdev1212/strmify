@@ -408,6 +408,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
                   placeholderTextColor="#8E8E93"
                   autoCapitalize="none"
                   autoCorrect={false}
+                  submitBehavior="blurAndSubmit"
                 />
               </View>
             </View>
@@ -454,6 +455,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
                             autoCapitalize="none"
                             autoCorrect={false}
                             autoFocus
+                            submitBehavior="blurAndSubmit"
                           />
                         </View>
                         <View style={styles.inlineActions}>

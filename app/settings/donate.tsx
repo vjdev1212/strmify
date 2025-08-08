@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     donateButton: {
-        backgroundColor: '#535aff', // Keep brand color
+        backgroundColor: 'rgba(83, 90, 255, 0.7)', // Keep brand color
         borderRadius: 16,
         paddingVertical: 15,
         paddingHorizontal: 26,

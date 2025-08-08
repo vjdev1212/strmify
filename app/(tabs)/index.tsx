@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   filterButtonActive: {
-    backgroundColor: 'rgba(83, 90, 255, 0.9)',
+    backgroundColor: 'rgba(83, 90, 255, 0.8)',
   },
   filterButtonText: {
     fontSize: 15,

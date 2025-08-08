@@ -20,7 +20,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     flexDirection: 'row',
     justifyContent: 'center',
-    backgroundColor: 'rgba(83, 90, 255, 0.3)',
+    backgroundColor: 'rgba(83, 90, 255, 0.9)',
     borderWidth: 1,
     borderColor: 'rgba(83, 90, 255, 0.3)',
     backdropFilter: 'blur(10px)',

@@ -58,7 +58,7 @@ const getColumnsForDevice = (deviceType: string, isPortrait: boolean) => {
 const THUMBNAIL_BACKGROUND_COLOR = '#0f0f0f';
 const EPISODE_AIRED_COLOR = '#afafaf';
 const EPISODE_DESCRIPTION_COLOR = '#efefef';
-const SELECTED_SEASON_COLOR = '#535aff';
+const SELECTED_SEASON_COLOR = 'rgba(83, 90, 255, 0.75)';
 const DARK_SEASON_BUTTON_COLOR = '#101010';
 const LIGHT_SEASON_BUTTON_COLOR = '#f0f0f0';
 const ANIMATION_DURATION = 500;

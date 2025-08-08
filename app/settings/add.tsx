@@ -98,7 +98,7 @@ export default function AddAddonScreen() {
                         onSubmitEditing={fetchManifest}
                         numberOfLines={1}
                         returnKeyType="go"
-                        submitBehavior={'submit'}
+                        submitBehavior="blurAndSubmit"
                     />
                 </View>
             </View>
@@ -331,26 +331,26 @@ const styles = StyleSheet.create({
     addButton: {
         backgroundColor: '#535aff',
         paddingVertical: 14,
-        paddingHorizontal: 32,
+        paddingHorizontal: 26,
         borderRadius: 12,
         alignItems: 'center',
         alignSelf: 'center',
         minWidth: 140,
     },
     addButtonShadow: {
-        shadowColor: '#535aff',
+        shadowColor: 'rgba(83, 90, 255, 0.75)',
         shadowOffset: {
             width: 0,
-            height: 8,
+            height: 3,
         },
         shadowOpacity: 0.3,
-        shadowRadius: 16,
-        elevation: 8,
+        shadowRadius: 6,
+        elevation: 6,
     },
     addButtonText: {
         color: '#ffffff',
         fontSize: 16,
-        fontWeight: '600',
+        fontWeight: '500',
         letterSpacing: 0.5,
     },
 });
