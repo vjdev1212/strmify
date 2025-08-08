@@ -389,8 +389,9 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
                   <Switch
                     value={isCurrent}
                     onValueChange={toggleCurrent}
-                    trackColor={{ false: '#E5E5EA', true: '#007AFF' }}
-                    thumbColor="#FFFFFF"
+                    trackColor={{ false: '#374151', true: '#535aff' }}
+                    thumbColor={isCurrent ? '#ffffff' : '#d1d5db'}
+                    ios_backgroundColor="#374151"
                   />
                 </View>
               </View>
