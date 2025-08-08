@@ -631,15 +631,24 @@ const StreamListScreen = () => {
     };
 
     // Helper function to extract quality from stream name
-    const extractQuality = (name: string): string => {
-        const qualities = ['4K', '2160p', '1440p', '1080p', '720p', '480p', '360p'];
+    const extractQuality = (name: string, title: string | undefined): string => {
+        const qualities = ['4K', '2160p', '1440p', '1080p', '720p', '480p', '360p', 'TeleSync', 'HDTS', 'DVD', 'WEB-DL', 'WEBDL', 'CAM'];
+
         for (const quality of qualities) {
-            if (name.includes(quality)) {
+            const lowerQuality = quality.toLowerCase();
+
+            if (name.toLowerCase().includes(lowerQuality)) {
+                return quality;
+            }
+
+            if (title && title.toLowerCase().includes(lowerQuality)) {
                 return quality;
             }
         }
+
         return '';
     };
+
 
     // Helper function to extract size from description or title
     const extractSize = (text: string): string => {
@@ -697,7 +706,7 @@ const StreamListScreen = () => {
 
     const RenderStreamItem = ({ item }: StreamItemProps): React.ReactElement => {
         const { name, title, description } = item;
-        const quality = extractQuality(name);
+        const quality = extractQuality(name, title);
         const size = extractSize(description || title || '');
         const streamType = getStreamType(item);
 
