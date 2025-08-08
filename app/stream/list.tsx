@@ -13,6 +13,9 @@ import { generateTorrServerPlayerUrl } from '@/clients/torrserver';
 import { ServerConfig } from '@/components/ServerConfig';
 import { Linking } from 'react-native';
 import BottomSpacing from '@/components/BottomSpacing';
+import { getPlatformSpecificPlayers, Players } from '@/utils/MediaPlayer';
+import StatusModal from '@/components/StatusModal';
+import { extractQuality, extractSize, getStreamType } from '@/utils/StreamItem';
 
 interface Stream {
     name: string;
@@ -38,17 +41,6 @@ enum Servers {
     Stremio = 'stremio',
     TorrServer = 'torrserver',
     Cancel = 'cancel',
-}
-
-enum Players {
-    Default = 'Default',
-    Browser = 'Browser',
-    VLC = 'VLC',
-    Infuse = 'Infuse',
-    VidHub = 'VidHub',
-    MXPlayer = "MX Player",
-    MXPlayerPro = "MX PRO",
-    OutPlayer = 'OutPlayer'
 }
 
 const DEFAULT_STREMIO_URL = 'https://127.0.0.1:12470';
@@ -101,54 +93,6 @@ const StreamListScreen = () => {
         return enabledServers;
     }, []);
 
-    const loadDefaultPlayer = async () => {
-        try {
-            const savedDefault = await AsyncStorage.getItem(STORAGE_KEY);
-            if (savedDefault) {
-                const defaultPlayerName = JSON.parse(savedDefault);
-                return defaultPlayerName;
-            }
-        } catch (error) {
-            console.error('Error loading default player:', error);
-        }
-        return null;
-    };
-
-    const getPlatformSpecificPlayers = () => {
-        if (getOriginalPlatform() === 'android') {
-            return [
-                { name: Players.Browser, scheme: 'STREAMURL', encodeUrl: false },
-                { name: Players.VLC, scheme: 'vlc://STREAMURL', encodeUrl: false },
-                { name: Players.MXPlayer, scheme: 'intent:STREAMURL?sign=Yva5dQp8cFQpVAMUh1QxNWbZAZ2h05lYQ4qAxqf717w=:0#Intent;package=com.mxtech.videoplayer.ad;S.title=STREAMTITLE;end', encodeUrl: false },
-                { name: Players.MXPlayerPro, scheme: 'intent:STREAMURL?sign=Yva5dQp8cFQpVAMUh1QxNWbZAZ2h05lYQ4qAxqf717w=:0#Intent;package=com.mxtech.videoplayer.pro;S.title=STREAMTITLE;end', encodeUrl: false },
-                { name: Players.VidHub, scheme: 'open-vidhub://x-callback-url/open?url=STREAMURL', encodeUrl: true },
-            ];
-        } else if (getOriginalPlatform() === 'ios') {
-            return [
-                { name: Players.Browser, scheme: 'STREAMURL', encodeUrl: false },
-                { name: Players.VLC, scheme: 'vlc://STREAMURL', encodeUrl: false },
-                { name: Players.Infuse, scheme: 'infuse://x-callback-url/play?url=STREAMURL', encodeUrl: true },
-                { name: Players.VidHub, scheme: 'open-vidhub://x-callback-url/open?url=STREAMURL', encodeUrl: true },
-                { name: Players.OutPlayer, scheme: 'outplayer://STREAMURL', encodeUrl: false },
-            ];
-        } else if (getOriginalPlatform() === 'web') {
-            return [
-                { name: Players.Browser, scheme: 'STREAMURL', encodeUrl: false }
-            ];
-        } else if (getOriginalPlatform() === 'windows') {
-            return [
-                { name: Players.Browser, scheme: 'STREAMURL', encodeUrl: false },
-            ];
-        } else if (getOriginalPlatform() === 'macos') {
-            return [
-                { name: Players.Browser, scheme: 'STREAMURL', encodeUrl: false },
-                { name: Players.VLC, scheme: 'vlc://STREAMURL', encodeUrl: false },
-                { name: Players.Infuse, scheme: 'infuse://x-callback-url/play?url=STREAMURL', encodeUrl: true },
-                { name: Players.VidHub, scheme: 'open-vidhub://x-callback-url/open?url=STREAMURL', encodeUrl: true },
-            ];
-        }
-        return [];
-    };
 
     const fetchServerConfigs = useCallback(async () => {
         try {
@@ -253,14 +197,9 @@ const StreamListScreen = () => {
     }, [fetchServerConfigs]);
 
     useEffect(() => {
-        console.log('=== SERVER CONFIG CHANGE ===');
-        console.log('Server type changed to:', serverType);
-        console.log('Available servers for type:', serversMap[serverType]);
-
         if (serversMap[serverType] && serversMap[serverType].length > 0) {
             const currentServer = serversMap[serverType].find(server => server.current);
             const newServerId = currentServer ? currentServer.serverId : serversMap[serverType][0].serverId;
-            console.log('Setting selectedServerId to:', newServerId);
             setSelectedServerId(newServerId);
         }
     }, [serverType, serversMap]);
@@ -310,14 +249,6 @@ const StreamListScreen = () => {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
         }
 
-        console.log('=== PLAY ATTEMPT ===');
-        console.log('Using player:', playerToUse);
-        console.log('Using server type:', serverTypeToUse);
-        console.log('Using server ID:', serverIdToUse);
-        console.log('Stream has URL:', !!url);
-        console.log('Stream has infoHash:', !!infoHash);
-        console.log('serversMap:', serversMap);
-
         if (!playerToUse || (!url && !serverIdToUse)) {
             console.error('Missing player or server:', { playerToUse, url, serverIdToUse });
             setStatusText('Error: Please select a media player and server.');
@@ -357,10 +288,8 @@ const StreamListScreen = () => {
             let videoUrl = url || '';
             if (!url && infoHash && selectedServer) {
                 setStatusText('Processing the InfoHash...');
-                console.log('Generating URL with:', { infoHash, serverType: selectedServer.serverType, serverUrl: selectedServer.serverUrl });
                 videoUrl = await generatePlayerUrlWithInfoHash(infoHash, selectedServer.serverType, selectedServer.serverUrl);
                 setStatusText('URL Generated...');
-                console.log('Generated video URL:', videoUrl);
             }
 
             if (!videoUrl) {
@@ -392,7 +321,6 @@ const StreamListScreen = () => {
                     });
                 } else {
                     setStatusText('Opening Stream in Media Player...');
-                    console.log('Opening URL in external player:', playerUrl);
                     await Linking.openURL(playerUrl);
                     setStatusText('Stream Opened in Media Player...');
                 }
@@ -524,13 +452,9 @@ const StreamListScreen = () => {
                 const currentServer = servers.find(server => server.current);
                 const serverId = currentServer ? currentServer.serverId : servers[0].serverId;
 
-                console.log('Auto-selecting single enabled server:', selectedServerType);
-                console.log('Auto-selecting server ID:', serverId);
-
                 setServerType(selectedServerType);
                 setSelectedServerId(serverId);
 
-                // Proceed directly to player selection
                 setTimeout(() => {
                     showPlayerSelection(selectedServerType, serverId, stream);
                 }, 100);
@@ -569,9 +493,6 @@ const StreamListScreen = () => {
                     if (servers && servers.length > 0) {
                         const currentServer = servers.find(server => server.current);
                         const serverId = currentServer ? currentServer.serverId : servers[0].serverId;
-
-                        console.log('Setting server type:', selectedServerType);
-                        console.log('Setting server ID:', serverId);
 
                         setServerType(selectedServerType);
                         setSelectedServerId(serverId);
@@ -613,12 +534,8 @@ const StreamListScreen = () => {
             (selectedIndex?: number) => {
                 if (selectedIndex !== undefined && selectedIndex !== cancelButtonIndex) {
                     const selectedPlayerName = players[selectedIndex].name;
-                    console.log('Player selected from action sheet:', selectedPlayerName);
 
                     setSelectedPlayer(selectedPlayerName);
-
-                    console.log('selected stream', stream);
-
                     if (stream) {
                         console.log('Starting playback with server info:', {
                             selectedServerType,
@@ -631,42 +548,6 @@ const StreamListScreen = () => {
         );
     };
 
-    // Helper function to extract quality from stream name
-    const extractQuality = (name: string, title: string | undefined): string => {
-        const qualities = ['4K', '2160p', '1440p', '1080p', '720p', '480p', '360p', 'TeleSync', 'HDTS', 'DVD', 'WEB-DL', 'WEBDL', 'CAM'];
-
-        for (const quality of qualities) {
-            const lowerQuality = quality.toLowerCase();
-
-            if (name.toLowerCase().includes(lowerQuality)) {
-                return quality;
-            }
-
-            if (title && title.toLowerCase().includes(lowerQuality)) {
-                return quality;
-            }
-        }
-
-        return '';
-    };
-
-
-    // Helper function to extract size from description or title
-    const extractSize = (text: string): string => {
-        const sizeMatch = text?.match(/(\d+(?:\.\d+)?)\s*(GB|MB|TB)/i);
-        return sizeMatch ? `${sizeMatch[1]} ${sizeMatch[2]}` : '';
-    };
-
-    // Helper function to check if stream is a torrent
-    const getStreamType = (stream: Stream): string => {
-        if (!!stream.infoHash || stream.name.toLowerCase().includes('torrent')) {
-            return 'Torrent';
-        }
-        if (!!stream.embed) {
-            return 'Embed';
-        }
-        return 'Direct';
-    };
 
     interface AddonItemProps {
         item: Addon;
@@ -823,25 +704,11 @@ const StreamListScreen = () => {
             }
             <BottomSpacing space={30} />
 
-            {/* Status Modal */}
-            <Modal
-                transparent={true}
+            <StatusModal
                 visible={isModalVisible}
-                animationType="fade"
-                onRequestClose={handleCancel}
-            >
-                <TouchableWithoutFeedback>
-                    <View style={styles.modalOverlay}>
-                        <View style={styles.modalContainer}>
-                            <ActivityIndicator size="large" color="#535aff" style={styles.activityIndicator} />
-                            <Text style={styles.modalText}>{statusText}</Text>
-                            <Pressable style={styles.cancelButton} onPress={handleCancel}>
-                                <Text style={styles.cancelButtonText}>Cancel</Text>
-                            </Pressable>
-                        </View>
-                    </View>
-                </TouchableWithoutFeedback>
-            </Modal>
+                statusText={statusText}
+                onCancel={handleCancel}
+            />
         </SafeAreaView >
     );
 };
@@ -1018,47 +885,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginHorizontal: '10%',
         color: '#fff'
-    },
-    // Modal Styles
-    modalOverlay: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.8)'
-    },
-    modalContainer: {
-        padding: 24,
-        borderRadius: 16,
-        minWidth: 280,
-        maxWidth: 320,
-        minHeight: 120,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#1a1a1a',
-        borderWidth: 1,
-        borderColor: '#333',
-    },
-    modalText: {
-        fontSize: 16,
-        textAlign: 'center',
-        marginVertical: 20,
-        color: '#ffffff',
-        lineHeight: 22,
-    },
-    cancelButton: {
-        marginVertical: 20,
-        paddingVertical: 12,
-        paddingHorizontal: 24,
-        borderRadius: 8,
-        alignItems: 'center',
-        minWidth: 120,
-        backgroundColor: '#535aff'
-    },
-    cancelButtonText: {
-        fontSize: 16,
-        color: '#ffffff',
-        fontWeight: '600'
-    }
+    }    
 });
 
 export default StreamListScreen;
