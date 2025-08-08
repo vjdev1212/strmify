@@ -9,7 +9,7 @@ const TorrServerScreen = () => {
             <ServerConfiguration
                 serverName="TorrServer"
                 serverType="torrserver"
-                defaultUrl="https://127.0.0.1:5665" />
+                defaultUrl="http://192.168.1.10:5665" />
         </SafeAreaView>
     );
 };

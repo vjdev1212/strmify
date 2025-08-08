@@ -58,7 +58,7 @@ const getColumnsForDevice = (deviceType: string, isPortrait: boolean) => {
 const THUMBNAIL_BACKGROUND_COLOR = '#0f0f0f';
 const EPISODE_AIRED_COLOR = '#afafaf';
 const EPISODE_DESCRIPTION_COLOR = '#efefef';
-const SELECTED_SEASON_COLOR = 'rgba(83, 90, 255, 0.75)';
+const SELECTED_SEASON_COLOR = '#535aff';
 const DARK_SEASON_BUTTON_COLOR = '#101010';
 const LIGHT_SEASON_BUTTON_COLOR = '#f0f0f0';
 const ANIMATION_DURATION = 500;
@@ -72,6 +72,7 @@ const EpisodeItem: React.FC<EpisodeItemProps> = React.memo(({ item, onEpisodeSel
   const [isLoading, setIsLoading] = useState(true);
   const [fadeAnim] = useState(() => new Animated.Value(0));
   const [imgError, setImgError] = useState(false);
+  const [scaleAnim] = useState(() => new Animated.Value(1));
 
   // Memoized computed values
   const computedValues = useMemo(() => {
@@ -134,6 +135,20 @@ const EpisodeItem: React.FC<EpisodeItemProps> = React.memo(({ item, onEpisodeSel
     handleEpisodeSelect(item.season, item.number);
   }, [handleEpisodeSelect, item.season, item.number]);
 
+  const handlePressIn = useCallback(() => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.96,
+      useNativeDriver: true,
+    }).start();
+  }, [scaleAnim]);
+
+  const handlePressOut = useCallback(() => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+    }).start();
+  }, [scaleAnim]);
+
   // Animation effect
   useEffect(() => {
     const imageLoader = setTimeout(() => {
@@ -156,30 +171,61 @@ const EpisodeItem: React.FC<EpisodeItemProps> = React.memo(({ item, onEpisodeSel
 
   const renderThumbnail = () => {
     if (isLoading) {
-      return <View style={styles.skeletonBackground} />;
+      return (
+        <View style={styles.thumbnailWrapper}>
+          <View style={[styles.skeletonBackground, thumbnailStyle]} />
+        </View>
+      );
     }
 
     if (!imgError) {
       return (
-        <Animated.Image
-          source={{ uri: item.thumbnail }}
-          onError={handleImageError}
-          style={thumbnailStyle}
-        />
+        <View style={styles.thumbnailWrapper}>
+          <Animated.Image
+            source={{ uri: item.thumbnail }}
+            onError={handleImageError}
+            style={[thumbnailStyle, { opacity: fadeAnim }]}
+          />
+          <View style={styles.episodeNumberOverlay}>
+            <Text style={styles.episodeNumberText}>
+              {item.episode || item.number}
+            </Text>
+          </View>
+        </View>
       );
     }
 
     return (
-      <View style={placeholderStyle}>
-        <SvgXml xml={DefaultEpisodeThumbnailImgXml} />
+      <View style={styles.thumbnailWrapper}>
+        <View style={placeholderStyle}>
+          <SvgXml xml={DefaultEpisodeThumbnailImgXml} width="40%" height="40%" />
+        </View>
+        <View style={styles.episodeNumberOverlay}>
+          <Text style={styles.episodeNumberText}>
+            {item.episode || item.number}
+          </Text>
+        </View>
       </View>
     );
   };
 
   return (
-    <View style={[styles.episodeContainer, { width: itemWidth as any }]}>
-      <Pressable onPress={handlePress}>
-        <View>
+    <Animated.View 
+      style={[
+        styles.episodeContainer, 
+        { 
+          width: itemWidth as any,
+          transform: [{ scale: scaleAnim }]
+        }
+      ]}
+    >
+      <Pressable 
+        onPress={handlePress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        style={styles.episodePressable}
+      >
+        <View style={styles.episodeCard}>
           <View style={styles.episodeRow}>
             <View style={styles.thumbnailContainer}>
               {renderThumbnail()}
@@ -194,13 +240,13 @@ const EpisodeItem: React.FC<EpisodeItemProps> = React.memo(({ item, onEpisodeSel
             </View>
           </View>
           <View style={styles.descriptionContainer}>
-            <Text style={episodeDescriptionStyle} numberOfLines={5}>
+            <Text style={episodeDescriptionStyle} numberOfLines={3}>
               {computedValues.episodeDescription}
             </Text>
           </View>
         </View>
       </Pressable>
-    </View>
+    </Animated.View>
   );
 });
 
@@ -213,7 +259,7 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
     const isPortrait = height > width;
     const deviceType = getDeviceType(width);
     const numColumns = getColumnsForDevice(deviceType, isPortrait);
-    const itemWidth = `${(100 / numColumns) - 2}%`; // Subtract 2% for margins
+    const itemWidth = `${(100 / numColumns) - 1.5}%`;
 
     // Group episodes by season
     const groupedEpisodes = videos.reduce((acc, video) => {
@@ -228,8 +274,9 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
     const seasonData = [
       ...Object.keys(groupedEpisodes)
         .map(Number)
-        .filter((season) => season !== 0),
-      0,
+        .filter((season) => season !== 0)
+        .sort((a, b) => a - b),
+      ...(groupedEpisodes[0] ? [0] : []),
     ];
 
     return {
@@ -252,14 +299,15 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
 
   const getSeasonButtonStyle = useCallback((season: number) => ({
     ...styles.seasonButton,
-    backgroundColor:
-      DARK_SEASON_BUTTON_COLOR,
-    ...(season === selectedSeason && styles.selectedSeasonButton),
+    backgroundColor: season === selectedSeason ? SELECTED_SEASON_COLOR : DARK_SEASON_BUTTON_COLOR,
+    borderWidth: season === selectedSeason ? 0 : StyleSheet.hairlineWidth,
+    borderColor: '#2a2a2a',
   }), [selectedSeason]);
 
   const getSeasonTextStyle = useCallback((season: number) => ({
     ...styles.seasonText,
-    ...(season === selectedSeason && styles.selectedSeasonText),
+    color: season === selectedSeason ? '#ffffff' : '#cccccc',
+    fontWeight: season === selectedSeason ? '600' : '400',
   }), [selectedSeason]);
 
   const renderSeasonItem = useCallback(({ item }: { item: number }) => (
@@ -267,7 +315,7 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
       style={getSeasonButtonStyle(item)}
       onPress={() => handleSeasonSelect(item)}
     >
-      <Text style={getSeasonTextStyle(item)}>
+      <Text style={getSeasonTextStyle(item) as any}>
         {item === 0 ? 'Specials' : `Season ${item}`}
       </Text>
     </Pressable>
@@ -288,21 +336,27 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
   // Handle initial selection when videos load
   useEffect(() => {
     if (videos.length > 0) {
-      const defaultEpisode = videos.find((video) => video.season === 1 && video.number === 1);
-      if (defaultEpisode) {
-        setSelectedSeason(1);
-      }
+      const availableSeasons = Object.keys(
+        videos.reduce((acc, video) => ({ ...acc, [video.season]: true }), {})
+      ).map(Number).sort((a, b) => a - b);
+      
+      const defaultSeason = availableSeasons.find(s => s !== 0) || availableSeasons[0] || 1;
+      setSelectedSeason(defaultSeason);
     }
   }, [videos]);
 
   // Early return if no videos
   if (!videos || videos.length === 0) {
-    return null;
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyText}>No episodes available</Text>
+      </View>
+    );
   }
 
   return (
     <View style={styles.container}>
-      <View>
+      <View style={styles.seasonListContainer}>
         <FlatList
           data={computedValues.seasonData}
           horizontal
@@ -310,10 +364,20 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
           renderItem={renderSeasonItem}
           contentContainerStyle={styles.seasonList}
           showsHorizontalScrollIndicator={false}
+          ItemSeparatorComponent={() => <View style={styles.seasonSeparator} />}
         />
       </View>
+      
       <View style={styles.episodeList}>
-        {computedValues.groupedEpisodes[selectedSeason]?.map(renderEpisodeItem)}
+        {computedValues.groupedEpisodes[selectedSeason]?.length > 0 ? (
+          computedValues.groupedEpisodes[selectedSeason].map(renderEpisodeItem)
+        ) : (
+          <View style={styles.noEpisodesContainer}>
+            <Text style={styles.noEpisodesText}>
+              No episodes available for {selectedSeason === 0 ? 'Specials' : `Season ${selectedSeason}`}
+            </Text>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -321,90 +385,168 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
 
 const styles = StyleSheet.create({
   container: {
-    margin: 10,
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  seasonListContainer: {
+    paddingVertical: 16,
+    backgroundColor: 'transparent',
   },
   seasonList: {
-    paddingHorizontal: '3%',
-    marginVertical: 10,
-    justifyContent: 'flex-start',
-    flexDirection: 'row',
-    flexGrow: 1,
+    paddingHorizontal: 20,
+    gap: 12,
+  },
+  seasonSeparator: {
+    width: 12,
   },
   seasonButton: {
-    marginRight: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 25,
-  },
-  selectedSeasonButton: {
-    backgroundColor: SELECTED_SEASON_COLOR,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 24,
+    minWidth: 100,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   seasonText: {
-    fontSize: 16,
-  },
-  selectedSeasonText: {
-    color: '#fff',
+    fontSize: 15,
+    letterSpacing: 0.3,
   },
   episodeList: {
-    paddingHorizontal: 10,
-    paddingVertical: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     flexDirection: 'row',
     justifyContent: 'flex-start',
     alignItems: 'flex-start',
     flexWrap: 'wrap',
+    gap: 12,
   },
   episodeContainer: {
-    marginHorizontal: '1%',
-    marginVertical: 10,
+    marginVertical: 6,
     alignSelf: 'flex-start',
+  },
+  episodePressable: {
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  episodeCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
   },
   episodeRow: {
     flexDirection: 'row',
-    marginRight: 5,
+    marginBottom: 10,
+    alignItems: 'flex-start',
   },
   thumbnailContainer: {
-    width: '50%',
+    marginRight: 15,
+    position: 'relative',
   },
   episodeInfo: {
-    justifyContent: 'center',
-    width: '50%',
+    flex: 1,
+    justifyContent: 'flex-start',
+    paddingTop: 2,
   },
   descriptionContainer: {
-    justifyContent: 'center',
     width: '100%',
-    marginRight: 5,
   },
   thumbnailPlaceHolder: {
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 6,
-    marginRight: 15,
+    borderRadius: 8,
     aspectRatio: THUMBNAIL_ASPECT_RATIO,
-    marginVertical: 20,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   thumbnail: {
-    borderRadius: 6,
-    marginRight: 15,
-    aspectRatio: THUMBNAIL_ASPECT_RATIO,
-    marginVertical: 20,
+    borderRadius: 8,
   },
   episodeTitle: {
     fontSize: 14,
     fontWeight: '500',
+    lineHeight: 18,
+    color: '#ffffff',
+    marginBottom: 4,
   },
   episodeAired: {
-    marginTop: 5,
     fontSize: 12,
+    fontWeight: '400',
+    letterSpacing: 0.1,
   },
   episodeDescription: {
-    marginTop: 5,
     fontSize: 13,
-    marginRight: 10,
+    lineHeight: 18,
+    fontWeight: '400',
+    letterSpacing: 0.1,
+    marginTop: 2,
   },
   skeletonBackground: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 8,
+    opacity: 1,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#888',
+    textAlign: 'center',
+  },
+  noEpisodesContainer: {
     width: '100%',
-    height: '100%',
-    opacity: 0.1,
+    paddingVertical: 40,
+    alignItems: 'center',
+  },
+  noEpisodesText: {
+    fontSize: 14,
+    color: '#888',
+    textAlign: 'center',
+  },
+  thumbnailWrapper: {
+    position: 'relative',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  episodeNumberOverlay: {
+    position: 'absolute',
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    backdropFilter: 'blur(20px)',
+    borderRadius: 8,
+    borderBottomLeftRadius: 0,
+    borderTopRightRadius: 0,
+    paddingHorizontal: 10,
+    paddingVertical: 2,
+    minWidth: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  episodeNumberText: {
+    color: '#ffffff',
+    fontSize: 11,
+    fontWeight: 500,
+    textAlign: 'center',
+    letterSpacing: 0.5,
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
 });
 
