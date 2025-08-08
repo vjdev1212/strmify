@@ -777,7 +777,7 @@ const StreamListScreen = () => {
                 loading && addons.length > 0 ? (
                     <RNView style={styles.loadingContainer}>
                         <View style={styles.centeredContainer}>
-                            <ActivityIndicator size="large" style={styles.activityIndicator} color="#ffffff" />
+                            <ActivityIndicator size="large" style={styles.activityIndicator} color="#535aff" />
                             <Text style={styles.loadingText}>Loading streams...</Text>
                         </View>
                     </RNView>
@@ -794,7 +794,7 @@ const StreamListScreen = () => {
                                         {
                                             addons.length > 0 && (
                                                 <View style={styles.centeredContainer}>
-                                                    <Feather style={styles.noStreams} name='alert-circle' color="#ffffff" size={50} />
+                                                    <Feather style={styles.noStreams} name='alert-circle' color="#535aff" size={50} />
                                                     <Text style={[styles.noStreamsText]}>
                                                         No streams found!
                                                     </Text>
@@ -819,7 +819,7 @@ const StreamListScreen = () => {
                 <TouchableWithoutFeedback>
                     <View style={styles.modalOverlay}>
                         <View style={styles.modalContainer}>
-                            <ActivityIndicator size="large" color="#ffffff" style={styles.activityIndicator} />
+                            <ActivityIndicator size="large" color="#535aff" style={styles.activityIndicator} />
                             <Text style={styles.modalText}>{statusText}</Text>
                             <Pressable style={styles.cancelButton} onPress={handleCancel}>
                                 <Text style={styles.cancelButtonText}>Cancel</Text>
@@ -968,7 +968,7 @@ const styles = StyleSheet.create({
     },
     activityIndicator: {
         marginBottom: 10,
-        color: '#ffffff',
+        color: '#535aff',
     },
     loadingText: {
         fontSize: 16,
@@ -987,7 +987,7 @@ const styles = StyleSheet.create({
         color: '#ffffff',
     },
     noStreams: {
-        marginTop: 150,
+        marginTop: -50,
         paddingBottom: 20
     },
     noStreamsText: {
