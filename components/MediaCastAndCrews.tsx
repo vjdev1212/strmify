@@ -7,7 +7,7 @@ import {
 } from "react-native";
 import { View, Text } from "./Themed";
 
-const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/original";
+const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/h632";
 
 // Memoized helper function
 const getInitials = (name: string): string => {
