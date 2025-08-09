@@ -22,7 +22,7 @@
       "icon": "assets/images/icon.png",
       "supportsTablet": true,
       "backgroundColor": "#000000",
-      "bundleIdentifier": "com.vijayyuvi.strmify"      
+      "bundleIdentifier": "com.vijayyuvi.strmify"
     },
     "android": {
       "adaptiveIcon": {
@@ -51,6 +51,17 @@
             "compileSdkVersion": 35,
             "targetSdkVersion": 35,
             "buildToolsVersion": "35.0.0"
+          }
+        }
+      ],
+      [
+        "react-native-vlc-media-player",
+        {
+          "ios": {
+            "includeVLCKit": false
+          },
+          "android": {
+            "legacyJetifier": false
           }
         }
       ]
