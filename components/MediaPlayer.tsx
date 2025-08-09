@@ -11,6 +11,7 @@ import {
     Platform,
     GestureResponderEvent,
     PanResponderGestureState,
+    LayoutChangeEvent,
 } from 'react-native';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import { Video, AVPlaybackStatus, ResizeMode } from 'expo-av';
@@ -91,6 +92,9 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const [isSeeking, setIsSeeking] = useState<boolean>(false);
     const [safeAreaInsets, setSafeAreaInsets] = useState({ top: 0, bottom: 0, left: 0, right: 0 });
 
+    // New: progress bar measured width
+    const [progressBarWidth, setProgressBarWidth] = useState<number>(0);
+
     // Refs
     const videoRef = useRef<Video>(null);
     const controlsOpacity = useRef(new Animated.Value(1)).current;
@@ -124,7 +128,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 setSafeAreaInsets({
                     top: 0,
                     bottom: 0,
-                    left: 44, // iPhone notch area in landscape
+                    left: 44,
                     right: 44,
                 });
             } else if (Platform.OS === 'ios') {
@@ -156,23 +160,19 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
             onStartShouldSetPanResponder: (): boolean => true,
             onMoveShouldSetPanResponder: (): boolean => true,
             onPanResponderGrant: (evt: GestureResponderEvent): void => {
-                if (duration <= 0) return;
+                if (duration <= 0 || progressBarWidth <= 0) return;
 
                 setIsSeeking(true);
                 const { locationX } = evt.nativeEvent;
-                // Use the actual progress bar width
-                const target: any = evt.nativeEvent.target;
-                const progress = Math.max(0, Math.min(1, locationX / target.width));
+                const progress = Math.max(0, Math.min(1, locationX / progressBarWidth));
                 const newTime = progress * duration;
                 setSeekPreviewTime(newTime);
             },
             onPanResponderMove: (evt: GestureResponderEvent): void => {
-                if (duration <= 0) return;
+                if (duration <= 0 || progressBarWidth <= 0) return;
 
                 const { locationX } = evt.nativeEvent;
-                // Use the actual progress bar width
-                const target: any = evt.nativeEvent.target;
-                const progress = Math.max(0, Math.min(1, locationX / target.width));
+                const progress = Math.max(0, Math.min(1, locationX / progressBarWidth));
                 const newTime = progress * duration;
                 setSeekPreviewTime(newTime);
             },
@@ -186,7 +186,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
         })
     ).current;
 
-    // Main video gesture handler - disabled when seeking
+    // Main video gesture handler - disabled when seeking & when touches in control areas
     const panResponder = useRef(
         PanResponder.create({
             onStartShouldSetPanResponder: (): boolean => !isSeeking,
@@ -401,7 +401,6 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 await videoRef.current?.playAsync();
                 if (!hasStartedPlaying) {
                     setHasStartedPlaying(true);
-                    // Show controls initially when playback starts
                     showControlsHandler();
                 }
             }
@@ -412,7 +411,6 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     }, [isPlaying, hasStartedPlaying, showControlsHandler]);
 
     const formatTime = useCallback((milliseconds: number): string => {
-        // Handle invalid or NaN values
         if (!milliseconds || isNaN(milliseconds) || milliseconds < 0) {
             return '0:00';
         }
@@ -444,7 +442,6 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
             const currentPos = status.positionMillis || 0;
             const totalDuration = status.durationMillis || 0;
 
-            // Only update if values are valid numbers
             if (!isNaN(currentPos) && currentPos >= 0) {
                 setCurrentTime(currentPos);
             }
@@ -458,7 +455,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 setHasStartedPlaying(true);
             }
 
-            if (status.didJustFinish) {
+            if ((status as any).didJustFinish) {
                 setIsPlaying(false);
                 showControlsHandler();
             }
@@ -478,6 +475,17 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const currentChapter = getCurrentChapter();
     const displayTime = (seekPreviewTime !== null && !isNaN(seekPreviewTime)) ? seekPreviewTime : currentTime;
 
+    // onLayout handler for the progress bar container
+    const onProgressBarLayout = (e: LayoutChangeEvent) => {
+        const w = e.nativeEvent.layout.width;
+        setProgressBarWidth(w);
+    };
+
+    // compute numeric widths for fill and thumb based on measured width
+    const progressRatio = (duration > 0 && !isNaN(displayTime) && progressBarWidth > 0) ? Math.max(0, Math.min(1, displayTime / duration)) : 0;
+    const fillWidth = progressBarWidth * progressRatio;
+    const thumbLeft = fillWidth - 8; // thumb is 16 wide, center it (8)
+
     return (
         <View style={styles.container}>
             <StatusBar hidden />
@@ -494,7 +502,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
                     rate={playbackRate}
                     resizeMode={resizeMode}
                     onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
-                    onError={(error: string) => console.error('Video error:', error)}
+                    onError={(error: any) => console.error('Video error:', error)}
                 />
 
                 {/* Brightness Overlay */}
@@ -614,43 +622,23 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
                     <View style={styles.bottomBarBackground}>
                         <View style={styles.bottomControls}>
                             {/* Progress Bar - Now seekable */}
-                            <TouchableOpacity
+                            <View
                                 style={styles.progressContainer}
-                                {...progressPanResponder.panHandlers}
-                                activeOpacity={1}
-                                onPressIn={(evt) => {
-                                    if (duration <= 0) return;
-                                    setIsSeeking(true);
-
-                                    const { locationX } = evt.nativeEvent;
-                                    const progressWidth = screenWidth - (safeAreaInsets.left + safeAreaInsets.right + 40);
-                                    const progress = Math.max(0, Math.min(1, locationX / progressWidth));
-                                    const newTime = progress * duration;
-                                    setSeekPreviewTime(newTime);
-                                }}
-                                onPressOut={() => {
-                                    if (seekPreviewTime !== null && duration > 0) {
-                                        videoRef.current?.setPositionAsync(seekPreviewTime);
-                                        setSeekPreviewTime(null);
-                                    }
-                                    setIsSeeking(false);
-                                }}
+                                onLayout={onProgressBarLayout}
+                                pointerEvents="box-none"
                             >
-                                <View style={styles.progressBar}>
-                                    <View
-                                        style={[
-                                            styles.progressFill,
-                                            { width: `${(duration > 0 && !isNaN(displayTime)) ? (displayTime / duration) * 100 : 0}%` }
-                                        ]}
-                                    />
-                                    <View
-                                        style={[
-                                            styles.progressThumb,
-                                            { left: `${(duration > 0 && !isNaN(displayTime)) ? (displayTime / duration) * 100 : 0}%` }
-                                        ]}
-                                    />
+                                {/* Touch area handles panResponder for progress (seeking) */}
+                                <View
+                                    style={[styles.progressBar, { width: '100%' }]}
+                                    {...progressPanResponder.panHandlers}
+                                >
+                                    <View style={[styles.progressBackground]} />
+                                    {/* Fill */}
+                                    <View style={[styles.progressFill, { width: fillWidth }]} />
+                                    {/* Thumb */}
+                                    <View style={[styles.progressThumb, { left: Math.max(0, thumbLeft) }]} />
                                 </View>
-                            </TouchableOpacity>
+                            </View>
 
                             {/* Control Row */}
                             <View style={styles.controlRow}>
@@ -860,9 +848,7 @@ const styles = StyleSheet.create({
         bottom: 0,
         justifyContent: 'space-between',
     },
-    topBar: {
-        // Dynamic padding handled in component
-    },
+    topBar: {},
     topBarBackground: {
         paddingVertical: 15,
     },
@@ -909,9 +895,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         pointerEvents: 'box-none',
     },
-    centerPlayButton: {
-        // No positioning needed
-    },
+    centerPlayButton: {},
     centerPlayBackground: {
         width: 80,
         height: 80,
@@ -922,30 +906,33 @@ const styles = StyleSheet.create({
         borderWidth: 2,
         borderColor: 'rgba(255, 255, 255, 0.3)',
     },
-    bottomBar: {
-        // Dynamic padding handled in component
-    },
+    bottomBar: {},
     bottomBarBackground: {
         paddingTop: 15,
         paddingBottom: 10,
     },
-    bottomControls: {
-        // Padding removed as it's handled in component
-    },
+    bottomControls: {},
     progressContainer: {
-        marginBottom: 20,
-        paddingVertical: 12, // Increased touch area
-        paddingHorizontal: 8,
+        marginBottom: 12,
+        paddingHorizontal: 20,
     },
     progressBar: {
+        height: 24,
+        justifyContent: 'center',
+        position: 'relative',
+    },
+    progressBackground: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
         height: 4,
         backgroundColor: 'rgba(255, 255, 255, 0.3)',
         borderRadius: 2,
-        position: 'relative',
-        flex: 1,
     },
     progressFill: {
-        height: '100%',
+        position: 'absolute',
+        left: 0,
+        height: 4,
         backgroundColor: '#00d4ff',
         borderRadius: 2,
     },
@@ -955,8 +942,6 @@ const styles = StyleSheet.create({
         height: 16,
         borderRadius: 8,
         backgroundColor: '#00d4ff',
-        top: -6,
-        marginLeft: -8,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.3,
@@ -1168,6 +1153,5 @@ const styles = StyleSheet.create({
     },
 });
 
-// Export types and component
 export type { Subtitle, Chapter };
 export default MediaPlayer;
