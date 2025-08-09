@@ -50,10 +50,10 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
     const player = useVideoPlayer(videoUrl, (player) => {
         player.loop = true;
+        videoRef.current?.enterFullscreen();
         if (autoPlay) {
             player.play();
-        }
-        videoRef.current?.enterFullscreen();
+        }        
     });
 
     useEvent(player, "playingChange", {
