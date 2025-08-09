@@ -1,15 +1,16 @@
-import { Subtitle, Chapter, MediaPlayer } from "@/components/MediaPlayer";
-import { useLocalSearchParams } from "expo-router";
+import MediaPlayer, { Subtitle, Chapter } from "@/components/MediaPlayer";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React from "react";
 
 const MediaPlayerScreen: React.FC = () => {
+  const router = useRouter();
   const { videoUrl, title, artwork } = useLocalSearchParams();
   const exampleSubtitles: Subtitle[] = [];
 
   const exampleChapters: Chapter[] = [];
 
   const handleBack = (): void => {
-    console.log('Back pressed');
+    router.back();
   };
 
   return (

@@ -12,21 +12,21 @@ import {
   GestureResponderEvent,
   PanResponderGestureState,
 } from 'react-native';
-import { Video, AVPlaybackStatus, VideoFullscreenUpdate } from 'expo-av';
+import * as ScreenOrientation from 'expo-screen-orientation';
+import { Video, AVPlaybackStatus, ResizeMode } from 'expo-av';
 import { Ionicons, MaterialIcons, Feather } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+// Get initial dimensions
+let { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 // TypeScript Interfaces
-export interface Subtitle {
+interface Subtitle {
   startTime: number;
   endTime: number;
   text: string;
 }
 
-export interface Chapter {
+interface Chapter {
   title: string;
   startTime: number;
   endTime: number;
@@ -58,7 +58,7 @@ interface MediaPlayerProps {
 
 type GestureType = 'volume' | 'brightness' | 'seek' | null;
 
-export const MediaPlayer: React.FC<MediaPlayerProps> = ({ 
+const MediaPlayer: React.FC<MediaPlayerProps> = ({ 
   videoUrl, 
   subtitles = [], 
   title = "Untitled Video",
@@ -71,7 +71,8 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 }) => {
   // State
   const [isPlaying, setIsPlaying] = useState<boolean>(autoPlay);
-  const [showControls, setShowControls] = useState<boolean>(true);
+  const [showControls, setShowControls] = useState<boolean>(false);
+  const [hasStartedPlaying, setHasStartedPlaying] = useState<boolean>(false);
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
   const [isBuffering, setIsBuffering] = useState<boolean>(false);
@@ -84,6 +85,11 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
   const [seekPreviewTime, setSeekPreviewTime] = useState<number | null>(null);
   const [gestureActive, setGestureActive] = useState<boolean>(false);
   const [gestureType, setGestureType] = useState<GestureType>(null);
+  const [resizeMode, setResizeMode] = useState<ResizeMode>(ResizeMode.STRETCH);
+  const [selectedSubtitleTrack, setSelectedSubtitleTrack] = useState<string | null>(null);
+  const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('landscape');
+  const [isSeeking, setIsSeeking] = useState<boolean>(false);
+  const [safeAreaInsets, setSafeAreaInsets] = useState({ top: 0, bottom: 0, left: 0, right: 0 });
 
   // Refs
   const videoRef = useRef<Video>(null);
@@ -93,21 +99,122 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
   const bufferingScale = useRef(new Animated.Value(1)).current;
   const gestureIndicatorOpacity = useRef(new Animated.Value(0)).current;
 
-  // Gesture handling
-  const panResponder = useRef(
+  // Set landscape orientation on mount
+  useEffect(() => {
+    const setLandscape = async () => {
+      await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
+    };
+    setLandscape();
+
+    return () => {
+      ScreenOrientation.unlockAsync();
+    };
+  }, []);
+
+  // Handle orientation changes and safe area
+  useEffect(() => {
+    const updateDimensions = (window: any) => {
+      screenWidth = window.width;
+      screenHeight = window.height;
+      const isLandscape = window.width > window.height;
+      setOrientation(isLandscape ? 'landscape' : 'portrait');
+      
+      // Calculate safe area insets for iPhone notch
+      if (Platform.OS === 'ios' && isLandscape) {
+        setSafeAreaInsets({
+          top: 0,
+          bottom: 0,
+          left: 44, // iPhone notch area in landscape
+          right: 44,
+        });
+      } else if (Platform.OS === 'ios') {
+        setSafeAreaInsets({
+          top: 44,
+          bottom: 34,
+          left: 0,
+          right: 0,
+        });
+      } else {
+        setSafeAreaInsets({ top: 24, bottom: 0, left: 0, right: 0 });
+      }
+    };
+
+    updateDimensions(Dimensions.get('window'));
+    const subscription = Dimensions.addEventListener('change', updateDimensions);
+
+    return () => subscription?.remove();
+  }, []);
+
+  // Progress bar pan responder for seeking
+  const progressPanResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: (): boolean => true,
+      onMoveShouldSetPanResponder: (): boolean => true,
+      onPanResponderGrant: (evt: GestureResponderEvent): void => {
+        setIsSeeking(true);
+        const { locationX } = evt.nativeEvent;
+        const progressWidth = screenWidth - (safeAreaInsets.left + safeAreaInsets.right + 40); // Account for padding and safe areas
+        const progress = Math.max(0, Math.min(1, locationX / progressWidth));
+        const newTime = progress * duration;
+        setSeekPreviewTime(newTime);
+      },
+      onPanResponderMove: (evt: GestureResponderEvent): void => {
+        const { locationX } = evt.nativeEvent;
+        const progressWidth = screenWidth - (safeAreaInsets.left + safeAreaInsets.right + 40);
+        const progress = Math.max(0, Math.min(1, locationX / progressWidth));
+        const newTime = progress * duration;
+        setSeekPreviewTime(newTime);
+      },
+      onPanResponderRelease: (): void => {
+        if (seekPreviewTime !== null) {
+          videoRef.current?.setPositionAsync(seekPreviewTime);
+          setSeekPreviewTime(null);
+        }
+        setIsSeeking(false);
+      },
+    })
+  ).current;
+
+  // Main video gesture handler - disabled when seeking
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: (): boolean => !isSeeking,
       onMoveShouldSetPanResponder: (evt: GestureResponderEvent, gestureState: PanResponderGestureState): boolean => {
+        if (isSeeking) return false;
+        
+        const { locationY } = evt.nativeEvent;
+        const topControlsHeight = safeAreaInsets.top + 100;
+        const bottomControlsHeight = 180 + safeAreaInsets.bottom;
+        
+        // Don't handle gestures in control areas when controls are visible
+        if (showControls && (locationY < topControlsHeight || locationY > screenHeight - bottomControlsHeight)) {
+          return false;
+        }
+        
+        // Require minimum movement for gesture
         return Math.abs(gestureState.dx) > 10 || Math.abs(gestureState.dy) > 10;
       },
       onPanResponderGrant: (evt: GestureResponderEvent, gestureState: PanResponderGestureState): void => {
-        setGestureActive(true);
-        const { locationX } = evt.nativeEvent;
-        const screenThird = screenWidth / 3;
+        if (isSeeking) return;
         
-        if (locationX < screenThird) {
+        const { locationX, locationY } = evt.nativeEvent;
+        const topControlsHeight = safeAreaInsets.top + 100;
+        const bottomControlsHeight = 180 + safeAreaInsets.bottom;
+        
+        // Don't handle gestures in control areas when controls are visible
+        if (showControls && (locationY < topControlsHeight || locationY > screenHeight - bottomControlsHeight)) {
+          return;
+        }
+        
+        setGestureActive(true);
+        
+        // Left side for brightness, right side for volume, center for seek
+        const leftThreshold = screenWidth * 0.3;
+        const rightThreshold = screenWidth * 0.7;
+        
+        if (locationX < leftThreshold) {
           setGestureType('brightness');
-        } else if (locationX > screenThird * 2) {
+        } else if (locationX > rightThreshold) {
           setGestureType('volume');
         } else {
           setGestureType('seek');
@@ -116,13 +223,15 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         showGestureIndicator();
       },
       onPanResponderMove: (evt: GestureResponderEvent, gestureState: PanResponderGestureState): void => {
+        if (isSeeking) return;
+        
         const { dy, dx } = gestureState;
         
         if (gestureType === 'brightness') {
-          const newBrightness = Math.max(0.1, Math.min(1, brightness - dy / 300));
+          const newBrightness = Math.max(0.1, Math.min(1, brightness - dy / 400));
           setBrightness(newBrightness);
         } else if (gestureType === 'volume') {
-          const newVolume = Math.max(0, Math.min(1, volume - dy / 300));
+          const newVolume = Math.max(0, Math.min(1, volume - dy / 400));
           setVolume(newVolume);
           videoRef.current?.setVolumeAsync(newVolume);
         } else if (gestureType === 'seek') {
@@ -132,6 +241,8 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         }
       },
       onPanResponderRelease: (evt: GestureResponderEvent, gestureState: PanResponderGestureState): void => {
+        if (isSeeking) return;
+        
         if (gestureType === 'seek' && seekPreviewTime !== null) {
           videoRef.current?.setPositionAsync(seekPreviewTime);
           setSeekPreviewTime(null);
@@ -141,32 +252,37 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         setGestureType(null);
         hideGestureIndicator();
         
-        // Single tap to toggle controls
+        // Single tap to toggle controls (only if no significant movement)
         if (Math.abs(gestureState.dx) < 10 && Math.abs(gestureState.dy) < 10) {
-          toggleControls();
+          const { locationY } = evt.nativeEvent;
+          const topControlsHeight = safeAreaInsets.top + 100;
+          const bottomControlsHeight = 180 + safeAreaInsets.bottom;
+          
+          // Only toggle controls in safe zones or when controls are hidden
+          if (!showControls || (locationY >= topControlsHeight && locationY <= screenHeight - bottomControlsHeight)) {
+            toggleControls();
+          }
         }
       },
     })
   ).current;
 
-  // Auto-hide controls
+  // Auto-hide controls after video starts playing
   useEffect(() => {
-    if (showControls && !gestureActive) {
+    if (showControls && !gestureActive && hasStartedPlaying && isPlaying) {
       if (hideControlsTimeout.current) {
         clearTimeout(hideControlsTimeout.current);
       }
       hideControlsTimeout.current = setTimeout(() => {
-        if (isPlaying) {
-          hideControls();
-        }
-      }, 4000);
+        hideControls();
+      }, 3000); // Hide after 3 seconds when playing
     }
     return () => {
       if (hideControlsTimeout.current) {
         clearTimeout(hideControlsTimeout.current);
       }
     };
-  }, [showControls, isPlaying, gestureActive]);
+  }, [showControls, isPlaying, gestureActive, hasStartedPlaying]);
 
   // Subtitle timing
   useEffect(() => {
@@ -209,7 +325,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     setShowControls(true);
     Animated.timing(controlsOpacity, {
       toValue: 1,
-      duration: 300,
+      duration: 200,
       useNativeDriver: true,
     }).start();
   }, [controlsOpacity]);
@@ -220,7 +336,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     Animated.parallel([
       Animated.timing(controlsOpacity, {
         toValue: 0,
-        duration: 300,
+        duration: 200,
         useNativeDriver: true,
       }),
       Animated.timing(advancedControlsOpacity, {
@@ -242,7 +358,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
   const showGestureIndicator = useCallback((): void => {
     Animated.timing(gestureIndicatorOpacity, {
       toValue: 1,
-      duration: 200,
+      duration: 150,
       useNativeDriver: true,
     }).start();
   }, [gestureIndicatorOpacity]);
@@ -250,7 +366,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
   const hideGestureIndicator = useCallback((): void => {
     Animated.timing(gestureIndicatorOpacity, {
       toValue: 0,
-      duration: 300,
+      duration: 200,
       useNativeDriver: true,
     }).start();
   }, [gestureIndicatorOpacity]);
@@ -261,7 +377,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     
     Animated.timing(advancedControlsOpacity, {
       toValue: newState ? 1 : 0,
-      duration: 300,
+      duration: 200,
       useNativeDriver: true,
     }).start();
   }, [showAdvancedControls, advancedControlsOpacity]);
@@ -272,12 +388,17 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         await videoRef.current?.pauseAsync();
       } else {
         await videoRef.current?.playAsync();
+        if (!hasStartedPlaying) {
+          setHasStartedPlaying(true);
+          // Show controls initially when playback starts
+          showControlsHandler();
+        }
       }
       setIsPlaying(!isPlaying);
     } catch (error) {
       console.error('Error toggling play:', error);
     }
-  }, [isPlaying]);
+  }, [isPlaying, hasStartedPlaying, showControlsHandler]);
 
   const formatTime = useCallback((milliseconds: number): string => {
     const totalSeconds = Math.floor(milliseconds / 1000);
@@ -308,11 +429,16 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
       setDuration(status.durationMillis || 0);
       setIsBuffering(status.isBuffering || false);
       
+      if (status.positionMillis && status.positionMillis > 0 && !hasStartedPlaying) {
+        setHasStartedPlaying(true);
+      }
+      
       if (status.didJustFinish) {
         setIsPlaying(false);
+        showControlsHandler();
       }
     }
-  }, []);
+  }, [hasStartedPlaying, showControlsHandler]);
 
   const changePlaybackRate = useCallback(async (rate: number): Promise<void> => {
     try {
@@ -341,6 +467,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
           isLooping={false}
           volume={volume}
           rate={playbackRate}
+          resizeMode={resizeMode}
           onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
           onError={(error: string) => console.error('Video error:', error)}
         />
@@ -357,9 +484,9 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         {/* Subtitle Overlay */}
         {currentSubtitle ? (
           <View style={styles.subtitleContainer}>
-            <BlurView intensity={20} style={styles.subtitleBlur}>
+            <View style={styles.subtitleBackground}>
               <Text style={styles.subtitleText}>{currentSubtitle}</Text>
-            </BlurView>
+            </View>
           </View>
         ) : null}
 
@@ -388,21 +515,21 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
           pointerEvents="none"
         >
           {gestureType === 'volume' && (
-            <BlurView intensity={80} style={styles.gestureBlur}>
+            <View style={styles.gestureBlur}>
               <Ionicons name="volume-high" size={32} color="white" />
               <Text style={styles.gestureText}>{Math.round(volume * 100)}%</Text>
-            </BlurView>
+            </View>
           )}
           {gestureType === 'brightness' && (
-            <BlurView intensity={80} style={styles.gestureBlur}>
+            <View style={styles.gestureBlur}>
               <Ionicons name="sunny" size={32} color="white" />
               <Text style={styles.gestureText}>{Math.round(brightness * 100)}%</Text>
-            </BlurView>
+            </View>
           )}
           {gestureType === 'seek' && seekPreviewTime !== null && (
-            <BlurView intensity={80} style={styles.gestureBlur}>
+            <View style={styles.gestureBlur}>
               <Text style={styles.gestureTimeText}>{formatTime(seekPreviewTime)}</Text>
-            </BlurView>
+            </View>
           )}
         </Animated.View>
       </View>
@@ -413,12 +540,13 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         pointerEvents={showControls ? 'auto' : 'none'}
       >
         {/* Top Bar */}
-        <BlurView intensity={60} style={styles.topBarBlur}>
-          <LinearGradient
-            colors={['rgba(0,0,0,0.4)', 'transparent']}
-            style={styles.topGradient}
-          >
-            <View style={styles.topBar}>
+        <View style={[styles.topBar, { 
+          paddingLeft: safeAreaInsets.left,
+          paddingRight: safeAreaInsets.right,
+          paddingTop: safeAreaInsets.top,
+        }]}>
+          <View style={styles.topBarBackground}>
+            <View style={styles.topBarContent}>
               <TouchableOpacity style={styles.backButton} onPress={onBack}>
                 <Ionicons name="chevron-back" size={28} color="white" />
               </TouchableOpacity>
@@ -438,27 +566,22 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 <Feather name="more-horizontal" size={24} color="white" />
               </TouchableOpacity>
             </View>
-          </LinearGradient>
-        </BlurView>
-
-        {/* Center Play Button */}
-        {!isPlaying && (
-          <TouchableOpacity style={styles.centerPlayButton} onPress={togglePlay}>
-            <BlurView intensity={40} style={styles.centerPlayBlur}>
-              <Ionicons name="play" size={48} color="white" style={{ marginLeft: 6 }} />
-            </BlurView>
-          </TouchableOpacity>
-        )}
+          </View>
+        </View>
 
         {/* Bottom Controls */}
-        <BlurView intensity={60} style={styles.bottomBarBlur}>
-          <LinearGradient
-            colors={['transparent', 'rgba(0,0,0,0.4)']}
-            style={styles.bottomGradient}
-          >
+        <View style={[styles.bottomBar, { 
+          paddingLeft: safeAreaInsets.left,
+          paddingRight: safeAreaInsets.right,
+          paddingBottom: safeAreaInsets.bottom,
+        }]}>
+          <View style={styles.bottomBarBackground}>
             <View style={styles.bottomControls}>
-              {/* Progress Bar */}
-              <View style={styles.progressContainer}>
+              {/* Progress Bar - Now seekable */}
+              <View 
+                style={styles.progressContainer}
+                {...progressPanResponder.panHandlers}
+              >
                 <View style={styles.progressBar}>
                   <View 
                     style={[
@@ -507,8 +630,8 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 <Text style={styles.timeText}>{formatTime(duration)}</Text>
               </View>
             </View>
-          </LinearGradient>
-        </BlurView>
+          </View>
+        </View>
       </Animated.View>
 
       {/* Advanced Controls Overlay */}
@@ -520,7 +643,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
           style={styles.advancedControlsBackground}
           onPress={toggleAdvancedControls}
         />
-        <BlurView intensity={80} style={styles.advancedControlsPanel}>
+        <View style={styles.advancedControlsPanel}>
           <View style={styles.advancedControlsContent}>
             <Text style={styles.advancedTitle}>Player Settings</Text>
             
@@ -550,25 +673,103 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
             </View>
 
             <View style={styles.controlGroup}>
-              <Text style={styles.controlGroupTitle}>Display</Text>
-              <TouchableOpacity
-                style={styles.toggleOption}
-                onPress={() => setShowSubtitles(!showSubtitles)}
-              >
-                <Text style={styles.optionText}>Subtitles</Text>
-                <View style={[
-                  styles.toggle,
-                  showSubtitles && styles.toggleActive
-                ]}>
-                  <Animated.View style={[
-                    styles.toggleThumb,
-                    { transform: [{ translateX: showSubtitles ? 20 : 0 }] }
-                  ]} />
-                </View>
-              </TouchableOpacity>
+              <Text style={styles.controlGroupTitle}>Video</Text>
+              <View style={styles.aspectRatioOptions}>
+                {[
+                  { mode: ResizeMode.STRETCH, label: 'Stretch' },
+                  { mode: ResizeMode.CONTAIN, label: 'Fit' },
+                  { mode: ResizeMode.COVER, label: 'Fill' },
+                ].map((option) => (
+                  <TouchableOpacity
+                    key={option.label}
+                    style={[
+                      styles.aspectRatioOption,
+                      resizeMode === option.mode && styles.selectedOption
+                    ]}
+                    onPress={() => setResizeMode(option.mode)}
+                  >
+                    <Text 
+                      style={[
+                        styles.optionText,
+                        resizeMode === option.mode && styles.selectedOptionText
+                      ]}
+                    >
+                      {option.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            <View style={styles.controlGroup}>
+              <Text style={styles.controlGroupTitle}>Subtitles</Text>
+              <View style={styles.subtitleOptionsContainer}>
+                <TouchableOpacity
+                  style={[
+                    styles.subtitleOption,
+                    selectedSubtitleTrack === null && styles.selectedOption
+                  ]}
+                  onPress={() => {
+                    setSelectedSubtitleTrack(null);
+                    setShowSubtitles(false);
+                  }}
+                >
+                  <Text 
+                    style={[
+                      styles.optionText,
+                      selectedSubtitleTrack === null && styles.selectedOptionText
+                    ]}
+                  >
+                    Off
+                  </Text>
+                </TouchableOpacity>
+                {subtitleTracks.map((track) => (
+                  <TouchableOpacity
+                    key={track.id}
+                    style={[
+                      styles.subtitleOption,
+                      selectedSubtitleTrack === track.id && styles.selectedOption
+                    ]}
+                    onPress={() => {
+                      setSelectedSubtitleTrack(track.id);
+                      setShowSubtitles(true);
+                    }}
+                  >
+                    <Text 
+                      style={[
+                        styles.optionText,
+                        selectedSubtitleTrack === track.id && styles.selectedOptionText
+                      ]}
+                    >
+                      {track.title}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+                {subtitles.length > 0 && (
+                  <TouchableOpacity
+                    style={[
+                      styles.subtitleOption,
+                      selectedSubtitleTrack === 'built-in' && styles.selectedOption
+                    ]}
+                    onPress={() => {
+                      setSelectedSubtitleTrack('built-in');
+                      setShowSubtitles(true);
+                    }}
+                  >
+                    <Text 
+                      style={[
+                        styles.optionText,
+                        selectedSubtitleTrack === 'built-in' && styles.selectedOptionText
+                      ]}
+                    >
+                      Built-in
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
           </View>
-        </BlurView>
+        </View>
       </Animated.View>
     </View>
   );
@@ -577,16 +778,17 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'black',
+    backgroundColor: 'transparent',
   },
   videoContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'transparent',
   },
   video: {
-    width: screenWidth,
-    height: screenHeight,
+    width: '100%',
+    height: '100%',
   },
   brightnessOverlay: {
     position: 'absolute',
@@ -604,18 +806,15 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: 'space-between',
   },
-  topBarBlur: {
-    borderRadius: 0,
-    overflow: 'hidden',
-  },
-  topGradient: {
-    paddingTop: Platform.OS === 'ios' ? 50 : 30,
-    paddingBottom: 15,
-  },
   topBar: {
+    // Dynamic padding handled in component
+  },
+  topBarBackground: {
+    paddingVertical: 15,
+  },
+  topBarContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
   },
   backButton: {
     padding: 8,
@@ -646,43 +845,51 @@ const styles = StyleSheet.create({
   menuButton: {
     padding: 8,
   },
-  centerPlayButton: {
+  centerContainer: {
     position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: [{ translateX: -60 }, { translateY: -60 }],
-  },
-  centerPlayBlur: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    pointerEvents: 'box-none',
   },
-  bottomBarBlur: {
-    borderRadius: 0,
-    overflow: 'hidden',
+  centerPlayButton: {
+    // No positioning needed
   },
-  bottomGradient: {
-    paddingTop: 20,
-    paddingBottom: Platform.OS === 'ios' ? 35 : 20,
+  centerPlayBackground: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  bottomBar: {
+  },
+  bottomBarBackground: {
+    paddingTop: 15,
+    paddingBottom: 10,
   },
   bottomControls: {
-    paddingHorizontal: 20,
+    // Padding removed as it's handled in component
   },
   progressContainer: {
-    marginBottom: 20,
+    marginBottom: 5,
+    paddingVertical: 10, 
   },
   progressBar: {
     height: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
     borderRadius: 2,
     position: 'relative',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: 'white',
+    backgroundColor: '#00d4ff',
     borderRadius: 2,
   },
   progressThumb: {
@@ -690,7 +897,7 @@ const styles = StyleSheet.create({
     width: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: 'white',
+    backgroundColor: '#00d4ff',
     top: -6,
     marginLeft: -8,
     shadowColor: '#000',
@@ -720,10 +927,10 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
   },
   playPauseButton: {
-    width: 56,
-    height: 56,
+    width: 50,
+    height: 50,
     borderRadius: 28,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
     marginHorizontal: 16,
@@ -732,14 +939,14 @@ const styles = StyleSheet.create({
   },
   subtitleContainer: {
     position: 'absolute',
-    bottom: 150,
+    bottom: 120,
     left: 30,
     right: 30,
     alignItems: 'center',
   },
-  subtitleBlur: {
+  subtitleBackground: {
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
     borderRadius: 8,
-    overflow: 'hidden',
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
@@ -789,6 +996,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   gestureBlur: {
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
     borderRadius: 16,
     paddingHorizontal: 24,
     paddingVertical: 20,
@@ -825,11 +1033,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   advancedControlsPanel: {
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
     borderRadius: 20,
     marginHorizontal: 40,
     maxWidth: 320,
     width: '100%',
-    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   advancedControlsContent: {
     padding: 24,
@@ -864,7 +1074,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   selectedOption: {
-    backgroundColor: 'white',
+    backgroundColor: '#00d4ff',
   },
   optionText: {
     color: 'white',
@@ -874,27 +1084,33 @@ const styles = StyleSheet.create({
   selectedOptionText: {
     color: 'black',
   },
-  toggleOption: {
+  aspectRatioOptions: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  aspectRatioOption: {
+    paddingHorizontal: 16,
     paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
-  toggle: {
-    width: 48,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    paddingHorizontal: 2,
+  subtitleOptionsContainer: {
+    flexDirection: 'column',
+    gap: 8,
   },
-  toggleActive: {
-    backgroundColor: '#00d4ff',
-  },
-  toggleThumb: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: 'white',
+  subtitleOption: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
 });
+
+// Export types and component
+export type { Subtitle, Chapter };
+export default MediaPlayer;
