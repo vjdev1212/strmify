@@ -1,4 +1,4 @@
-import MediaPlayer, { Chapter, Subtitle } from "@/components/MediaPlayer";
+import { Subtitle, Chapter, MediaPlayer } from "@/components/MediaPlayer";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React from "react";
 
@@ -20,7 +20,7 @@ const MediaPlayerScreen: React.FC = () => {
       subtitle={title as string}
       subtitles={exampleSubtitles}
       chapters={exampleChapters}
-      onBack={handleBack}
+      onBack={handleBack}      
       autoPlay={true}
     />
   );

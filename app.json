@@ -55,14 +55,10 @@
         }
       ],
       [
-        "react-native-vlc-media-player",
+        "expo-video",
         {
-          "ios": {
-            "includeVLCKit": false
-          },
-          "android": {
-            "legacyJetifier": false
-          }
+          "supportsBackgroundPlayback": true,
+          "supportsPictureInPicture": true
         }
       ]
     ],
