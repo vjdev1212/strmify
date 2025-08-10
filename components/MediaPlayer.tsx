@@ -83,8 +83,12 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         player.volume = volume;
         player.timeUpdateEventInterval = 1;
         player.playbackRate = playbackRate;
+        // Fix 1: Remove immediate autoplay and handle it properly
         if (autoPlay) {
-            player.play();
+            // Small delay to ensure player is ready
+            setTimeout(() => {
+                player.play();
+            }, 100);
         }
     });
 
@@ -97,14 +101,19 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         if (!seeking) {
             setCurrentTime(currentTime);
             updateCurrentChapter(currentTime);
+            // Fix 2: Get duration during timeUpdate if not set
+            if (duration === 0 && player.duration > 0) {
+                setDuration(player.duration);
+            }
         }
     });
 
     useEventListener(player, "statusChange", ({ status, error }) => {
-        console.log('status', status)
-        // if (videoDuration && videoDuration > 0) {
-        //     setDuration(videoDuration);
-        // }
+        console.log('status', status);
+        // Fix 3: Get duration on status change
+        if (player.duration > 0 && duration === 0) {
+            setDuration(player.duration);
+        }
     });
 
     // Update current chapter based on time
@@ -284,16 +293,25 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 animationType="slide"
                 onRequestClose={() => setShowChapters(false)}
             >
-                <View style={styles.modalContainer}>
-                    <View style={styles.modalContent}>
+                {/* Fix 4: Add TouchableOpacity for outside tap to close */}
+                <TouchableOpacity
+                    style={styles.modalContainer}
+                    activeOpacity={1}
+                    onPress={() => setShowChapters(false)}
+                >
+                    <TouchableOpacity
+                        style={styles.modalContent}
+                        activeOpacity={1}
+                        onPress={(e) => e.stopPropagation()}
+                    >
                         <Text style={styles.modalTitle}>Chapters</Text>
                         <FlatList
                             data={chapters}
                             keyExtractor={(item, index) => `chapter-${index}`}
                             renderItem={renderChapter}
                         />
-                    </View>
-                </View>
+                    </TouchableOpacity>
+                </TouchableOpacity>
             </Modal>
         );
     };
@@ -409,7 +427,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: 'black',
     },
     videoContainer: {
         flex: 1,
@@ -421,7 +438,7 @@ const styles = StyleSheet.create({
         ...StyleSheet.absoluteFillObject,
         justifyContent: 'space-between',
         paddingHorizontal: 20,
-        paddingVertical: 40,
+        paddingVertical: 20,
     },
     topBar: {
         flexDirection: 'row',
