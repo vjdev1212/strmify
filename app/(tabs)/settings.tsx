@@ -15,17 +15,12 @@ const SettingsScreen = () => {
   // Get the environment variables and default to false if not set
   const showContact = process.env.EXPO_PUBLIC_SHOW_CONTACT === 'true';
   const enableStremio = process.env.EXPO_PUBLIC_ENABLE_STREMIO === 'true';
-  const enableTorrServer = process.env.EXPO_PUBLIC_ENABLE_TORRSERVER === 'true';
 
   // Build servers list conditionally based on flags
   const serversList: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [];
 
   if (enableStremio) {
     serversList.push({ title: 'Stremio', route: '/settings/stremioserver', icon: 'magnet-outline' });
-  }
-
-  if (enableTorrServer) {
-    serversList.push({ title: 'TorrServer', route: '/settings/torrserver', icon: 'magnet-outline' });
   }
 
   const General: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [
@@ -139,7 +134,7 @@ const SettingsScreen = () => {
               styles.sectionHeader,
               { color: '#8E8E93' }
             ]}>
-              SERVERS
+              SERVER
             </Text>
             <View style={styles.settingsGroup}>
               {serversList.map((item, index) => (
@@ -173,7 +168,7 @@ const SettingsScreen = () => {
                   icon={item.icon}
                   onPress={() => onSettingsItemPress(item)}
                   isFirst={index === 0}
-                  isLast={index === serversList.length - 1}
+                  isLast={index === contactList.length - 1}
                 />
               ))}
             </View>

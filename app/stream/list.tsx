@@ -9,7 +9,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import { generateStremioPlayerUrl } from '@/clients/stremio';
-import { generateTorrServerPlayerUrl } from '@/clients/torrserver';
 import { ServerConfig } from '@/components/ServerConfig';
 import { Linking } from 'react-native';
 import BottomSpacing from '@/components/BottomSpacing';
@@ -37,19 +36,8 @@ interface StreamResponse {
     streams?: Stream[];
 }
 
-enum Servers {
-    Stremio = 'stremio',
-    TorrServer = 'torrserver',
-    Cancel = 'cancel',
-}
-
 const DEFAULT_STREMIO_URL = 'https://127.0.0.1:12470';
-const DEFAULT_TORRSERVER_URL = 'https://127.0.0.1:5665';
 const STORAGE_KEY = 'defaultMediaPlayer';
-
-// Environment variable checks
-const ENABLE_STREMIO = process.env.EXPO_PUBLIC_ENABLE_STREMIO === 'true';
-const ENABLE_TORRSERVER = process.env.EXPO_PUBLIC_ENABLE_TORRSERVER === 'true';
 
 const StreamListScreen = () => {
     const { imdbid, type, name: contentTitle, season, episode, colors } = useLocalSearchParams<{
@@ -69,15 +57,10 @@ const StreamListScreen = () => {
     const router = useRouter();
     const { showActionSheetWithOptions } = useActionSheet();
 
-    // New state for server and player logic
-    const [serversMap, setServersMap] = useState<{ [key: string]: ServerConfig[] }>({
-        [Servers.Stremio]: [],
-        [Servers.TorrServer]: [],
-        [Servers.Cancel]: [],
-    });
-    const [serverType, setServerType] = useState<string>(Servers.Stremio);
-    const [players, setPlayers] = useState<{ name: string; scheme: string; encodeUrl: boolean }[]>([]);
+    // Stremio server state
+    const [stremioServers, setStremioServers] = useState<ServerConfig[]>([]);
     const [selectedServerId, setSelectedServerId] = useState<string | null>(null);
+    const [players, setPlayers] = useState<{ name: string; scheme: string; encodeUrl: boolean }[]>([]);
     const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
     const [playBtnDisabled, setPlayBtnDisabled] = useState<boolean>(false);
     const [isModalVisible, setModalVisible] = useState(false);
@@ -85,105 +68,53 @@ const StreamListScreen = () => {
     const [isPlaying, setIsPlaying] = useState(false);
     const [selectedStream, setSelectedStream] = useState<Stream | null>(null);
 
-    // Get enabled servers based on environment variables
-    const getEnabledServers = useCallback(() => {
-        const enabledServers: string[] = [];
-        if (ENABLE_STREMIO) enabledServers.push(Servers.Stremio);
-        if (ENABLE_TORRSERVER) enabledServers.push(Servers.TorrServer);
-        return enabledServers;
-    }, []);
-
-
     const fetchServerConfigs = useCallback(async () => {
         try {
-            const enabledServers = getEnabledServers();
-
-            if (enabledServers.length === 0) {
-                console.warn('No servers are enabled in environment variables');
-                showAlert('Error', 'No streaming servers are enabled');
-                return;
-            }
-
             const storedServers = await AsyncStorage.getItem('servers');
-            let newServersMap: { [key: string]: ServerConfig[] } = {
-                [Servers.Stremio]: [],
-                [Servers.TorrServer]: [],
-            };
+            let stremioServerList: ServerConfig[] = [];
 
             if (!storedServers) {
-                // Create default servers only for enabled ones
-                if (ENABLE_STREMIO) {
-                    const defaultStremio: ServerConfig = {
-                        serverId: `stremio-default`,
-                        serverType: Servers.Stremio,
-                        serverName: 'Stremio',
-                        serverUrl: DEFAULT_STREMIO_URL,
-                        current: true
-                    };
-                    newServersMap[Servers.Stremio] = [defaultStremio];
-                }
-
-                if (ENABLE_TORRSERVER) {
-                    const defaultTorrServer: ServerConfig = {
-                        serverId: `torrserver-default`,
-                        serverType: Servers.TorrServer,
-                        serverName: 'TorrServer',
-                        serverUrl: DEFAULT_TORRSERVER_URL,
-                        current: true
-                    };
-                    newServersMap[Servers.TorrServer] = [defaultTorrServer];
-                }
+                // Create default Stremio server
+                const defaultStremio: ServerConfig = {
+                    serverId: `stremio-default`,
+                    serverType: 'stremio',
+                    serverName: 'Stremio',
+                    serverUrl: DEFAULT_STREMIO_URL,
+                    current: true
+                };
+                stremioServerList = [defaultStremio];
             } else {
                 const allServers: ServerConfig[] = JSON.parse(storedServers);
-
-                // Filter servers based on enabled ones
-                if (ENABLE_STREMIO) {
-                    const stremioServers = allServers.filter(server => server.serverType === Servers.Stremio);
-                    newServersMap[Servers.Stremio] = stremioServers.length > 0 ? stremioServers : [{
-                        serverId: `stremio-default`,
-                        serverType: Servers.Stremio,
-                        serverName: 'Stremio',
-                        serverUrl: DEFAULT_STREMIO_URL,
-                        current: true
-                    }];
-                }
-
-                if (ENABLE_TORRSERVER) {
-                    const torrServerServers = allServers.filter(server => server.serverType === Servers.TorrServer);
-                    newServersMap[Servers.TorrServer] = torrServerServers.length > 0 ? torrServerServers : [{
-                        serverId: `torrserver-default`,
-                        serverType: Servers.TorrServer,
-                        serverName: 'TorrServer',
-                        serverUrl: DEFAULT_TORRSERVER_URL,
-                        current: true
-                    }];
-                }
+                // Filter only Stremio servers
+                const filteredStremioServers = allServers.filter(server => server.serverType === 'stremio');
+                
+                stremioServerList = filteredStremioServers.length > 0 ? filteredStremioServers : [{
+                    serverId: `stremio-default`,
+                    serverType: 'stremio',
+                    serverName: 'Stremio',
+                    serverUrl: DEFAULT_STREMIO_URL,
+                    current: true
+                }];
             }
 
-            setServersMap(newServersMap);
+            setStremioServers(stremioServerList);
 
-            // Set default server type and ID based on enabled servers
-            if (ENABLE_STREMIO && newServersMap[Servers.Stremio].length > 0) {
-                const stremioCurrentServer = newServersMap[Servers.Stremio].find(server => server.current);
-                setServerType(Servers.Stremio);
-                setSelectedServerId(stremioCurrentServer ? stremioCurrentServer.serverId : newServersMap[Servers.Stremio][0].serverId);
-            } else if (ENABLE_TORRSERVER && newServersMap[Servers.TorrServer].length > 0) {
-                const torrServerCurrentServer = newServersMap[Servers.TorrServer].find(server => server.current);
-                setServerType(Servers.TorrServer);
-                setSelectedServerId(torrServerCurrentServer ? torrServerCurrentServer.serverId : newServersMap[Servers.TorrServer][0].serverId);
+            // Set default server ID
+            if (stremioServerList.length > 0) {
+                const currentServer = stremioServerList.find(server => server.current);
+                setSelectedServerId(currentServer ? currentServer.serverId : stremioServerList[0].serverId);
             }
 
         } catch (error) {
             console.error('Error loading server configurations:', error);
             showAlert('Error', 'Failed to load server configurations');
         }
-    }, [getEnabledServers]);
+    }, []);
 
     useEffect(() => {
         const loadPlayers = async () => {
             const platformPlayers = getPlatformSpecificPlayers();
             setPlayers(platformPlayers);
-
             setSelectedPlayer(platformPlayers[0].name);
         };
 
@@ -197,24 +128,17 @@ const StreamListScreen = () => {
     }, [fetchServerConfigs]);
 
     useEffect(() => {
-        if (serversMap[serverType] && serversMap[serverType].length > 0) {
-            const currentServer = serversMap[serverType].find(server => server.current);
-            const newServerId = currentServer ? currentServer.serverId : serversMap[serverType][0].serverId;
+        if (stremioServers.length > 0) {
+            const currentServer = stremioServers.find(server => server.current);
+            const newServerId = currentServer ? currentServer.serverId : stremioServers[0].serverId;
             setSelectedServerId(newServerId);
         }
-    }, [serverType, serversMap]);
+    }, [stremioServers]);
 
-    const generatePlayerUrlWithInfoHash = async (infoHash: string, serverType: string, serverUrl: string) => {
+    const generatePlayerUrlWithInfoHash = async (infoHash: string, serverUrl: string) => {
         try {
             setStatusText('Torrent details sent to the server. This may take a moment. Please wait...');
-            if (serverType === Servers.Stremio) {
-                return await generateStremioPlayerUrl(infoHash, serverUrl, type, season as string, episode as string);
-            }
-            if (serverType === Servers.TorrServer) {
-                const videoUrl = await generateTorrServerPlayerUrl(infoHash, serverUrl, type, season as string, episode as string);
-                return videoUrl;
-            }
-            return '';
+            return await generateStremioPlayerUrl(infoHash, serverUrl, type, season as string, episode as string);
         } catch (error) {
             console.error('Error generating player URL:', error);
             throw error;
@@ -228,8 +152,8 @@ const StreamListScreen = () => {
         setIsPlaying(false);
     };
 
-    // Modified handlePlay to accept optional server parameters and better validation
-    const handlePlay = async (stream: Stream, playerName?: string, forceServerType?: string, forceServerId?: string) => {
+    // Modified handlePlay to work with Stremio only
+    const handlePlay = async (stream: Stream, playerName?: string, forceServerId?: string) => {
         if (isHapticsSupported()) {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
         }
@@ -239,7 +163,6 @@ const StreamListScreen = () => {
 
         const { url, infoHash } = stream;
         const playerToUse = playerName || selectedPlayer;
-        const serverTypeToUse = forceServerType || serverType;
         const serverIdToUse = forceServerId || selectedServerId;
 
         setIsPlaying(true);
@@ -259,13 +182,13 @@ const StreamListScreen = () => {
             return;
         }
 
-        const selectedServer = serversMap[serverTypeToUse]?.find(s => s.serverId === serverIdToUse);
+        const selectedServer = stremioServers.find(s => s.serverId === serverIdToUse);
         console.log('Selected server:', selectedServer);
 
         if (!selectedServer && !url && infoHash) {
-            console.error('No server found for infoHash processing');
-            setStatusText('Error: Server configuration not found.');
-            showAlert('Error', 'Server configuration not found. Please try again.');
+            console.error('No Stremio server found for infoHash processing');
+            setStatusText('Error: Stremio server configuration not found.');
+            showAlert('Error', 'Stremio server configuration not found. Please try again.');
             setPlayBtnDisabled(false);
             setModalVisible(false);
             setIsPlaying(false);
@@ -288,7 +211,7 @@ const StreamListScreen = () => {
             let videoUrl = url || '';
             if (!url && infoHash && selectedServer) {
                 setStatusText('Processing the InfoHash...');
-                videoUrl = await generatePlayerUrlWithInfoHash(infoHash, selectedServer.serverType, selectedServer.serverUrl);
+                videoUrl = await generatePlayerUrlWithInfoHash(infoHash, selectedServer.serverUrl);
                 setStatusText('URL Generated...');
             }
 
@@ -428,46 +351,31 @@ const StreamListScreen = () => {
         setSelectedStream(stream);
 
         if (!url && infoHash) {
-            showServerSelection(stream); // pass stream directly
+            showServerSelection(stream);
         } else {
-            showPlayerSelection(undefined, undefined, stream); // pass stream directly
+            showPlayerSelection(undefined, stream);
         }
     };
 
     const showServerSelection = (stream: Stream) => {
-        const enabledServers = getEnabledServers();
-
-        // If no servers are enabled, show error
-        if (enabledServers.length === 0) {
-            showAlert('Error', 'No streaming servers are enabled');
+        // Check if any Stremio servers are available
+        if (stremioServers.length === 0) {
+            showAlert('Error', 'No Stremio servers are configured');
             return;
         }
 
-        // If only one server is enabled, auto-select it and proceed to player selection
-        if (enabledServers.length === 1) {
-            const selectedServerType = enabledServers[0];
-            const servers = serversMap[selectedServerType];
-
-            if (servers && servers.length > 0) {
-                const currentServer = servers.find(server => server.current);
-                const serverId = currentServer ? currentServer.serverId : servers[0].serverId;
-
-                setServerType(selectedServerType);
-                setSelectedServerId(serverId);
-
-                setTimeout(() => {
-                    showPlayerSelection(selectedServerType, serverId, stream);
-                }, 100);
-            } else {
-                showAlert('Error', 'No servers configured for the enabled server type');
-            }
+        // If only one server is available, auto-select it and proceed to player selection
+        if (stremioServers.length === 1) {
+            const serverId = stremioServers[0].serverId;
+            setSelectedServerId(serverId);
+            setTimeout(() => {
+                showPlayerSelection(serverId, stream);
+            }, 100);
             return;
         }
 
         // Multiple servers available, show action sheet
-        const serverOptions: string[] = enabledServers.map(type =>
-            type === 'stremio' ? 'Stremio' : 'TorrServer'
-        );
+        const serverOptions: string[] = stremioServers.map(server => server.serverName);
         serverOptions.push('Cancel');
 
         const cancelButtonIndex = serverOptions.length - 1;
@@ -476,8 +384,8 @@ const StreamListScreen = () => {
             {
                 options: serverOptions,
                 cancelButtonIndex,
-                title: 'Server',
-                message: 'Select the Server for Streaming',
+                title: 'Stremio Server',
+                message: 'Select the Stremio Server for Streaming',
                 messageTextStyle: { color: '#ffffff', fontSize: 12 },
                 textStyle: { color: '#ffffff' },
                 titleTextStyle: { color: '#535aff', fontWeight: '500' },
@@ -486,34 +394,20 @@ const StreamListScreen = () => {
             },
             (selectedIndex?: number) => {
                 if (selectedIndex !== undefined && selectedIndex !== cancelButtonIndex) {
-                    const selectedServerType = enabledServers[selectedIndex];
-                    console.log('Server selected:', selectedServerType);
+                    const selectedServer = stremioServers[selectedIndex];
+                    console.log('Server selected:', selectedServer);
 
-                    const servers = serversMap[selectedServerType];
-                    if (servers && servers.length > 0) {
-                        const currentServer = servers.find(server => server.current);
-                        const serverId = currentServer ? currentServer.serverId : servers[0].serverId;
+                    setSelectedServerId(selectedServer.serverId);
 
-                        setServerType(selectedServerType);
-                        setSelectedServerId(serverId);
-
-                        setTimeout(() => {
-                            showPlayerSelection(selectedServerType, serverId, stream);
-                        }, 300);
-                    } else {
-                        console.error('No servers found for type:', selectedServerType);
-                        showAlert('Error', 'No servers configured for the selected type');
-                    }
+                    setTimeout(() => {
+                        showPlayerSelection(selectedServer.serverId, stream);
+                    }, 300);
                 }
             }
         );
     };
 
-    const showPlayerSelection = (
-        selectedServerType?: string,
-        selectedServerIdParam?: string,
-        stream?: Stream
-    ) => {
+    const showPlayerSelection = (selectedServerIdParam?: string, stream?: Stream) => {
         const playerOptions = players.map(player => player.name);
         playerOptions.push('Cancel');
 
@@ -538,16 +432,14 @@ const StreamListScreen = () => {
                     setSelectedPlayer(selectedPlayerName);
                     if (stream) {
                         console.log('Starting playback with server info:', {
-                            selectedServerType,
                             selectedServerIdParam
                         });
-                        handlePlay(stream, selectedPlayerName, selectedServerType, selectedServerIdParam);
+                        handlePlay(stream, selectedPlayerName, selectedServerIdParam);
                     }
                 }
             }
         );
     };
-
 
     interface AddonItemProps {
         item: Addon;
