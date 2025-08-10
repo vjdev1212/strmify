@@ -4,6 +4,8 @@ import { ActivityIndicator, Card, StatusBar, Text, View } from '@/components/The
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
+import * as Clipboard from 'expo-clipboard';
+import * as Sharing from 'expo-sharing';
 import { isHapticsSupported, showAlert, getOriginalPlatform } from '@/utils/platform';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
@@ -357,6 +359,45 @@ const StreamListScreen = () => {
         }
     };
 
+    const convertInfoHashToMagnet = (infoHash: string) => {
+        return `magnet:?xt=urn:btih:${infoHash}`;
+    };
+
+    const copyToClipboard = async (text: string) => {
+        try {
+            await Clipboard.setStringAsync(text);
+            showAlert('Success', 'Copied to clipboard');
+        } catch (error) {
+            console.error('Failed to copy:', error);
+            showAlert('Error', 'Failed to copy to clipboard');
+        }
+    };
+
+    const shareContent = async (text: string) => {
+        try {
+            const isAvailable = await Sharing.isAvailableAsync();
+            if (isAvailable) {
+                await Sharing.shareAsync(text);
+            } else {
+                // Fallback to clipboard if sharing is not available
+                await copyToClipboard(text);
+                showAlert('Info', 'Sharing not available. Link copied to clipboard instead.');
+            }
+        } catch (error) {
+            console.error('Failed to share:', error);
+            showAlert('Error', 'Failed to share content');
+        }
+    };
+
+    const openInBrowser = async (url: string) => {
+        try {
+            await Linking.openURL(url);
+        } catch (error) {
+            console.error('Failed to open URL:', error);
+            showAlert('Error', 'Failed to open in browser');
+        }
+    };
+
     const showServerSelection = (stream: Stream) => {
         // Check if any Stremio servers are available
         if (stremioServers.length === 0) {
@@ -364,28 +405,35 @@ const StreamListScreen = () => {
             return;
         }
 
-        // If only one server is available, auto-select it and proceed to player selection
-        if (stremioServers.length === 1) {
-            const serverId = stremioServers[0].serverId;
-            setSelectedServerId(serverId);
-            setTimeout(() => {
-                showPlayerSelection(serverId, stream);
-            }, 100);
-            return;
+        // Get the current server name to display
+        const currentServer = stremioServers.find(server => server.serverId === selectedServerId);
+        const currentServerName = currentServer ? currentServer.serverName : stremioServers[0].serverName;
+        const serverId = currentServer?.serverId || stremioServers[0].serverId;
+
+        const { url, infoHash } = stream;
+        let linkToUse = url || '';
+        
+        // Convert infoHash to magnet link if no direct URL
+        if (!url && infoHash) {
+            linkToUse = convertInfoHashToMagnet(infoHash);
         }
 
-        // Multiple servers available, show action sheet
-        const serverOptions: string[] = stremioServers.map(server => server.serverName);
-        serverOptions.push('Cancel');
-
-        const cancelButtonIndex = serverOptions.length - 1;
+        // Show action sheet with current server and additional options
+        const serverOptions = [
+            'Play',
+            'Copy',
+            'Share',
+            'Open',
+            'Cancel'
+        ];
+        const cancelButtonIndex = 4;
 
         showActionSheetWithOptions(
             {
                 options: serverOptions,
                 cancelButtonIndex,
-                title: 'Stremio Server',
-                message: 'Select the Stremio Server for Streaming',
+                title: currentServerName,
+                message: 'Select action for streaming',
                 messageTextStyle: { color: '#ffffff', fontSize: 12 },
                 textStyle: { color: '#ffffff' },
                 titleTextStyle: { color: '#535aff', fontWeight: '500' },
@@ -394,14 +442,23 @@ const StreamListScreen = () => {
             },
             (selectedIndex?: number) => {
                 if (selectedIndex !== undefined && selectedIndex !== cancelButtonIndex) {
-                    const selectedServer = stremioServers[selectedIndex];
-                    console.log('Server selected:', selectedServer);
-
-                    setSelectedServerId(selectedServer.serverId);
-
-                    setTimeout(() => {
-                        showPlayerSelection(selectedServer.serverId, stream);
-                    }, 300);
+                    switch (selectedIndex) {
+                        case 0: // Play
+                            setSelectedServerId(serverId);
+                            setTimeout(() => {
+                                showPlayerSelection(serverId, stream);
+                            }, 100);
+                            break;
+                        case 1: // Copy
+                            copyToClipboard(linkToUse);
+                            break;
+                        case 2: // Share
+                            shareContent(linkToUse);
+                            break;
+                        case 3: // Open in Browser
+                            openInBrowser(linkToUse);
+                            break;
+                    }
                 }
             }
         );
