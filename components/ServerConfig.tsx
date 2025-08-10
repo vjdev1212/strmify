@@ -464,7 +464,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
                             <Text style={styles.cancelButtonText}>Cancel</Text>
                           </Pressable>
                           <Pressable style={styles.inlineActionButton} onPress={saveInlineEdit}>
-                            <Text style={styles.saveButtonText}>Save</Text>
+                            <Text style={[styles.saveButtonText, { color: '#007AFF' }]}>Save</Text>
                           </Pressable>
                         </View>
                       </View>
