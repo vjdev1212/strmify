@@ -436,8 +436,16 @@ const StreamListScreen = () => {
                 messageTextStyle: { color: '#ffffff', fontSize: 12 },
                 textStyle: { color: '#ffffff' },
                 titleTextStyle: { color: '#535aff', fontWeight: '500' },
+                cancelButtonTintColor: '#ff6b6b',
                 containerStyle: { backgroundColor: '#101010' },
-                userInterfaceStyle: 'dark'
+                userInterfaceStyle: 'dark',
+                icons: [
+                    <Feather name="play" size={20} color="#ffffff" />,
+                    <Feather name="copy" size={20} color="#ffffff" />,
+                    <Feather name="share" size={20} color="#ffffff" />,
+                    <Feather name="external-link" size={20} color="#ffffff" />,
+                    <Feather name="x" size={20} color="#ff6b6b" />
+                ]
             },
             (selectedIndex?: number) => {
                 if (selectedIndex !== undefined && selectedIndex !== cancelButtonIndex) {
