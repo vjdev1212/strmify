@@ -432,8 +432,7 @@ const StreamListScreen = () => {
             {
                 options: serverOptions,
                 cancelButtonIndex,
-                title: currentServerName,
-                message: 'Select action for streaming',
+                title: 'Select action',
                 messageTextStyle: { color: '#ffffff', fontSize: 12 },
                 textStyle: { color: '#ffffff' },
                 titleTextStyle: { color: '#535aff', fontWeight: '500' },
