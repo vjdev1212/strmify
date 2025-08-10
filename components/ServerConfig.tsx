@@ -374,7 +374,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
       {/* Add/Edit Form */}
       {(editingId || isAddingNew) && (
         <View style={styles.settingsSection}>
-          <Text style={styles.sectionHeader}>
+          <Text style={[styles.sectionHeader, { paddingLeft: 25 }]}>
             {editingId ? 'EDIT SERVER' : 'ADD SERVER'}
           </Text>
 
@@ -593,7 +593,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     color: '#8E8E93',
     textTransform: 'uppercase',
-    paddingHorizontal: 20,
+    paddingLeft: 4,
     paddingBottom: 10
   },
   addButton: {
