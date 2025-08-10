@@ -372,23 +372,7 @@ const StreamListScreen = () => {
             showAlert('Error', 'Failed to copy to clipboard');
         }
     };
-
-    const shareContent = async (text: string) => {
-        try {
-            const isAvailable = await Sharing.isAvailableAsync();
-            if (isAvailable) {
-                await Sharing.shareAsync(text);
-            } else {
-                // Fallback to clipboard if sharing is not available
-                await copyToClipboard(text);
-                showAlert('Info', 'Sharing not available. Link copied to clipboard instead.');
-            }
-        } catch (error) {
-            console.error('Failed to share:', error);
-            showAlert('Error', 'Failed to share content');
-        }
-    };
-
+    
     const openInBrowser = async (url: string) => {
         try {
             await Linking.openURL(url);
@@ -422,11 +406,10 @@ const StreamListScreen = () => {
         const serverOptions = [
             'Play',
             'Copy',
-            'Share',
-            'Open',
+            'Open with App',
             'Cancel'
         ];
-        const cancelButtonIndex = 4;
+        const cancelButtonIndex = 3;
 
         showActionSheetWithOptions(
             {
@@ -442,7 +425,6 @@ const StreamListScreen = () => {
                 icons: [
                     <Feather name="play" size={20} color="#ffffff" />,
                     <Feather name="copy" size={20} color="#ffffff" />,
-                    <Feather name="share" size={20} color="#ffffff" />,
                     <Feather name="external-link" size={20} color="#ffffff" />,
                     <Feather name="x" size={20} color="#ff6b6b" />
                 ]
@@ -450,21 +432,18 @@ const StreamListScreen = () => {
             (selectedIndex?: number) => {
                 if (selectedIndex !== undefined && selectedIndex !== cancelButtonIndex) {
                     switch (selectedIndex) {
-                        case 0: // Play
+                        case 0:
                             setSelectedServerId(serverId);
                             setTimeout(() => {
                                 showPlayerSelection(serverId, stream);
                             }, 100);
                             break;
-                        case 1: // Copy
+                        case 1:
                             copyToClipboard(linkToUse);
                             break;
-                        case 2: // Share
-                            shareContent(linkToUse);
-                            break;
-                        case 3: // Open in Browser
+                        case 2: 
                             openInBrowser(linkToUse);
-                            break;
+                            break;                        
                     }
                 }
             }
