@@ -1,22 +1,18 @@
 workflows:
-  expo-build:
-    name: Expo EAS Build (Signed IPA for iOS, APK for Android)
+  ios-unsigned:
+    name: iOS Unsigned Build
     environment:
-      groups:
-        - expo-env-vars
+      node: latest
+      expo: latest
+      xcode: latest
     scripts:
       - name: Install dependencies
-        script: |
-          echo "Setting up Node.js..."
-          nvm install $NODE_VERSION
-          npm install
-      - name: Install EAS CLI
-        script: |
-          npm install -g eas-cli
-      - name: Build Expo project using EAS Build
-        script: |
-          eas build --platform ios --profile development --non-interactive
-          eas build --platform android --profile development --non-interactive
+        script: yarn install
+      - name: Generate iOS native project
+        script: npx expo prebuild -p ios
+      - name: Build iOS app (unsigned for simulator)
+        script: npx eas build --platform ios --profile simulator --non-interactive
     artifacts:
-      - ./dist/*.ipa
-      - ./dist/*.apk
+      - build/**/*.ipa
+      - build/**/*.app
+      - build/**/*.tar.gz
