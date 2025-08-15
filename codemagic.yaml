@@ -1,6 +1,6 @@
 workflows:
-  ios-unsigned:
-    name: iOS Unsigned Build
+  ios-free-apple:
+    name: iOS Build with Free Apple ID
     environment:
       node: latest
       expo: latest
@@ -10,9 +10,7 @@ workflows:
         script: yarn install
       - name: Generate iOS native project
         script: npx expo prebuild -p ios
-      - name: Build iOS app (unsigned for simulator)
-        script: npx eas build --platform ios --profile simulator --non-interactive
+      - name: Build iOS app for devices
+        script: npx eas build --platform ios --profile production --non-interactive --local
     artifacts:
-      - build/**/*.ipa
-      - build/**/*.app
-      - build/**/*.tar.gz
+      - dist/**/*.ipa
