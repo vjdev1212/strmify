@@ -238,31 +238,13 @@ export default function AppleTVCarousel({
                             paddingBottom: dims.bottomPadding,
                             flexDirection: dimensions.isLandscape ? 'row' : 'row',
                         }]}>
-                            <View style={styles.posterContainer}>
-                                <Image
-                                    key={`poster-${item.id}-${index}`} // Force re-render
-                                    source={{ uri: item.posterUrl }}
-                                    style={[styles.posterImage, {
-                                        width: dims.posterWidth,
-                                        height: dims.posterHeight,
-                                    }]}
-                                    resizeMode="cover"
-                                />
-
-                                {/* Poster shadow */}
-                                <View style={[styles.posterShadow, {
-                                    width: dims.posterWidth,
-                                    height: dims.posterHeight,
-                                }]} />
-                            </View>
 
                             <View style={[styles.textContainer, {
-                                marginLeft: dimensions.isLandscape ? 30 : 20,
                                 flex: 1,
                             }]}>
                                 <Text style={[styles.title, {
                                     fontSize: dims.titleSize
-                                }]} numberOfLines={2}>
+                                }]} numberOfLines={1}>
                                     {item.title}
                                 </Text>
                                 {item.subtitle && (
@@ -270,7 +252,7 @@ export default function AppleTVCarousel({
                                         style={[styles.subtitle, {
                                             fontSize: dims.subtitleSize
                                         }]}
-                                        numberOfLines={dimensions.isLandscape ? 2 : 3}
+                                        numberOfLines={dimensions.isLandscape ? 2 : 2}
                                     >
                                         {item.subtitle}
                                     </Text>
@@ -316,7 +298,7 @@ export default function AppleTVCarousel({
         return (
             <View style={[styles.container, styles.loadingContainer, {
                 height: responsiveDims.carouselHeight
-            }]}>                
+            }]}>
                 <ActivityIndicator color="#535aff"></ActivityIndicator>
             </View>
         );
@@ -354,7 +336,7 @@ export default function AppleTVCarousel({
                     bottom: dimensions.isLandscape ? 15 : 20,
                     left: dimensions.isLandscape ? 30 : 20,
                 }]}>
-                    <BlurView intensity={20} style={styles.paginationBlur}>
+                    <BlurView intensity={20} style={[styles.paginationBlur]}>
                         <View style={styles.paginationDots}>
                             {data.map((_, index) => renderPaginationDot(index))}
                         </View>
@@ -374,6 +356,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     carouselItem: {
+        marginBottom: 10
     },
     carouselTouchable: {
         flex: 1,
@@ -430,10 +413,11 @@ const styles = StyleSheet.create({
         textShadowColor: 'rgba(0,0,0,0.6)',
         textShadowOffset: { width: 0, height: 1 },
         textShadowRadius: 2,
+        maxWidth: 600
     },
     metaContainer: {
         justifyContent: 'space-between',
-        marginTop: 12,
+        marginTop: 10,
     },
     metaText: {
         color: 'rgba(255,255,255,0.9)',
