@@ -1,6 +1,6 @@
 workflows:
-  ios-no-auth:
-    name: iOS Build Without Expo Auth
+  ios-simple:
+    name: Simple iOS Build
     environment:
       node: latest
       xcode: latest
@@ -9,50 +9,41 @@ workflows:
         script: npm install --force
       
       - name: Install Expo CLI
-        script: npm install -g @expo/cli --force
+        script: npm install -g @expo/cli@latest --force
       
-      - name: Generate iOS native project (skip login)
+      - name: Check Expo CLI version
+        script: npx expo --version
+      
+      - name: Clean and generate iOS project
         script: |
-          # Skip authentication by using --skip-dependency-update
-          EXPO_NO_TELEMETRY=1 npx expo prebuild -p ios --clear --no-install
+          # Remove existing native directories
+          rm -rf ios android
+          
+          # Generate iOS native project
+          npx expo prebuild --platform ios
       
       - name: Install iOS dependencies
         script: |
           cd ios
-          pod install --repo-update
+          pod install
       
-      - name: Create export options plist
-        script: |
-          cat > ios/ExportOptions.plist << 'EOF'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-              <key>method</key>
-              <string>development</string>
-              <key>signingStyle</key>
-              <string>automatic</string>
-              <key>stripSwiftSymbols</key>
-              <true/>
-              <key>thinning</key>
-              <string>&lt;none&gt;</string>
-          </dict>
-          </plist>
-          EOF
-      
-      - name: Build iOS app with Xcode
+      - name: Build with Xcode (unsigned)
         script: |
           cd ios
           
-          # Get the scheme name (usually matches the project name)
-          SCHEME_NAME=$(ls -1 *.xcworkspace | sed 's/\.xcworkspace$//')
-          echo "Building scheme: $SCHEME_NAME"
+          # Find the workspace file
+          WORKSPACE=$(find . -name "*.xcworkspace" -maxdepth 1 | head -1)
+          if [ -z "$WORKSPACE" ]; then
+            echo "❌ No .xcworkspace found"
+            exit 1
+          fi
           
-          # Clean build directory
-          rm -rf build/
+          # Get the scheme name
+          SCHEME_NAME=$(basename "$WORKSPACE" .xcworkspace)
+          echo "📱 Building scheme: $SCHEME_NAME"
           
-          # Archive the app
-          xcodebuild -workspace "$SCHEME_NAME.xcworkspace" \
+          # Build for device (unsigned)
+          xcodebuild -workspace "$WORKSPACE" \
             -scheme "$SCHEME_NAME" \
             -configuration Release \
             -destination generic/platform=iOS \
@@ -60,18 +51,22 @@ workflows:
             archive \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO
+            CODE_SIGNING_ALLOWED=NO \
+            DEVELOPMENT_TEAM=""
           
-          # Export IPA
-          xcodebuild -exportArchive \
-            -archivePath "build/$SCHEME_NAME.xcarchive" \
-            -exportPath build/ \
-            -exportOptionsPlist ExportOptions.plist
+          # Create unsigned IPA
+          mkdir -p build/unsigned
+          cp -r "build/$SCHEME_NAME.xcarchive/Products/Applications/" "build/unsigned/"
           
-          # List the generated files
-          echo "Generated files:"
-          find build/ -name "*.ipa" -type f
+          # Find the .app file and create IPA
+          APP_FILE=$(find "build/unsigned" -name "*.app" | head -1)
+          if [ -n "$APP_FILE" ]; then
+            APP_NAME=$(basename "$APP_FILE")
+            cd build/unsigned
+            zip -r "${APP_NAME%.app}.ipa" "$APP_NAME"
+            echo "✅ Created unsigned IPA: ${APP_NAME%.app}.ipa"
+          fi
     
     artifacts:
-      - ios/build/**/*.ipa
-      - ios/build/**/*.app
+      - ios/build/unsigned/*.ipa
+      - ios/build/**/*.xcarchive
