@@ -1,9 +1,16 @@
 workflows:
-  ios-simple:
-    name: Simple iOS Build
+  strmify:
+    name: Strmify iOS Build
     environment:
       node: latest
       xcode: latest
+      env:
+        EXPO_PUBLIC_TMDB_API_KEY: $EXPO_PUBLIC_TMDB_API_KEY
+        EXPO_PUBLIC_ENABLE_STREMIO: $EXPO_PUBLIC_ENABLE_STREMIO
+        EXPO_PUBLIC_SHOW_CONTACT: $EXPO_PUBLIC_SHOW_CONTACT
+        EXPO_PUBLIC_BUY_ME_COFFEE: $EXPO_PUBLIC_BUY_ME_COFFEE
+        EXPO_PUBLIC_FEEDBACK_URL: $EXPO_PUBLIC_FEEDBACK_URL
+        EXPO_TOKEN: $EXPO_TOKEN   # required if using Expo/EAS
     scripts:
       - name: Install dependencies
         script: npm install --force
@@ -16,10 +23,7 @@ workflows:
       
       - name: Clean and generate iOS project
         script: |
-          # Remove existing native directories
           rm -rf ios android
-          
-          # Generate iOS native project
           npx expo prebuild --platform ios
       
       - name: Install iOS dependencies
@@ -30,19 +34,15 @@ workflows:
       - name: Build with Xcode (unsigned)
         script: |
           cd ios
-          
-          # Find the workspace file
           WORKSPACE=$(find . -name "*.xcworkspace" -maxdepth 1 | head -1)
           if [ -z "$WORKSPACE" ]; then
             echo "❌ No .xcworkspace found"
             exit 1
           fi
-          
-          # Get the scheme name
+
           SCHEME_NAME=$(basename "$WORKSPACE" .xcworkspace)
           echo "📱 Building scheme: $SCHEME_NAME"
-          
-          # Build for device (unsigned)
+
           xcodebuild -workspace "$WORKSPACE" \
             -scheme "$SCHEME_NAME" \
             -configuration Release \
@@ -53,52 +53,18 @@ workflows:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
             DEVELOPMENT_TEAM=""
-          
-          # Create proper IPA structure
-          echo "📦 Creating properly structured IPA..."
-          
-          # Create IPA directory structure
+
           mkdir -p "build/Payload"
-          
-          # Copy the .app bundle to Payload directory
           cp -r "build/$SCHEME_NAME.xcarchive/Products/Applications/"*.app "build/Payload/"
-          
-          # Get the app name
+
           APP_NAME=$(ls "build/Payload/" | head -1)
           IPA_NAME="${APP_NAME%.app}"
-          
-          echo "📱 App bundle: $APP_NAME"
-          echo "📦 IPA name: $IPA_NAME"
-          
-          # Verify the app bundle structure
-          echo "🔍 App bundle contents:"
-          ls -la "build/Payload/$APP_NAME/"
-          
-          # Check for Info.plist
-          if [ ! -f "build/Payload/$APP_NAME/Info.plist" ]; then
-            echo "⚠️  Warning: Info.plist not found in app bundle"
-          fi
-          
-          # Check for executable
-          EXECUTABLE=$(plutil -extract CFBundleExecutable raw "build/Payload/$APP_NAME/Info.plist" 2>/dev/null || echo "$IPA_NAME")
-          if [ ! -f "build/Payload/$APP_NAME/$EXECUTABLE" ]; then
-            echo "⚠️  Warning: Executable $EXECUTABLE not found"
-          else
-            echo "✅ Executable found: $EXECUTABLE"
-          fi
-          
-          # Create the IPA file
+
           cd build
           zip -r "$IPA_NAME.ipa" Payload/
-          
-          # Verify IPA was created
+
           if [ -f "$IPA_NAME.ipa" ]; then
-            echo "✅ IPA created successfully: $IPA_NAME.ipa"
-            echo "📊 IPA size: $(ls -lh "$IPA_NAME.ipa" | awk '{print $5}')"
-            
-            # Test IPA structure
-            echo "🧪 Testing IPA structure:"
-            unzip -l "$IPA_NAME.ipa" | head -10
+            echo "✅ IPA created: $IPA_NAME.ipa"
           else
             echo "❌ Failed to create IPA"
             exit 1
