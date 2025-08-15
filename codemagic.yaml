@@ -4,13 +4,13 @@ workflows:
     environment:
       node: latest
       xcode: latest
-      env:
+      vars:
         EXPO_PUBLIC_TMDB_API_KEY: $EXPO_PUBLIC_TMDB_API_KEY
         EXPO_PUBLIC_ENABLE_STREMIO: $EXPO_PUBLIC_ENABLE_STREMIO
         EXPO_PUBLIC_SHOW_CONTACT: $EXPO_PUBLIC_SHOW_CONTACT
         EXPO_PUBLIC_BUY_ME_COFFEE: $EXPO_PUBLIC_BUY_ME_COFFEE
         EXPO_PUBLIC_FEEDBACK_URL: $EXPO_PUBLIC_FEEDBACK_URL
-        EXPO_TOKEN: $EXPO_TOKEN   # required if using Expo/EAS
+        EXPO_TOKEN: $EXPO_TOKEN
     scripts:
       - name: Install dependencies
         script: npm install --force
