@@ -22,7 +22,6 @@
       },
       "ios": {
         "distribution": "store",
-        "buildType": "export",
         "credentialsSource": "remote"
       },
       "channel": "production"
