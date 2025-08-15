@@ -4,14 +4,33 @@ workflows:
     environment:
       node: latest
       xcode: latest
+      vars:
+        # Add your Expo token here or set it in Codemagic environment variables
+        EXPO_TOKEN: $EXPO_TOKEN
     scripts:
       - name: Install dependencies
         script: npm install --force
+      
       - name: Install Expo CLI + EAS CLI
-        script: npm install -g expo-cli eas-cli --force
+        script: npm install -g @expo/cli eas-cli --force
+      
+      - name: Verify Expo authentication
+        script: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "EXPO_TOKEN environment variable is required"
+            exit 1
+          fi
+          npx expo whoami
+      
       - name: Generate iOS native project
-        script: npx expo prebuild -p ios
-      - name: Build iOS app for devices
-        script: npx eas build --platform ios --profile production --non-interactive --local
+        script: npx expo prebuild -p ios --clear
+      
+      - name: Build iOS app locally (unsigned)
+        script: |
+          # Use local build with sideload profile for unsigned IPA
+          npx eas build --platform ios --profile sideload --non-interactive --local
+    
     artifacts:
+      - build/**/*.ipa
       - dist/**/*.ipa
+      - "**/*.ipa"

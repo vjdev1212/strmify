@@ -3,7 +3,11 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "channel": "development"
+      "channel": "development",
+      "ios": {
+        "simulator": false,
+        "buildConfiguration": "Release"
+      }
     },
     "preview": {
       "distribution": "internal",
@@ -18,12 +22,26 @@
     "production": {
       "ios": {
         "distribution": "internal",
-        "credentialsSource": "local"
+        "credentialsSource": "local",
+        "simulator": false,
+        "buildConfiguration": "Release"
       },
       "android": {
         "buildType": "app-bundle"
       },
       "channel": "production"
+    },
+    "unsigned": {
+      "distribution": "internal",
+      "ios": {
+        "simulator": false,
+        "buildConfiguration": "Release",
+        "autoIncrement": false,
+        "credentialsSource": "local"
+      },
+      "env": {
+        "EXPO_NO_CAPABILITY_SYNC": "1"
+      }
     }
   },
   "cli": {
