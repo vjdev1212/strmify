@@ -3,11 +3,12 @@ workflows:
     name: iOS Build with Free Apple ID
     environment:
       node: latest
-      expo: latest
       xcode: latest
     scripts:
       - name: Install dependencies
         script: yarn install
+      - name: Install Expo CLI
+        script: npm install -g expo-cli eas-cli
       - name: Generate iOS native project
         script: npx expo prebuild -p ios
       - name: Build iOS app for devices
