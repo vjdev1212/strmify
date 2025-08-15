@@ -174,14 +174,15 @@ const SeriesDetails = () => {
           zIndex: 10
         }]}>
           <MediaLogo logo={data.logo} title={data.name} />
-          <MediaContentHeader
-            name={data.name}
-            genre={data.genre}
-            released={data.released}
-            runtime={data.runtime}
-            imdbRating={data.imdbRating}
-            releaseInfo={data.releaseInfo}
-          />
+          {!isPortrait && (
+            <MediaContentHeader
+              name={data.name}
+              genre={data.genre || data.genres}
+              released={data.released}
+              runtime={data.runtime}
+              imdbRating={data.imdbRating}
+              releaseInfo={data.releaseInfo}
+            />)}
           <PlayButton onPress={handlePlayPress} />
           <MediaContentDescription description={data.description} />
           {
