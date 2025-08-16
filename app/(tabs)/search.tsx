@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 30,
     fontWeight: '700',
     color: '#ffffff',
     marginBottom: 4,
