@@ -35,10 +35,20 @@ interface TraktTokens {
     created_at: number;
 }
 
+interface DeviceCodeResponse {
+    device_code: string;
+    user_code: string;
+    verification_url: string;
+    expires_in: number;
+    interval: number;
+}
+
 const TraktAuthScreen = () => {
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [userInfo, setUserInfo] = useState<any>(null);
+    const [deviceCodeData, setDeviceCodeData] = useState<DeviceCodeResponse | null>(null);
+    const [showDeviceCode, setShowDeviceCode] = useState<boolean>(false);
 
     useEffect(() => {
         checkAuthStatus();
@@ -97,6 +107,8 @@ const TraktAuthScreen = () => {
                 if (error) {
                     console.error('Auth error:', error);
                     setIsLoading(false);
+                    setShowDeviceCode(false);
+                    setDeviceCodeData(null);
                     showAlert('Authentication Failed', `Error: ${error}`);
                     return;
                 }
@@ -105,10 +117,6 @@ const TraktAuthScreen = () => {
                     // If Trakt sends back a code, handle it
                     console.log('Received auth code:', code);
                 }
-                
-                // For device code flow, this redirect confirms user completed the auth
-                // The polling mechanism will handle getting the actual token
-                showAlert('Authentication', 'Please wait while we complete the authentication...');
                 
                 // Optionally, you can trigger a re-check of auth status here
                 setTimeout(() => {
@@ -127,6 +135,8 @@ const TraktAuthScreen = () => {
                 const parsedTokens: TraktTokens = JSON.parse(tokens);
                 if (isTokenValid(parsedTokens)) {
                     setIsAuthenticated(true);
+                    setShowDeviceCode(false);
+                    setDeviceCodeData(null);
                     await fetchUserInfo(parsedTokens.access_token);
                 } else {
                     // Try to refresh the token
@@ -198,8 +208,26 @@ const TraktAuthScreen = () => {
     };
 
     const pollForToken = async (deviceCode: string, interval: number) => {
-        const pollInterval = setInterval(async () => {
+        let pollInterval: any = null;
+        let timeoutId: any = null;
+        let retryCount = 0;
+        const maxRetries = 3;
+        
+        const cleanup = () => {
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+            }
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+                timeoutId = null;
+            }
+        };
+
+        const poll = async () => {
             try {
+                console.log('Polling for token...');
+                
                 const response = await fetch(`${TRAKT_API_BASE}/oauth/device/token`, {
                     method: 'POST',
                     headers: {
@@ -213,14 +241,18 @@ const TraktAuthScreen = () => {
                 });
 
                 if (response.ok) {
+                    console.log('Token received successfully!');
                     const tokens: TraktTokens = await response.json();
                     tokens.created_at = Math.floor(Date.now() / 1000);
                     
                     await SecureStore.setItemAsync('trakt_tokens', JSON.stringify(tokens));
                     
+                    cleanup();
+                    
                     setIsAuthenticated(true);
                     setIsLoading(false);
-                    clearInterval(pollInterval);
+                    setShowDeviceCode(false);
+                    setDeviceCodeData(null);
                     
                     await fetchUserInfo(tokens.access_token);
                     
@@ -230,25 +262,69 @@ const TraktAuthScreen = () => {
                     
                     showAlert('Success', 'Successfully connected to Trakt.tv!');
                 } else if (response.status === 400) {
-                    // Still waiting for user authorization
+                    // Still waiting for user authorization - this is expected
+                    console.log('Still waiting for user authorization...');
+                    retryCount = 0; // Reset retry count on expected response
+                    return;
+                } else if (response.status === 404) {
+                    // Device code expired
+                    console.log('Device code expired');
+                    cleanup();
+                    setIsLoading(false);
+                    setShowDeviceCode(false);
+                    setDeviceCodeData(null);
+                    showAlert('Expired', 'The device code has expired. Please try again.');
                     return;
                 } else {
-                    throw new Error('Failed to get token');
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
             } catch (error) {
                 console.error('Error polling for token:', error);
-                clearInterval(pollInterval);
-                setIsLoading(false);
+                retryCount++;
+                
                 const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-                showAlert('Error', `Failed to authenticate with Trakt.tv: ${errorMessage}`);
+                
+                // Handle network errors more gracefully
+                if (errorMessage.includes('Network request failed') || errorMessage.includes('fetch')) {
+                    if (retryCount <= maxRetries) {
+                        console.log(`Network error, retrying in ${interval * 2} seconds... (${retryCount}/${maxRetries})`);
+                        // Double the interval on network errors to avoid overwhelming
+                        return;
+                    } else {
+                        console.log('Max retries reached for network errors');
+                    }
+                }
+                
+                // Stop polling on persistent errors
+                cleanup();
+                setIsLoading(false);
+                setShowDeviceCode(false);
+                setDeviceCodeData(null);
+                
+                if (retryCount > maxRetries && errorMessage.includes('Network request failed')) {
+                    showAlert(
+                        'Connection Error', 
+                        'Unable to connect to Trakt.tv. Please check your internet connection and try again.'
+                    );
+                } else {
+                    showAlert('Error', `Failed to authenticate with Trakt.tv: ${errorMessage}`);
+                }
             }
-        }, interval * 1000);
+        };
 
-        // Stop polling after 10 minutes
-        setTimeout(() => {
-            clearInterval(pollInterval);
-            setIsLoading(false);
-        }, 600000);
+        // Start polling
+        pollInterval = setInterval(poll, interval * 1000);
+        
+        // Stop polling after 15 minutes (increased from 10)
+        timeoutId = setTimeout(() => {
+            cleanup();
+            if (isLoading && showDeviceCode) {
+                setIsLoading(false);
+                setShowDeviceCode(false);
+                setDeviceCodeData(null);
+                showAlert('Timeout', 'Authentication process timed out. Please try again.');
+            }
+        }, 900000); // 15 minutes
     };
 
     const authenticateWithTrakt = async () => {
@@ -260,15 +336,11 @@ const TraktAuthScreen = () => {
             }
 
             const deviceCodeResponse = await generateDeviceCode();
+            setDeviceCodeData(deviceCodeResponse);
+            setShowDeviceCode(true);
             
             // Open browser for user authentication
             await Linking.openURL(deviceCodeResponse.verification_url);
-            
-            showAlert(
-                'Authenticate with Trakt.tv',
-                `Please visit the opened page and enter this code: ${deviceCodeResponse.user_code}`,
-                [{ text: 'OK', onPress: () => {} }]
-            );
 
             // Start polling for token
             await pollForToken(deviceCodeResponse.device_code, deviceCodeResponse.interval);
@@ -276,9 +348,23 @@ const TraktAuthScreen = () => {
         } catch (error) {
             console.error('Authentication error:', error);
             setIsLoading(false);
+            setShowDeviceCode(false);
+            setDeviceCodeData(null);
             const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
             showAlert('Error', `Failed to start authentication process: ${errorMessage}`);
         }
+    };
+
+    const cancelAuthentication = () => {
+        setIsLoading(false);
+        setShowDeviceCode(false);
+        setDeviceCodeData(null);
+        
+        if (isHapticsSupported()) {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+        }
+        
+        console.log('Authentication cancelled by user');
     };
 
     const refreshAccessToken = async (tokens: TraktTokens) => {
@@ -325,6 +411,7 @@ const TraktAuthScreen = () => {
 
             if (response.ok) {
                 const user = await response.json();
+                console.log(user);
                 setUserInfo(user);
             }
         } catch (error) {
@@ -350,6 +437,59 @@ const TraktAuthScreen = () => {
         }
     };
 
+    const renderDeviceCodeView = () => (
+        <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Authenticate with Trakt.tv</Text>
+                <Text style={styles.sectionSubtitle}>
+                    Visit the URL below and enter the code to complete authentication
+                </Text>
+            </View>
+
+            {deviceCodeData && (
+                <View style={styles.deviceCodeContainer}>
+                    <View style={styles.urlContainer}>
+                        <Text style={styles.urlLabel}>Visit this URL:</Text>
+                        <Pressable 
+                            style={styles.urlButton}
+                            onPress={() => Linking.openURL(deviceCodeData.verification_url)}
+                        >
+                            <Text style={styles.urlText}>{deviceCodeData.verification_url}</Text>
+                        </Pressable>
+                    </View>
+
+                    <View style={styles.codeContainer}>
+                        <Text style={styles.codeLabel}>Enter this code:</Text>
+                        <View style={styles.codeDisplay}>
+                            <Text style={styles.codeText}>{deviceCodeData.user_code}</Text>
+                        </View>
+                    </View>
+
+                    <View style={styles.statusContainer}>
+                        <ActivityIndicator color="#535aff" size="small" />
+                        <Text style={styles.statusText}>
+                            Waiting for authentication... Complete the process in your browser
+                        </Text>
+                    </View>
+
+                    <Text style={styles.helpText}>
+                        This process may take a few minutes. The code will expire in {Math.ceil(deviceCodeData.expires_in / 60)} minutes.
+                    </Text>
+
+                    <Pressable 
+                        style={({ pressed }) => [
+                            styles.cancelButton,
+                            pressed && styles.buttonPressed
+                        ]}
+                        onPress={cancelAuthentication}
+                    >
+                        <Text style={styles.cancelButtonText}>Cancel</Text>
+                    </Pressable>
+                </View>
+            )}
+        </View>
+    );
+
     const renderAuthenticatedView = () => (
         <>
             <View style={styles.section}>
@@ -366,7 +506,7 @@ const TraktAuthScreen = () => {
                         <Text style={styles.userInfoLabel}>Name:</Text>
                         <Text style={styles.userInfoValue}>{userInfo.name || 'Not provided'}</Text>
                         
-                        <Text style={styles.userInfoLabel}>Member Since:</Text>
+                        <Text style={styles.userInfoLabel}>VIP:</Text>
                         <Text style={styles.userInfoValue}>
                             {new Date(userInfo.joined_at).toLocaleDateString()}
                         </Text>
@@ -413,18 +553,12 @@ const TraktAuthScreen = () => {
                 onPress={authenticateWithTrakt}
                 disabled={isLoading}
             >
-                {isLoading ? (
+                {isLoading && !showDeviceCode ? (
                     <ActivityIndicator color="#fff" size="small" />
                 ) : (
                     <Text style={styles.connectButtonText}>Connect to Trakt.tv</Text>
                 )}
             </Pressable>
-            
-            {isLoading && (
-                <Text style={styles.loadingText}>
-                    Waiting for authorization... Please complete the authentication in your browser
-                </Text>
-            )}
         </>
     );
 
@@ -436,7 +570,12 @@ const TraktAuthScreen = () => {
                 contentContainerStyle={styles.scrollContent}
                 style={styles.scrollView}
             >
-                {isAuthenticated ? renderAuthenticatedView() : renderUnauthenticatedView()}
+                {isAuthenticated 
+                    ? renderAuthenticatedView() 
+                    : showDeviceCode 
+                        ? renderDeviceCodeView()
+                        : renderUnauthenticatedView()
+                }
             </ScrollView>
         </SafeAreaView>
     );
@@ -497,6 +636,71 @@ const styles = StyleSheet.create({
         color: '#fff',
         marginBottom: 8,
     },
+    deviceCodeContainer: {
+        marginTop: 24,
+        gap: 24,
+    },
+    urlContainer: {
+        alignItems: 'center',
+    },
+    urlLabel: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#fff',
+        marginBottom: 12,
+    },
+    urlButton: {
+        backgroundColor: 'rgba(83, 90, 255, 0.1)',
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#535aff',
+    },
+    urlText: {
+        fontSize: 14,
+        color: '#535aff',
+        textAlign: 'center',
+    },
+    codeContainer: {
+        alignItems: 'center',
+    },
+    codeLabel: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#fff',
+        marginBottom: 12,
+    },
+    codeDisplay: {
+        backgroundColor: 'rgba(83, 90, 255, 0.2)',
+        paddingVertical: 16,
+        paddingHorizontal: 24,
+        borderRadius: 12,
+        borderWidth: 2,
+        borderColor: '#535aff',
+        minWidth: 200,
+        alignItems: 'center',
+    },
+    codeText: {
+        fontSize: 28,
+        fontWeight: 'bold',
+        color: '#535aff',
+        letterSpacing: 4,
+        textAlign: 'center',
+    },
+    statusContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 12,
+    },
+    statusText: {
+        fontSize: 14,
+        color: '#888',
+        textAlign: 'center',
+        lineHeight: 20,
+        flex: 1,
+    },
     connectButton: {
         backgroundColor: '#535aff',
         paddingVertical: 16,
@@ -518,7 +722,7 @@ const styles = StyleSheet.create({
     logoutButton: {
         backgroundColor: '#ff4757',
         paddingVertical: 16,
-        paddingHorizontal: 32,
+        paddingHorizontal: 16,
         borderRadius: 12,
         alignItems: 'center',
         marginTop: 20,
@@ -532,6 +736,15 @@ const styles = StyleSheet.create({
         elevation: 8,
         width: 200,
         alignSelf: 'center',
+    },
+    cancelButton: {
+        backgroundColor: '#6c757d',
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+        borderRadius: 8,
+        alignItems: 'center',
+        alignSelf: 'center',
+        minWidth: 120,
     },
     buttonPressed: {
         transform: [{ scale: 0.98 }],
@@ -549,12 +762,17 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
     },
-    loadingText: {
+    cancelButtonText: {
+        color: '#fff',
         fontSize: 14,
-        color: '#888',
+        fontWeight: '600',
+    },
+    helpText: {
+        fontSize: 12,
+        color: '#666',
         textAlign: 'center',
-        marginTop: 16,
-        lineHeight: 20,
+        lineHeight: 16,
+        fontStyle: 'italic',
     },
 });
 
