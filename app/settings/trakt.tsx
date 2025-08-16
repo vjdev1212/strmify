@@ -4,6 +4,7 @@ import { isHapticsSupported, showAlert } from '@/utils/platform';
 import * as SecureStore from 'expo-secure-store';
 import * as Haptics from 'expo-haptics';
 import { useCallback, useEffect, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 
 // Trakt.tv API configuration from environment variables
 const TRAKT_CLIENT_ID = process.env.EXPO_PUBLIC_TRAKT_CLIENT_ID || '';
@@ -41,7 +42,83 @@ const TraktAuthScreen = () => {
 
     useEffect(() => {
         checkAuthStatus();
+        
+        // Handle deep link when app is opened from background
+        const handleDeepLink = (event: { url: string }) => {
+            handleAuthRedirect(event.url);
+        };
+
+        // Add event listener for deep links
+        const subscription = Linking.addEventListener('url', handleDeepLink);
+
+        // Check if app was opened with a deep link
+        Linking.getInitialURL().then((url) => {
+            if (url) {
+                handleAuthRedirect(url);
+            }
+        });
+
+        return () => {
+            subscription?.remove();
+        };
     }, []);
+
+    // Handle when screen comes into focus (useful for detecting when user returns from browser)
+    useFocusEffect(
+        useCallback(() => {
+            if (isLoading) {
+                // User came back from browser, check if they completed auth
+                // The polling will handle the token exchange
+            }
+        }, [isLoading])
+    );
+
+    const handleAuthRedirect = (url: string) => {
+        console.log('Received deep link:', url);
+        
+        // Parse the URL to extract path and parameters
+        try {
+            const urlObj = new URL(url);
+            const pathname = urlObj.pathname; // This will be "/settings/trakt"
+            const searchParams = urlObj.searchParams;
+            
+            console.log('Path:', pathname);
+            console.log('Params:', Object.fromEntries(searchParams));
+            
+            // Check if this is our Trakt auth redirect to settings/trakt
+            if (pathname === '/settings/trakt' || url.includes('settings/trakt')) {
+                console.log('Trakt auth redirect detected for settings/trakt');
+                
+                // Extract any parameters Trakt might send back
+                const code = searchParams.get('code');
+                const state = searchParams.get('state');
+                const error = searchParams.get('error');
+                
+                if (error) {
+                    console.error('Auth error:', error);
+                    setIsLoading(false);
+                    showAlert('Authentication Failed', `Error: ${error}`);
+                    return;
+                }
+                
+                if (code) {
+                    // If Trakt sends back a code, handle it
+                    console.log('Received auth code:', code);
+                }
+                
+                // For device code flow, this redirect confirms user completed the auth
+                // The polling mechanism will handle getting the actual token
+                showAlert('Authentication', 'Please wait while we complete the authentication...');
+                
+                // Optionally, you can trigger a re-check of auth status here
+                setTimeout(() => {
+                    checkAuthStatus();
+                }, 2000);
+            }
+        } catch (error) {
+            console.error('Error parsing auth redirect URL:', error);
+        }
+    };
 
     const checkAuthStatus = async () => {
         try {
@@ -73,20 +150,32 @@ const TraktAuthScreen = () => {
                 throw new Error('Missing required Trakt.tv configuration. Please check your environment variables.');
             }
 
+            console.log('Attempting to generate device code with client ID:', TRAKT_CLIENT_ID);
+
             // For web/Expo Go, you need a backend proxy to avoid CORS
             const response = await fetch(`${TRAKT_API_BASE}/oauth/device/code`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'trakt-api-version': '2',
+                    'trakt-api-key': TRAKT_CLIENT_ID,
                 },
                 body: JSON.stringify({
                     client_id: TRAKT_CLIENT_ID,
                 }),
             });
 
+            console.log('Response status:', response.status, response.statusText);
+
             if (!response.ok) {
-                console.log('response', response)
-                throw new Error('Failed to generate device code');
+                const errorData = await response.text();
+                console.error('API Error Response:', errorData);
+                
+                if (response.status === 403) {
+                    throw new Error('Invalid Trakt.tv client credentials. Please check your EXPO_PUBLIC_TRAKT_CLIENT_ID in your .env file.');
+                }
+                
+                throw new Error(`Failed to generate device code: ${response.status} ${response.statusText}`);
             }
 
             return await response.json();
@@ -99,6 +188,8 @@ const TraktAuthScreen = () => {
                     'Configuration Required', 
                     'This feature requires a backend proxy to work in web browsers. Please set up a backend proxy or use this in a native app build.'
                 );
+            } else if (errorMessage.includes('credentials') || errorMessage.includes('403')) {
+                showAlert('Invalid Credentials', 'Please check your Trakt.tv app credentials in the .env file.');
             } else if (errorMessage.includes('configuration')) {
                 showAlert('Configuration Error', errorMessage);
             }
