@@ -16,6 +16,22 @@ workflows:
       - name: Check Expo CLI version
         script: npx expo --version
       
+      - name: Extract app version from app.json
+        script: |
+          if [ -f "app.json" ]; then
+            APP_VERSION=$(node -p "JSON.parse(require('fs').readFileSync('app.json', 'utf8')).expo.version")
+            APP_NAME=$(node -p "JSON.parse(require('fs').readFileSync('app.json', 'utf8')).expo.name.replace(/[^a-zA-Z0-9]/g, '')")
+            
+            echo "📱 App Name: $APP_NAME"
+            echo "📋 Version: $APP_VERSION"
+            echo "APP_VERSION=$APP_VERSION" >> $CM_ENV
+            echo "APP_NAME=$APP_NAME" >> $CM_ENV
+          else
+            echo "⚠️  app.json not found, using default values"
+            echo "APP_VERSION=1.0.0" >> $CM_ENV
+            echo "APP_NAME=Strmify" >> $CM_ENV
+          fi
+      
       - name: Clean and generate iOS project
         script: |
           rm -rf ios android
@@ -52,14 +68,18 @@ workflows:
           mkdir -p "build/Payload"
           cp -r "build/$SCHEME_NAME.xcarchive/Products/Applications/"*.app "build/Payload/"
 
-          APP_NAME=$(ls "build/Payload/" | head -1)
-          IPA_NAME="${APP_NAME%.app}"
+          APP_BUNDLE=$(ls "build/Payload/" | head -1)
+          BASE_NAME="${APP_BUNDLE%.app}"
 
-          echo "📱 App bundle: $APP_NAME"
+          echo "📱 App bundle: $APP_BUNDLE"
+
+          # Create versioned IPA name
+          IPA_NAME="${APP_NAME}_v${APP_VERSION}"
+          
           echo "📦 IPA name: $IPA_NAME"
 
-          EXECUTABLE=$(plutil -extract CFBundleExecutable raw "build/Payload/$APP_NAME/Info.plist" 2>/dev/null || echo "$IPA_NAME")
-          if [ ! -f "build/Payload/$APP_NAME/$EXECUTABLE" ]; then
+          EXECUTABLE=$(plutil -extract CFBundleExecutable raw "build/Payload/$APP_BUNDLE/Info.plist" 2>/dev/null || echo "$BASE_NAME")
+          if [ ! -f "build/Payload/$APP_BUNDLE/$EXECUTABLE" ]; then
             echo "⚠️  Warning: Executable $EXECUTABLE not found"
           else
             echo "✅ Executable found: $EXECUTABLE"
@@ -71,6 +91,11 @@ workflows:
           if [ -f "$IPA_NAME.ipa" ]; then
             echo "✅ IPA created successfully: $IPA_NAME.ipa"
             echo "📊 IPA size: $(ls -lh "$IPA_NAME.ipa" | awk '{print $5}')"
+            echo "🏷️  Full version info: $APP_NAME v$APP_VERSION"
+            
+            # Create a symlink with a simple name for easier access
+            ln -sf "$IPA_NAME.ipa" "latest.ipa"
+            echo "🔗 Symlink created: latest.ipa -> $IPA_NAME.ipa"
           else
             echo "❌ Failed to create IPA"
             exit 1
