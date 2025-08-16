@@ -3,7 +3,7 @@ import { StatusBar, Text, View } from '../../components/Themed';
 import { isHapticsSupported, showAlert } from '@/utils/platform';
 import * as Haptics from 'expo-haptics';
 import { useCallback, useEffect, useState } from 'react';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { isUserAuthenticated, makeTraktApiCall } from '../settings/trakt';
 
 const TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
@@ -61,14 +61,6 @@ const TraktScreen = () => {
     useEffect(() => {
         checkAuthentication();
     }, []);
-
-    useFocusEffect(
-        useCallback(() => {
-            if (isAuthenticated) {
-                loadAllTraktData();
-            }
-        }, [isAuthenticated])
-    );
 
     const checkAuthentication = async () => {
         const authenticated = await isUserAuthenticated();
@@ -600,7 +592,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         marginTop: 30,
-        backgroundColor: '#000',
     },
     mainContainer: {
         flex: 1,
@@ -610,7 +601,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         gap: 20,
-        backgroundColor: '#000',
     },
     loadingText: {
         fontSize: 16,
@@ -623,7 +613,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 32,
         gap: 20,
-        backgroundColor: '#000',
     },
     unauthenticatedIcon: {
         fontSize: 64,
@@ -644,7 +633,6 @@ const styles = StyleSheet.create({
     },
     tabContainer: {
         flexGrow: 0,
-        backgroundColor: 'rgba(255, 255, 255, 0.02)',
         paddingVertical: 16,
         paddingHorizontal: 16,
         borderBottomWidth: 1,
@@ -700,7 +688,6 @@ const styles = StyleSheet.create({
     },
     contentWrapper: {
         flex: 1,
-        backgroundColor: '#000',
     },
     // Grid Layout Styles
     gridContainer: {
