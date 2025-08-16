@@ -506,10 +506,21 @@ const TraktAuthScreen = () => {
                         <Text style={styles.userInfoLabel}>Name:</Text>
                         <Text style={styles.userInfoValue}>{userInfo.name || 'Not provided'}</Text>
                         
-                        <Text style={styles.userInfoLabel}>VIP:</Text>
-                        <Text style={styles.userInfoValue}>
-                            {new Date(userInfo.joined_at).toLocaleDateString()}
-                        </Text>
+                        <Text style={styles.userInfoLabel}>Profile:</Text>
+                        <Text style={styles.userInfoValue}>{userInfo.private ? 'Private' : 'Public'}</Text>
+                        
+                        <Text style={styles.userInfoLabel}>VIP Status:</Text>
+                        <Text style={styles.userInfoValue}>{userInfo.vip ? 'VIP Member' : 'Regular Member'}</Text>
+                        
+                        {userInfo.vip_ep && (
+                            <>
+                                <Text style={styles.userInfoLabel}>VIP EP:</Text>
+                                <Text style={styles.userInfoValue}>Active</Text>
+                            </>
+                        )}
+                        
+                        <Text style={styles.userInfoLabel}>Account Type:</Text>
+                        <Text style={styles.userInfoValue}>{userInfo.director ? 'Director' : 'Standard User'}</Text>
                     </View>
                 )}
             </View>
@@ -627,13 +638,13 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     userInfoLabel: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#535aff',
+        fontSize: 16,
+        fontWeight: '500',
+        color: '#fff',
     },
     userInfoValue: {
-        fontSize: 16,
-        color: '#fff',
+        fontSize: 14,
+        color: '#ccc',
         marginBottom: 8,
     },
     deviceCodeContainer: {
