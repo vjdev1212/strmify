@@ -594,7 +594,7 @@ const TraktScreen = () => {
         <View style={styles.unauthenticatedContainer}>
             <Text style={styles.unauthenticatedTitle}>Connect to Trakt.tv</Text>
             <Text style={styles.unauthenticatedText}>
-                Please authenticate with Trakt.tv first to view your data
+                Please authenticate with Trakt.tv to view your data
             </Text>
         </View>
     );
