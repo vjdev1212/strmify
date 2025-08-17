@@ -27,6 +27,9 @@ interface TraktItem {
     progress?: number; // Playback progress (0-100)
     paused_at?: string; // When playback was paused
     action?: string; // 'start', 'pause', 'scrobble', 'watch'
+    rank?: number; // For ranked lists
+    id?: number; // List item ID
+    notes?: string; // List item notes
 }
 
 interface TMDBDetails {
@@ -50,12 +53,26 @@ const TraktScreen = () => {
     const router = useRouter();
     const [screenData, setScreenData] = useState(Dimensions.get('window'));
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
-    const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [isLoading, setIsLoading] = useState<boolean>(false);
     const [refreshing, setRefreshing] = useState<boolean>(false);
-    const [selectedTab, setSelectedTab] = useState<'user-lists' | 'movies' | 'shows'>('user-lists');
+    const [selectedTab, setSelectedTab] = useState<'user-lists' | 'movies' | 'shows'>('movies');
     const [userListSections, setUserListSections] = useState<ListSection[]>([]);
     const [movieSections, setMovieSections] = useState<ListSection[]>([]);
     const [showSections, setShowSections] = useState<ListSection[]>([]);
+    
+    // Track loading states for each tab
+    const [tabLoadingStates, setTabLoadingStates] = useState({
+        movies: false,
+        shows: false,
+        'user-lists': false,
+    });
+    
+    // Track which tabs have been loaded
+    const [tabsLoaded, setTabsLoaded] = useState({
+        movies: false,
+        shows: false,
+        'user-lists': false,
+    });
 
     // Screen dimensions and responsive calculations
     const { width, height } = screenData;
@@ -98,12 +115,44 @@ const TraktScreen = () => {
         const authenticated = await isUserAuthenticated();
         setIsAuthenticated(authenticated);
         if (authenticated) {
-            await loadAllData();
+            // Load the default tab (movies) on initial load
+            await loadTabData('movies');
         }
-        setIsLoading(false);
     };
 
-    // Helper function to sort items by most recent date
+    // Helper function to sort items by rank first, then by most recent date
+    const sortByRankThenDate = (items: TraktItem[]) => {
+        return items.sort((a: any, b: any) => {
+            // If both items have ranks, sort by rank (ascending)
+            if (a.rank !== undefined && b.rank !== undefined) {
+                return a.rank - b.rank;
+            }
+            
+            // If only one has a rank, prioritize the ranked item
+            if (a.rank !== undefined && b.rank === undefined) {
+                return -1;
+            }
+            if (a.rank === undefined && b.rank !== undefined) {
+                return 1;
+            }
+            
+            // If neither has a rank, fall back to date sorting
+            const getDate = (item: any) => {
+                return item.listed_at || 
+                       item.last_watched_at || 
+                       item.last_updated_at || 
+                       item.updated_at || 
+                       item.watched_at ||
+                       '1970-01-01';
+            };
+            
+            const dateA = new Date(getDate(a)).getTime();
+            const dateB = new Date(getDate(b)).getTime();
+            return dateB - dateA; // descending order (newest first)
+        });
+    };
+
+    // Helper function to sort items by most recent date (for non-list items)
     const sortByRecentDate = (items: TraktItem[]) => {
         return items.sort((a: any, b: any) => {
             // Priority order for date fields: listed_at > last_watched_at > last_updated_at > updated_at
@@ -159,12 +208,49 @@ const TraktScreen = () => {
         return enhancedItems;
     };
 
+    // Helper function to load data for a specific tab
+    const loadTabData = async (tab: 'user-lists' | 'movies' | 'shows') => {
+        if (!isAuthenticated) return;
+
+        // Set loading state for this tab
+        setTabLoadingStates(prev => ({ ...prev, [tab]: true }));
+
+        try {
+            switch (tab) {
+                case 'movies':
+                    await loadMovieData();
+                    break;
+                case 'shows':
+                    await loadShowData();
+                    break;
+                case 'user-lists':
+                    await loadUserListData();
+                    break;
+            }
+            
+            // Mark tab as loaded
+            setTabsLoaded(prev => ({ ...prev, [tab]: true }));
+        } catch (error) {
+            console.error(`Error loading ${tab} data:`, error);
+            showAlert('Error', `Failed to load ${tab} data. Please try again.`);
+        } finally {
+            setTabLoadingStates(prev => ({ ...prev, [tab]: false }));
+        }
+    };
+
     const loadAllData = async () => {
         if (!isAuthenticated) return;
 
         try {
             setIsLoading(true);
             await Promise.all([loadUserListData(), loadMovieData(), loadShowData()]);
+            
+            // Mark all tabs as loaded
+            setTabsLoaded({
+                movies: true,
+                shows: true,
+                'user-lists': true,
+            });
         } catch (error) {
             console.error('Error loading Trakt data:', error);
             showAlert('Error', 'Failed to load Trakt data. Please try again.');
@@ -182,8 +268,8 @@ const TraktScreen = () => {
             for (const list of userLists) {
                 const listItems = await makeTraktApiCall(`/users/me/lists/${list.ids.slug}/items`);
                 if (listItems.length > 0) {
-                    // Sort list items by recent date
-                    const sortedListItems = sortByRecentDate(listItems);
+                    // Sort list items by rank first, then by recent date
+                    const sortedListItems = sortByRankThenDate(listItems);
                     const enhancedListItems = await enhanceWithTMDB(sortedListItems.slice(0, 20));
                     newUserListSections.push({
                         title: list.name,
@@ -193,10 +279,11 @@ const TraktScreen = () => {
             }
 
             // Load Watchlist as a special user list (combined movies and shows)
+            // Note: Watchlist typically doesn't have ranks, so we'll use date sorting
             try {
                 const watchlistItems = await makeTraktApiCall('/sync/watchlist');
                 if (watchlistItems.length > 0) {
-                    // Sort watchlist by most recent additions
+                    // Sort watchlist by most recent additions (no ranks in watchlist)
                     const sortedWatchlistItems = sortByRecentDate(watchlistItems);
                     const enhancedWatchlistItems = await enhanceWithTMDB(sortedWatchlistItems.slice(0, 20));
                     newUserListSections.unshift({
@@ -486,9 +573,23 @@ const TraktScreen = () => {
         }
     };
 
+    const getCurrentSections = () => {
+        switch (selectedTab) {
+            case 'movies':
+                return movieSections;
+            case 'shows':
+                return showSections;
+            case 'user-lists':
+                return userListSections;
+            default:
+                return [];
+        }
+    };
+
     const onRefresh = async () => {
         setRefreshing(true);
-        await loadAllData();
+        // Refresh only the current tab's data
+        await loadTabData(selectedTab);
         setRefreshing(false);
 
         if (isHapticsSupported()) {
@@ -623,38 +724,16 @@ const TraktScreen = () => {
             <Pressable
                 style={[
                     styles.tab,
-                    selectedTab === 'user-lists' && styles.activeTab
-                ]}
-                onPress={() => {
-                    setSelectedTab('user-lists');
-                    if (isHapticsSupported()) {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
-                    }
-                }}
-            >
-                <Ionicons
-                    name='apps'
-                    size={16}
-                    color={selectedTab === 'user-lists' ? '#fff' : '#bbb'}
-                    style={{ marginRight: 6 }}
-                />
-                <Text style={[
-                    styles.tabText,
-                    selectedTab === 'user-lists' && styles.activeTabText
-                ]}>
-                    Lists
-                </Text>
-            </Pressable>
-
-            <Pressable
-                style={[
-                    styles.tab,
                     selectedTab === 'movies' && styles.activeTab
                 ]}
-                onPress={() => {
+                onPress={async () => {
                     setSelectedTab('movies');
                     if (isHapticsSupported()) {
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+                    }
+                    // Load data if not already loaded
+                    if (!tabsLoaded.movies) {
+                        await loadTabData('movies');
                     }
                 }}
             >
@@ -677,10 +756,14 @@ const TraktScreen = () => {
                     styles.tab,
                     selectedTab === 'shows' && styles.activeTab
                 ]}
-                onPress={() => {
+                onPress={async () => {
                     setSelectedTab('shows');
                     if (isHapticsSupported()) {
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+                    }
+                    // Load data if not already loaded
+                    if (!tabsLoaded.shows) {
+                        await loadTabData('shows');
                     }
                 }}
             >
@@ -697,20 +780,82 @@ const TraktScreen = () => {
                     TV
                 </Text>
             </Pressable>
+
+            <Pressable
+                style={[
+                    styles.tab,
+                    selectedTab === 'user-lists' && styles.activeTab
+                ]}
+                onPress={async () => {
+                    setSelectedTab('user-lists');
+                    if (isHapticsSupported()) {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+                    }
+                    // Load data if not already loaded
+                    if (!tabsLoaded['user-lists']) {
+                        await loadTabData('user-lists');
+                    }
+                }}
+            >
+                <Ionicons
+                    name='apps'
+                    size={16}
+                    color={selectedTab === 'user-lists' ? '#fff' : '#bbb'}
+                    style={{ marginRight: 6 }}
+                />
+                <Text style={[
+                    styles.tabText,
+                    selectedTab === 'user-lists' && styles.activeTabText
+                ]}>
+                    Lists
+                </Text>
+            </Pressable>
         </View>
     );
 
-    const getCurrentSections = () => {
-        switch (selectedTab) {
-            case 'user-lists':
-                return userListSections;
-            case 'movies':
-                return movieSections;
-            case 'shows':
-                return showSections;
-            default:
-                return [];
+    const renderTabContent = () => {
+        const currentTabLoading = tabLoadingStates[selectedTab];
+        const currentTabLoaded = tabsLoaded[selectedTab];
+        
+        // Show loading if tab is loading and hasn't been loaded before
+        if (currentTabLoading && !currentTabLoaded) {
+            return (
+                <View style={styles.tabLoadingContainer}>
+                    <ActivityIndicator size="large" color="#535aff" />
+                    <Text style={styles.loadingText}>
+                        Loading {selectedTab === 'user-lists' ? 'lists' : selectedTab}...
+                    </Text>
+                </View>
+            );
         }
+
+        // Show content
+        const sections = getCurrentSections();
+        
+        if (!currentTabLoaded && sections.length === 0) {
+            return (
+                <View style={styles.emptyTabContainer}>
+                    <Text style={styles.emptyTabText}>
+                        Tap to load {selectedTab === 'user-lists' ? 'lists' : selectedTab}
+                    </Text>
+                </View>
+            );
+        }
+
+        return (
+            <ScrollView
+                style={styles.contentContainer}
+                refreshControl={
+                    <RefreshControl 
+                        refreshing={refreshing} 
+                        onRefresh={onRefresh}
+                        tintColor="#535aff"
+                    />
+                }
+            >
+                {sections.map(renderSection)}
+            </ScrollView>
+        );
     };
 
     const renderUnauthenticated = () => (
@@ -722,13 +867,13 @@ const TraktScreen = () => {
         </View>
     );
 
-    if (isLoading && !refreshing) {
+    if (isLoading) {
         return (
             <SafeAreaView style={styles.container}>
                 <StatusBar />
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color="#535aff" />
-                    <Text style={styles.loadingText}>Loading your Trakt data...</Text>
+                    <Text style={styles.loadingText}>Connecting to Trakt...</Text>
                 </View>
             </SafeAreaView>
         );
@@ -742,12 +887,7 @@ const TraktScreen = () => {
             ) : (
                 <View style={styles.mainContainer}>
                     {renderTabs()}
-                    <ScrollView
-                        style={styles.contentContainer}
-                        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-                    >
-                        {getCurrentSections().map(renderSection)}
-                    </ScrollView>
+                    {renderTabContent()}
                     <BottomSpacing space={50} />
                 </View>
             )}
@@ -959,6 +1099,24 @@ const styles = StyleSheet.create({
         color: '#535aff',
         fontWeight: '600',
         marginTop: 2,
+    },
+    tabLoadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: 20,
+        paddingVertical: 100,
+    },
+    emptyTabContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: 100,
+    },
+    emptyTabText: {
+        fontSize: 16,
+        color: '#888',
+        textAlign: 'center',
     },
     episodeInfo: {
         fontSize: 12,
