@@ -2,10 +2,10 @@ import { SafeAreaView, ScrollView, StyleSheet, Pressable, ActivityIndicator, Pla
 import { StatusBar, Text, View } from '../../components/Themed';
 import { isHapticsSupported, showAlert } from '@/utils/platform';
 import * as Haptics from 'expo-haptics';
-import { useCallback, useEffect, useState, useRef } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { TraktTokens } from '@/utils/Trakt';
-import { webLinking, webSecureStore, webClipboard } from '@/utils/Web';
+import { webLinking, webSecureStore } from '@/utils/Web';
 
 // Trakt.tv API configuration from environment variables
 const TRAKT_CLIENT_ID = process.env.EXPO_PUBLIC_TRAKT_CLIENT_ID || '';
@@ -30,17 +30,25 @@ const validateConfig = () => {
     return true;
 };
 
-
 const TraktAuthScreen = () => {
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [userInfo, setUserInfo] = useState<any>(null);
-
-    const pollingRef = useRef<any>(null);
-    const timeoutRef = useRef<any>(null);
+    const [isInitialized, setIsInitialized] = useState<boolean>(false);
 
     useEffect(() => {
-        checkAuthStatus();
+        initializeAuth();
+    }, []);
+
+    const initializeAuth = async () => {
+        // Validate configuration first
+        if (!validateConfig()) {
+            showAlert('Configuration Error', 'Missing required Trakt.tv API configuration');
+            setIsInitialized(true);
+            return;
+        }
+
+        await checkAuthStatus();
 
         // Handle URL parameters for web OAuth redirect
         if (isWeb) {
@@ -63,12 +71,11 @@ const TraktAuthScreen = () => {
 
             return () => {
                 subscription?.remove();
-                cleanup();
             };
         }
 
-        return cleanup;
-    }, []);
+        setIsInitialized(true);
+    };
 
     // Handle web OAuth redirect by checking URL parameters
     const handleWebAuthRedirect = () => {
@@ -85,7 +92,7 @@ const TraktAuthScreen = () => {
             return;
         }
 
-        if (code) {
+        if (code && state === 'app_auth') {
             console.log('Received auth code from redirect:', code);
             exchangeCodeForTokens(code);
             // Clean up URL
@@ -93,7 +100,43 @@ const TraktAuthScreen = () => {
         }
     };
 
-    // Exchange authorization code for tokens (for redirect flow)
+    const handleAuthRedirect = (url: string) => {
+        console.log('Received deep link:', url);
+
+        try {
+            const urlObj = new URL(url);
+            const pathname = urlObj.pathname;
+            const searchParams = urlObj.searchParams;
+
+            console.log('Path:', pathname);
+            console.log('Params:', Object.fromEntries(searchParams));
+
+            // Check if this is our Trakt auth redirect
+            if (pathname === '/settings/trakt' || url.includes('settings/trakt')) {
+                console.log('Trakt auth redirect detected for settings/trakt');
+
+                const code = searchParams.get('code');
+                const state = searchParams.get('state');
+                const error = searchParams.get('error');
+
+                if (error) {
+                    console.error('Auth error:', error);
+                    setIsLoading(false);
+                    showAlert('Authentication Failed', `Error: ${error}`);
+                    return;
+                }
+
+                if (code && state === 'app_auth') {
+                    console.log('Received auth code:', code);
+                    exchangeCodeForTokens(code);
+                }
+            }
+        } catch (error) {
+            console.error('Error parsing auth redirect URL:', error);
+        }
+    };
+
+    // Exchange authorization code for tokens (OAuth flow)
     const exchangeCodeForTokens = async (code: string) => {
         try {
             setIsLoading(true);
@@ -121,8 +164,6 @@ const TraktAuthScreen = () => {
                 await webSecureStore.setItem('trakt_tokens', JSON.stringify(tokens));
 
                 setIsAuthenticated(true);
-                setIsLoading(false);
-
                 await fetchUserInfo(tokens.access_token);
 
                 if (!isWeb && isHapticsSupported()) {
@@ -131,73 +172,28 @@ const TraktAuthScreen = () => {
 
                 showAlert('Success', 'Successfully connected to Trakt.tv!');
             } else {
-                throw new Error(`Failed to exchange code for tokens: ${response.status}`);
+                const errorData = await response.json();
+                throw new Error(`Failed to exchange code for tokens: ${errorData.error || response.status}`);
             }
         } catch (error) {
             console.error('Token exchange error:', error);
-            setIsLoading(false);
             showAlert('Error', 'Failed to complete authentication');
+        } finally {
+            setIsLoading(false);
         }
     };
 
-    // Handle when screen comes into focus (useful for detecting when user returns from browser)
+    // Handle when screen comes into focus
     useFocusEffect(
         useCallback(() => {
-            if (isLoading) {
-                // User came back from browser, check if they completed auth
-                // The polling will handle the token exchange for device flow
+            if (isLoading && !isWeb) {
+                // User came back from browser on mobile, check auth status
+                setTimeout(() => {
+                    checkAuthStatus();
+                }, 1000);
             }
         }, [isLoading])
     );
-
-    const cleanup = () => {
-        if (pollingRef.current) {
-            clearInterval(pollingRef.current);
-            pollingRef.current = null;
-        }
-        if (timeoutRef.current) {
-            clearTimeout(timeoutRef.current);
-            timeoutRef.current = null;
-        }
-    };
-
-    const handleAuthRedirect = (url: string) => {
-        console.log('Received deep link:', url);
-
-        // Parse the URL to extract path and parameters
-        try {
-            const urlObj = new URL(url);
-            const pathname = urlObj.pathname;
-            const searchParams = urlObj.searchParams;
-
-            console.log('Path:', pathname);
-            console.log('Params:', Object.fromEntries(searchParams));
-
-            // Check if this is our Trakt auth redirect
-            if (pathname === '/settings/trakt' || url.includes('settings/trakt')) {
-                console.log('Trakt auth redirect detected for settings/trakt');
-
-                const code = searchParams.get('code');
-                const state = searchParams.get('state');
-                const error = searchParams.get('error');
-
-                if (error) {
-                    console.error('Auth error:', error);
-                    cleanup();
-                    setIsLoading(false);
-                    showAlert('Authentication Failed', `Error: ${error}`);
-                    return;
-                }
-
-                if (code) {
-                    console.log('Received auth code:', code);
-                    exchangeCodeForTokens(code);
-                }
-            }
-        } catch (error) {
-            console.error('Error parsing auth redirect URL:', error);
-        }
-    };
 
     const checkAuthStatus = async () => {
         try {
@@ -206,7 +202,6 @@ const TraktAuthScreen = () => {
                 const parsedTokens: TraktTokens = JSON.parse(tokens);
                 if (isTokenValid(parsedTokens)) {
                     setIsAuthenticated(true);
-                    cleanup();
                     await fetchUserInfo(parsedTokens.access_token);
                 } else {
                     // Try to refresh the token
@@ -224,6 +219,11 @@ const TraktAuthScreen = () => {
     };
     
     const authenticateWithTrakt = async () => {
+        if (!validateConfig()) {
+            showAlert('Configuration Error', 'Missing required Trakt.tv API configuration');
+            return;
+        }
+
         try {
             setIsLoading(true);
 
@@ -232,11 +232,13 @@ const TraktAuthScreen = () => {
             }
 
             const authUrl = `https://trakt.tv/oauth/authorize?response_type=code&client_id=${TRAKT_CLIENT_ID}&redirect_uri=${encodeURIComponent(TRAKT_REDIRECT_URI)}&state=app_auth`;
+            
+            console.log('Opening auth URL:', authUrl);
             await webLinking.openURL(authUrl);
-            return;
+
+            // Don't set loading to false immediately - let the redirect handle it
         } catch (error) {
             console.error('Authentication error:', error);
-            cleanup();
             setIsLoading(false);
             const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
             showAlert('Error', `Failed to start authentication process: ${errorMessage}`);
@@ -249,6 +251,8 @@ const TraktAuthScreen = () => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'trakt-api-version': '2',
+                    'trakt-api-key': TRAKT_CLIENT_ID,
                 },
                 body: JSON.stringify({
                     refresh_token: tokens.refresh_token,
@@ -287,8 +291,10 @@ const TraktAuthScreen = () => {
 
             if (response.ok) {
                 const user = await response.json();
-                console.log(user);
+                console.log('User info:', user);
                 setUserInfo(user);
+            } else {
+                console.error('Failed to fetch user info:', response.status);
             }
         } catch (error) {
             console.error('Failed to fetch user info:', error);
@@ -393,11 +399,28 @@ const TraktAuthScreen = () => {
                     <Text style={styles.connectButtonText}>
                         Connect to Trakt.tv
                     </Text>
-
                 )}
             </Pressable>
+
+            {isLoading && !isWeb && (
+                <Text style={styles.helpText}>
+                    Waiting for you to complete authentication in your browser...
+                </Text>
+            )}
         </>
     );
+
+    // Show loading indicator while initializing
+    if (!isInitialized) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator color="#535aff" size="large" />
+                    <Text style={styles.loadingText}>Initializing...</Text>
+                </View>
+            </SafeAreaView>
+        );
+    }
 
     return (
         <SafeAreaView style={styles.container}>
@@ -407,7 +430,7 @@ const TraktAuthScreen = () => {
                 contentContainerStyle={styles.scrollContent}
                 style={styles.scrollView}
             >
-                {renderAuthenticatedView()}
+                {isAuthenticated ? renderAuthenticatedView() : renderUnauthenticatedView()}
             </ScrollView>
         </SafeAreaView>
     );
@@ -427,6 +450,16 @@ const styles = StyleSheet.create({
     scrollContent: {
         padding: 20,
         paddingBottom: 40,
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: 16,
+    },
+    loadingText: {
+        fontSize: 16,
+        color: '#888',
     },
     section: {
         marginBottom: 32,
@@ -454,50 +487,6 @@ const styles = StyleSheet.create({
         color: '#aaa',
         lineHeight: 20,
     },
-    authMethodContainer: {
-        marginBottom: 24,
-    },
-    authMethodTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#fff',
-        marginBottom: 12,
-        textAlign: 'center',
-    },
-    authMethodButtons: {
-        flexDirection: 'row',
-        gap: 12,
-        justifyContent: 'center',
-    },
-    authMethodButton: {
-        flex: 1,
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-        paddingVertical: 16,
-        paddingHorizontal: 16,
-        borderRadius: 12,
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.1)',
-        maxWidth: 150,
-    },
-    authMethodButtonActive: {
-        backgroundColor: 'rgba(83, 90, 255, 0.2)',
-        borderColor: '#535aff',
-    },
-    authMethodButtonText: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#ccc',
-        marginBottom: 4,
-    },
-    authMethodButtonTextActive: {
-        color: '#535aff',
-    },
-    authMethodDescription: {
-        fontSize: 12,
-        color: '#888',
-        textAlign: 'center',
-    },
     userInfoContainer: {
         marginTop: 16,
         gap: 12,
@@ -511,77 +500,6 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#ccc',
         marginBottom: 8,
-    },
-    deviceCodeContainer: {
-        marginTop: 24,
-        gap: 24,
-    },
-    urlContainer: {
-        alignItems: 'center',
-    },
-    urlLabel: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#fff',
-        marginBottom: 12,
-    },
-    urlButton: {
-        backgroundColor: 'rgba(83, 90, 255, 0.1)',
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#535aff',
-    },
-    urlText: {
-        fontSize: 14,
-        color: '#535aff',
-        textAlign: 'center',
-    },
-    codeContainer: {
-        alignItems: 'center',
-    },
-    codeLabel: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#fff',
-        marginBottom: 12,
-    },
-    codeDisplay: {
-        backgroundColor: 'rgba(83, 90, 255, 0.2)',
-        paddingVertical: 16,
-        paddingHorizontal: 24,
-        borderRadius: 12,
-        borderWidth: 2,
-        borderColor: '#535aff',
-        minWidth: 200,
-        alignItems: 'center',
-    },
-    codeText: {
-        fontSize: 28,
-        fontWeight: 'bold',
-        color: '#535aff',
-        letterSpacing: 4,
-        textAlign: 'center',
-    },
-    copyHint: {
-        fontSize: 12,
-        color: '#888',
-        marginTop: 8,
-        fontStyle: 'italic',
-    },
-    statusContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 12,
-    },
-    statusText: {
-        fontSize: 14,
-        color: '#888',
-        textAlign: 'center',
-        lineHeight: 20,
-        flex: 1,
     },
     connectButton: {
         backgroundColor: '#535aff',
@@ -619,15 +537,6 @@ const styles = StyleSheet.create({
         width: 200,
         alignSelf: 'center',
     },
-    cancelButton: {
-        backgroundColor: '#6c757d',
-        paddingVertical: 12,
-        paddingHorizontal: 24,
-        borderRadius: 8,
-        alignItems: 'center',
-        alignSelf: 'center',
-        minWidth: 120,
-    },
     buttonPressed: {
         transform: [{ scale: 0.98 }],
     },
@@ -644,17 +553,13 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
     },
-    cancelButtonText: {
-        color: '#fff',
-        fontSize: 14,
-        fontWeight: '600',
-    },
     helpText: {
         fontSize: 12,
         color: '#666',
         textAlign: 'center',
         lineHeight: 16,
         fontStyle: 'italic',
+        marginTop: 16,
     },
 });
 
