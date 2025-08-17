@@ -690,7 +690,6 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingVertical: 20
     },
-    // Sections
     section: {
         marginBottom: 32,
     },
