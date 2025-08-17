@@ -189,7 +189,6 @@ const TraktScreen = () => {
             // Trending Movies
             const trendingMovies = await makeTraktApiCall('/movies/trending');
 
-            console.log('trending', trendingMovies);
             const enhancedTrendingMovies = await enhanceWithTMDB(
                 trendingMovies.slice(0, 20).map((item: any) => ({ movie: item.movie, type: 'movie' as const }))
             );
@@ -243,9 +242,18 @@ const TraktScreen = () => {
             // Watched Movies
             const watchedMovies = await makeTraktApiCall('/sync/watched/movies');
             if (watchedMovies.length > 0) {
-                const enhancedWatchedMovies = await enhanceWithTMDB(
-                    watchedMovies.slice(0, 20).map((item: any) => ({ ...item, type: 'movie' as const }))
-                );
+                const sortedWatchedMovies = watchedMovies
+                    .sort((a: any, b: any) => {
+                        const dateA = new Date(a.last_watched_at || a.last_updated_at).getTime();
+                        const dateB = new Date(b.last_watched_at || b.last_updated_at).getTime();
+                        return dateB - dateA; // descending order (newest first)
+                    })
+                    .slice(0, 20)
+                    .map((item: any) => ({
+                        ...item,
+                        type: 'movie' as const,
+                    }));
+                const enhancedWatchedMovies = await enhanceWithTMDB(sortedWatchedMovies);
                 newMovieSections.push({
                     title: 'Watched',
                     data: enhancedWatchedMovies,
@@ -331,11 +339,20 @@ const TraktScreen = () => {
             }
 
             // Watched Shows
-            const watchedShows = await makeTraktApiCall('/sync/watched/shows');
+            const watchedShows = await makeTraktApiCall('/sync/watched/shows?extended=noseasons');
             if (watchedShows.length > 0) {
-                const enhancedWatchedShows = await enhanceWithTMDB(
-                    watchedShows.slice(0, 20).map((item: any) => ({ ...item, type: 'show' as const }))
-                );
+                const sortedWatchedShows = watchedShows
+                    .sort((a: any, b: any) => {
+                        const dateA = new Date(a.last_watched_at || a.last_updated_at).getTime();
+                        const dateB = new Date(b.last_watched_at || b.last_updated_at).getTime();
+                        return dateB - dateA;
+                    })
+                    .slice(0, 20)
+                    .map((item: any) => ({
+                        ...item,
+                        type: 'show' as const,
+                    }))
+                const enhancedWatchedShows = await enhanceWithTMDB(sortedWatchedShows);
                 newShowSections.push({
                     title: 'Watched',
                     data: enhancedWatchedShows,
@@ -681,7 +698,7 @@ const styles = StyleSheet.create({
     },
     tabText: {
         fontWeight: '500',
-        color: '#888',
+        color: '#ccc',
     },
     activeTabText: {
         color: '#fff',
@@ -702,12 +719,12 @@ const styles = StyleSheet.create({
     },
     sectionTitle: {
         fontSize: 20,
-        fontWeight: '700',
+        fontWeight: '600',
         color: '#fff',
     },
     sectionCount: {
         fontSize: 14,
-        color: '#888',
+        color: '#ccc',
         fontWeight: '500',
     },
     horizontalList: {
@@ -727,7 +744,7 @@ const styles = StyleSheet.create({
     poster: {
         // width and height applied dynamically
         borderRadius: 8,
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        backgroundColor: 'rgba(255, 255, 255, 0.01)',
     },
     placeholderPoster: {
         justifyContent: 'center',
@@ -778,7 +795,7 @@ const styles = StyleSheet.create({
     },
     mediaYear: {
         fontSize: 12,
-        color: '#888',
+        color: '#ccc',
         fontWeight: '500',
     },
 });

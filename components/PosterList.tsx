@@ -208,8 +208,8 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   title: {
-    fontSize: 18,
-    fontWeight: '500',
+    fontSize: 20,
+    fontWeight: '600',
   },
   seeAllText: {
     fontSize: 16,
