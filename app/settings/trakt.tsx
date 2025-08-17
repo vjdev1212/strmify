@@ -1,4 +1,4 @@
-import { SafeAreaView, ScrollView, StyleSheet, Pressable, ActivityIndicator, Linking } from 'react-native';
+import { SafeAreaView, ScrollView, StyleSheet, Pressable, ActivityIndicator, Linking, Platform } from 'react-native';
 import { StatusBar, Text, View } from '../../components/Themed';
 import { isHapticsSupported, showAlert } from '@/utils/platform';
 import * as SecureStore from 'expo-secure-store';
@@ -6,12 +6,17 @@ import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
 import { useCallback, useEffect, useState, useRef } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
+import { TraktTokens } from '@/utils/Trakt';
+import { webLinking, webSecureStore, webClipboard } from '@/utils/Web';
 
 // Trakt.tv API configuration from environment variables
 const TRAKT_CLIENT_ID = process.env.EXPO_PUBLIC_TRAKT_CLIENT_ID || '';
 const TRAKT_CLIENT_SECRET = process.env.EXPO_PUBLIC_TRAKT_CLIENT_SECRET || '';
 const TRAKT_REDIRECT_URI = process.env.EXPO_PUBLIC_TRAKT_REDIRECT_URI || '';
 const TRAKT_API_BASE = process.env.EXPO_PUBLIC_TRAKT_API_BASE || 'https://api.trakt.tv';
+
+// Platform detection
+const isWeb = Platform.OS === 'web';
 
 // Validate required environment variables
 const validateConfig = () => {
@@ -26,15 +31,6 @@ const validateConfig = () => {
     }
     return true;
 };
-
-interface TraktTokens {
-    access_token: string;
-    refresh_token: string;
-    expires_in: number;
-    token_type: string;
-    scope: string;
-    created_at: number;
-}
 
 interface DeviceCodeResponse {
     device_code: string;
@@ -51,6 +47,7 @@ const TraktAuthScreen = () => {
     const [deviceCodeData, setDeviceCodeData] = useState<DeviceCodeResponse | null>(null);
     const [showDeviceCode, setShowDeviceCode] = useState<boolean>(false);
     const [codeCopied, setCodeCopied] = useState<boolean>(false);
+    const [authMethod, setAuthMethod] = useState<'device' | 'redirect'>('redirect');
     
     const pollingRef = useRef<any>(null);
     const timeoutRef = useRef<any>(null);
@@ -58,33 +55,110 @@ const TraktAuthScreen = () => {
     useEffect(() => {
         checkAuthStatus();
         
-        // Handle deep link when app is opened from background
-        const handleDeepLink = (event: { url: string }) => {
-            handleAuthRedirect(event.url);
-        };
+        // Handle URL parameters for web OAuth redirect
+        if (isWeb) {
+            handleWebAuthRedirect();
+        } else {
+            // Handle deep link when app is opened from background
+            const handleDeepLink = (event: { url: string }) => {
+                handleAuthRedirect(event.url);
+            };
 
-        // Add event listener for deep links
-        const subscription = Linking.addEventListener('url', handleDeepLink);
+            // Add event listener for deep links
+            const subscription = webLinking.addEventListener('url', handleDeepLink);
 
-        // Check if app was opened with a deep link
-        Linking.getInitialURL().then((url) => {
-            if (url) {
-                handleAuthRedirect(url);
-            }
-        });
+            // Check if app was opened with a deep link
+            webLinking.getInitialURL().then((url) => {
+                if (url) {
+                    handleAuthRedirect(url);
+                }
+            });
 
-        return () => {
-            subscription?.remove();
-            cleanup();
-        };
+            return () => {
+                subscription?.remove();
+                cleanup();
+            };
+        }
+
+        return cleanup;
     }, []);
+
+    // Handle web OAuth redirect by checking URL parameters
+    const handleWebAuthRedirect = () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        const state = urlParams.get('state');
+        const error = urlParams.get('error');
+        
+        if (error) {
+            console.error('Auth error:', error);
+            showAlert('Authentication Failed', `Error: ${error}`);
+            // Clean up URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+            return;
+        }
+        
+        if (code) {
+            console.log('Received auth code from redirect:', code);
+            exchangeCodeForTokens(code);
+            // Clean up URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    };
+
+    // Exchange authorization code for tokens (for redirect flow)
+    const exchangeCodeForTokens = async (code: string) => {
+        try {
+            setIsLoading(true);
+            
+            const response = await fetch(`${TRAKT_API_BASE}/oauth/token`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'trakt-api-version': '2',
+                    'trakt-api-key': TRAKT_CLIENT_ID,
+                },
+                body: JSON.stringify({
+                    code: code,
+                    client_id: TRAKT_CLIENT_ID,
+                    client_secret: TRAKT_CLIENT_SECRET,
+                    redirect_uri: TRAKT_REDIRECT_URI,
+                    grant_type: 'authorization_code',
+                }),
+            });
+
+            if (response.ok) {
+                const tokens: TraktTokens = await response.json();
+                tokens.created_at = Math.floor(Date.now() / 1000);
+                
+                await webSecureStore.setItem('trakt_tokens', JSON.stringify(tokens));
+                
+                setIsAuthenticated(true);
+                setIsLoading(false);
+                
+                await fetchUserInfo(tokens.access_token);
+                
+                if (!isWeb && isHapticsSupported()) {
+                    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                }
+                
+                showAlert('Success', 'Successfully connected to Trakt.tv!');
+            } else {
+                throw new Error(`Failed to exchange code for tokens: ${response.status}`);
+            }
+        } catch (error) {
+            console.error('Token exchange error:', error);
+            setIsLoading(false);
+            showAlert('Error', 'Failed to complete authentication');
+        }
+    };
 
     // Handle when screen comes into focus (useful for detecting when user returns from browser)
     useFocusEffect(
         useCallback(() => {
             if (isLoading) {
                 // User came back from browser, check if they completed auth
-                // The polling will handle the token exchange
+                // The polling will handle the token exchange for device flow
             }
         }, [isLoading])
     );
@@ -106,17 +180,16 @@ const TraktAuthScreen = () => {
         // Parse the URL to extract path and parameters
         try {
             const urlObj = new URL(url);
-            const pathname = urlObj.pathname; // This will be "/settings/trakt"
+            const pathname = urlObj.pathname;
             const searchParams = urlObj.searchParams;
             
             console.log('Path:', pathname);
             console.log('Params:', Object.fromEntries(searchParams));
             
-            // Check if this is our Trakt auth redirect to settings/trakt
+            // Check if this is our Trakt auth redirect
             if (pathname === '/settings/trakt' || url.includes('settings/trakt')) {
                 console.log('Trakt auth redirect detected for settings/trakt');
                 
-                // Extract any parameters Trakt might send back
                 const code = searchParams.get('code');
                 const state = searchParams.get('state');
                 const error = searchParams.get('error');
@@ -132,14 +205,9 @@ const TraktAuthScreen = () => {
                 }
                 
                 if (code) {
-                    // If Trakt sends back a code, handle it
                     console.log('Received auth code:', code);
+                    exchangeCodeForTokens(code);
                 }
-                
-                // Optionally, you can trigger a re-check of auth status here
-                setTimeout(() => {
-                    checkAuthStatus();
-                }, 2000);
             }
         } catch (error) {
             console.error('Error parsing auth redirect URL:', error);
@@ -148,7 +216,7 @@ const TraktAuthScreen = () => {
 
     const checkAuthStatus = async () => {
         try {
-            const tokens = await SecureStore.getItemAsync('trakt_tokens');
+            const tokens = await webSecureStore.getItem('trakt_tokens');
             if (tokens) {
                 const parsedTokens: TraktTokens = JSON.parse(tokens);
                 if (isTokenValid(parsedTokens)) {
@@ -174,10 +242,10 @@ const TraktAuthScreen = () => {
 
     const copyCodeToClipboard = async () => {
         if (deviceCodeData?.user_code) {
-            await Clipboard.setStringAsync(deviceCodeData.user_code);
+            await webClipboard.setString(deviceCodeData.user_code);
             setCodeCopied(true);
             
-            if (isHapticsSupported()) {
+            if (!isWeb && isHapticsSupported()) {
                 await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             }
             
@@ -195,7 +263,6 @@ const TraktAuthScreen = () => {
 
             console.log('Attempting to generate device code with client ID:', TRAKT_CLIENT_ID);
 
-            // For web/Expo Go, you need a backend proxy to avoid CORS
             const response = await fetch(`${TRAKT_API_BASE}/oauth/device/code`, {
                 method: 'POST',
                 headers: {
@@ -224,17 +291,14 @@ const TraktAuthScreen = () => {
             return await response.json();
         } catch (error) {
             console.error('Error generating device code:', error);
-            // If CORS error, show helpful message
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            if (errorMessage.includes('CORS') || errorMessage.includes('fetch')) {
-                showAlert(
-                    'Configuration Required', 
-                    'This feature requires a backend proxy to work in web browsers. Please set up a backend proxy or use this in a native app build.'
-                );
-            } else if (errorMessage.includes('credentials') || errorMessage.includes('403')) {
+            
+            if (errorMessage.includes('credentials') || errorMessage.includes('403')) {
                 showAlert('Invalid Credentials', 'Please check your Trakt.tv app credentials in the .env file.');
             } else if (errorMessage.includes('configuration')) {
                 showAlert('Configuration Error', errorMessage);
+            } else {
+                showAlert('Error', `Failed to generate device code: ${errorMessage}`);
             }
             throw error;
         }
@@ -262,7 +326,7 @@ const TraktAuthScreen = () => {
                     const tokens: TraktTokens = await response.json();
                     tokens.created_at = Math.floor(Date.now() / 1000);
                     
-                    await SecureStore.setItemAsync('trakt_tokens', JSON.stringify(tokens));
+                    await webSecureStore.setItem('trakt_tokens', JSON.stringify(tokens));
                     
                     cleanup();
                     
@@ -273,7 +337,7 @@ const TraktAuthScreen = () => {
                     
                     await fetchUserInfo(tokens.access_token);
                     
-                    if (isHapticsSupported()) {
+                    if (!isWeb && isHapticsSupported()) {
                         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                     }
                     
@@ -316,7 +380,7 @@ const TraktAuthScreen = () => {
                 setDeviceCodeData(null);
                 showAlert('Timeout', 'Authentication process timed out. Please try again.');
             }
-        }, deviceCodeData?.expires_in ? deviceCodeData.expires_in * 1000 : 600000); // Use actual expiry time or 10 minutes
+        }, deviceCodeData?.expires_in ? deviceCodeData.expires_in * 1000 : 600000);
     };
 
     const authenticateWithTrakt = async () => {
@@ -324,19 +388,27 @@ const TraktAuthScreen = () => {
             setIsLoading(true);
             setCodeCopied(false);
             
-            if (isHapticsSupported()) {
+            if (!isWeb && isHapticsSupported()) {
                 await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
             }
 
-            const deviceCodeResponse = await generateDeviceCode();
-            setDeviceCodeData(deviceCodeResponse);
-            setShowDeviceCode(true);
-            
-            // Open browser for user authentication
-            await Linking.openURL(deviceCodeResponse.verification_url);
+            if (authMethod === 'redirect' && isWeb) {
+                // Use redirect flow for web
+                const authUrl = `https://trakt.tv/oauth/authorize?response_type=code&client_id=${TRAKT_CLIENT_ID}&redirect_uri=${encodeURIComponent(TRAKT_REDIRECT_URI)}&state=web_auth`;
+                window.location.href = authUrl;
+                return;
+            } else {
+                // Use device code flow
+                const deviceCodeResponse = await generateDeviceCode();
+                setDeviceCodeData(deviceCodeResponse);
+                setShowDeviceCode(true);
+                
+                // Open browser for user authentication
+                await webLinking.openURL(deviceCodeResponse.verification_url);
 
-            // Start polling for token
-            await pollForToken(deviceCodeResponse.device_code, deviceCodeResponse.interval);
+                // Start polling for token
+                await pollForToken(deviceCodeResponse.device_code, deviceCodeResponse.interval);
+            }
             
         } catch (error) {
             console.error('Authentication error:', error);
@@ -356,7 +428,7 @@ const TraktAuthScreen = () => {
         setDeviceCodeData(null);
         setCodeCopied(false);
         
-        if (isHapticsSupported()) {
+        if (!isWeb && isHapticsSupported()) {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
         }
         
@@ -383,7 +455,7 @@ const TraktAuthScreen = () => {
                 const newTokens: TraktTokens = await response.json();
                 newTokens.created_at = Math.floor(Date.now() / 1000);
                 
-                await SecureStore.setItemAsync('trakt_tokens', JSON.stringify(newTokens));
+                await webSecureStore.setItem('trakt_tokens', JSON.stringify(newTokens));
                 setIsAuthenticated(true);
                 await fetchUserInfo(newTokens.access_token);
             } else {
@@ -417,11 +489,11 @@ const TraktAuthScreen = () => {
 
     const logout = async () => {
         try {
-            if (isHapticsSupported()) {
+            if (!isWeb && isHapticsSupported()) {
                 await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
             }
 
-            await SecureStore.deleteItemAsync('trakt_tokens');
+            await webSecureStore.deleteItem('trakt_tokens');
             setIsAuthenticated(false);
             setUserInfo(null);
             
@@ -431,6 +503,55 @@ const TraktAuthScreen = () => {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
             showAlert('Error', `Failed to logout: ${errorMessage}`);
         }
+    };
+
+    const renderAuthMethodSelector = () => {
+        if (!isWeb) return null;
+        
+        return (
+            <View style={styles.authMethodContainer}>
+                <Text style={styles.authMethodTitle}>Choose Authentication Method:</Text>
+                <View style={styles.authMethodButtons}>
+                    <Pressable 
+                        style={({ pressed }) => [
+                            styles.authMethodButton,
+                            authMethod === 'redirect' && styles.authMethodButtonActive,
+                            pressed && styles.buttonPressed
+                        ]}
+                        onPress={() => setAuthMethod('redirect')}
+                    >
+                        <Text style={[
+                            styles.authMethodButtonText,
+                            authMethod === 'redirect' && styles.authMethodButtonTextActive
+                        ]}>
+                            Browser Redirect
+                        </Text>
+                        <Text style={styles.authMethodDescription}>
+                            Quick and seamless
+                        </Text>
+                    </Pressable>
+                    
+                    <Pressable 
+                        style={({ pressed }) => [
+                            styles.authMethodButton,
+                            authMethod === 'device' && styles.authMethodButtonActive,
+                            pressed && styles.buttonPressed
+                        ]}
+                        onPress={() => setAuthMethod('device')}
+                    >
+                        <Text style={[
+                            styles.authMethodButtonText,
+                            authMethod === 'device' && styles.authMethodButtonTextActive
+                        ]}>
+                            Device Code
+                        </Text>
+                        <Text style={styles.authMethodDescription}>
+                            Manual entry method
+                        </Text>
+                    </Pressable>
+                </View>
+            </View>
+        );
     };
 
     const renderDeviceCodeView = () => (
@@ -448,7 +569,7 @@ const TraktAuthScreen = () => {
                         <Text style={styles.urlLabel}>Visit this URL:</Text>
                         <Pressable 
                             style={styles.urlButton}
-                            onPress={() => Linking.openURL(deviceCodeData.verification_url)}
+                            onPress={() => webLinking.openURL(deviceCodeData.verification_url)}
                         >
                             <Text style={styles.urlText}>{deviceCodeData.verification_url}</Text>
                         </Pressable>
@@ -557,6 +678,8 @@ const TraktAuthScreen = () => {
                 </View>
             </View>
 
+            {renderAuthMethodSelector()}
+
             <Pressable 
                 style={({ pressed }) => [
                     styles.connectButton,
@@ -569,7 +692,9 @@ const TraktAuthScreen = () => {
                 {isLoading && !showDeviceCode ? (
                     <ActivityIndicator color="#fff" size="small" />
                 ) : (
-                    <Text style={styles.connectButtonText}>Connect to Trakt.tv</Text>
+                    <Text style={styles.connectButtonText}>
+                        {authMethod === 'redirect' && isWeb ? 'Connect via Browser' : 'Connect to Trakt.tv'}
+                    </Text>
                 )}
             </Pressable>
         </>
@@ -634,6 +759,50 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#aaa',
         lineHeight: 20,
+    },
+    authMethodContainer: {
+        marginBottom: 24,
+    },
+    authMethodTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#fff',
+        marginBottom: 12,
+        textAlign: 'center',
+    },
+    authMethodButtons: {
+        flexDirection: 'row',
+        gap: 12,
+        justifyContent: 'center',
+    },
+    authMethodButton: {
+        flex: 1,
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        paddingVertical: 16,
+        paddingHorizontal: 16,
+        borderRadius: 12,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.1)',
+        maxWidth: 150,
+    },
+    authMethodButtonActive: {
+        backgroundColor: 'rgba(83, 90, 255, 0.2)',
+        borderColor: '#535aff',
+    },
+    authMethodButtonText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#ccc',
+        marginBottom: 4,
+    },
+    authMethodButtonTextActive: {
+        color: '#535aff',
+    },
+    authMethodDescription: {
+        fontSize: 12,
+        color: '#888',
+        textAlign: 'center',
     },
     userInfoContainer: {
         marginTop: 16,
@@ -796,56 +965,3 @@ const styles = StyleSheet.create({
 });
 
 export default TraktAuthScreen;
-
-// Utility functions to use in other screens
-export const getTraktTokens = async (): Promise<TraktTokens | null> => {
-    try {
-        const tokens = await SecureStore.getItemAsync('trakt_tokens');
-        return tokens ? JSON.parse(tokens) : null;
-    } catch (error) {
-        console.error('Failed to get Trakt tokens:', error);
-        return null;
-    }
-};
-
-export const isUserAuthenticated = async (): Promise<boolean> => {
-    try {
-        const tokens = await getTraktTokens();
-        if (!tokens) return false;
-        
-        const expiresAt = tokens.created_at + tokens.expires_in;
-        return Date.now() / 1000 < expiresAt;
-    } catch (error) {
-        console.error('Failed to check authentication status:', error);
-        return false;
-    }
-};
-
-export const makeTraktApiCall = async (endpoint: string, options: RequestInit = {}): Promise<any> => {
-    try {
-        const tokens = await getTraktTokens();
-        if (!tokens) {
-            throw new Error('User not authenticated');
-        }
-
-        const response = await fetch(`${TRAKT_API_BASE}${endpoint}`, {
-            ...options,
-            headers: {
-                'Authorization': `Bearer ${tokens.access_token}`,
-                'trakt-api-version': '2',
-                'trakt-api-key': TRAKT_CLIENT_ID,
-                'Content-Type': 'application/json',
-                ...options.headers,
-            },
-        });
-
-        if (!response.ok) {
-            throw new Error(`Trakt API error: ${response.status}`);
-        }
-
-        return await response.json();
-    } catch (error) {
-        console.error('Trakt API call failed:', error);
-        throw error;
-    }
-};

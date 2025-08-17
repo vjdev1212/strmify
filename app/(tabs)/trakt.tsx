@@ -2,10 +2,10 @@ import { SafeAreaView, ScrollView, StyleSheet, Pressable, ActivityIndicator, Ref
 import { StatusBar, Text, View } from '../../components/Themed';
 import { isHapticsSupported, showAlert } from '@/utils/platform';
 import * as Haptics from 'expo-haptics';
-import { useCallback, useEffect, useState, useMemo } from 'react';
-import { useFocusEffect, useRouter } from 'expo-router';
-import { isUserAuthenticated, makeTraktApiCall } from '../settings/trakt';
+import { useEffect, useState, useMemo } from 'react';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { isUserAuthenticated, makeTraktApiCall } from '@/utils/Trakt';
 
 const TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
