@@ -2,15 +2,14 @@ import { SafeAreaView, ScrollView, StyleSheet, Pressable, ActivityIndicator, Ref
 import { StatusBar, Text, View } from '../../components/Themed';
 import { isHapticsSupported, showAlert } from '@/utils/platform';
 import * as Haptics from 'expo-haptics';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { isUserAuthenticated, makeTraktApiCall } from '../settings/trakt';
+import { Ionicons } from '@expo/vector-icons';
 
 const TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
-
-const { width } = Dimensions.get('window');
 
 interface TraktItem {
     type: 'movie' | 'show';
@@ -40,6 +39,7 @@ interface ListSection {
 
 const TraktScreen = () => {
     const router = useRouter();
+    const [screenData, setScreenData] = useState(Dimensions.get('window'));
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [refreshing, setRefreshing] = useState<boolean>(false);
@@ -47,6 +47,39 @@ const TraktScreen = () => {
     const [userListSections, setUserListSections] = useState<ListSection[]>([]);
     const [movieSections, setMovieSections] = useState<ListSection[]>([]);
     const [showSections, setShowSections] = useState<ListSection[]>([]);
+
+    // Screen dimensions and responsive calculations
+    const { width, height } = screenData;
+    const isPortrait = height > width;
+    const shortSide = Math.min(width, height);
+
+    // Device category based on shortSide
+    const getPostersPerScreen = () => {
+        if (shortSide < 580) return isPortrait ? 3 : 5;       // mobile
+        if (shortSide < 1024) return isPortrait ? 6 : 8;      // tablet
+        if (shortSide < 1440) return isPortrait ? 7 : 9;      // laptop
+        return isPortrait ? 7 : 10;                           // desktop
+    };
+
+    const postersPerScreen = getPostersPerScreen();
+    const spacing = 12;
+    const containerMargin = 15;
+
+    const posterWidth = useMemo(() => {
+        const totalSpacing = spacing * (postersPerScreen - 1);
+        const totalMargins = containerMargin * 2; // left + right
+        return (width - totalSpacing - totalMargins) / postersPerScreen;
+    }, [width, postersPerScreen]);
+
+    const posterHeight = posterWidth * 1.5;
+
+    useEffect(() => {
+        const subscription = Dimensions.addEventListener('change', ({ window }) => {
+            setScreenData(window);
+        });
+
+        return () => subscription?.remove();
+    }, []);
 
     useEffect(() => {
         checkAuthentication();
@@ -72,13 +105,13 @@ const TraktScreen = () => {
                 try {
                     const content = item.movie || item.show;
                     const tmdbId = content?.ids?.tmdb;
-                    
+
                     if (tmdbId) {
                         const endpoint = item.movie ? 'movie' : 'tv';
                         const response = await fetch(
                             `${TMDB_BASE_URL}/${endpoint}/${tmdbId}?api_key=${TMDB_API_KEY}`
                         );
-                        
+
                         if (response.ok) {
                             const tmdbData = await response.json();
                             return {
@@ -100,7 +133,7 @@ const TraktScreen = () => {
 
     const loadAllData = async () => {
         if (!isAuthenticated) return;
-        
+
         try {
             setIsLoading(true);
             await Promise.all([loadUserListData(), loadMovieData(), loadShowData()]);
@@ -352,7 +385,7 @@ const TraktScreen = () => {
         setRefreshing(true);
         await loadAllData();
         setRefreshing(false);
-        
+
         if (isHapticsSupported()) {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
@@ -369,41 +402,50 @@ const TraktScreen = () => {
         return (
             <Pressable
                 style={({ pressed }) => [
-                    styles.mediaItem,
+                    {
+                        ...styles.mediaItem,
+                        width: posterWidth,
+                        marginRight: spacing,
+                    },
                     pressed && styles.mediaItemPressed
                 ]}
                 onPress={() => handleMediaPress(item)}
             >
                 <View style={styles.posterContainer}>
                     {poster ? (
-                        <Image 
+                        <Image
                             source={{ uri: `${TMDB_IMAGE_BASE}${poster}` }}
-                            style={styles.poster}
+                            style={{
+                                ...styles.poster,
+                                width: posterWidth,
+                                height: posterHeight,
+                            }}
                             resizeMode="cover"
                         />
                     ) : (
-                        <View style={[styles.poster, styles.placeholderPoster]}>
+                        <View style={[
+                            styles.poster,
+                            styles.placeholderPoster,
+                            {
+                                width: posterWidth,
+                                height: posterHeight,
+                            }
+                        ]}>
                             <Text style={styles.placeholderText}>
                                 {item.type === 'movie' ? '🎬' : '📺'}
                             </Text>
                         </View>
                     )}
-                    
-                    {rating && (
-                        <View style={styles.ratingOverlay}>
-                            <Text style={styles.ratingOverlayText}>⭐ {rating.toFixed(1)}</Text>
-                        </View>
-                    )}
-                    
+
                     {userRating && (
                         <View style={styles.userRatingOverlay}>
                             <Text style={styles.userRatingOverlayText}>{userRating}</Text>
                         </View>
                     )}
                 </View>
-                
+
                 <View style={styles.mediaInfo}>
-                    <Text style={styles.mediaTitle} numberOfLines={2}>
+                    <Text style={styles.mediaTitle} numberOfLines={1}>
                         {title}
                     </Text>
                     {year && (
@@ -420,13 +462,17 @@ const TraktScreen = () => {
                 <Text style={styles.sectionTitle}>{section.title}</Text>
                 <Text style={styles.sectionCount}>{section.data.length} items</Text>
             </View>
-            
+
             <FlatList
                 data={section.data}
                 renderItem={renderMediaItem}
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.horizontalList}
+                contentContainerStyle={{
+                    ...styles.horizontalList,
+                    paddingLeft: containerMargin,
+                    paddingRight: containerMargin,
+                }}
                 keyExtractor={(item, index) => `${section.title}-${index}`}
             />
         </View>
@@ -446,6 +492,12 @@ const TraktScreen = () => {
                     }
                 }}
             >
+                <Ionicons
+                    name='apps'
+                    size={16}
+                    color={selectedTab === 'user-lists' ? '#fff' : '#bbb'}
+                    style={{ marginRight: 6 }}
+                />
                 <Text style={[
                     styles.tabText,
                     selectedTab === 'user-lists' && styles.activeTabText
@@ -453,7 +505,7 @@ const TraktScreen = () => {
                     Lists
                 </Text>
             </Pressable>
-            
+
             <Pressable
                 style={[
                     styles.tab,
@@ -466,6 +518,12 @@ const TraktScreen = () => {
                     }
                 }}
             >
+                <Ionicons
+                    name='film-outline'
+                    size={16}
+                    color={selectedTab === 'movies' ? '#fff' : '#bbb'}
+                    style={{ marginRight: 6 }}
+                />
                 <Text style={[
                     styles.tabText,
                     selectedTab === 'movies' && styles.activeTabText
@@ -473,7 +531,7 @@ const TraktScreen = () => {
                     Movies
                 </Text>
             </Pressable>
-            
+
             <Pressable
                 style={[
                     styles.tab,
@@ -486,6 +544,12 @@ const TraktScreen = () => {
                     }
                 }}
             >
+                <Ionicons
+                    name='tv-outline'
+                    size={16}
+                    color={selectedTab === 'shows' ? '#fff' : '#bbb'}
+                    style={{ marginRight: 6 }}
+                />
                 <Text style={[
                     styles.tabText,
                     selectedTab === 'shows' && styles.activeTabText
@@ -538,7 +602,7 @@ const TraktScreen = () => {
             ) : (
                 <View style={styles.mainContainer}>
                     {renderTabs()}
-                    <ScrollView 
+                    <ScrollView
                         style={styles.contentContainer}
                         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
                     >
@@ -597,15 +661,14 @@ const styles = StyleSheet.create({
         borderBottomColor: 'rgba(255, 255, 255, 0.05)',
     },
     tab: {
-        flex: 1,
-        paddingVertical: 10,
-        paddingHorizontal: 10,
+        flexDirection: 'row',
+        paddingVertical: 12,
+        paddingHorizontal: 20,
         borderRadius: 25,
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
         marginRight: 12,
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: 'transparent',
+        borderColor: 'rgba(255, 255, 255, 0.1)',
     },
     activeTab: {
         backgroundColor: '#535aff',
@@ -617,7 +680,6 @@ const styles = StyleSheet.create({
         elevation: 8,
     },
     tabText: {
-        fontSize: 16,
         fontWeight: '500',
         color: '#888',
     },
@@ -650,13 +712,11 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     horizontalList: {
-        paddingLeft: 16,
-        paddingRight: 16,
+        // Dynamic padding applied inline
     },
-    // Media Items
+    // Media Items - Dynamic sizing applied inline
     mediaItem: {
-        width: 140,
-        marginRight: 16,
+        // width and marginRight applied dynamically
     },
     mediaItemPressed: {
         transform: [{ scale: 0.95 }],
@@ -666,8 +726,7 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     poster: {
-        width: 140,
-        height: 210,
+        // width and height applied dynamically
         borderRadius: 8,
         backgroundColor: 'rgba(255, 255, 255, 0.05)',
     },
