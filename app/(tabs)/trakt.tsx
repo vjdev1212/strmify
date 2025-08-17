@@ -18,6 +18,10 @@ interface TraktItem {
     watched_at?: string;
     rating?: number;
     plays?: number;
+    listed_at?: string; // For watchlist items
+    updated_at?: string;
+    last_watched_at?: string;
+    last_updated_at?: string;
 }
 
 interface TMDBDetails {
@@ -94,6 +98,25 @@ const TraktScreen = () => {
         setIsLoading(false);
     };
 
+    // Helper function to sort items by most recent date
+    const sortByRecentDate = (items: TraktItem[]) => {
+        return items.sort((a: any, b: any) => {
+            // Priority order for date fields: listed_at > last_watched_at > last_updated_at > updated_at
+            const getDate = (item: any) => {
+                return item.listed_at || 
+                       item.last_watched_at || 
+                       item.last_updated_at || 
+                       item.updated_at || 
+                       item.watched_at ||
+                       '1970-01-01';
+            };
+            
+            const dateA = new Date(getDate(a)).getTime();
+            const dateB = new Date(getDate(b)).getTime();
+            return dateB - dateA; // descending order (newest first)
+        });
+    };
+
     const enhanceWithTMDB = async (items: TraktItem[]): Promise<EnhancedTraktItem[]> => {
         if (!TMDB_API_KEY) {
             console.warn('TMDB API key not found');
@@ -154,7 +177,9 @@ const TraktScreen = () => {
             for (const list of userLists) {
                 const listItems = await makeTraktApiCall(`/users/me/lists/${list.ids.slug}/items`);
                 if (listItems.length > 0) {
-                    const enhancedListItems = await enhanceWithTMDB(listItems.slice(0, 20));
+                    // Sort list items by recent date
+                    const sortedListItems = sortByRecentDate(listItems);
+                    const enhancedListItems = await enhanceWithTMDB(sortedListItems.slice(0, 20));
                     newUserListSections.push({
                         title: list.name,
                         data: enhancedListItems,
@@ -162,11 +187,13 @@ const TraktScreen = () => {
                 }
             }
 
-            // Load Watchlist as a special user list
+            // Load Watchlist as a special user list (combined movies and shows)
             try {
                 const watchlistItems = await makeTraktApiCall('/sync/watchlist');
                 if (watchlistItems.length > 0) {
-                    const enhancedWatchlistItems = await enhanceWithTMDB(watchlistItems.slice(0, 20));
+                    // Sort watchlist by most recent additions
+                    const sortedWatchlistItems = sortByRecentDate(watchlistItems);
+                    const enhancedWatchlistItems = await enhanceWithTMDB(sortedWatchlistItems.slice(0, 20));
                     newUserListSections.unshift({
                         title: 'Watchlist',
                         data: enhancedWatchlistItems,
@@ -188,7 +215,6 @@ const TraktScreen = () => {
         try {
             // Trending Movies
             const trendingMovies = await makeTraktApiCall('/movies/trending');
-
             const enhancedTrendingMovies = await enhanceWithTMDB(
                 trendingMovies.slice(0, 20).map((item: any) => ({ movie: item.movie, type: 'movie' as const }))
             );
@@ -227,9 +253,11 @@ const TraktScreen = () => {
             try {
                 const favoritedMovies = await makeTraktApiCall('/sync/favorites/movies');
                 if (favoritedMovies.length > 0) {
-                    const enhancedFavoritedMovies = await enhanceWithTMDB(
-                        favoritedMovies.slice(0, 20).map((item: any) => ({ ...item, type: 'movie' as const }))
-                    );
+                    // Sort favorited movies by recent date
+                    const sortedFavoritedMovies = sortByRecentDate(favoritedMovies)
+                        .slice(0, 20)
+                        .map((item: any) => ({ ...item, type: 'movie' as const }));
+                    const enhancedFavoritedMovies = await enhanceWithTMDB(sortedFavoritedMovies);
                     newMovieSections.push({
                         title: 'Favorited',
                         data: enhancedFavoritedMovies,
@@ -242,12 +270,7 @@ const TraktScreen = () => {
             // Watched Movies
             const watchedMovies = await makeTraktApiCall('/sync/watched/movies');
             if (watchedMovies.length > 0) {
-                const sortedWatchedMovies = watchedMovies
-                    .sort((a: any, b: any) => {
-                        const dateA = new Date(a.last_watched_at || a.last_updated_at).getTime();
-                        const dateB = new Date(b.last_watched_at || b.last_updated_at).getTime();
-                        return dateB - dateA; // descending order (newest first)
-                    })
+                const sortedWatchedMovies = sortByRecentDate(watchedMovies)
                     .slice(0, 20)
                     .map((item: any) => ({
                         ...item,
@@ -264,9 +287,11 @@ const TraktScreen = () => {
             try {
                 const collectedMovies = await makeTraktApiCall('/sync/collection/movies');
                 if (collectedMovies.length > 0) {
-                    const enhancedCollectedMovies = await enhanceWithTMDB(
-                        collectedMovies.slice(0, 20).map((item: any) => ({ ...item, type: 'movie' as const }))
-                    );
+                    // Sort collected movies by recent date
+                    const sortedCollectedMovies = sortByRecentDate(collectedMovies)
+                        .slice(0, 20)
+                        .map((item: any) => ({ ...item, type: 'movie' as const }));
+                    const enhancedCollectedMovies = await enhanceWithTMDB(sortedCollectedMovies);
                     newMovieSections.push({
                         title: 'Collected',
                         data: enhancedCollectedMovies,
@@ -286,6 +311,27 @@ const TraktScreen = () => {
         const newShowSections: ListSection[] = [];
 
         try {
+            // TV Show Watchlist - Add as first section
+            try {
+                const showWatchlist = await makeTraktApiCall('/sync/watchlist/shows');
+                if (showWatchlist.length > 0) {
+                    // Sort by most recent additions and map to correct format
+                    const sortedShowWatchlist = sortByRecentDate(showWatchlist)
+                        .slice(0, 20)
+                        .map((item: any) => ({ 
+                            ...item, 
+                            type: 'show' as const 
+                        }));
+                    const enhancedShowWatchlist = await enhanceWithTMDB(sortedShowWatchlist);
+                    newShowSections.push({
+                        title: 'TV Watchlist',
+                        data: enhancedShowWatchlist,
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading show watchlist:', error);
+            }
+
             // Trending Shows
             const trendingShows = await makeTraktApiCall('/shows/trending');
             const enhancedTrendingShows = await enhanceWithTMDB(
@@ -326,9 +372,11 @@ const TraktScreen = () => {
             try {
                 const favoritedShows = await makeTraktApiCall('/sync/favorites/shows');
                 if (favoritedShows.length > 0) {
-                    const enhancedFavoritedShows = await enhanceWithTMDB(
-                        favoritedShows.slice(0, 20).map((item: any) => ({ ...item, type: 'show' as const }))
-                    );
+                    // Sort favorited shows by recent date
+                    const sortedFavoritedShows = sortByRecentDate(favoritedShows)
+                        .slice(0, 20)
+                        .map((item: any) => ({ ...item, type: 'show' as const }));
+                    const enhancedFavoritedShows = await enhanceWithTMDB(sortedFavoritedShows);
                     newShowSections.push({
                         title: 'Favorited',
                         data: enhancedFavoritedShows,
@@ -341,17 +389,12 @@ const TraktScreen = () => {
             // Watched Shows
             const watchedShows = await makeTraktApiCall('/sync/watched/shows?extended=noseasons');
             if (watchedShows.length > 0) {
-                const sortedWatchedShows = watchedShows
-                    .sort((a: any, b: any) => {
-                        const dateA = new Date(a.last_watched_at || a.last_updated_at).getTime();
-                        const dateB = new Date(b.last_watched_at || b.last_updated_at).getTime();
-                        return dateB - dateA;
-                    })
+                const sortedWatchedShows = sortByRecentDate(watchedShows)
                     .slice(0, 20)
                     .map((item: any) => ({
                         ...item,
                         type: 'show' as const,
-                    }))
+                    }));
                 const enhancedWatchedShows = await enhanceWithTMDB(sortedWatchedShows);
                 newShowSections.push({
                     title: 'Watched',
@@ -363,9 +406,11 @@ const TraktScreen = () => {
             try {
                 const collectedShows = await makeTraktApiCall('/sync/collection/shows');
                 if (collectedShows.length > 0) {
-                    const enhancedCollectedShows = await enhanceWithTMDB(
-                        collectedShows.slice(0, 20).map((item: any) => ({ ...item, type: 'show' as const }))
-                    );
+                    // Sort collected shows by recent date
+                    const sortedCollectedShows = sortByRecentDate(collectedShows)
+                        .slice(0, 20)
+                        .map((item: any) => ({ ...item, type: 'show' as const }));
+                    const enhancedCollectedShows = await enhanceWithTMDB(sortedCollectedShows);
                     newShowSections.push({
                         title: 'Collected',
                         data: enhancedCollectedShows,
