@@ -17,11 +17,8 @@ const SettingsScreen = () => {
   // Build servers list conditionally based on flags
   const integrationList: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [
     { title: 'Stremio', route: '/settings/stremioserver', icon: 'magnet-outline' },
+    { title: 'Trakt', route: '/settings/trakt', icon: 'checkmark-done-circle-outline' }
   ];
-
-  if (Platform.OS !== 'web') {
-    integrationList.push({ title: 'Trakt', route: '/settings/trakt', icon: 'checkmark-done-circle-outline' });
-  }
 
   const General: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [
     { title: 'Addons', route: '/settings/addons', icon: 'extension-puzzle-outline' },
