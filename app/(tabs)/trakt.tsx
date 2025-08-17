@@ -6,6 +6,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { isUserAuthenticated, makeTraktApiCall } from '@/utils/Trakt';
+import BottomSpacing from '@/components/BottomSpacing';
 
 const TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
@@ -670,6 +671,7 @@ const TraktScreen = () => {
                     >
                         {getCurrentSections().map(renderSection)}
                     </ScrollView>
+                    <BottomSpacing space={50} />
                 </View>
             )}
         </SafeAreaView>
