@@ -1,9 +1,7 @@
-import { SafeAreaView, ScrollView, StyleSheet, Pressable, ActivityIndicator, Linking, Platform } from 'react-native';
+import { SafeAreaView, ScrollView, StyleSheet, Pressable, ActivityIndicator, Platform } from 'react-native';
 import { StatusBar, Text, View } from '../../components/Themed';
 import { isHapticsSupported, showAlert } from '@/utils/platform';
-import * as SecureStore from 'expo-secure-store';
 import * as Haptics from 'expo-haptics';
-import * as Clipboard from 'expo-clipboard';
 import { useCallback, useEffect, useState, useRef } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { TraktTokens } from '@/utils/Trakt';
@@ -32,22 +30,11 @@ const validateConfig = () => {
     return true;
 };
 
-interface DeviceCodeResponse {
-    device_code: string;
-    user_code: string;
-    verification_url: string;
-    expires_in: number;
-    interval: number;
-}
 
 const TraktAuthScreen = () => {
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [userInfo, setUserInfo] = useState<any>(null);
-    const [deviceCodeData, setDeviceCodeData] = useState<DeviceCodeResponse | null>(null);
-    const [showDeviceCode, setShowDeviceCode] = useState<boolean>(false);
-    const [codeCopied, setCodeCopied] = useState<boolean>(false);
-    const [authMethod, setAuthMethod] = useState<'device' | 'redirect'>('redirect');
 
     const pollingRef = useRef<any>(null);
     const timeoutRef = useRef<any>(null);
@@ -198,8 +185,6 @@ const TraktAuthScreen = () => {
                     console.error('Auth error:', error);
                     cleanup();
                     setIsLoading(false);
-                    setShowDeviceCode(false);
-                    setDeviceCodeData(null);
                     showAlert('Authentication Failed', `Error: ${error}`);
                     return;
                 }
@@ -221,8 +206,6 @@ const TraktAuthScreen = () => {
                 const parsedTokens: TraktTokens = JSON.parse(tokens);
                 if (isTokenValid(parsedTokens)) {
                     setIsAuthenticated(true);
-                    setShowDeviceCode(false);
-                    setDeviceCodeData(null);
                     cleanup();
                     await fetchUserInfo(parsedTokens.access_token);
                 } else {
@@ -239,201 +222,25 @@ const TraktAuthScreen = () => {
         const expiresAt = tokens.created_at + tokens.expires_in;
         return Date.now() / 1000 < expiresAt;
     };
-
-    const copyCodeToClipboard = async () => {
-        if (deviceCodeData?.user_code) {
-            await webClipboard.setString(deviceCodeData.user_code);
-            setCodeCopied(true);
-
-            if (!isWeb && isHapticsSupported()) {
-                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            }
-
-            // Reset copied state after 2 seconds
-            setTimeout(() => setCodeCopied(false), 2000);
-        }
-    };
-
-    const generateDeviceCode = async () => {
-        try {
-            // Validate configuration first
-            if (!validateConfig()) {
-                throw new Error('Missing required Trakt.tv configuration. Please check your environment variables.');
-            }
-
-            console.log('Attempting to generate device code with client ID:', TRAKT_CLIENT_ID);
-
-            const response = await fetch(`${TRAKT_API_BASE}/oauth/device/code`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'trakt-api-version': '2',
-                    'trakt-api-key': TRAKT_CLIENT_ID,
-                },
-                body: JSON.stringify({
-                    client_id: TRAKT_CLIENT_ID,
-                }),
-            });
-
-            console.log('Response status:', response.status, response.statusText);
-
-            if (!response.ok) {
-                const errorData = await response.text();
-                console.error('API Error Response:', errorData);
-
-                if (response.status === 403) {
-                    throw new Error('Invalid Trakt.tv client credentials. Please check your EXPO_PUBLIC_TRAKT_CLIENT_ID in your .env file.');
-                }
-
-                throw new Error(`Failed to generate device code: ${response.status} ${response.statusText}`);
-            }
-
-            return await response.json();
-        } catch (error) {
-            console.error('Error generating device code:', error);
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-
-            if (errorMessage.includes('credentials') || errorMessage.includes('403')) {
-                showAlert('Invalid Credentials', 'Please check your Trakt.tv app credentials in the .env file.');
-            } else if (errorMessage.includes('configuration')) {
-                showAlert('Configuration Error', errorMessage);
-            } else {
-                showAlert('Error', `Failed to generate device code: ${errorMessage}`);
-            }
-            throw error;
-        }
-    };
-
-    const pollForToken = async (deviceCode: string, interval: number) => {
-        const poll = async () => {
-            try {
-                console.log('Polling for token...');
-
-                const response = await fetch(`${TRAKT_API_BASE}/oauth/device/token`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        code: deviceCode,
-                        client_id: TRAKT_CLIENT_ID,
-                        client_secret: TRAKT_CLIENT_SECRET,
-                    }),
-                });
-
-                if (response.ok) {
-                    console.log('Token received successfully!');
-                    const tokens: TraktTokens = await response.json();
-                    tokens.created_at = Math.floor(Date.now() / 1000);
-
-                    await webSecureStore.setItem('trakt_tokens', JSON.stringify(tokens));
-
-                    cleanup();
-
-                    setIsAuthenticated(true);
-                    setIsLoading(false);
-                    setShowDeviceCode(false);
-                    setDeviceCodeData(null);
-
-                    await fetchUserInfo(tokens.access_token);
-
-                    if (!isWeb && isHapticsSupported()) {
-                        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                    }
-
-                    showAlert('Success', 'Successfully connected to Trakt.tv!');
-                } else if (response.status === 400) {
-                    // Still waiting for user authorization - this is expected
-                    console.log('Still waiting for user authorization...');
-                    return; // Continue polling
-                } else if (response.status === 404 || response.status === 410) {
-                    // Device code expired or denied
-                    console.log('Device code expired or denied');
-                    cleanup();
-                    setIsLoading(false);
-                    setShowDeviceCode(false);
-                    setDeviceCodeData(null);
-                    showAlert('Expired', 'The device code has expired or was denied. Please try again.');
-                    return;
-                } else {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-            } catch (error) {
-                // Silently continue polling for network errors
-                console.log('Network error during polling, will retry...');
-                return; // Continue polling
-            }
-        };
-
-        // Start polling immediately
-        await poll();
-
-        // Set up interval for subsequent polls
-        pollingRef.current = setInterval(poll, interval * 1000);
-
-        // Set timeout to stop polling after device code expires
-        timeoutRef.current = setTimeout(() => {
-            cleanup();
-            if (isLoading && showDeviceCode) {
-                setIsLoading(false);
-                setShowDeviceCode(false);
-                setDeviceCodeData(null);
-                showAlert('Timeout', 'Authentication process timed out. Please try again.');
-            }
-        }, deviceCodeData?.expires_in ? deviceCodeData.expires_in * 1000 : 600000);
-    };
-
+    
     const authenticateWithTrakt = async () => {
         try {
             setIsLoading(true);
-            setCodeCopied(false);
 
             if (!isWeb && isHapticsSupported()) {
                 await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
             }
 
-            if (!isWeb) {
-                // Use redirect flow for native apps
-                const authUrl = `https://trakt.tv/oauth/authorize?response_type=code&client_id=${TRAKT_CLIENT_ID}&redirect_uri=${encodeURIComponent(TRAKT_REDIRECT_URI)}&state=app_auth`;
-                await webLinking.openURL(authUrl);
-                return;
-            } else {
-                // Use device code flow for web
-                const deviceCodeResponse = await generateDeviceCode();
-                setDeviceCodeData(deviceCodeResponse);
-                setShowDeviceCode(true);
-
-                // Open browser for user authentication
-                await webLinking.openURL(deviceCodeResponse.verification_url);
-
-                // Start polling for token
-                await pollForToken(deviceCodeResponse.device_code, deviceCodeResponse.interval);
-            }
-
+            const authUrl = `https://trakt.tv/oauth/authorize?response_type=code&client_id=${TRAKT_CLIENT_ID}&redirect_uri=${encodeURIComponent(TRAKT_REDIRECT_URI)}&state=app_auth`;
+            await webLinking.openURL(authUrl);
+            return;
         } catch (error) {
             console.error('Authentication error:', error);
             cleanup();
             setIsLoading(false);
-            setShowDeviceCode(false);
-            setDeviceCodeData(null);
             const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
             showAlert('Error', `Failed to start authentication process: ${errorMessage}`);
         }
-    };
-
-
-    const cancelAuthentication = () => {
-        cleanup();
-        setIsLoading(false);
-        setShowDeviceCode(false);
-        setDeviceCodeData(null);
-        setCodeCopied(false);
-
-        if (!isWeb && isHapticsSupported()) {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
-        }
-
-        console.log('Authentication cancelled by user');
     };
 
     const refreshAccessToken = async (tokens: TraktTokens) => {
@@ -505,66 +312,6 @@ const TraktAuthScreen = () => {
             showAlert('Error', `Failed to logout: ${errorMessage}`);
         }
     };
-
-
-    const renderDeviceCodeView = () => (
-        <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Authenticate with Trakt.tv</Text>
-                <Text style={styles.sectionSubtitle}>
-                    Visit the URL below and enter the code to complete authentication
-                </Text>
-            </View>
-
-            {deviceCodeData && (
-                <View style={styles.deviceCodeContainer}>
-                    <View style={styles.urlContainer}>
-                        <Text style={styles.urlLabel}>Visit this URL:</Text>
-                        <Pressable
-                            style={styles.urlButton}
-                            onPress={() => webLinking.openURL(deviceCodeData.verification_url)}
-                        >
-                            <Text style={styles.urlText}>{deviceCodeData.verification_url}</Text>
-                        </Pressable>
-                    </View>
-
-                    <View style={styles.codeContainer}>
-                        <Text style={styles.codeLabel}>Enter this code:</Text>
-                        <Pressable
-                            style={styles.codeDisplay}
-                            onPress={copyCodeToClipboard}
-                        >
-                            <Text style={styles.codeText}>{deviceCodeData.user_code}</Text>
-                            <Text style={styles.copyHint}>
-                                {codeCopied ? '✓ Copied!' : 'Tap to copy'}
-                            </Text>
-                        </Pressable>
-                    </View>
-
-                    <View style={styles.statusContainer}>
-                        <ActivityIndicator color="#535aff" size="small" />
-                        <Text style={styles.statusText}>
-                            Waiting for authentication... Complete the process in your browser
-                        </Text>
-                    </View>
-
-                    <Text style={styles.helpText}>
-                        Code expires in {Math.ceil(deviceCodeData.expires_in / 60)} minutes
-                    </Text>
-
-                    <Pressable
-                        style={({ pressed }) => [
-                            styles.cancelButton,
-                            pressed && styles.buttonPressed
-                        ]}
-                        onPress={cancelAuthentication}
-                    >
-                        <Text style={styles.cancelButtonText}>Cancel</Text>
-                    </Pressable>
-                </View>
-            )}
-        </View>
-    );
 
     const renderAuthenticatedView = () => (
         <>
@@ -640,7 +387,7 @@ const TraktAuthScreen = () => {
                 onPress={authenticateWithTrakt}
                 disabled={isLoading}
             >
-                {isLoading && !showDeviceCode ? (
+                {isLoading ? (
                     <ActivityIndicator color="#fff" size="small" />
                 ) : (
                     <Text style={styles.connectButtonText}>
@@ -660,12 +407,7 @@ const TraktAuthScreen = () => {
                 contentContainerStyle={styles.scrollContent}
                 style={styles.scrollView}
             >
-                {isAuthenticated
-                    ? renderAuthenticatedView()
-                    : showDeviceCode
-                        ? renderDeviceCodeView()
-                        : renderUnauthenticatedView()
-                }
+                {renderAuthenticatedView()}
             </ScrollView>
         </SafeAreaView>
     );
