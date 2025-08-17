@@ -20,7 +20,6 @@ interface TraktItem {
     watched_at?: string;
     rating?: number;
     plays?: number;
-    rank?: number;
     listed_at?: string; // For watchlist items
     updated_at?: string;
     last_watched_at?: string;
@@ -109,15 +108,14 @@ const TraktScreen = () => {
         return items.sort((a: any, b: any) => {
             // Priority order for date fields: listed_at > last_watched_at > last_updated_at > updated_at
             const getDate = (item: any) => {
-                return item.rank ||
-                    item.listed_at ||
-                    item.last_watched_at ||
-                    item.last_updated_at ||
-                    item.updated_at ||
-                    item.watched_at ||
-                    '1970-01-01';
+                return item.listed_at || 
+                       item.last_watched_at || 
+                       item.last_updated_at || 
+                       item.updated_at || 
+                       item.watched_at ||
+                       '1970-01-01';
             };
-
+            
             const dateA = new Date(getDate(a)).getTime();
             const dateB = new Date(getDate(b)).getTime();
             return dateB - dateA; // descending order (newest first)
@@ -238,7 +236,7 @@ const TraktScreen = () => {
                             progress: item.progress || 0,
                             paused_at: item.paused_at,
                         }));
-
+                    
                     const enhancedMovieProgress = await enhanceWithTMDB(sortedMovieProgress);
                     newMovieSections.push({
                         title: 'Continue Watching Movies',
@@ -366,7 +364,7 @@ const TraktScreen = () => {
                             progress: item.progress || 0,
                             paused_at: item.paused_at,
                         }));
-
+                    
                     const enhancedShowProgress = await enhanceWithTMDB(sortedShowProgress);
                     newShowSections.push({
                         title: 'Continue Watching TV',
@@ -506,7 +504,7 @@ const TraktScreen = () => {
         const rating = item.tmdb?.vote_average;
         const userRating = item.rating;
         const progress = item.progress;
-
+        
         // For episodes, extract episode info
         const episode = item.episode;
         const episodeTitle = episode?.title;
@@ -555,11 +553,11 @@ const TraktScreen = () => {
                     {progress !== undefined && progress > 0 && (
                         <View style={styles.progressContainer}>
                             <View style={styles.progressBar}>
-                                <View
+                                <View 
                                     style={[
                                         styles.progressFill,
                                         { width: `${progress}%` }
-                                    ]}
+                                    ]} 
                                 />
                             </View>
                             <Text style={styles.progressText}>{Math.round(progress)}%</Text>
