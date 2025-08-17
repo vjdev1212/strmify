@@ -1,7 +1,8 @@
 
 import * as SecureStore from 'expo-secure-store';
 import * as Clipboard from 'expo-clipboard';
-import { Linking, Platform } from 'react-native';
+import { Platform } from 'react-native';
+import * as Linking from 'expo-linking';
 
 const isWeb = Platform.OS === 'web';
 
