@@ -88,6 +88,7 @@ export default function AppleTVCarousel({
     useEffect(() => {
         const fetchCarouselData = async () => {
             try {
+                const { isLandscape } = dimensions;
                 setLoading(true);
                 const promises: Promise<any>[] = [];
 
@@ -128,7 +129,7 @@ export default function AppleTVCarousel({
                                 title: item.title || item.name,
                                 subtitle: item.overview,
                                 posterUrl: `https://image.tmdb.org/t/p/w780${item.poster_path}`,
-                                backdropUrl: `https://image.tmdb.org/t/p/w1280${item.backdrop_path}`,
+                                backdropUrl: `https://image.tmdb.org/t/p/${isLandscape ? 'original' : 'w1280'}${item.backdrop_path}`,
                                 type,
                                 year: getYear(item.release_date || item.first_air_date),
                                 rating: item.vote_average?.toFixed(1) || '0.0',
