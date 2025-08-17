@@ -41,40 +41,45 @@ const TraktAuthScreen = () => {
     }, []);
 
     const initializeAuth = async () => {
-        // Validate configuration first
-        if (!validateConfig()) {
-            showAlert('Configuration Error', 'Missing required Trakt.tv API configuration');
+        try {
+            // Validate configuration first
+            if (!validateConfig()) {
+                showAlert('Configuration Error', 'Missing required Trakt.tv API configuration');
+                setIsInitialized(true);
+                return;
+            }
+
+            await checkAuthStatus();
+
+            // Handle URL parameters for web OAuth redirect
+            if (isWeb) {
+                handleWebAuthRedirect();
+            } else {
+                // Handle deep link when app is opened from background
+                const handleDeepLink = (event: { url: string }) => {
+                    handleAuthRedirect(event.url);
+                };
+
+                // Add event listener for deep links
+                const subscription = webLinking.addEventListener('url', handleDeepLink);
+
+                // Check if app was opened with a deep link
+                webLinking.getInitialURL().then((url) => {
+                    if (url) {
+                        handleAuthRedirect(url);
+                    }
+                });
+
+                return () => {
+                    subscription?.remove();
+                };
+            }
+        } catch (error) {
+            console.error('Initialize auth error:', error);
+        } finally {
+            // Always set initialized to true after completing initialization
             setIsInitialized(true);
-            return;
         }
-
-        await checkAuthStatus();
-
-        // Handle URL parameters for web OAuth redirect
-        if (isWeb) {
-            handleWebAuthRedirect();
-        } else {
-            // Handle deep link when app is opened from background
-            const handleDeepLink = (event: { url: string }) => {
-                handleAuthRedirect(event.url);
-            };
-
-            // Add event listener for deep links
-            const subscription = webLinking.addEventListener('url', handleDeepLink);
-
-            // Check if app was opened with a deep link
-            webLinking.getInitialURL().then((url) => {
-                if (url) {
-                    handleAuthRedirect(url);
-                }
-            });
-
-            return () => {
-                subscription?.remove();
-            };
-        }
-
-        setIsInitialized(true);
     };
 
     // Handle web OAuth redirect by checking URL parameters
