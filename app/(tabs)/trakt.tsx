@@ -634,7 +634,6 @@ const TraktScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        marginTop: 30,
     },
     mainContainer: {
         flex: 1,
