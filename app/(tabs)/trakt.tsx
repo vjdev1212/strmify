@@ -16,6 +16,7 @@ interface TraktItem {
     type: 'movie' | 'show';
     movie?: any;
     show?: any;
+    episode?: any;
     watched_at?: string;
     rating?: number;
     plays?: number;
@@ -23,6 +24,9 @@ interface TraktItem {
     updated_at?: string;
     last_watched_at?: string;
     last_updated_at?: string;
+    progress?: number; // Playback progress (0-100)
+    paused_at?: string; // When playback was paused
+    action?: string; // 'start', 'pause', 'scrobble', 'watch'
 }
 
 interface TMDBDetails {
@@ -214,6 +218,35 @@ const TraktScreen = () => {
         const newMovieSections: ListSection[] = [];
 
         try {
+            // Movie Playback Progress - Add as first section
+            try {
+                const movieProgress = await makeTraktApiCall('/sync/playback/movies');
+                if (movieProgress.length > 0) {
+                    // Sort by most recent activity (paused_at)
+                    const sortedMovieProgress = movieProgress
+                        .sort((a: any, b: any) => {
+                            const dateA = new Date(a.paused_at || a.updated_at || '1970-01-01').getTime();
+                            const dateB = new Date(b.paused_at || b.updated_at || '1970-01-01').getTime();
+                            return dateB - dateA;
+                        })
+                        .slice(0, 20)
+                        .map((item: any) => ({
+                            ...item,
+                            type: 'movie' as const,
+                            progress: item.progress || 0,
+                            paused_at: item.paused_at,
+                        }));
+                    
+                    const enhancedMovieProgress = await enhanceWithTMDB(sortedMovieProgress);
+                    newMovieSections.push({
+                        title: 'Continue Watching Movies',
+                        data: enhancedMovieProgress,
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading movie playback progress:', error);
+            }
+
             // Trending Movies
             const trendingMovies = await makeTraktApiCall('/movies/trending');
             const enhancedTrendingMovies = await enhanceWithTMDB(
@@ -312,25 +345,34 @@ const TraktScreen = () => {
         const newShowSections: ListSection[] = [];
 
         try {
-            // TV Show Watchlist - Add as first section
+            // TV Show Playback Progress - Add as first section  
             try {
-                const showWatchlist = await makeTraktApiCall('/sync/watchlist/shows');
-                if (showWatchlist.length > 0) {
-                    // Sort by most recent additions and map to correct format
-                    const sortedShowWatchlist = sortByRecentDate(showWatchlist)
+                const showProgress = await makeTraktApiCall('/sync/playback/episodes');
+                if (showProgress.length > 0) {
+                    // Sort by most recent activity (paused_at) and map to show format
+                    const sortedShowProgress = showProgress
+                        .sort((a: any, b: any) => {
+                            const dateA = new Date(a.paused_at || a.updated_at || '1970-01-01').getTime();
+                            const dateB = new Date(b.paused_at || b.updated_at || '1970-01-01').getTime();
+                            return dateB - dateA;
+                        })
                         .slice(0, 20)
-                        .map((item: any) => ({ 
-                            ...item, 
-                            type: 'show' as const 
+                        .map((item: any) => ({
+                            ...item,
+                            show: item.show || (item.episode && item.episode.show),
+                            type: 'show' as const,
+                            progress: item.progress || 0,
+                            paused_at: item.paused_at,
                         }));
-                    const enhancedShowWatchlist = await enhanceWithTMDB(sortedShowWatchlist);
+                    
+                    const enhancedShowProgress = await enhanceWithTMDB(sortedShowProgress);
                     newShowSections.push({
-                        title: 'TV Watchlist',
-                        data: enhancedShowWatchlist,
+                        title: 'Continue Watching TV',
+                        data: enhancedShowProgress,
                     });
                 }
             } catch (error) {
-                console.error('Error loading show watchlist:', error);
+                console.error('Error loading show playback progress:', error);
             }
 
             // Trending Shows
@@ -461,6 +503,13 @@ const TraktScreen = () => {
         const poster = item.tmdb?.poster_path;
         const rating = item.tmdb?.vote_average;
         const userRating = item.rating;
+        const progress = item.progress;
+        
+        // For episodes, extract episode info
+        const episode = item.episode;
+        const episodeTitle = episode?.title;
+        const seasonNumber = episode?.season;
+        const episodeNumber = episode?.number;
 
         return (
             <Pressable
@@ -500,6 +549,21 @@ const TraktScreen = () => {
                         </View>
                     )}
 
+                    {/* Progress Bar for Continue Watching items */}
+                    {progress !== undefined && progress > 0 && (
+                        <View style={styles.progressContainer}>
+                            <View style={styles.progressBar}>
+                                <View 
+                                    style={[
+                                        styles.progressFill,
+                                        { width: `${progress}%` }
+                                    ]} 
+                                />
+                            </View>
+                            <Text style={styles.progressText}>{Math.round(progress)}%</Text>
+                        </View>
+                    )}
+
                     {userRating && (
                         <View style={styles.userRatingOverlay}>
                             <Text style={styles.userRatingOverlayText}>{userRating}</Text>
@@ -511,8 +575,21 @@ const TraktScreen = () => {
                     <Text style={styles.mediaTitle} numberOfLines={1}>
                         {title}
                     </Text>
+                    {/* Show episode info for TV shows */}
+                    {episode && seasonNumber && episodeNumber && (
+                        <Text style={styles.episodeInfo} numberOfLines={1}>
+                            S{seasonNumber}E{episodeNumber}
+                            {episodeTitle && ` • ${episodeTitle}`}
+                        </Text>
+                    )}
                     {year && (
                         <Text style={styles.mediaYear}>{year}</Text>
+                    )}
+                    {/* Show progress percentage in title area for continue watching */}
+                    {progress !== undefined && progress > 0 && (
+                        <Text style={styles.progressLabel}>
+                            {Math.round(progress)}% watched
+                        </Text>
                     )}
                 </View>
             </Pressable>
@@ -843,6 +920,51 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#ccc',
         fontWeight: '500',
+    },
+    progressContainer: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        paddingHorizontal: 8,
+        paddingVertical: 6,
+        borderBottomLeftRadius: 8,
+        borderBottomRightRadius: 8,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    progressBar: {
+        flex: 1,
+        height: 4,
+        backgroundColor: 'rgba(255, 255, 255, 0.3)',
+        borderRadius: 2,
+        overflow: 'hidden',
+    },
+    progressFill: {
+        height: '100%',
+        backgroundColor: '#535aff',
+        borderRadius: 2,
+    },
+    progressText: {
+        fontSize: 10,
+        color: '#fff',
+        fontWeight: '600',
+        minWidth: 32,
+        textAlign: 'right',
+    },
+    progressLabel: {
+        fontSize: 11,
+        color: '#535aff',
+        fontWeight: '600',
+        marginTop: 2,
+    },
+    episodeInfo: {
+        fontSize: 12,
+        color: '#aaa',
+        fontWeight: '500',
+        marginTop: 2,
     },
 });
 
