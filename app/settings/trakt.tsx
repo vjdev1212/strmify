@@ -3,7 +3,8 @@ import { StatusBar, Text, View } from '../../components/Themed';
 import { isHapticsSupported, showAlert } from '@/utils/platform';
 import * as SecureStore from 'expo-secure-store';
 import * as Haptics from 'expo-haptics';
-import { useCallback, useEffect, useState } from 'react';
+import * as Clipboard from 'expo-clipboard';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 
 // Trakt.tv API configuration from environment variables
@@ -49,6 +50,10 @@ const TraktAuthScreen = () => {
     const [userInfo, setUserInfo] = useState<any>(null);
     const [deviceCodeData, setDeviceCodeData] = useState<DeviceCodeResponse | null>(null);
     const [showDeviceCode, setShowDeviceCode] = useState<boolean>(false);
+    const [codeCopied, setCodeCopied] = useState<boolean>(false);
+    
+    const pollingRef = useRef<any>(null);
+    const timeoutRef = useRef<any>(null);
 
     useEffect(() => {
         checkAuthStatus();
@@ -70,6 +75,7 @@ const TraktAuthScreen = () => {
 
         return () => {
             subscription?.remove();
+            cleanup();
         };
     }, []);
 
@@ -82,6 +88,17 @@ const TraktAuthScreen = () => {
             }
         }, [isLoading])
     );
+
+    const cleanup = () => {
+        if (pollingRef.current) {
+            clearInterval(pollingRef.current);
+            pollingRef.current = null;
+        }
+        if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+            timeoutRef.current = null;
+        }
+    };
 
     const handleAuthRedirect = (url: string) => {
         console.log('Received deep link:', url);
@@ -106,6 +123,7 @@ const TraktAuthScreen = () => {
                 
                 if (error) {
                     console.error('Auth error:', error);
+                    cleanup();
                     setIsLoading(false);
                     setShowDeviceCode(false);
                     setDeviceCodeData(null);
@@ -137,6 +155,7 @@ const TraktAuthScreen = () => {
                     setIsAuthenticated(true);
                     setShowDeviceCode(false);
                     setDeviceCodeData(null);
+                    cleanup();
                     await fetchUserInfo(parsedTokens.access_token);
                 } else {
                     // Try to refresh the token
@@ -151,6 +170,20 @@ const TraktAuthScreen = () => {
     const isTokenValid = (tokens: TraktTokens): boolean => {
         const expiresAt = tokens.created_at + tokens.expires_in;
         return Date.now() / 1000 < expiresAt;
+    };
+
+    const copyCodeToClipboard = async () => {
+        if (deviceCodeData?.user_code) {
+            await Clipboard.setStringAsync(deviceCodeData.user_code);
+            setCodeCopied(true);
+            
+            if (isHapticsSupported()) {
+                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            }
+            
+            // Reset copied state after 2 seconds
+            setTimeout(() => setCodeCopied(false), 2000);
+        }
     };
 
     const generateDeviceCode = async () => {
@@ -208,22 +241,6 @@ const TraktAuthScreen = () => {
     };
 
     const pollForToken = async (deviceCode: string, interval: number) => {
-        let pollInterval: any = null;
-        let timeoutId: any = null;
-        let retryCount = 0;
-        const maxRetries = 3;
-        
-        const cleanup = () => {
-            if (pollInterval) {
-                clearInterval(pollInterval);
-                pollInterval = null;
-            }
-            if (timeoutId) {
-                clearTimeout(timeoutId);
-                timeoutId = null;
-            }
-        };
-
         const poll = async () => {
             try {
                 console.log('Polling for token...');
@@ -264,59 +281,34 @@ const TraktAuthScreen = () => {
                 } else if (response.status === 400) {
                     // Still waiting for user authorization - this is expected
                     console.log('Still waiting for user authorization...');
-                    retryCount = 0; // Reset retry count on expected response
-                    return;
-                } else if (response.status === 404) {
-                    // Device code expired
-                    console.log('Device code expired');
+                    return; // Continue polling
+                } else if (response.status === 404 || response.status === 410) {
+                    // Device code expired or denied
+                    console.log('Device code expired or denied');
                     cleanup();
                     setIsLoading(false);
                     setShowDeviceCode(false);
                     setDeviceCodeData(null);
-                    showAlert('Expired', 'The device code has expired. Please try again.');
+                    showAlert('Expired', 'The device code has expired or was denied. Please try again.');
                     return;
                 } else {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
             } catch (error) {
-                console.error('Error polling for token:', error);
-                retryCount++;
-                
-                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-                
-                // Handle network errors more gracefully
-                if (errorMessage.includes('Network request failed') || errorMessage.includes('fetch')) {
-                    if (retryCount <= maxRetries) {
-                        console.log(`Network error, retrying in ${interval * 2} seconds... (${retryCount}/${maxRetries})`);
-                        // Double the interval on network errors to avoid overwhelming
-                        return;
-                    } else {
-                        console.log('Max retries reached for network errors');
-                    }
-                }
-                
-                // Stop polling on persistent errors
-                cleanup();
-                setIsLoading(false);
-                setShowDeviceCode(false);
-                setDeviceCodeData(null);
-                
-                if (retryCount > maxRetries && errorMessage.includes('Network request failed')) {
-                    showAlert(
-                        'Connection Error', 
-                        'Unable to connect to Trakt.tv. Please check your internet connection and try again.'
-                    );
-                } else {
-                    showAlert('Error', `Failed to authenticate with Trakt.tv: ${errorMessage}`);
-                }
+                // Silently continue polling for network errors
+                console.log('Network error during polling, will retry...');
+                return; // Continue polling
             }
         };
 
-        // Start polling
-        pollInterval = setInterval(poll, interval * 1000);
+        // Start polling immediately
+        await poll();
         
-        // Stop polling after 15 minutes (increased from 10)
-        timeoutId = setTimeout(() => {
+        // Set up interval for subsequent polls
+        pollingRef.current = setInterval(poll, interval * 1000);
+        
+        // Set timeout to stop polling after device code expires
+        timeoutRef.current = setTimeout(() => {
             cleanup();
             if (isLoading && showDeviceCode) {
                 setIsLoading(false);
@@ -324,12 +316,13 @@ const TraktAuthScreen = () => {
                 setDeviceCodeData(null);
                 showAlert('Timeout', 'Authentication process timed out. Please try again.');
             }
-        }, 900000); // 15 minutes
+        }, deviceCodeData?.expires_in ? deviceCodeData.expires_in * 1000 : 600000); // Use actual expiry time or 10 minutes
     };
 
     const authenticateWithTrakt = async () => {
         try {
             setIsLoading(true);
+            setCodeCopied(false);
             
             if (isHapticsSupported()) {
                 await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
@@ -347,6 +340,7 @@ const TraktAuthScreen = () => {
             
         } catch (error) {
             console.error('Authentication error:', error);
+            cleanup();
             setIsLoading(false);
             setShowDeviceCode(false);
             setDeviceCodeData(null);
@@ -356,9 +350,11 @@ const TraktAuthScreen = () => {
     };
 
     const cancelAuthentication = () => {
+        cleanup();
         setIsLoading(false);
         setShowDeviceCode(false);
         setDeviceCodeData(null);
+        setCodeCopied(false);
         
         if (isHapticsSupported()) {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
@@ -460,9 +456,15 @@ const TraktAuthScreen = () => {
 
                     <View style={styles.codeContainer}>
                         <Text style={styles.codeLabel}>Enter this code:</Text>
-                        <View style={styles.codeDisplay}>
+                        <Pressable 
+                            style={styles.codeDisplay}
+                            onPress={copyCodeToClipboard}
+                        >
                             <Text style={styles.codeText}>{deviceCodeData.user_code}</Text>
-                        </View>
+                            <Text style={styles.copyHint}>
+                                {codeCopied ? '✓ Copied!' : 'Tap to copy'}
+                            </Text>
+                        </Pressable>
                     </View>
 
                     <View style={styles.statusContainer}>
@@ -473,7 +475,7 @@ const TraktAuthScreen = () => {
                     </View>
 
                     <Text style={styles.helpText}>
-                        This process may take a few minutes. The code will expire in {Math.ceil(deviceCodeData.expires_in / 60)} minutes.
+                        Code expires in {Math.ceil(deviceCodeData.expires_in / 60)} minutes
                     </Text>
 
                     <Pressable 
@@ -698,6 +700,12 @@ const styles = StyleSheet.create({
         color: '#535aff',
         letterSpacing: 4,
         textAlign: 'center',
+    },
+    copyHint: {
+        fontSize: 12,
+        color: '#888',
+        marginTop: 8,
+        fontStyle: 'italic',
     },
     statusContainer: {
         flexDirection: 'row',
