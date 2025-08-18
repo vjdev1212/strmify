@@ -25,10 +25,10 @@ const AppResourcesScreen = () => {
     },
     {
       id: 2,
-      title: 'AltStore (IPA)',
+      title: 'App Store (IPA)',
       subtitle: 'iOS sideloading installation',
       icon: '🍎',
-      url: 'https://github.com/vijaydevstudio/strmify-public/releases/download/v1.0.5/Strmify_v1.0.5.ipa',
+      url: 'https://github.com/vijaydevstudio/strmify-public/releases',
     },
     // {
     //   id: 3,
