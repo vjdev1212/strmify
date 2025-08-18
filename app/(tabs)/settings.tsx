@@ -6,7 +6,7 @@ import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics'
 import { isHapticsSupported } from '@/utils/platform';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useColorScheme } from '@/components/useColorScheme';
+import BottomSpacing from '@/components/BottomSpacing';
 
 const SettingsScreen = () => {
   const router = useRouter();
@@ -29,6 +29,10 @@ const SettingsScreen = () => {
   const contactList: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [
     { title: 'Feedback', route: '/settings/contact', icon: 'mail-outline' },
     { title: 'Donate', route: '/settings/donate', icon: 'heart-circle-outline' },
+  ];
+
+    const resourcesList: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [
+    { title: 'Releases', route: '/settings/releases', icon: 'download-outline' },
   ];
 
   // SettingItem Component with iOS dark styling
@@ -171,6 +175,30 @@ const SettingsScreen = () => {
             </View>
           </View>
         )}
+
+        {resourcesList.length > 0 && (
+          <View style={styles.section}>
+            <Text style={[
+              styles.sectionHeader,
+              { color: '#8E8E93' }
+            ]}>
+              RESOURCES
+            </Text>
+            <View style={styles.settingsGroup}>
+              {resourcesList.map((item, index) => (
+                <SettingItem
+                  key={index}
+                  title={item.title}
+                  icon={item.icon}
+                  onPress={() => onSettingsItemPress(item)}
+                  isFirst={index === 0}
+                  isLast={index === resourcesList.length - 1}
+                />
+              ))}
+            </View>
+          </View>
+        )}
+        <BottomSpacing space={50} />
       </ScrollView>
     </SafeAreaView>
   );
