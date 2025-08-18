@@ -60,7 +60,7 @@ const AppResourcesScreen = () => {
       <StatusBar />
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Text style={styles.title}>Releases</Text>
+          <Text style={styles.title}>Downloads</Text>
           <Text style={styles.subtitle}>Choose your preferred platform</Text>
         </View>
 

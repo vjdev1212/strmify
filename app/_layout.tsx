@@ -334,7 +334,7 @@ function RootLayoutNav() {
               }}
             />
             <Stack.Screen
-              name="settings/releases"
+              name="settings/downloads"
               options={{
                 headerShown: true,
                 headerTransparent: true,
