@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Pressable, View, ScrollView } from 'react-native';
+import { StyleSheet, Pressable, View, ScrollView, Platform } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { StatusBar, Text } from '@/components/Themed';
 import { useRouter } from 'expo-router';
@@ -10,18 +10,15 @@ import { useColorScheme } from '@/components/useColorScheme';
 
 const SettingsScreen = () => {
   const router = useRouter();
-  const colorScheme = useColorScheme();
 
   // Get the environment variables and default to false if not set
   const showContact = process.env.EXPO_PUBLIC_SHOW_CONTACT === 'true';
-  const enableStremio = process.env.EXPO_PUBLIC_ENABLE_STREMIO === 'true';
 
   // Build servers list conditionally based on flags
-  const serversList: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [];
-
-  if (enableStremio) {
-    serversList.push({ title: 'Stremio', route: '/settings/stremioserver', icon: 'magnet-outline' });
-  }
+  const integrationList: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [
+    { title: 'Stremio', route: '/settings/stremioserver', icon: 'magnet-outline' },
+    { title: 'Trakt', route: '/settings/trakt', icon: 'checkmark-done-circle-outline' }
+  ];
 
   const General: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [
     { title: 'Addons', route: '/settings/addons', icon: 'extension-puzzle-outline' },
@@ -30,8 +27,8 @@ const SettingsScreen = () => {
   ];
 
   const contactList: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [
-    { title: 'Contact', route: '/settings/contact', icon: 'mail-outline' },
-    { title: 'Support', route: '/settings/donate', icon: 'cash-outline' },
+    { title: 'Feedback', route: '/settings/contact', icon: 'mail-outline' },
+    { title: 'Donate', route: '/settings/donate', icon: 'heart-circle-outline' },
   ];
 
   // SettingItem Component with iOS dark styling
@@ -128,23 +125,23 @@ const SettingsScreen = () => {
         </View>
 
         {/* Servers Section - Only render if at least one server is enabled */}
-        {serversList.length > 0 && (
+        {integrationList.length > 0 && (
           <View style={styles.section}>
             <Text style={[
               styles.sectionHeader,
               { color: '#8E8E93' }
             ]}>
-              SERVER
+              INTEGRATIONS
             </Text>
             <View style={styles.settingsGroup}>
-              {serversList.map((item, index) => (
+              {integrationList.map((item, index) => (
                 <SettingItem
                   key={index}
                   title={item.title}
                   icon={item.icon}
                   onPress={() => onSettingsItemPress(item)}
                   isFirst={index === 0}
-                  isLast={index === serversList.length - 1}
+                  isLast={index === integrationList.length - 1}
                 />
               ))}
             </View>
