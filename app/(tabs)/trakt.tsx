@@ -132,7 +132,7 @@ const TraktScreen = () => {
             if (a.rank !== undefined && b.rank !== undefined) {
                 return a.rank - b.rank;
             }
-            
+
             // If only one has a rank, prioritize the ranked item
             if (a.rank !== undefined && b.rank === undefined) {
                 return -1;
@@ -140,17 +140,17 @@ const TraktScreen = () => {
             if (a.rank === undefined && b.rank !== undefined) {
                 return 1;
             }
-            
+
             // If neither has a rank, fall back to date sorting
             const getDate = (item: any) => {
-                return item.listed_at || 
-                       item.last_watched_at || 
-                       item.last_updated_at || 
-                       item.updated_at || 
-                       item.watched_at ||
-                       '1970-01-01';
+                return item.listed_at ||
+                    item.last_watched_at ||
+                    item.last_updated_at ||
+                    item.updated_at ||
+                    item.watched_at ||
+                    '1970-01-01';
             };
-            
+
             const dateA = new Date(getDate(a)).getTime();
             const dateB = new Date(getDate(b)).getTime();
             return dateB - dateA; // descending order (newest first)
@@ -162,14 +162,14 @@ const TraktScreen = () => {
         return items.sort((a: any, b: any) => {
             // Priority order for date fields: listed_at > last_watched_at > last_updated_at > updated_at
             const getDate = (item: any) => {
-                return item.listed_at || 
-                       item.last_watched_at || 
-                       item.last_updated_at || 
-                       item.updated_at || 
-                       item.watched_at ||
-                       '1970-01-01';
+                return item.listed_at ||
+                    item.last_watched_at ||
+                    item.last_updated_at ||
+                    item.updated_at ||
+                    item.watched_at ||
+                    '1970-01-01';
             };
-            
+
             const dateA = new Date(getDate(a)).getTime();
             const dateB = new Date(getDate(b)).getTime();
             return dateB - dateA; // descending order (newest first)
@@ -179,9 +179,9 @@ const TraktScreen = () => {
     // Helper function to calculate remaining minutes
     const calculateRemainingMinutes = (progress: number, runtime?: number, episodeRuntime?: number[]): number | null => {
         if (progress === undefined || progress === null) return null;
-        
+
         let totalMinutes: number;
-        
+
         if (runtime) {
             // Movie runtime
             totalMinutes = runtime;
@@ -192,10 +192,10 @@ const TraktScreen = () => {
             // Default fallback (typical episode/movie lengths)
             totalMinutes = 45; // Default episode length
         }
-        
+
         const watchedMinutes = (progress / 100) * totalMinutes;
         const remainingMinutes = Math.max(0, totalMinutes - watchedMinutes);
-        
+
         return Math.round(remainingMinutes);
     };
 
@@ -314,7 +314,7 @@ const TraktScreen = () => {
                             progress: item.progress || 0,
                             paused_at: item.paused_at,
                         }));
-                    
+
                     const enhancedMovieProgress = await enhanceWithTMDB(sortedMovieProgress);
                     newMovieSections.push({
                         title: 'Currently Watching',
@@ -442,7 +442,7 @@ const TraktScreen = () => {
                             progress: item.progress || 0,
                             paused_at: item.paused_at,
                         }));
-                    
+
                     const enhancedShowProgress = await enhanceWithTMDB(sortedShowProgress);
                     newShowSections.push({
                         title: 'Currently Watching',
@@ -596,7 +596,7 @@ const TraktScreen = () => {
         const rating = item.tmdb?.vote_average;
         const userRating = item.rating;
         const progress = item.progress;
-        
+
         // For episodes, extract episode info
         const episode = item.episode;
         const episodeTitle = episode?.title;
@@ -605,7 +605,7 @@ const TraktScreen = () => {
 
         // Determine if this is a "Currently Watching" item
         const isCurrentlyWatching = sectionTitle === 'Currently Watching';
-        
+
         // Calculate remaining minutes for progress items
         const remainingMinutes = progress !== undefined ? calculateRemainingMinutes(
             progress,
@@ -614,8 +614,8 @@ const TraktScreen = () => {
         ) : null;
 
         // Use backdrop for currently watching items, poster for others
-        const imageSource = isCurrentlyWatching && backdrop ? 
-            `${TMDB_BACKDROP_BASE}${backdrop}` : 
+        const imageSource = isCurrentlyWatching && backdrop ?
+            `${TMDB_BACKDROP_BASE}${backdrop}` :
             poster ? `${TMDB_IMAGE_BASE}${poster}` : null;
 
         // Use different dimensions based on item type
@@ -663,11 +663,11 @@ const TraktScreen = () => {
                     {/* Progress Bar for Continue Watching items */}
                     {progress !== undefined && progress > 0 && isCurrentlyWatching && (
                         <View style={styles.backdropProgressContainer}>
-                            <View 
+                            <View
                                 style={[
                                     styles.backdropProgressFill,
                                     { width: `${progress}%` }
-                                ]} 
+                                ]}
                             />
                         </View>
                     )}
@@ -696,8 +696,8 @@ const TraktScreen = () => {
                     {/* Show remaining time in title area for continue watching */}
                     {progress !== undefined && progress > 0 && remainingMinutes !== null && remainingMinutes > 0 && (
                         <Text style={styles.progressLabel}>
-                            {remainingMinutes < 60 ? 
-                                `${remainingMinutes} min left` : 
+                            {remainingMinutes < 60 ?
+                                `${remainingMinutes} min left` :
                                 `${Math.floor(remainingMinutes / 60)}h ${remainingMinutes % 60}m left`
                             }
                         </Text>
@@ -813,14 +813,14 @@ const TraktScreen = () => {
 
     const renderTabContent = () => {
         const sections = getCurrentSections();
-        
+
         return (
             <ScrollView
                 style={styles.contentContainer}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
-                    <RefreshControl 
-                        refreshing={refreshing} 
+                    <RefreshControl
+                        refreshing={refreshing}
                         onRefresh={onRefresh}
                         tintColor="#535aff"
                     />
@@ -912,6 +912,8 @@ const styles = StyleSheet.create({
         paddingVertical: 16,
         borderBottomWidth: 1,
         borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+        backgroundColor: 'rgba(255, 255, 255, 0.02)',
+        backdropFilter: 'blur(15px)',
     },
     tab: {
         flexDirection: 'row',
@@ -922,12 +924,20 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderWidth: 1,
         borderColor: 'rgba(255, 255, 255, 0.1)',
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        backdropFilter: 'blur(20px)',
+        shadowColor: 'rgba(0, 0, 0, 0.2)',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 4,
     },
     activeTab: {
-        backgroundColor: '#535aff',
-        borderColor: '#535aff',
+        backgroundColor: 'rgba(83, 90, 255, 0.3)',
+        borderColor: 'rgba(83, 90, 255, 0.5)',
+        backdropFilter: 'blur(25px)',
         shadowColor: '#535aff',
-        shadowOffset: { width: 0, height: 4 },
+        shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
         elevation: 8,
@@ -938,6 +948,14 @@ const styles = StyleSheet.create({
     },
     activeTabText: {
         color: '#fff',
+    },
+    tabIcon: {
+        marginRight: 8,
+        opacity: 0.8,
+    },
+    activeTabIcon: {
+        opacity: 1,
+        color: '#ffffff',
     },
     contentContainer: {
         flex: 1,

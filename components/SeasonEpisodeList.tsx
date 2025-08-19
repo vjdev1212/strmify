@@ -299,15 +299,15 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
 
   const getSeasonButtonStyle = useCallback((season: number) => ({
     ...styles.seasonButton,
-    backgroundColor: season === selectedSeason ? SELECTED_SEASON_COLOR : DARK_SEASON_BUTTON_COLOR,
-    borderWidth: season === selectedSeason ? 0 : StyleSheet.hairlineWidth,
-    borderColor: '#2a2a2a',
+    backgroundColor: season === selectedSeason ? 'rgba(83, 90, 255, 0.3)' : 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 1.5,
+    borderColor: season === selectedSeason ? 'rgba(83, 90, 255, 0.5)' : 'rgba(255, 255, 255, 0.15)',
   }), [selectedSeason]);
 
   const getSeasonTextStyle = useCallback((season: number) => ({
     ...styles.seasonText,
     color: season === selectedSeason ? '#ffffff' : '#cccccc',
-    fontWeight: season === selectedSeason ? '600' : '400',
+    fontWeight: season === selectedSeason ? '500' : '400',
   }), [selectedSeason]);
 
   const renderSeasonItem = useCallback(({ item }: { item: number }) => (
@@ -406,14 +406,14 @@ const styles = StyleSheet.create({
     minWidth: 100,
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowColor: 'rgba(0, 0, 0, 0.3)',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
   seasonText: {
-    fontSize: 15,
+    fontSize: 16,
     letterSpacing: 0.3,
   },
   episodeList: {
