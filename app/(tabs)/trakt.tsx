@@ -11,6 +11,7 @@ import BottomSpacing from '@/components/BottomSpacing';
 const TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
+const TMDB_BACKDROP_BASE = 'https://image.tmdb.org/t/p/w780';
 
 interface TraktItem {
     type: 'movie' | 'show';
@@ -34,9 +35,12 @@ interface TraktItem {
 
 interface TMDBDetails {
     poster_path?: string;
+    backdrop_path?: string;
     vote_average?: number;
     release_date?: string;
     first_air_date?: string;
+    runtime?: number; // Movie runtime in minutes
+    episode_run_time?: number[]; // TV show episode runtime array
 }
 
 interface EnhancedTraktItem extends TraktItem {
@@ -59,20 +63,6 @@ const TraktScreen = () => {
     const [userListSections, setUserListSections] = useState<ListSection[]>([]);
     const [movieSections, setMovieSections] = useState<ListSection[]>([]);
     const [showSections, setShowSections] = useState<ListSection[]>([]);
-    
-    // Track loading states for each tab
-    const [tabLoadingStates, setTabLoadingStates] = useState({
-        movies: false,
-        shows: false,
-        'user-lists': false,
-    });
-    
-    // Track which tabs have been loaded
-    const [tabsLoaded, setTabsLoaded] = useState({
-        movies: false,
-        shows: false,
-        'user-lists': false,
-    });
 
     // Screen dimensions and responsive calculations
     const { width, height } = screenData;
@@ -87,7 +77,15 @@ const TraktScreen = () => {
         return isPortrait ? 7 : 10;                           // desktop
     };
 
+    const getBackdropsPerScreen = () => {
+        if (shortSide < 580) return isPortrait ? 2 : 3;       // mobile
+        if (shortSide < 1024) return isPortrait ? 3 : 5;      // tablet
+        if (shortSide < 1440) return isPortrait ? 5 : 7;      // laptop
+        return isPortrait ? 7 : 9;                            // desktop
+    };
+
     const postersPerScreen = getPostersPerScreen();
+    const backdropsPerScreen = getBackdropsPerScreen();
     const spacing = 12;
     const containerMargin = 15;
 
@@ -97,7 +95,14 @@ const TraktScreen = () => {
         return (width - totalSpacing - totalMargins) / postersPerScreen;
     }, [width, postersPerScreen]);
 
+    const backdropWidth = useMemo(() => {
+        const totalSpacing = spacing * (backdropsPerScreen - 1);
+        const totalMargins = containerMargin * 2; // left + right
+        return (width - totalSpacing - totalMargins) / backdropsPerScreen;
+    }, [width, backdropsPerScreen]);
+
     const posterHeight = posterWidth * 1.5;
+    const backdropHeight = backdropWidth * 0.56; // 16:9 aspect ratio
 
     useEffect(() => {
         const subscription = Dimensions.addEventListener('change', ({ window }) => {
@@ -115,8 +120,8 @@ const TraktScreen = () => {
         const authenticated = await isUserAuthenticated();
         setIsAuthenticated(authenticated);
         if (authenticated) {
-            // Load the default tab (movies) on initial load
-            await loadTabData('movies');
+            // Load all tabs simultaneously
+            await loadAllData();
         }
     };
 
@@ -171,6 +176,29 @@ const TraktScreen = () => {
         });
     };
 
+    // Helper function to calculate remaining minutes
+    const calculateRemainingMinutes = (progress: number, runtime?: number, episodeRuntime?: number[]): number | null => {
+        if (progress === undefined || progress === null) return null;
+        
+        let totalMinutes: number;
+        
+        if (runtime) {
+            // Movie runtime
+            totalMinutes = runtime;
+        } else if (episodeRuntime && episodeRuntime.length > 0) {
+            // Use average episode runtime for TV shows
+            totalMinutes = episodeRuntime.reduce((sum, time) => sum + time, 0) / episodeRuntime.length;
+        } else {
+            // Default fallback (typical episode/movie lengths)
+            totalMinutes = 45; // Default episode length
+        }
+        
+        const watchedMinutes = (progress / 100) * totalMinutes;
+        const remainingMinutes = Math.max(0, totalMinutes - watchedMinutes);
+        
+        return Math.round(remainingMinutes);
+    };
+
     const enhanceWithTMDB = async (items: TraktItem[]): Promise<EnhancedTraktItem[]> => {
         if (!TMDB_API_KEY) {
             console.warn('TMDB API key not found');
@@ -208,49 +236,12 @@ const TraktScreen = () => {
         return enhancedItems;
     };
 
-    // Helper function to load data for a specific tab
-    const loadTabData = async (tab: 'user-lists' | 'movies' | 'shows') => {
-        if (!isAuthenticated) return;
-
-        // Set loading state for this tab
-        setTabLoadingStates(prev => ({ ...prev, [tab]: true }));
-
-        try {
-            switch (tab) {
-                case 'movies':
-                    await loadMovieData();
-                    break;
-                case 'shows':
-                    await loadShowData();
-                    break;
-                case 'user-lists':
-                    await loadUserListData();
-                    break;
-            }
-            
-            // Mark tab as loaded
-            setTabsLoaded(prev => ({ ...prev, [tab]: true }));
-        } catch (error) {
-            console.error(`Error loading ${tab} data:`, error);
-            showAlert('Error', `Failed to load ${tab} data. Please try again.`);
-        } finally {
-            setTabLoadingStates(prev => ({ ...prev, [tab]: false }));
-        }
-    };
-
     const loadAllData = async () => {
         if (!isAuthenticated) return;
 
         try {
             setIsLoading(true);
             await Promise.all([loadUserListData(), loadMovieData(), loadShowData()]);
-            
-            // Mark all tabs as loaded
-            setTabsLoaded({
-                movies: true,
-                shows: true,
-                'user-lists': true,
-            });
         } catch (error) {
             console.error('Error loading Trakt data:', error);
             showAlert('Error', 'Failed to load Trakt data. Please try again.');
@@ -326,7 +317,7 @@ const TraktScreen = () => {
                     
                     const enhancedMovieProgress = await enhanceWithTMDB(sortedMovieProgress);
                     newMovieSections.push({
-                        title: 'Continue Watching Movies',
+                        title: 'Currently Watching',
                         data: enhancedMovieProgress,
                     });
                 }
@@ -454,7 +445,7 @@ const TraktScreen = () => {
                     
                     const enhancedShowProgress = await enhanceWithTMDB(sortedShowProgress);
                     newShowSections.push({
-                        title: 'Continue Watching TV',
+                        title: 'Currently Watching',
                         data: enhancedShowProgress,
                     });
                 }
@@ -588,8 +579,7 @@ const TraktScreen = () => {
 
     const onRefresh = async () => {
         setRefreshing(true);
-        // Refresh only the current tab's data
-        await loadTabData(selectedTab);
+        await loadAllData();
         setRefreshing(false);
 
         if (isHapticsSupported()) {
@@ -597,11 +587,12 @@ const TraktScreen = () => {
         }
     };
 
-    const renderMediaItem = ({ item }: { item: EnhancedTraktItem }) => {
+    const renderMediaItem = ({ item, sectionTitle }: { item: EnhancedTraktItem; sectionTitle?: string }) => {
         const content = item.movie || item.show;
         const title = content?.title || content?.name;
         const year = content?.year;
         const poster = item.tmdb?.poster_path;
+        const backdrop = item.tmdb?.backdrop_path;
         const rating = item.tmdb?.vote_average;
         const userRating = item.rating;
         const progress = item.progress;
@@ -612,12 +603,31 @@ const TraktScreen = () => {
         const seasonNumber = episode?.season;
         const episodeNumber = episode?.number;
 
+        // Determine if this is a "Currently Watching" item
+        const isCurrentlyWatching = sectionTitle === 'Currently Watching';
+        
+        // Calculate remaining minutes for progress items
+        const remainingMinutes = progress !== undefined ? calculateRemainingMinutes(
+            progress,
+            item.tmdb?.runtime,
+            item.tmdb?.episode_run_time
+        ) : null;
+
+        // Use backdrop for currently watching items, poster for others
+        const imageSource = isCurrentlyWatching && backdrop ? 
+            `${TMDB_BACKDROP_BASE}${backdrop}` : 
+            poster ? `${TMDB_IMAGE_BASE}${poster}` : null;
+
+        // Use different dimensions based on item type
+        const itemWidth = isCurrentlyWatching ? backdropWidth : posterWidth;
+        const imageHeight = isCurrentlyWatching ? backdropHeight : posterHeight;
+
         return (
             <Pressable
                 style={({ pressed }) => [
                     {
                         ...styles.mediaItem,
-                        width: posterWidth,
+                        width: itemWidth,
                         marginRight: spacing,
                     },
                     pressed && styles.mediaItemPressed
@@ -625,13 +635,13 @@ const TraktScreen = () => {
                 onPress={() => handleMediaPress(item)}
             >
                 <View style={styles.posterContainer}>
-                    {poster ? (
+                    {imageSource ? (
                         <Image
-                            source={{ uri: `${TMDB_IMAGE_BASE}${poster}` }}
+                            source={{ uri: imageSource }}
                             style={{
                                 ...styles.poster,
-                                width: posterWidth,
-                                height: posterHeight,
+                                width: itemWidth,
+                                height: imageHeight,
                             }}
                             resizeMode="cover"
                         />
@@ -640,8 +650,8 @@ const TraktScreen = () => {
                             styles.poster,
                             styles.placeholderPoster,
                             {
-                                width: posterWidth,
-                                height: posterHeight,
+                                width: itemWidth,
+                                height: imageHeight,
                             }
                         ]}>
                             <Text style={styles.placeholderText}>
@@ -651,17 +661,14 @@ const TraktScreen = () => {
                     )}
 
                     {/* Progress Bar for Continue Watching items */}
-                    {progress !== undefined && progress > 0 && (
-                        <View style={styles.progressContainer}>
-                            <View style={styles.progressBar}>
-                                <View 
-                                    style={[
-                                        styles.progressFill,
-                                        { width: `${progress}%` }
-                                    ]} 
-                                />
-                            </View>
-                            <Text style={styles.progressText}>{Math.round(progress)}%</Text>
+                    {progress !== undefined && progress > 0 && isCurrentlyWatching && (
+                        <View style={styles.backdropProgressContainer}>
+                            <View 
+                                style={[
+                                    styles.backdropProgressFill,
+                                    { width: `${progress}%` }
+                                ]} 
+                            />
                         </View>
                     )}
 
@@ -686,10 +693,13 @@ const TraktScreen = () => {
                     {year && (
                         <Text style={styles.mediaYear}>{year}</Text>
                     )}
-                    {/* Show progress percentage in title area for continue watching */}
-                    {progress !== undefined && progress > 0 && (
+                    {/* Show remaining time in title area for continue watching */}
+                    {progress !== undefined && progress > 0 && remainingMinutes !== null && remainingMinutes > 0 && (
                         <Text style={styles.progressLabel}>
-                            {Math.round(progress)}% watched
+                            {remainingMinutes < 60 ? 
+                                `${remainingMinutes} min left` : 
+                                `${Math.floor(remainingMinutes / 60)}h ${remainingMinutes % 60}m left`
+                            }
                         </Text>
                     )}
                 </View>
@@ -706,7 +716,7 @@ const TraktScreen = () => {
 
             <FlatList
                 data={section.data}
-                renderItem={renderMediaItem}
+                renderItem={({ item }) => renderMediaItem({ item, sectionTitle: section.title })}
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={{
@@ -730,10 +740,6 @@ const TraktScreen = () => {
                     setSelectedTab('movies');
                     if (isHapticsSupported()) {
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
-                    }
-                    // Load data if not already loaded
-                    if (!tabsLoaded.movies) {
-                        await loadTabData('movies');
                     }
                 }}
             >
@@ -761,10 +767,6 @@ const TraktScreen = () => {
                     if (isHapticsSupported()) {
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
                     }
-                    // Load data if not already loaded
-                    if (!tabsLoaded.shows) {
-                        await loadTabData('shows');
-                    }
                 }}
             >
                 <Ionicons
@@ -791,10 +793,6 @@ const TraktScreen = () => {
                     if (isHapticsSupported()) {
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
                     }
-                    // Load data if not already loaded
-                    if (!tabsLoaded['user-lists']) {
-                        await loadTabData('user-lists');
-                    }
                 }}
             >
                 <Ionicons
@@ -814,37 +812,12 @@ const TraktScreen = () => {
     );
 
     const renderTabContent = () => {
-        const currentTabLoading = tabLoadingStates[selectedTab];
-        const currentTabLoaded = tabsLoaded[selectedTab];
-        
-        // Show loading if tab is loading and hasn't been loaded before
-        if (currentTabLoading && !currentTabLoaded) {
-            return (
-                <View style={styles.tabLoadingContainer}>
-                    <ActivityIndicator size="large" color="#535aff" />
-                    <Text style={styles.loadingText}>
-                        Loading {selectedTab === 'user-lists' ? 'lists' : selectedTab}...
-                    </Text>
-                </View>
-            );
-        }
-
-        // Show content
         const sections = getCurrentSections();
         
-        if (!currentTabLoaded && sections.length === 0) {
-            return (
-                <View style={styles.emptyTabContainer}>
-                    <Text style={styles.emptyTabText}>
-                        Tap to load {selectedTab === 'user-lists' ? 'lists' : selectedTab}
-                    </Text>
-                </View>
-            );
-        }
-
         return (
             <ScrollView
                 style={styles.contentContainer}
+                showsVerticalScrollIndicator={false}
                 refreshControl={
                     <RefreshControl 
                         refreshing={refreshing} 
@@ -1091,32 +1064,30 @@ const styles = StyleSheet.create({
         fontSize: 10,
         color: '#fff',
         fontWeight: '600',
-        minWidth: 32,
+        minWidth: 60,
         textAlign: 'right',
+    },
+    backdropProgressContainer: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: 4,
+        backgroundColor: 'rgba(255, 255, 255, 0.3)',
+        borderBottomLeftRadius: 8,
+        borderBottomRightRadius: 8,
+    },
+    backdropProgressFill: {
+        height: '100%',
+        backgroundColor: '#535aff',
+        borderBottomLeftRadius: 8,
+        borderBottomRightRadius: 8,
     },
     progressLabel: {
         fontSize: 11,
-        color: '#535aff',
-        fontWeight: '600',
+        color: '#aaa',
+        fontWeight: '500',
         marginTop: 2,
-    },
-    tabLoadingContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        gap: 20,
-        paddingVertical: 100,
-    },
-    emptyTabContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingVertical: 100,
-    },
-    emptyTabText: {
-        fontSize: 16,
-        color: '#888',
-        textAlign: 'center',
     },
     episodeInfo: {
         fontSize: 12,
