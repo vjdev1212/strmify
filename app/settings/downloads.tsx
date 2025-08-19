@@ -28,7 +28,7 @@ const AppResourcesScreen = () => {
       title: 'App Store (IPA)',
       subtitle: 'iOS sideloading installation',
       icon: '🍎',
-      url: 'https://github.com/vijaydevstudio/strmify-public/releases',
+      url: 'https://github.com/vjdev1212/strmify-public/releases',
     },
     // {
     //   id: 3,
