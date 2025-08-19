@@ -779,7 +779,7 @@ const TraktScreen = () => {
                     styles.tabText,
                     selectedTab === 'shows' && styles.activeTabText
                 ]}>
-                    TV
+                    Series
                 </Text>
             </Pressable>
 
@@ -912,7 +912,6 @@ const styles = StyleSheet.create({
         paddingVertical: 16,
         borderBottomWidth: 1,
         borderBottomColor: 'rgba(255, 255, 255, 0.05)',
-        backgroundColor: 'rgba(255, 255, 255, 0.02)',
         backdropFilter: 'blur(15px)',
     },
     tab: {

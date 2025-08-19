@@ -324,39 +324,57 @@ const TraktAuthScreen = () => {
         }
     };
 
+    const renderUserInfoTable = () => {
+        if (!userInfo) return null;
+
+        const userDetails = [
+            { label: 'Username', value: userInfo.username },
+            { label: 'Display Name', value: userInfo.name || 'Not provided' },
+            { label: 'Profile Status', value: userInfo.private ? 'Private' : 'Public' },
+            { label: 'Membership', value: userInfo.vip ? 'VIP Member' : 'Regular Member' },
+            { label: 'Account Type', value: userInfo.director ? 'Director' : 'Standard User' },
+            ...(userInfo.vip_ep ? [{ label: 'VIP EP', value: 'Active' }] : []),
+        ];
+
+        return (
+            <View style={styles.tableContainer}>
+                <Text style={styles.tableHeader}>Account Information</Text>
+                <View style={styles.table}>
+                    {userDetails.map((detail, index) => (
+                        <View 
+                            key={detail.label} 
+                            style={[
+                                styles.tableRow,
+                                index === userDetails.length - 1 && styles.lastRow
+                            ]}
+                        >
+                            <Text style={styles.tableLabel}>{detail.label}</Text>
+                            <Text style={[
+                                styles.tableValue,
+                                detail.label === 'Membership' && userInfo.vip && styles.vipText,
+                                detail.label === 'VIP EP' && styles.vipText
+                            ]}>
+                                {detail.value}
+                            </Text>
+                        </View>
+                    ))}
+                </View>
+            </View>
+        );
+    };
+
     const renderAuthenticatedView = () => (
         <>
             <View style={styles.section}>
                 <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Trakt.tv Connected</Text>
-                    <Text style={styles.sectionSubtitle}>Your account is successfully connected</Text>
+                    <View style={styles.statusIndicator}>
+                        <View style={styles.connectedDot} />
+                        <Text style={styles.sectionTitle}>Trakt.tv Connected</Text>
+                    </View>
+                    <Text style={styles.sectionSubtitle}>Your account is successfully connected and syncing</Text>
                 </View>
 
-                {userInfo && (
-                    <View style={styles.userInfoContainer}>
-                        <Text style={styles.userInfoLabel}>Username:</Text>
-                        <Text style={styles.userInfoValue}>{userInfo.username}</Text>
-
-                        <Text style={styles.userInfoLabel}>Name:</Text>
-                        <Text style={styles.userInfoValue}>{userInfo.name || 'Not provided'}</Text>
-
-                        <Text style={styles.userInfoLabel}>Profile:</Text>
-                        <Text style={styles.userInfoValue}>{userInfo.private ? 'Private' : 'Public'}</Text>
-
-                        <Text style={styles.userInfoLabel}>VIP Status:</Text>
-                        <Text style={styles.userInfoValue}>{userInfo.vip ? 'VIP Member' : 'Regular Member'}</Text>
-
-                        {userInfo.vip_ep && (
-                            <>
-                                <Text style={styles.userInfoLabel}>VIP EP:</Text>
-                                <Text style={styles.userInfoValue}>Active</Text>
-                            </>
-                        )}
-
-                        <Text style={styles.userInfoLabel}>Account Type:</Text>
-                        <Text style={styles.userInfoValue}>{userInfo.director ? 'Director' : 'Standard User'}</Text>
-                    </View>
-                )}
+                {renderUserInfoTable()}
             </View>
 
             <Pressable
@@ -366,7 +384,7 @@ const TraktAuthScreen = () => {
                 ]}
                 onPress={logout}
             >
-                <Text style={styles.logoutButtonText}>Disconnect Account</Text>
+                <Text style={styles.logoutButtonText}>Disconnect</Text>
             </Pressable>
         </>
     );
@@ -470,18 +488,30 @@ const styles = StyleSheet.create({
         marginBottom: 32,
     },
     sectionHeader: {
-        marginBottom: 16,
+        marginBottom: 24,
+    },
+    statusIndicator: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 4,
+    },
+    connectedDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: '#10b981',
+        marginRight: 12,
     },
     sectionTitle: {
         fontSize: 30,
         fontWeight: '600',
         color: '#fff',
-        marginBottom: 4,
     },
     sectionSubtitle: {
         fontSize: 14,
         color: '#888',
         lineHeight: 20,
+        marginTop: 4,
     },
     featureList: {
         marginTop: 16,
@@ -492,19 +522,50 @@ const styles = StyleSheet.create({
         color: '#aaa',
         lineHeight: 20,
     },
-    userInfoContainer: {
-        marginTop: 16,
-        gap: 12,
+    tableContainer: {
+        marginTop: 8,
     },
-    userInfoLabel: {
-        fontSize: 16,
-        fontWeight: '500',
+    tableHeader: {
+        fontSize: 18,
+        fontWeight: '600',
         color: '#fff',
+        marginBottom: 16,
     },
-    userInfoValue: {
-        fontSize: 14,
-        color: '#ccc',
-        marginBottom: 8,
+    table: {
+        backgroundColor: '#1a1a1a',
+        borderRadius: 12,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: '#333',
+    },
+    tableRow: {
+        flexDirection: 'row',
+        paddingVertical: 16,
+        paddingHorizontal: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: '#2a2a2a',
+        alignItems: 'center',
+    },
+    lastRow: {
+        borderBottomWidth: 0,
+    },
+    tableLabel: {
+        fontSize: 15,
+        fontWeight: '500',
+        color: '#bbb',
+        flex: 1,
+        minWidth: 120,
+    },
+    tableValue: {
+        fontSize: 15,
+        color: '#fff',
+        flex: 2,
+        textAlign: 'right',
+        fontWeight: '400',
+    },
+    vipText: {
+        color: '#fbbf24',
+        fontWeight: '600',
     },
     connectButton: {
         backgroundColor: '#535aff',
