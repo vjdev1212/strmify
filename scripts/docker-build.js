@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const cmd = `docker buildx build \
---tag jarvisnexus/strmify:latest \
+--tag vjdev1212/strmify:latest \
 --platform linux/arm64,linux/amd64,linux/arm/v7 \
 --push .`;
 
