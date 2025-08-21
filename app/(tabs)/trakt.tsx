@@ -296,9 +296,9 @@ const TraktScreen = () => {
         try {
             setIsLoading(true);
             await Promise.all([
-                loadUserListData(), 
-                loadMovieData(), 
-                loadShowData(), 
+                loadUserListData(),
+                loadMovieData(),
+                loadShowData(),
                 loadCalendarData()
             ]);
         } catch (error) {
@@ -311,12 +311,11 @@ const TraktScreen = () => {
 
     const loadCalendarData = async () => {
         try {
-            // Get date range: 30 days before and 30 days after today
             const today = new Date();
             const startDate = new Date(today);
             startDate.setDate(today.getDate());
             const endDate = new Date(today);
-            endDate.setDate(today.getDate() + 60);
+            endDate.setDate(today.getDate() + 30);
 
             const formatDate = (date: Date) => date.toISOString().split('T')[0];
 
@@ -934,7 +933,7 @@ const TraktScreen = () => {
                     <Text style={styles.calendarItemTitle} numberOfLines={2}>
                         {item.title}
                     </Text>
-                    
+
                     {item.type === 'episode' && item.season && item.episode && (
                         <View style={styles.calendarEpisodeInfo}>
                             <Text style={styles.calendarEpisodeText}>
@@ -947,7 +946,7 @@ const TraktScreen = () => {
                             )}
                         </View>
                     )}
-                    
+
                     {item.year && (
                         <Text style={styles.calendarItemYear}>{item.year}</Text>
                     )}
@@ -972,20 +971,27 @@ const TraktScreen = () => {
             <View style={styles.calendarSectionHeader}>
                 <Text style={styles.calendarSectionTitle}>{section.dateLabel}</Text>
                 <Text style={styles.calendarSectionDate}>
-                    {new Date(section.date).toLocaleDateString('en-US', { 
-                        month: 'short', 
-                        day: 'numeric' 
+                    {new Date(section.date).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric'
                     })}
                 </Text>
             </View>
 
             {section.items.length > 0 ? (
-                <View style={styles.calendarItemsContainer}>
-                    {section.items.map((item, index) => (
-                        <View key={`${section.date}-${index}`}>
-                            {renderCalendarItem({ item })}
-                        </View>
-                    ))}
+                <View style={styles.calendarItemsHorizontalContainer}>
+                    <FlatList
+                        data={section.items}
+                        renderItem={renderCalendarItemHorizontal}
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={{
+                            ...styles.horizontalList,
+                            paddingLeft: containerMargin,
+                            paddingRight: containerMargin,
+                        }}
+                        keyExtractor={(item, index) => `${section.date}-${index}`}
+                    />
                 </View>
             ) : (
                 <View style={styles.emptyDayContainer}>
@@ -1019,111 +1025,190 @@ const TraktScreen = () => {
 
     const renderTabs = () => (
         <View style={styles.tabContainer}>
-            <Pressable
-                style={[
-                    styles.tab,
-                    selectedTab === 'movies' && styles.activeTab
-                ]}
-                onPress={async () => {
-                    setSelectedTab('movies');
-                    if (isHapticsSupported()) {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
-                    }
-                }}
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.tabScrollContent}
             >
-                <Ionicons
-                    name='film-outline'
-                    size={16}
-                    color={selectedTab === 'movies' ? '#fff' : '#bbb'}
-                    style={{ marginRight: 6 }}
-                />
-                <Text style={[
-                    styles.tabText,
-                    selectedTab === 'movies' && styles.activeTabText
-                ]}>
-                    Movies
-                </Text>
-            </Pressable>
+                <Pressable
+                    style={[
+                        styles.tab,
+                        selectedTab === 'movies' && styles.activeTab
+                    ]}
+                    onPress={async () => {
+                        setSelectedTab('movies');
+                        if (isHapticsSupported()) {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+                        }
+                    }}
+                >
+                    <Ionicons
+                        name='film-outline'
+                        size={16}
+                        color={selectedTab === 'movies' ? '#fff' : '#bbb'}
+                        style={{ marginRight: 6 }}
+                    />
+                    <Text style={[
+                        styles.tabText,
+                        selectedTab === 'movies' && styles.activeTabText
+                    ]}>
+                        Movies
+                    </Text>
+                </Pressable>
 
-            <Pressable
-                style={[
-                    styles.tab,
-                    selectedTab === 'shows' && styles.activeTab
-                ]}
-                onPress={async () => {
-                    setSelectedTab('shows');
-                    if (isHapticsSupported()) {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
-                    }
-                }}
-            >
-                <Ionicons
-                    name='tv-outline'
-                    size={16}
-                    color={selectedTab === 'shows' ? '#fff' : '#bbb'}
-                    style={{ marginRight: 6 }}
-                />
-                <Text style={[
-                    styles.tabText,
-                    selectedTab === 'shows' && styles.activeTabText
-                ]}>
-                    Series
-                </Text>
-            </Pressable>
+                <Pressable
+                    style={[
+                        styles.tab,
+                        selectedTab === 'shows' && styles.activeTab
+                    ]}
+                    onPress={async () => {
+                        setSelectedTab('shows');
+                        if (isHapticsSupported()) {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+                        }
+                    }}
+                >
+                    <Ionicons
+                        name='tv-outline'
+                        size={16}
+                        color={selectedTab === 'shows' ? '#fff' : '#bbb'}
+                        style={{ marginRight: 6 }}
+                    />
+                    <Text style={[
+                        styles.tabText,
+                        selectedTab === 'shows' && styles.activeTabText
+                    ]}>
+                        Series
+                    </Text>
+                </Pressable>
 
-            <Pressable
-                style={[
-                    styles.tab,
-                    selectedTab === 'user-lists' && styles.activeTab
-                ]}
-                onPress={async () => {
-                    setSelectedTab('user-lists');
-                    if (isHapticsSupported()) {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
-                    }
-                }}
-            >
-                <Ionicons
-                    name='apps'
-                    size={16}
-                    color={selectedTab === 'user-lists' ? '#fff' : '#bbb'}
-                    style={{ marginRight: 6 }}
-                />
-                <Text style={[
-                    styles.tabText,
-                    selectedTab === 'user-lists' && styles.activeTabText
-                ]}>
-                    Lists
-                </Text>
-            </Pressable>
+                <Pressable
+                    style={[
+                        styles.tab,
+                        selectedTab === 'calendar' && styles.activeTab
+                    ]}
+                    onPress={async () => {
+                        setSelectedTab('calendar');
+                        if (isHapticsSupported()) {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+                        }
+                    }}
+                >
+                    <Ionicons
+                        name='calendar-outline'
+                        size={16}
+                        color={selectedTab === 'calendar' ? '#fff' : '#bbb'}
+                        style={{ marginRight: 6 }}
+                    />
+                    <Text style={[
+                        styles.tabText,
+                        selectedTab === 'calendar' && styles.activeTabText
+                    ]}>
+                        Calendar
+                    </Text>
+                </Pressable>
 
-            <Pressable
-                style={[
-                    styles.tab,
-                    selectedTab === 'calendar' && styles.activeTab
-                ]}
-                onPress={async () => {
-                    setSelectedTab('calendar');
-                    if (isHapticsSupported()) {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
-                    }
-                }}
-            >
-                <Ionicons
-                    name='calendar-outline'
-                    size={16}
-                    color={selectedTab === 'calendar' ? '#fff' : '#bbb'}
-                    style={{ marginRight: 6 }}
-                />
-                <Text style={[
-                    styles.tabText,
-                    selectedTab === 'calendar' && styles.activeTabText
-                ]}>
-                    Calendar
-                </Text>
-            </Pressable>
+                <Pressable
+                    style={[
+                        styles.tab,
+                        selectedTab === 'user-lists' && styles.activeTab
+                    ]}
+                    onPress={async () => {
+                        setSelectedTab('user-lists');
+                        if (isHapticsSupported()) {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+                        }
+                    }}
+                >
+                    <Ionicons
+                        name='apps'
+                        size={16}
+                        color={selectedTab === 'user-lists' ? '#fff' : '#bbb'}
+                        style={{ marginRight: 6 }}
+                    />
+                    <Text style={[
+                        styles.tabText,
+                        selectedTab === 'user-lists' && styles.activeTabText
+                    ]}>
+                        Lists
+                    </Text>
+                </Pressable>
+            </ScrollView>
         </View>
     );
+
+    const renderCalendarItemHorizontal = ({ item }: { item: CalendarItem }) => {
+        const imageSource = item.poster_path ? `${TMDB_IMAGE_BASE}${item.poster_path}` : null;
+
+        return (
+            <Pressable
+                style={({ pressed }) => [
+                    {
+                        ...styles.calendarMediaItem,
+                        width: posterWidth,
+                        marginRight: spacing,
+                    },
+                    pressed && styles.mediaItemPressed
+                ]}
+                onPress={() => handleCalendarItemPress(item)}
+            >
+                <View style={styles.posterContainer}>
+                    {imageSource ? (
+                        <Image
+                            source={{ uri: imageSource }}
+                            style={{
+                                ...styles.poster,
+                                width: posterWidth,
+                                height: posterHeight,
+                            }}
+                            resizeMode="cover"
+                        />
+                    ) : (
+                        <View style={[
+                            styles.poster,
+                            styles.placeholderPoster,
+                            {
+                                width: posterWidth,
+                                height: posterHeight,
+                            }
+                        ]}>
+                            <Text style={styles.placeholderText}>
+                                {item.type === 'movie' ? '🎬' : '📺'}
+                            </Text>
+                        </View>
+                    )}
+
+                    {/* Type badge overlay */}
+                    <View style={styles.calendarTypeOverlay}>
+                        <View style={[
+                            styles.calendarTypeBadgeSmall,
+                            item.type === 'movie' ? styles.movieBadge : styles.episodeBadge
+                        ]}>
+                            <Text style={styles.calendarTypeBadgeSmallText}>
+                                {item.type === 'movie' ? 'Movie' : 'EP'}
+                            </Text>
+                        </View>
+                    </View>
+                </View>
+
+                <View style={styles.mediaInfo}>
+                    <Text style={styles.mediaTitle} numberOfLines={2}>
+                        {item.title}
+                    </Text>
+
+                    {item.type === 'episode' && item.season && item.episode && (
+                        <Text style={styles.episodeInfo} numberOfLines={1}>
+                            S{item.season}E{item.episode}
+                        </Text>
+                    )}
+
+                    {item.year && (
+                        <Text style={styles.mediaYear}>{item.year}</Text>
+                    )}
+                </View>
+            </Pressable>
+        );
+    };
 
     const renderTabContent = () => {
         if (selectedTab === 'calendar') {
@@ -1238,9 +1323,11 @@ const styles = StyleSheet.create({
         lineHeight: 24,
         maxWidth: 300,
     },
-    tabContainer: {
-        flexDirection: 'row',
+    tabScrollContent: {
         paddingHorizontal: 16,
+        alignItems: 'center',
+    },
+    tabContainer: {
         paddingVertical: 16,
         borderBottomWidth: 1,
         borderBottomColor: 'rgba(255, 255, 255, 0.05)',
@@ -1320,7 +1407,6 @@ const styles = StyleSheet.create({
         // width and marginRight applied dynamically
     },
     mediaItemPressed: {
-        transform: [{ scale: 0.95 }],
     },
     posterContainer: {
         position: 'relative',
@@ -1448,6 +1534,9 @@ const styles = StyleSheet.create({
     // Calendar-specific styles
     calendarSection: {
         marginBottom: 32,
+        maxWidth: 780,
+        alignSelf: 'center',
+        width: '100%',
         paddingHorizontal: 16,
     },
     calendarSectionHeader: {
@@ -1466,8 +1555,8 @@ const styles = StyleSheet.create({
     },
     calendarSectionDate: {
         fontSize: 14,
-        color: '#535aff',
-        fontWeight: '600',
+        color: '#ccc',
+        fontWeight: '500',
     },
     calendarItemsContainer: {
         gap: 12,
@@ -1481,7 +1570,6 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
     },
     calendarItemPressed: {
-        transform: [{ scale: 0.98 }],
         backgroundColor: 'rgba(255, 255, 255, 0.05)',
     },
     calendarItemImageContainer: {
@@ -1591,8 +1679,33 @@ const styles = StyleSheet.create({
         lineHeight: 22,
         maxWidth: 280,
     },
+    calendarMediaItem: {
+        // width and marginRight applied dynamically
+    },
+
+    calendarItemsHorizontalContainer: {
+        maxWidth: 780, // Max width constraint
+        alignSelf: 'center',
+        width: '100%',
+    },
+
+    calendarTypeOverlay: {
+        position: 'absolute',
+        top: 6,
+        right: 6,
+    },
+
+    calendarTypeBadgeSmall: {
+        paddingHorizontal: 6,
+        paddingVertical: 3,
+        borderRadius: 6,
+    },
+    calendarTypeBadgeSmallText: {
+        fontSize: 10,
+        fontWeight: '600',
+        color: '#fff',
+    },
 });
 
 export default TraktScreen;
 
-    
