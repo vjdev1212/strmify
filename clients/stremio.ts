@@ -71,7 +71,7 @@ function getStremioEpisodeFile(files: any[], season: string, episode: string) {
         return matchingFile;
     }
 
-    const episodeIndex = +episode;
+    const episodeIndex = +episode - 1;
     if (episodeIndex >= 0 && episodeIndex < files.length) {
         return files[episodeIndex];
     }
