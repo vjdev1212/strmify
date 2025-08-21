@@ -53,16 +53,39 @@ interface ListSection {
     data: EnhancedTraktItem[];
 }
 
+interface CalendarItem {
+    type: 'movie' | 'episode';
+    date: string;
+    title: string;
+    show_title?: string;
+    year?: number;
+    season?: number;
+    episode?: number;
+    episode_title?: string;
+    first_aired?: string;
+    tmdb_id?: number;
+    poster_path?: string;
+    backdrop_path?: string;
+    ids?: any;
+}
+
+interface CalendarSection {
+    date: string;
+    dateLabel: string;
+    items: CalendarItem[];
+}
+
 const TraktScreen = () => {
     const router = useRouter();
     const [screenData, setScreenData] = useState(Dimensions.get('window'));
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [refreshing, setRefreshing] = useState<boolean>(false);
-    const [selectedTab, setSelectedTab] = useState<'user-lists' | 'movies' | 'shows'>('movies');
+    const [selectedTab, setSelectedTab] = useState<'user-lists' | 'movies' | 'shows' | 'calendar'>('movies');
     const [userListSections, setUserListSections] = useState<ListSection[]>([]);
     const [movieSections, setMovieSections] = useState<ListSection[]>([]);
     const [showSections, setShowSections] = useState<ListSection[]>([]);
+    const [calendarSections, setCalendarSections] = useState<CalendarSection[]>([]);
 
     // Screen dimensions and responsive calculations
     const { width, height } = screenData;
@@ -103,27 +126,6 @@ const TraktScreen = () => {
 
     const posterHeight = posterWidth * 1.5;
     const backdropHeight = backdropWidth * 0.56; // 16:9 aspect ratio
-
-    useEffect(() => {
-        const subscription = Dimensions.addEventListener('change', ({ window }) => {
-            setScreenData(window);
-        });
-
-        return () => subscription?.remove();
-    }, []);
-
-    useEffect(() => {
-        checkAuthentication();
-    }, []);
-
-    const checkAuthentication = async () => {
-        const authenticated = await isUserAuthenticated();
-        setIsAuthenticated(authenticated);
-        if (authenticated) {
-            // Load all tabs simultaneously
-            await loadAllData();
-        }
-    };
 
     // Helper function to sort items by rank first, then by most recent date
     const sortByRankThenDate = (items: TraktItem[]) => {
@@ -174,6 +176,37 @@ const TraktScreen = () => {
             const dateB = new Date(getDate(b)).getTime();
             return dateB - dateA; // descending order (newest first)
         });
+    };
+
+    // Helper function to format date labels
+    const formatDateLabel = (dateString: string): string => {
+        const date = new Date(dateString);
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(today.getDate() + 1);
+        const yesterday = new Date(today);
+        yesterday.setDate(today.getDate() - 1);
+
+        // Normalize dates to compare only year, month, and day
+        const normalizeDate = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        const normalizedDate = normalizeDate(date);
+        const normalizedToday = normalizeDate(today);
+        const normalizedTomorrow = normalizeDate(tomorrow);
+        const normalizedYesterday = normalizeDate(yesterday);
+
+        if (normalizedDate.getTime() === normalizedToday.getTime()) {
+            return 'Today';
+        } else if (normalizedDate.getTime() === normalizedTomorrow.getTime()) {
+            return 'Tomorrow';
+        } else if (normalizedDate.getTime() === normalizedYesterday.getTime()) {
+            return 'Yesterday';
+        } else {
+            return date.toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
     };
 
     // Helper function to calculate remaining minutes
@@ -236,17 +269,163 @@ const TraktScreen = () => {
         return enhancedItems;
     };
 
+    useEffect(() => {
+        const subscription = Dimensions.addEventListener('change', ({ window }) => {
+            setScreenData(window);
+        });
+
+        return () => subscription?.remove();
+    }, []);
+
+    useEffect(() => {
+        checkAuthentication();
+    }, []);
+
+    const checkAuthentication = async () => {
+        const authenticated = await isUserAuthenticated();
+        setIsAuthenticated(authenticated);
+        if (authenticated) {
+            // Load all tabs simultaneously
+            await loadAllData();
+        }
+    };
+
     const loadAllData = async () => {
         if (!isAuthenticated) return;
 
         try {
             setIsLoading(true);
-            await Promise.all([loadUserListData(), loadMovieData(), loadShowData()]);
+            await Promise.all([
+                loadUserListData(),
+                loadMovieData(),
+                loadShowData(),
+                loadCalendarData()
+            ]);
         } catch (error) {
             console.error('Error loading Trakt data:', error);
             showAlert('Error', 'Failed to load Trakt data. Please try again.');
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const loadCalendarData = async () => {
+        try {
+            const today = new Date();
+            const startDate = new Date(today);
+            startDate.setDate(today.getDate());
+            const endDate = new Date(today);
+            endDate.setDate(today.getDate() + 30);
+
+            const formatDate = (date: Date) => date.toISOString().split('T')[0];
+
+            // Generate all dates in range
+            const allDates: string[] = [];
+            const currentDate = new Date(startDate);
+            while (currentDate <= endDate) {
+                allDates.push(formatDate(currentDate));
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+
+            // Load calendar data for shows and movies
+            const [showCalendar, movieCalendar] = await Promise.all([
+                makeTraktApiCall(`/calendars/my/shows/${formatDate(startDate)}/60`),
+                makeTraktApiCall(`/calendars/my/movies/${formatDate(startDate)}/60`)
+            ]);
+
+            // Process and group calendar items by date
+            const calendarMap = new Map<string, CalendarItem[]>();
+
+            // Initialize all dates with empty arrays
+            allDates.forEach(date => {
+                calendarMap.set(date, []);
+            });
+
+            // Process show episodes
+            showCalendar.forEach((item: any) => {
+                const date = item.first_aired;
+                if (!date || !calendarMap.has(date)) return;
+
+                const calendarItem: CalendarItem = {
+                    type: 'episode',
+                    date,
+                    title: item.show?.title || 'Unknown Show',
+                    show_title: item.show?.title,
+                    year: item.show?.year,
+                    season: item.episode?.season,
+                    episode: item.episode?.number,
+                    episode_title: item.episode?.title,
+                    first_aired: item.first_aired,
+                    tmdb_id: item.show?.ids?.tmdb,
+                    poster_path: '',
+                    backdrop_path: '',
+                    ids: item.show?.ids
+                };
+
+                calendarMap.get(date)!.push(calendarItem);
+            });
+
+            // Process movies
+            movieCalendar.forEach((item: any) => {
+                const date = item.released;
+                if (!date || !calendarMap.has(date)) return;
+
+                const calendarItem: CalendarItem = {
+                    type: 'movie',
+                    date,
+                    title: item.movie?.title || 'Unknown Movie',
+                    year: item.movie?.year,
+                    first_aired: item.released,
+                    tmdb_id: item.movie?.ids?.tmdb,
+                    poster_path: '',
+                    backdrop_path: '',
+                    ids: item.movie?.ids
+                };
+
+                calendarMap.get(date)!.push(calendarItem);
+            });
+
+            // Convert map to sorted sections (all dates, even empty ones)
+            const newCalendarSections: CalendarSection[] = allDates.map(date => ({
+                date,
+                dateLabel: formatDateLabel(date),
+                items: calendarMap.get(date) || []
+            }));
+
+            // Enhance with TMDB data only for sections that have items
+            for (const section of newCalendarSections) {
+                if (section.items.length > 0 && TMDB_API_KEY) {
+                    const enhancedItems = await Promise.all(
+                        section.items.map(async (item) => {
+                            try {
+                                if (item.tmdb_id) {
+                                    const endpoint = item.type === 'movie' ? 'movie' : 'tv';
+                                    const response = await fetch(
+                                        `${TMDB_BASE_URL}/${endpoint}/${item.tmdb_id}?api_key=${TMDB_API_KEY}`
+                                    );
+
+                                    if (response.ok) {
+                                        const tmdbData = await response.json();
+                                        return {
+                                            ...item,
+                                            poster_path: tmdbData.poster_path,
+                                            backdrop_path: tmdbData.backdrop_path
+                                        };
+                                    }
+                                }
+                            } catch (error) {
+                                console.error('TMDB calendar enhancement error:', error);
+                            }
+                            return item;
+                        })
+                    );
+                    section.items = enhancedItems;
+                }
+            }
+
+            setCalendarSections(newCalendarSections);
+        } catch (error) {
+            console.error('Error loading calendar data:', error);
         }
     };
 
@@ -564,6 +743,22 @@ const TraktScreen = () => {
         }
     };
 
+    const handleCalendarItemPress = async (item: CalendarItem) => {
+        if (isHapticsSupported()) {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+        }
+
+        const tmdbId = item.tmdb_id;
+        const type = item.type === 'movie' ? 'movie' : 'series';
+
+        if (tmdbId) {
+            router.push({
+                pathname: `/${type}/details`,
+                params: { moviedbid: tmdbId.toString() },
+            });
+        }
+    };
+
     const getCurrentSections = () => {
         switch (selectedTab) {
             case 'movies':
@@ -707,6 +902,105 @@ const TraktScreen = () => {
         );
     };
 
+    const renderCalendarItem = ({ item }: { item: CalendarItem }) => {
+        const imageSource = item.poster_path ? `${TMDB_IMAGE_BASE}${item.poster_path}` : null;
+
+        return (
+            <Pressable
+                style={({ pressed }) => [
+                    styles.calendarItem,
+                    pressed && styles.calendarItemPressed
+                ]}
+                onPress={() => handleCalendarItemPress(item)}
+            >
+                <View style={styles.calendarItemImageContainer}>
+                    {imageSource ? (
+                        <Image
+                            source={{ uri: imageSource }}
+                            style={styles.calendarItemImage}
+                            resizeMode="cover"
+                        />
+                    ) : (
+                        <View style={[styles.calendarItemImage, styles.calendarItemImagePlaceholder]}>
+                            <Text style={styles.calendarPlaceholderText}>
+                                {item.type === 'movie' ? '🎬' : '📺'}
+                            </Text>
+                        </View>
+                    )}
+                </View>
+
+                <View style={styles.calendarItemInfo}>
+                    <Text style={styles.calendarItemTitle} numberOfLines={2}>
+                        {item.title}
+                    </Text>
+
+                    {item.type === 'episode' && item.season && item.episode && (
+                        <View style={styles.calendarEpisodeInfo}>
+                            <Text style={styles.calendarEpisodeText}>
+                                S{item.season}E{item.episode}
+                            </Text>
+                            {item.episode_title && (
+                                <Text style={styles.calendarEpisodeTitle} numberOfLines={1}>
+                                    {item.episode_title}
+                                </Text>
+                            )}
+                        </View>
+                    )}
+
+                    {item.year && (
+                        <Text style={styles.calendarItemYear}>{item.year}</Text>
+                    )}
+                </View>
+
+                <View style={styles.calendarItemType}>
+                    <View style={[
+                        styles.calendarTypeBadge,
+                        item.type === 'movie' ? styles.movieBadge : styles.episodeBadge
+                    ]}>
+                        <Text style={styles.calendarTypeBadgeText}>
+                            {item.type === 'movie' ? 'Movie' : 'Episode'}
+                        </Text>
+                    </View>
+                </View>
+            </Pressable>
+        );
+    };
+
+    const renderCalendarSection = (section: CalendarSection) => (
+        <View key={section.date} style={styles.calendarSection}>
+            <View style={styles.calendarSectionHeader}>
+                <Text style={styles.calendarSectionTitle}>{section.dateLabel}</Text>
+                <Text style={styles.calendarSectionDate}>
+                    {new Date(section.date).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric'
+                    })}
+                </Text>
+            </View>
+
+            {section.items.length > 0 ? (
+                <View style={styles.calendarItemsHorizontalContainer}>
+                    <FlatList
+                        data={section.items}
+                        renderItem={renderCalendarItemHorizontal}
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={{
+                            ...styles.horizontalList,
+                            paddingLeft: containerMargin,
+                            paddingRight: containerMargin,
+                        }}
+                        keyExtractor={(item, index) => `${section.date}-${index}`}
+                    />
+                </View>
+            ) : (
+                <View style={styles.emptyDayContainer}>
+                    <Text style={styles.emptyDayText}>Nothing on this day</Text>
+                </View>
+            )}
+        </View>
+    );
+
     const renderSection = (section: ListSection) => (
         <View key={section.title} style={styles.section}>
             <View style={styles.sectionHeader}>
@@ -731,87 +1025,210 @@ const TraktScreen = () => {
 
     const renderTabs = () => (
         <View style={styles.tabContainer}>
-            <Pressable
-                style={[
-                    styles.tab,
-                    selectedTab === 'movies' && styles.activeTab
-                ]}
-                onPress={async () => {
-                    setSelectedTab('movies');
-                    if (isHapticsSupported()) {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
-                    }
-                }}
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.tabScrollContent}
             >
-                <Ionicons
-                    name='film-outline'
-                    size={16}
-                    color={selectedTab === 'movies' ? '#fff' : '#bbb'}
-                    style={{ marginRight: 6 }}
-                />
-                <Text style={[
-                    styles.tabText,
-                    selectedTab === 'movies' && styles.activeTabText
-                ]}>
-                    Movies
-                </Text>
-            </Pressable>
+                <Pressable
+                    style={[
+                        styles.tab,
+                        selectedTab === 'movies' && styles.activeTab
+                    ]}
+                    onPress={async () => {
+                        setSelectedTab('movies');
+                        if (isHapticsSupported()) {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+                        }
+                    }}
+                >
+                    <Ionicons
+                        name='film-outline'
+                        size={16}
+                        color={selectedTab === 'movies' ? '#fff' : '#bbb'}
+                        style={{ marginRight: 6 }}
+                    />
+                    <Text style={[
+                        styles.tabText,
+                        selectedTab === 'movies' && styles.activeTabText
+                    ]}>
+                        Movies
+                    </Text>
+                </Pressable>
 
-            <Pressable
-                style={[
-                    styles.tab,
-                    selectedTab === 'shows' && styles.activeTab
-                ]}
-                onPress={async () => {
-                    setSelectedTab('shows');
-                    if (isHapticsSupported()) {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
-                    }
-                }}
-            >
-                <Ionicons
-                    name='tv-outline'
-                    size={16}
-                    color={selectedTab === 'shows' ? '#fff' : '#bbb'}
-                    style={{ marginRight: 6 }}
-                />
-                <Text style={[
-                    styles.tabText,
-                    selectedTab === 'shows' && styles.activeTabText
-                ]}>
-                    Series
-                </Text>
-            </Pressable>
+                <Pressable
+                    style={[
+                        styles.tab,
+                        selectedTab === 'shows' && styles.activeTab
+                    ]}
+                    onPress={async () => {
+                        setSelectedTab('shows');
+                        if (isHapticsSupported()) {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+                        }
+                    }}
+                >
+                    <Ionicons
+                        name='tv-outline'
+                        size={16}
+                        color={selectedTab === 'shows' ? '#fff' : '#bbb'}
+                        style={{ marginRight: 6 }}
+                    />
+                    <Text style={[
+                        styles.tabText,
+                        selectedTab === 'shows' && styles.activeTabText
+                    ]}>
+                        Series
+                    </Text>
+                </Pressable>
 
-            <Pressable
-                style={[
-                    styles.tab,
-                    selectedTab === 'user-lists' && styles.activeTab
-                ]}
-                onPress={async () => {
-                    setSelectedTab('user-lists');
-                    if (isHapticsSupported()) {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
-                    }
-                }}
-            >
-                <Ionicons
-                    name='apps'
-                    size={16}
-                    color={selectedTab === 'user-lists' ? '#fff' : '#bbb'}
-                    style={{ marginRight: 6 }}
-                />
-                <Text style={[
-                    styles.tabText,
-                    selectedTab === 'user-lists' && styles.activeTabText
-                ]}>
-                    Lists
-                </Text>
-            </Pressable>
+                <Pressable
+                    style={[
+                        styles.tab,
+                        selectedTab === 'calendar' && styles.activeTab
+                    ]}
+                    onPress={async () => {
+                        setSelectedTab('calendar');
+                        if (isHapticsSupported()) {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+                        }
+                    }}
+                >
+                    <Ionicons
+                        name='calendar-outline'
+                        size={16}
+                        color={selectedTab === 'calendar' ? '#fff' : '#bbb'}
+                        style={{ marginRight: 6 }}
+                    />
+                    <Text style={[
+                        styles.tabText,
+                        selectedTab === 'calendar' && styles.activeTabText
+                    ]}>
+                        Calendar
+                    </Text>
+                </Pressable>
+
+                <Pressable
+                    style={[
+                        styles.tab,
+                        selectedTab === 'user-lists' && styles.activeTab
+                    ]}
+                    onPress={async () => {
+                        setSelectedTab('user-lists');
+                        if (isHapticsSupported()) {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+                        }
+                    }}
+                >
+                    <Ionicons
+                        name='apps'
+                        size={16}
+                        color={selectedTab === 'user-lists' ? '#fff' : '#bbb'}
+                        style={{ marginRight: 6 }}
+                    />
+                    <Text style={[
+                        styles.tabText,
+                        selectedTab === 'user-lists' && styles.activeTabText
+                    ]}>
+                        Lists
+                    </Text>
+                </Pressable>
+            </ScrollView>
         </View>
     );
 
+    const renderCalendarItemHorizontal = ({ item }: { item: CalendarItem }) => {
+        const imageSource = item.poster_path ? `${TMDB_IMAGE_BASE}${item.poster_path}` : null;
+
+        return (
+            <Pressable
+                style={({ pressed }) => [
+                    {
+                        ...styles.calendarMediaItem,
+                        width: posterWidth,
+                        marginRight: spacing,
+                    },
+                    pressed && styles.mediaItemPressed
+                ]}
+                onPress={() => handleCalendarItemPress(item)}
+            >
+                <View style={styles.posterContainer}>
+                    {imageSource ? (
+                        <Image
+                            source={{ uri: imageSource }}
+                            style={{
+                                ...styles.poster,
+                                width: posterWidth,
+                                height: posterHeight,
+                            }}
+                            resizeMode="cover"
+                        />
+                    ) : (
+                        <View style={[
+                            styles.poster,
+                            styles.placeholderPoster,
+                            {
+                                width: posterWidth,
+                                height: posterHeight,
+                            }
+                        ]}>
+                            <Text style={styles.placeholderText}>
+                                {item.type === 'movie' ? '🎬' : '📺'}
+                            </Text>
+                        </View>
+                    )}
+
+                    {/* Type badge overlay */}
+                    <View style={styles.calendarTypeOverlay}>
+                        <View style={[
+                            styles.calendarTypeBadgeSmall,
+                            item.type === 'movie' ? styles.movieBadge : styles.episodeBadge
+                        ]}>
+                            <Text style={styles.calendarTypeBadgeSmallText}>
+                                {item.type === 'movie' ? 'Movie' : 'EP'}
+                            </Text>
+                        </View>
+                    </View>
+                </View>
+
+                <View style={styles.mediaInfo}>
+                    <Text style={styles.mediaTitle} numberOfLines={2}>
+                        {item.title}
+                    </Text>
+
+                    {item.type === 'episode' && item.season && item.episode && (
+                        <Text style={styles.episodeInfo} numberOfLines={1}>
+                            S{item.season}E{item.episode}
+                        </Text>
+                    )}
+
+                    {item.year && (
+                        <Text style={styles.mediaYear}>{item.year}</Text>
+                    )}
+                </View>
+            </Pressable>
+        );
+    };
+
     const renderTabContent = () => {
+        if (selectedTab === 'calendar') {
+            return (
+                <ScrollView
+                    style={styles.contentContainer}
+                    showsVerticalScrollIndicator={false}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={onRefresh}
+                            tintColor="#535aff"
+                        />
+                    }
+                >
+                    {calendarSections.map(renderCalendarSection)}
+                </ScrollView>
+            );
+        }
+
         const sections = getCurrentSections();
 
         return (
@@ -906,9 +1323,11 @@ const styles = StyleSheet.create({
         lineHeight: 24,
         maxWidth: 300,
     },
-    tabContainer: {
-        flexDirection: 'row',
+    tabScrollContent: {
         paddingHorizontal: 16,
+        alignItems: 'center',
+    },
+    tabContainer: {
         paddingVertical: 16,
         borderBottomWidth: 1,
         borderBottomColor: 'rgba(255, 255, 255, 0.05)',
@@ -988,7 +1407,6 @@ const styles = StyleSheet.create({
         // width and marginRight applied dynamically
     },
     mediaItemPressed: {
-        transform: [{ scale: 0.95 }],
     },
     posterContainer: {
         position: 'relative',
@@ -1113,6 +1531,181 @@ const styles = StyleSheet.create({
         fontWeight: '500',
         marginTop: 2,
     },
+    // Calendar-specific styles
+    calendarSection: {
+        marginBottom: 32,
+        maxWidth: 780,
+        alignSelf: 'center',
+        width: '100%',
+        paddingHorizontal: 16,
+    },
+    calendarSectionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 16,
+        paddingBottom: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(255, 255, 255, 0.08)',
+    },
+    calendarSectionTitle: {
+        fontSize: 20,
+        fontWeight: '500',
+        color: '#fff',
+    },
+    calendarSectionDate: {
+        fontSize: 14,
+        color: '#ccc',
+        fontWeight: '500',
+    },
+    calendarItemsContainer: {
+        gap: 12,
+    },
+    calendarItem: {
+        flexDirection: 'row',
+        backgroundColor: 'rgba(255, 255, 255, 0.03)',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.06)',
+        overflow: 'hidden',
+    },
+    calendarItemPressed: {
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    },
+    calendarItemImageContainer: {
+        width: 60,
+        height: 90,
+    },
+    calendarItemImage: {
+        width: '100%',
+        height: '100%',
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    },
+    calendarItemImagePlaceholder: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    calendarPlaceholderText: {
+        fontSize: 20,
+        opacity: 0.5,
+    },
+    calendarItemInfo: {
+        flex: 1,
+        padding: 12,
+        justifyContent: 'center',
+        gap: 4,
+    },
+    calendarItemTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#fff',
+        lineHeight: 20,
+    },
+    calendarEpisodeInfo: {
+        gap: 2,
+    },
+    calendarEpisodeText: {
+        fontSize: 13,
+        color: '#535aff',
+        fontWeight: '600',
+    },
+    calendarEpisodeTitle: {
+        fontSize: 13,
+        color: '#bbb',
+        fontWeight: '400',
+    },
+    calendarItemYear: {
+        fontSize: 12,
+        color: '#888',
+        fontWeight: '500',
+    },
+    calendarItemType: {
+        justifyContent: 'center',
+        paddingRight: 12,
+    },
+    calendarTypeBadge: {
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 8,
+    },
+    movieBadge: {
+        backgroundColor: 'rgba(255, 193, 7, 0.15)',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 193, 7, 0.3)',
+    },
+    episodeBadge: {
+        backgroundColor: 'rgba(83, 90, 255, 0.15)',
+        borderWidth: 1,
+        borderColor: 'rgba(83, 90, 255, 0.3)',
+    },
+    calendarTypeBadgeText: {
+        fontSize: 11,
+        fontWeight: '600',
+        color: '#fff',
+    },
+    emptyDayContainer: {
+        padding: 20,
+        alignItems: 'center',
+        backgroundColor: 'rgba(255, 255, 255, 0.02)',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.04)',
+        borderStyle: 'dashed',
+    },
+    emptyDayText: {
+        fontSize: 14,
+        color: '#666',
+        fontStyle: 'italic',
+        fontWeight: '500',
+    },
+    emptyCalendarContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 40,
+        gap: 16,
+        marginTop: 60,
+    },
+    emptyCalendarTitle: {
+        fontSize: 20,
+        fontWeight: '600',
+        color: '#fff',
+        textAlign: 'center',
+    },
+    emptyCalendarText: {
+        fontSize: 15,
+        color: '#888',
+        textAlign: 'center',
+        lineHeight: 22,
+        maxWidth: 280,
+    },
+    calendarMediaItem: {
+        // width and marginRight applied dynamically
+    },
+
+    calendarItemsHorizontalContainer: {
+        maxWidth: 780, // Max width constraint
+        alignSelf: 'center',
+        width: '100%',
+    },
+
+    calendarTypeOverlay: {
+        position: 'absolute',
+        top: 6,
+        right: 6,
+    },
+
+    calendarTypeBadgeSmall: {
+        paddingHorizontal: 6,
+        paddingVertical: 3,
+        borderRadius: 6,
+    },
+    calendarTypeBadgeSmallText: {
+        fontSize: 10,
+        fontWeight: '600',
+        color: '#fff',
+    },
 });
 
 export default TraktScreen;
+
