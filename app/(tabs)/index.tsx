@@ -1,38 +1,25 @@
-import { router } from 'expo-router';
-import React, { useState, useMemo, useCallback } from 'react';
+import { router } from 'expo-router'; import React, { useState, useMemo } from 'react';
 import {
+  SafeAreaView,
+  ScrollView,
   StyleSheet,
   View,
   FlatList,
-  TouchableOpacity,
-  VirtualizedList
+  TouchableOpacity
 } from 'react-native';
 import { StatusBar, Text } from '@/components/Themed';
 import PosterList from '@/components/PosterList';
 import BottomSpacing from '@/components/BottomSpacing';
-import AppleTVCarousel from '@/components/PosterCarousel';
+import AppleTVCarousel from '@/components/PosterCarousel'; // Import the new carousel
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { isHapticsSupported } from '@/utils/platform';
-import { CatalogUrl, MovieGneres, TvGneres } from '@/constants/Stremio';
-
-interface ListItem {
-  apiUrl: string;
-  title: string;
-  type: 'movie' | 'series';
-  id: string;
-}
-
-interface FilterItem {
-  key: 'all' | 'movies' | 'series';
-  label: string;
-  icon: string;
-}
+import { CatalogUrl, MovieGneres, TvGneres } from '@/constants/Tmdb';
 
 export default function HomeScreen() {
   const [filter, setFilter] = useState<'all' | 'movies' | 'series'>('all');
 
-  const filters: FilterItem[] = [
+  const filters = [
     { key: 'all', label: 'All', icon: 'apps' },
     { key: 'movies', label: 'Movies', icon: 'film-outline' },
     { key: 'series', label: 'Series', icon: 'tv-outline' }
@@ -40,47 +27,47 @@ export default function HomeScreen() {
 
   // All mode fixed curated list
   const allLists = useMemo(() => [
-    { apiUrl: CatalogUrl.trendingMovies, title: 'Movies - Trending', type: 'movie' as const, id: 'trending-movies' },
-    { apiUrl: CatalogUrl.trendingSeries, title: 'Series - Trending', type: 'series' as const, id: 'trending-series' },
-    { apiUrl: CatalogUrl.popularMovies, title: 'Movies - Popular', type: 'movie' as const, id: 'popular-movies' },
-    { apiUrl: CatalogUrl.popularSeries, title: 'Series - Popular', type: 'series' as const, id: 'popular-series' },
-    { apiUrl: CatalogUrl.topMovies, title: 'Movies - Top Rated', type: 'movie' as const, id: 'top-movies' },
-    { apiUrl: CatalogUrl.topSeries, title: 'Series - Top Rated', type: 'series' as const, id: 'top-series' },
-    { apiUrl: CatalogUrl.nowPlayingMovies, title: 'Movies - Now Playing', type: 'movie' as const, id: 'now-playing-movies' },
-    { apiUrl: CatalogUrl.onTheAirTv, title: 'Series - On the Air', type: 'series' as const, id: 'on-the-air-tv' },
-    { apiUrl: CatalogUrl.upcomingMovies, title: 'Movies - Upcoming', type: 'movie' as const, id: 'upcoming-movies' },
-    { apiUrl: CatalogUrl.airingTodayTv, title: 'Series - Airing Today', type: 'series' as const, id: 'airing-today-tv' },
+    { apiUrl: CatalogUrl.trendingMovies, title: 'Movies - Trending', type: 'movie' },
+    { apiUrl: CatalogUrl.trendingSeries, title: 'Series - Trending', type: 'series' },
+    { apiUrl: CatalogUrl.popularMovies, title: 'Movies - Popular', type: 'movie' },
+    { apiUrl: CatalogUrl.popularSeries, title: 'Series - Popular', type: 'series' },
+    { apiUrl: CatalogUrl.topMovies, title: 'Movies - Top Rated', type: 'movie' },
+    { apiUrl: CatalogUrl.topSeries, title: 'Series - Top Rated', type: 'series' },
+    { apiUrl: CatalogUrl.nowPlayingMovies, title: 'Movies - Now Playing', type: 'movie' },
+    { apiUrl: CatalogUrl.onTheAirTv, title: 'Series - On the Air', type: 'series' },
+    { apiUrl: CatalogUrl.upcomingMovies, title: 'Movies - Upcoming', type: 'movie' },
+    { apiUrl: CatalogUrl.airingTodayTv, title: 'Series - Airing Today', type: 'series' },
   ], []);
 
   const movieLists = useMemo(() => [
-    { apiUrl: CatalogUrl.trendingMovies, title: 'Trending', type: 'movie' as const, id: 'movie-trending' },
-    { apiUrl: CatalogUrl.nowPlayingMovies, title: 'Now Playing', type: 'movie' as const, id: 'movie-now-playing' },
-    { apiUrl: MovieGneres.action, title: 'Action', type: 'movie' as const, id: 'movie-action' },
-    { apiUrl: MovieGneres.adventure, title: 'Adventure', type: 'movie' as const, id: 'movie-adventure' },
-    { apiUrl: MovieGneres.scifi, title: 'Sci-Fi', type: 'movie' as const, id: 'movie-scifi' },
-    { apiUrl: MovieGneres.comedy, title: 'Comedy', type: 'movie' as const, id: 'movie-comedy' },
-    { apiUrl: MovieGneres.family, title: 'Family', type: 'movie' as const, id: 'movie-family' },
-    { apiUrl: MovieGneres.animation, title: 'Animation', type: 'movie' as const, id: 'movie-animation' },
-    { apiUrl: MovieGneres.thriller, title: 'Thriller', type: 'movie' as const, id: 'movie-thriller' },
-    { apiUrl: MovieGneres.crime, title: 'Crime', type: 'movie' as const, id: 'movie-crime' },
-    { apiUrl: MovieGneres.horror, title: 'Horror', type: 'movie' as const, id: 'movie-horror' },
-    { apiUrl: MovieGneres.mystery, title: 'Mystery', type: 'movie' as const, id: 'movie-mystery' },
-    { apiUrl: MovieGneres.fantasy, title: 'Fantasy', type: 'movie' as const, id: 'movie-fantasy' },
-    { apiUrl: MovieGneres.drama, title: 'Drama', type: 'movie' as const, id: 'movie-drama' },
-    { apiUrl: MovieGneres.romance, title: 'Romance', type: 'movie' as const, id: 'movie-romance' },
+    { apiUrl: CatalogUrl.trendingMovies, title: 'Trending', type: 'movie' },
+    { apiUrl: CatalogUrl.nowPlayingMovies, title: 'Now Playing', type: 'movie' },
+    { apiUrl: MovieGneres.action, title: 'Action', type: 'movie' },
+    { apiUrl: MovieGneres.adventure, title: 'Adventure', type: 'movie' },
+    { apiUrl: MovieGneres.scifi, title: 'Sci-Fi', type: 'movie' },
+    { apiUrl: MovieGneres.comedy, title: 'Comedy', type: 'movie' },
+    { apiUrl: MovieGneres.family, title: 'Family', type: 'movie' },
+    { apiUrl: MovieGneres.animation, title: 'Animation', type: 'movie' },
+    { apiUrl: MovieGneres.thriller, title: 'Thriller', type: 'movie' },
+    { apiUrl: MovieGneres.crime, title: 'Crime', type: 'movie' },
+    { apiUrl: MovieGneres.horror, title: 'Horror', type: 'movie' },
+    { apiUrl: MovieGneres.mystery, title: 'Mystery', type: 'movie' },
+    { apiUrl: MovieGneres.fantasy, title: 'Fantasy', type: 'movie' },
+    { apiUrl: MovieGneres.drama, title: 'Drama', type: 'movie' },
+    { apiUrl: MovieGneres.romance, title: 'Romance', type: 'movie' },
   ], []);
 
   const seriesLists = useMemo(() => [
-    { apiUrl: CatalogUrl.trendingSeries, title: 'Trending', type: 'series' as const, id: 'series-trending' },
-    { apiUrl: TvGneres.actionAdventure, title: 'Action & Adventure', type: 'series' as const, id: 'series-action-adventure' },
-    { apiUrl: TvGneres.drama, title: 'Drama', type: 'series' as const, id: 'series-drama' },
-    { apiUrl: TvGneres.crime, title: 'Crime', type: 'series' as const, id: 'series-crime' },
-    { apiUrl: TvGneres.comedy, title: 'Comedy', type: 'series' as const, id: 'series-comedy' },
-    { apiUrl: TvGneres.mystery, title: 'Mystery', type: 'series' as const, id: 'series-mystery' },
-    { apiUrl: TvGneres.scifiFantsy, title: 'Sci-Fi & Fantasy', type: 'series' as const, id: 'series-scifi-fantasy' },
-    { apiUrl: TvGneres.animation, title: 'Animation', type: 'series' as const, id: 'series-animation' },
-    { apiUrl: TvGneres.family, title: 'Family', type: 'series' as const, id: 'series-family' },
-    { apiUrl: TvGneres.kids, title: 'Kids', type: 'series' as const, id: 'series-kids' },
+    { apiUrl: CatalogUrl.trendingSeries, title: 'Trending', type: 'series' },
+    { apiUrl: TvGneres.actionAdventure, title: 'Action & Adventure', type: 'series' },
+    { apiUrl: TvGneres.drama, title: 'Drama', type: 'series' },
+    { apiUrl: TvGneres.crime, title: 'Crime', type: 'series' },
+    { apiUrl: TvGneres.comedy, title: 'Comedy', type: 'series' },
+    { apiUrl: TvGneres.mystery, title: 'Mystery', type: 'series' },
+    { apiUrl: TvGneres.scifiFantsy, title: 'Sci-Fi & Fantasy', type: 'series' },
+    { apiUrl: TvGneres.animation, title: 'Animation', type: 'series' },
+    { apiUrl: TvGneres.family, title: 'Family', type: 'series' },
+    { apiUrl: TvGneres.kids, title: 'Kids', type: 'series' },
   ], []);
 
   // Pick correct list based on filter
@@ -91,120 +78,83 @@ export default function HomeScreen() {
     return [];
   }, [filter, allLists, movieLists, seriesLists]);
 
-  const handleFilterChange = useCallback(async (newFilter: 'all' | 'movies' | 'series') => {
+  const handleFilterChange = async (newFilter: 'all' | 'movies' | 'series') => {
     if (isHapticsSupported()) {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
     }
     setFilter(newFilter);
-  }, []);
+  };
 
-  const handleCarouselItemPress = useCallback((item: any) => {
-    const type = item.type == 'movie' ? 'movie' : 'series';
+  const handleCarouselItemPress = (item: any) => {
+    const type = item.type == 'movie' ? 'movie' : 'series'
     router.push({
       pathname: `/${type}/details`,
       params: { moviedbid: item.moviedbid },
     });
-  }, []);
-
-  // Header component containing carousel and filters
-  const ListHeader = useCallback(() => (
-    <View>
-      {/* Apple TV Carousel */}
-      <AppleTVCarousel
-        filter={filter}
-        onItemPress={handleCarouselItemPress}
-        autoPlay={true}
-        autoPlayInterval={6000}
-      />
-
-      <View style={styles.contentContainer}>
-        {/* Filter buttons */}
-        <View style={styles.filtersContainer}>
-          <FlatList
-            data={filters}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.filterRow}
-            keyExtractor={(item) => item.key}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={[
-                  styles.filterButton,
-                  filter === item.key && styles.filterButtonActive
-                ]}
-                onPress={() => handleFilterChange(item.key)}
-              >
-                <Ionicons
-                  name={item.icon as any}
-                  size={18}
-                  color={filter === item.key ? '#fff' : '#bbb'}
-                  style={{ marginRight: 6 }}
-                />
-                <Text
-                  style={[
-                    styles.filterButtonText,
-                    filter === item.key && styles.filterButtonTextActive
-                  ]}
-                >
-                  {item.label}
-                </Text>
-              </TouchableOpacity>
-            )}
-          />
-        </View>
-      </View>
-    </View>
-  ), [filter, filters, handleCarouselItemPress, handleFilterChange]);
-
-  // Footer component for bottom spacing
-  const ListFooter = useCallback(() => (
-    <BottomSpacing space={50} />
-  ), []);
-
-  // Render item for the main VirtualizedList
-  const renderPosterList = useCallback(({ item }: { item: ListItem }) => (
-    <PosterList
-      key={item.id}
-      apiUrl={item.apiUrl}
-      title={item.title}
-      type={item.type}
-    />
-  ), []);
-
-  // Key extractor for VirtualizedList
-  const keyExtractor = useCallback((item: ListItem, index: number) => `${filter}-${item.id}-${index}`, [filter]);
-
-  // Get item for VirtualizedList
-  const getItem = useCallback((data: ListItem[], index: number) => data[index], []);
-
-  // Get item count for VirtualizedList
-  const getItemCount = useCallback((data: ListItem[]) => data.length, []);
-
-  // Get item layout for better performance
-  const getItemLayout = useCallback((data: ListItem[] | null | undefined, index: number) => ({
-    length: 280, // Approximate height of each PosterList component
-    offset: 280 * index,
-    index,
-  }), []);
+  };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container]}>
       <StatusBar />
-      <VirtualizedList
-        data={activeLists}
-        renderItem={renderPosterList}
-        keyExtractor={keyExtractor}
-        getItem={getItem}
-        getItemCount={getItemCount}
-        ListHeaderComponent={ListHeader}
-        ListFooterComponent={ListFooter}
-        showsVerticalScrollIndicator={false}
-        removeClippedSubviews={true} // Improve performance by removing off-screen items
-        maxToRenderPerBatch={3} // Render fewer items per batch for better performance
-        windowSize={5} // Reduce memory footprint
-        initialNumToRender={3} // Render fewer items initially
-        // getItemLayout={getItemLayout} // Uncomment if PosterList heights are consistent
-      />
+      {/* Scrollable content */}
+      <ScrollView showsVerticalScrollIndicator={false} key={filter}>
+
+        {/* Apple TV Carousel */}
+        <AppleTVCarousel
+          filter={filter}
+          onItemPress={handleCarouselItemPress}
+          autoPlay={true}
+          autoPlayInterval={6000}
+        />
+
+
+        <View style={styles.contentContainer}>
+          {/* Filter buttons - moved to overlay on carousel */}
+          <View style={[styles.filtersContainer]}>
+            <FlatList
+              data={filters}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.filterRow}
+              keyExtractor={(item) => item.key}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.filterButton,
+                    filter === item.key && styles.filterButtonActive
+                  ]}
+                  onPress={() => handleFilterChange(item.key as 'all' | 'movies' | 'series')}
+                >
+                  <Ionicons
+                    name={item.icon as any}
+                    size={18}
+                    color={filter === item.key ? '#fff' : '#bbb'}
+                    style={{ marginRight: 6 }}
+                  />
+                  <Text
+                    style={[
+                      styles.filterButtonText,
+                      filter === item.key && styles.filterButtonTextActive
+                    ]}
+                  >
+                    {item.label}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+
+          {activeLists.map((list, i) => (
+            <PosterList
+              key={`${filter}-${i}`}
+              apiUrl={list.apiUrl}
+              title={list.title}
+              type={list.type as 'movie' | 'series'}
+            />
+          ))}
+        </View>
+        <BottomSpacing space={50} />
+      </ScrollView>
     </View>
   );
 }
