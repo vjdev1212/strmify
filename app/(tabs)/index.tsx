@@ -54,7 +54,6 @@ export default function HomeScreen() {
     { apiUrl: MovieGneres.mystery, title: 'Mystery', type: 'movie' },
     { apiUrl: MovieGneres.fantasy, title: 'Fantasy', type: 'movie' },
     { apiUrl: MovieGneres.drama, title: 'Drama', type: 'movie' },
-    { apiUrl: MovieGneres.romance, title: 'Romance', type: 'movie' },
   ], []);
 
   const seriesLists = useMemo(() => [
