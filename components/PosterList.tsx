@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import {
-  FlatList,
+  VirtualizedList,
   Image,
   StyleSheet,
   Pressable,
@@ -163,6 +163,30 @@ const PosterList = ({
     });
   }, [apiUrl, type]);
 
+  // VirtualizedList required functions
+  const getItem = useCallback((data: PosterItemData[], index: number) => data[index], []);
+  
+  const getItemCount = useCallback((data: PosterItemData[]) => data.length, []);
+  
+  const getItemLayout = useCallback((_: any, index: number) => ({
+    length: posterWidth + spacing,
+    offset: (posterWidth + spacing) * index,
+    index,
+  }), [posterWidth, spacing]);
+
+  const renderItem = useCallback(({ item }: { item: PosterItemData }) => (
+    <PosterItem
+      item={item}
+      posterWidth={posterWidth}
+      posterHeight={posterHeight}
+      type={type}
+      spacing={spacing}
+    />
+  ), [posterWidth, posterHeight, type, spacing]);
+
+  const keyExtractor = useCallback((item: PosterItemData, index: number) => 
+    `${item.moviedbid}-${index}`, []);
+
   if (!data || data.length === 0) return null;
 
   return (
@@ -174,21 +198,20 @@ const PosterList = ({
         </Pressable>
       </RNView>
 
-      <FlatList
+      <VirtualizedList
         data={data}
         horizontal
-        renderItem={({ item }) => (
-          <PosterItem
-            item={item}
-            posterWidth={posterWidth}
-            posterHeight={posterHeight}
-            type={type}
-            spacing={spacing}
-          />
-        )}
-        keyExtractor={(item, index) => `${item.moviedbid}-${index}`}
+        renderItem={renderItem}
+        keyExtractor={keyExtractor}
+        getItem={getItem}
+        getItemCount={getItemCount}
+        getItemLayout={getItemLayout}
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingRight: 4 }}
+        initialNumToRender={postersPerScreen}
+        maxToRenderPerBatch={postersPerScreen}
+        windowSize={3}
+        removeClippedSubviews={true}
       />
     </RNView>
   );
