@@ -14,7 +14,7 @@ import AppleTVCarousel from '@/components/PosterCarousel'; // Import the new car
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { isHapticsSupported } from '@/utils/platform';
-import { CatalogUrl, MovieGneres, TvGneres } from '@/constants/Stremio';
+import { CatalogUrl, MovieGneres, TvGneres } from '@/constants/Tmdb';
 
 export default function HomeScreen() {
   const [filter, setFilter] = useState<'all' | 'movies' | 'series'>('all');

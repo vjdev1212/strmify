@@ -2,7 +2,7 @@ import { SafeAreaView, ScrollView, StyleSheet, Pressable, ActivityIndicator, Ref
 import { StatusBar, Text, View } from '../../components/Themed';
 import { isHapticsSupported, showAlert } from '@/utils/platform';
 import * as Haptics from 'expo-haptics';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { isUserAuthenticated, makeTraktApiCall } from '@/utils/Trakt';
@@ -13,6 +13,11 @@ const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
 const TMDB_BACKDROP_BASE = 'https://image.tmdb.org/t/p/w780';
 
+// Constants for optimization
+const INITIAL_LOAD_LIMIT = 12; // Reduce initial items per section
+const MAX_CONCURRENT_REQUESTS = 3; // Limit concurrent API calls
+const TMDB_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
+
 interface TraktItem {
     type: 'movie' | 'show';
     movie?: any;
@@ -21,16 +26,16 @@ interface TraktItem {
     watched_at?: string;
     rating?: number;
     plays?: number;
-    listed_at?: string; // For watchlist items
+    listed_at?: string;
     updated_at?: string;
     last_watched_at?: string;
     last_updated_at?: string;
-    progress?: number; // Playback progress (0-100)
-    paused_at?: string; // When playback was paused
-    action?: string; // 'start', 'pause', 'scrobble', 'watch'
-    rank?: number; // For ranked lists
-    id?: number; // List item ID
-    notes?: string; // List item notes
+    progress?: number;
+    paused_at?: string;
+    action?: string;
+    rank?: number;
+    id?: number;
+    notes?: string;
 }
 
 interface TMDBDetails {
@@ -39,8 +44,8 @@ interface TMDBDetails {
     vote_average?: number;
     release_date?: string;
     first_air_date?: string;
-    runtime?: number; // Movie runtime in minutes
-    episode_run_time?: number[]; // TV show episode runtime array
+    runtime?: number;
+    episode_run_time?: number[];
 }
 
 interface EnhancedTraktItem extends TraktItem {
@@ -75,9 +80,12 @@ interface CalendarSection {
     items: CalendarItem[];
 }
 
+// Simple TMDB cache implementation
+const tmdbCache = new Map<string, { data: any; timestamp: number }>();
+
 const TraktScreen = () => {
     const router = useRouter();
-    const [screenData, setScreenData] = useState(Dimensions.get('window'));
+    const [screenData, setScreenData] = useState(() => Dimensions.get('window'));
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [refreshing, setRefreshing] = useState<boolean>(false);
@@ -86,240 +94,476 @@ const TraktScreen = () => {
     const [movieSections, setMovieSections] = useState<ListSection[]>([]);
     const [showSections, setShowSections] = useState<ListSection[]>([]);
     const [calendarSections, setCalendarSections] = useState<CalendarSection[]>([]);
+    const [tabDataLoaded, setTabDataLoaded] = useState({
+        'movies': false,
+        'shows': false,
+        'user-lists': false,
+        'calendar': false
+    });
 
-    // Screen dimensions and responsive calculations
-    const { width, height } = screenData;
-    const isPortrait = height > width;
-    const shortSide = Math.min(width, height);
+    // Refs for optimization
+    const loadingRef = useRef<Set<string>>(new Set());
+    const mountedRef = useRef(true);
 
-    // Device category based on shortSide
-    const getPostersPerScreen = () => {
-        if (shortSide < 580) return isPortrait ? 3 : 5;       // mobile
-        if (shortSide < 1024) return isPortrait ? 6 : 8;      // tablet
-        if (shortSide < 1440) return isPortrait ? 7 : 9;      // laptop
-        return isPortrait ? 7 : 10;                           // desktop
-    };
+    // Memoized responsive calculations
+    const dimensions = useMemo(() => {
+        const { width, height } = screenData;
+        const isPortrait = height > width;
+        const shortSide = Math.min(width, height);
 
-    const getBackdropsPerScreen = () => {
-        if (shortSide < 580) return isPortrait ? 2 : 3;       // mobile
-        if (shortSide < 1024) return isPortrait ? 3 : 5;      // tablet
-        if (shortSide < 1440) return isPortrait ? 5 : 7;      // laptop
-        return isPortrait ? 7 : 9;                            // desktop
-    };
+        const getPostersPerScreen = () => {
+            if (shortSide < 580) return isPortrait ? 3 : 5;
+            if (shortSide < 1024) return isPortrait ? 6 : 8;
+            if (shortSide < 1440) return isPortrait ? 7 : 9;
+            return isPortrait ? 7 : 10;
+        };
 
-    const postersPerScreen = getPostersPerScreen();
-    const backdropsPerScreen = getBackdropsPerScreen();
-    const spacing = 12;
-    const containerMargin = 15;
+        const getBackdropsPerScreen = () => {
+            if (shortSide < 580) return isPortrait ? 2 : 3;
+            if (shortSide < 1024) return isPortrait ? 3 : 5;
+            if (shortSide < 1440) return isPortrait ? 5 : 7;
+            return isPortrait ? 7 : 9;
+        };
 
-    const posterWidth = useMemo(() => {
-        const totalSpacing = spacing * (postersPerScreen - 1);
-        const totalMargins = containerMargin * 2; // left + right
-        return (width - totalSpacing - totalMargins) / postersPerScreen;
-    }, [width, postersPerScreen]);
+        const postersPerScreen = getPostersPerScreen();
+        const backdropsPerScreen = getBackdropsPerScreen();
+        const spacing = 12;
+        const containerMargin = 15;
 
-    const backdropWidth = useMemo(() => {
-        const totalSpacing = spacing * (backdropsPerScreen - 1);
-        const totalMargins = containerMargin * 2; // left + right
-        return (width - totalSpacing - totalMargins) / backdropsPerScreen;
-    }, [width, backdropsPerScreen]);
+        const posterWidth = (width - spacing * (postersPerScreen - 1) - containerMargin * 2) / postersPerScreen;
+        const backdropWidth = (width - spacing * (backdropsPerScreen - 1) - containerMargin * 2) / backdropsPerScreen;
+        const posterHeight = posterWidth * 1.5;
+        const backdropHeight = backdropWidth * 0.56;
 
-    const posterHeight = posterWidth * 1.5;
-    const backdropHeight = backdropWidth * 0.56; // 16:9 aspect ratio
+        return {
+            width,
+            height,
+            isPortrait,
+            posterWidth,
+            backdropWidth,
+            posterHeight,
+            backdropHeight,
+            spacing,
+            containerMargin,
+        };
+    }, [screenData]);
 
-    // Helper function to sort items by rank first, then by most recent date
-    const sortByRankThenDate = (items: TraktItem[]) => {
-        return items.sort((a: any, b: any) => {
-            // If both items have ranks, sort by rank (ascending)
-            if (a.rank !== undefined && b.rank !== undefined) {
-                return a.rank - b.rank;
-            }
+    // Optimized TMDB enhancement with caching and batching
+    const enhanceWithTMDB = useCallback(async (items: TraktItem[], limit = INITIAL_LOAD_LIMIT): Promise<EnhancedTraktItem[]> => {
+        if (!TMDB_API_KEY || !items.length) return items;
 
-            // If only one has a rank, prioritize the ranked item
-            if (a.rank !== undefined && b.rank === undefined) {
-                return -1;
-            }
-            if (a.rank === undefined && b.rank !== undefined) {
-                return 1;
-            }
-
-            // If neither has a rank, fall back to date sorting
-            const getDate = (item: any) => {
-                return item.listed_at ||
-                    item.last_watched_at ||
-                    item.last_updated_at ||
-                    item.updated_at ||
-                    item.watched_at ||
-                    '1970-01-01';
-            };
-
-            const dateA = new Date(getDate(a)).getTime();
-            const dateB = new Date(getDate(b)).getTime();
-            return dateB - dateA; // descending order (newest first)
-        });
-    };
-
-    // Helper function to sort items by most recent date (for non-list items)
-    const sortByRecentDate = (items: TraktItem[]) => {
-        return items.sort((a: any, b: any) => {
-            // Priority order for date fields: listed_at > last_watched_at > last_updated_at > updated_at
-            const getDate = (item: any) => {
-                return item.listed_at ||
-                    item.last_watched_at ||
-                    item.last_updated_at ||
-                    item.updated_at ||
-                    item.watched_at ||
-                    '1970-01-01';
-            };
-
-            const dateA = new Date(getDate(a)).getTime();
-            const dateB = new Date(getDate(b)).getTime();
-            return dateB - dateA; // descending order (newest first)
-        });
-    };
-
-    // Helper function to format date labels
-    const formatDateLabel = (dateString: string): string => {
-        const date = new Date(dateString);
-        const today = new Date();
-        const tomorrow = new Date(today);
-        tomorrow.setDate(today.getDate() + 1);
-        const yesterday = new Date(today);
-        yesterday.setDate(today.getDate() - 1);
-
-        // Normalize dates to compare only year, month, and day
-        const normalizeDate = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
-        const normalizedDate = normalizeDate(date);
-        const normalizedToday = normalizeDate(today);
-        const normalizedTomorrow = normalizeDate(tomorrow);
-        const normalizedYesterday = normalizeDate(yesterday);
-
-        if (normalizedDate.getTime() === normalizedToday.getTime()) {
-            return 'Today';
-        } else if (normalizedDate.getTime() === normalizedTomorrow.getTime()) {
-            return 'Tomorrow';
-        } else if (normalizedDate.getTime() === normalizedYesterday.getTime()) {
-            return 'Yesterday';
-        } else {
-            return date.toLocaleDateString('en-US', {
-                weekday: 'long',
-                month: 'short',
-                day: 'numeric'
-            });
-        }
-    };
-
-    // Helper function to calculate remaining minutes
-    const calculateRemainingMinutes = (progress: number, runtime?: number, episodeRuntime?: number[]): number | null => {
-        if (progress === undefined || progress === null) return null;
-
-        let totalMinutes: number;
-
-        if (runtime) {
-            // Movie runtime
-            totalMinutes = runtime;
-        } else if (episodeRuntime && episodeRuntime.length > 0) {
-            // Use average episode runtime for TV shows
-            totalMinutes = episodeRuntime.reduce((sum, time) => sum + time, 0) / episodeRuntime.length;
-        } else {
-            // Default fallback (typical episode/movie lengths)
-            totalMinutes = 45; // Default episode length
+        const itemsToProcess = items.slice(0, limit);
+        const batches: TraktItem[][] = [];
+        
+        // Create batches for concurrent processing
+        for (let i = 0; i < itemsToProcess.length; i += MAX_CONCURRENT_REQUESTS) {
+            batches.push(itemsToProcess.slice(i, i + MAX_CONCURRENT_REQUESTS));
         }
 
-        const watchedMinutes = (progress / 100) * totalMinutes;
-        const remainingMinutes = Math.max(0, totalMinutes - watchedMinutes);
+        const enhancedItems: EnhancedTraktItem[] = [];
 
-        return Math.round(remainingMinutes);
-    };
+        for (const batch of batches) {
+            if (!mountedRef.current) break;
 
-    const enhanceWithTMDB = async (items: TraktItem[]): Promise<EnhancedTraktItem[]> => {
-        if (!TMDB_API_KEY) {
-            console.warn('TMDB API key not found');
-            return items;
-        }
-
-        const enhancedItems = await Promise.all(
-            items.slice(0, 20).map(async (item) => {
+            const batchPromises = batch.map(async (item): Promise<EnhancedTraktItem> => {
                 try {
                     const content = item.movie || item.show;
                     const tmdbId = content?.ids?.tmdb;
+                    
+                    if (!tmdbId) return item;
 
-                    if (tmdbId) {
-                        const endpoint = item.movie ? 'movie' : 'tv';
-                        const response = await fetch(
-                            `${TMDB_BASE_URL}/${endpoint}/${tmdbId}?api_key=${TMDB_API_KEY}`
-                        );
+                    const cacheKey = `${item.movie ? 'movie' : 'tv'}-${tmdbId}`;
+                    const cached = tmdbCache.get(cacheKey);
+                    const now = Date.now();
 
-                        if (response.ok) {
-                            const tmdbData = await response.json();
-                            return {
-                                ...item,
-                                tmdb: tmdbData,
-                                tmdb_id: tmdbId
-                            };
-                        }
+                    // Return cached data if still valid
+                    if (cached && (now - cached.timestamp) < TMDB_CACHE_DURATION) {
+                        return {
+                            ...item,
+                            tmdb: cached.data,
+                            tmdb_id: tmdbId
+                        };
+                    }
+
+                    const endpoint = item.movie ? 'movie' : 'tv';
+                    const response = await fetch(
+                        `${TMDB_BASE_URL}/${endpoint}/${tmdbId}?api_key=${TMDB_API_KEY}`
+                    );
+
+                    if (response.ok) {
+                        const tmdbData = await response.json();
+                        // Cache the result
+                        tmdbCache.set(cacheKey, { data: tmdbData, timestamp: now });
+                        
+                        return {
+                            ...item,
+                            tmdb: tmdbData,
+                            tmdb_id: tmdbId
+                        };
                     }
                 } catch (error) {
                     console.error('TMDB enhancement error:', error);
                 }
                 return item;
-            })
-        );
+            });
+
+            const batchResults = await Promise.all(batchPromises);
+            enhancedItems.push(...batchResults);
+        }
 
         return enhancedItems;
-    };
+    }, []);
 
+    // Optimized sorting functions with memoization
+    const sortByRankThenDate = useCallback((items: TraktItem[]) => {
+        return items.sort((a: any, b: any) => {
+            if (a.rank !== undefined && b.rank !== undefined) {
+                return a.rank - b.rank;
+            }
+            if (a.rank !== undefined && b.rank === undefined) return -1;
+            if (a.rank === undefined && b.rank !== undefined) return 1;
+
+            const getDate = (item: any) => {
+                return item.listed_at || item.last_watched_at || item.last_updated_at || 
+                       item.updated_at || item.watched_at || '1970-01-01';
+            };
+
+            const dateA = new Date(getDate(a)).getTime();
+            const dateB = new Date(getDate(b)).getTime();
+            return dateB - dateA;
+        });
+    }, []);
+
+    const sortByRecentDate = useCallback((items: TraktItem[]) => {
+        return items.sort((a: any, b: any) => {
+            const getDate = (item: any) => {
+                return item.listed_at || item.last_watched_at || item.last_updated_at || 
+                       item.updated_at || item.watched_at || '1970-01-01';
+            };
+
+            const dateA = new Date(getDate(a)).getTime();
+            const dateB = new Date(getDate(b)).getTime();
+            return dateB - dateA;
+        });
+    }, []);
+
+    // Lazy loading for tabs - only load data when tab is selected
+    const loadTabData = useCallback(async (tab: string) => {
+        if (loadingRef.current.has(tab) || tabDataLoaded[tab as keyof typeof tabDataLoaded]) return;
+        
+        loadingRef.current.add(tab);
+        setIsLoading(true);
+
+        try {
+            switch (tab) {
+                case 'movies':
+                    await loadMovieData();
+                    break;
+                case 'shows':
+                    await loadShowData();
+                    break;
+                case 'user-lists':
+                    await loadUserListData();
+                    break;
+                case 'calendar':
+                    await loadCalendarData();
+                    break;
+            }
+            
+            setTabDataLoaded(prev => ({ ...prev, [tab]: true }));
+        } catch (error) {
+            console.error(`Error loading ${tab} data:`, error);
+            showAlert('Error', `Failed to load ${tab} data. Please try again.`);
+        } finally {
+            loadingRef.current.delete(tab);
+            setIsLoading(false);
+        }
+    }, [tabDataLoaded]);
+
+    // Effect for dimension changes
     useEffect(() => {
         const subscription = Dimensions.addEventListener('change', ({ window }) => {
             setScreenData(window);
         });
-
         return () => subscription?.remove();
     }, []);
 
     useEffect(() => {
+        mountedRef.current = true;
         checkAuthentication();
+        return () => {
+            mountedRef.current = false;
+        };
     }, []);
 
-    const checkAuthentication = async () => {
+    // Load initial tab data only
+    useEffect(() => {
+        if (isAuthenticated && !tabDataLoaded[selectedTab]) {
+            loadTabData(selectedTab);
+        }
+    }, [isAuthenticated, selectedTab, loadTabData, tabDataLoaded]);
+
+    const checkAuthentication = useCallback(async () => {
         const authenticated = await isUserAuthenticated();
         setIsAuthenticated(authenticated);
-        if (authenticated) {
-            // Load all tabs simultaneously
-            await loadAllData();
-        }
-    };
+    }, []);
 
-    const loadAllData = async () => {
-        if (!isAuthenticated) return;
+    // Optimized data loading functions
+    const loadMovieData = useCallback(async () => {
+        const newMovieSections: ListSection[] = [];
 
         try {
-            setIsLoading(true);
-            await Promise.all([
-                loadUserListData(),
-                loadMovieData(),
-                loadShowData(),
-                loadCalendarData()
+            // Load most important sections first (Currently Watching, Trending)
+            const prioritySections = await Promise.allSettled([
+                makeTraktApiCall('/sync/playback/movies'),
+                makeTraktApiCall('/movies/trending')
             ]);
-        } catch (error) {
-            console.error('Error loading Trakt data:', error);
-            showAlert('Error', 'Failed to load Trakt data. Please try again.');
-        } finally {
-            setIsLoading(false);
-        }
-    };
 
-    const loadCalendarData = async () => {
+            // Currently Watching
+            if (prioritySections[0].status === 'fulfilled' && prioritySections[0].value?.length > 0) {
+                const movieProgress = prioritySections[0].value
+                    .sort((a: any, b: any) => {
+                        const dateA = new Date(a.paused_at || a.updated_at || '1970-01-01').getTime();
+                        const dateB = new Date(b.paused_at || b.updated_at || '1970-01-01').getTime();
+                        return dateB - dateA;
+                    })
+                    .slice(0, INITIAL_LOAD_LIMIT)
+                    .map((item: any) => ({
+                        ...item,
+                        type: 'movie' as const,
+                        progress: item.progress || 0,
+                        paused_at: item.paused_at,
+                    }));
+
+                const enhancedMovieProgress = await enhanceWithTMDB(movieProgress);
+                newMovieSections.push({
+                    title: 'Currently Watching',
+                    data: enhancedMovieProgress,
+                });
+            }
+
+            // Trending
+            if (prioritySections[1].status === 'fulfilled' && prioritySections[1].value?.length > 0) {
+                const trendingMovies = prioritySections[1].value;
+                const enhancedTrendingMovies = await enhanceWithTMDB(
+                    trendingMovies.slice(0, INITIAL_LOAD_LIMIT).map((item: any) => ({ movie: item.movie, type: 'movie' as const }))
+                );
+                newMovieSections.push({
+                    title: 'Trending',
+                    data: enhancedTrendingMovies,
+                });
+            }
+
+            setMovieSections(newMovieSections);
+
+            // Load remaining sections in background
+            setTimeout(async () => {
+                if (!mountedRef.current) return;
+                
+                const backgroundSections = await Promise.allSettled([
+                    makeTraktApiCall('/recommendations/movies'),
+                    makeTraktApiCall('/movies/popular'),
+                    makeTraktApiCall('/sync/favorites/movies'),
+                    makeTraktApiCall('/sync/watched/movies'),
+                    makeTraktApiCall('/sync/collection/movies')
+                ]);
+
+                const additionalSections: ListSection[] = [];
+
+                // Process background sections
+                for (let i = 0; i < backgroundSections.length; i++) {
+                    const result = backgroundSections[i];
+                    if (result.status === 'fulfilled' && result.value?.length > 0) {
+                        const sectionTitles = ['Recommendations', 'Popular', 'Favorited', 'Watched', 'Collected'];
+                        const items = result.value;
+                        
+                        let processedItems;
+                        if (i >= 2) { // Favorited, Watched, Collected
+                            processedItems = sortByRecentDate(items)
+                                .slice(0, INITIAL_LOAD_LIMIT)
+                                .map((item: any) => ({ ...item, type: 'movie' as const }));
+                        } else {
+                            processedItems = items
+                                .slice(0, INITIAL_LOAD_LIMIT)
+                                .map((item: any) => ({ movie: item, type: 'movie' as const }));
+                        }
+
+                        const enhanced = await enhanceWithTMDB(processedItems);
+                        additionalSections.push({
+                            title: sectionTitles[i],
+                            data: enhanced,
+                        });
+                    }
+                }
+
+                if (mountedRef.current) {
+                    setMovieSections(prev => [...prev, ...additionalSections]);
+                }
+            }, 100);
+
+        } catch (error) {
+            console.error('Error loading movie data:', error);
+        }
+    }, [enhanceWithTMDB, sortByRecentDate]);
+
+    const loadShowData = useCallback(async () => {
+        const newShowSections: ListSection[] = [];
+
+        try {
+            // Load priority sections first
+            const prioritySections = await Promise.allSettled([
+                makeTraktApiCall('/sync/playback/episodes'),
+                makeTraktApiCall('/shows/trending')
+            ]);
+
+            // Currently Watching
+            if (prioritySections[0].status === 'fulfilled' && prioritySections[0].value?.length > 0) {
+                const showProgress = prioritySections[0].value
+                    .sort((a: any, b: any) => {
+                        const dateA = new Date(a.paused_at || a.updated_at || '1970-01-01').getTime();
+                        const dateB = new Date(b.paused_at || b.updated_at || '1970-01-01').getTime();
+                        return dateB - dateA;
+                    })
+                    .slice(0, INITIAL_LOAD_LIMIT)
+                    .map((item: any) => ({
+                        ...item,
+                        show: item.show || (item.episode && item.episode.show),
+                        type: 'show' as const,
+                        progress: item.progress || 0,
+                        paused_at: item.paused_at,
+                    }));
+
+                const enhancedShowProgress = await enhanceWithTMDB(showProgress);
+                newShowSections.push({
+                    title: 'Currently Watching',
+                    data: enhancedShowProgress,
+                });
+            }
+
+            // Trending
+            if (prioritySections[1].status === 'fulfilled' && prioritySections[1].value?.length > 0) {
+                const trendingShows = prioritySections[1].value;
+                const enhancedTrendingShows = await enhanceWithTMDB(
+                    trendingShows.slice(0, INITIAL_LOAD_LIMIT).map((item: any) => ({ show: item.show, type: 'show' as const }))
+                );
+                newShowSections.push({
+                    title: 'Trending',
+                    data: enhancedTrendingShows,
+                });
+            }
+
+            setShowSections(newShowSections);
+
+            // Load remaining sections in background
+            setTimeout(async () => {
+                if (!mountedRef.current) return;
+                
+                const backgroundSections = await Promise.allSettled([
+                    makeTraktApiCall('/recommendations/shows'),
+                    makeTraktApiCall('/shows/popular'),
+                    makeTraktApiCall('/sync/favorites/shows'),
+                    makeTraktApiCall('/sync/watched/shows?extended=noseasons'),
+                    makeTraktApiCall('/sync/collection/shows')
+                ]);
+
+                const additionalSections: ListSection[] = [];
+
+                for (let i = 0; i < backgroundSections.length; i++) {
+                    const result = backgroundSections[i];
+                    if (result.status === 'fulfilled' && result.value?.length > 0) {
+                        const sectionTitles = ['Recommendations', 'Popular', 'Favorited', 'Watched', 'Collected'];
+                        const items = result.value;
+                        
+                        let processedItems;
+                        if (i >= 2) {
+                            processedItems = sortByRecentDate(items)
+                                .slice(0, INITIAL_LOAD_LIMIT)
+                                .map((item: any) => ({ ...item, type: 'show' as const }));
+                        } else {
+                            processedItems = items
+                                .slice(0, INITIAL_LOAD_LIMIT)
+                                .map((item: any) => ({ show: item, type: 'show' as const }));
+                        }
+
+                        const enhanced = await enhanceWithTMDB(processedItems);
+                        additionalSections.push({
+                            title: sectionTitles[i],
+                            data: enhanced,
+                        });
+                    }
+                }
+
+                if (mountedRef.current) {
+                    setShowSections(prev => [...prev, ...additionalSections]);
+                }
+            }, 100);
+
+        } catch (error) {
+            console.error('Error loading show data:', error);
+        }
+    }, [enhanceWithTMDB, sortByRecentDate]);
+
+    const loadUserListData = useCallback(async () => {
+        const newUserListSections: ListSection[] = [];
+
+        try {
+            // Load watchlist first (most important)
+            const watchlistItems = await makeTraktApiCall('/sync/watchlist');
+            if (watchlistItems.length > 0) {
+                const sortedWatchlistItems = sortByRecentDate(watchlistItems);
+                const enhancedWatchlistItems = await enhanceWithTMDB(sortedWatchlistItems.slice(0, INITIAL_LOAD_LIMIT));
+                newUserListSections.push({
+                    title: 'Watchlist',
+                    data: enhancedWatchlistItems,
+                });
+            }
+
+            setUserListSections(newUserListSections);
+
+            // Load user lists in background
+            setTimeout(async () => {
+                if (!mountedRef.current) return;
+                
+                const userLists = await makeTraktApiCall('/users/me/lists');
+                const additionalSections: ListSection[] = [];
+                
+                for (const list of userLists.slice(0, 5)) { // Limit to 5 lists initially
+                    const listItems = await makeTraktApiCall(`/users/me/lists/${list.ids.slug}/items`);
+                    if (listItems.length > 0) {
+                        const sortedListItems = sortByRankThenDate(listItems);
+                        const enhancedListItems = await enhanceWithTMDB(sortedListItems.slice(0, INITIAL_LOAD_LIMIT));
+                        additionalSections.push({
+                            title: list.name,
+                            data: enhancedListItems,
+                        });
+                    }
+                }
+
+                if (mountedRef.current) {
+                    setUserListSections(prev => [...prev, ...additionalSections]);
+                }
+            }, 100);
+
+        } catch (error) {
+            console.error('Error loading user lists:', error);
+        }
+    }, [enhanceWithTMDB, sortByRecentDate, sortByRankThenDate]);
+
+    const loadCalendarData = useCallback(async () => {
         try {
             const today = new Date();
             const startDate = new Date(today);
-            startDate.setDate(today.getDate());
             const endDate = new Date(today);
-            endDate.setDate(today.getDate() + 30);
+            endDate.setDate(today.getDate() + 14); // Reduced to 2 weeks for faster loading
 
             const formatDate = (date: Date) => date.toISOString().split('T')[0];
 
-            // Generate all dates in range
+            // Load only next 14 days for faster initial load
+            const [showCalendar, movieCalendar] = await Promise.allSettled([
+                makeTraktApiCall(`/calendars/my/shows/${formatDate(startDate)}/14`),
+                makeTraktApiCall(`/calendars/my/movies/${formatDate(startDate)}/14`)
+            ]);
+
             const allDates: string[] = [];
             const currentDate = new Date(startDate);
             while (currentDate <= endDate) {
@@ -327,85 +571,121 @@ const TraktScreen = () => {
                 currentDate.setDate(currentDate.getDate() + 1);
             }
 
-            // Load calendar data for shows and movies
-            const [showCalendar, movieCalendar] = await Promise.all([
-                makeTraktApiCall(`/calendars/my/shows/${formatDate(startDate)}/60`),
-                makeTraktApiCall(`/calendars/my/movies/${formatDate(startDate)}/60`)
-            ]);
-
-            // Process and group calendar items by date
             const calendarMap = new Map<string, CalendarItem[]>();
-
-            // Initialize all dates with empty arrays
-            allDates.forEach(date => {
-                calendarMap.set(date, []);
-            });
+            allDates.forEach(date => calendarMap.set(date, []));
 
             // Process show episodes
-            showCalendar.forEach((item: any) => {
-                const date = item.first_aired;
-                if (!date || !calendarMap.has(date)) return;
+            if (showCalendar.status === 'fulfilled' && showCalendar.value) {
+                showCalendar.value.forEach((item: any) => {
+                    const date = item.first_aired;
+                    if (!date || !calendarMap.has(date)) return;
 
-                const calendarItem: CalendarItem = {
-                    type: 'episode',
-                    date,
-                    title: item.show?.title || 'Unknown Show',
-                    show_title: item.show?.title,
-                    year: item.show?.year,
-                    season: item.episode?.season,
-                    episode: item.episode?.number,
-                    episode_title: item.episode?.title,
-                    first_aired: item.first_aired,
-                    tmdb_id: item.show?.ids?.tmdb,
-                    poster_path: '',
-                    backdrop_path: '',
-                    ids: item.show?.ids
-                };
+                    const calendarItem: CalendarItem = {
+                        type: 'episode',
+                        date,
+                        title: item.show?.title || 'Unknown Show',
+                        show_title: item.show?.title,
+                        year: item.show?.year,
+                        season: item.episode?.season,
+                        episode: item.episode?.number,
+                        episode_title: item.episode?.title,
+                        first_aired: item.first_aired,
+                        tmdb_id: item.show?.ids?.tmdb,
+                        poster_path: '',
+                        backdrop_path: '',
+                        ids: item.show?.ids
+                    };
 
-                calendarMap.get(date)!.push(calendarItem);
-            });
+                    calendarMap.get(date)!.push(calendarItem);
+                });
+            }
 
             // Process movies
-            movieCalendar.forEach((item: any) => {
-                const date = item.released;
-                if (!date || !calendarMap.has(date)) return;
+            if (movieCalendar.status === 'fulfilled' && movieCalendar.value) {
+                movieCalendar.value.forEach((item: any) => {
+                    const date = item.released;
+                    if (!date || !calendarMap.has(date)) return;
 
-                const calendarItem: CalendarItem = {
-                    type: 'movie',
-                    date,
-                    title: item.movie?.title || 'Unknown Movie',
-                    year: item.movie?.year,
-                    first_aired: item.released,
-                    tmdb_id: item.movie?.ids?.tmdb,
-                    poster_path: '',
-                    backdrop_path: '',
-                    ids: item.movie?.ids
-                };
+                    const calendarItem: CalendarItem = {
+                        type: 'movie',
+                        date,
+                        title: item.movie?.title || 'Unknown Movie',
+                        year: item.movie?.year,
+                        first_aired: item.released,
+                        tmdb_id: item.movie?.ids?.tmdb,
+                        poster_path: '',
+                        backdrop_path: '',
+                        ids: item.movie?.ids
+                    };
 
-                calendarMap.get(date)!.push(calendarItem);
-            });
+                    calendarMap.get(date)!.push(calendarItem);
+                });
+            }
 
-            // Convert map to sorted sections (all dates, even empty ones)
+            const formatDateLabel = (dateString: string): string => {
+                const date = new Date(dateString);
+                const today = new Date();
+                const tomorrow = new Date(today);
+                tomorrow.setDate(today.getDate() + 1);
+                const yesterday = new Date(today);
+                yesterday.setDate(today.getDate() - 1);
+
+                const normalizeDate = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+                const normalizedDate = normalizeDate(date);
+                const normalizedToday = normalizeDate(today);
+                const normalizedTomorrow = normalizeDate(tomorrow);
+                const normalizedYesterday = normalizeDate(yesterday);
+
+                if (normalizedDate.getTime() === normalizedToday.getTime()) {
+                    return 'Today';
+                } else if (normalizedDate.getTime() === normalizedTomorrow.getTime()) {
+                    return 'Tomorrow';
+                } else if (normalizedDate.getTime() === normalizedYesterday.getTime()) {
+                    return 'Yesterday';
+                } else {
+                    return date.toLocaleDateString('en-US', {
+                        weekday: 'long',
+                        month: 'short',
+                        day: 'numeric'
+                    });
+                }
+            };
+
             const newCalendarSections: CalendarSection[] = allDates.map(date => ({
                 date,
                 dateLabel: formatDateLabel(date),
                 items: calendarMap.get(date) || []
             }));
 
-            // Enhance with TMDB data only for sections that have items
-            for (const section of newCalendarSections) {
-                if (section.items.length > 0 && TMDB_API_KEY) {
+            // Enhance with TMDB data only for sections with items
+            const sectionsWithItems = newCalendarSections.filter(section => section.items.length > 0);
+            
+            for (const section of sectionsWithItems.slice(0, 7)) { // Limit TMDB calls initially
+                if (TMDB_API_KEY) {
                     const enhancedItems = await Promise.all(
-                        section.items.map(async (item) => {
+                        section.items.slice(0, 5).map(async (item) => { // Limit items per day
                             try {
                                 if (item.tmdb_id) {
                                     const endpoint = item.type === 'movie' ? 'movie' : 'tv';
+                                    const cacheKey = `${endpoint}-${item.tmdb_id}`;
+                                    const cached = tmdbCache.get(cacheKey);
+                                    const now = Date.now();
+
+                                    if (cached && (now - cached.timestamp) < TMDB_CACHE_DURATION) {
+                                        return {
+                                            ...item,
+                                            poster_path: cached.data.poster_path,
+                                            backdrop_path: cached.data.backdrop_path
+                                        };
+                                    }
+
                                     const response = await fetch(
                                         `${TMDB_BASE_URL}/${endpoint}/${item.tmdb_id}?api_key=${TMDB_API_KEY}`
                                     );
 
                                     if (response.ok) {
                                         const tmdbData = await response.json();
+                                        tmdbCache.set(cacheKey, { data: tmdbData, timestamp: now });
                                         return {
                                             ...item,
                                             poster_path: tmdbData.poster_path,
@@ -427,306 +707,10 @@ const TraktScreen = () => {
         } catch (error) {
             console.error('Error loading calendar data:', error);
         }
-    };
+    }, []);
 
-    const loadUserListData = async () => {
-        const newUserListSections: ListSection[] = [];
-
-        try {
-            // Load User Created Lists (Both movies and shows)
-            const userLists = await makeTraktApiCall('/users/me/lists');
-            for (const list of userLists) {
-                const listItems = await makeTraktApiCall(`/users/me/lists/${list.ids.slug}/items`);
-                if (listItems.length > 0) {
-                    // Sort list items by rank first, then by recent date
-                    const sortedListItems = sortByRankThenDate(listItems);
-                    const enhancedListItems = await enhanceWithTMDB(sortedListItems.slice(0, 20));
-                    newUserListSections.push({
-                        title: list.name,
-                        data: enhancedListItems,
-                    });
-                }
-            }
-
-            // Load Watchlist as a special user list (combined movies and shows)
-            // Note: Watchlist typically doesn't have ranks, so we'll use date sorting
-            try {
-                const watchlistItems = await makeTraktApiCall('/sync/watchlist');
-                if (watchlistItems.length > 0) {
-                    // Sort watchlist by most recent additions (no ranks in watchlist)
-                    const sortedWatchlistItems = sortByRecentDate(watchlistItems);
-                    const enhancedWatchlistItems = await enhanceWithTMDB(sortedWatchlistItems.slice(0, 20));
-                    newUserListSections.unshift({
-                        title: 'Watchlist',
-                        data: enhancedWatchlistItems,
-                    });
-                }
-            } catch (error) {
-                console.error('Error loading watchlist:', error);
-            }
-
-            setUserListSections(newUserListSections);
-        } catch (error) {
-            console.error('Error loading user lists:', error);
-        }
-    };
-
-    const loadMovieData = async () => {
-        const newMovieSections: ListSection[] = [];
-
-        try {
-            // Movie Playback Progress - Add as first section
-            try {
-                const movieProgress = await makeTraktApiCall('/sync/playback/movies');
-                if (movieProgress.length > 0) {
-                    // Sort by most recent activity (paused_at)
-                    const sortedMovieProgress = movieProgress
-                        .sort((a: any, b: any) => {
-                            const dateA = new Date(a.paused_at || a.updated_at || '1970-01-01').getTime();
-                            const dateB = new Date(b.paused_at || b.updated_at || '1970-01-01').getTime();
-                            return dateB - dateA;
-                        })
-                        .slice(0, 20)
-                        .map((item: any) => ({
-                            ...item,
-                            type: 'movie' as const,
-                            progress: item.progress || 0,
-                            paused_at: item.paused_at,
-                        }));
-
-                    const enhancedMovieProgress = await enhanceWithTMDB(sortedMovieProgress);
-                    newMovieSections.push({
-                        title: 'Currently Watching',
-                        data: enhancedMovieProgress,
-                    });
-                }
-            } catch (error) {
-                console.error('Error loading movie playback progress:', error);
-            }
-
-            // Trending Movies
-            const trendingMovies = await makeTraktApiCall('/movies/trending');
-            const enhancedTrendingMovies = await enhanceWithTMDB(
-                trendingMovies.slice(0, 20).map((item: any) => ({ movie: item.movie, type: 'movie' as const }))
-            );
-            newMovieSections.push({
-                title: 'Trending',
-                data: enhancedTrendingMovies,
-            });
-
-            // Recommendations Movies
-            try {
-                const recommendedMovies = await makeTraktApiCall('/recommendations/movies');
-                if (recommendedMovies.length > 0) {
-                    const enhancedRecommendedMovies = await enhanceWithTMDB(
-                        recommendedMovies.slice(0, 20).map((item: any) => ({ movie: item, type: 'movie' as const }))
-                    );
-                    newMovieSections.push({
-                        title: 'Recommendations',
-                        data: enhancedRecommendedMovies,
-                    });
-                }
-            } catch (error) {
-                console.error('Error loading movie recommendations:', error);
-            }
-
-            // Popular Movies
-            const popularMovies = await makeTraktApiCall('/movies/popular');
-            const enhancedPopularMovies = await enhanceWithTMDB(
-                popularMovies.slice(0, 20).map((item: any) => ({ movie: item, type: 'movie' as const }))
-            );
-            newMovieSections.push({
-                title: 'Popular',
-                data: enhancedPopularMovies,
-            });
-
-            // Favorited Movies
-            try {
-                const favoritedMovies = await makeTraktApiCall('/sync/favorites/movies');
-                if (favoritedMovies.length > 0) {
-                    // Sort favorited movies by recent date
-                    const sortedFavoritedMovies = sortByRecentDate(favoritedMovies)
-                        .slice(0, 20)
-                        .map((item: any) => ({ ...item, type: 'movie' as const }));
-                    const enhancedFavoritedMovies = await enhanceWithTMDB(sortedFavoritedMovies);
-                    newMovieSections.push({
-                        title: 'Favorited',
-                        data: enhancedFavoritedMovies,
-                    });
-                }
-            } catch (error) {
-                console.error('Error loading favorited movies:', error);
-            }
-
-            // Watched Movies
-            const watchedMovies = await makeTraktApiCall('/sync/watched/movies');
-            if (watchedMovies.length > 0) {
-                const sortedWatchedMovies = sortByRecentDate(watchedMovies)
-                    .slice(0, 20)
-                    .map((item: any) => ({
-                        ...item,
-                        type: 'movie' as const,
-                    }));
-                const enhancedWatchedMovies = await enhanceWithTMDB(sortedWatchedMovies);
-                newMovieSections.push({
-                    title: 'Watched',
-                    data: enhancedWatchedMovies,
-                });
-            }
-
-            // Collected Movies
-            try {
-                const collectedMovies = await makeTraktApiCall('/sync/collection/movies');
-                if (collectedMovies.length > 0) {
-                    // Sort collected movies by recent date
-                    const sortedCollectedMovies = sortByRecentDate(collectedMovies)
-                        .slice(0, 20)
-                        .map((item: any) => ({ ...item, type: 'movie' as const }));
-                    const enhancedCollectedMovies = await enhanceWithTMDB(sortedCollectedMovies);
-                    newMovieSections.push({
-                        title: 'Collected',
-                        data: enhancedCollectedMovies,
-                    });
-                }
-            } catch (error) {
-                console.error('Error loading collected movies:', error);
-            }
-
-            setMovieSections(newMovieSections);
-        } catch (error) {
-            console.error('Error loading movie data:', error);
-        }
-    };
-
-    const loadShowData = async () => {
-        const newShowSections: ListSection[] = [];
-
-        try {
-            // TV Show Playback Progress - Add as first section  
-            try {
-                const showProgress = await makeTraktApiCall('/sync/playback/episodes');
-                if (showProgress.length > 0) {
-                    // Sort by most recent activity (paused_at) and map to show format
-                    const sortedShowProgress = showProgress
-                        .sort((a: any, b: any) => {
-                            const dateA = new Date(a.paused_at || a.updated_at || '1970-01-01').getTime();
-                            const dateB = new Date(b.paused_at || b.updated_at || '1970-01-01').getTime();
-                            return dateB - dateA;
-                        })
-                        .slice(0, 20)
-                        .map((item: any) => ({
-                            ...item,
-                            show: item.show || (item.episode && item.episode.show),
-                            type: 'show' as const,
-                            progress: item.progress || 0,
-                            paused_at: item.paused_at,
-                        }));
-
-                    const enhancedShowProgress = await enhanceWithTMDB(sortedShowProgress);
-                    newShowSections.push({
-                        title: 'Currently Watching',
-                        data: enhancedShowProgress,
-                    });
-                }
-            } catch (error) {
-                console.error('Error loading show playback progress:', error);
-            }
-
-            // Trending Shows
-            const trendingShows = await makeTraktApiCall('/shows/trending');
-            const enhancedTrendingShows = await enhanceWithTMDB(
-                trendingShows.slice(0, 20).map((item: any) => ({ show: item.show, type: 'show' as const }))
-            );
-            newShowSections.push({
-                title: 'Trending',
-                data: enhancedTrendingShows,
-            });
-
-            // Recommendations Shows
-            try {
-                const recommendedShows = await makeTraktApiCall('/recommendations/shows');
-                if (recommendedShows.length > 0) {
-                    const enhancedRecommendedShows = await enhanceWithTMDB(
-                        recommendedShows.slice(0, 20).map((item: any) => ({ show: item, type: 'show' as const }))
-                    );
-                    newShowSections.push({
-                        title: 'Recommendations',
-                        data: enhancedRecommendedShows,
-                    });
-                }
-            } catch (error) {
-                console.error('Error loading show recommendations:', error);
-            }
-
-            // Popular Shows
-            const popularShows = await makeTraktApiCall('/shows/popular');
-            const enhancedPopularShows = await enhanceWithTMDB(
-                popularShows.slice(0, 20).map((item: any) => ({ show: item, type: 'show' as const }))
-            );
-            newShowSections.push({
-                title: 'Popular',
-                data: enhancedPopularShows,
-            });
-
-            // Favorited Shows
-            try {
-                const favoritedShows = await makeTraktApiCall('/sync/favorites/shows');
-                if (favoritedShows.length > 0) {
-                    // Sort favorited shows by recent date
-                    const sortedFavoritedShows = sortByRecentDate(favoritedShows)
-                        .slice(0, 20)
-                        .map((item: any) => ({ ...item, type: 'show' as const }));
-                    const enhancedFavoritedShows = await enhanceWithTMDB(sortedFavoritedShows);
-                    newShowSections.push({
-                        title: 'Favorited',
-                        data: enhancedFavoritedShows,
-                    });
-                }
-            } catch (error) {
-                console.error('Error loading favorited shows:', error);
-            }
-
-            // Watched Shows
-            const watchedShows = await makeTraktApiCall('/sync/watched/shows?extended=noseasons');
-            if (watchedShows.length > 0) {
-                const sortedWatchedShows = sortByRecentDate(watchedShows)
-                    .slice(0, 20)
-                    .map((item: any) => ({
-                        ...item,
-                        type: 'show' as const,
-                    }));
-                const enhancedWatchedShows = await enhanceWithTMDB(sortedWatchedShows);
-                newShowSections.push({
-                    title: 'Watched',
-                    data: enhancedWatchedShows,
-                });
-            }
-
-            // Collected Shows
-            try {
-                const collectedShows = await makeTraktApiCall('/sync/collection/shows');
-                if (collectedShows.length > 0) {
-                    // Sort collected shows by recent date
-                    const sortedCollectedShows = sortByRecentDate(collectedShows)
-                        .slice(0, 20)
-                        .map((item: any) => ({ ...item, type: 'show' as const }));
-                    const enhancedCollectedShows = await enhanceWithTMDB(sortedCollectedShows);
-                    newShowSections.push({
-                        title: 'Collected',
-                        data: enhancedCollectedShows,
-                    });
-                }
-            } catch (error) {
-                console.error('Error loading collected shows:', error);
-            }
-
-            setShowSections(newShowSections);
-        } catch (error) {
-            console.error('Error loading show data:', error);
-        }
-    };
-
-    const handleMediaPress = async (item: EnhancedTraktItem) => {
+    // Memoized handlers
+    const handleMediaPress = useCallback(async (item: EnhancedTraktItem) => {
         if (isHapticsSupported()) {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
         }
@@ -741,9 +725,9 @@ const TraktScreen = () => {
                 params: { moviedbid: tmdbId.toString() },
             });
         }
-    };
+    }, [router]);
 
-    const handleCalendarItemPress = async (item: CalendarItem) => {
+    const handleCalendarItemPress = useCallback(async (item: CalendarItem) => {
         if (isHapticsSupported()) {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
         }
@@ -757,65 +741,86 @@ const TraktScreen = () => {
                 params: { moviedbid: tmdbId.toString() },
             });
         }
-    };
+    }, [router]);
 
-    const getCurrentSections = () => {
-        switch (selectedTab) {
-            case 'movies':
-                return movieSections;
-            case 'shows':
-                return showSections;
-            case 'user-lists':
-                return userListSections;
-            default:
-                return [];
+    const handleTabPress = useCallback(async (tab: 'user-lists' | 'movies' | 'shows' | 'calendar') => {
+        setSelectedTab(tab);
+        if (isHapticsSupported()) {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
         }
-    };
+        // Trigger loading if not already loaded
+        if (!tabDataLoaded[tab]) {
+            loadTabData(tab);
+        }
+    }, [tabDataLoaded, loadTabData]);
 
-    const onRefresh = async () => {
+    const onRefresh = useCallback(async () => {
         setRefreshing(true);
-        await loadAllData();
+        // Clear cache on refresh
+        tmdbCache.clear();
+        setTabDataLoaded({
+            'movies': false,
+            'shows': false,
+            'user-lists': false,
+            'calendar': false
+        });
+        await loadTabData(selectedTab);
         setRefreshing(false);
 
         if (isHapticsSupported()) {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
-    };
+    }, [selectedTab, loadTabData]);
 
-    const renderMediaItem = ({ item, sectionTitle }: { item: EnhancedTraktItem; sectionTitle?: string }) => {
+    // Utility function for remaining minutes calculation
+    const calculateRemainingMinutes = useCallback((progress: number, runtime?: number, episodeRuntime?: number[]): number | null => {
+        if (progress === undefined || progress === null) return null;
+
+        let totalMinutes: number;
+
+        if (runtime) {
+            totalMinutes = runtime;
+        } else if (episodeRuntime && episodeRuntime.length > 0) {
+            totalMinutes = episodeRuntime.reduce((sum, time) => sum + time, 0) / episodeRuntime.length;
+        } else {
+            totalMinutes = 45;
+        }
+
+        const watchedMinutes = (progress / 100) * totalMinutes;
+        const remainingMinutes = Math.max(0, totalMinutes - watchedMinutes);
+
+        return Math.round(remainingMinutes);
+    }, []);
+
+    // Memoized render functions
+    const renderMediaItem = useCallback(({ item, sectionTitle }: { item: EnhancedTraktItem; sectionTitle?: string }) => {
         const content = item.movie || item.show;
         const title = content?.title || content?.name;
         const year = content?.year;
         const poster = item.tmdb?.poster_path;
         const backdrop = item.tmdb?.backdrop_path;
-        const rating = item.tmdb?.vote_average;
         const userRating = item.rating;
         const progress = item.progress;
 
-        // For episodes, extract episode info
         const episode = item.episode;
         const episodeTitle = episode?.title;
         const seasonNumber = episode?.season;
         const episodeNumber = episode?.number;
 
-        // Determine if this is a "Currently Watching" item
         const isCurrentlyWatching = sectionTitle === 'Currently Watching';
 
-        // Calculate remaining minutes for progress items
         const remainingMinutes = progress !== undefined ? calculateRemainingMinutes(
             progress,
             item.tmdb?.runtime,
             item.tmdb?.episode_run_time
         ) : null;
 
-        // Use backdrop for currently watching items, poster for others
         const imageSource = isCurrentlyWatching && backdrop ?
             `${TMDB_BACKDROP_BASE}${backdrop}` :
             poster ? `${TMDB_IMAGE_BASE}${poster}` : null;
 
-        // Use different dimensions based on item type
-        const itemWidth = isCurrentlyWatching ? backdropWidth : posterWidth;
-        const imageHeight = isCurrentlyWatching ? backdropHeight : posterHeight;
+        const itemWidth = isCurrentlyWatching ? dimensions.backdropWidth : dimensions.posterWidth;
+        const imageHeight = isCurrentlyWatching ? dimensions.backdropHeight : dimensions.posterHeight;
 
         return (
             <Pressable
@@ -823,7 +828,7 @@ const TraktScreen = () => {
                     {
                         ...styles.mediaItem,
                         width: itemWidth,
-                        marginRight: spacing,
+                        marginRight: dimensions.spacing,
                     },
                     pressed && styles.mediaItemPressed
                 ]}
@@ -855,7 +860,6 @@ const TraktScreen = () => {
                         </View>
                     )}
 
-                    {/* Progress Bar for Continue Watching items */}
                     {progress !== undefined && progress > 0 && isCurrentlyWatching && (
                         <View style={styles.backdropProgressContainer}>
                             <View
@@ -878,7 +882,6 @@ const TraktScreen = () => {
                     <Text style={styles.mediaTitle} numberOfLines={1}>
                         {title}
                     </Text>
-                    {/* Show episode info for TV shows */}
                     {episode && seasonNumber && episodeNumber && (
                         <Text style={styles.episodeInfo} numberOfLines={1}>
                             S{seasonNumber}E{episodeNumber}
@@ -888,7 +891,6 @@ const TraktScreen = () => {
                     {year && (
                         <Text style={styles.mediaYear}>{year}</Text>
                     )}
-                    {/* Show remaining time in title area for continue watching */}
                     {progress !== undefined && progress > 0 && remainingMinutes !== null && remainingMinutes > 0 && (
                         <Text style={styles.progressLabel}>
                             {remainingMinutes < 60 ?
@@ -900,244 +902,9 @@ const TraktScreen = () => {
                 </View>
             </Pressable>
         );
-    };
+    }, [dimensions, handleMediaPress, calculateRemainingMinutes]);
 
-    const renderCalendarItem = ({ item }: { item: CalendarItem }) => {
-        const imageSource = item.poster_path ? `${TMDB_IMAGE_BASE}${item.poster_path}` : null;
-
-        return (
-            <Pressable
-                style={({ pressed }) => [
-                    styles.calendarItem,
-                    pressed && styles.calendarItemPressed
-                ]}
-                onPress={() => handleCalendarItemPress(item)}
-            >
-                <View style={styles.calendarItemImageContainer}>
-                    {imageSource ? (
-                        <Image
-                            source={{ uri: imageSource }}
-                            style={styles.calendarItemImage}
-                            resizeMode="cover"
-                        />
-                    ) : (
-                        <View style={[styles.calendarItemImage, styles.calendarItemImagePlaceholder]}>
-                            <Text style={styles.calendarPlaceholderText}>
-                                {item.type === 'movie' ? '🎬' : '📺'}
-                            </Text>
-                        </View>
-                    )}
-                </View>
-
-                <View style={styles.calendarItemInfo}>
-                    <Text style={styles.calendarItemTitle} numberOfLines={2}>
-                        {item.title}
-                    </Text>
-
-                    {item.type === 'episode' && item.season && item.episode && (
-                        <View style={styles.calendarEpisodeInfo}>
-                            <Text style={styles.calendarEpisodeText}>
-                                S{item.season}E{item.episode}
-                            </Text>
-                            {item.episode_title && (
-                                <Text style={styles.calendarEpisodeTitle} numberOfLines={1}>
-                                    {item.episode_title}
-                                </Text>
-                            )}
-                        </View>
-                    )}
-
-                    {item.year && (
-                        <Text style={styles.calendarItemYear}>{item.year}</Text>
-                    )}
-                </View>
-
-                <View style={styles.calendarItemType}>
-                    <View style={[
-                        styles.calendarTypeBadge,
-                        item.type === 'movie' ? styles.movieBadge : styles.episodeBadge
-                    ]}>
-                        <Text style={styles.calendarTypeBadgeText}>
-                            {item.type === 'movie' ? 'Movie' : 'Episode'}
-                        </Text>
-                    </View>
-                </View>
-            </Pressable>
-        );
-    };
-
-    const renderCalendarSection = (section: CalendarSection) => (
-        <View key={section.date} style={styles.calendarSection}>
-            <View style={styles.calendarSectionHeader}>
-                <Text style={styles.calendarSectionTitle}>{section.dateLabel}</Text>
-                <Text style={styles.calendarSectionDate}>
-                    {new Date(section.date).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric'
-                    })}
-                </Text>
-            </View>
-
-            {section.items.length > 0 ? (
-                <View style={styles.calendarItemsHorizontalContainer}>
-                    <FlatList
-                        data={section.items}
-                        renderItem={renderCalendarItemHorizontal}
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={{
-                            ...styles.horizontalList,
-                            paddingLeft: containerMargin,
-                            paddingRight: containerMargin,
-                        }}
-                        keyExtractor={(item, index) => `${section.date}-${index}`}
-                    />
-                </View>
-            ) : (
-                <View style={styles.emptyDayContainer}>
-                    <Text style={styles.emptyDayText}>Nothing on this day</Text>
-                </View>
-            )}
-        </View>
-    );
-
-    const renderSection = (section: ListSection) => (
-        <View key={section.title} style={styles.section}>
-            <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>{section.title}</Text>
-                <Text style={styles.sectionCount}>{section.data.length} items</Text>
-            </View>
-
-            <FlatList
-                data={section.data}
-                renderItem={({ item }) => renderMediaItem({ item, sectionTitle: section.title })}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{
-                    ...styles.horizontalList,
-                    paddingLeft: containerMargin,
-                    paddingRight: containerMargin,
-                }}
-                keyExtractor={(item, index) => `${section.title}-${index}`}
-            />
-        </View>
-    );
-
-    const renderTabs = () => (
-        <View style={styles.tabContainer}>
-            <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.tabScrollContent}
-            >
-                <Pressable
-                    style={[
-                        styles.tab,
-                        selectedTab === 'movies' && styles.activeTab
-                    ]}
-                    onPress={async () => {
-                        setSelectedTab('movies');
-                        if (isHapticsSupported()) {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
-                        }
-                    }}
-                >
-                    <Ionicons
-                        name='film-outline'
-                        size={16}
-                        color={selectedTab === 'movies' ? '#fff' : '#bbb'}
-                        style={{ marginRight: 6 }}
-                    />
-                    <Text style={[
-                        styles.tabText,
-                        selectedTab === 'movies' && styles.activeTabText
-                    ]}>
-                        Movies
-                    </Text>
-                </Pressable>
-
-                <Pressable
-                    style={[
-                        styles.tab,
-                        selectedTab === 'shows' && styles.activeTab
-                    ]}
-                    onPress={async () => {
-                        setSelectedTab('shows');
-                        if (isHapticsSupported()) {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
-                        }
-                    }}
-                >
-                    <Ionicons
-                        name='tv-outline'
-                        size={16}
-                        color={selectedTab === 'shows' ? '#fff' : '#bbb'}
-                        style={{ marginRight: 6 }}
-                    />
-                    <Text style={[
-                        styles.tabText,
-                        selectedTab === 'shows' && styles.activeTabText
-                    ]}>
-                        Series
-                    </Text>
-                </Pressable>
-
-                <Pressable
-                    style={[
-                        styles.tab,
-                        selectedTab === 'calendar' && styles.activeTab
-                    ]}
-                    onPress={async () => {
-                        setSelectedTab('calendar');
-                        if (isHapticsSupported()) {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
-                        }
-                    }}
-                >
-                    <Ionicons
-                        name='calendar-outline'
-                        size={16}
-                        color={selectedTab === 'calendar' ? '#fff' : '#bbb'}
-                        style={{ marginRight: 6 }}
-                    />
-                    <Text style={[
-                        styles.tabText,
-                        selectedTab === 'calendar' && styles.activeTabText
-                    ]}>
-                        Calendar
-                    </Text>
-                </Pressable>
-
-                <Pressable
-                    style={[
-                        styles.tab,
-                        selectedTab === 'user-lists' && styles.activeTab
-                    ]}
-                    onPress={async () => {
-                        setSelectedTab('user-lists');
-                        if (isHapticsSupported()) {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
-                        }
-                    }}
-                >
-                    <Ionicons
-                        name='apps'
-                        size={16}
-                        color={selectedTab === 'user-lists' ? '#fff' : '#bbb'}
-                        style={{ marginRight: 6 }}
-                    />
-                    <Text style={[
-                        styles.tabText,
-                        selectedTab === 'user-lists' && styles.activeTabText
-                    ]}>
-                        Lists
-                    </Text>
-                </Pressable>
-            </ScrollView>
-        </View>
-    );
-
-    const renderCalendarItemHorizontal = ({ item }: { item: CalendarItem }) => {
+    const renderCalendarItemHorizontal = useCallback(({ item }: { item: CalendarItem }) => {
         const imageSource = item.poster_path ? `${TMDB_IMAGE_BASE}${item.poster_path}` : null;
 
         return (
@@ -1145,8 +912,8 @@ const TraktScreen = () => {
                 style={({ pressed }) => [
                     {
                         ...styles.calendarMediaItem,
-                        width: posterWidth,
-                        marginRight: spacing,
+                        width: dimensions.posterWidth,
+                        marginRight: dimensions.spacing,
                     },
                     pressed && styles.mediaItemPressed
                 ]}
@@ -1158,8 +925,8 @@ const TraktScreen = () => {
                             source={{ uri: imageSource }}
                             style={{
                                 ...styles.poster,
-                                width: posterWidth,
-                                height: posterHeight,
+                                width: dimensions.posterWidth,
+                                height: dimensions.posterHeight,
                             }}
                             resizeMode="cover"
                         />
@@ -1168,8 +935,8 @@ const TraktScreen = () => {
                             styles.poster,
                             styles.placeholderPoster,
                             {
-                                width: posterWidth,
-                                height: posterHeight,
+                                width: dimensions.posterWidth,
+                                height: dimensions.posterHeight,
                             }
                         ]}>
                             <Text style={styles.placeholderText}>
@@ -1178,7 +945,6 @@ const TraktScreen = () => {
                         </View>
                     )}
 
-                    {/* Type badge overlay */}
                     <View style={styles.calendarTypeOverlay}>
                         <View style={[
                             styles.calendarTypeBadgeSmall,
@@ -1208,9 +974,126 @@ const TraktScreen = () => {
                 </View>
             </Pressable>
         );
-    };
+    }, [dimensions, handleCalendarItemPress]);
 
-    const renderTabContent = () => {
+    const renderCalendarSection = useCallback((section: CalendarSection) => (
+        <View key={section.date} style={styles.calendarSection}>
+            <View style={styles.calendarSectionHeader}>
+                <Text style={styles.calendarSectionTitle}>{section.dateLabel}</Text>
+                <Text style={styles.calendarSectionDate}>
+                    {new Date(section.date).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric'
+                    })}
+                </Text>
+            </View>
+
+            {section.items.length > 0 ? (
+                <View style={styles.calendarItemsHorizontalContainer}>
+                    <FlatList
+                        data={section.items}
+                        renderItem={renderCalendarItemHorizontal}
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={{
+                            ...styles.horizontalList,
+                            paddingLeft: dimensions.containerMargin,
+                            paddingRight: dimensions.containerMargin,
+                        }}
+                        keyExtractor={(item, index) => `${section.date}-${index}`}
+                        removeClippedSubviews={true}
+                        maxToRenderPerBatch={5}
+                        windowSize={10}
+                        initialNumToRender={3}
+                    />
+                </View>
+            ) : (
+                <View style={styles.emptyDayContainer}>
+                    <Text style={styles.emptyDayText}>Nothing on this day</Text>
+                </View>
+            )}
+        </View>
+    ), [dimensions, renderCalendarItemHorizontal]);
+
+    const renderSection = useCallback((section: ListSection) => (
+        <View key={section.title} style={styles.section}>
+            <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>{section.title}</Text>
+                <Text style={styles.sectionCount}>{section.data.length} items</Text>
+            </View>
+
+            <FlatList
+                data={section.data}
+                renderItem={({ item }) => renderMediaItem({ item, sectionTitle: section.title })}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{
+                    ...styles.horizontalList,
+                    paddingLeft: dimensions.containerMargin,
+                    paddingRight: dimensions.containerMargin,
+                }}
+                keyExtractor={(item, index) => `${section.title}-${index}`}
+                removeClippedSubviews={true}
+                maxToRenderPerBatch={5}
+                windowSize={10}
+                initialNumToRender={3}
+            />
+        </View>
+    ), [dimensions, renderMediaItem]);
+
+    const getCurrentSections = useCallback(() => {
+        switch (selectedTab) {
+            case 'movies':
+                return movieSections;
+            case 'shows':
+                return showSections;
+            case 'user-lists':
+                return userListSections;
+            default:
+                return [];
+        }
+    }, [selectedTab, movieSections, showSections, userListSections]);
+
+    const renderTabs = useCallback(() => (
+        <View style={styles.tabContainer}>
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.tabScrollContent}
+            >
+                {[
+                    { key: 'movies', icon: 'film-outline', label: 'Movies' },
+                    { key: 'shows', icon: 'tv-outline', label: 'Series' },
+                    { key: 'calendar', icon: 'calendar-outline', label: 'Calendar' },
+                    { key: 'user-lists', icon: 'apps', label: 'Lists' }
+                ].map((tab) => (
+                    <Pressable
+                        key={tab.key}
+                        style={[
+                            styles.tab,
+                            selectedTab === tab.key && styles.activeTab
+                        ]}
+                        onPress={() => handleTabPress(tab.key as any)}
+                    >
+                        <Ionicons
+                            name={tab.icon as any}
+                            size={16}
+                            color={selectedTab === tab.key ? '#fff' : '#bbb'}
+                            style={{ marginRight: 6 }}
+                        />
+                        <Text style={[
+                            styles.tabText,
+                            selectedTab === tab.key && styles.activeTabText
+                        ]}>
+                            {tab.label}
+                        </Text>
+                    </Pressable>
+                ))}
+            </ScrollView>
+        </View>
+    ), [selectedTab, handleTabPress]);
+
+    const renderTabContent = useCallback(() => {
         if (selectedTab === 'calendar') {
             return (
                 <ScrollView
@@ -1223,6 +1106,7 @@ const TraktScreen = () => {
                             tintColor="#535aff"
                         />
                     }
+                    removeClippedSubviews={true}
                 >
                     {calendarSections.map(renderCalendarSection)}
                 </ScrollView>
@@ -1242,28 +1126,29 @@ const TraktScreen = () => {
                         tintColor="#535aff"
                     />
                 }
+                removeClippedSubviews={true}
             >
                 {sections.map(renderSection)}
             </ScrollView>
         );
-    };
+    }, [selectedTab, calendarSections, getCurrentSections, refreshing, onRefresh, renderCalendarSection, renderSection]);
 
-    const renderUnauthenticated = () => (
+    const renderUnauthenticated = useCallback(() => (
         <View style={styles.unauthenticatedContainer}>
             <Text style={styles.unauthenticatedTitle}>Connect to Trakt.tv</Text>
             <Text style={styles.unauthenticatedText}>
                 Please authenticate with Trakt.tv to view your data
             </Text>
         </View>
-    );
+    ), []);
 
-    if (isLoading) {
+    if (isLoading && !tabDataLoaded[selectedTab]) {
         return (
             <SafeAreaView style={styles.container}>
                 <StatusBar />
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color="#535aff" />
-                    <Text style={styles.loadingText}>Connecting to Trakt...</Text>
+                    <Text style={styles.loadingText}>Loading...</Text>
                 </View>
             </SafeAreaView>
         );
@@ -1367,14 +1252,6 @@ const styles = StyleSheet.create({
     activeTabText: {
         color: '#fff',
     },
-    tabIcon: {
-        marginRight: 8,
-        opacity: 0.8,
-    },
-    activeTabIcon: {
-        opacity: 1,
-        color: '#ffffff',
-    },
     contentContainer: {
         flex: 1,
         paddingVertical: 20
@@ -1402,7 +1279,6 @@ const styles = StyleSheet.create({
     horizontalList: {
         // Dynamic padding applied inline
     },
-    // Media Items - Dynamic sizing applied inline
     mediaItem: {
         // width and marginRight applied dynamically
     },
@@ -1413,7 +1289,6 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     poster: {
-        // width and height applied dynamically
         borderRadius: 8,
         backgroundColor: 'rgba(255, 255, 255, 0.01)',
     },
@@ -1424,20 +1299,6 @@ const styles = StyleSheet.create({
     placeholderText: {
         fontSize: 32,
         opacity: 0.5,
-    },
-    ratingOverlay: {
-        position: 'absolute',
-        top: 6,
-        right: 6,
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        paddingHorizontal: 6,
-        paddingVertical: 3,
-        borderRadius: 6,
-    },
-    ratingOverlayText: {
-        fontSize: 11,
-        fontWeight: '500',
-        color: '#ffc107',
     },
     userRatingOverlay: {
         position: 'absolute',
@@ -1469,39 +1330,6 @@ const styles = StyleSheet.create({
         color: '#ccc',
         fontWeight: '500',
     },
-    progressContainer: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        paddingHorizontal: 8,
-        paddingVertical: 6,
-        borderBottomLeftRadius: 8,
-        borderBottomRightRadius: 8,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-    },
-    progressBar: {
-        flex: 1,
-        height: 4,
-        backgroundColor: 'rgba(255, 255, 255, 0.3)',
-        borderRadius: 2,
-        overflow: 'hidden',
-    },
-    progressFill: {
-        height: '100%',
-        backgroundColor: '#535aff',
-        borderRadius: 2,
-    },
-    progressText: {
-        fontSize: 10,
-        color: '#fff',
-        fontWeight: '600',
-        minWidth: 60,
-        textAlign: 'right',
-    },
     backdropProgressContainer: {
         position: 'absolute',
         bottom: 0,
@@ -1531,7 +1359,6 @@ const styles = StyleSheet.create({
         fontWeight: '500',
         marginTop: 2,
     },
-    // Calendar-specific styles
     calendarSection: {
         marginBottom: 32,
         maxWidth: 780,
@@ -1558,75 +1385,28 @@ const styles = StyleSheet.create({
         color: '#ccc',
         fontWeight: '500',
     },
-    calendarItemsContainer: {
-        gap: 12,
-    },
-    calendarItem: {
-        flexDirection: 'row',
-        backgroundColor: 'rgba(255, 255, 255, 0.03)',
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.06)',
-        overflow: 'hidden',
-    },
-    calendarItemPressed: {
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    },
-    calendarItemImageContainer: {
-        width: 60,
-        height: 90,
-    },
-    calendarItemImage: {
+    calendarItemsHorizontalContainer: {
+        maxWidth: 780,
+        alignSelf: 'center',
         width: '100%',
-        height: '100%',
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
     },
-    calendarItemImagePlaceholder: {
-        justifyContent: 'center',
-        alignItems: 'center',
+    calendarMediaItem: {
+        // width and marginRight applied dynamically
     },
-    calendarPlaceholderText: {
-        fontSize: 20,
-        opacity: 0.5,
+    calendarTypeOverlay: {
+        position: 'absolute',
+        top: 6,
+        right: 6,
     },
-    calendarItemInfo: {
-        flex: 1,
-        padding: 12,
-        justifyContent: 'center',
-        gap: 4,
+    calendarTypeBadgeSmall: {
+        paddingHorizontal: 6,
+        paddingVertical: 3,
+        borderRadius: 6,
     },
-    calendarItemTitle: {
-        fontSize: 16,
+    calendarTypeBadgeSmallText: {
+        fontSize: 10,
         fontWeight: '600',
         color: '#fff',
-        lineHeight: 20,
-    },
-    calendarEpisodeInfo: {
-        gap: 2,
-    },
-    calendarEpisodeText: {
-        fontSize: 13,
-        color: '#535aff',
-        fontWeight: '600',
-    },
-    calendarEpisodeTitle: {
-        fontSize: 13,
-        color: '#bbb',
-        fontWeight: '400',
-    },
-    calendarItemYear: {
-        fontSize: 12,
-        color: '#888',
-        fontWeight: '500',
-    },
-    calendarItemType: {
-        justifyContent: 'center',
-        paddingRight: 12,
-    },
-    calendarTypeBadge: {
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 8,
     },
     movieBadge: {
         backgroundColor: 'rgba(255, 193, 7, 0.15)',
@@ -1637,11 +1417,6 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(83, 90, 255, 0.15)',
         borderWidth: 1,
         borderColor: 'rgba(83, 90, 255, 0.3)',
-    },
-    calendarTypeBadgeText: {
-        fontSize: 11,
-        fontWeight: '600',
-        color: '#fff',
     },
     emptyDayContainer: {
         padding: 20,
@@ -1658,54 +1433,6 @@ const styles = StyleSheet.create({
         fontStyle: 'italic',
         fontWeight: '500',
     },
-    emptyCalendarContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 40,
-        gap: 16,
-        marginTop: 60,
-    },
-    emptyCalendarTitle: {
-        fontSize: 20,
-        fontWeight: '600',
-        color: '#fff',
-        textAlign: 'center',
-    },
-    emptyCalendarText: {
-        fontSize: 15,
-        color: '#888',
-        textAlign: 'center',
-        lineHeight: 22,
-        maxWidth: 280,
-    },
-    calendarMediaItem: {
-        // width and marginRight applied dynamically
-    },
-
-    calendarItemsHorizontalContainer: {
-        maxWidth: 780, // Max width constraint
-        alignSelf: 'center',
-        width: '100%',
-    },
-
-    calendarTypeOverlay: {
-        position: 'absolute',
-        top: 6,
-        right: 6,
-    },
-
-    calendarTypeBadgeSmall: {
-        paddingHorizontal: 6,
-        paddingVertical: 3,
-        borderRadius: 6,
-    },
-    calendarTypeBadgeSmallText: {
-        fontSize: 10,
-        fontWeight: '600',
-        color: '#fff',
-    },
 });
 
 export default TraktScreen;
-
