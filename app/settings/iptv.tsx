@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
     View,
     Text,
@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { confirmAction } from '@/utils/CrossPlatform';
 
 interface Playlist {
@@ -35,12 +36,51 @@ interface PlaylistItemProps {
     onExpand: (id: string) => void;
 }
 
+const STORAGE_KEY = '@iptv_playlists';
+
 const PlaylistManagerScreen: React.FC = () => {
     const [playlists, setPlaylists] = useState<Playlist[]>([]);
-
+    const [isLoading, setIsLoading] = useState<boolean>(true);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [isAddingNew, setIsAddingNew] = useState<boolean>(false);
+
+    // Load playlists from storage on component mount
+    useEffect(() => {
+        loadPlaylists();
+    }, []);
+
+    // Save playlists to storage whenever playlists change
+    useEffect(() => {
+        if (!isLoading) { // Don't save during initial load
+            savePlaylists();
+        }
+    }, [playlists, isLoading]);
+
+    const loadPlaylists = async (): Promise<void> => {
+        try {
+            const stored = await AsyncStorage.getItem(STORAGE_KEY);
+            if (stored) {
+                const parsedPlaylists = JSON.parse(stored);
+                setPlaylists(parsedPlaylists);
+                console.log('Loaded playlists:', parsedPlaylists.length);
+            }
+        } catch (error) {
+            console.error('Error loading playlists:', error);
+            Alert.alert('Error', 'Failed to load saved playlists');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const savePlaylists = async (): Promise<void> => {
+        try {
+            await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(playlists));
+            console.log('Saved playlists:', playlists.length);
+        } catch (error) {
+            console.error('Error saving playlists:', error);
+        }
+    };
 
     const validateUrl = (url: string): boolean => {
         return url.includes('.m3u8') || url.includes('.m3u');
@@ -89,6 +129,9 @@ const PlaylistManagerScreen: React.FC = () => {
 
         setEditingId(null);
         setIsAddingNew(false);
+        
+        // Show success message
+        Alert.alert('Success', 'Playlist saved successfully!');
     };
 
     const cancelEdit = async (): Promise<void> => {
@@ -105,13 +148,15 @@ const PlaylistManagerScreen: React.FC = () => {
     const deletePlaylist = async (id: string): Promise<void> => {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
         const confirmed = await confirmAction(
-            'Confirm Drop',
-            'Are you sure you want to drop this torrent?',
-            'Drop'
+            'Confirm Delete',
+            'Are you sure you want to delete this playlist?',
+            'Delete'
         );
         if (!confirmed) return;
+        
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setPlaylists(prev => prev.filter(p => p.id !== id));
+        
         if (editingId === id) {
             setEditingId(null);
             setIsAddingNew(false);
@@ -119,6 +164,8 @@ const PlaylistManagerScreen: React.FC = () => {
         if (expandedId === id) {
             setExpandedId(null);
         }
+        
+        Alert.alert('Success', 'Playlist deleted successfully');
     };
 
     const togglePlaylist = async (id: string): Promise<void> => {
@@ -158,6 +205,12 @@ const PlaylistManagerScreen: React.FC = () => {
     }) => {
         const [editName, setEditName] = useState<string>(playlist.name);
         const [editUrl, setEditUrl] = useState<string>(playlist.url);
+
+        // Update local state when playlist prop changes
+        useEffect(() => {
+            setEditName(playlist.name);
+            setEditUrl(playlist.url);
+        }, [playlist.name, playlist.url]);
 
         const handleSave = (): void => {
             onSave(playlist.id, editName, editUrl);
@@ -237,7 +290,7 @@ const PlaylistManagerScreen: React.FC = () => {
                                     styles.playlistName,
                                     { opacity: playlist.enabled ? 1 : 0.6 }
                                 ]}>
-                                    {playlist.name}
+                                    {playlist.name || 'Untitled Playlist'}
                                 </Text>
                                 {!playlist.enabled && (
                                     <View style={styles.statusBadge}>
@@ -249,7 +302,7 @@ const PlaylistManagerScreen: React.FC = () => {
                             </View>
                         </View>
                         <Text style={styles.playlistUrl} numberOfLines={1}>
-                            {playlist.url}
+                            {playlist.url || 'No URL'}
                         </Text>
                     </View>
                     <Ionicons
@@ -301,6 +354,20 @@ const PlaylistManagerScreen: React.FC = () => {
             </View>
         );
     };
+
+    // Show loading state
+    if (isLoading) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <View style={styles.header}>
+                    <Text style={styles.title}>IPTV Playlists</Text>
+                </View>
+                <View style={styles.loadingContainer}>
+                    <Text style={styles.loadingText}>Loading playlists...</Text>
+                </View>
+            </SafeAreaView>
+        );
+    }
 
     return (
         <SafeAreaView style={styles.container}>
@@ -382,6 +449,15 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingHorizontal: 20,
         paddingTop: 20,
+    },
+    loadingContainer: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    loadingText: {
+        fontSize: 16,
+        color: '#666',
     },
     emptyState: {
         alignItems: 'center',
