@@ -11,6 +11,7 @@ import {
     Dimensions,
     Image,
     Alert,
+    TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -25,6 +26,7 @@ interface Playlist {
     url: string;
     enabled: boolean;
     createdAt: string;
+    channelCount?: number;
 }
 
 interface Channel {
@@ -33,6 +35,7 @@ interface Channel {
     url: string;
     logo?: string;
     group?: string;
+    language?: string;
     playlistId: string;
 }
 
@@ -50,7 +53,9 @@ const IptvScreen: React.FC<IptvScreenProps> = ({
     const [loading, setLoading] = useState<boolean>(false);
     const [refreshing, setRefreshing] = useState<boolean>(false);
     const [searchQuery, setSearchQuery] = useState<string>('');
+    const [selectedLanguage, setSelectedLanguage] = useState<string>('All');
     const [selectedCategory, setSelectedCategory] = useState<string>('All');
+    const [showSearch, setShowSearch] = useState<boolean>(false);
 
     // Mock data for demonstration
     const mockPlaylists: Playlist[] = [
@@ -60,6 +65,7 @@ const IptvScreen: React.FC<IptvScreenProps> = ({
             url: 'https://example.com/sports.m3u8',
             enabled: true,
             createdAt: new Date().toISOString(),
+            channelCount: 45,
         },
         {
             id: '2',
@@ -67,6 +73,7 @@ const IptvScreen: React.FC<IptvScreenProps> = ({
             url: 'https://example.com/news.m3u8',
             enabled: true,
             createdAt: new Date().toISOString(),
+            channelCount: 28,
         },
         {
             id: '3',
@@ -74,16 +81,27 @@ const IptvScreen: React.FC<IptvScreenProps> = ({
             url: 'https://example.com/entertainment.m3u8',
             enabled: true,
             createdAt: new Date().toISOString(),
+            channelCount: 67,
+        },
+        {
+            id: '4',
+            name: 'International',
+            url: 'https://example.com/international.m3u8',
+            enabled: true,
+            createdAt: new Date().toISOString(),
+            channelCount: 132,
         },
     ];
 
     const mockChannels: Channel[] = [
+        // Sports Channels
         {
             id: '1',
             name: 'ESPN',
             url: 'https://example.com/espn.m3u8',
             logo: 'https://via.placeholder.com/80x80/ff0000/ffffff?text=ESPN',
             group: 'Sports',
+            language: 'English',
             playlistId: '1'
         },
         {
@@ -92,14 +110,26 @@ const IptvScreen: React.FC<IptvScreenProps> = ({
             url: 'https://example.com/foxsports.m3u8',
             logo: 'https://via.placeholder.com/80x80/0066cc/ffffff?text=FOX',
             group: 'Sports',
+            language: 'English',
             playlistId: '1'
         },
+        {
+            id: '15',
+            name: 'Sky Sports',
+            url: 'https://example.com/skysports.m3u8',
+            logo: 'https://via.placeholder.com/80x80/003366/ffffff?text=SKY',
+            group: 'Premium Sports',
+            language: 'English',
+            playlistId: '1'
+        },
+        // News Channels
         {
             id: '3',
             name: 'CNN',
             url: 'https://example.com/cnn.m3u8',
             logo: 'https://via.placeholder.com/80x80/cc0000/ffffff?text=CNN',
             group: 'News',
+            language: 'English',
             playlistId: '2'
         },
         {
@@ -108,14 +138,26 @@ const IptvScreen: React.FC<IptvScreenProps> = ({
             url: 'https://example.com/bbc.m3u8',
             logo: 'https://via.placeholder.com/80x80/ffffff/000000?text=BBC',
             group: 'News',
+            language: 'English',
             playlistId: '2'
         },
+        {
+            id: '16',
+            name: 'Al Jazeera',
+            url: 'https://example.com/aljazeera.m3u8',
+            logo: 'https://via.placeholder.com/80x80/8B4513/ffffff?text=AJ',
+            group: 'International News',
+            language: 'Arabic',
+            playlistId: '2'
+        },
+        // Entertainment Channels
         {
             id: '5',
             name: 'Netflix',
             url: 'https://example.com/netflix.m3u8',
             logo: 'https://via.placeholder.com/80x80/e50914/ffffff?text=NF',
-            group: 'Entertainment',
+            group: 'Streaming',
+            language: 'English',
             playlistId: '3'
         },
         {
@@ -123,8 +165,91 @@ const IptvScreen: React.FC<IptvScreenProps> = ({
             name: 'Disney+',
             url: 'https://example.com/disney.m3u8',
             logo: 'https://via.placeholder.com/80x80/003366/ffffff?text=D+',
-            group: 'Entertainment',
+            group: 'Family',
+            language: 'English',
             playlistId: '3'
+        },
+        {
+            id: '17',
+            name: 'Comedy Central',
+            url: 'https://example.com/comedy.m3u8',
+            logo: 'https://via.placeholder.com/80x80/FFFF00/000000?text=CC',
+            group: 'Comedy',
+            language: 'English',
+            playlistId: '3'
+        },
+        // International Channels
+        {
+            id: '7',
+            name: 'Zee TV',
+            url: 'https://example.com/zee.m3u8',
+            logo: 'https://via.placeholder.com/80x80/FF6600/ffffff?text=ZEE',
+            group: 'Entertainment',
+            language: 'Hindi',
+            playlistId: '4'
+        },
+        {
+            id: '8',
+            name: 'Star Plus',
+            url: 'https://example.com/star.m3u8',
+            logo: 'https://via.placeholder.com/80x80/FFD700/000000?text=STAR',
+            group: 'Drama',
+            language: 'Hindi',
+            playlistId: '4'
+        },
+        {
+            id: '9',
+            name: 'TF1',
+            url: 'https://example.com/tf1.m3u8',
+            logo: 'https://via.placeholder.com/80x80/0066FF/ffffff?text=TF1',
+            group: 'General',
+            language: 'French',
+            playlistId: '4'
+        },
+        {
+            id: '10',
+            name: 'RAI Uno',
+            url: 'https://example.com/rai.m3u8',
+            logo: 'https://via.placeholder.com/80x80/009900/ffffff?text=RAI',
+            group: 'General',
+            language: 'Italian',
+            playlistId: '4'
+        },
+        {
+            id: '11',
+            name: 'TVE',
+            url: 'https://example.com/tve.m3u8',
+            logo: 'https://via.placeholder.com/80x80/FF0033/ffffff?text=TVE',
+            group: 'General',
+            language: 'Spanish',
+            playlistId: '4'
+        },
+        {
+            id: '12',
+            name: 'ARD',
+            url: 'https://example.com/ard.m3u8',
+            logo: 'https://via.placeholder.com/80x80/000066/ffffff?text=ARD',
+            group: 'General',
+            language: 'German',
+            playlistId: '4'
+        },
+        {
+            id: '13',
+            name: 'NHK World',
+            url: 'https://example.com/nhk.m3u8',
+            logo: 'https://via.placeholder.com/80x80/CC0000/ffffff?text=NHK',
+            group: 'News',
+            language: 'Japanese',
+            playlistId: '4'
+        },
+        {
+            id: '14',
+            name: 'CCTV',
+            url: 'https://example.com/cctv.m3u8',
+            logo: 'https://via.placeholder.com/80x80/FF0000/FFFF00?text=CCTV',
+            group: 'News',
+            language: 'Chinese',
+            playlistId: '4'
         },
     ];
 
@@ -132,21 +257,26 @@ const IptvScreen: React.FC<IptvScreenProps> = ({
     const enabledPlaylists = activePlaylistsData.filter(p => p.enabled);
 
     useEffect(() => {
-        loadChannels();
+        if (selectedPlaylist) {
+            loadChannels();
+        }
     }, [selectedPlaylist]);
 
     const loadChannels = async () => {
+        if (!selectedPlaylist) return;
+        
         setLoading(true);
         try {
             // Simulate API call
             await new Promise(resolve => setTimeout(resolve, 1000));
             
-            let filteredChannels = mockChannels;
-            if (selectedPlaylist) {
-                filteredChannels = mockChannels.filter(c => c.playlistId === selectedPlaylist);
-            }
-            
+            const filteredChannels = mockChannels.filter(c => c.playlistId === selectedPlaylist);
             setChannels(filteredChannels);
+            
+            // Reset filters when switching playlists
+            setSelectedLanguage('All');
+            setSelectedCategory('All');
+            setSearchQuery('');
         } catch (error) {
             Alert.alert('Error', 'Failed to load channels');
         } finally {
@@ -169,13 +299,32 @@ const IptvScreen: React.FC<IptvScreenProps> = ({
         );
     };
 
+    const resetToPlaylistSelection = () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+        setSelectedPlaylist(null);
+        setChannels([]);
+        setSelectedLanguage('All');
+        setSelectedCategory('All');
+        setSearchQuery('');
+        setShowSearch(false);
+    };
+
+    const getLanguages = () => {
+        const languages = ['All', ...new Set(channels.map(c => c.language).filter(Boolean))];
+        return languages.sort();
+    };
+
     const getCategories = () => {
         const categories = ['All', ...new Set(channels.map(c => c.group).filter(Boolean))];
-        return categories;
+        return categories.sort();
     };
 
     const getFilteredChannels = () => {
         let filtered = channels;
+        
+        if (selectedLanguage !== 'All') {
+            filtered = filtered.filter(c => c.language === selectedLanguage);
+        }
         
         if (selectedCategory !== 'All') {
             filtered = filtered.filter(c => c.group === selectedCategory);
@@ -184,79 +333,115 @@ const IptvScreen: React.FC<IptvScreenProps> = ({
         if (searchQuery) {
             filtered = filtered.filter(c => 
                 c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                (c.group && c.group.toLowerCase().includes(searchQuery.toLowerCase()))
+                (c.group && c.group.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                (c.language && c.language.toLowerCase().includes(searchQuery.toLowerCase()))
             );
         }
         
         return filtered;
     };
 
-    const PlaylistSelector = () => (
-        <View style={styles.playlistSelector}>
-            <FlatList
-                horizontal
-                data={[{ id: 'all', name: 'All Channels' }, ...enabledPlaylists]}
-                keyExtractor={(item) => item.id}
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.playlistSelectorContent}
-                renderItem={({ item }) => (
-                    <TouchableOpacity
-                        style={[
-                            styles.playlistChip,
-                            (selectedPlaylist === item.id || (item.id === 'all' && !selectedPlaylist)) && 
-                            styles.selectedPlaylistChip
-                        ]}
-                        onPress={() => {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
-                            setSelectedPlaylist(item.id === 'all' ? null : item.id);
-                            setSelectedCategory('All');
-                        }}
-                    >
-                        <Text style={[
-                            styles.playlistChipText,
-                            (selectedPlaylist === item.id || (item.id === 'all' && !selectedPlaylist)) && 
-                            styles.selectedPlaylistChipText
-                        ]}>
-                            {item.name}
-                        </Text>
-                    </TouchableOpacity>
-                )}
-            />
-        </View>
+    const PlaylistCard = ({ playlist }: { playlist: Playlist }) => (
+        <TouchableOpacity
+            style={styles.playlistCard}
+            onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                setSelectedPlaylist(playlist.id);
+            }}
+            activeOpacity={0.8}
+        >
+            <LinearGradient
+                colors={['#1a1a1a', '#0f0f0f']}
+                style={styles.playlistCardGradient}
+            >
+                <View style={styles.playlistIcon}>
+                    <Ionicons name="list" size={32} color="#535aff" />
+                </View>
+                
+                <Text style={styles.playlistName}>{playlist.name}</Text>
+                
+                <View style={styles.playlistMeta}>
+                    <Text style={styles.channelCountText}>
+                        {playlist.channelCount || mockChannels.filter(c => c.playlistId === playlist.id).length} channels
+                    </Text>
+                </View>
+                
+                <View style={styles.playlistArrow}>
+                    <Ionicons name="chevron-forward" size={20} color="#666" />
+                </View>
+            </LinearGradient>
+        </TouchableOpacity>
     );
 
-    const CategorySelector = () => {
-        const categories = getCategories();
-        if (categories.length <= 1) return null;
+    const FilterSelector = ({ title, items, selected, onSelect, icon }: {
+        title: string;
+        items: string[];
+        selected: string;
+        onSelect: (item: string) => void;
+        icon: string;
+    }) => {
+        if (items.length <= 1) return null;
 
         return (
-            <View style={styles.categorySelector}>
+            <View style={styles.filterSection}>
+                <View style={styles.filterHeader}>
+                    <Ionicons name={icon as any} size={16} color="#666" />
+                    <Text style={styles.filterTitle}>{title}</Text>
+                </View>
                 <FlatList
                     horizontal
-                    data={categories}
-                    keyExtractor={(item: any) => item}
+                    data={items}
+                    keyExtractor={(item) => item}
                     showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.categorySelectorContent}
+                    contentContainerStyle={styles.filterContent}
                     renderItem={({ item }) => (
                         <TouchableOpacity
                             style={[
-                                styles.categoryChip,
-                                selectedCategory === item && styles.selectedCategoryChip
+                                styles.filterChip,
+                                selected === item && styles.selectedFilterChip
                             ]}
                             onPress={() => {
                                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
-                                setSelectedCategory(item);
+                                onSelect(item);
                             }}
                         >
                             <Text style={[
-                                styles.categoryChipText,
-                                selectedCategory === item && styles.selectedCategoryChipText
+                                styles.filterChipText,
+                                selected === item && styles.selectedFilterChipText
                             ]}>
                                 {item}
                             </Text>
                         </TouchableOpacity>
                     )}
                 />
+            </View>
+        );
+    };
+
+    const SearchBar = () => {
+        if (!showSearch) return null;
+
+        return (
+            <View style={styles.searchContainer}>
+                <View style={styles.searchInputContainer}>
+                    <Ionicons name="search" size={20} color="#666" />
+                    <TextInput
+                        style={styles.searchInput}
+                        placeholder="Search channels..."
+                        placeholderTextColor="#666"
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                        autoFocus
+                    />
+                    {searchQuery.length > 0 && (
+                        <TouchableOpacity
+                            onPress={() => setSearchQuery('')}
+                            style={styles.clearButton}
+                        >
+                            <Ionicons name="close-circle" size={20} color="#666" />
+                        </TouchableOpacity>
+                    )}
+                </View>
             </View>
         );
     };
@@ -296,6 +481,11 @@ const IptvScreen: React.FC<IptvScreenProps> = ({
                             {channel.group}
                         </Text>
                     )}
+                    {channel.language && (
+                        <Text style={styles.channelLanguage} numberOfLines={1}>
+                            {channel.language}
+                        </Text>
+                    )}
                 </View>
 
                 <View style={styles.channelActions}>
@@ -313,17 +503,25 @@ const IptvScreen: React.FC<IptvScreenProps> = ({
         </TouchableOpacity>
     );
 
-    const EmptyState = () => (
+    const EmptyState = ({ type }: { type: 'playlists' | 'channels' }) => (
         <View style={styles.emptyState}>
-            <Ionicons name="tv-outline" size={80} color="#333" />
-            <Text style={styles.emptyTitle}>No Channels Available</Text>
+            <Ionicons 
+                name={type === 'playlists' ? "list-outline" : "tv-outline"} 
+                size={80} 
+                color="#333" 
+            />
+            <Text style={styles.emptyTitle}>
+                {type === 'playlists' ? 'No Playlists Available' : 'No Channels Found'}
+            </Text>
             <Text style={styles.emptySubtitle}>
-                {enabledPlaylists.length === 0 
+                {type === 'playlists' 
                     ? 'No active playlists found. Enable playlists in settings.'
-                    : 'No channels found in the selected playlist.'
+                    : searchQuery 
+                        ? `No channels found matching "${searchQuery}"`
+                        : 'No channels found in the selected filters.'
                 }
             </Text>
-            {enabledPlaylists.length === 0 && (
+            {type === 'playlists' && (
                 <TouchableOpacity 
                     style={styles.settingsButton}
                     onPress={onSettingsPress}
@@ -335,6 +533,46 @@ const IptvScreen: React.FC<IptvScreenProps> = ({
         </View>
     );
 
+    // If no playlist is selected, show playlist selection
+    if (!selectedPlaylist) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <StatusBar barStyle="light-content" backgroundColor="#000" />
+                
+                <View style={styles.header}>
+                    <View style={styles.headerLeft}>
+                        <Text style={styles.title}>Select Playlist</Text>
+                    </View>
+                    
+                    <TouchableOpacity 
+                        style={styles.headerButton}
+                        onPress={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+                            onSettingsPress?.();
+                        }}
+                    >
+                        <Ionicons name="settings-outline" size={22} color="#fff" />
+                    </TouchableOpacity>
+                </View>
+
+                <View style={styles.content}>
+                    {enabledPlaylists.length === 0 ? (
+                        <EmptyState type="playlists" />
+                    ) : (
+                        <FlatList
+                            data={enabledPlaylists}
+                            keyExtractor={(item) => item.id}
+                            contentContainerStyle={styles.playlistsList}
+                            showsVerticalScrollIndicator={false}
+                            renderItem={({ item }) => <PlaylistCard playlist={item} />}
+                        />
+                    )}
+                </View>
+            </SafeAreaView>
+        );
+    }
+
+    // Show channels for selected playlist
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar barStyle="light-content" backgroundColor="#000" />
@@ -342,20 +580,27 @@ const IptvScreen: React.FC<IptvScreenProps> = ({
             {/* Header */}
             <View style={styles.header}>
                 <View style={styles.headerLeft}>
-                    <Text style={styles.title}>IPTV</Text>
-                    <View style={styles.channelCount}>
-                        <Text style={styles.channelCountText}>
-                            {getFilteredChannels().length} channels
+                    <TouchableOpacity 
+                        style={styles.backButton}
+                        onPress={resetToPlaylistSelection}
+                    >
+                        <Ionicons name="chevron-back" size={24} color="#fff" />
+                    </TouchableOpacity>
+                    <View>
+                        <Text style={styles.title}>Channels</Text>
+                        <Text style={styles.subtitle}>
+                            {enabledPlaylists.find(p => p.id === selectedPlaylist)?.name}
                         </Text>
                     </View>
                 </View>
                 
                 <View style={styles.headerRight}>
                     <TouchableOpacity 
-                        style={styles.headerButton}
+                        style={[styles.headerButton, showSearch && styles.activeHeaderButton]}
                         onPress={() => {
                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
-                            // Add search functionality
+                            setShowSearch(!showSearch);
+                            if (showSearch) setSearchQuery('');
                         }}
                     >
                         <Ionicons name="search" size={22} color="#fff" />
@@ -373,10 +618,28 @@ const IptvScreen: React.FC<IptvScreenProps> = ({
                 </View>
             </View>
 
+            {/* Search Bar */}
+            <SearchBar />
+
             {/* Content */}
             <View style={styles.content}>
-                {enabledPlaylists.length > 1 && <PlaylistSelector />}
-                <CategorySelector />
+                {/* Filters */}
+                <View style={styles.filtersContainer}>
+                    <FilterSelector
+                        title="Language"
+                        items={getLanguages() as []}
+                        selected={selectedLanguage}
+                        onSelect={setSelectedLanguage}
+                        icon="language"
+                    />
+                    <FilterSelector
+                        title="Category"
+                        items={getCategories() as []}
+                        selected={selectedCategory}
+                        onSelect={setSelectedCategory}
+                        icon="grid"
+                    />
+                </View>
                 
                 {loading && !refreshing ? (
                     <View style={styles.loadingContainer}>
@@ -384,25 +647,32 @@ const IptvScreen: React.FC<IptvScreenProps> = ({
                         <Text style={styles.loadingText}>Loading channels...</Text>
                     </View>
                 ) : getFilteredChannels().length === 0 ? (
-                    <EmptyState />
+                    <EmptyState type="channels" />
                 ) : (
-                    <FlatList
-                        data={getFilteredChannels()}
-                        keyExtractor={(item) => item.id}
-                        numColumns={2}
-                        columnWrapperStyle={styles.row}
-                        contentContainerStyle={styles.channelsList}
-                        showsVerticalScrollIndicator={false}
-                        refreshControl={
-                            <RefreshControl
-                                refreshing={refreshing}
-                                onRefresh={onRefresh}
-                                tintColor="#535aff"
-                                colors={['#535aff']}
-                            />
-                        }
-                        renderItem={({ item }) => <ChannelCard channel={item} />}
-                    />
+                    <View style={styles.channelsContainer}>
+                        <View style={styles.channelsHeader}>
+                            <Text style={styles.channelsCount}>
+                                {getFilteredChannels().length} of {channels.length} channels
+                            </Text>
+                        </View>
+                        <FlatList
+                            data={getFilteredChannels()}
+                            keyExtractor={(item) => item.id}
+                            numColumns={2}
+                            columnWrapperStyle={styles.row}
+                            contentContainerStyle={styles.channelsList}
+                            showsVerticalScrollIndicator={false}
+                            refreshControl={
+                                <RefreshControl
+                                    refreshing={refreshing}
+                                    onRefresh={onRefresh}
+                                    tintColor="#535aff"
+                                    colors={['#535aff']}
+                                />
+                            }
+                            renderItem={({ item }) => <ChannelCard channel={item} />}
+                        />
+                    </View>
                 )}
             </View>
         </SafeAreaView>
@@ -426,25 +696,21 @@ const styles = StyleSheet.create({
     headerLeft: {
         flexDirection: 'row',
         alignItems: 'center',
+        flex: 1,
+    },
+    backButton: {
+        marginRight: 12,
+        padding: 4,
     },
     title: {
         fontSize: 28,
         fontWeight: '700',
         color: '#fff',
-        marginRight: 12,
     },
-    channelCount: {
-        backgroundColor: '#535aff20',
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: '#535aff40',
-    },
-    channelCountText: {
-        fontSize: 12,
-        fontWeight: '600',
-        color: '#535aff',
+    subtitle: {
+        fontSize: 14,
+        color: '#666',
+        marginTop: 2,
     },
     headerRight: {
         flexDirection: 'row',
@@ -458,48 +724,108 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
+    activeHeaderButton: {
+        backgroundColor: '#535aff',
+    },
     content: {
         flex: 1,
     },
-    playlistSelector: {
-        paddingVertical: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: '#1a1a1a',
-    },
-    playlistSelectorContent: {
+    searchContainer: {
         paddingHorizontal: 20,
-        gap: 12,
-    },
-    playlistChip: {
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 20,
-        backgroundColor: '#1a1a1a',
-        borderWidth: 1,
-        borderColor: '#222',
-    },
-    selectedPlaylistChip: {
-        backgroundColor: '#535aff',
-        borderColor: '#535aff',
-    },
-    playlistChipText: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#666',
-    },
-    selectedPlaylistChipText: {
-        color: '#fff',
-    },
-    categorySelector: {
         paddingVertical: 12,
         borderBottomWidth: 1,
         borderBottomColor: '#1a1a1a',
     },
-    categorySelectorContent: {
+    searchInputContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#1a1a1a',
+        borderRadius: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+    },
+    searchInput: {
+        flex: 1,
+        marginLeft: 12,
+        fontSize: 16,
+        color: '#fff',
+    },
+    clearButton: {
+        padding: 4,
+    },
+    playlistsList: {
+        padding: 20,
+        paddingBottom: 40,
+    },
+    playlistCard: {
+        marginBottom: 16,
+        borderRadius: 16,
+        overflow: 'hidden',
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+    },
+    playlistCardGradient: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 20,
+        minHeight: 80,
+    },
+    playlistIcon: {
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+        backgroundColor: '#535aff20',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 16,
+    },
+    playlistName: {
+        flex: 1,
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#fff',
+    },
+    playlistMeta: {
+        alignItems: 'flex-end',
+        marginRight: 12,
+    },
+    channelCountText: {
+        fontSize: 14,
+        color: '#666',
+    },
+    playlistArrow: {
+        width: 24,
+        height: 24,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    filtersContainer: {
+        borderBottomWidth: 1,
+        borderBottomColor: '#1a1a1a',
+    },
+    filterSection: {
+        paddingVertical: 12,
+    },
+    filterHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        marginBottom: 8,
+    },
+    filterTitle: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#888',
+        marginLeft: 8,
+    },
+    filterContent: {
         paddingHorizontal: 20,
         gap: 8,
     },
-    categoryChip: {
+    filterChip: {
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 16,
@@ -507,17 +833,31 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#222',
     },
-    selectedCategoryChip: {
-        backgroundColor: '#00ff8820',
-        borderColor: '#00ff88',
+    selectedFilterChip: {
+        backgroundColor: '#535aff20',
+        borderColor: '#535aff',
     },
-    categoryChipText: {
+    filterChipText: {
         fontSize: 12,
         fontWeight: '600',
         color: '#888',
     },
-    selectedCategoryChipText: {
-        color: '#00ff88',
+    selectedFilterChipText: {
+        color: '#535aff',
+    },
+    channelsContainer: {
+        flex: 1,
+    },
+    channelsHeader: {
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#1a1a1a',
+    },
+    channelsCount: {
+        fontSize: 14,
+        color: '#666',
+        fontWeight: '600',
     },
     channelsList: {
         padding: 20,
@@ -539,7 +879,7 @@ const styles = StyleSheet.create({
     },
     channelCardGradient: {
         padding: 16,
-        minHeight: 180,
+        minHeight: 200,
     },
     channelImageContainer: {
         alignItems: 'center',
@@ -582,6 +922,12 @@ const styles = StyleSheet.create({
     channelGroup: {
         fontSize: 12,
         color: '#888',
+        textAlign: 'center',
+        marginBottom: 2,
+    },
+    channelLanguage: {
+        fontSize: 11,
+        color: '#666',
         textAlign: 'center',
     },
     channelActions: {
