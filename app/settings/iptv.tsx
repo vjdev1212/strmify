@@ -8,12 +8,14 @@ import {
     Alert,
     ScrollView,
     Animated,
+    Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { confirmAction } from '@/utils/platform';
+import { confirmAction, showAlert } from '@/utils/platform';
+import { asyncStorageService } from '@/utils/AsyncStorage';
 
 interface Playlist {
     id: string;
@@ -23,11 +25,18 @@ interface Playlist {
     createdAt: string;
 }
 
+interface AlertButton {
+    text: string;
+    style?: 'default' | 'cancel' | 'destructive';
+    onPress?: () => void;
+}
+
 interface PlaylistItemProps {
     playlist: Playlist;
     index: number;
     isEditing: boolean;
     isExpanded: boolean;
+    isAddingNew: boolean;
     onEdit: (id: string) => void;
     onSave: (id: string, name: string, url: string) => void;
     onCancel: () => void;
@@ -36,7 +45,7 @@ interface PlaylistItemProps {
     onExpand: (id: string) => void;
 }
 
-const STORAGE_KEY = '@iptv_playlists';
+const STORAGE_KEY = 'iptv_playlists';
 
 const PlaylistManagerScreen: React.FC = () => {
     const [playlists, setPlaylists] = useState<Playlist[]>([]);
@@ -50,24 +59,38 @@ const PlaylistManagerScreen: React.FC = () => {
         loadPlaylists();
     }, []);
 
-    // Save playlists to storage whenever playlists change
+    // Save playlists to storage whenever playlists change (but not during initial load)
     useEffect(() => {
-        if (!isLoading) { // Don't save during initial load
+        if (!isLoading) {
             savePlaylists();
         }
     }, [playlists, isLoading]);
 
     const loadPlaylists = async (): Promise<void> => {
         try {
-            const stored = await AsyncStorage.getItem(STORAGE_KEY);
+            console.log('Loading playlists from AsyncStorage...');
+            const stored = await asyncStorageService.getItem(STORAGE_KEY);
+            
             if (stored) {
                 const parsedPlaylists = JSON.parse(stored);
-                setPlaylists(parsedPlaylists);
-                console.log('Loaded playlists:', parsedPlaylists.length);
+                console.log('Loaded playlists:', parsedPlaylists);
+                
+                // Validate the loaded data
+                if (Array.isArray(parsedPlaylists)) {
+                    setPlaylists(parsedPlaylists);
+                    console.log('Successfully loaded', parsedPlaylists.length, 'playlists');
+                } else {
+                    console.log('Invalid data format, starting with empty array');
+                    setPlaylists([]);
+                }
+            } else {
+                console.log('No stored playlists found, starting with empty array');
+                setPlaylists([]);
             }
         } catch (error) {
             console.error('Error loading playlists:', error);
-            Alert.alert('Error', 'Failed to load saved playlists');
+            showAlert('Error', 'Failed to load saved playlists');
+            setPlaylists([]);
         } finally {
             setIsLoading(false);
         }
@@ -75,10 +98,12 @@ const PlaylistManagerScreen: React.FC = () => {
 
     const savePlaylists = async (): Promise<void> => {
         try {
-            await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(playlists));
-            console.log('Saved playlists:', playlists.length);
+            const playlistsToSave = JSON.stringify(playlists);
+            await asyncStorageService.setItem(STORAGE_KEY, playlistsToSave);
+            console.log('Successfully saved', playlists.length, 'playlists to AsyncStorage');
         } catch (error) {
             console.error('Error saving playlists:', error);
+            showAlert('Error', 'Failed to save playlists');
         }
     };
 
@@ -87,7 +112,10 @@ const PlaylistManagerScreen: React.FC = () => {
     };
 
     const addNewPlaylist = async (): Promise<void> => {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        if (Haptics?.impactAsync) {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        }
+        
         const newPlaylist: Playlist = {
             id: Date.now().toString(),
             name: '',
@@ -95,7 +123,14 @@ const PlaylistManagerScreen: React.FC = () => {
             enabled: true,
             createdAt: new Date().toISOString(),
         };
-        setPlaylists(prev => [newPlaylist, ...prev]);
+        
+        console.log('Adding new playlist:', newPlaylist);
+        setPlaylists(prev => {
+            const updated = [newPlaylist, ...prev];
+            console.log('Updated playlists array length:', updated.length);
+            return updated;
+        });
+        
         setEditingId(newPlaylist.id);
         setExpandedId(newPlaylist.id);
         setIsAddingNew(true);
@@ -103,50 +138,76 @@ const PlaylistManagerScreen: React.FC = () => {
 
     const savePlaylist = async (id: string, name: string, url: string): Promise<void> => {
         if (!name.trim()) {
-            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            Alert.alert('Error', 'Please enter a playlist name');
+            if (Haptics?.notificationAsync) {
+                await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            }
+            showAlert('Error', 'Please enter a playlist name');
             return;
         }
 
         if (!url.trim()) {
-            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            Alert.alert('Error', 'Please enter a playlist URL');
+            if (Haptics?.notificationAsync) {
+                await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            }
+            showAlert('Error', 'Please enter a playlist URL');
             return;
         }
 
         if (!validateUrl(url)) {
-            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            Alert.alert('Error', 'Please enter a valid M3U8 playlist URL');
+            if (Haptics?.notificationAsync) {
+                await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            }
+            showAlert('Error', 'Please enter a valid M3U8 playlist URL');
             return;
         }
 
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        setPlaylists(prev =>
-            prev.map(p =>
-                p.id === id ? { ...p, name: name.trim(), url: url.trim() } : p
-            )
-        );
+        try {
+            if (Haptics?.notificationAsync) {
+                await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            }
+            
+            console.log('Saving playlist:', { id, name, url });
+            setPlaylists(prev => {
+                const updated = prev.map(p =>
+                    p.id === id ? { ...p, name: name.trim(), url: url.trim() } : p
+                );
+                console.log('Updated playlist in array:', updated.find(p => p.id === id));
+                return updated;
+            });
 
-        setEditingId(null);
-        setIsAddingNew(false);
-        
-        // Show success message
-        Alert.alert('Success', 'Playlist saved successfully!');
+            // Clear editing states
+            setEditingId(null);
+            setIsAddingNew(false);
+            setExpandedId(id); // Keep it expanded to show the saved data
+            
+            // Show success message
+            showAlert('Success', 'Playlist saved successfully!');
+        } catch (error) {
+            console.error('Error saving playlist:', error);
+            showAlert('Error', 'Failed to save playlist');
+        }
     };
 
     const cancelEdit = async (): Promise<void> => {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
-        if (isAddingNew) {
+        if (Haptics?.impactAsync) {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+        }
+        
+        if (isAddingNew && editingId) {
             // Remove the new playlist if it was being added
+            console.log('Canceling new playlist addition');
             setPlaylists(prev => prev.filter(p => p.id !== editingId));
-            setIsAddingNew(false);
             setExpandedId(null);
         }
         setEditingId(null);
+        setIsAddingNew(false);
     };
 
     const deletePlaylist = async (id: string): Promise<void> => {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+        if (Haptics?.impactAsync) {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+        }
+        
         const confirmed = await confirmAction(
             'Confirm Delete',
             'Are you sure you want to delete this playlist?',
@@ -154,8 +215,16 @@ const PlaylistManagerScreen: React.FC = () => {
         );
         if (!confirmed) return;
         
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        setPlaylists(prev => prev.filter(p => p.id !== id));
+        if (Haptics?.notificationAsync) {
+            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
+        
+        console.log('Deleting playlist with id:', id);
+        setPlaylists(prev => {
+            const updated = prev.filter(p => p.id !== id);
+            console.log('Remaining playlists:', updated.length);
+            return updated;
+        });
         
         if (editingId === id) {
             setEditingId(null);
@@ -165,20 +234,27 @@ const PlaylistManagerScreen: React.FC = () => {
             setExpandedId(null);
         }
         
-        Alert.alert('Success', 'Playlist deleted successfully');
+        showAlert('Success', 'Playlist deleted successfully');
     };
 
     const togglePlaylist = async (id: string): Promise<void> => {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        if (Haptics?.impactAsync) {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        }
+        
+        console.log('Toggling playlist enabled state for id:', id);
         setPlaylists(prev =>
             prev.map(p => (p.id === id ? { ...p, enabled: !p.enabled } : p))
         );
     };
 
     const startEditing = async (id: string): Promise<void> => {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+        if (Haptics?.impactAsync) {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+        }
+        
         if (editingId && editingId !== id) {
-            cancelEdit();
+            await cancelEdit();
         }
         setEditingId(id);
         setExpandedId(id);
@@ -187,8 +263,31 @@ const PlaylistManagerScreen: React.FC = () => {
 
     const toggleExpanded = async (id: string): Promise<void> => {
         if (editingId === id) return;
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+        
+        if (Haptics?.impactAsync) {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+        }
+        
         setExpandedId(expandedId === id ? null : id);
+    };
+
+    // Clear all playlists (utility function)
+    const clearAllPlaylists = async (): Promise<void> => {
+        const confirmed = await confirmAction(
+            'Clear All Playlists',
+            'Are you sure you want to delete all playlists? This action cannot be undone.',
+            'Clear All'
+        );
+        if (!confirmed) return;
+        
+        try {
+            await asyncStorageService.removeItem(STORAGE_KEY);
+            setPlaylists([]);
+            showAlert('Success', 'All playlists cleared successfully');
+        } catch (error) {
+            console.error('Error clearing playlists:', error);
+            showAlert('Error', 'Failed to clear playlists');
+        }
     };
 
     const PlaylistItem: React.FC<PlaylistItemProps> = ({
@@ -196,6 +295,7 @@ const PlaylistManagerScreen: React.FC = () => {
         index,
         isEditing,
         isExpanded,
+        isAddingNew,
         onEdit,
         onSave,
         onCancel,
@@ -235,7 +335,7 @@ const PlaylistManagerScreen: React.FC = () => {
                                 placeholder="Enter playlist name"
                                 placeholderTextColor="#666"
                                 autoFocus={isAddingNew}
-                                submitBehavior="blurAndSubmit"
+                                returnKeyType="next"
                             />
                         </View>
 
@@ -250,7 +350,8 @@ const PlaylistManagerScreen: React.FC = () => {
                                 multiline
                                 autoCapitalize="none"
                                 autoCorrect={false}
-                                submitBehavior="blurAndSubmit"
+                                returnKeyType="done"
+                                onSubmitEditing={handleSave}
                             />
                         </View>
 
@@ -395,6 +496,7 @@ const PlaylistManagerScreen: React.FC = () => {
                             index={index}
                             isEditing={editingId === playlist.id}
                             isExpanded={expandedId === playlist.id}
+                            isAddingNew={isAddingNew && editingId === playlist.id}
                             onEdit={startEditing}
                             onSave={savePlaylist}
                             onCancel={cancelEdit}
