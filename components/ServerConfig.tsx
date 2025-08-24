@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, Text } from '@/components/Themed';
 import { showAlert } from '@/utils/platform';
 import { AntDesign, Feather, MaterialIcons } from '@expo/vector-icons';
+import { confirmAction } from '@/utils/CrossPlatform';
 
 interface ServerConfigProps {
   serverName: string;
@@ -231,28 +232,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
       showAlert('Error', 'Failed to update server URL.');
       console.error('Error updating server URL:', error);
     }
-  };
-
-  const confirmAction = async (
-    title: string,
-    message: string,
-    confirmText: string
-  ): Promise<boolean> => {
-    if (Platform.OS === 'web') {
-      return window.confirm(`${title}\n\n${message}`);
-    }
-
-    return new Promise((resolve) => {
-      Alert.alert(
-        title,
-        message,
-        [
-          { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
-          { text: confirmText, style: 'destructive', onPress: () => resolve(true) },
-        ]
-      );
-    });
-  };
+  };  
 
 
   const handleDelete = async (serverId: string) => {
