@@ -384,16 +384,7 @@ const IptvScreen: React.FC<IptvScreenProps> = ({
                         ? `No channels found matching "${searchQuery}"`
                         : 'No channels found in the selected filters.'
                 }
-            </Text>
-            {type === 'playlists' && (
-                <TouchableOpacity
-                    style={styles.settingsButton}
-                    onPress={onSettingsPress}
-                >
-                    <Ionicons name="settings-outline" size={20} color="#535aff" />
-                    <Text style={styles.settingsButtonText}>Go to Settings</Text>
-                </TouchableOpacity>
-            )}
+            </Text>            
         </View>
     );
 

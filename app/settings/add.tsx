@@ -13,7 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 // Removed AsyncStorage import - using localStorage instead
 import { Alert, Platform } from "react-native";
-import { confirmAction } from '@/utils/CrossPlatform';
+import { confirmAction } from '@/utils/platform';
 
 interface Playlist {
     id: string;
