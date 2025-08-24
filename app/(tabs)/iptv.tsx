@@ -40,13 +40,14 @@ interface Channel {
 }
 
 interface IptvScreenProps {
-    playlists?: Playlist[];
+    playlists: Playlist[];
     onSettingsPress?: () => void;
+    onPlayChannel?: (channel: Channel) => void;
 }
 
-const IptvScreen: React.FC<IptvScreenProps> = ({ 
+const IptvScreen: React.FC<IptvScreenProps> = ({
     playlists = [],
-    onSettingsPress 
+    onSettingsPress
 }) => {
     const [channels, setChannels] = useState<Channel[]>([]);
     const [selectedPlaylist, setSelectedPlaylist] = useState<string | null>(null);
@@ -57,204 +58,7 @@ const IptvScreen: React.FC<IptvScreenProps> = ({
     const [selectedCategory, setSelectedCategory] = useState<string>('All');
     const [showSearch, setShowSearch] = useState<boolean>(false);
 
-    // Mock data for demonstration
-    const mockPlaylists: Playlist[] = [
-        {
-            id: '1',
-            name: 'Sports Channels',
-            url: 'https://example.com/sports.m3u8',
-            enabled: true,
-            createdAt: new Date().toISOString(),
-            channelCount: 45,
-        },
-        {
-            id: '2',
-            name: 'News Channels',
-            url: 'https://example.com/news.m3u8',
-            enabled: true,
-            createdAt: new Date().toISOString(),
-            channelCount: 28,
-        },
-        {
-            id: '3',
-            name: 'Entertainment',
-            url: 'https://example.com/entertainment.m3u8',
-            enabled: true,
-            createdAt: new Date().toISOString(),
-            channelCount: 67,
-        },
-        {
-            id: '4',
-            name: 'International',
-            url: 'https://example.com/international.m3u8',
-            enabled: true,
-            createdAt: new Date().toISOString(),
-            channelCount: 132,
-        },
-    ];
-
-    const mockChannels: Channel[] = [
-        // Sports Channels
-        {
-            id: '1',
-            name: 'ESPN',
-            url: 'https://example.com/espn.m3u8',
-            logo: 'https://via.placeholder.com/80x80/ff0000/ffffff?text=ESPN',
-            group: 'Sports',
-            language: 'English',
-            playlistId: '1'
-        },
-        {
-            id: '2',
-            name: 'Fox Sports',
-            url: 'https://example.com/foxsports.m3u8',
-            logo: 'https://via.placeholder.com/80x80/0066cc/ffffff?text=FOX',
-            group: 'Sports',
-            language: 'English',
-            playlistId: '1'
-        },
-        {
-            id: '15',
-            name: 'Sky Sports',
-            url: 'https://example.com/skysports.m3u8',
-            logo: 'https://via.placeholder.com/80x80/003366/ffffff?text=SKY',
-            group: 'Premium Sports',
-            language: 'English',
-            playlistId: '1'
-        },
-        // News Channels
-        {
-            id: '3',
-            name: 'CNN',
-            url: 'https://example.com/cnn.m3u8',
-            logo: 'https://via.placeholder.com/80x80/cc0000/ffffff?text=CNN',
-            group: 'News',
-            language: 'English',
-            playlistId: '2'
-        },
-        {
-            id: '4',
-            name: 'BBC News',
-            url: 'https://example.com/bbc.m3u8',
-            logo: 'https://via.placeholder.com/80x80/ffffff/000000?text=BBC',
-            group: 'News',
-            language: 'English',
-            playlistId: '2'
-        },
-        {
-            id: '16',
-            name: 'Al Jazeera',
-            url: 'https://example.com/aljazeera.m3u8',
-            logo: 'https://via.placeholder.com/80x80/8B4513/ffffff?text=AJ',
-            group: 'International News',
-            language: 'Arabic',
-            playlistId: '2'
-        },
-        // Entertainment Channels
-        {
-            id: '5',
-            name: 'Netflix',
-            url: 'https://example.com/netflix.m3u8',
-            logo: 'https://via.placeholder.com/80x80/e50914/ffffff?text=NF',
-            group: 'Streaming',
-            language: 'English',
-            playlistId: '3'
-        },
-        {
-            id: '6',
-            name: 'Disney+',
-            url: 'https://example.com/disney.m3u8',
-            logo: 'https://via.placeholder.com/80x80/003366/ffffff?text=D+',
-            group: 'Family',
-            language: 'English',
-            playlistId: '3'
-        },
-        {
-            id: '17',
-            name: 'Comedy Central',
-            url: 'https://example.com/comedy.m3u8',
-            logo: 'https://via.placeholder.com/80x80/FFFF00/000000?text=CC',
-            group: 'Comedy',
-            language: 'English',
-            playlistId: '3'
-        },
-        // International Channels
-        {
-            id: '7',
-            name: 'Zee TV',
-            url: 'https://example.com/zee.m3u8',
-            logo: 'https://via.placeholder.com/80x80/FF6600/ffffff?text=ZEE',
-            group: 'Entertainment',
-            language: 'Hindi',
-            playlistId: '4'
-        },
-        {
-            id: '8',
-            name: 'Star Plus',
-            url: 'https://example.com/star.m3u8',
-            logo: 'https://via.placeholder.com/80x80/FFD700/000000?text=STAR',
-            group: 'Drama',
-            language: 'Hindi',
-            playlistId: '4'
-        },
-        {
-            id: '9',
-            name: 'TF1',
-            url: 'https://example.com/tf1.m3u8',
-            logo: 'https://via.placeholder.com/80x80/0066FF/ffffff?text=TF1',
-            group: 'General',
-            language: 'French',
-            playlistId: '4'
-        },
-        {
-            id: '10',
-            name: 'RAI Uno',
-            url: 'https://example.com/rai.m3u8',
-            logo: 'https://via.placeholder.com/80x80/009900/ffffff?text=RAI',
-            group: 'General',
-            language: 'Italian',
-            playlistId: '4'
-        },
-        {
-            id: '11',
-            name: 'TVE',
-            url: 'https://example.com/tve.m3u8',
-            logo: 'https://via.placeholder.com/80x80/FF0033/ffffff?text=TVE',
-            group: 'General',
-            language: 'Spanish',
-            playlistId: '4'
-        },
-        {
-            id: '12',
-            name: 'ARD',
-            url: 'https://example.com/ard.m3u8',
-            logo: 'https://via.placeholder.com/80x80/000066/ffffff?text=ARD',
-            group: 'General',
-            language: 'German',
-            playlistId: '4'
-        },
-        {
-            id: '13',
-            name: 'NHK World',
-            url: 'https://example.com/nhk.m3u8',
-            logo: 'https://via.placeholder.com/80x80/CC0000/ffffff?text=NHK',
-            group: 'News',
-            language: 'Japanese',
-            playlistId: '4'
-        },
-        {
-            id: '14',
-            name: 'CCTV',
-            url: 'https://example.com/cctv.m3u8',
-            logo: 'https://via.placeholder.com/80x80/FF0000/FFFF00?text=CCTV',
-            group: 'News',
-            language: 'Chinese',
-            playlistId: '4'
-        },
-    ];
-
-    const activePlaylistsData = playlists.length > 0 ? playlists : mockPlaylists;
-    const enabledPlaylists = activePlaylistsData.filter(p => p.enabled);
+    const enabledPlaylists = playlists.filter(p => p.enabled);
 
     useEffect(() => {
         if (selectedPlaylist) {
@@ -262,23 +66,83 @@ const IptvScreen: React.FC<IptvScreenProps> = ({
         }
     }, [selectedPlaylist]);
 
+    // M3U8 Parser function
+    const parseM3U8 = (content: string): Channel[] => {
+        const lines = content.split('\n').map(line => line.trim()).filter(line => line);
+        const channels: Channel[] = [];
+        let currentChannel: Partial<Channel> = {};
+        let channelIndex = 0;
+
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+
+            if (line.startsWith('#EXTINF:')) {
+                // Parse channel info from #EXTINF line
+                const infoMatch = line.match(/#EXTINF:.*?,(.+)/);
+                const channelName = infoMatch ? infoMatch[1].trim() : `Channel ${channelIndex + 1}`;
+
+                // Extract additional attributes
+                const tvgLogoMatch = line.match(/tvg-logo="([^"]+)"/);
+                const groupTitleMatch = line.match(/group-title="([^"]+)"/);
+                const tvgLanguageMatch = line.match(/tvg-language="([^"]+)"/);
+
+                currentChannel = {
+                    id: `channel_${selectedPlaylist}_${channelIndex}`,
+                    name: channelName,
+                    logo: tvgLogoMatch ? tvgLogoMatch[1] : undefined,
+                    group: groupTitleMatch ? groupTitleMatch[1] : undefined,
+                    language: tvgLanguageMatch ? tvgLanguageMatch[1] : undefined,
+                    playlistId: selectedPlaylist!,
+                };
+                channelIndex++;
+            } else if (line.startsWith('http')) {
+                // This is a stream URL
+                if (currentChannel.name) {
+                    currentChannel.url = line;
+                    channels.push(currentChannel as Channel);
+                    currentChannel = {};
+                }
+            }
+        }
+
+        return channels;
+    };
+
     const loadChannels = async () => {
         if (!selectedPlaylist) return;
-        
+
         setLoading(true);
         try {
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            const filteredChannels = mockChannels.filter(c => c.playlistId === selectedPlaylist);
-            setChannels(filteredChannels);
-            
+            const playlist = enabledPlaylists.find(p => p.id === selectedPlaylist);
+            if (!playlist) {
+                throw new Error('Playlist not found');
+            }
+
+            // Fetch the M3U8 playlist content
+            const response = await fetch(playlist.url);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch playlist: ${response.status}`);
+            }
+
+            const content = await response.text();
+            const parsedChannels = parseM3U8(content);
+
+            setChannels(parsedChannels);
+
             // Reset filters when switching playlists
             setSelectedLanguage('All');
             setSelectedCategory('All');
             setSearchQuery('');
         } catch (error) {
-            Alert.alert('Error', 'Failed to load channels');
+            console.error('Error loading channels:', error);
+            Alert.alert(
+                'Error',
+                `Failed to load channels: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                [
+                    { text: 'Retry', onPress: () => loadChannels() },
+                    { text: 'Back', onPress: resetToPlaylistSelection }
+                ]
+            );
         } finally {
             setLoading(false);
         }
@@ -290,8 +154,8 @@ const IptvScreen: React.FC<IptvScreenProps> = ({
         setRefreshing(false);
     };
 
-    const playChannel = (channel: Channel) => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const playChannel = async (channel: Channel) => {
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         Alert.alert(
             'Play Channel',
             `Playing ${channel.name}`,
@@ -299,8 +163,8 @@ const IptvScreen: React.FC<IptvScreenProps> = ({
         );
     };
 
-    const resetToPlaylistSelection = () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+    const resetToPlaylistSelection = async () => {
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
         setSelectedPlaylist(null);
         setChannels([]);
         setSelectedLanguage('All');
@@ -310,42 +174,42 @@ const IptvScreen: React.FC<IptvScreenProps> = ({
     };
 
     const getLanguages = () => {
-        const languages = ['All', ...new Set(channels.map(c => c.language).filter(Boolean))];
+        const languages: any[] = ['All', ...new Set(channels.map(c => c.language).filter(Boolean))];
         return languages.sort();
     };
 
     const getCategories = () => {
-        const categories = ['All', ...new Set(channels.map(c => c.group).filter(Boolean))];
+        const categories: any[] = ['All', ...new Set(channels.map(c => c.group).filter(Boolean))];
         return categories.sort();
     };
 
     const getFilteredChannels = () => {
         let filtered = channels;
-        
+
         if (selectedLanguage !== 'All') {
             filtered = filtered.filter(c => c.language === selectedLanguage);
         }
-        
+
         if (selectedCategory !== 'All') {
             filtered = filtered.filter(c => c.group === selectedCategory);
         }
-        
+
         if (searchQuery) {
-            filtered = filtered.filter(c => 
+            filtered = filtered.filter(c =>
                 c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 (c.group && c.group.toLowerCase().includes(searchQuery.toLowerCase())) ||
                 (c.language && c.language.toLowerCase().includes(searchQuery.toLowerCase()))
             );
         }
-        
+
         return filtered;
     };
 
     const PlaylistCard = ({ playlist }: { playlist: Playlist }) => (
         <TouchableOpacity
             style={styles.playlistCard}
-            onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            onPress={async () => {
+                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 setSelectedPlaylist(playlist.id);
             }}
             activeOpacity={0.8}
@@ -357,15 +221,15 @@ const IptvScreen: React.FC<IptvScreenProps> = ({
                 <View style={styles.playlistIcon}>
                     <Ionicons name="list" size={32} color="#535aff" />
                 </View>
-                
+
                 <Text style={styles.playlistName}>{playlist.name}</Text>
-                
+
                 <View style={styles.playlistMeta}>
                     <Text style={styles.channelCountText}>
-                        {playlist.channelCount || mockChannels.filter(c => c.playlistId === playlist.id).length} channels
+                        {playlist.channelCount} channels
                     </Text>
                 </View>
-                
+
                 <View style={styles.playlistArrow}>
                     <Ionicons name="chevron-forward" size={20} color="#666" />
                 </View>
@@ -400,8 +264,8 @@ const IptvScreen: React.FC<IptvScreenProps> = ({
                                 styles.filterChip,
                                 selected === item && styles.selectedFilterChip
                             ]}
-                            onPress={() => {
-                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+                            onPress={async () => {
+                                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
                                 onSelect(item);
                             }}
                         >
@@ -471,7 +335,7 @@ const IptvScreen: React.FC<IptvScreenProps> = ({
                         <Ionicons name="play-circle" size={32} color="#535aff" />
                     </View>
                 </View>
-                
+
                 <View style={styles.channelInfo}>
                     <Text style={styles.channelName} numberOfLines={2}>
                         {channel.name}
@@ -489,11 +353,11 @@ const IptvScreen: React.FC<IptvScreenProps> = ({
                 </View>
 
                 <View style={styles.channelActions}>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         style={styles.favoriteButton}
-                        onPress={(e) => {
+                        onPress={async (e) => {
                             e.stopPropagation();
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+                            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
                         }}
                     >
                         <Ionicons name="heart-outline" size={18} color="#666" />
@@ -505,24 +369,24 @@ const IptvScreen: React.FC<IptvScreenProps> = ({
 
     const EmptyState = ({ type }: { type: 'playlists' | 'channels' }) => (
         <View style={styles.emptyState}>
-            <Ionicons 
-                name={type === 'playlists' ? "list-outline" : "tv-outline"} 
-                size={80} 
-                color="#333" 
+            <Ionicons
+                name={type === 'playlists' ? "list-outline" : "tv-outline"}
+                size={80}
+                color="#333"
             />
             <Text style={styles.emptyTitle}>
                 {type === 'playlists' ? 'No Playlists Available' : 'No Channels Found'}
             </Text>
             <Text style={styles.emptySubtitle}>
-                {type === 'playlists' 
+                {type === 'playlists'
                     ? 'No active playlists found. Enable playlists in settings.'
-                    : searchQuery 
+                    : searchQuery
                         ? `No channels found matching "${searchQuery}"`
                         : 'No channels found in the selected filters.'
                 }
             </Text>
             {type === 'playlists' && (
-                <TouchableOpacity 
+                <TouchableOpacity
                     style={styles.settingsButton}
                     onPress={onSettingsPress}
                 >
@@ -538,16 +402,16 @@ const IptvScreen: React.FC<IptvScreenProps> = ({
         return (
             <SafeAreaView style={styles.container}>
                 <StatusBar barStyle="light-content" backgroundColor="#000" />
-                
+
                 <View style={styles.header}>
                     <View style={styles.headerLeft}>
                         <Text style={styles.title}>Select Playlist</Text>
                     </View>
-                    
-                    <TouchableOpacity 
+
+                    <TouchableOpacity
                         style={styles.headerButton}
-                        onPress={() => {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+                        onPress={async () => {
+                            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
                             onSettingsPress?.();
                         }}
                     >
@@ -576,11 +440,11 @@ const IptvScreen: React.FC<IptvScreenProps> = ({
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar barStyle="light-content" backgroundColor="#000" />
-            
+
             {/* Header */}
             <View style={styles.header}>
                 <View style={styles.headerLeft}>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         style={styles.backButton}
                         onPress={resetToPlaylistSelection}
                     >
@@ -593,23 +457,23 @@ const IptvScreen: React.FC<IptvScreenProps> = ({
                         </Text>
                     </View>
                 </View>
-                
+
                 <View style={styles.headerRight}>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         style={[styles.headerButton, showSearch && styles.activeHeaderButton]}
-                        onPress={() => {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+                        onPress={async () => {
+                            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
                             setShowSearch(!showSearch);
                             if (showSearch) setSearchQuery('');
                         }}
                     >
                         <Ionicons name="search" size={22} color="#fff" />
                     </TouchableOpacity>
-                    
-                    <TouchableOpacity 
+
+                    <TouchableOpacity
                         style={styles.headerButton}
-                        onPress={() => {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+                        onPress={async () => {
+                            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
                             onSettingsPress?.();
                         }}
                     >
@@ -627,20 +491,20 @@ const IptvScreen: React.FC<IptvScreenProps> = ({
                 <View style={styles.filtersContainer}>
                     <FilterSelector
                         title="Language"
-                        items={getLanguages() as []}
+                        items={getLanguages()}
                         selected={selectedLanguage}
                         onSelect={setSelectedLanguage}
                         icon="language"
                     />
                     <FilterSelector
                         title="Category"
-                        items={getCategories() as []}
+                        items={getCategories()}
                         selected={selectedCategory}
                         onSelect={setSelectedCategory}
                         icon="grid"
                     />
                 </View>
-                
+
                 {loading && !refreshing ? (
                     <View style={styles.loadingContainer}>
                         <ActivityIndicator size="large" color="#535aff" />
