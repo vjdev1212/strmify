@@ -49,42 +49,12 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-  const LightTheme: Theme = {
-    dark: false,
-    colors: {
-      primary: 'rgb(0, 122, 255)',
-      background: '#f8f9fa',
-      card: 'rgba(255, 255, 255, 0.9)',
-      text: 'rgb(28, 28, 30)',
-      border: 'rgba(216, 216, 216, 0.3)',
-      notification: 'rgb(255, 59, 48)',
-    },
-    fonts: {
-      regular: {
-        fontFamily: '',
-        fontWeight: '500'
-      },
-      medium: {
-        fontFamily: '',
-        fontWeight: '500'
-      },
-      bold: {
-        fontFamily: '',
-        fontWeight: '500'
-      },
-      heavy: {
-        fontFamily: '',
-        fontWeight: '500'
-      }
-    }
-  };
 
-  // Enhanced DarkTheme with proper background colors
   const GlassDarkTheme: Theme = {
     ...DarkTheme,
     colors: {
       ...DarkTheme.colors,
-      background: '#0a0a0a', // Solid background instead of transparent
+      background: '#0a0a0a', 
       card: 'rgba(18, 18, 18, 0.9)',
       border: 'rgba(255, 255, 255, 0.1)',
     }

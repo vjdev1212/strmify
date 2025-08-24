@@ -78,6 +78,7 @@ export default function TabLayout() {
         { name: 'index', title: 'Home', icon: 'home' },
         { name: 'trakt', title: 'Trakt', icon: 'check-square-o' },
         { name: 'search', title: 'Search', icon: 'search' },
+        { name: 'iptv', title: 'TV', icon: 'tv' },
         { name: 'settings', title: 'Settings', icon: 'gear' },
       ].map(({ name, title, icon }) => (
         <Tabs.Screen
