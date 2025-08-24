@@ -6,12 +6,9 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
-  Modal,
   ScrollView,
-  Switch,
   Animated,
 } from 'react-native';
-import { PanGestureHandler, State } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -23,14 +20,17 @@ interface Playlist {
   createdAt: string;
 }
 
-interface FormData {
-  name: string;
-  url: string;
-}
-
 interface PlaylistItemProps {
   playlist: Playlist;
   index: number;
+  isEditing: boolean;
+  isExpanded: boolean;
+  onEdit: (id: string) => void;
+  onSave: (id: string, name: string, url: string) => void;
+  onCancel: () => void;
+  onDelete: (id: string) => void;
+  onToggle: (id: string) => void;
+  onExpand: (id: string) => void;
 }
 
 const PlaylistManagerScreen: React.FC = () => {
@@ -51,69 +51,62 @@ const PlaylistManagerScreen: React.FC = () => {
     },
   ]);
 
-  const [modalVisible, setModalVisible] = useState<boolean>(false);
-  const [editingPlaylist, setEditingPlaylist] = useState<Playlist | null>(null);
-  const [formData, setFormData] = useState<FormData>({ name: '', url: '' });
-
-  const openModal = (playlist: Playlist | null = null): void => {
-    if (playlist) {
-      setEditingPlaylist(playlist);
-      setFormData({ name: playlist.name, url: playlist.url });
-    } else {
-      setEditingPlaylist(null);
-      setFormData({ name: '', url: '' });
-    }
-    setModalVisible(true);
-  };
-
-  const closeModal = (): void => {
-    setModalVisible(false);
-    setEditingPlaylist(null);
-    setFormData({ name: '', url: '' });
-  };
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [isAddingNew, setIsAddingNew] = useState<boolean>(false);
 
   const validateUrl = (url: string): boolean => {
     return url.includes('.m3u8') || url.includes('.m3u');
   };
 
-  const savePlaylist = (): void => {
-    if (!formData.name.trim()) {
+  const addNewPlaylist = (): void => {
+    const newPlaylist: Playlist = {
+      id: Date.now().toString(),
+      name: '',
+      url: '',
+      enabled: true,
+      createdAt: new Date().toISOString(),
+    };
+    setPlaylists(prev => [newPlaylist, ...prev]);
+    setEditingId(newPlaylist.id);
+    setExpandedId(newPlaylist.id);
+    setIsAddingNew(true);
+  };
+
+  const savePlaylist = (id: string, name: string, url: string): void => {
+    if (!name.trim()) {
       Alert.alert('Error', 'Please enter a playlist name');
       return;
     }
 
-    if (!formData.url.trim()) {
+    if (!url.trim()) {
       Alert.alert('Error', 'Please enter a playlist URL');
       return;
     }
 
-    if (!validateUrl(formData.url)) {
+    if (!validateUrl(url)) {
       Alert.alert('Error', 'Please enter a valid M3U8 playlist URL');
       return;
     }
 
-    if (editingPlaylist) {
-      // Update existing playlist
-      setPlaylists(prev =>
-        prev.map(p =>
-          p.id === editingPlaylist.id
-            ? { ...p, name: formData.name, url: formData.url }
-            : p
-        )
-      );
-    } else {
-      // Add new playlist
-      const newPlaylist: Playlist = {
-        id: Date.now().toString(),
-        name: formData.name,
-        url: formData.url,
-        enabled: true,
-        createdAt: new Date().toISOString(),
-      };
-      setPlaylists(prev => [...prev, newPlaylist]);
-    }
+    setPlaylists(prev =>
+      prev.map(p =>
+        p.id === id ? { ...p, name: name.trim(), url: url.trim() } : p
+      )
+    );
+    
+    setEditingId(null);
+    setIsAddingNew(false);
+  };
 
-    closeModal();
+  const cancelEdit = (): void => {
+    if (isAddingNew) {
+      // Remove the new playlist if it was being added
+      setPlaylists(prev => prev.filter(p => p.id !== editingId));
+      setIsAddingNew(false);
+      setExpandedId(null);
+    }
+    setEditingId(null);
   };
 
   const deletePlaylist = (id: string): void => {
@@ -125,7 +118,16 @@ const PlaylistManagerScreen: React.FC = () => {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => setPlaylists(prev => prev.filter(p => p.id !== id)),
+          onPress: () => {
+            setPlaylists(prev => prev.filter(p => p.id !== id));
+            if (editingId === id) {
+              setEditingId(null);
+              setIsAddingNew(false);
+            }
+            if (expandedId === id) {
+              setExpandedId(null);
+            }
+          },
         },
       ]
     );
@@ -137,85 +139,170 @@ const PlaylistManagerScreen: React.FC = () => {
     );
   };
 
-  const reorderPlaylists = (fromIndex: number, toIndex: number): void => {
-    const newPlaylists = [...playlists];
-    const [removed] = newPlaylists.splice(fromIndex, 1);
-    newPlaylists.splice(toIndex, 0, removed);
-    setPlaylists(newPlaylists);
+  const startEditing = (id: string): void => {
+    if (editingId && editingId !== id) {
+      cancelEdit();
+    }
+    setEditingId(id);
+    setExpandedId(id);
+    setIsAddingNew(false);
   };
 
-  const PlaylistItem: React.FC<PlaylistItemProps> = ({ playlist, index }) => {
-    const translateY = useRef(new Animated.Value(0)).current;
-    const opacity = useRef(new Animated.Value(1)).current;
+  const toggleExpanded = (id: string): void => {
+    if (editingId === id) return; // Don't allow collapse while editing
+    setExpandedId(expandedId === id ? null : id);
+  };
 
-    const onGestureEvent = Animated.event(
-      [{ nativeEvent: { translationY: translateY } }],
-      { useNativeDriver: true }
-    );
+  const PlaylistItem: React.FC<PlaylistItemProps> = ({ 
+    playlist, 
+    index, 
+    isEditing, 
+    isExpanded,
+    onEdit, 
+    onSave, 
+    onCancel, 
+    onDelete, 
+    onToggle,
+    onExpand 
+  }) => {
+    const [editName, setEditName] = useState<string>(playlist.name);
+    const [editUrl, setEditUrl] = useState<string>(playlist.url);
 
-    const onHandlerStateChange = (event: any): void => {
-      if (event.nativeEvent.oldState === State.ACTIVE) {
-        Animated.spring(translateY, {
-          toValue: 0,
-          useNativeDriver: true,
-        }).start();
-      }
+    const handleSave = (): void => {
+      onSave(playlist.id, editName, editUrl);
     };
 
-    return (
-      <PanGestureHandler
-        onGestureEvent={onGestureEvent}
-        onHandlerStateChange={onHandlerStateChange}
-      >
-        <Animated.View
-          style={[
-            styles.playlistItem,
-            {
-              opacity: playlist.enabled ? 1 : 0.5,
-              transform: [{ translateY }],
-            },
-          ]}
-        >
-          <View style={styles.dragHandle}>
-            <Ionicons name="reorder-two" size={20} color="#666" />
-          </View>
+    const handleCancel = (): void => {
+      setEditName(playlist.name);
+      setEditUrl(playlist.url);
+      onCancel();
+    };
 
-          <View style={styles.playlistContent}>
-            <View style={styles.playlistHeader}>
-              <Text style={styles.playlistName}>{playlist.name}</Text>
-              <Switch
-                value={playlist.enabled}
-                onValueChange={() => togglePlaylist(playlist.id)}
-                trackColor={{ false: '#333', true: '#535aff40' }}
-                thumbColor={playlist.enabled ? '#535aff' : '#666'}
-                ios_backgroundColor="#333"
+    if (isEditing) {
+      return (
+        <View style={[styles.playlistItem, styles.editingItem]}>
+          <View style={styles.editingContent}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Playlist Name</Text>
+              <TextInput
+                style={styles.editInput}
+                value={editName}
+                onChangeText={setEditName}
+                placeholder="Enter playlist name"
+                placeholderTextColor="#666"
+                autoFocus={isAddingNew}
               />
             </View>
-            
-            <Text style={styles.playlistUrl} numberOfLines={1}>
-              {playlist.url}
-            </Text>
-            
-            <View style={styles.playlistActions}>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>M3U8 URL</Text>
+              <TextInput
+                style={[styles.editInput, styles.urlEditInput]}
+                value={editUrl}
+                onChangeText={setEditUrl}
+                placeholder="https://example.com/playlist.m3u8"
+                placeholderTextColor="#666"
+                multiline
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            </View>
+
+            <View style={styles.editActions}>
               <TouchableOpacity
-                style={[styles.actionButton, styles.editButton]}
-                onPress={() => openModal(playlist)}
+                style={[styles.editActionButton, styles.cancelEditButton]}
+                onPress={handleCancel}
               >
-                <Ionicons name="pencil" size={16} color="#535aff" />
-                <Text style={styles.editButtonText}>Edit</Text>
+                <Ionicons name="close" size={16} color="#ff4757" />
+                <Text style={styles.cancelEditText}>Cancel</Text>
               </TouchableOpacity>
               
               <TouchableOpacity
-                style={[styles.actionButton, styles.deleteButton]}
-                onPress={() => deletePlaylist(playlist.id)}
+                style={[styles.editActionButton, styles.saveEditButton]}
+                onPress={handleSave}
               >
-                <Ionicons name="trash" size={16} color="#ff4757" />
-                <Text style={styles.deleteButtonText}>Delete</Text>
+                <Ionicons name="checkmark" size={16} color="#fff" />
+                <Text style={styles.saveEditText}>Save</Text>
               </TouchableOpacity>
             </View>
           </View>
-        </Animated.View>
-      </PanGestureHandler>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.playlistItem}>
+        <TouchableOpacity
+          style={styles.playlistHeader}
+          onPress={() => onExpand(playlist.id)}
+          activeOpacity={0.7}
+        >
+          <View style={styles.playlistMainInfo}>
+            <View style={styles.playlistTitleRow}>
+              <View style={styles.titleWithStatus}>
+                <Text style={[
+                  styles.playlistName,
+                  { opacity: playlist.enabled ? 1 : 0.6 }
+                ]}>
+                  {playlist.name}
+                </Text>
+                <View style={[
+                  styles.statusDot,
+                  { backgroundColor: playlist.enabled ? '#00ff88' : '#666' }
+                ]} />
+              </View>
+            </View>
+            <Text style={styles.playlistUrl} numberOfLines={1}>
+              {playlist.url}
+            </Text>
+          </View>
+          <Ionicons 
+            name={isExpanded ? "chevron-up" : "chevron-down"} 
+            size={20} 
+            color="#666" 
+          />
+        </TouchableOpacity>
+
+        {isExpanded && (
+          <View style={styles.playlistActions}>
+            <TouchableOpacity
+              style={[
+                styles.actionButton, 
+                playlist.enabled ? styles.disableButton : styles.enableButton
+              ]}
+              onPress={() => onToggle(playlist.id)}
+            >
+              <Ionicons 
+                name={playlist.enabled ? "pause" : "play"} 
+                size={16} 
+                color={playlist.enabled ? "#ff9500" : "#00ff88"} 
+              />
+              <Text style={[
+                styles.actionButtonText,
+                { color: playlist.enabled ? "#ff9500" : "#00ff88" }
+              ]}>
+                {playlist.enabled ? 'Disable' : 'Enable'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.actionButton, styles.editButton]}
+              onPress={() => onEdit(playlist.id)}
+            >
+              <Ionicons name="pencil" size={16} color="#535aff" />
+              <Text style={styles.editButtonText}>Edit</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[styles.actionButton, styles.deleteButton]}
+              onPress={() => onDelete(playlist.id)}
+            >
+              <Ionicons name="trash" size={16} color="#ff4757" />
+              <Text style={styles.deleteButtonText}>Delete</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
     );
   };
 
@@ -223,7 +310,7 @@ const PlaylistManagerScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>IPTV Playlists</Text>
-        <TouchableOpacity style={styles.addButton} onPress={() => openModal()}>
+        <TouchableOpacity style={styles.addButton} onPress={addNewPlaylist}>
           <Ionicons name="add" size={24} color="#fff" />
         </TouchableOpacity>
       </View>
@@ -243,73 +330,18 @@ const PlaylistManagerScreen: React.FC = () => {
               key={playlist.id}
               playlist={playlist}
               index={index}
+              isEditing={editingId === playlist.id}
+              isExpanded={expandedId === playlist.id}
+              onEdit={startEditing}
+              onSave={savePlaylist}
+              onCancel={cancelEdit}
+              onDelete={deletePlaylist}
+              onToggle={togglePlaylist}
+              onExpand={toggleExpanded}
             />
           ))
         )}
       </ScrollView>
-
-      <Modal
-        visible={modalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={closeModal}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                {editingPlaylist ? 'Edit Playlist' : 'Add Playlist'}
-              </Text>
-              <TouchableOpacity onPress={closeModal}>
-                <Ionicons name="close" size={24} color="#fff" />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Playlist Name</Text>
-              <TextInput
-                style={styles.input}
-                value={formData.name}
-                onChangeText={(text: string) => setFormData(prev => ({ ...prev, name: text }))}
-                placeholder="Enter playlist name"
-                placeholderTextColor="#666"
-              />
-            </View>
-
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>M3U8 URL</Text>
-              <TextInput
-                style={[styles.input, styles.urlInput]}
-                value={formData.url}
-                onChangeText={(text: string) => setFormData(prev => ({ ...prev, url: text }))}
-                placeholder="https://example.com/playlist.m3u8"
-                placeholderTextColor="#666"
-                multiline
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-            </View>
-
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={closeModal}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={[styles.modalButton, styles.saveButton]}
-                onPress={savePlaylist}
-              >
-                <Text style={styles.saveButtonText}>
-                  {editingPlaylist ? 'Update' : 'Save'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 };
@@ -320,7 +352,8 @@ const styles = StyleSheet.create({
     marginTop: 30,
     width: '100%',
     maxWidth: 780,
-    margin: 'auto'
+    margin: 'auto',
+    backgroundColor: '#0a0a0a',
   },
   header: {
     flexDirection: 'row',
@@ -352,6 +385,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 20,
+    paddingTop: 20,
   },
   emptyState: {
     alignItems: 'center',
@@ -374,47 +408,74 @@ const styles = StyleSheet.create({
     backgroundColor: '#111',
     borderRadius: 12,
     marginVertical: 6,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
     borderWidth: 1,
     borderColor: '#222',
+    overflow: 'hidden',
   },
-  dragHandle: {
-    marginRight: 12,
-    paddingVertical: 8,
+  editingItem: {
+    backgroundColor: '#151515',
+    borderColor: '#222',
+    borderWidth: 1,
+    padding: 16,
   },
-  playlistContent: {
-    flex: 1,
+  editingContent: {
+    width: '100%',
   },
   playlistHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    padding: 16,
+  },
+  playlistMainInfo: {
+    flex: 1,
+    marginRight: 12,
+  },
+  playlistTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 8,
+  },
+  titleWithStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
   },
   playlistName: {
     fontSize: 16,
     fontWeight: '600',
     color: '#fff',
-    flex: 1,
+    marginRight: 8,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   playlistUrl: {
     fontSize: 12,
     color: '#888',
-    marginBottom: 12,
   },
   playlistActions: {
     flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingBottom: 16,
     gap: 8,
   },
   actionButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-    gap: 4,
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 8,
+    gap: 6,
+  },
+  enableButton: {
+    backgroundColor: '#00ff8820',
+  },
+  disableButton: {
+    backgroundColor: '#ff950020',
   },
   editButton: {
     backgroundColor: '#535aff20',
@@ -422,7 +483,7 @@ const styles = StyleSheet.create({
   editButtonText: {
     color: '#535aff',
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   deleteButton: {
     backgroundColor: '#ff475720',
@@ -430,81 +491,64 @@ const styles = StyleSheet.create({
   deleteButtonText: {
     color: '#ff4757',
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: '600',
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    justifyContent: 'flex-end',
+  actionButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
-  modalContent: {
-    backgroundColor: '#111',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-    maxHeight: '80%',
+  inputGroup: {
+    marginBottom: 16,
   },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#222',
-  },
-  modalTitle: {
-    fontSize: 18,
+  inputLabel: {
+    fontSize: 12,
     fontWeight: '600',
     color: '#fff',
+    marginBottom: 6,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
-  formGroup: {
-    marginTop: 20,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#fff',
-    marginBottom: 8,
-  },
-  input: {
+  editInput: {
     backgroundColor: '#222',
     borderRadius: 8,
-    padding: 16,
+    padding: 12,
     color: '#fff',
     fontSize: 14,
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: '#222',
   },
-  urlInput: {
+  urlEditInput: {
     minHeight: 60,
     textAlignVertical: 'top',
   },
-  modalActions: {
+  editActions: {
     flexDirection: 'row',
     gap: 12,
-    marginTop: 24,
+    marginTop: 8,
   },
-  modalButton: {
+  editActionButton: {
     flex: 1,
-    paddingVertical: 14,
-    borderRadius: 8,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 8,
+    gap: 6,
   },
-  cancelButton: {
+  cancelEditButton: {
     backgroundColor: '#333',
   },
-  cancelButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '500',
+  cancelEditText: {
+    color: '#ff4757',
+    fontSize: 14,
+    fontWeight: '600',
   },
-  saveButton: {
+  saveEditButton: {
     backgroundColor: '#535aff',
   },
-  saveButtonText: {
+  saveEditText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
   },
 });
