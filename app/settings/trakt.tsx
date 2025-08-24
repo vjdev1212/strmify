@@ -4,8 +4,8 @@ import { isHapticsSupported, showAlert } from '@/utils/platform';
 import * as Haptics from 'expo-haptics';
 import { useCallback, useEffect, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { TraktTokens } from '@/utils/Trakt';
-import { webLinking, webSecureStore } from '@/utils/Web';
+import { webLinking } from '@/utils/Web';
+import { clearTraktTokens, getTraktUserInfo, isUserAuthenticated, saveTraktTokens, TraktTokens } from '@/clients/trakt';
 
 // Trakt.tv API configuration from environment variables
 const TRAKT_CLIENT_ID = process.env.EXPO_PUBLIC_TRAKT_CLIENT_ID || '';
@@ -166,10 +166,11 @@ const TraktAuthScreen = () => {
                 const tokens: TraktTokens = await response.json();
                 tokens.created_at = Math.floor(Date.now() / 1000);
 
-                await webSecureStore.setItem('trakt_tokens', JSON.stringify(tokens));
+                // Use service function to save tokens
+                await saveTraktTokens(tokens);
 
                 setIsAuthenticated(true);
-                await fetchUserInfo(tokens.access_token);
+                await fetchUserInfo();
 
                 if (!isWeb && isHapticsSupported()) {
                     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -202,25 +203,16 @@ const TraktAuthScreen = () => {
 
     const checkAuthStatus = async () => {
         try {
-            const tokens = await webSecureStore.getItem('trakt_tokens');
-            if (tokens) {
-                const parsedTokens: TraktTokens = JSON.parse(tokens);
-                if (isTokenValid(parsedTokens)) {
-                    setIsAuthenticated(true);
-                    await fetchUserInfo(parsedTokens.access_token);
-                } else {
-                    // Try to refresh the token
-                    await refreshAccessToken(parsedTokens);
-                }
+            // Use service function to check authentication
+            const authenticated = await isUserAuthenticated();
+            setIsAuthenticated(authenticated);
+            
+            if (authenticated) {
+                await fetchUserInfo();
             }
         } catch (error) {
             console.error('Failed to check auth status:', error);
         }
-    };
-
-    const isTokenValid = (tokens: TraktTokens): boolean => {
-        const expiresAt = tokens.created_at + tokens.expires_in;
-        return Date.now() / 1000 < expiresAt;
     };
     
     const authenticateWithTrakt = async () => {
@@ -250,56 +242,15 @@ const TraktAuthScreen = () => {
         }
     };
 
-    const refreshAccessToken = async (tokens: TraktTokens) => {
+    const fetchUserInfo = async () => {
         try {
-            const response = await fetch(`${TRAKT_API_BASE}/oauth/token`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'trakt-api-version': '2',
-                    'trakt-api-key': TRAKT_CLIENT_ID,
-                },
-                body: JSON.stringify({
-                    refresh_token: tokens.refresh_token,
-                    client_id: TRAKT_CLIENT_ID,
-                    client_secret: TRAKT_CLIENT_SECRET,
-                    redirect_uri: TRAKT_REDIRECT_URI,
-                    grant_type: 'refresh_token',
-                }),
-            });
-
-            if (response.ok) {
-                const newTokens: TraktTokens = await response.json();
-                newTokens.created_at = Math.floor(Date.now() / 1000);
-
-                await webSecureStore.setItem('trakt_tokens', JSON.stringify(newTokens));
-                setIsAuthenticated(true);
-                await fetchUserInfo(newTokens.access_token);
-            } else {
-                throw new Error('Failed to refresh token');
-            }
-        } catch (error) {
-            console.error('Token refresh error:', error);
-            await logout();
-        }
-    };
-
-    const fetchUserInfo = async (accessToken: string) => {
-        try {
-            const response = await fetch(`${TRAKT_API_BASE}/users/me`, {
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`,
-                    'trakt-api-version': '2',
-                    'trakt-api-key': TRAKT_CLIENT_ID,
-                },
-            });
-
-            if (response.ok) {
-                const user = await response.json();
+            // Use service function to get user info
+            const user = await getTraktUserInfo();
+            if (user) {
                 console.log('User info:', user);
                 setUserInfo(user);
             } else {
-                console.error('Failed to fetch user info:', response.status);
+                console.error('Failed to fetch user info');
             }
         } catch (error) {
             console.error('Failed to fetch user info:', error);
@@ -312,7 +263,8 @@ const TraktAuthScreen = () => {
                 await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
             }
 
-            await webSecureStore.deleteItem('trakt_tokens');
+            // Use service function to clear tokens
+            await clearTraktTokens();
             setIsAuthenticated(false);
             setUserInfo(null);
 
