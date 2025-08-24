@@ -12,13 +12,23 @@ import {
     Image,
     Alert,
     TextInput,
+    Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
+import { asyncStorageService } from '@/utils/AsyncStorage';
+import { showAlert } from '@/utils/platform';
 
 const { width } = Dimensions.get('window');
+
+interface AlertButton {
+    text: string;
+    style?: 'default' | 'cancel' | 'destructive';
+    onPress?: () => void;
+}
 
 interface Playlist {
     id: string;
@@ -40,19 +50,22 @@ interface Channel {
 }
 
 interface IptvScreenProps {
-    playlists: Playlist[];
     onSettingsPress?: () => void;
     onPlayChannel?: (channel: Channel) => void;
 }
 
+const STORAGE_KEY = 'iptv_playlists';
+
 const IptvScreen: React.FC<IptvScreenProps> = ({
-    playlists = [],
-    onSettingsPress
+    onSettingsPress,
+    onPlayChannel
 }) => {
+    const [playlists, setPlaylists] = useState<Playlist[]>([]);
     const [channels, setChannels] = useState<Channel[]>([]);
     const [selectedPlaylist, setSelectedPlaylist] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const [refreshing, setRefreshing] = useState<boolean>(false);
+    const [playlistsLoading, setPlaylistsLoading] = useState<boolean>(true);
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [selectedLanguage, setSelectedLanguage] = useState<string>('All');
     const [selectedCategory, setSelectedCategory] = useState<string>('All');
@@ -60,11 +73,80 @@ const IptvScreen: React.FC<IptvScreenProps> = ({
 
     const enabledPlaylists = playlists.filter(p => p.enabled);
 
+    // Load playlists from AsyncStorage on component mount
+    useEffect(() => {
+        loadPlaylists();
+    }, []);
+
     useEffect(() => {
         if (selectedPlaylist) {
             loadChannels();
         }
     }, [selectedPlaylist]);
+
+    const loadPlaylists = async (): Promise<void> => {
+        try {
+            console.log('Loading playlists from AsyncStorage...');
+            setPlaylistsLoading(true);
+            
+            const stored = await asyncStorageService.getItem(STORAGE_KEY);
+            
+            if (stored) {
+                const parsedPlaylists = JSON.parse(stored);
+                console.log('Loaded playlists:', parsedPlaylists);
+                
+                // Validate the loaded data
+                if (Array.isArray(parsedPlaylists)) {
+                    // Update channel counts by fetching playlist info
+                    const playlistsWithCounts = await Promise.all(
+                        parsedPlaylists.map(async (playlist: Playlist) => {
+                            if (playlist.enabled) {
+                                try {
+                                    const response = await fetch(playlist.url);
+                                    if (response.ok) {
+                                        const content = await response.text();
+                                        const channelCount = countChannelsInM3U8(content);
+                                        return { ...playlist, channelCount };
+                                    }
+                                } catch (error) {
+                                    console.warn(`Failed to fetch channel count for playlist ${playlist.name}:`, error);
+                                }
+                            }
+                            return { ...playlist, channelCount: 0 };
+                        })
+                    );
+                    
+                    setPlaylists(playlistsWithCounts);
+                    console.log('Successfully loaded', playlistsWithCounts.length, 'playlists');
+                } else {
+                    console.log('Invalid data format, starting with empty array');
+                    setPlaylists([]);
+                }
+            } else {
+                console.log('No stored playlists found, starting with empty array');
+                setPlaylists([]);
+            }
+        } catch (error) {
+            console.error('Error loading playlists:', error);
+            showAlert('Error', 'Failed to load saved playlists');
+            setPlaylists([]);
+        } finally {
+            setPlaylistsLoading(false);
+        }
+    };
+
+    const countChannelsInM3U8 = (content: string): number => {
+        const lines = content.split('\n').map(line => line.trim()).filter(line => line);
+        let channelCount = 0;
+        
+        for (const line of lines) {
+            if (line.startsWith('#EXTINF:')) {
+                channelCount++;
+            }
+        }
+        
+        return channelCount;
+    };
 
     // M3U8 Parser function
     const parseM3U8 = (content: string): Channel[] => {
@@ -118,15 +200,18 @@ const IptvScreen: React.FC<IptvScreenProps> = ({
                 throw new Error('Playlist not found');
             }
 
+            console.log(`Loading channels from playlist: ${playlist.name}`);
+            
             // Fetch the M3U8 playlist content
             const response = await fetch(playlist.url);
             if (!response.ok) {
-                throw new Error(`Failed to fetch playlist: ${response.status}`);
+                throw new Error(`Failed to fetch playlist: ${response.status} ${response.statusText}`);
             }
 
             const content = await response.text();
             const parsedChannels = parseM3U8(content);
 
+            console.log(`Parsed ${parsedChannels.length} channels from playlist`);
             setChannels(parsedChannels);
 
             // Reset filters when switching playlists
@@ -135,7 +220,7 @@ const IptvScreen: React.FC<IptvScreenProps> = ({
             setSearchQuery('');
         } catch (error) {
             console.error('Error loading channels:', error);
-            Alert.alert(
+            showAlert(
                 'Error',
                 `Failed to load channels: ${error instanceof Error ? error.message : 'Unknown error'}`,
                 [
@@ -150,17 +235,26 @@ const IptvScreen: React.FC<IptvScreenProps> = ({
 
     const onRefresh = async () => {
         setRefreshing(true);
-        await loadChannels();
+        if (selectedPlaylist) {
+            await loadChannels();
+        } else {
+            await loadPlaylists();
+        }
         setRefreshing(false);
     };
 
     const playChannel = async (channel: Channel) => {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        Alert.alert(
-            'Play Channel',
-            `Playing ${channel.name}`,
-            [{ text: 'OK' }]
-        );
+        
+        if (onPlayChannel) {
+            onPlayChannel(channel);
+        } else {
+            showAlert(
+                'Play Channel',
+                `Playing ${channel.name}`,
+                [{ text: 'OK' }]
+            );
+        }
     };
 
     const resetToPlaylistSelection = async () => {
@@ -174,12 +268,12 @@ const IptvScreen: React.FC<IptvScreenProps> = ({
     };
 
     const getLanguages = () => {
-        const languages: any[] = ['All', ...new Set(channels.map(c => c.language).filter(Boolean))];
+        const languages: string[] = ['All', ...new Set(channels.map(c => c.language).filter(Boolean) as string[])];
         return languages.sort();
     };
 
     const getCategories = () => {
-        const categories: any[] = ['All', ...new Set(channels.map(c => c.group).filter(Boolean))];
+        const categories: string[] = ['All', ...new Set(channels.map(c => c.group).filter(Boolean) as string[])];
         return categories.sort();
     };
 
@@ -226,7 +320,7 @@ const IptvScreen: React.FC<IptvScreenProps> = ({
 
                 <View style={styles.playlistMeta}>
                     <Text style={styles.channelCountText}>
-                        {playlist.channelCount} channels
+                        {playlist.channelCount || 0} channels
                     </Text>
                 </View>
 
@@ -325,6 +419,7 @@ const IptvScreen: React.FC<IptvScreenProps> = ({
                         <Image
                             source={{ uri: channel.logo }}
                             style={styles.channelLogo}
+                            onError={() => console.log(`Failed to load image: ${channel.logo}`)}
                         />
                     ) : (
                         <View style={styles.channelLogoPlaceholder}>
@@ -379,14 +474,36 @@ const IptvScreen: React.FC<IptvScreenProps> = ({
             </Text>
             <Text style={styles.emptySubtitle}>
                 {type === 'playlists'
-                    ? 'No active playlists found. Enable playlists in settings.'
+                    ? 'No active playlists found. Add and enable playlists in settings.'
                     : searchQuery
                         ? `No channels found matching "${searchQuery}"`
                         : 'No channels found in the selected filters.'
                 }
-            </Text>            
+            </Text>
+            {type === 'playlists' && (
+                <TouchableOpacity
+                    style={styles.settingsButton}
+                    onPress={() => onSettingsPress?.()}
+                >
+                    <Ionicons name="settings-outline" size={18} color="#535aff" />
+                    <Text style={styles.settingsButtonText}>Open Settings</Text>
+                </TouchableOpacity>
+            )}
         </View>
     );
+
+    // Show loading state for playlists
+    if (playlistsLoading) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <StatusBar barStyle="light-content" backgroundColor="#000" />
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#535aff" />
+                    <Text style={styles.loadingText}>Loading playlists...</Text>
+                </View>
+            </SafeAreaView>
+        );
+    }
 
     // If no playlist is selected, show playlist selection
     if (!selectedPlaylist) {
@@ -397,6 +514,9 @@ const IptvScreen: React.FC<IptvScreenProps> = ({
                 <View style={styles.header}>
                     <View style={styles.headerLeft}>
                         <Text style={styles.title}>Select Playlist</Text>
+                        <Text style={styles.subtitle}>
+                            {enabledPlaylists.length} active playlist{enabledPlaylists.length !== 1 ? 's' : ''}
+                        </Text>
                     </View>
 
                     <TouchableOpacity
@@ -419,6 +539,14 @@ const IptvScreen: React.FC<IptvScreenProps> = ({
                             keyExtractor={(item) => item.id}
                             contentContainerStyle={styles.playlistsList}
                             showsVerticalScrollIndicator={false}
+                            refreshControl={
+                                <RefreshControl
+                                    refreshing={refreshing}
+                                    onRefresh={onRefresh}
+                                    tintColor="#535aff"
+                                    colors={['#535aff']}
+                                />
+                            }
                             renderItem={({ item }) => <PlaylistCard playlist={item} />}
                         />
                     )}
