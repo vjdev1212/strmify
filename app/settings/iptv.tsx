@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 
 interface Playlist {
     id: string;
@@ -60,6 +61,7 @@ const PlaylistManagerScreen: React.FC = () => {
     };
 
     const addNewPlaylist = (): void => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         const newPlaylist: Playlist = {
             id: Date.now().toString(),
             name: '',
@@ -75,20 +77,24 @@ const PlaylistManagerScreen: React.FC = () => {
 
     const savePlaylist = (id: string, name: string, url: string): void => {
         if (!name.trim()) {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
             Alert.alert('Error', 'Please enter a playlist name');
             return;
         }
 
         if (!url.trim()) {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
             Alert.alert('Error', 'Please enter a playlist URL');
             return;
         }
 
         if (!validateUrl(url)) {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
             Alert.alert('Error', 'Please enter a valid M3U8 playlist URL');
             return;
         }
 
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setPlaylists(prev =>
             prev.map(p =>
                 p.id === id ? { ...p, name: name.trim(), url: url.trim() } : p
@@ -100,6 +106,7 @@ const PlaylistManagerScreen: React.FC = () => {
     };
 
     const cancelEdit = (): void => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
         if (isAddingNew) {
             // Remove the new playlist if it was being added
             setPlaylists(prev => prev.filter(p => p.id !== editingId));
@@ -110,6 +117,7 @@ const PlaylistManagerScreen: React.FC = () => {
     };
 
     const deletePlaylist = (id: string): void => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
         Alert.alert(
             'Delete Playlist',
             'Are you sure you want to delete this playlist?',
@@ -119,6 +127,7 @@ const PlaylistManagerScreen: React.FC = () => {
                     text: 'Delete',
                     style: 'destructive',
                     onPress: () => {
+                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                         setPlaylists(prev => prev.filter(p => p.id !== id));
                         if (editingId === id) {
                             setEditingId(null);
@@ -134,12 +143,14 @@ const PlaylistManagerScreen: React.FC = () => {
     };
 
     const togglePlaylist = (id: string): void => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         setPlaylists(prev =>
             prev.map(p => (p.id === id ? { ...p, enabled: !p.enabled } : p))
         );
     };
 
     const startEditing = (id: string): void => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
         if (editingId && editingId !== id) {
             cancelEdit();
         }
@@ -150,6 +161,7 @@ const PlaylistManagerScreen: React.FC = () => {
 
     const toggleExpanded = (id: string): void => {
         if (editingId === id) return; // Don't allow collapse while editing
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
         setExpandedId(expandedId === id ? null : id);
     };
 
