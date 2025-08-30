@@ -5,8 +5,8 @@ import * as Haptics from 'expo-haptics';
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { isUserAuthenticated, makeTraktApiCall } from '@/utils/Trakt';
 import BottomSpacing from '@/components/BottomSpacing';
+import { isUserAuthenticated, makeTraktApiCall } from '@/clients/trakt';
 
 const TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';

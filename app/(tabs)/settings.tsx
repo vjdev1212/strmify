@@ -17,7 +17,8 @@ const SettingsScreen = () => {
   // Build servers list conditionally based on flags
   const integrationList: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [
     { title: 'Stremio', route: '/settings/stremioserver', icon: 'magnet-outline' },
-    { title: 'Trakt', route: '/settings/trakt', icon: 'checkmark-done-circle-outline' }
+    { title: 'Trakt', route: '/settings/trakt', icon: 'checkmark-done-outline' },
+    { title: 'IPTV', route: '/settings/iptv', icon: 'tv-outline' }
   ];
 
   const General: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [
@@ -28,7 +29,7 @@ const SettingsScreen = () => {
 
   const contactList: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [
     { title: 'Feedback', route: '/settings/contact', icon: 'mail-outline' },
-    { title: 'Donate', route: '/settings/donate', icon: 'heart-circle-outline' },
+    { title: 'Donate', route: '/settings/donate', icon: 'heart-outline' },
   ];
 
   const resourcesList: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [

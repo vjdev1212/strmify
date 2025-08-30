@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, Switch, TextInput, Pressable, FlatList, ScrollView, Alert, Animated, Platform } from 'react-native';
+import { StyleSheet, Switch, TextInput, Pressable, ScrollView, Animated } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, Text } from '@/components/Themed';
-import { showAlert } from '@/utils/platform';
-import { AntDesign, Feather, MaterialIcons } from '@expo/vector-icons';
+import { confirmAction, showAlert } from '@/utils/platform';
+import { MaterialIcons } from '@expo/vector-icons';
 
 interface ServerConfigProps {
   serverName: string;
@@ -231,28 +231,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
       showAlert('Error', 'Failed to update server URL.');
       console.error('Error updating server URL:', error);
     }
-  };
-
-  const confirmAction = async (
-    title: string,
-    message: string,
-    confirmText: string
-  ): Promise<boolean> => {
-    if (Platform.OS === 'web') {
-      return window.confirm(`${title}\n\n${message}`);
-    }
-
-    return new Promise((resolve) => {
-      Alert.alert(
-        title,
-        message,
-        [
-          { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
-          { text: confirmText, style: 'destructive', onPress: () => resolve(true) },
-        ]
-      );
-    });
-  };
+  };  
 
 
   const handleDelete = async (serverId: string) => {
@@ -261,13 +240,11 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
       showAlert('Error', 'Cannot delete the current server. Please set another server as current first.');
       return;
     }
-    const title = 'Delete Server';
-    const message = 'Are you sure you want to delete this server configuration?';
 
     const confirmed = await confirmAction(
-      'Confirm Drop',
-      'Are you sure you want to drop this torrent?',
-      'Drop'
+      'Delete Server',
+      'Are you sure you want to delete this server configuration?',
+      'Delete'
     );
     if (!confirmed) return;
 
