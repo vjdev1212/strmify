@@ -1,5 +1,4 @@
 import { Text, View } from "@/components/Themed";
-import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams } from "expo-router";
 import React, { useEffect } from "react";
 import { StyleSheet, Platform } from "react-native";
@@ -7,6 +6,7 @@ import { WebView } from "react-native-webview";
 
 const EmbedPlayer = () => {
     const { url } = useLocalSearchParams();
+    const webViewBgColor = '#000';
 
     const iframeHtml = `
         <!DOCTYPE html>
@@ -59,23 +59,36 @@ const EmbedPlayer = () => {
                 Platform.OS === "web" ? (
                     <iframe
                         src={url as string}
-                        style={{ flex: 1, width: "100%", height: "100%" }}
+                        style={{ flex: 1, width: "100%", height: "100%", border: 0, backgroundColor: '#000000' }}
                         referrerPolicy="no-referrer-when-downgrade"
-                        allow="encrypted-media; autoplay; fullscreen"
-                        sandbox="allow-forms allow-scripts allow-same-origin allowfullscreen allow-presentation"
-                        frameBorder={0}
+                        sandbox="allow-same-origin allow-scripts allow-forms allow-presentation"
+                        allow="encrypted-media; autoplay; fullscreen; picture-in-picture; web-share"
+                        frameBorder="0"
                         allowFullScreen
+                        x-webkit-airplay="allow"
+                        webkit-playsinline="false"
                     />
                 ) : (
                     <WebView
-                        originWhitelist={["*"]}
+                        originWhitelist={['*']}
                         source={{ html: iframeHtml }}
-                        style={{ flex: 1 }}
+                        style={{
+                            flex: 1,
+                            backgroundColor: webViewBgColor,
+                            marginTop: 30,
+                            marginBottom: 10
+                        }}
                         javaScriptEnabled
                         domStorageEnabled
+                        startInLoadingState
                         allowUniversalAccessFromFileURLs
                         allowFileAccess
-                        startInLoadingState
+                        mediaPlaybackRequiresUserAction={false}
+                        allowsFullscreenVideo={true}
+                        allowsAirPlayForMediaPlayback={true}
+                        allowsPictureInPictureMediaPlayback={true}
+                        allowsInlineMediaPlayback={false}
+                        bounces={false}
                     />
                 )
             ) : (
