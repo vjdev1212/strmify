@@ -1,25 +1,66 @@
 import React from 'react';
 import { StyleSheet, Pressable, Linking, SafeAreaView, ScrollView } from 'react-native';
-import { AntDesign } from '@expo/vector-icons';
+import { AntDesign, Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { View, Text, StatusBar } from '@/components/Themed';
 import { isHapticsSupported } from '@/utils/platform';
 
+type IconLibrary = 'AntDesign' | 'Ionicons';
+
+interface ContactItem {
+    type: string;
+    value: string;
+    icon: string;
+    iconLibrary: IconLibrary;
+    action: () => Promise<void>;
+}
+
 const ContactScreen = () => {
     const feedbackUrl = process.env.EXPO_PUBLIC_FEEDBACK_URL || '';
-    const contactInfo = [
+    const reportBugUrl = process.env.EXPO_PUBLIC_REPORT_BUG_URL || '';
+    
+    const contactInfo: ContactItem[] = [
         {
             type: 'Feedback',
             value: 'Submit your feedback',
-            icon: 'form' as 'form',
+            icon: 'form',
+            iconLibrary: 'AntDesign',
             action: async () => {
                 if (isHapticsSupported()) {
                     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
                 }
                 Linking.openURL(feedbackUrl);
             },
+        },
+        {
+            type: 'Report Bug',
+            value: 'Found a Bug? Report here',
+            icon: 'bug-outline',
+            iconLibrary: 'Ionicons',
+            action: async () => {
+                if (isHapticsSupported()) {
+                    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+                }
+                Linking.openURL(reportBugUrl);
+            },
         }        
     ];
+
+    const renderIcon = (item: ContactItem) => {
+        const iconProps = {
+            name: item.icon as any,
+            size: 24,
+            color: "#535aff"
+        };
+
+        switch (item.iconLibrary) {
+            case 'Ionicons':
+                return <Ionicons {...iconProps} />;
+            case 'AntDesign':
+            default:
+                return <AntDesign {...iconProps} />;
+        }
+    };
 
     return (
         <SafeAreaView style={styles.container}>
@@ -45,7 +86,7 @@ const ContactScreen = () => {
                             onPress={item.action}
                         >
                             <View style={styles.iconContainer}>
-                                <AntDesign name={item.icon} size={24} color="#535aff" />
+                                {renderIcon(item)}
                             </View>
                             <View style={styles.contentContainer}>
                                 <Text style={styles.type}>{item.type}</Text>
