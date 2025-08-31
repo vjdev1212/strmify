@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { getOriginalPlatform, isHapticsSupported, showAlert } from '@/utils/platform';
+import BottomSpacing from '@/components/BottomSpacing';
 
 enum Players {
     Default = 'Default',
@@ -186,7 +187,6 @@ const MediaPlayerConfigScreen = () => {
         return (
             <SafeAreaView style={styles.centeredContainer}>
                 <View style={styles.loadingContainer}>
-                    <MaterialIcons name="play-circle" size={48} color="#535aff" style={styles.loadingIcon} />
                     <Text style={styles.loadingText}>Loading player configuration...</Text>
                 </View>
             </SafeAreaView>
@@ -202,7 +202,6 @@ const MediaPlayerConfigScreen = () => {
             >
                 <View style={styles.contentContainer}>
                     <View style={styles.headerSection}>
-                        <MaterialIcons name="play-circle" size={32} color="#535aff" style={styles.headerIcon} />
                         <Text style={styles.title}>Default Media Player</Text>
                         <Text style={styles.subtitle}>
                             Choose your preferred media player for streaming content
@@ -298,6 +297,7 @@ const MediaPlayerConfigScreen = () => {
                         </Pressable>
                     </View>
                 </View>
+                <BottomSpacing space={30} />
             </ScrollView>
         </SafeAreaView>
     );
@@ -327,13 +327,12 @@ const getPlayerDescription = (playerName: string): string => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#000000',
+        marginTop: 30
     },
     scrollContent: {
         paddingBottom: 20,
     },
-    contentContainer: {
-        marginTop: 40,
+    contentContainer: {        
         paddingHorizontal: 24,
         maxWidth: 780,
         alignSelf: 'center',
@@ -360,12 +359,8 @@ const styles = StyleSheet.create({
     },
     headerSection: {
         alignItems: 'center',
-        marginBottom: 40,
+        marginBottom: 10,
         paddingVertical: 20,
-    },
-    headerIcon: {
-        marginBottom: 12,
-        opacity: 0.9,
     },
     title: {
         fontSize: 28,
@@ -384,11 +379,11 @@ const styles = StyleSheet.create({
         fontWeight: '400',
     },
     playersSection: {
-        marginBottom: 40,
+        marginBottom: 30,
     },
     sectionTitle: {
         fontSize: 18,
-        fontWeight: '600',
+        fontWeight: '500',
         color: '#ffffff',
         marginBottom: 16,
         paddingHorizontal: 4,
@@ -399,7 +394,8 @@ const styles = StyleSheet.create({
     playerCard: {
         backgroundColor: '#1a1a1a',
         borderRadius: 16,
-        padding: 20,
+        paddingVertical: 10,
+        paddingHorizontal: 16,
         borderWidth: 2,
         borderColor: '#2a2a2a',
         shadowColor: '#000',
@@ -424,7 +420,6 @@ const styles = StyleSheet.create({
         width: 52,
         height: 52,
         borderRadius: 14,
-        backgroundColor: '#2a2a2a',
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 16,
@@ -441,7 +436,7 @@ const styles = StyleSheet.create({
     },
     playerName: {
         fontSize: 17,
-        fontWeight: '600',
+        fontWeight: '500',
         marginBottom: 6,
         color: '#ffffff',
         letterSpacing: -0.2,
@@ -511,13 +506,13 @@ const styles = StyleSheet.create({
     primaryButtonText: {
         fontSize: 16,
         color: '#ffffff',
-        fontWeight: '600',
+        fontWeight: '500',
         letterSpacing: -0.2,
     },
     secondaryButtonText: {
         fontSize: 16,
         color: '#ffffff',
-        fontWeight: '600',
+        fontWeight: '500',
         letterSpacing: -0.2,
     },
     buttonDisabled: {
