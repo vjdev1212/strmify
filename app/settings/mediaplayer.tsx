@@ -338,12 +338,11 @@ const styles = StyleSheet.create({
         paddingVertical: 20,
     },
     title: {
-        fontSize: 28,
-        fontWeight: '700',
+        fontSize: 30,
+        fontWeight: '600',
         marginBottom: 12,
         textAlign: 'center',
         color: '#ffffff',
-        letterSpacing: -0.5,
     },
     subtitle: {
         fontSize: 16,

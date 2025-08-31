@@ -552,7 +552,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 30,
-    fontWeight: '700',
+    fontWeight: '600',
     color: '#FFFFFF',
   },
   settingsSection: {
