@@ -271,7 +271,7 @@ const MediaPlayerConfigScreen = () => {
                             ) : (
                                 <>
                                     <MaterialIcons name="save" size={18} color="#ffffff" style={styles.buttonIcon} />
-                                    <Text style={styles.primaryButtonText}>Save Changes</Text>
+                                    <Text style={styles.primaryButtonText}>Save</Text>
                                 </>
                             )}
                         </Pressable>
@@ -444,13 +444,11 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#ffffff',
         fontWeight: '500',
-        letterSpacing: -0.2,
     },
     secondaryButtonText: {
         fontSize: 16,
         color: '#ffffff',
         fontWeight: '500',
-        letterSpacing: -0.2,
     },
     buttonDisabled: {
         backgroundColor: 'rgba(255, 255, 255, 0.02)',

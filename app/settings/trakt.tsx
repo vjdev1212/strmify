@@ -1,4 +1,4 @@
-import { SafeAreaView, ScrollView, StyleSheet, Pressable, ActivityIndicator, Platform } from 'react-native';
+import { SafeAreaView, ScrollView, StyleSheet, Pressable, ActivityIndicator, Platform, Switch } from 'react-native';
 import { StatusBar, Text, View } from '../../components/Themed';
 import { isHapticsSupported, showAlert } from '@/utils/platform';
 import * as Haptics from 'expo-haptics';
@@ -35,6 +35,7 @@ const TraktAuthScreen = () => {
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [userInfo, setUserInfo] = useState<any>(null);
     const [isInitialized, setIsInitialized] = useState<boolean>(false);
+    const [isTraktEnabled, setIsTraktEnabled] = useState<boolean>(true); // New state for enable/disable
 
     useEffect(() => {
         initializeAuth();
@@ -276,6 +277,30 @@ const TraktAuthScreen = () => {
         }
     };
 
+    const toggleTraktIntegration = async (enabled: boolean) => {
+        try {
+            if (!isWeb && isHapticsSupported()) {
+                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            }
+
+            setIsTraktEnabled(enabled);
+
+            if (!enabled) {
+                // If disabling, disconnect from Trakt as well
+                if (isAuthenticated) {
+                    await logout();
+                }
+                showAlert('Trakt Integration Disabled', 'Trakt.tv integration has been disabled. You can re-enable it anytime.');
+            } else {
+                showAlert('Trakt Integration Enabled', 'Trakt.tv integration is now enabled. Connect your account to start syncing.');
+            }
+        } catch (error) {
+            console.error('Toggle error:', error);
+            // Revert the toggle state if there's an error
+            setIsTraktEnabled(!enabled);
+        }
+    };
+
     const renderUserInfoTable = () => {
         if (!userInfo) return null;
 
@@ -315,72 +340,145 @@ const TraktAuthScreen = () => {
         );
     };
 
+    const renderToggleSection = () => (
+        <View style={styles.toggleSection}>
+            <View style={styles.toggleContainer}>
+                <View style={styles.toggleInfo}>
+                    <Text style={styles.toggleTitle}>Trakt.tv Integration</Text>
+                    <Text style={styles.toggleSubtitle}>
+                        {isTraktEnabled 
+                            ? 'Sync your watched history and ratings with Trakt.tv'
+                            : 'Enable to sync with Trakt.tv'
+                        }
+                    </Text>
+                </View>
+                <Switch
+                    value={isTraktEnabled}
+                    onValueChange={toggleTraktIntegration}
+                    trackColor={{ false: '#3a3a3a', true: '#535aff40' }}
+                    thumbColor={isTraktEnabled ? '#535aff' : '#888'}
+                    ios_backgroundColor="#3a3a3a"
+                    style={styles.switch}
+                />
+            </View>
+        </View>
+    );
+
     const renderAuthenticatedView = () => (
         <>
-            <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                    <View style={styles.statusIndicator}>
-                        <View style={styles.connectedDot} />
-                        <Text style={styles.sectionTitle}>Trakt.tv Connected</Text>
+            {renderToggleSection()}
+
+            {isTraktEnabled && (
+                <>
+                    <View style={styles.section}>
+                        <View style={styles.sectionHeader}>
+                            <View style={styles.statusIndicator}>
+                                <View style={styles.connectedDot} />
+                                <Text style={styles.sectionTitle}>Connected</Text>
+                            </View>
+                            <Text style={styles.sectionSubtitle}>Your account is successfully connected and syncing</Text>
+                        </View>
+
+                        {renderUserInfoTable()}
                     </View>
-                    <Text style={styles.sectionSubtitle}>Your account is successfully connected and syncing</Text>
+
+                    <Pressable
+                        style={({ pressed }) => [
+                            styles.logoutButton,
+                            pressed && styles.buttonPressed
+                        ]}
+                        onPress={logout}
+                    >
+                        <Text style={styles.logoutButtonText}>Disconnect Account</Text>
+                    </Pressable>
+                </>
+            )}
+
+            {!isTraktEnabled && (
+                <View style={styles.disabledContainer}>
+                    <View style={styles.disabledIcon}>
+                        <Text style={styles.disabledIconText}>📱</Text>
+                    </View>
+                    <Text style={styles.disabledTitle}>Trakt Integration Disabled</Text>
+                    <Text style={styles.disabledSubtitle}>
+                        Enable the toggle above to connect your Trakt.tv account and start syncing your watch history.
+                    </Text>
                 </View>
-
-                {renderUserInfoTable()}
-            </View>
-
-            <Pressable
-                style={({ pressed }) => [
-                    styles.logoutButton,
-                    pressed && styles.buttonPressed
-                ]}
-                onPress={logout}
-            >
-                <Text style={styles.logoutButtonText}>Disconnect</Text>
-            </Pressable>
+            )}
         </>
     );
 
     const renderUnauthenticatedView = () => (
         <>
-            <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Connect to Trakt.tv</Text>
-                    <Text style={styles.sectionSubtitle}>
-                        Connect your Trakt.tv account to sync your watched history, ratings, and collections
+            {renderToggleSection()}
+
+            {isTraktEnabled ? (
+                <>
+                    <View style={styles.section}>
+                        <View style={styles.sectionHeader}>
+                            <Text style={styles.sectionTitle}>Connect to Trakt.tv</Text>
+                            <Text style={styles.sectionSubtitle}>
+                                Connect your Trakt.tv account to sync your watched history, ratings, and collections
+                            </Text>
+                        </View>
+
+                        <View style={styles.featureList}>
+                            <View style={styles.featureItem}>
+                                <View style={styles.featureDot} />
+                                <Text style={styles.featureText}>Sync watched episodes and movies</Text>
+                            </View>
+                            <View style={styles.featureItem}>
+                                <View style={styles.featureDot} />
+                                <Text style={styles.featureText}>Access your ratings and reviews</Text>
+                            </View>
+                            <View style={styles.featureItem}>
+                                <View style={styles.featureDot} />
+                                <Text style={styles.featureText}>Manage your watchlist</Text>
+                            </View>
+                            <View style={styles.featureItem}>
+                                <View style={styles.featureDot} />
+                                <Text style={styles.featureText}>View your collection</Text>
+                            </View>
+                        </View>
+                    </View>
+
+                    <Pressable
+                        style={({ pressed }) => [
+                            styles.connectButton,
+                            pressed && styles.buttonPressed,
+                            isLoading && styles.buttonDisabled
+                        ]}
+                        onPress={authenticateWithTrakt}
+                        disabled={isLoading}
+                    >
+                        {isLoading ? (
+                            <View style={styles.buttonContent}>
+                                <ActivityIndicator color="#fff" size="small" />
+                                <Text style={styles.connectButtonText}>Connecting...</Text>
+                            </View>
+                        ) : (
+                            <Text style={styles.connectButtonText}>
+                                Connect to Trakt.tv
+                            </Text>
+                        )}
+                    </Pressable>
+
+                    {isLoading && !isWeb && (
+                        <Text style={styles.helpText}>
+                            Complete authentication in your browser to continue
+                        </Text>
+                    )}
+                </>
+            ) : (
+                <View style={styles.disabledContainer}>
+                    <View style={styles.disabledIcon}>
+                        <Text style={styles.disabledIconText}>🔒</Text>
+                    </View>
+                    <Text style={styles.disabledTitle}>Trakt Integration Disabled</Text>
+                    <Text style={styles.disabledSubtitle}>
+                        Enable Trakt.tv integration above to connect your account and sync your watch history, ratings, and collections.
                     </Text>
                 </View>
-
-                <View style={styles.featureList}>
-                    <Text style={styles.featureItem}>• Sync watched episodes and movies</Text>
-                    <Text style={styles.featureItem}>• Access your ratings and reviews</Text>
-                    <Text style={styles.featureItem}>• Manage your watchlist</Text>
-                    <Text style={styles.featureItem}>• View your collection</Text>
-                </View>
-            </View>
-
-            <Pressable
-                style={({ pressed }) => [
-                    styles.connectButton,
-                    pressed && styles.buttonPressed,
-                    isLoading && styles.buttonDisabled
-                ]}
-                onPress={authenticateWithTrakt}
-                disabled={isLoading}
-            >
-                {isLoading ? (
-                    <ActivityIndicator color="#fff" size="small" />
-                ) : (
-                    <Text style={styles.connectButtonText}>
-                        Connect to Trakt.tv
-                    </Text>
-                )}
-            </Pressable>
-
-            {isLoading && !isWeb && (
-                <Text style={styles.helpText}>
-                    Waiting for you to complete authentication in your browser...
-                </Text>
             )}
         </>
     );
@@ -436,6 +534,37 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#888',
     },
+    toggleSection: {
+        marginBottom: 32,
+    },
+    toggleContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: '#1a1a1a',
+        borderRadius: 16,
+        padding: 20,
+        borderWidth: 1,
+        borderColor: '#2a2a2a',
+    },
+    toggleInfo: {
+        flex: 1,
+        marginRight: 16,
+    },
+    toggleTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#fff',
+        marginBottom: 4,
+    },
+    toggleSubtitle: {
+        fontSize: 14,
+        color: '#888',
+        lineHeight: 18,
+    },
+    switch: {
+        transform: [{ scaleX: 1.1 }, { scaleY: 1.1 }],
+    },
     section: {
         marginBottom: 32,
     },
@@ -455,8 +584,8 @@ const styles = StyleSheet.create({
         marginRight: 12,
     },
     sectionTitle: {
-        fontSize: 30,
-        fontWeight: '600',
+        fontSize: 28,
+        fontWeight: '700',
         color: '#fff',
     },
     sectionSubtitle: {
@@ -466,13 +595,26 @@ const styles = StyleSheet.create({
         marginTop: 4,
     },
     featureList: {
-        marginTop: 16,
-        gap: 8,
+        marginTop: 20,
+        gap: 12,
     },
     featureItem: {
-        fontSize: 14,
-        color: '#aaa',
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingLeft: 4,
+    },
+    featureDot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: '#535aff',
+        marginRight: 16,
+    },
+    featureText: {
+        fontSize: 15,
+        color: '#ccc',
         lineHeight: 20,
+        flex: 1,
     },
     tableContainer: {
         marginTop: 8,
@@ -485,10 +627,10 @@ const styles = StyleSheet.create({
     },
     table: {
         backgroundColor: '#1a1a1a',
-        borderRadius: 12,
+        borderRadius: 16,
         overflow: 'hidden',
         borderWidth: 1,
-        borderColor: '#333',
+        borderColor: '#2a2a2a',
     },
     tableRow: {
         flexDirection: 'row',
@@ -522,25 +664,25 @@ const styles = StyleSheet.create({
     connectButton: {
         backgroundColor: '#535aff',
         paddingVertical: 16,
-        paddingHorizontal: 16,
-        borderRadius: 12,
+        paddingHorizontal: 24,
+        borderRadius: 16,
         alignItems: 'center',
         marginTop: 20,
         shadowColor: '#535aff',
         shadowOffset: {
             width: 0,
-            height: 4,
+            height: 8,
         },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
+        shadowOpacity: 0.25,
+        shadowRadius: 16,
         elevation: 8,
-        width: 200,
         alignSelf: 'center',
+        minWidth: 200,
     },
     logoutButton: {
         backgroundColor: '#ff4757',
-        paddingVertical: 16,
-        paddingHorizontal: 16,
+        paddingVertical: 14,
+        paddingHorizontal: 24,
         borderRadius: 12,
         alignItems: 'center',
         marginTop: 20,
@@ -549,17 +691,22 @@ const styles = StyleSheet.create({
             width: 0,
             height: 4,
         },
-        shadowOpacity: 0.3,
+        shadowOpacity: 0.2,
         shadowRadius: 8,
-        elevation: 8,
-        width: 200,
+        elevation: 6,
         alignSelf: 'center',
+        minWidth: 180,
     },
     buttonPressed: {
         transform: [{ scale: 0.98 }],
     },
     buttonDisabled: {
         opacity: 0.6,
+    },
+    buttonContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
     },
     connectButtonText: {
         color: '#fff',
@@ -568,16 +715,53 @@ const styles = StyleSheet.create({
     },
     logoutButtonText: {
         color: '#fff',
-        fontSize: 16,
+        fontSize: 15,
         fontWeight: '600',
     },
     helpText: {
-        fontSize: 12,
+        fontSize: 13,
         color: '#666',
         textAlign: 'center',
-        lineHeight: 16,
+        lineHeight: 18,
         fontStyle: 'italic',
         marginTop: 16,
+        paddingHorizontal: 20,
+    },
+    disabledContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 40,
+        backgroundColor: '#1a1a1a',
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: '#2a2a2a',
+        marginTop: 20,
+    },
+    disabledIcon: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        backgroundColor: '#2a2a2a',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 16,
+    },
+    disabledIconText: {
+        fontSize: 24,
+    },
+    disabledTitle: {
+        fontSize: 20,
+        fontWeight: '600',
+        color: '#888',
+        textAlign: 'center',
+        marginBottom: 8,
+    },
+    disabledSubtitle: {
+        fontSize: 14,
+        color: '#666',
+        textAlign: 'center',
+        lineHeight: 20,
+        paddingHorizontal: 20,
     },
 });
 
