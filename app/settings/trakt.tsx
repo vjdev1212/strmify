@@ -6,6 +6,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { webLinking } from '@/utils/Web';
 import { clearTraktTokens, getTraktUserInfo, isUserAuthenticated, saveTraktTokens, TraktTokens } from '@/clients/trakt';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Storage key for Trakt enable preference
+const TRAKT_ENABLED_KEY = '@trakt_enabled';
 
 // Trakt.tv API configuration from environment variables
 const TRAKT_CLIENT_ID = process.env.EXPO_PUBLIC_TRAKT_CLIENT_ID || '';
@@ -35,11 +39,31 @@ const TraktAuthScreen = () => {
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [userInfo, setUserInfo] = useState<any>(null);
     const [isInitialized, setIsInitialized] = useState<boolean>(false);
-    const [isTraktEnabled, setIsTraktEnabled] = useState<boolean>(true); // New state for enable/disable
+    const [isTraktEnabled, setIsTraktEnabled] = useState<boolean>(true);
 
     useEffect(() => {
         initializeAuth();
+        loadTraktEnabledState();
     }, []);
+
+    const loadTraktEnabledState = async () => {
+        try {
+            const stored = await AsyncStorage.getItem(TRAKT_ENABLED_KEY);
+            if (stored !== null) {
+                setIsTraktEnabled(JSON.parse(stored));
+            }
+        } catch (error) {
+            console.error('Failed to load Trakt enabled state:', error);
+        }
+    };
+
+    const saveTraktEnabledState = async (enabled: boolean) => {
+        try {
+            await AsyncStorage.setItem(TRAKT_ENABLED_KEY, JSON.stringify(enabled));
+        } catch (error) {
+            console.error('Failed to save Trakt enabled state:', error);
+        }
+    };
 
     const initializeAuth = async () => {
         try {
@@ -284,15 +308,16 @@ const TraktAuthScreen = () => {
             }
 
             setIsTraktEnabled(enabled);
+            await saveTraktEnabledState(enabled);
 
             if (!enabled) {
                 // If disabling, disconnect from Trakt as well
                 if (isAuthenticated) {
                     await logout();
                 }
-                showAlert('Trakt Integration Disabled', 'Trakt.tv integration has been disabled. You can re-enable it anytime.');
+                showAlert('Trakt Integration Disabled', 'Trakt.tv integration has been disabled. Re-open the app to reflect the changes.');
             } else {
-                showAlert('Trakt Integration Enabled', 'Trakt.tv integration is now enabled. Connect your account to start syncing.');
+                showAlert('Trakt Integration Enabled', 'Trakt.tv integration is now enabled. Re-open the app to reflect the changes.');
             }
         } catch (error) {
             console.error('Toggle error:', error);

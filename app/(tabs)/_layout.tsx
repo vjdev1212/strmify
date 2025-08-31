@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Tabs } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -6,6 +6,10 @@ import { Platform, StyleSheet, View } from 'react-native';
 import { isHapticsSupported } from '@/utils/platform';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Storage key for Trakt enable preference
+const TRAKT_ENABLED_KEY = '@trakt_enabled';
 
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];
@@ -14,7 +18,42 @@ function TabBarIcon(props: {
   return <FontAwesome size={24} {...props} />;
 }
 
+// Custom hook for managing Trakt enable state
+export const useTraktEnabled = () => {
+  const [isTraktEnabled, setIsTraktEnabled] = useState<boolean>(true);
+  const [isLoaded, setIsLoaded] = useState<boolean>(false);
+
+  useEffect(() => {
+    loadTraktEnabledState();
+  }, []);
+
+  const loadTraktEnabledState = async () => {
+    try {
+      const stored = await AsyncStorage.getItem(TRAKT_ENABLED_KEY);
+      if (stored !== null) {
+        setIsTraktEnabled(JSON.parse(stored));
+      }
+    } catch (error) {
+      console.error('Failed to load Trakt enabled state:', error);
+    } finally {
+      setIsLoaded(true);
+    }
+  };
+
+  const setTraktEnabled = async (enabled: boolean) => {
+    try {
+      await AsyncStorage.setItem(TRAKT_ENABLED_KEY, JSON.stringify(enabled));
+      setIsTraktEnabled(enabled);
+    } catch (error) {
+      console.error('Failed to save Trakt enabled state:', error);
+    }
+  };
+
+  return { isTraktEnabled, setTraktEnabled, isLoaded };
+};
+
 export default function TabLayout() {
+  const { isTraktEnabled, isLoaded } = useTraktEnabled();
 
   const getTabBarHeight = () => {
     switch (Platform.OS) {
@@ -51,6 +90,11 @@ export default function TabLayout() {
     ? 'Inter, -apple-system, BlinkMacSystemFont, sans-serif'
     : undefined;
 
+  // Don't render until we've loaded the preference to avoid layout jump
+  if (!isLoaded) {
+    return null;
+  }
+
   return (
     <Tabs
       initialRouteName="index"
@@ -74,29 +118,71 @@ export default function TabLayout() {
         tabBarBackground: () => tabBarBackground,
       }}
     >
-      {[
-        { name: 'index', title: 'Home', icon: 'home' },
-        { name: 'trakt', title: 'Trakt', icon: 'check-square-o' },
-        { name: 'search', title: 'Search', icon: 'search' },
-        { name: 'settings', title: 'Settings', icon: 'gear' },
-      ].map(({ name, title, icon }) => (
-        <Tabs.Screen
-          key={name}
-          name={name}
-          listeners={{
-            tabPress: () => {
-              if (isHapticsSupported()) {
-                Haptics.selectionAsync();
-              }
-            },
-          }}
-          options={{
-            title,
-            tabBarIcon: ({ color }) => <TabBarIcon name={icon as any} color={color} />,
-            tabBarIconStyle: { marginVertical: 5 },
-          }}
-        />
-      ))}
+      <Tabs.Screen
+        name="index"
+        listeners={{
+          tabPress: () => {
+            if (isHapticsSupported()) {
+              Haptics.selectionAsync();
+            }
+          },
+        }}
+        options={{
+          title: 'Home',
+          tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
+          tabBarIconStyle: { marginVertical: 5 },
+        }}
+      />
+      
+      <Tabs.Screen
+        name="trakt"
+        listeners={{
+          tabPress: () => {
+            if (isHapticsSupported()) {
+              Haptics.selectionAsync();
+            }
+          },
+        }}
+        options={{
+          title: 'Trakt',
+          tabBarIcon: ({ color }) => <TabBarIcon name="check-square-o" color={color} />,
+          tabBarIconStyle: { marginVertical: 5 },
+          tabBarItemStyle: isTraktEnabled ? {} : { display: 'none' },
+          tabBarButton: isTraktEnabled ? undefined : () => null,
+        }}
+      />
+      
+      <Tabs.Screen
+        name="search"
+        listeners={{
+          tabPress: () => {
+            if (isHapticsSupported()) {
+              Haptics.selectionAsync();
+            }
+          },
+        }}
+        options={{
+          title: 'Search',
+          tabBarIcon: ({ color }) => <TabBarIcon name="search" color={color} />,
+          tabBarIconStyle: { marginVertical: 5 },
+        }}
+      />
+      
+      <Tabs.Screen
+        name="settings"
+        listeners={{
+          tabPress: () => {
+            if (isHapticsSupported()) {
+              Haptics.selectionAsync();
+            }
+          },
+        }}
+        options={{
+          title: 'Settings',
+          tabBarIcon: ({ color }) => <TabBarIcon name="gear" color={color} />,
+          tabBarIconStyle: { marginVertical: 5 },
+        }}
+      />
     </Tabs>
   );
 }
