@@ -356,16 +356,16 @@ const styles = StyleSheet.create({
         marginBottom: 30,
     },
     playersContainer: {
-        backgroundColor: '#1a1a1a',
+        backgroundColor: '#1C1C1E',
         borderRadius: 12,
         overflow: 'hidden',
     },
     playerRow: {
-        backgroundColor: '#1a1a1a',
         paddingHorizontal: 16,
         paddingVertical: 8,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: '#3a3a3a',
+        borderBottomWidth: 0.5,
+        borderBottomColor: '#2C2C2E',
+        minHeight: 44,
     },
     firstRow: {
         borderTopLeftRadius: 12,
