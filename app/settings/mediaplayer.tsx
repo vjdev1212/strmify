@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, ScrollView, Pressable, Image, SafeAreaView, Alert } from 'react-native';
+import { StyleSheet, ScrollView, Pressable, SafeAreaView, Alert } from 'react-native';
 import { Text, View, StatusBar } from '@/components/Themed';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
@@ -23,7 +23,6 @@ interface PlayerConfig {
     name: string;
     scheme: string;
     encodeUrl: boolean;
-    icon: any;
     isDefault: boolean;
 }
 
@@ -41,44 +40,43 @@ const MediaPlayerConfigScreen = () => {
     }, []);
 
     const getPlatformSpecificPlayers = (): PlayerConfig[] => {
-        const baseConfig = (name: string, scheme: string, encodeUrl: boolean, icon: any): PlayerConfig => ({
+        const baseConfig = (name: string, scheme: string, encodeUrl: boolean): PlayerConfig => ({
             name,
             scheme,
             encodeUrl,
-            icon,
             isDefault: false
         });
 
         if (getOriginalPlatform() === 'android') {
             return [
-                baseConfig(Players.Browser, 'STREAMURL', false, require('@/assets/images/players/chrome.png')),
-                baseConfig(Players.VLC, 'vlc://STREAMURL', false, require('@/assets/images/players/vlc.png')),
-                baseConfig(Players.MXPlayer, 'intent:STREAMURL?sign=Yva5dQp8cFQpVAMUh1QxNWbZAZ2h05lYQ4qAxqf717w=:0#Intent;package=com.mxtech.videoplayer.ad;S.title=STREAMTITLE;end', false, require('@/assets/images/players/mxplayer.png')),
-                baseConfig(Players.MXPlayerPro, 'intent:STREAMURL?sign=Yva5dQp8cFQpVAMUh1QxNWbZAZ2h05lYQ4qAxqf717w=:0#Intent;package=com.mxtech.videoplayer.pro;S.title=STREAMTITLE;end', false, require('@/assets/images/players/mxplayer.png')),
-                baseConfig(Players.VidHub, 'open-vidhub://x-callback-url/open?url=STREAMURL', true, require('@/assets/images/players/vidhub.png')),
+                baseConfig(Players.Browser, 'STREAMURL', false),
+                baseConfig(Players.VLC, 'vlc://STREAMURL', false),
+                baseConfig(Players.MXPlayer, 'intent:STREAMURL?sign=Yva5dQp8cFQpVAMUh1QxNWbZAZ2h05lYQ4qAxqf717w=:0#Intent;package=com.mxtech.videoplayer.ad;S.title=STREAMTITLE;end', false),
+                baseConfig(Players.MXPlayerPro, 'intent:STREAMURL?sign=Yva5dQp8cFQpVAMUh1QxNWbZAZ2h05lYQ4qAxqf717w=:0#Intent;package=com.mxtech.videoplayer.pro;S.title=STREAMTITLE;end', false),
+                baseConfig(Players.VidHub, 'open-vidhub://x-callback-url/open?url=STREAMURL', true),
             ];
         } else if (getOriginalPlatform() === 'ios') {
             return [
-                baseConfig(Players.Browser, 'STREAMURL', false, require('@/assets/images/players/chrome.png')),
-                baseConfig(Players.VLC, 'vlc://STREAMURL', false, require('@/assets/images/players/vlc.png')),
-                baseConfig(Players.Infuse, 'infuse://x-callback-url/play?url=STREAMURL', true, require('@/assets/images/players/infuse.png')),
-                baseConfig(Players.VidHub, 'open-vidhub://x-callback-url/open?url=STREAMURL', true, require('@/assets/images/players/vidhub.png')),
-                baseConfig(Players.OutPlayer, 'outplayer://STREAMURL', false, require('@/assets/images/players/outplayer.png')),
+                baseConfig(Players.Browser, 'STREAMURL', false),
+                baseConfig(Players.VLC, 'vlc://STREAMURL', false),
+                baseConfig(Players.Infuse, 'infuse://x-callback-url/play?url=STREAMURL', true),
+                baseConfig(Players.VidHub, 'open-vidhub://x-callback-url/open?url=STREAMURL', true),
+                baseConfig(Players.OutPlayer, 'outplayer://STREAMURL', false),
             ];
         } else if (getOriginalPlatform() === 'web') {
             return [
-                baseConfig(Players.Browser, 'STREAMURL', false, require('@/assets/images/players/chrome.png'))
+                baseConfig(Players.Browser, 'STREAMURL', false)
             ];
         } else if (getOriginalPlatform() === 'windows') {
             return [
-                baseConfig(Players.Browser, 'STREAMURL', false, require('@/assets/images/players/chrome.png')),
+                baseConfig(Players.Browser, 'STREAMURL', false),
             ];
         } else if (getOriginalPlatform() === 'macos') {
             return [
-                baseConfig(Players.Browser, 'STREAMURL', false, require('@/assets/images/players/chrome.png')),
-                baseConfig(Players.VLC, 'vlc://STREAMURL', false, require('@/assets/images/players/vlc.png')),
-                baseConfig(Players.Infuse, 'infuse://x-callback-url/play?url=STREAMURL', true, require('@/assets/images/players/infuse.png')),
-                baseConfig(Players.VidHub, 'open-vidhub://x-callback-url/open?url=STREAMURL', true, require('@/assets/images/players/vidhub.png')),
+                baseConfig(Players.Browser, 'STREAMURL', false),
+                baseConfig(Players.VLC, 'vlc://STREAMURL', false),
+                baseConfig(Players.Infuse, 'infuse://x-callback-url/play?url=STREAMURL', true),
+                baseConfig(Players.VidHub, 'open-vidhub://x-callback-url/open?url=STREAMURL', true),
             ];
         }
         return [];
@@ -209,53 +207,35 @@ const MediaPlayerConfigScreen = () => {
                     </View>
 
                     <View style={styles.playersSection}>
-                        <Text style={styles.sectionTitle}>Available Players</Text>
                         <View style={styles.playersContainer}>
                             {players.map((player, index) => (
                                 <Pressable
                                     key={player.name}
                                     style={[
-                                        styles.playerCard,
-                                        selectedPlayer === player.name && styles.playerCardSelected,
-                                        { 
-                                            transform: selectedPlayer === player.name 
-                                                ? [{ scale: 0.98 }] 
-                                                : [{ scale: 1 }] 
-                                        }
+                                        styles.playerRow,
+                                        index === 0 && styles.firstRow,
+                                        index === players.length - 1 && styles.lastRow
                                     ]}
                                     onPress={() => handlePlayerSelect(player.name)}
-                                    android_ripple={{ color: 'rgba(83, 90, 255, 0.1)', borderless: false }}
+                                    android_ripple={{ color: 'rgba(255, 255, 255, 0.1)', borderless: false }}
                                 >
                                     <View style={styles.playerContent}>
-                                        <View style={styles.playerIconContainer}>
-                                            <Image 
-                                                source={player.icon} 
-                                                style={styles.playerIcon} 
-                                                resizeMode="cover"
-                                            />
-                                        </View>
                                         <View style={styles.playerInfo}>
-                                            <Text style={[
-                                                styles.playerName,
-                                                selectedPlayer === player.name && styles.playerNameSelected
-                                            ]}>
+                                            <Text style={styles.playerName}>
                                                 {player.name}
                                             </Text>
                                             <Text style={styles.playerDescription}>
                                                 {getPlayerDescription(player.name)}
                                             </Text>
                                         </View>
-                                        <View style={styles.checkboxContainer}>
-                                            <View style={[
-                                                styles.checkbox,
-                                                selectedPlayer === player.name && styles.checkboxSelected
-                                            ]}>
+                                        <View style={styles.checkmarkContainer}>
+                                            {selectedPlayer === player.name && (
                                                 <MaterialIcons
                                                     name="check"
-                                                    size={16}
-                                                    color={selectedPlayer === player.name ? '#ffffff' : 'transparent'}
+                                                    size={20}
+                                                    color="#535aff"
                                                 />
-                                            </View>
+                                            )}
                                         </View>
                                     </View>
                                 </Pressable>
@@ -348,10 +328,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 32,
     },
-    loadingIcon: {
-        marginBottom: 16,
-        opacity: 0.8,
-    },
     loadingText: {
         fontSize: 16,
         color: '#888888',
@@ -381,91 +357,56 @@ const styles = StyleSheet.create({
     playersSection: {
         marginBottom: 30,
     },
-    sectionTitle: {
-        fontSize: 18,
-        fontWeight: '500',
-        color: '#ffffff',
-        marginBottom: 16,
-        paddingHorizontal: 4,
-    },
     playersContainer: {
-        gap: 12,
-    },
-    playerCard: {
         backgroundColor: '#1a1a1a',
-        borderRadius: 16,
-        paddingVertical: 10,
-        paddingHorizontal: 16,
-        borderWidth: 2,
+        borderRadius: 12,
+        overflow: 'hidden',
+        borderWidth: 1,
         borderColor: '#2a2a2a',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 3,
     },
-    playerCardSelected: {
-        borderColor: '#535aff',
-        backgroundColor: '#252545',
-        shadowColor: '#535aff',
-        shadowOpacity: 0.2,
-        shadowRadius: 12,
-        elevation: 6,
+    playerRow: {
+        backgroundColor: '#1a1a1a',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#2a2a2a',
+    },
+    firstRow: {
+        borderTopLeftRadius: 12,
+        borderTopRightRadius: 12,
+    },
+    lastRow: {
+        borderBottomWidth: 0,
+        borderBottomLeftRadius: 12,
+        borderBottomRightRadius: 12,
     },
     playerContent: {
         flexDirection: 'row',
         alignItems: 'center',
-    },
-    playerIconContainer: {
-        width: 52,
-        height: 52,
-        borderRadius: 14,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 16,
-        overflow: 'hidden',
-    },
-    playerIcon: {
-        width: 40,
-        height: 40,
-        borderRadius: 10,
+        justifyContent: 'space-between',
+        minHeight: 44,
     },
     playerInfo: {
         flex: 1,
         paddingRight: 12,
     },
     playerName: {
-        fontSize: 17,
-        fontWeight: '500',
-        marginBottom: 6,
+        fontSize: 16,
+        fontWeight: '400',
         color: '#ffffff',
-        letterSpacing: -0.2,
-    },
-    playerNameSelected: {
-        color: '#ffffff',
+        marginBottom: 2,
     },
     playerDescription: {
-        fontSize: 14,
+        fontSize: 13,
         color: '#888888',
-        lineHeight: 20,
+        lineHeight: 18,
         fontWeight: '400',
     },
-    checkboxContainer: {
-        marginLeft: 8,
-    },
-    checkbox: {
+    checkmarkContainer: {
         width: 24,
         height: 24,
-        borderRadius: 12,
-        borderWidth: 2,
-        borderColor: '#666666',
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'transparent',
-    },
-    checkboxSelected: {
-        backgroundColor: '#535aff',
-        borderColor: '#535aff',
     },
     buttonSection: {
         flexDirection: 'row',
