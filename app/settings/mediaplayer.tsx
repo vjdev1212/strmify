@@ -185,7 +185,10 @@ const MediaPlayerConfigScreen = () => {
     if (loading) {
         return (
             <SafeAreaView style={styles.centeredContainer}>
-                <Text style={styles.loadingText}>Loading player configuration...</Text>
+                <View style={styles.loadingContainer}>
+                    <MaterialIcons name="play-circle" size={48} color="#535aff" style={styles.loadingIcon} />
+                    <Text style={styles.loadingText}>Loading player configuration...</Text>
+                </View>
             </SafeAreaView>
         );
     }
@@ -193,63 +196,105 @@ const MediaPlayerConfigScreen = () => {
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar />
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView 
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scrollContent}
+            >
                 <View style={styles.contentContainer}>
-                    <Text style={styles.title}>Default Media Player</Text>
-                    <Text style={styles.subtitle}>
-                        Choose your preferred media player.
-                    </Text>
-
-                    <View style={styles.playersContainer}>
-                        {players.map((player) => (
-                            <Pressable
-                                key={player.name}
-                                style={[
-                                    styles.playerCard,
-                                    selectedPlayer === player.name && styles.playerCardSelected
-                                ]}
-                                onPress={() => handlePlayerSelect(player.name)}
-                            >
-                                <View style={styles.playerContent}>
-                                    <Image 
-                                        source={player.icon} 
-                                        style={styles.playerIcon} 
-                                        resizeMode="cover"
-                                    />
-                                    <View style={styles.playerInfo}>
-                                        <Text style={styles.playerName}>{player.name}</Text>
-                                        <Text style={styles.playerDescription}>
-                                            {getPlayerDescription(player.name)}
-                                        </Text>
-                                    </View>
-                                    <View style={styles.checkboxContainer}>
-                                        <MaterialIcons
-                                            name={selectedPlayer === player.name ? 'check-circle' : 'check-circle-outline'}
-                                            size={24}
-                                            color={selectedPlayer === player.name ? '#535aff' : '#666'}
-                                        />
-                                    </View>
-                                </View>
-                            </Pressable>
-                        ))}
+                    <View style={styles.headerSection}>
+                        <MaterialIcons name="play-circle" size={32} color="#535aff" style={styles.headerIcon} />
+                        <Text style={styles.title}>Default Media Player</Text>
+                        <Text style={styles.subtitle}>
+                            Choose your preferred media player for streaming content
+                        </Text>
                     </View>
 
-                    <View style={styles.buttonContainer}>
+                    <View style={styles.playersSection}>
+                        <Text style={styles.sectionTitle}>Available Players</Text>
+                        <View style={styles.playersContainer}>
+                            {players.map((player, index) => (
+                                <Pressable
+                                    key={player.name}
+                                    style={[
+                                        styles.playerCard,
+                                        selectedPlayer === player.name && styles.playerCardSelected,
+                                        { 
+                                            transform: selectedPlayer === player.name 
+                                                ? [{ scale: 0.98 }] 
+                                                : [{ scale: 1 }] 
+                                        }
+                                    ]}
+                                    onPress={() => handlePlayerSelect(player.name)}
+                                    android_ripple={{ color: 'rgba(83, 90, 255, 0.1)', borderless: false }}
+                                >
+                                    <View style={styles.playerContent}>
+                                        <View style={styles.playerIconContainer}>
+                                            <Image 
+                                                source={player.icon} 
+                                                style={styles.playerIcon} 
+                                                resizeMode="cover"
+                                            />
+                                        </View>
+                                        <View style={styles.playerInfo}>
+                                            <Text style={[
+                                                styles.playerName,
+                                                selectedPlayer === player.name && styles.playerNameSelected
+                                            ]}>
+                                                {player.name}
+                                            </Text>
+                                            <Text style={styles.playerDescription}>
+                                                {getPlayerDescription(player.name)}
+                                            </Text>
+                                        </View>
+                                        <View style={styles.checkboxContainer}>
+                                            <View style={[
+                                                styles.checkbox,
+                                                selectedPlayer === player.name && styles.checkboxSelected
+                                            ]}>
+                                                <MaterialIcons
+                                                    name="check"
+                                                    size={16}
+                                                    color={selectedPlayer === player.name ? '#ffffff' : 'transparent'}
+                                                />
+                                            </View>
+                                        </View>
+                                    </View>
+                                </Pressable>
+                            ))}
+                        </View>
+                    </View>
+
+                    <View style={styles.buttonSection}>
                         <Pressable
                             style={[styles.button, styles.secondaryButton]}
                             onPress={resetToDefault}
+                            android_ripple={{ color: 'rgba(255, 255, 255, 0.1)' }}
                         >
+                            <MaterialIcons name="refresh" size={18} color="#ffffff" style={styles.buttonIcon} />
                             <Text style={styles.secondaryButtonText}>Reset</Text>
                         </Pressable>
                         
                         <Pressable
-                            style={[styles.button, styles.primaryButton, saving && styles.buttonDisabled]}
+                            style={[
+                                styles.button, 
+                                styles.primaryButton, 
+                                saving && styles.buttonDisabled
+                            ]}
                             onPress={savePlayerConfig}
                             disabled={saving}
+                            android_ripple={{ color: 'rgba(255, 255, 255, 0.2)' }}
                         >
-                            <Text style={styles.primaryButtonText}>
-                                {saving ? 'Saving...' : 'Save'}
-                            </Text>
+                            {saving ? (
+                                <>
+                                    <MaterialIcons name="hourglass-empty" size={18} color="#ffffff" style={styles.buttonIcon} />
+                                    <Text style={styles.primaryButtonText}>Saving...</Text>
+                                </>
+                            ) : (
+                                <>
+                                    <MaterialIcons name="save" size={18} color="#ffffff" style={styles.buttonIcon} />
+                                    <Text style={styles.primaryButtonText}>Save Changes</Text>
+                                </>
+                            )}
                         </Pressable>
                     </View>
                 </View>
@@ -282,107 +327,204 @@ const getPlayerDescription = (playerName: string): string => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        marginTop: 30,
-        width: '100%',
-        margin: 'auto',
-        maxWidth: 780
+        backgroundColor: '#000000',
+    },
+    scrollContent: {
+        paddingBottom: 20,
     },
     contentContainer: {
-        marginHorizontal: 20,
-        marginVertical: 20
+        marginTop: 40,
+        paddingHorizontal: 24,
+        maxWidth: 780,
+        alignSelf: 'center',
+        width: '100%',
     },
     centeredContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+        backgroundColor: '#000000',
+    },
+    loadingContainer: {
+        alignItems: 'center',
+        padding: 32,
+    },
+    loadingIcon: {
+        marginBottom: 16,
+        opacity: 0.8,
     },
     loadingText: {
         fontSize: 16,
-        color: '#666',
+        color: '#888888',
+        fontWeight: '400',
+    },
+    headerSection: {
+        alignItems: 'center',
+        marginBottom: 40,
+        paddingVertical: 20,
+    },
+    headerIcon: {
+        marginBottom: 12,
+        opacity: 0.9,
     },
     title: {
-        fontSize: 18,
-        fontWeight: '500',
-        marginBottom: 10,
-        textAlign: 'center'
+        fontSize: 28,
+        fontWeight: '700',
+        marginBottom: 12,
+        textAlign: 'center',
+        color: '#ffffff',
+        letterSpacing: -0.5,
     },
     subtitle: {
-        fontSize: 15,
+        fontSize: 16,
         textAlign: 'center',
-        marginBottom: 30,
-        lineHeight: 22
+        color: '#888888',
+        lineHeight: 24,
+        paddingHorizontal: 20,
+        fontWeight: '400',
+    },
+    playersSection: {
+        marginBottom: 40,
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#ffffff',
+        marginBottom: 16,
+        paddingHorizontal: 4,
     },
     playersContainer: {
-        marginBottom: 30
+        gap: 12,
     },
     playerCard: {
         backgroundColor: '#1a1a1a',
-        borderRadius: 12,
-        padding: 10,
-        marginBottom: 10,
+        borderRadius: 16,
+        padding: 20,
         borderWidth: 2,
-        borderColor: 'transparent'
+        borderColor: '#2a2a2a',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 3,
     },
     playerCardSelected: {
         borderColor: '#535aff',
-        backgroundColor: '#252545'
+        backgroundColor: '#252545',
+        shadowColor: '#535aff',
+        shadowOpacity: 0.2,
+        shadowRadius: 12,
+        elevation: 6,
     },
     playerContent: {
         flexDirection: 'row',
-        alignItems: 'center'
+        alignItems: 'center',
+    },
+    playerIconContainer: {
+        width: 52,
+        height: 52,
+        borderRadius: 14,
+        backgroundColor: '#2a2a2a',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 16,
+        overflow: 'hidden',
     },
     playerIcon: {
         width: 40,
         height: 40,
-        borderRadius: 8,
-        marginRight: 16
+        borderRadius: 10,
     },
     playerInfo: {
-        flex: 1
+        flex: 1,
+        paddingRight: 12,
     },
     playerName: {
-        fontSize: 16,
+        fontSize: 17,
         fontWeight: '600',
-        marginBottom: 4
+        marginBottom: 6,
+        color: '#ffffff',
+        letterSpacing: -0.2,
+    },
+    playerNameSelected: {
+        color: '#ffffff',
     },
     playerDescription: {
         fontSize: 14,
-        color: '#888'
+        color: '#888888',
+        lineHeight: 20,
+        fontWeight: '400',
     },
     checkboxContainer: {
-        marginLeft: 16
+        marginLeft: 8,
     },
-    buttonContainer: {
+    checkbox: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        borderWidth: 2,
+        borderColor: '#666666',
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'transparent',
+    },
+    checkboxSelected: {
+        backgroundColor: '#535aff',
+        borderColor: '#535aff',
+    },
+    buttonSection: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
-        gap: 12,
-        marginTop: 20
+        gap: 16,
+        marginTop: 8,
+        paddingTop: 20,
+        borderTopWidth: 1,
+        borderTopColor: '#2a2a2a',
     },
     button: {
         flex: 1,
-        paddingVertical: 14,
-        paddingHorizontal: 15,
-        borderRadius: 30,
-        alignItems: 'center'
+        paddingVertical: 16,
+        paddingHorizontal: 20,
+        borderRadius: 16,
+        alignItems: 'center',
+        flexDirection: 'row',
+        justifyContent: 'center',
+        borderWidth: 1,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.3,
+        shadowRadius: 20,
+        elevation: 8,
+        overflow: 'hidden',
     },
     primaryButton: {
-        backgroundColor: '#535aff'
+        backgroundColor: 'rgba(83, 90, 255, 0.2)',
+        borderColor: 'rgba(83, 90, 255, 0.3)',
+        shadowColor: '#535aff',
     },
     secondaryButton: {
-        backgroundColor: '#101010'
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        borderColor: 'rgba(255, 255, 255, 0.1)',
+    },
+    buttonIcon: {
+        marginRight: 8,
     },
     primaryButtonText: {
         fontSize: 16,
         color: '#ffffff',
+        fontWeight: '600',
+        letterSpacing: -0.2,
     },
     secondaryButtonText: {
         fontSize: 16,
         color: '#ffffff',
+        fontWeight: '600',
+        letterSpacing: -0.2,
     },
     buttonDisabled: {
-        backgroundColor: '#3b3b3b',
-        opacity: 0.7,
-    }
+        backgroundColor: 'rgba(255, 255, 255, 0.02)',
+        borderColor: 'rgba(255, 255, 255, 0.05)',
+        opacity: 0.4,
+    },
 });
 
 export default MediaPlayerConfigScreen;

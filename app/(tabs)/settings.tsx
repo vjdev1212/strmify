@@ -22,7 +22,7 @@ const SettingsScreen = () => {
 
   const General: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [
     { title: 'Addons', route: '/settings/addons', icon: 'extension-puzzle-outline' },
-    // { title: 'Media Player', route: '/settings/mediaplayer', icon: 'play-circle-outline' },
+    { title: 'Media Player', route: '/settings/mediaplayer', icon: 'play-circle-outline' },
     // { title: 'Sync', route: '/settings/sync', icon: 'sync-outline' },
   ];
 
