@@ -49,6 +49,7 @@ const MediaPlayerConfigScreen = () => {
 
         if (getOriginalPlatform() === 'android') {
             return [
+                baseConfig(Players.Default, 'STREAMURL', false),
                 baseConfig(Players.Browser, 'STREAMURL', false),
                 baseConfig(Players.VLC, 'vlc://STREAMURL', false),
                 baseConfig(Players.MXPlayer, 'intent:STREAMURL?sign=Yva5dQp8cFQpVAMUh1QxNWbZAZ2h05lYQ4qAxqf717w=:0#Intent;package=com.mxtech.videoplayer.ad;S.title=STREAMTITLE;end', false),
@@ -57,6 +58,7 @@ const MediaPlayerConfigScreen = () => {
             ];
         } else if (getOriginalPlatform() === 'ios') {
             return [
+                baseConfig(Players.Default, 'STREAMURL', false),
                 baseConfig(Players.Browser, 'STREAMURL', false),
                 baseConfig(Players.VLC, 'vlc://STREAMURL', false),
                 baseConfig(Players.Infuse, 'infuse://x-callback-url/play?url=STREAMURL', true),
@@ -73,6 +75,7 @@ const MediaPlayerConfigScreen = () => {
             ];
         } else if (getOriginalPlatform() === 'macos') {
             return [
+                baseConfig(Players.Default, 'STREAMURL', false),
                 baseConfig(Players.Browser, 'STREAMURL', false),
                 baseConfig(Players.VLC, 'vlc://STREAMURL', false),
                 baseConfig(Players.Infuse, 'infuse://x-callback-url/play?url=STREAMURL', true),
@@ -85,14 +88,14 @@ const MediaPlayerConfigScreen = () => {
     const loadPlayerConfig = async () => {
         try {
             const platformPlayers = getPlatformSpecificPlayers();
-            
+
             // Load saved default player
             const savedDefault = await AsyncStorage.getItem(STORAGE_KEY);
-            
+
             if (savedDefault) {
                 const defaultPlayerName = JSON.parse(savedDefault);
                 setSelectedPlayer(defaultPlayerName);
-                
+
                 // Mark the default player
                 const updatedPlayers = platformPlayers.map(player => ({
                     ...player,
@@ -129,14 +132,14 @@ const MediaPlayerConfigScreen = () => {
         }
 
         setSaving(true);
-        
+
         try {
             await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(selectedPlayer));
-            
+
             if (isHapticsSupported()) {
                 await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             }
-            
+
             showAlert('Success', 'Default media player saved successfully');
         } catch (error) {
             console.error('Error saving player config:', error);
@@ -165,11 +168,11 @@ const MediaPlayerConfigScreen = () => {
                             if (platformPlayers.length > 0) {
                                 setSelectedPlayer(platformPlayers[0].name);
                             }
-                            
+
                             if (isHapticsSupported()) {
                                 await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                             }
-                            
+
                             showAlert('Success', 'Player configuration reset to default');
                         } catch (error) {
                             console.error('Error resetting player config:', error);
@@ -194,7 +197,7 @@ const MediaPlayerConfigScreen = () => {
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar />
-            <ScrollView 
+            <ScrollView
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
             >
@@ -224,9 +227,6 @@ const MediaPlayerConfigScreen = () => {
                                             <Text style={styles.playerName}>
                                                 {player.name}
                                             </Text>
-                                            <Text style={styles.playerDescription}>
-                                                {getPlayerDescription(player.name)}
-                                            </Text>
                                         </View>
                                         <View style={styles.checkmarkContainer}>
                                             {selectedPlayer === player.name && (
@@ -252,11 +252,11 @@ const MediaPlayerConfigScreen = () => {
                             <MaterialIcons name="refresh" size={18} color="#ffffff" style={styles.buttonIcon} />
                             <Text style={styles.secondaryButtonText}>Reset</Text>
                         </Pressable>
-                        
+
                         <Pressable
                             style={[
-                                styles.button, 
-                                styles.primaryButton, 
+                                styles.button,
+                                styles.primaryButton,
                                 saving && styles.buttonDisabled
                             ]}
                             onPress={savePlayerConfig}
@@ -312,7 +312,7 @@ const styles = StyleSheet.create({
     scrollContent: {
         paddingBottom: 20,
     },
-    contentContainer: {        
+    contentContainer: {
         paddingHorizontal: 24,
         maxWidth: 780,
         alignSelf: 'center',
@@ -322,7 +322,6 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#000000',
     },
     loadingContainer: {
         alignItems: 'center',
@@ -361,15 +360,13 @@ const styles = StyleSheet.create({
         backgroundColor: '#1a1a1a',
         borderRadius: 12,
         overflow: 'hidden',
-        borderWidth: 1,
-        borderColor: '#2a2a2a',
     },
     playerRow: {
         backgroundColor: '#1a1a1a',
         paddingHorizontal: 16,
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: '#2a2a2a',
+        paddingVertical: 8,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: '#3a3a3a',
     },
     firstRow: {
         borderTopLeftRadius: 12,
@@ -384,17 +381,17 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        minHeight: 44,
+        paddingVertical: 4,
     },
     playerInfo: {
         flex: 1,
         paddingRight: 12,
     },
     playerName: {
-        fontSize: 16,
+        fontSize: 17,
         fontWeight: '400',
         color: '#ffffff',
-        marginBottom: 2,
+        lineHeight: 22,
     },
     playerDescription: {
         fontSize: 13,
