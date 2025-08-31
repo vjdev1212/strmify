@@ -113,11 +113,32 @@ const StreamListScreen = () => {
         }
     }, []);
 
+    // Load saved default player from config
+    const loadDefaultPlayer = async () => {
+        try {
+            const savedDefault = await AsyncStorage.getItem(STORAGE_KEY);
+            if (savedDefault) {
+                const defaultPlayerName = JSON.parse(savedDefault);
+                setSelectedPlayer(defaultPlayerName);
+                return defaultPlayerName;
+            }
+            return null;
+        } catch (error) {
+            console.error('Error loading default player:', error);
+            return null;
+        }
+    };
+
     useEffect(() => {
         const loadPlayers = async () => {
             const platformPlayers = getPlatformSpecificPlayers();
             setPlayers(platformPlayers);
-            setSelectedPlayer(platformPlayers[0].name);
+            
+            // Load saved default player or use first available
+            const savedPlayer = await loadDefaultPlayer();
+            if (!savedPlayer && platformPlayers.length > 0) {
+                setSelectedPlayer(platformPlayers[0].name);
+            }
         };
 
         const initializeData = async () => {
@@ -355,7 +376,14 @@ const StreamListScreen = () => {
         if (!url && infoHash) {
             showServerSelection(stream);
         } else {
-            showPlayerSelection(undefined, stream);
+            // Check if we have a default player configured
+            if (selectedPlayer) {
+                // Use the configured default player directly
+                handlePlay(stream, selectedPlayer);
+            } else {
+                // No default player, show selection
+                showPlayerSelection(undefined, stream);
+            }
         }
     };
 
@@ -435,7 +463,14 @@ const StreamListScreen = () => {
                         case 0:
                             setSelectedServerId(serverId);
                             setTimeout(() => {
-                                showPlayerSelection(serverId, stream);
+                                // Check if we have a default player configured
+                                if (selectedPlayer) {
+                                    // Use the configured default player directly
+                                    handlePlay(stream, selectedPlayer, serverId);
+                                } else {
+                                    // No default player, show selection
+                                    showPlayerSelection(serverId, stream);
+                                }
                             }, 100);
                             break;
                         case 1:
