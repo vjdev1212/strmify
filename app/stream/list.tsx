@@ -38,7 +38,7 @@ interface StreamResponse {
     streams?: Stream[];
 }
 
-const DEFAULT_STREMIO_URL = 'https://127.0.0.1:12470';
+const DEFAULT_STREMIO_URL = 'http://127.0.0.1:11470';
 const STORAGE_KEY = 'defaultMediaPlayer';
 
 const StreamListScreen = () => {
