@@ -289,6 +289,21 @@ function RootLayoutNav() {
               }}
             />
             <Stack.Screen
+              name="settings/disclaimer"
+              options={{
+                headerShown: true,
+                headerTransparent: true,
+                headerBackground: InvisibleHeaderBackground,
+                headerTitle: '',
+                headerTintColor: '#ffffff',
+                headerBackTitle: '',
+                headerShadowVisible: false,
+                headerStyle: {
+                  backgroundColor: 'transparent',
+                }
+              }}
+            />
+            <Stack.Screen
               name="settings/donate"
               options={{
                 headerShown: true,

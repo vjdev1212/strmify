@@ -28,6 +28,7 @@ const SettingsScreen = () => {
 
   const contactList: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [
     { title: 'Contact', route: '/settings/contact', icon: 'mail-outline' },
+    { title: 'Disclaimer', route: '/settings/disclaimer', icon: 'mail-outline' },
     { title: 'Donate', route: '/settings/donate', icon: 'heart-outline' },
   ];
 
