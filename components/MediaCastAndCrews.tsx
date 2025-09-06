@@ -4,6 +4,7 @@ import {
   ScrollView,
   Image,
   Pressable,
+  useWindowDimensions,
 } from "react-native";
 import { View, Text } from "./Themed";
 
@@ -30,6 +31,32 @@ interface MediaCastAndCrewsProps {
 }
 
 const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
+  const { width, height } = useWindowDimensions();
+  
+  // Device orientation and size logic
+  const isPortrait = height > width;
+  const shortSide = Math.min(width, height);
+  
+  // Device category based on shortSide
+  const getCastPerScreen = () => {
+    if (shortSide < 580) return isPortrait ? 3 : 5;       // mobile
+    if (shortSide < 1024) return isPortrait ? 6 : 8;      // tablet
+    if (shortSide < 1440) return isPortrait ? 7 : 9;      // laptop
+    return isPortrait ? 7 : 10;                           // desktop
+  };
+
+  const castPerScreen = getCastPerScreen();
+  const spacing = 12;
+  const containerMargin = 15;
+  
+  const castWidth = useMemo(() => {
+    const totalSpacing = spacing * (castPerScreen - 1);
+    const totalMargins = containerMargin * 2; // left + right
+    return (width - totalSpacing - totalMargins) / castPerScreen;
+  }, [width, castPerScreen]);
+
+  const castHeight = castWidth * 1.5;
+
   // Modern color scheme
   const COLORS = {
     background: '#000000',
@@ -66,7 +93,7 @@ const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerContainer}>
+      <View style={[styles.headerContainer, { paddingHorizontal: containerMargin }]}>
         <Text style={[styles.sectionTitle, { color: COLORS.primary }]}>
           Cast & Crew
         </Text>
@@ -75,17 +102,19 @@ const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-        style={styles.scrollView}
+        contentContainerStyle={[styles.scrollContent, { paddingRight: containerMargin }]}
+        style={[styles.scrollView, { paddingLeft: containerMargin }]}
       >
         {castItems.map((item, index) => (
           <Pressable
             key={item.id}
             style={[
               styles.castCard,
-              { backgroundColor: COLORS.cardBackground },
-              index === 0 && styles.firstCard,
-              index === castItems.length - 1 && styles.lastCard,
+              {
+                width: castWidth,
+                marginRight: index === castItems.length - 1 ? 0 : spacing,
+                backgroundColor: COLORS.cardBackground,
+              }
             ]}
             android_ripple={{ color: COLORS.accent, borderless: false }}
           >
@@ -93,10 +122,15 @@ const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
               {item.hasImage ? (
                 <Image
                   source={{ uri: item.imageUri! }}
-                  style={styles.profileImage}
+                  style={[styles.profileImage as any, {
+                    width: castWidth,
+                    height: castHeight,
+                  }]}
                 />
               ) : (
                 <View style={[styles.placeholderImage, {
+                  width: castWidth,
+                  height: castHeight,
                   backgroundColor: COLORS.accent,
                   borderColor: COLORS.border,
                 }]}>
@@ -135,7 +169,6 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
   },
   headerContainer: {
-    paddingHorizontal: 15,
     marginBottom: 16,
   },
   sectionTitle: {
@@ -144,14 +177,12 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   scrollView: {
-    paddingLeft: 15,
+    // paddingLeft handled dynamically
   },
   scrollContent: {
-    paddingRight: 15,
+    // paddingRight handled dynamically
   },
   castCard: {
-    width: 120,
-    marginRight: 12,
     borderRadius: 6,
     paddingBottom: 10,
     alignItems: "center",
@@ -163,12 +194,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
-  },
-  firstCard: {
-    marginLeft: 0,
-  },
-  lastCard: {
-    marginRight: 0,
   },
   imageContainer: {
     marginBottom: 12,
@@ -182,14 +207,10 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   profileImage: {
-    width: 120,
-    height: 170,
     borderTopStartRadius: 6,
     borderTopEndRadius: 6,
   },
   placeholderImage: {
-    width: 120,
-    height: 170,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
