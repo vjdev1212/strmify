@@ -14,11 +14,8 @@ const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
 const TMDB_BACKDROP_BASE = 'https://image.tmdb.org/t/p/w780';
 
-// Constants for optimization
-const INITIAL_LOAD_LIMIT = 12; // Reduce initial items per section
-const MAX_CONCURRENT_REQUESTS = 3; // Limit concurrent API calls
+// Cache duration
 const TMDB_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
-
 
 // Simple TMDB cache implementation
 const tmdbCache = new Map<string, { data: any; timestamp: number }>();
@@ -34,15 +31,9 @@ const TraktScreen = () => {
     const [movieSections, setMovieSections] = useState<ListSection[]>([]);
     const [showSections, setShowSections] = useState<ListSection[]>([]);
     const [calendarSections, setCalendarSections] = useState<CalendarSection[]>([]);
-    const [tabDataLoaded, setTabDataLoaded] = useState({
-        'movies': false,
-        'shows': false,
-        'user-lists': false,
-        'calendar': false
-    });
+    const [allTabsLoaded, setAllTabsLoaded] = useState<boolean>(false);
 
     // Refs for optimization
-    const loadingRef = useRef<Set<string>>(new Set());
     const mountedRef = useRef(true);
 
     // Memoized responsive calculations
@@ -88,73 +79,60 @@ const TraktScreen = () => {
         };
     }, [screenData]);
 
-    // Optimized TMDB enhancement with caching and batching
-    const enhanceWithTMDB = useCallback(async (items: TraktItem[], limit = INITIAL_LOAD_LIMIT): Promise<EnhancedTraktItem[]> => {
+    // Enhanced TMDB enhancement - no limits, process all items
+    const enhanceWithTMDB = useCallback(async (items: TraktItem[]): Promise<EnhancedTraktItem[]> => {
         if (!TMDB_API_KEY || !items.length) return items;
-
-        const itemsToProcess = items.slice(0, limit);
-        const batches: TraktItem[][] = [];
-        
-        // Create batches for concurrent processing
-        for (let i = 0; i < itemsToProcess.length; i += MAX_CONCURRENT_REQUESTS) {
-            batches.push(itemsToProcess.slice(i, i + MAX_CONCURRENT_REQUESTS));
-        }
 
         const enhancedItems: EnhancedTraktItem[] = [];
 
-        for (const batch of batches) {
-            if (!mountedRef.current) break;
+        // Process all items in parallel
+        const enhancePromises = items.map(async (item): Promise<EnhancedTraktItem> => {
+            try {
+                const content = item.movie || item.show;
+                const tmdbId = content?.ids?.tmdb;
+                
+                if (!tmdbId) return item;
 
-            const batchPromises = batch.map(async (item): Promise<EnhancedTraktItem> => {
-                try {
-                    const content = item.movie || item.show;
-                    const tmdbId = content?.ids?.tmdb;
-                    
-                    if (!tmdbId) return item;
+                const cacheKey = `${item.movie ? 'movie' : 'tv'}-${tmdbId}`;
+                const cached = tmdbCache.get(cacheKey);
+                const now = Date.now();
 
-                    const cacheKey = `${item.movie ? 'movie' : 'tv'}-${tmdbId}`;
-                    const cached = tmdbCache.get(cacheKey);
-                    const now = Date.now();
-
-                    // Return cached data if still valid
-                    if (cached && (now - cached.timestamp) < TMDB_CACHE_DURATION) {
-                        return {
-                            ...item,
-                            tmdb: cached.data,
-                            tmdb_id: tmdbId
-                        };
-                    }
-
-                    const endpoint = item.movie ? 'movie' : 'tv';
-                    const response = await fetch(
-                        `${TMDB_BASE_URL}/${endpoint}/${tmdbId}?api_key=${TMDB_API_KEY}`
-                    );
-
-                    if (response.ok) {
-                        const tmdbData = await response.json();
-                        // Cache the result
-                        tmdbCache.set(cacheKey, { data: tmdbData, timestamp: now });
-                        
-                        return {
-                            ...item,
-                            tmdb: tmdbData,
-                            tmdb_id: tmdbId
-                        };
-                    }
-                } catch (error) {
-                    console.error('TMDB enhancement error:', error);
+                // Return cached data if still valid
+                if (cached && (now - cached.timestamp) < TMDB_CACHE_DURATION) {
+                    return {
+                        ...item,
+                        tmdb: cached.data,
+                        tmdb_id: tmdbId
+                    };
                 }
-                return item;
-            });
 
-            const batchResults = await Promise.all(batchPromises);
-            enhancedItems.push(...batchResults);
-        }
+                const endpoint = item.movie ? 'movie' : 'tv';
+                const response = await fetch(
+                    `${TMDB_BASE_URL}/${endpoint}/${tmdbId}?api_key=${TMDB_API_KEY}`
+                );
 
-        return enhancedItems;
+                if (response.ok) {
+                    const tmdbData = await response.json();
+                    // Cache the result
+                    tmdbCache.set(cacheKey, { data: tmdbData, timestamp: now });
+                    
+                    return {
+                        ...item,
+                        tmdb: tmdbData,
+                        tmdb_id: tmdbId
+                    };
+                }
+            } catch (error) {
+                console.error('TMDB enhancement error:', error);
+            }
+            return item;
+        });
+
+        const results = await Promise.all(enhancePromises);
+        return results;
     }, []);
 
-    // Optimized sorting functions with memoization
+    // Sorting functions with memoization
     const sortByRankThenDate = useCallback((items: TraktItem[]) => {
         return items.sort((a: any, b: any) => {
             if (a.rank !== undefined && b.rank !== undefined) {
@@ -187,38 +165,27 @@ const TraktScreen = () => {
         });
     }, []);
 
-    // Lazy loading for tabs - only load data when tab is selected
-    const loadTabData = useCallback(async (tab: string) => {
-        if (loadingRef.current.has(tab) || tabDataLoaded[tab as keyof typeof tabDataLoaded]) return;
-        
-        loadingRef.current.add(tab);
+    // Load all tabs data at once
+    const loadAllData = useCallback(async () => {
         setIsLoading(true);
 
         try {
-            switch (tab) {
-                case 'movies':
-                    await loadMovieData();
-                    break;
-                case 'shows':
-                    await loadShowData();
-                    break;
-                case 'user-lists':
-                    await loadUserListData();
-                    break;
-                case 'calendar':
-                    await loadCalendarData();
-                    break;
-            }
+            // Load all tab data in parallel
+            await Promise.all([
+                loadMovieData(),
+                loadShowData(),
+                loadUserListData(),
+                loadCalendarData()
+            ]);
             
-            setTabDataLoaded(prev => ({ ...prev, [tab]: true }));
+            setAllTabsLoaded(true);
         } catch (error) {
-            console.error(`Error loading ${tab} data:`, error);
-            showAlert('Error', `Failed to load ${tab} data. Please try again.`);
+            console.error('Error loading data:', error);
+            showAlert('Error', 'Failed to load data. Please try again.');
         } finally {
-            loadingRef.current.delete(tab);
             setIsLoading(false);
         }
-    }, [tabDataLoaded]);
+    }, []);
 
     // Effect for dimension changes
     useEffect(() => {
@@ -236,38 +203,50 @@ const TraktScreen = () => {
         };
     }, []);
 
-    // Load initial tab data only
+    // Load all data when authenticated
     useEffect(() => {
-        if (isAuthenticated && !tabDataLoaded[selectedTab]) {
-            loadTabData(selectedTab);
+        if (isAuthenticated && !allTabsLoaded) {
+            loadAllData();
         }
-    }, [isAuthenticated, selectedTab, loadTabData, tabDataLoaded]);
+    }, [isAuthenticated, allTabsLoaded, loadAllData]);
 
     const checkAuthentication = useCallback(async () => {
         const authenticated = await isUserAuthenticated();
         setIsAuthenticated(authenticated);
     }, []);
 
-    // Optimized data loading functions
+    // Movie data loading - no limits
     const loadMovieData = useCallback(async () => {
         const newMovieSections: ListSection[] = [];
 
         try {
-            // Load most important sections first (Currently Watching, Trending)
-            const prioritySections = await Promise.allSettled([
+            // Load all movie sections in parallel
+            const [
+                movieProgress,
+                trendingMovies,
+                recommendedMovies,
+                popularMovies,
+                favoritedMovies,
+                watchedMovies,
+                collectedMovies
+            ] = await Promise.allSettled([
                 makeTraktApiCall('/sync/playback/movies'),
-                makeTraktApiCall('/movies/trending')
+                makeTraktApiCall('/movies/trending'),
+                makeTraktApiCall('/recommendations/movies'),
+                makeTraktApiCall('/movies/popular'),
+                makeTraktApiCall('/sync/favorites/movies'),
+                makeTraktApiCall('/sync/watched/movies'),
+                makeTraktApiCall('/sync/collection/movies')
             ]);
 
             // Currently Watching
-            if (prioritySections[0].status === 'fulfilled' && prioritySections[0].value?.length > 0) {
-                const movieProgress = prioritySections[0].value
+            if (movieProgress.status === 'fulfilled' && movieProgress.value?.length > 0) {
+                const progressItems = movieProgress.value
                     .sort((a: any, b: any) => {
                         const dateA = new Date(a.paused_at || a.updated_at || '1970-01-01').getTime();
                         const dateB = new Date(b.paused_at || b.updated_at || '1970-01-01').getTime();
                         return dateB - dateA;
                     })
-                    .slice(0, INITIAL_LOAD_LIMIT)
                     .map((item: any) => ({
                         ...item,
                         type: 'movie' as const,
@@ -275,7 +254,7 @@ const TraktScreen = () => {
                         paused_at: item.paused_at,
                     }));
 
-                const enhancedMovieProgress = await enhanceWithTMDB(movieProgress);
+                const enhancedMovieProgress = await enhanceWithTMDB(progressItems);
                 newMovieSections.push({
                     title: 'Currently Watching',
                     data: enhancedMovieProgress,
@@ -283,63 +262,71 @@ const TraktScreen = () => {
             }
 
             // Trending
-            if (prioritySections[1].status === 'fulfilled' && prioritySections[1].value?.length > 0) {
-                const trendingMovies = prioritySections[1].value;
-                const enhancedTrendingMovies = await enhanceWithTMDB(
-                    trendingMovies.slice(0, INITIAL_LOAD_LIMIT).map((item: any) => ({ movie: item.movie, type: 'movie' as const }))
-                );
+            if (trendingMovies.status === 'fulfilled' && trendingMovies.value?.length > 0) {
+                const trendingItems = trendingMovies.value.map((item: any) => ({ movie: item.movie, type: 'movie' as const }));
+                const enhancedTrending = await enhanceWithTMDB(trendingItems);
                 newMovieSections.push({
                     title: 'Trending',
-                    data: enhancedTrendingMovies,
+                    data: enhancedTrending,
                 });
             }
 
-            setMovieSections(newMovieSections);
+            // Recommendations
+            if (recommendedMovies.status === 'fulfilled' && recommendedMovies.value?.length > 0) {
+                const recommendedItems = recommendedMovies.value.map((item: any) => ({ movie: item, type: 'movie' as const }));
+                const enhancedRecommended = await enhanceWithTMDB(recommendedItems);
+                newMovieSections.push({
+                    title: 'Recommendations',
+                    data: enhancedRecommended,
+                });
+            }
 
-            // Load remaining sections in background
-            setTimeout(async () => {
-                if (!mountedRef.current) return;
-                
-                const backgroundSections = await Promise.allSettled([
-                    makeTraktApiCall('/recommendations/movies'),
-                    makeTraktApiCall('/movies/popular'),
-                    makeTraktApiCall('/sync/favorites/movies'),
-                    makeTraktApiCall('/sync/watched/movies'),
-                    makeTraktApiCall('/sync/collection/movies')
-                ]);
+            // Popular
+            if (popularMovies.status === 'fulfilled' && popularMovies.value?.length > 0) {
+                const popularItems = popularMovies.value.map((item: any) => ({ movie: item, type: 'movie' as const }));
+                const enhancedPopular = await enhanceWithTMDB(popularItems);
+                newMovieSections.push({
+                    title: 'Popular',
+                    data: enhancedPopular,
+                });
+            }
 
-                const additionalSections: ListSection[] = [];
+            // Favorited
+            if (favoritedMovies.status === 'fulfilled' && favoritedMovies.value?.length > 0) {
+                const favoritedItems = sortByRecentDate(favoritedMovies.value)
+                    .map((item: any) => ({ ...item, type: 'movie' as const }));
+                const enhancedFavorited = await enhanceWithTMDB(favoritedItems);
+                newMovieSections.push({
+                    title: 'Favorited',
+                    data: enhancedFavorited,
+                });
+            }
 
-                // Process background sections
-                for (let i = 0; i < backgroundSections.length; i++) {
-                    const result = backgroundSections[i];
-                    if (result.status === 'fulfilled' && result.value?.length > 0) {
-                        const sectionTitles = ['Recommendations', 'Popular', 'Favorited', 'Watched', 'Collected'];
-                        const items = result.value;
-                        
-                        let processedItems;
-                        if (i >= 2) { // Favorited, Watched, Collected
-                            processedItems = sortByRecentDate(items)
-                                .slice(0, INITIAL_LOAD_LIMIT)
-                                .map((item: any) => ({ ...item, type: 'movie' as const }));
-                        } else {
-                            processedItems = items
-                                .slice(0, INITIAL_LOAD_LIMIT)
-                                .map((item: any) => ({ movie: item, type: 'movie' as const }));
-                        }
+            // Watched
+            if (watchedMovies.status === 'fulfilled' && watchedMovies.value?.length > 0) {
+                const watchedItems = sortByRecentDate(watchedMovies.value)
+                    .map((item: any) => ({ ...item, type: 'movie' as const }));
+                const enhancedWatched = await enhanceWithTMDB(watchedItems);
+                newMovieSections.push({
+                    title: 'Watched',
+                    data: enhancedWatched,
+                });
+            }
 
-                        const enhanced = await enhanceWithTMDB(processedItems);
-                        additionalSections.push({
-                            title: sectionTitles[i],
-                            data: enhanced,
-                        });
-                    }
-                }
+            // Collected
+            if (collectedMovies.status === 'fulfilled' && collectedMovies.value?.length > 0) {
+                const collectedItems = sortByRecentDate(collectedMovies.value)
+                    .map((item: any) => ({ ...item, type: 'movie' as const }));
+                const enhancedCollected = await enhanceWithTMDB(collectedItems);
+                newMovieSections.push({
+                    title: 'Collected',
+                    data: enhancedCollected,
+                });
+            }
 
-                if (mountedRef.current) {
-                    setMovieSections(prev => [...prev, ...additionalSections]);
-                }
-            }, 100);
+            if (mountedRef.current) {
+                setMovieSections(newMovieSections);
+            }
 
         } catch (error) {
             console.error('Error loading movie data:', error);
@@ -350,21 +337,33 @@ const TraktScreen = () => {
         const newShowSections: ListSection[] = [];
 
         try {
-            // Load priority sections first
-            const prioritySections = await Promise.allSettled([
+            // Load all show sections in parallel
+            const [
+                showProgress,
+                trendingShows,
+                recommendedShows,
+                popularShows,
+                favoritedShows,
+                watchedShows,
+                collectedShows
+            ] = await Promise.allSettled([
                 makeTraktApiCall('/sync/playback/episodes'),
-                makeTraktApiCall('/shows/trending')
+                makeTraktApiCall('/shows/trending'),
+                makeTraktApiCall('/recommendations/shows'),
+                makeTraktApiCall('/shows/popular'),
+                makeTraktApiCall('/sync/favorites/shows'),
+                makeTraktApiCall('/sync/watched/shows?extended=noseasons'),
+                makeTraktApiCall('/sync/collection/shows')
             ]);
 
             // Currently Watching
-            if (prioritySections[0].status === 'fulfilled' && prioritySections[0].value?.length > 0) {
-                const showProgress = prioritySections[0].value
+            if (showProgress.status === 'fulfilled' && showProgress.value?.length > 0) {
+                const progressItems = showProgress.value
                     .sort((a: any, b: any) => {
                         const dateA = new Date(a.paused_at || a.updated_at || '1970-01-01').getTime();
                         const dateB = new Date(b.paused_at || b.updated_at || '1970-01-01').getTime();
                         return dateB - dateA;
                     })
-                    .slice(0, INITIAL_LOAD_LIMIT)
                     .map((item: any) => ({
                         ...item,
                         show: item.show || (item.episode && item.episode.show),
@@ -373,7 +372,7 @@ const TraktScreen = () => {
                         paused_at: item.paused_at,
                     }));
 
-                const enhancedShowProgress = await enhanceWithTMDB(showProgress);
+                const enhancedShowProgress = await enhanceWithTMDB(progressItems);
                 newShowSections.push({
                     title: 'Currently Watching',
                     data: enhancedShowProgress,
@@ -381,62 +380,71 @@ const TraktScreen = () => {
             }
 
             // Trending
-            if (prioritySections[1].status === 'fulfilled' && prioritySections[1].value?.length > 0) {
-                const trendingShows = prioritySections[1].value;
-                const enhancedTrendingShows = await enhanceWithTMDB(
-                    trendingShows.slice(0, INITIAL_LOAD_LIMIT).map((item: any) => ({ show: item.show, type: 'show' as const }))
-                );
+            if (trendingShows.status === 'fulfilled' && trendingShows.value?.length > 0) {
+                const trendingItems = trendingShows.value.map((item: any) => ({ show: item.show, type: 'show' as const }));
+                const enhancedTrending = await enhanceWithTMDB(trendingItems);
                 newShowSections.push({
                     title: 'Trending',
-                    data: enhancedTrendingShows,
+                    data: enhancedTrending,
                 });
             }
 
-            setShowSections(newShowSections);
+            // Recommendations
+            if (recommendedShows.status === 'fulfilled' && recommendedShows.value?.length > 0) {
+                const recommendedItems = recommendedShows.value.map((item: any) => ({ show: item, type: 'show' as const }));
+                const enhancedRecommended = await enhanceWithTMDB(recommendedItems);
+                newShowSections.push({
+                    title: 'Recommendations',
+                    data: enhancedRecommended,
+                });
+            }
 
-            // Load remaining sections in background
-            setTimeout(async () => {
-                if (!mountedRef.current) return;
-                
-                const backgroundSections = await Promise.allSettled([
-                    makeTraktApiCall('/recommendations/shows'),
-                    makeTraktApiCall('/shows/popular'),
-                    makeTraktApiCall('/sync/favorites/shows'),
-                    makeTraktApiCall('/sync/watched/shows?extended=noseasons'),
-                    makeTraktApiCall('/sync/collection/shows')
-                ]);
+            // Popular
+            if (popularShows.status === 'fulfilled' && popularShows.value?.length > 0) {
+                const popularItems = popularShows.value.map((item: any) => ({ show: item, type: 'show' as const }));
+                const enhancedPopular = await enhanceWithTMDB(popularItems);
+                newShowSections.push({
+                    title: 'Popular',
+                    data: enhancedPopular,
+                });
+            }
 
-                const additionalSections: ListSection[] = [];
+            // Favorited
+            if (favoritedShows.status === 'fulfilled' && favoritedShows.value?.length > 0) {
+                const favoritedItems = sortByRecentDate(favoritedShows.value)
+                    .map((item: any) => ({ ...item, type: 'show' as const }));
+                const enhancedFavorited = await enhanceWithTMDB(favoritedItems);
+                newShowSections.push({
+                    title: 'Favorited',
+                    data: enhancedFavorited,
+                });
+            }
 
-                for (let i = 0; i < backgroundSections.length; i++) {
-                    const result = backgroundSections[i];
-                    if (result.status === 'fulfilled' && result.value?.length > 0) {
-                        const sectionTitles = ['Recommendations', 'Popular', 'Favorited', 'Watched', 'Collected'];
-                        const items = result.value;
-                        
-                        let processedItems;
-                        if (i >= 2) {
-                            processedItems = sortByRecentDate(items)
-                                .slice(0, INITIAL_LOAD_LIMIT)
-                                .map((item: any) => ({ ...item, type: 'show' as const }));
-                        } else {
-                            processedItems = items
-                                .slice(0, INITIAL_LOAD_LIMIT)
-                                .map((item: any) => ({ show: item, type: 'show' as const }));
-                        }
+            // Watched
+            if (watchedShows.status === 'fulfilled' && watchedShows.value?.length > 0) {
+                const watchedItems = sortByRecentDate(watchedShows.value)
+                    .map((item: any) => ({ ...item, type: 'show' as const }));
+                const enhancedWatched = await enhanceWithTMDB(watchedItems);
+                newShowSections.push({
+                    title: 'Watched',
+                    data: enhancedWatched,
+                });
+            }
 
-                        const enhanced = await enhanceWithTMDB(processedItems);
-                        additionalSections.push({
-                            title: sectionTitles[i],
-                            data: enhanced,
-                        });
-                    }
-                }
+            // Collected
+            if (collectedShows.status === 'fulfilled' && collectedShows.value?.length > 0) {
+                const collectedItems = sortByRecentDate(collectedShows.value)
+                    .map((item: any) => ({ ...item, type: 'show' as const }));
+                const enhancedCollected = await enhanceWithTMDB(collectedItems);
+                newShowSections.push({
+                    title: 'Collected',
+                    data: enhancedCollected,
+                });
+            }
 
-                if (mountedRef.current) {
-                    setShowSections(prev => [...prev, ...additionalSections]);
-                }
-            }, 100);
+            if (mountedRef.current) {
+                setShowSections(newShowSections);
+            }
 
         } catch (error) {
             console.error('Error loading show data:', error);
@@ -447,42 +455,35 @@ const TraktScreen = () => {
         const newUserListSections: ListSection[] = [];
 
         try {
-            // Load watchlist first (most important)
+            // Load watchlist first
             const watchlistItems = await makeTraktApiCall('/sync/watchlist');
             if (watchlistItems.length > 0) {
                 const sortedWatchlistItems = sortByRecentDate(watchlistItems);
-                const enhancedWatchlistItems = await enhanceWithTMDB(sortedWatchlistItems.slice(0, INITIAL_LOAD_LIMIT));
+                const enhancedWatchlistItems = await enhanceWithTMDB(sortedWatchlistItems);
                 newUserListSections.push({
                     title: 'Watchlist',
                     data: enhancedWatchlistItems,
                 });
             }
 
-            setUserListSections(newUserListSections);
-
-            // Load user lists in background
-            setTimeout(async () => {
-                if (!mountedRef.current) return;
-                
-                const userLists = await makeTraktApiCall('/users/me/lists');
-                const additionalSections: ListSection[] = [];
-                
-                for (const list of userLists.slice(0, 5)) { // Limit to 5 lists initially
-                    const listItems = await makeTraktApiCall(`/users/me/lists/${list.ids.slug}/items`);
-                    if (listItems.length > 0) {
-                        const sortedListItems = sortByRankThenDate(listItems);
-                        const enhancedListItems = await enhanceWithTMDB(sortedListItems.slice(0, INITIAL_LOAD_LIMIT));
-                        additionalSections.push({
-                            title: list.name,
-                            data: enhancedListItems,
-                        });
-                    }
+            // Load all user lists
+            const userLists = await makeTraktApiCall('/users/me/lists');
+            
+            for (const list of userLists) {
+                const listItems = await makeTraktApiCall(`/users/me/lists/${list.ids.slug}/items`);
+                if (listItems.length > 0) {
+                    const sortedListItems = sortByRankThenDate(listItems);
+                    const enhancedListItems = await enhanceWithTMDB(sortedListItems);
+                    newUserListSections.push({
+                        title: list.name,
+                        data: enhancedListItems,
+                    });
                 }
+            }
 
-                if (mountedRef.current) {
-                    setUserListSections(prev => [...prev, ...additionalSections]);
-                }
-            }, 100);
+            if (mountedRef.current) {
+                setUserListSections(newUserListSections);
+            }
 
         } catch (error) {
             console.error('Error loading user lists:', error);
@@ -494,14 +495,14 @@ const TraktScreen = () => {
             const today = new Date();
             const startDate = new Date(today);
             const endDate = new Date(today);
-            endDate.setDate(today.getDate() + 14); // Reduced to 2 weeks for faster loading
+            endDate.setDate(today.getDate() + 30); // Load full month
 
             const formatDate = (date: Date) => date.toISOString().split('T')[0];
 
-            // Load only next 14 days for faster initial load
+            // Load full calendar data
             const [showCalendar, movieCalendar] = await Promise.allSettled([
-                makeTraktApiCall(`/calendars/my/shows/${formatDate(startDate)}/14`),
-                makeTraktApiCall(`/calendars/my/movies/${formatDate(startDate)}/14`)
+                makeTraktApiCall(`/calendars/my/shows/${formatDate(startDate)}/30`),
+                makeTraktApiCall(`/calendars/my/movies/${formatDate(startDate)}/30`)
             ]);
 
             const allDates: string[] = [];
@@ -597,13 +598,11 @@ const TraktScreen = () => {
                 items: calendarMap.get(date) || []
             }));
 
-            // Enhance with TMDB data only for sections with items
-            const sectionsWithItems = newCalendarSections.filter(section => section.items.length > 0);
-            
-            for (const section of sectionsWithItems.slice(0, 7)) { // Limit TMDB calls initially
-                if (TMDB_API_KEY) {
+            // Enhance all calendar items with TMDB data
+            for (const section of newCalendarSections) {
+                if (section.items.length > 0 && TMDB_API_KEY) {
                     const enhancedItems = await Promise.all(
-                        section.items.slice(0, 5).map(async (item) => { // Limit items per day
+                        section.items.map(async (item) => {
                             try {
                                 if (item.tmdb_id) {
                                     const endpoint = item.type === 'movie' ? 'movie' : 'tv';
@@ -688,29 +687,20 @@ const TraktScreen = () => {
         if (isHapticsSupported()) {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
         }
-        // Trigger loading if not already loaded
-        if (!tabDataLoaded[tab]) {
-            loadTabData(tab);
-        }
-    }, [tabDataLoaded, loadTabData]);
+    }, []);
 
     const onRefresh = useCallback(async () => {
         setRefreshing(true);
         // Clear cache on refresh
         tmdbCache.clear();
-        setTabDataLoaded({
-            'movies': false,
-            'shows': false,
-            'user-lists': false,
-            'calendar': false
-        });
-        await loadTabData(selectedTab);
+        setAllTabsLoaded(false);
+        await loadAllData();
         setRefreshing(false);
 
         if (isHapticsSupported()) {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
-    }, [selectedTab, loadTabData]);
+    }, [loadAllData]);
 
     // Utility function for remaining minutes calculation
     const calculateRemainingMinutes = useCallback((progress: number, runtime?: number, episodeRuntime?: number[]): number | null => {
@@ -942,9 +932,9 @@ const TraktScreen = () => {
                         }}
                         keyExtractor={(item, index) => `${section.date}-${index}`}
                         removeClippedSubviews={true}
-                        maxToRenderPerBatch={5}
-                        windowSize={10}
-                        initialNumToRender={3}
+                        maxToRenderPerBatch={10}
+                        windowSize={20}
+                        initialNumToRender={8}
                     />
                 </View>
             ) : (
@@ -974,9 +964,9 @@ const TraktScreen = () => {
                 }}
                 keyExtractor={(item, index) => `${section.title}-${index}`}
                 removeClippedSubviews={true}
-                maxToRenderPerBatch={5}
-                windowSize={10}
-                initialNumToRender={3}
+                maxToRenderPerBatch={10}
+                windowSize={20}
+                initialNumToRender={8}
             />
         </View>
     ), [dimensions, renderMediaItem]);
@@ -1082,7 +1072,7 @@ const TraktScreen = () => {
         </View>
     ), []);
 
-    if (isLoading && !tabDataLoaded[selectedTab]) {
+    if (isLoading && !allTabsLoaded) {
         return (
             <SafeAreaView style={styles.container}>
                 <StatusBar />
