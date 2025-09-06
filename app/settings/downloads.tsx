@@ -46,21 +46,17 @@ const AppResourcesScreen = () => {
     },
   ];
 
-  const handlePress = async (url: any) => {
+  const handlePress = async (url: string) => {
     try {
       if (isHapticsSupported()) {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
-      const supported = await Linking.canOpenURL(url);
-      if (supported) {
-        await Linking.openURL(url);
-      } else {
-        console.log("Can't open URL: " + url);
-      }
+      await Linking.openURL(url);
     } catch (error) {
-      console.error('Error opening URL:', error);
+      console.error("Error opening URL:", error);
     }
   };
+
 
   return (
     <SafeAreaView style={styles.container}>
