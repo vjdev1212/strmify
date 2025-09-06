@@ -25,18 +25,18 @@ const AppResourcesScreen = () => {
     },
     {
       id: 2,
-      title: 'App Store (IPA)',
-      subtitle: 'iOS sideloading installation',
+      title: 'Manual IPA Install',
+      subtitle: 'Direct download for sideloading',
       icon: '🍎',
       url: 'https://github.com/vjdev1212/strmify-public/releases',
     },
-    // {
-    //   id: 3,
-    //   title: 'Docker Image',
-    //   subtitle: 'Self-hosted container deployment',
-    //   icon: '🐳',
-    //   url: 'https://hub.docker.com/r/jarvisnexus/strmify',
-    // },
+    {
+      id: 3,
+      title: 'SideStore Installation',
+      subtitle: 'One-click install via SideStore',
+      icon: '📦',
+      url: 'sidestore://source?url=https://raw.githubusercontent.com/vjdev1212/strmify-public/refs/heads/main/sources/sidestore-source.json',
+    },
   ];
 
   const handlePress = async (url: any) => {
