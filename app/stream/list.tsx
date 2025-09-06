@@ -1,12 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { StyleSheet, Pressable, View as RNView, ScrollView, Modal, TouchableWithoutFeedback } from 'react-native';
+import { StyleSheet, Pressable, View as RNView, ScrollView } from 'react-native';
 import { ActivityIndicator, Card, StatusBar, Text, View } from '@/components/Themed';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
-import * as Sharing from 'expo-sharing';
-import { isHapticsSupported, showAlert, getOriginalPlatform } from '@/utils/platform';
+import { isHapticsSupported, showAlert } from '@/utils/platform';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { useActionSheet } from '@expo/react-native-action-sheet';
