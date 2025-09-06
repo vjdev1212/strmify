@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import BottomSpacing from '@/components/BottomSpacing';
 import { isUserAuthenticated, makeTraktApiCall } from '@/clients/trakt';
+import { ListSection, CalendarSection, TraktItem, EnhancedTraktItem, CalendarItem } from '@/models/trakt';
 
 const TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
@@ -18,67 +19,6 @@ const INITIAL_LOAD_LIMIT = 12; // Reduce initial items per section
 const MAX_CONCURRENT_REQUESTS = 3; // Limit concurrent API calls
 const TMDB_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
 
-interface TraktItem {
-    type: 'movie' | 'show';
-    movie?: any;
-    show?: any;
-    episode?: any;
-    watched_at?: string;
-    rating?: number;
-    plays?: number;
-    listed_at?: string;
-    updated_at?: string;
-    last_watched_at?: string;
-    last_updated_at?: string;
-    progress?: number;
-    paused_at?: string;
-    action?: string;
-    rank?: number;
-    id?: number;
-    notes?: string;
-}
-
-interface TMDBDetails {
-    poster_path?: string;
-    backdrop_path?: string;
-    vote_average?: number;
-    release_date?: string;
-    first_air_date?: string;
-    runtime?: number;
-    episode_run_time?: number[];
-}
-
-interface EnhancedTraktItem extends TraktItem {
-    tmdb?: TMDBDetails;
-    tmdb_id?: number;
-}
-
-interface ListSection {
-    title: string;
-    data: EnhancedTraktItem[];
-}
-
-interface CalendarItem {
-    type: 'movie' | 'episode';
-    date: string;
-    title: string;
-    show_title?: string;
-    year?: number;
-    season?: number;
-    episode?: number;
-    episode_title?: string;
-    first_aired?: string;
-    tmdb_id?: number;
-    poster_path?: string;
-    backdrop_path?: string;
-    ids?: any;
-}
-
-interface CalendarSection {
-    date: string;
-    dateLabel: string;
-    items: CalendarItem[];
-}
 
 // Simple TMDB cache implementation
 const tmdbCache = new Map<string, { data: any; timestamp: number }>();
