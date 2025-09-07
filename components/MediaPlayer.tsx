@@ -454,7 +454,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                         >
                             <Ionicons
                                 name={isPlaying ? "pause" : "play"}
-                                size={32}
+                                size={60}
                                 color={isReady ? "white" : "rgba(255,255,255,0.5)"}
                             />
                         </TouchableOpacity>
@@ -718,9 +718,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 20,
-        paddingTop: 40,
+        paddingTop: 20,
         paddingBottom: 20,
-        height: 100,
     },
     backButton: {
         padding: 8,
@@ -766,8 +765,6 @@ const styles = StyleSheet.create({
     playButton: {
         padding: 16,
         marginHorizontal: 30,
-        borderRadius: 30,
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
     },
     disabledButton: {
         opacity: 0.5,
