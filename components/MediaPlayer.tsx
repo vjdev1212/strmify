@@ -70,7 +70,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const [selectedAudioTrack, setSelectedAudioTrack] = useState<string | null>(null);
     const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
     const [volume, setVolume] = useState(1.0);
-    const [isMuted, setIsMuted] = useState(false);
+    const [isMuted, setIsMuted] = useState(true);
     const [showVolumeSlider, setShowVolumeSlider] = useState(false);
     const [showChapters, setShowChapters] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
@@ -937,7 +937,6 @@ const styles = StyleSheet.create({
     },
     progressContainerWithMargin: {
         marginBottom: 16,
-        marginHorizontal: 10,
         paddingVertical: 10,
     },
     progressSlider: {
