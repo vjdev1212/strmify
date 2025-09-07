@@ -50,7 +50,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     autoPlay = true,
 }) => {
     const videoRef = useRef<VideoView>(null);
-    const [isPlaying, setIsPlaying] = useState(autoPlay);
+    const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
     const [showControls, setShowControls] = useState(true);
@@ -60,6 +60,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const [volume, setVolume] = useState(1.0);
     const [showChapters, setShowChapters] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
+    const [isReady, setIsReady] = useState(false);
 
     // Animated values
     const controlsOpacity = useRef(new Animated.Value(1)).current;
@@ -92,70 +93,87 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         player.muted = false;
         player.volume = volume;
         player.playbackRate = playbackSpeed;
-
-        if (autoPlay) {
-            player.play();
-        }
     });
 
     const playingChange = useEvent(player, "playingChange");
-
-    // then inside an effect or render:
     useEffect(() => {
         if (!playingChange) return;
 
-        const { isPlaying } = playingChange;
-        setIsPlaying(isPlaying);
-        setIsBuffering(false);
-
-        Animated.timing(bufferOpacity, {
-            toValue: 0,
-            duration: 200,
-            useNativeDriver: true,
-        }).start();
+        const { isPlaying: playing } = playingChange;
+        setIsPlaying(playing);
+        
+        if (playing) {
+            setIsBuffering(false);
+            Animated.timing(bufferOpacity, {
+                toValue: 0,
+                duration: 200,
+                useNativeDriver: true,
+            }).start();
+        }
     }, [playingChange]);
 
     const timeUpdate = useEvent(player, "timeUpdate");
     useEffect(() => {
         if (!timeUpdate) return;
 
-        const { currentTime, bufferedPosition } = timeUpdate;
-        setCurrentTime(currentTime);
-        setDuration(bufferedPosition);
-
-        const progress = bufferedPosition > 0 ? currentTime / bufferedPosition : 0;
-        Animated.timing(progressBarValue, {
-            toValue: progress,
-            duration: 100,
-            useNativeDriver: false,
-        }).start();
-    }, [timeUpdate]);
+        const { currentTime: time, bufferedPosition } = timeUpdate;
+        setCurrentTime(time);
+        
+        // Get duration from player status instead of bufferedPosition
+        if (player.duration && player.duration > 0) {
+            setDuration(player.duration);
+            const progress = player.duration > 0 ? time / player.duration : 0;
+            Animated.timing(progressBarValue, {
+                toValue: progress,
+                duration: 100,
+                useNativeDriver: false,
+            }).start();
+        }
+    }, [timeUpdate, player.duration]);
 
     const statusChange = useEvent(player, "statusChange");
     useEffect(() => {
         if (!statusChange) return;
 
         const { status } = statusChange;
-        if (status === "loading" || status === "readyToPlay") {
-            setIsBuffering(status === "loading");
-
+                
+        if (status === "loading") {
+            setIsBuffering(true);
             Animated.timing(bufferOpacity, {
-                toValue: status === "loading" ? 1 : 0,
+                toValue: 1,
                 duration: 200,
                 useNativeDriver: true,
             }).start();
+        } else if (status === "readyToPlay") {
+            setIsBuffering(false);
+            setIsReady(true);
+            Animated.timing(bufferOpacity, {
+                toValue: 0,
+                duration: 200,
+                useNativeDriver: true,
+            }).start();
+            
+            // Auto-play if requested and ready
+            if (autoPlay) {
+                player.play();
+            }
+        } else if (status === "error") {
+            Alert.alert("Video Error", "Failed to load video. Please check the video URL and try again.");
+            setIsBuffering(false);
         }
-    }, [statusChange]);
+    }, [statusChange, autoPlay, player]);
 
     // Control functions
     const togglePlayPause = useCallback(() => {
+        if (!isReady) return;
+        
         if (isPlaying) {
             player.pause();
         } else {
             player.play();
         }
         showControlsTemporarily();
-    }, [isPlaying, player]);
+    }, [isPlaying, player, isReady]);
 
     const showControlsTemporarily = useCallback(() => {
         setShowControls(true);
@@ -184,16 +202,23 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     }, [isPlaying, controlsOpacity]);
 
     const seekTo = useCallback((seconds: number) => {
-        player.seekBy(seconds - currentTime);
+        if (!isReady || duration <= 0) return;
+        
+        const clampedTime = Math.max(0, Math.min(duration, seconds));
+        player.seekBy(clampedTime - currentTime);
         showControlsTemporarily();
-    }, [currentTime, player, showControlsTemporarily]);
+    }, [currentTime, duration, player, showControlsTemporarily, isReady]);
 
     const skipTime = useCallback((seconds: number) => {
+        if (!isReady || duration <= 0) return;
+        
         const newTime = Math.max(0, Math.min(duration, currentTime + seconds));
         seekTo(newTime);
-    }, [currentTime, duration, seekTo]);
+    }, [currentTime, duration, seekTo, isReady]);
 
     const formatTime = useCallback((seconds: number) => {
+        if (isNaN(seconds) || seconds < 0) return "0:00";
+        
         const hours = Math.floor(seconds / 3600);
         const minutes = Math.floor((seconds % 3600) / 60);
         const secs = Math.floor(seconds % 60);
@@ -218,18 +243,19 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     // Gesture handler for seeking
     const panResponder = useRef(
         PanResponder.create({
-            onMoveShouldSetPanResponder: () => true,
+            onMoveShouldSetPanResponder: (evt, gestureState) => {
+                // Only respond to horizontal gestures
+                return Math.abs(gestureState.dx) > Math.abs(gestureState.dy) && Math.abs(gestureState.dx) > 10;
+            },
             onPanResponderGrant: () => {
                 showControlsTemporarily();
             },
             onPanResponderMove: (evt, gestureState) => {
-                const { dx } = gestureState;
-                const seekAmount = (dx / SCREEN_WIDTH) * duration;
-                const newTime = Math.max(0, Math.min(duration, currentTime + seekAmount));
-
                 // Visual feedback could be added here
             },
             onPanResponderRelease: (evt, gestureState) => {
+                if (!isReady || duration <= 0) return;
+                
                 const { dx } = gestureState;
                 const seekAmount = (dx / SCREEN_WIDTH) * duration;
                 skipTime(seekAmount);
@@ -261,7 +287,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 pointerEvents="none"
             >
                 <MaterialIcons name="sync" size={40} color="white" />
-                <Text style={styles.bufferingText}>Buffering...</Text>
+                <Text style={styles.bufferingText}>Loading...</Text>
             </Animated.View>
 
             {/* Touch area for showing controls */}
@@ -324,28 +350,31 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                     {/* Center controls */}
                     <View style={styles.centerControls}>
                         <TouchableOpacity
-                            style={styles.skipButton}
+                            style={[styles.skipButton, !isReady && styles.disabledButton]}
                             onPress={() => skipTime(-10)}
+                            disabled={!isReady}
                         >
-                            <MaterialIcons name="replay-10" size={36} color="white" />
+                            <MaterialIcons name="replay-10" size={36} color={isReady ? "white" : "rgba(255,255,255,0.5)"} />
                         </TouchableOpacity>
 
                         <TouchableOpacity
-                            style={styles.playButton}
+                            style={[styles.playButton, !isReady && styles.disabledButton]}
                             onPress={togglePlayPause}
+                            disabled={!isReady}
                         >
                             <Ionicons
                                 name={isPlaying ? "pause" : "play"}
                                 size={48}
-                                color="white"
+                                color={isReady ? "white" : "rgba(255,255,255,0.5)"}
                             />
                         </TouchableOpacity>
 
                         <TouchableOpacity
-                            style={styles.skipButton}
+                            style={[styles.skipButton, !isReady && styles.disabledButton]}
                             onPress={() => skipTime(30)}
+                            disabled={!isReady}
                         >
-                            <MaterialIcons name="forward-30" size={36} color="white" />
+                            <MaterialIcons name="forward-30" size={36} color={isReady ? "white" : "rgba(255,255,255,0.5)"} />
                         </TouchableOpacity>
                     </View>
 
@@ -555,6 +584,9 @@ const styles = StyleSheet.create({
         borderRadius: 40,
         padding: 20,
         marginHorizontal: 30,
+    },
+    disabledButton: {
+        opacity: 0.5,
     },
     bottomControls: {
         paddingHorizontal: 20,
