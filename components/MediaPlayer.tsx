@@ -75,12 +75,11 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const [showChapters, setShowChapters] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
     const [isReady, setIsReady] = useState(false);
-    const [isFullscreen, setIsFullscreen] = useState(true);
     const [isDragging, setIsDragging] = useState(false);
     const [dragPosition, setDragPosition] = useState(0);
     const [contentFit, setContentFit] = useState<VideoContentFit>('contain');
 
-    // Content fit options cycle
+    // Content fit options cycle (removed scaleDown)
     const contentFitOptions: VideoContentFit[] = ['contain', 'cover', 'fill'];
 
     // Animated values
@@ -253,26 +252,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         showControlsTemporarily();
     }, [isPlaying, player, isReady, showControlsTemporarily]);
 
-    const toggleFullscreen = useCallback(async () => {
-        try {
-            if (isFullscreen) {
-                await ScreenOrientation.lockAsync(
-                    ScreenOrientation.OrientationLock.PORTRAIT_UP
-                );
-                StatusBar.setHidden(false);
-            } else {
-                await ScreenOrientation.lockAsync(
-                    ScreenOrientation.OrientationLock.LANDSCAPE
-                );
-                StatusBar.setHidden(true);
-            }
-            setIsFullscreen(!isFullscreen);
-            showControlsTemporarily();
-        } catch (error) {
-            console.warn("Failed to toggle fullscreen:", error);
-        }
-    }, [isFullscreen, showControlsTemporarily]);
-
     const togglePictureInPicture = useCallback(async () => {
         try {
             if (videoRef.current && player && isReady) {
@@ -308,10 +287,17 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         seekTo(newTime);
     }, [currentTime, duration, seekTo, isReady]);
 
-    const toggleMute = useCallback(() => {
-        setIsMuted(!isMuted);
+    // Combined volume control - either unmutes or shows slider
+    const toggleVolumeControl = useCallback(() => {
+        if (isMuted) {
+            setIsMuted(false);
+        } else {
+            setShowVolumeSlider(!showVolumeSlider);
+            setShowSettings(false);
+            setShowChapters(false);
+        }
         showControlsTemporarily();
-    }, [isMuted, showControlsTemporarily]);
+    }, [isMuted, showVolumeSlider, showControlsTemporarily]);
 
     const handleVolumeChange = useCallback((value: number) => {
         setVolume(value);
@@ -350,31 +336,35 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         showControlsTemporarily();
     }, [showControlsTemporarily]);
 
-    // Improved progress bar pan responder with better control
+    // Fixed progress bar pan responder - prevents screen movement
     const progressPanResponder = useRef(
         PanResponder.create({
             onStartShouldSetPanResponder: () => true,
             onMoveShouldSetPanResponder: () => true,
-            onPanResponderGrant: (evt) => {
-                if (!isReady || duration <= 0) return;
+            onPanResponderGrant: (evt, gestureState) => {
+                if (!isReady || duration <= 0) return false;
                 
                 setIsDragging(true);
                 showControlsTemporarily();
                 
                 const { locationX } = evt.nativeEvent;
-                const progressBarWidth = SCREEN_WIDTH - 80;
+                const progressBarWidth = SCREEN_WIDTH - 120; // Account for margins
                 const progress = Math.max(0, Math.min(1, locationX / progressBarWidth));
                 setDragPosition(progress);
                 progressBarValue.setValue(progress);
+                
+                return true;
             },
-            onPanResponderMove: (evt) => {
-                if (!isDragging || !isReady || duration <= 0) return;
+            onPanResponderMove: (evt, gestureState) => {
+                if (!isDragging || !isReady || duration <= 0) return false;
                 
                 const { locationX } = evt.nativeEvent;
-                const progressBarWidth = SCREEN_WIDTH - 80;
+                const progressBarWidth = SCREEN_WIDTH - 120;
                 const progress = Math.max(0, Math.min(1, locationX / progressBarWidth));
                 setDragPosition(progress);
                 progressBarValue.setValue(progress);
+                
+                return true;
             },
             onPanResponderRelease: () => {
                 if (!isDragging || !isReady || duration <= 0) {
@@ -386,6 +376,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 const newTime = dragPosition * duration;
                 seekTo(newTime);
             },
+            onPanResponderTerminationRequest: () => false,
         })
     ).current;
 
@@ -424,7 +415,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const displayTime = isDragging ? dragPosition * duration : currentTime;
 
     return (
-        <View style={[styles.container, isFullscreen && styles.fullscreenContainer]}>
+        <View style={styles.container}>
             <VideoView
                 ref={videoRef}
                 style={styles.video}
@@ -488,10 +479,10 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                         </View>
 
                         <View style={styles.topRightControls}>
-                            {/* Volume/Mute control in top bar */}
+                            {/* Combined Volume/Mute control */}
                             <TouchableOpacity
                                 style={styles.controlButton}
-                                onPress={toggleMute}
+                                onPress={toggleVolumeControl}
                             >
                                 <Ionicons
                                     name={isMuted ? "volume-mute" : volume > 0.5 ? "volume-high" : "volume-low"}
@@ -500,16 +491,21 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 />
                             </TouchableOpacity>
 
-                            {/* Content fit control */}
+                            {/* Content fit control with label */}
                             <TouchableOpacity
                                 style={styles.controlButton}
                                 onPress={cycleContentFit}
                             >
-                                <MaterialIcons
-                                    name={getContentFitIcon()}
-                                    size={24}
-                                    color="white"
-                                />
+                                <View style={styles.contentFitContainer}>
+                                    <MaterialIcons
+                                        name={getContentFitIcon()}
+                                        size={24}
+                                        color="white"
+                                    />
+                                    <Text style={styles.contentFitLabel}>
+                                        {getContentFitLabel()}
+                                    </Text>
+                                </View>
                             </TouchableOpacity>
 
                             <TouchableOpacity
@@ -545,17 +541,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 }}
                             >
                                 <Ionicons name="settings-outline" size={24} color="white" />
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={styles.controlButton}
-                                onPress={toggleFullscreen}
-                            >
-                                <MaterialIcons
-                                    name={isFullscreen ? "fullscreen-exit" : "fullscreen"}
-                                    size={24}
-                                    color="white"
-                                />
                             </TouchableOpacity>
                         </View>
                     </LinearGradient>
@@ -615,7 +600,8 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                             </Text>
                         </View>
 
-                        <View style={styles.progressContainer} {...progressPanResponder.panHandlers}>
+                        {/* Progress bar with horizontal margins */}
+                        <View style={styles.progressContainerWithMargin} {...progressPanResponder.panHandlers}>
                             <View style={styles.progressBar}>
                                 <View style={styles.progressTrack} />
                                 <Animated.View
@@ -645,33 +631,14 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                             </View>
                         </View>
 
-                        <View style={styles.bottomRightControls}>
-                            {/* Volume slider toggle */}
-                            <TouchableOpacity
-                                style={styles.controlButton}
-                                onPress={() => {
-                                    setShowVolumeSlider(!showVolumeSlider);
-                                    setShowSettings(false);
-                                    setShowChapters(false);
-                                }}
-                            >
-                                <Ionicons
-                                    name="volume-high"
-                                    size={20}
-                                    color="white"
-                                />
-                            </TouchableOpacity>
-                            
-                            {playbackSpeed !== 1.0 && (
+                        {/* Only show speed when not default */}
+                        {playbackSpeed !== 1.0 && (
+                            <View style={styles.bottomRightControls}>
                                 <Text style={styles.speedText}>
                                     {playbackSpeed}x
                                 </Text>
-                            )}
-
-                            <Text style={styles.contentFitText}>
-                                {getContentFitLabel()}
-                            </Text>
-                        </View>
+                            </View>
+                        )}
                     </LinearGradient>
                 </Animated.View>
             )}
@@ -723,7 +690,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 {[
                                     { value: 'contain', label: 'Fit' },
                                     { value: 'cover', label: 'Fill' },
-                                    { value: 'fill', label: 'Stretch' },
+                                    { value: 'fill', label: 'Stretch' }
                                 ].map(option => (
                                     <TouchableOpacity
                                         key={option.value}
@@ -868,14 +835,6 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: 'black',
     },
-    fullscreenContainer: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 1000,
-    },
     video: {
         width: '100%',
         height: '100%',
@@ -962,8 +921,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 10,
     },
-    progressContainer: {
+    progressContainerWithMargin: {
         marginBottom: 16,
+        marginHorizontal: 20,
         paddingVertical: 10,
     },
     progressBar: {
@@ -1015,6 +975,7 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 14,
         fontWeight: '500',
+        marginHorizontal: 20
     },
     speedText: {
         color: '#007AFF',
@@ -1231,4 +1192,6 @@ const styles = StyleSheet.create({
         fontSize: 14,
         flex: 1,
     },
+    contentFitContainer:{},
+    contentFitLabel: {}
 });
