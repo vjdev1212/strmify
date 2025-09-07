@@ -78,17 +78,20 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const [isDragging, setIsDragging] = useState(false);
     const [dragPosition, setDragPosition] = useState(0);
     const [contentFit, setContentFit] = useState<VideoContentFit>('contain');
+    const [showContentFitLabel, setShowContentFitLabel] = useState(false);
 
-    // Content fit options cycle (removed scaleDown)
+    // Content fit options cycle
     const contentFitOptions: VideoContentFit[] = ['contain', 'cover', 'fill'];
 
     // Animated values
     const controlsOpacity = useRef(new Animated.Value(1)).current;
     const progressBarValue = useRef(new Animated.Value(0)).current;
     const bufferOpacity = useRef(new Animated.Value(1)).current;
+    const contentFitLabelOpacity = useRef(new Animated.Value(0)).current;
 
     // Auto-hide controls timer
     const hideControlsTimer = useRef<any>(null);
+    const contentFitLabelTimer = useRef<any>(null);
 
     // Initialize player
     const player = useVideoPlayer(videoUrl, (player) => {
@@ -116,6 +119,9 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
             StatusBar.setHidden(false);
             if (hideControlsTimer.current) {
                 clearTimeout(hideControlsTimer.current);
+            }
+            if (contentFitLabelTimer.current) {
+                clearTimeout(contentFitLabelTimer.current);
             }
         };
     }, []);
@@ -268,8 +274,43 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         const currentIndex = contentFitOptions.indexOf(contentFit);
         const nextIndex = (currentIndex + 1) % contentFitOptions.length;
         setContentFit(contentFitOptions[nextIndex]);
+        
+        // Show the label briefly
+        setShowContentFitLabel(true);
+        Animated.timing(contentFitLabelOpacity, {
+            toValue: 1,
+            duration: 200,
+            useNativeDriver: true,
+        }).start();
+
+        if (contentFitLabelTimer.current) {
+            clearTimeout(contentFitLabelTimer.current);
+        }
+
+        contentFitLabelTimer.current = setTimeout(() => {
+            Animated.timing(contentFitLabelOpacity, {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: true,
+            }).start(() => {
+                setShowContentFitLabel(false);
+            });
+        }, 1000);
+
         showControlsTemporarily();
     }, [contentFit, showControlsTemporarily]);
+
+    const handleAirPlay = useCallback(async () => {
+        try {
+            // Note: This would need to be implemented with a proper AirPlay library
+            // For now, we'll just show an alert
+            Alert.alert("AirPlay", "AirPlay functionality would be implemented here with a proper AirPlay library.");
+            showControlsTemporarily();
+        } catch (error) {
+            console.warn("AirPlay error:", error);
+            Alert.alert("AirPlay", "AirPlay is not available on this device.");
+        }
+    }, [showControlsTemporarily]);
 
     const seekTo = useCallback((seconds: number) => {
         if (!isReady || duration <= 0) return;
@@ -287,17 +328,19 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         seekTo(newTime);
     }, [currentTime, duration, seekTo, isReady]);
 
-    // Combined volume control - either unmutes or shows slider
-    const toggleVolumeControl = useCallback(() => {
-        if (isMuted) {
-            setIsMuted(false);
-        } else {
-            setShowVolumeSlider(!showVolumeSlider);
-            setShowSettings(false);
-            setShowChapters(false);
-        }
+    // Separate mute toggle
+    const toggleMute = useCallback(() => {
+        setIsMuted(!isMuted);
         showControlsTemporarily();
-    }, [isMuted, showVolumeSlider, showControlsTemporarily]);
+    }, [isMuted, showControlsTemporarily]);
+
+    // Volume slider control
+    const toggleVolumeSlider = useCallback(() => {
+        setShowVolumeSlider(!showVolumeSlider);
+        setShowSettings(false);
+        setShowChapters(false);
+        showControlsTemporarily();
+    }, [showVolumeSlider, showControlsTemporarily]);
 
     const handleVolumeChange = useCallback((value: number) => {
         setVolume(value);
@@ -336,49 +379,33 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         showControlsTemporarily();
     }, [showControlsTemporarily]);
 
-    // Fixed progress bar pan responder - prevents screen movement
-    const progressPanResponder = useRef(
-        PanResponder.create({
-            onStartShouldSetPanResponder: () => true,
-            onMoveShouldSetPanResponder: () => true,
-            onPanResponderGrant: (evt, gestureState) => {
-                if (!isReady || duration <= 0) return false;
-                
-                setIsDragging(true);
-                showControlsTemporarily();
-                
-                const { locationX } = evt.nativeEvent;
-                const progressBarWidth = SCREEN_WIDTH - 120; // Account for margins
-                const progress = Math.max(0, Math.min(1, locationX / progressBarWidth));
-                setDragPosition(progress);
-                progressBarValue.setValue(progress);
-                
-                return true;
-            },
-            onPanResponderMove: (evt, gestureState) => {
-                if (!isDragging || !isReady || duration <= 0) return false;
-                
-                const { locationX } = evt.nativeEvent;
-                const progressBarWidth = SCREEN_WIDTH - 120;
-                const progress = Math.max(0, Math.min(1, locationX / progressBarWidth));
-                setDragPosition(progress);
-                progressBarValue.setValue(progress);
-                
-                return true;
-            },
-            onPanResponderRelease: () => {
-                if (!isDragging || !isReady || duration <= 0) {
-                    setIsDragging(false);
-                    return;
-                }
-                
-                setIsDragging(false);
-                const newTime = dragPosition * duration;
-                seekTo(newTime);
-            },
-            onPanResponderTerminationRequest: () => false,
-        })
-    ).current;
+    // Fixed progress bar with proper slider functionality
+    const handleSliderValueChange = useCallback((value: number) => {
+        if (!isReady || duration <= 0) return;
+        
+        setIsDragging(true);
+        setDragPosition(value);
+        progressBarValue.setValue(value);
+        
+        const newTime = value * duration;
+        setCurrentTime(newTime);
+    }, [duration, isReady]);
+
+    const handleSliderSlidingStart = useCallback(() => {
+        setIsDragging(true);
+        showControlsTemporarily();
+    }, [showControlsTemporarily]);
+
+    const handleSliderSlidingComplete = useCallback((value: number) => {
+        if (!isReady || duration <= 0) {
+            setIsDragging(false);
+            return;
+        }
+        
+        setIsDragging(false);
+        const newTime = value * duration;
+        seekTo(newTime);
+    }, [duration, seekTo, isReady]);
 
     // Close panels when touching outside
     const handleOverlayPress = useCallback(() => {
@@ -413,6 +440,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
     const currentChapter = getCurrentChapter();
     const displayTime = isDragging ? dragPosition * duration : currentTime;
+    const sliderValue = isDragging ? dragPosition : (duration > 0 ? currentTime / duration : 0);
 
     return (
         <View style={styles.container}>
@@ -437,6 +465,28 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 >
                     <ActivityIndicator size="large" color="white" />
                     <Text style={styles.bufferingText}>Loading...</Text>
+                </Animated.View>
+            )}
+
+            {/* Content fit label overlay */}
+            {showContentFitLabel && (
+                <Animated.View
+                    style={[
+                        styles.contentFitLabelOverlay,
+                        { opacity: contentFitLabelOpacity }
+                    ]}
+                    pointerEvents="none"
+                >
+                    <View style={styles.contentFitLabelContainer}>
+                        <MaterialIcons
+                            name={getContentFitIcon()}
+                            size={32}
+                            color="white"
+                        />
+                        <Text style={styles.contentFitLabelText}>
+                            {getContentFitLabel()}
+                        </Text>
+                    </View>
                 </Animated.View>
             )}
 
@@ -479,33 +529,52 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                         </View>
 
                         <View style={styles.topRightControls}>
-                            {/* Combined Volume/Mute control */}
+                            {/* Separate Mute button */}
                             <TouchableOpacity
                                 style={styles.controlButton}
-                                onPress={toggleVolumeControl}
+                                onPress={toggleMute}
                             >
                                 <Ionicons
-                                    name={isMuted ? "volume-mute" : volume > 0.5 ? "volume-high" : "volume-low"}
+                                    name={isMuted ? "volume-mute" : "volume-high"}
                                     size={24}
                                     color="white"
                                 />
                             </TouchableOpacity>
 
-                            {/* Content fit control with label */}
+                            {/* Volume slider control */}
+                            <TouchableOpacity
+                                style={styles.controlButton}
+                                onPress={toggleVolumeSlider}
+                            >
+                                <MaterialIcons
+                                    name="tune"
+                                    size={24}
+                                    color="white"
+                                />
+                            </TouchableOpacity>
+
+                            {/* Content fit control */}
                             <TouchableOpacity
                                 style={styles.controlButton}
                                 onPress={cycleContentFit}
                             >
-                                <View style={styles.contentFitContainer}>
-                                    <MaterialIcons
-                                        name={getContentFitIcon()}
-                                        size={24}
-                                        color="white"
-                                    />
-                                    <Text style={styles.contentFitLabel}>
-                                        {getContentFitLabel()}
-                                    </Text>
-                                </View>
+                                <MaterialIcons
+                                    name={getContentFitIcon()}
+                                    size={24}
+                                    color="white"
+                                />
+                            </TouchableOpacity>
+
+                            {/* AirPlay button */}
+                            <TouchableOpacity
+                                style={styles.controlButton}
+                                onPress={handleAirPlay}
+                            >
+                                <MaterialIcons
+                                    name="airplay"
+                                    size={24}
+                                    color="white"
+                                />
                             </TouchableOpacity>
 
                             <TouchableOpacity
@@ -600,35 +669,20 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                             </Text>
                         </View>
 
-                        {/* Progress bar with horizontal margins */}
-                        <View style={styles.progressContainerWithMargin} {...progressPanResponder.panHandlers}>
-                            <View style={styles.progressBar}>
-                                <View style={styles.progressTrack} />
-                                <Animated.View
-                                    style={[
-                                        styles.progressFill,
-                                        {
-                                            width: progressBarValue.interpolate({
-                                                inputRange: [0, 1],
-                                                outputRange: ['0%', '100%'],
-                                                extrapolate: 'clamp',
-                                            }),
-                                        },
-                                    ]}
-                                />
-                                <Animated.View
-                                    style={[
-                                        styles.progressThumb,
-                                        {
-                                            left: progressBarValue.interpolate({
-                                                inputRange: [0, 1],
-                                                outputRange: ['0%', '100%'],
-                                                extrapolate: 'clamp',
-                                            }),
-                                        },
-                                    ]}
-                                />
-                            </View>
+                        {/* Fixed progress bar with proper slider */}
+                        <View style={styles.progressContainerWithMargin}>
+                            <Slider
+                                style={styles.progressSlider}
+                                minimumValue={0}
+                                maximumValue={1}
+                                value={sliderValue}
+                                onValueChange={handleSliderValueChange}
+                                onSlidingStart={handleSliderSlidingStart}
+                                onSlidingComplete={handleSliderSlidingComplete}
+                                minimumTrackTintColor="#007AFF"
+                                maximumTrackTintColor="rgba(255,255,255,0.3)"
+                                disabled={!isReady || duration <= 0}
+                            />
                         </View>
 
                         {/* Only show speed when not default */}
@@ -786,46 +840,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                         </ScrollView>
                     </TouchableOpacity>
                 </TouchableOpacity>
-            )}
-
-            {/* Chapters panel */}
-            {showChapters && chapters.length > 0 && (
-                <TouchableOpacity
-                    style={styles.chaptersOverlay}
-                    activeOpacity={1}
-                    onPress={() => setShowChapters(false)}
-                >
-                    <TouchableOpacity
-                        style={styles.chaptersPanel}
-                        activeOpacity={1}
-                        onPress={(e) => e.stopPropagation()}
-                    >
-                        <Text style={styles.chaptersPanelTitle}>Chapters</Text>
-                        <ScrollView style={styles.chaptersContent}>
-                            {chapters.map((chapter: Chapter, index: number) => (
-                                <TouchableOpacity
-                                    key={index}
-                                    style={[
-                                        styles.chapterItem,
-                                        currentChapter?.title === chapter.title && styles.chapterItemActive
-                                    ]}
-                                    onPress={() => {
-                                        seekTo(chapter.start);
-                                        setShowChapters(false);
-                                    }}
-                                >
-                                    <Text style={styles.chapterTime}>
-                                        {formatTime(chapter.start)}
-                                    </Text>
-                                    <Text style={styles.chapterTitle} numberOfLines={2}>
-                                        {chapter.title}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </ScrollView>
-                    </TouchableOpacity>
-                </TouchableOpacity>
-            )}
+            )}            
         </View>
     );
 };
@@ -918,53 +933,16 @@ const styles = StyleSheet.create({
     timeContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 10,
+        alignItems: 'center',        
     },
     progressContainerWithMargin: {
         marginBottom: 16,
-        marginHorizontal: 20,
+        marginHorizontal: 10,
         paddingVertical: 10,
     },
-    progressBar: {
-        height: 6,
-        backgroundColor: 'rgba(255, 255, 255, 0.3)',
-        borderRadius: 3,
-        position: 'relative',
-        overflow: 'visible',
-    },
-    progressTrack: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    },
-    progressFill: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        bottom: 0,
-        backgroundColor: '#007AFF',
-        borderRadius: 3,
-    },
-    progressThumb: {
-        position: 'absolute',
-        top: -8,
-        width: 20,
-        height: 20,
-        backgroundColor: '#007AFF',
-        borderRadius: 10,
-        marginLeft: -10,
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
-        elevation: 5,
+    progressSlider: {
+        width: '100%',
+        height: 40,
     },
     bottomRightControls: {
         flexDirection: 'row',
@@ -975,17 +953,11 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 14,
         fontWeight: '500',
-        marginHorizontal: 20
+        marginHorizontal: 10
     },
     speedText: {
         color: '#007AFF',
         fontSize: 14,
-        fontWeight: '500',
-        marginLeft: 12,
-    },
-    contentFitText: {
-        color: 'rgba(255, 255, 255, 0.8)',
-        fontSize: 12,
         fontWeight: '500',
         marginLeft: 12,
     },
@@ -1004,6 +976,27 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 16,
         marginTop: 8,
+    },
+    contentFitLabelOverlay: {
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: [{ translateX: -75 }, { translateY: -50 }],
+        zIndex: 5,
+    },
+    contentFitLabelContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+        borderRadius: 25,
+    },
+    contentFitLabelText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: '600',
+        marginLeft: 8,
     },
     volumeOverlay: {
         position: 'absolute',
@@ -1141,57 +1134,4 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 14,
     },
-    chaptersOverlay: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    chaptersPanel: {
-        backgroundColor: 'rgba(0, 0, 0, 0.95)',
-        borderRadius: 12,
-        padding: 20,
-        width: '80%',
-        maxHeight: '70%',
-    },
-    chaptersPanelTitle: {
-        color: 'white',
-        fontSize: 18,
-        fontWeight: '600',
-        marginBottom: 16,
-    },
-    chaptersContent: {
-        maxHeight: 400,
-    },
-    chapterItem: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        paddingVertical: 12,
-        paddingHorizontal: 8,
-        borderBottomWidth: 1,
-        borderBottomColor: 'rgba(255, 255, 255, 0.1)',
-        borderRadius: 6,
-        marginBottom: 4,
-    },
-    chapterItemActive: {
-        backgroundColor: 'rgba(0, 122, 255, 0.2)',
-    },
-    chapterTime: {
-        color: '#007AFF',
-        fontSize: 12,
-        fontWeight: '500',
-        minWidth: 50,
-        marginRight: 12,
-    },
-    chapterTitle: {
-        color: 'white',
-        fontSize: 14,
-        flex: 1,
-    },
-    contentFitContainer:{},
-    contentFitLabel: {}
 });
