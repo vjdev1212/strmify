@@ -300,18 +300,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         showControlsTemporarily();
     }, [contentFit, showControlsTemporarily]);
 
-    const handleAirPlay = useCallback(async () => {
-        try {
-            // Note: This would need to be implemented with a proper AirPlay library
-            // For now, we'll just show an alert
-            Alert.alert("AirPlay", "AirPlay functionality would be implemented here with a proper AirPlay library.");
-            showControlsTemporarily();
-        } catch (error) {
-            console.warn("AirPlay error:", error);
-            Alert.alert("AirPlay", "AirPlay is not available on this device.");
-        }
-    }, [showControlsTemporarily]);
-
     const seekTo = useCallback((seconds: number) => {
         if (!isReady || duration <= 0) return;
 
@@ -564,19 +552,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                     color="white"
                                 />
                             </TouchableOpacity>
-
-                            {/* AirPlay button */}
-                            <TouchableOpacity
-                                style={styles.controlButton}
-                                onPress={handleAirPlay}
-                            >
-                                <MaterialIcons
-                                    name="airplay"
-                                    size={24}
-                                    color="white"
-                                />
-                            </TouchableOpacity>
-
+                          
                             <TouchableOpacity
                                 style={styles.controlButton}
                                 onPress={togglePictureInPicture}
