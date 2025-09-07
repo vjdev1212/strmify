@@ -43,9 +43,9 @@ interface MediaPlayerProps {
     videoUrl: string;
     title: string;
     subtitle?: string;
-    subtitles: Subtitle[];
-    audioTracks: AudioTrack[];
-    chapters: Chapter[];
+    subtitles?: Subtitle[];
+    audioTracks?: AudioTrack[];
+    chapters?: Chapter[];
     onBack: () => void;
     autoPlay?: boolean;
 }
@@ -54,9 +54,9 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     videoUrl,
     title,
     subtitle,
-    subtitles,
-    audioTracks,
-    chapters,
+    subtitles = [],
+    audioTracks = [],
+    chapters = [],
     onBack,
     autoPlay = true,
 }) => {
@@ -75,10 +75,13 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const [showChapters, setShowChapters] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
     const [isReady, setIsReady] = useState(false);
-    const [isFullscreen, setIsFullscreen] = useState(false);
+    const [isFullscreen, setIsFullscreen] = useState(true);
     const [isDragging, setIsDragging] = useState(false);
     const [dragPosition, setDragPosition] = useState(0);
     const [contentFit, setContentFit] = useState<VideoContentFit>('contain');
+
+    // Content fit options cycle
+    const contentFitOptions: VideoContentFit[] = ['contain', 'cover', 'fill'];
 
     // Animated values
     const controlsOpacity = useRef(new Animated.Value(1)).current;
@@ -256,10 +259,12 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 await ScreenOrientation.lockAsync(
                     ScreenOrientation.OrientationLock.PORTRAIT_UP
                 );
+                StatusBar.setHidden(false);
             } else {
                 await ScreenOrientation.lockAsync(
                     ScreenOrientation.OrientationLock.LANDSCAPE
                 );
+                StatusBar.setHidden(true);
             }
             setIsFullscreen(!isFullscreen);
             showControlsTemporarily();
@@ -270,19 +275,22 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
     const togglePictureInPicture = useCallback(async () => {
         try {
-            if (videoRef.current) {
+            if (videoRef.current && player && isReady) {
                 await videoRef.current.startPictureInPicture();
             }
             showControlsTemporarily();
         } catch (error) {
-            Alert.alert("Picture-in-Picture Error", "PiP mode is not supported on this device.");
+            console.warn("PiP error:", error);
+            Alert.alert("Picture-in-Picture", "PiP mode is not supported on this device or video is not ready.");
         }
-    }, [showControlsTemporarily]);
+    }, [showControlsTemporarily, player, isReady]);
 
-    const changeContentFit = useCallback((fit: VideoContentFit) => {
-        setContentFit(fit);
+    const cycleContentFit = useCallback(() => {
+        const currentIndex = contentFitOptions.indexOf(contentFit);
+        const nextIndex = (currentIndex + 1) % contentFitOptions.length;
+        setContentFit(contentFitOptions[nextIndex]);
         showControlsTemporarily();
-    }, [showControlsTemporarily]);
+    }, [contentFit, showControlsTemporarily]);
 
     const seekTo = useCallback((seconds: number) => {
         if (!isReady || duration <= 0) return;
@@ -312,7 +320,8 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         } else if (isMuted) {
             setIsMuted(false);
         }
-    }, [isMuted]);
+        showControlsTemporarily();
+    }, [isMuted, showControlsTemporarily]);
 
     const formatTime = useCallback((seconds: number) => {
         if (isNaN(seconds) || seconds < 0) return "0:00";
@@ -336,20 +345,31 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         showControlsTemporarily();
     }, [showControlsTemporarily]);
 
-    // Progress bar pan responder
+    const changeContentFit = useCallback((fit: VideoContentFit) => {
+        setContentFit(fit);
+        showControlsTemporarily();
+    }, [showControlsTemporarily]);
+
+    // Improved progress bar pan responder with better control
     const progressPanResponder = useRef(
         PanResponder.create({
             onStartShouldSetPanResponder: () => true,
             onMoveShouldSetPanResponder: () => true,
             onPanResponderGrant: (evt) => {
+                if (!isReady || duration <= 0) return;
+                
                 setIsDragging(true);
                 showControlsTemporarily();
+                
                 const { locationX } = evt.nativeEvent;
                 const progressBarWidth = SCREEN_WIDTH - 80;
                 const progress = Math.max(0, Math.min(1, locationX / progressBarWidth));
                 setDragPosition(progress);
+                progressBarValue.setValue(progress);
             },
             onPanResponderMove: (evt) => {
+                if (!isDragging || !isReady || duration <= 0) return;
+                
                 const { locationX } = evt.nativeEvent;
                 const progressBarWidth = SCREEN_WIDTH - 80;
                 const progress = Math.max(0, Math.min(1, locationX / progressBarWidth));
@@ -357,11 +377,14 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 progressBarValue.setValue(progress);
             },
             onPanResponderRelease: () => {
-                setIsDragging(false);
-                if (duration > 0) {
-                    const newTime = dragPosition * duration;
-                    seekTo(newTime);
+                if (!isDragging || !isReady || duration <= 0) {
+                    setIsDragging(false);
+                    return;
                 }
+                
+                setIsDragging(false);
+                const newTime = dragPosition * duration;
+                seekTo(newTime);
             },
         })
     ).current;
@@ -378,6 +401,24 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
             showControlsTemporarily();
         }
     }, [showSettings, showChapters, showVolumeSlider, showControlsTemporarily]);
+
+    const getContentFitIcon = useCallback(() => {
+        switch (contentFit) {
+            case 'contain': return 'fit-screen';
+            case 'cover': return 'crop';
+            case 'fill': return 'fullscreen';
+            default: return 'fit-screen';
+        }
+    }, [contentFit]);
+
+    const getContentFitLabel = useCallback(() => {
+        switch (contentFit) {
+            case 'contain': return 'Fit';
+            case 'cover': return 'Fill';
+            case 'fill': return 'Stretch';
+            default: return 'Fit';
+        }
+    }, [contentFit]);
 
     const currentChapter = getCurrentChapter();
     const displayTime = isDragging ? dragPosition * duration : currentTime;
@@ -447,6 +488,30 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                         </View>
 
                         <View style={styles.topRightControls}>
+                            {/* Volume/Mute control in top bar */}
+                            <TouchableOpacity
+                                style={styles.controlButton}
+                                onPress={toggleMute}
+                            >
+                                <Ionicons
+                                    name={isMuted ? "volume-mute" : volume > 0.5 ? "volume-high" : "volume-low"}
+                                    size={24}
+                                    color="white"
+                                />
+                            </TouchableOpacity>
+
+                            {/* Content fit control */}
+                            <TouchableOpacity
+                                style={styles.controlButton}
+                                onPress={cycleContentFit}
+                            >
+                                <MaterialIcons
+                                    name={getContentFitIcon()}
+                                    size={24}
+                                    color="white"
+                                />
+                            </TouchableOpacity>
+
                             <TouchableOpacity
                                 style={styles.controlButton}
                                 onPress={togglePictureInPicture}
@@ -495,44 +560,46 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                         </View>
                     </LinearGradient>
 
-                    {/* Center controls */}
-                    <View style={styles.centerControls}>
-                        <TouchableOpacity
-                            style={[styles.skipButton, !isReady && styles.disabledButton]}
-                            onPress={() => skipTime(-10)}
-                            disabled={!isReady}
-                        >
-                            <MaterialIcons 
-                                name="replay-10" 
-                                size={36} 
-                                color={isReady ? "white" : "rgba(255,255,255,0.5)"} 
-                            />
-                        </TouchableOpacity>
+                    {/* Center controls - Hidden during buffering */}
+                    {!isBuffering && (
+                        <View style={styles.centerControls}>
+                            <TouchableOpacity
+                                style={[styles.skipButton, !isReady && styles.disabledButton]}
+                                onPress={() => skipTime(-10)}
+                                disabled={!isReady}
+                            >
+                                <MaterialIcons 
+                                    name="replay-10" 
+                                    size={36} 
+                                    color={isReady ? "white" : "rgba(255,255,255,0.5)"} 
+                                />
+                            </TouchableOpacity>
 
-                        <TouchableOpacity
-                            style={[styles.playButton, !isReady && styles.disabledButton]}
-                            onPress={togglePlayPause}
-                            disabled={!isReady}
-                        >
-                            <Ionicons
-                                name={isPlaying ? "pause" : "play"}
-                                size={60}
-                                color={isReady ? "white" : "rgba(255,255,255,0.5)"}
-                            />
-                        </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.playButton, !isReady && styles.disabledButton]}
+                                onPress={togglePlayPause}
+                                disabled={!isReady}
+                            >
+                                <Ionicons
+                                    name={isPlaying ? "pause" : "play"}
+                                    size={60}
+                                    color={isReady ? "white" : "rgba(255,255,255,0.5)"}
+                                />
+                            </TouchableOpacity>
 
-                        <TouchableOpacity
-                            style={[styles.skipButton, !isReady && styles.disabledButton]}
-                            onPress={() => skipTime(30)}
-                            disabled={!isReady}
-                        >
-                            <MaterialIcons 
-                                name="forward-30" 
-                                size={36} 
-                                color={isReady ? "white" : "rgba(255,255,255,0.5)"} 
-                            />
-                        </TouchableOpacity>
-                    </View>
+                            <TouchableOpacity
+                                style={[styles.skipButton, !isReady && styles.disabledButton]}
+                                onPress={() => skipTime(30)}
+                                disabled={!isReady}
+                            >
+                                <MaterialIcons 
+                                    name="forward-30" 
+                                    size={36} 
+                                    color={isReady ? "white" : "rgba(255,255,255,0.5)"} 
+                                />
+                            </TouchableOpacity>
+                        </View>
+                    )}
 
                     {/* Bottom controls */}
                     <LinearGradient
@@ -579,6 +646,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                         </View>
 
                         <View style={styles.bottomRightControls}>
+                            {/* Volume slider toggle */}
                             <TouchableOpacity
                                 style={styles.controlButton}
                                 onPress={() => {
@@ -588,7 +656,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 }}
                             >
                                 <Ionicons
-                                    name={isMuted ? "volume-mute" : volume > 0.5 ? "volume-high" : "volume-low"}
+                                    name="volume-high"
                                     size={20}
                                     color="white"
                                 />
@@ -599,9 +667,42 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                     {playbackSpeed}x
                                 </Text>
                             )}
+
+                            <Text style={styles.contentFitText}>
+                                {getContentFitLabel()}
+                            </Text>
                         </View>
                     </LinearGradient>
                 </Animated.View>
+            )}
+
+            {/* Volume slider */}
+            {showVolumeSlider && (
+                <TouchableOpacity
+                    style={styles.volumeOverlay}
+                    activeOpacity={1}
+                    onPress={() => setShowVolumeSlider(false)}
+                >
+                    <TouchableOpacity
+                        style={styles.volumePanel}
+                        activeOpacity={1}
+                        onPress={(e) => e.stopPropagation()}
+                    >
+                        <View style={styles.volumeControls}>
+                            <Ionicons name="volume-low" size={20} color="white" />
+                            <Slider
+                                style={styles.volumeSlider}
+                                minimumValue={0}
+                                maximumValue={1}
+                                value={volume}
+                                onValueChange={handleVolumeChange}
+                                minimumTrackTintColor="#007AFF"
+                                maximumTrackTintColor="rgba(255,255,255,0.3)"
+                            />
+                            <Ionicons name="volume-high" size={20} color="white" />
+                        </View>
+                    </TouchableOpacity>
+                </TouchableOpacity>
             )}
             
             {/* Settings panel */}
@@ -867,9 +968,9 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
     },
     progressBar: {
-        height: 4,
+        height: 6,
         backgroundColor: 'rgba(255, 255, 255, 0.3)',
-        borderRadius: 2,
+        borderRadius: 3,
         position: 'relative',
         overflow: 'visible',
     },
@@ -887,15 +988,24 @@ const styles = StyleSheet.create({
         left: 0,
         bottom: 0,
         backgroundColor: '#007AFF',
+        borderRadius: 3,
     },
     progressThumb: {
         position: 'absolute',
-        top: -6,
-        width: 16,
-        height: 16,
+        top: -8,
+        width: 20,
+        height: 20,
         backgroundColor: '#007AFF',
-        borderRadius: 8,
-        marginLeft: -8,
+        borderRadius: 10,
+        marginLeft: -10,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
     },
     bottomRightControls: {
         flexDirection: 'row',
@@ -911,6 +1021,13 @@ const styles = StyleSheet.create({
         color: '#007AFF',
         fontSize: 14,
         fontWeight: '500',
+        marginLeft: 12,
+    },
+    contentFitText: {
+        color: 'rgba(255, 255, 255, 0.8)',
+        fontSize: 12,
+        fontWeight: '500',
+        marginLeft: 12,
     },
     bufferingContainer: {
         position: 'absolute',
@@ -920,12 +1037,43 @@ const styles = StyleSheet.create({
         bottom: 0,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        zIndex: 10,
     },
     bufferingText: {
         color: 'white',
         fontSize: 16,
         marginTop: 8,
+    },
+    volumeOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    volumePanel: {
+        backgroundColor: 'rgba(0, 0, 0, 0.9)',
+        borderRadius: 12,
+        padding: 20,
+        minWidth: 300,
+    },
+    volumeControls: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    volumeSlider: {
+        flex: 1,
+        height: 40,
+        marginHorizontal: 15,
+    },
+    sliderThumb: {
+        backgroundColor: '#007AFF',
+        width: 20,
+        height: 20,
     },
     settingsOverlay: {
         position: 'absolute',
