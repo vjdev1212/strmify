@@ -10,12 +10,14 @@ import {
     PanResponder,
     Alert,
     ScrollView,
+    ActivityIndicator,
 } from "react-native";
 import { useVideoPlayer, VideoContentFit, VideoView } from "expo-video";
 import { useEvent } from "expo";
 import * as ScreenOrientation from "expo-screen-orientation";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import Slider from '@react-native-community/slider';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -63,11 +65,13 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
     const [showControls, setShowControls] = useState(true);
-    const [isBuffering, setIsBuffering] = useState(false);
+    const [isBuffering, setIsBuffering] = useState(true);
     const [selectedSubtitle, setSelectedSubtitle] = useState<string | null>(null);
     const [selectedAudioTrack, setSelectedAudioTrack] = useState<string | null>(null);
     const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
     const [volume, setVolume] = useState(1.0);
+    const [isMuted, setIsMuted] = useState(false);
+    const [showVolumeSlider, setShowVolumeSlider] = useState(false);
     const [showChapters, setShowChapters] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
     const [isReady, setIsReady] = useState(false);
@@ -75,22 +79,33 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const [isDragging, setIsDragging] = useState(false);
     const [dragPosition, setDragPosition] = useState(0);
     const [contentFit, setContentFit] = useState<VideoContentFit>('contain');
-    const [isPiPEnabled, setIsPiPEnabled] = useState(false);
 
     // Animated values
     const controlsOpacity = useRef(new Animated.Value(1)).current;
     const progressBarValue = useRef(new Animated.Value(0)).current;
-    const bufferOpacity = useRef(new Animated.Value(0)).current;
+    const bufferOpacity = useRef(new Animated.Value(1)).current;
 
     // Auto-hide controls timer
     const hideControlsTimer = useRef<any>(null);
 
+    // Initialize player
+    const player = useVideoPlayer(videoUrl, (player) => {
+        player.loop = false;
+        player.muted = isMuted;
+        player.volume = volume;
+        player.playbackRate = playbackSpeed;
+    });
+
     useEffect(() => {
         const setupOrientation = async () => {
-            await ScreenOrientation.lockAsync(
-                ScreenOrientation.OrientationLock.LANDSCAPE
-            );
-            StatusBar.setHidden(true);
+            try {
+                await ScreenOrientation.lockAsync(
+                    ScreenOrientation.OrientationLock.LANDSCAPE
+                );
+                StatusBar.setHidden(true);
+            } catch (error) {
+                console.warn("Failed to set orientation:", error);
+            }
         };
         setupOrientation();
 
@@ -103,20 +118,23 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         };
     }, []);
 
-    const player = useVideoPlayer(videoUrl, (player) => {
-        player.loop = false;
-        player.muted = false;
-        player.volume = volume;
-        player.playbackRate = playbackSpeed;
-    });
+    // Update player settings when state changes
+    useEffect(() => {
+        if (player) {
+            player.muted = isMuted;
+            player.volume = isMuted ? 0 : volume;
+            player.playbackRate = playbackSpeed;
+        }
+    }, [player, isMuted, volume, playbackSpeed]);
 
+    // Playing state change handler
     const playingChange = useEvent(player, "playingChange");
     useEffect(() => {
         if (!playingChange) return;
-
+        
         const { isPlaying: playing } = playingChange;
         setIsPlaying(playing);
-
+        
         if (playing) {
             setIsBuffering(false);
             Animated.timing(bufferOpacity, {
@@ -125,8 +143,9 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 useNativeDriver: true,
             }).start();
         }
-    }, [playingChange]);
+    }, [playingChange, bufferOpacity]);
 
+    // Time update handler
     const timeUpdate = useEvent(player, "timeUpdate");
     useEffect(() => {
         if (!timeUpdate || isDragging) return;
@@ -134,50 +153,64 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         const { currentTime: time } = timeUpdate;
         setCurrentTime(time);
 
-        if (player.duration && player.duration > 0) {
-            setDuration(player.duration);
-            const progress = player.duration > 0 ? time / player.duration : 0;
-            Animated.timing(progressBarValue, {
-                toValue: progress,
-                duration: 100,
-                useNativeDriver: false,
-            }).start();
+        // Get duration from player
+        const videoDuration = player.duration || 0;
+        if (videoDuration > 0 && duration !== videoDuration) {
+            setDuration(videoDuration);
         }
-    }, [timeUpdate, player.duration, isDragging]);
 
+        // Update progress bar
+        if (videoDuration > 0) {
+            const progress = time / videoDuration;
+            progressBarValue.setValue(progress);
+        }
+    }, [timeUpdate, player.duration, isDragging, duration]);
+
+    // Status change handler
     const statusChange = useEvent(player, "statusChange");
     useEffect(() => {
         if (!statusChange) return;
 
         const { status } = statusChange;
-
         console.log('Video status changed:', status);
 
-        if (status === "loading") {
-            setIsBuffering(true);
-            Animated.timing(bufferOpacity, {
-                toValue: 1,
-                duration: 200,
-                useNativeDriver: true,
-            }).start();
-        } else if (status === "readyToPlay") {
-            setIsBuffering(false);
-            setIsReady(true);
-            Animated.timing(bufferOpacity, {
-                toValue: 0,
-                duration: 200,
-                useNativeDriver: true,
-            }).start();
-
-            if (autoPlay) {
-                player.play();
-            }
-        } else if (status === "error") {
-            Alert.alert("Video Error", "Failed to load video. Please check the video URL and try again.");
-            setIsBuffering(false);
+        switch (status) {
+            case "loading":
+                setIsBuffering(true);
+                setIsReady(false);
+                Animated.timing(bufferOpacity, {
+                    toValue: 1,
+                    duration: 200,
+                    useNativeDriver: true,
+                }).start();
+                break;
+                
+            case "readyToPlay":
+                setIsBuffering(false);
+                setIsReady(true);
+                // Get duration when ready
+                const videoDuration = player.duration || 0;
+                if (videoDuration > 0) {
+                    setDuration(videoDuration);
+                }
+                Animated.timing(bufferOpacity, {
+                    toValue: 0,
+                    duration: 200,
+                    useNativeDriver: true,
+                }).start();
+                
+                if (autoPlay) {
+                    player.play();
+                }
+                break;
+                
+            case "error":
+                Alert.alert("Video Error", "Failed to load video. Please check the video URL and try again.");
+                setIsBuffering(false);
+                setIsReady(false);
+                break;
         }
-    }, [statusChange, autoPlay, player]);
-
+    }, [statusChange, autoPlay, player, bufferOpacity]);
 
     const showControlsTemporarily = useCallback(() => {
         setShowControls(true);
@@ -193,7 +226,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         }
 
         hideControlsTimer.current = setTimeout(() => {
-            if (isPlaying && !showSettings && !showChapters) {
+            if (isPlaying && !showSettings && !showChapters && !showVolumeSlider) {
                 Animated.timing(controlsOpacity, {
                     toValue: 0,
                     duration: 500,
@@ -203,7 +236,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 });
             }
         }, 3000);
-    }, [isPlaying, controlsOpacity, showSettings, showChapters]);
+    }, [isPlaying, controlsOpacity, showSettings, showChapters, showVolumeSlider]);
 
     // Control functions
     const togglePlayPause = useCallback(() => {
@@ -215,39 +248,50 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
             player.play();
         }
         showControlsTemporarily();
-    }, [isPlaying, player, isReady]);
+    }, [isPlaying, player, isReady, showControlsTemporarily]);
 
-    const toggleFullscreen = useCallback(() => {
-        setIsFullscreen(!isFullscreen);
-        showControlsTemporarily();
-    }, [isFullscreen]);
+    const toggleFullscreen = useCallback(async () => {
+        try {
+            if (isFullscreen) {
+                await ScreenOrientation.lockAsync(
+                    ScreenOrientation.OrientationLock.PORTRAIT_UP
+                );
+            } else {
+                await ScreenOrientation.lockAsync(
+                    ScreenOrientation.OrientationLock.LANDSCAPE
+                );
+            }
+            setIsFullscreen(!isFullscreen);
+            showControlsTemporarily();
+        } catch (error) {
+            console.warn("Failed to toggle fullscreen:", error);
+        }
+    }, [isFullscreen, showControlsTemporarily]);
 
     const togglePictureInPicture = useCallback(async () => {
         try {
-            if (isPiPEnabled) {
-                setIsPiPEnabled(false);
-            } else {
-                setIsPiPEnabled(true);
+            if (videoRef.current) {
+                await videoRef.current.startPictureInPicture();
             }
             showControlsTemporarily();
         } catch (error) {
             Alert.alert("Picture-in-Picture Error", "PiP mode is not supported on this device.");
         }
-    }, [isPiPEnabled, showControlsTemporarily]);
+    }, [showControlsTemporarily]);
 
     const changeContentFit = useCallback((fit: VideoContentFit) => {
         setContentFit(fit);
         showControlsTemporarily();
     }, [showControlsTemporarily]);
 
-
     const seekTo = useCallback((seconds: number) => {
         if (!isReady || duration <= 0) return;
 
         const clampedTime = Math.max(0, Math.min(duration, seconds));
-        player.seekBy(clampedTime - currentTime);
+        player.seekBy(clampedTime);
+        setCurrentTime(clampedTime);
         showControlsTemporarily();
-    }, [currentTime, duration, player, showControlsTemporarily, isReady]);
+    }, [duration, player, showControlsTemporarily, isReady]);
 
     const skipTime = useCallback((seconds: number) => {
         if (!isReady || duration <= 0) return;
@@ -255,6 +299,20 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         const newTime = Math.max(0, Math.min(duration, currentTime + seconds));
         seekTo(newTime);
     }, [currentTime, duration, seekTo, isReady]);
+
+    const toggleMute = useCallback(() => {
+        setIsMuted(!isMuted);
+        showControlsTemporarily();
+    }, [isMuted, showControlsTemporarily]);
+
+    const handleVolumeChange = useCallback((value: number) => {
+        setVolume(value);
+        if (value === 0) {
+            setIsMuted(true);
+        } else if (isMuted) {
+            setIsMuted(false);
+        }
+    }, [isMuted]);
 
     const formatTime = useCallback((seconds: number) => {
         if (isNaN(seconds) || seconds < 0) return "0:00";
@@ -275,9 +333,8 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
     const changePlaybackSpeed = useCallback((speed: number) => {
         setPlaybackSpeed(speed);
-        player.playbackRate = speed;
         showControlsTemporarily();
-    }, [player, showControlsTemporarily]);
+    }, [showControlsTemporarily]);
 
     // Progress bar pan responder
     const progressPanResponder = useRef(
@@ -297,12 +354,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 const progressBarWidth = SCREEN_WIDTH - 80;
                 const progress = Math.max(0, Math.min(1, locationX / progressBarWidth));
                 setDragPosition(progress);
-
-                Animated.timing(progressBarValue, {
-                    toValue: progress,
-                    duration: 0,
-                    useNativeDriver: false,
-                }).start();
+                progressBarValue.setValue(progress);
             },
             onPanResponderRelease: () => {
                 setIsDragging(false);
@@ -320,10 +372,12 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
             setShowSettings(false);
         } else if (showChapters) {
             setShowChapters(false);
+        } else if (showVolumeSlider) {
+            setShowVolumeSlider(false);
         } else {
             showControlsTemporarily();
         }
-    }, [showSettings, showChapters, showControlsTemporarily]);
+    }, [showSettings, showChapters, showVolumeSlider, showControlsTemporarily]);
 
     const currentChapter = getCurrentChapter();
     const displayTime = isDragging ? dragPosition * duration : currentTime;
@@ -334,23 +388,25 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 ref={videoRef}
                 style={styles.video}
                 player={player}
-                allowsFullscreen={false}
+                allowsFullscreen={true}
                 allowsPictureInPicture={true}
                 nativeControls={false}
                 contentFit={contentFit}
             />
 
-            {/* Buffering indicator */}
-            <Animated.View
-                style={[
-                    styles.bufferingContainer,
-                    { opacity: bufferOpacity }
-                ]}
-                pointerEvents="none"
-            >
-                <MaterialIcons name="sync" size={40} color="white" />
-                <Text style={styles.bufferingText}>Loading...</Text>
-            </Animated.View>
+            {/* Loading indicator */}
+            {isBuffering && (
+                <Animated.View
+                    style={[
+                        styles.bufferingContainer,
+                        { opacity: bufferOpacity }
+                    ]}
+                    pointerEvents="none"
+                >
+                    <ActivityIndicator size="large" color="white" />
+                    <Text style={styles.bufferingText}>Loading...</Text>
+                </Animated.View>
+            )}
 
             {/* Touch area for showing controls */}
             <TouchableOpacity
@@ -398,7 +454,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 <MaterialIcons
                                     name="picture-in-picture-alt"
                                     size={24}
-                                    color={isPiPEnabled ? "#007AFF" : "white"}
+                                    color="white"
                                 />
                             </TouchableOpacity>
 
@@ -408,6 +464,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                     onPress={() => {
                                         setShowChapters(!showChapters);
                                         setShowSettings(false);
+                                        setShowVolumeSlider(false);
                                     }}
                                 >
                                     <MaterialIcons name="list" size={24} color="white" />
@@ -419,6 +476,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 onPress={() => {
                                     setShowSettings(!showSettings);
                                     setShowChapters(false);
+                                    setShowVolumeSlider(false);
                                 }}
                             >
                                 <Ionicons name="settings-outline" size={24} color="white" />
@@ -444,7 +502,11 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                             onPress={() => skipTime(-10)}
                             disabled={!isReady}
                         >
-                            <MaterialIcons name="replay-10" size={36} color={isReady ? "white" : "rgba(255,255,255,0.5)"} />
+                            <MaterialIcons 
+                                name="replay-10" 
+                                size={36} 
+                                color={isReady ? "white" : "rgba(255,255,255,0.5)"} 
+                            />
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -464,7 +526,11 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                             onPress={() => skipTime(30)}
                             disabled={!isReady}
                         >
-                            <MaterialIcons name="forward-30" size={36} color={isReady ? "white" : "rgba(255,255,255,0.5)"} />
+                            <MaterialIcons 
+                                name="forward-30" 
+                                size={36} 
+                                color={isReady ? "white" : "rgba(255,255,255,0.5)"} 
+                            />
                         </TouchableOpacity>
                     </View>
 
@@ -513,6 +579,21 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                         </View>
 
                         <View style={styles.bottomRightControls}>
+                            <TouchableOpacity
+                                style={styles.controlButton}
+                                onPress={() => {
+                                    setShowVolumeSlider(!showVolumeSlider);
+                                    setShowSettings(false);
+                                    setShowChapters(false);
+                                }}
+                            >
+                                <Ionicons
+                                    name={isMuted ? "volume-mute" : volume > 0.5 ? "volume-high" : "volume-low"}
+                                    size={20}
+                                    color="white"
+                                />
+                            </TouchableOpacity>
+                            
                             {playbackSpeed !== 1.0 && (
                                 <Text style={styles.speedText}>
                                     {playbackSpeed}x
@@ -522,7 +603,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                     </LinearGradient>
                 </Animated.View>
             )}
-
+            
             {/* Settings panel */}
             {showSettings && (
                 <TouchableOpacity
@@ -550,7 +631,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                             styles.scaleOption,
                                             contentFit === option.value && styles.scaleOptionSelected
                                         ]}
-                                        onPress={() => changeContentFit(option.value as any)}
+                                        onPress={() => changeContentFit(option.value as VideoContentFit)}
                                     >
                                         <Text style={[
                                             styles.scaleOptionText,
