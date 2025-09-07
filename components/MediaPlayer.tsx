@@ -724,7 +724,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                     { value: 'contain', label: 'Fit' },
                                     { value: 'cover', label: 'Fill' },
                                     { value: 'fill', label: 'Stretch' },
-                                    { value: 'scaleDown', label: 'Scale Down' }
                                 ].map(option => (
                                     <TouchableOpacity
                                         key={option.value}
