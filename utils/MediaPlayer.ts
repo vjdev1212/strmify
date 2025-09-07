@@ -23,7 +23,7 @@ export const getPlatformSpecificPlayers = () => {
         ];
     } else if (getOriginalPlatform() === 'ios') {
         return [
-            // { name: Players.Default, scheme: 'STREAMURL', encodeUrl: false },
+            { name: Players.Default, scheme: 'STREAMURL', encodeUrl: false },
             { name: Players.Browser, scheme: 'STREAMURL', encodeUrl: false },
             { name: Players.VLC, scheme: 'vlc://STREAMURL', encodeUrl: false },
             { name: Players.Infuse, scheme: 'infuse://x-callback-url/play?url=STREAMURL', encodeUrl: true },
@@ -42,7 +42,7 @@ export const getPlatformSpecificPlayers = () => {
         ];
     } else if (getOriginalPlatform() === 'macos') {
         return [
-            // { name: Players.Default, scheme: 'STREAMURL', encodeUrl: false },
+            { name: Players.Default, scheme: 'STREAMURL', encodeUrl: false },
             { name: Players.Browser, scheme: 'STREAMURL', encodeUrl: false },
             { name: Players.VLC, scheme: 'vlc://STREAMURL', encodeUrl: false },
             { name: Players.Infuse, scheme: 'infuse://x-callback-url/play?url=STREAMURL', encodeUrl: true },
