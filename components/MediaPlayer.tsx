@@ -9,8 +9,9 @@ import {
     StatusBar,
     PanResponder,
     Alert,
+    ScrollView,
 } from "react-native";
-import { PlayingChangeEventPayload, StatusChangeEventPayload, TimeUpdateEventPayload, useVideoPlayer, VideoView } from "expo-video";
+import { useVideoPlayer, VideoContentFit, VideoView } from "expo-video";
 import { useEvent } from "expo";
 import * as ScreenOrientation from "expo-screen-orientation";
 import { LinearGradient } from "expo-linear-gradient";
@@ -24,6 +25,12 @@ export interface Subtitle {
     label: string;
 }
 
+export interface AudioTrack {
+    language: string;
+    label: string;
+    id: string;
+}
+
 export interface Chapter {
     title: string;
     start: number; // in seconds
@@ -35,6 +42,7 @@ interface MediaPlayerProps {
     title: string;
     subtitle?: string;
     subtitles: Subtitle[];
+    audioTracks: AudioTrack[];
     chapters: Chapter[];
     onBack: () => void;
     autoPlay?: boolean;
@@ -45,6 +53,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     title,
     subtitle,
     subtitles,
+    audioTracks,
     chapters,
     onBack,
     autoPlay = true,
@@ -56,11 +65,17 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const [showControls, setShowControls] = useState(true);
     const [isBuffering, setIsBuffering] = useState(false);
     const [selectedSubtitle, setSelectedSubtitle] = useState<string | null>(null);
+    const [selectedAudioTrack, setSelectedAudioTrack] = useState<string | null>(null);
     const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
     const [volume, setVolume] = useState(1.0);
     const [showChapters, setShowChapters] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
     const [isReady, setIsReady] = useState(false);
+    const [isFullscreen, setIsFullscreen] = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
+    const [dragPosition, setDragPosition] = useState(0);
+    const [contentFit, setContentFit] = useState<VideoContentFit>('contain');
+    const [isPiPEnabled, setIsPiPEnabled] = useState(false);
 
     // Animated values
     const controlsOpacity = useRef(new Animated.Value(1)).current;
@@ -101,7 +116,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
         const { isPlaying: playing } = playingChange;
         setIsPlaying(playing);
-        
+
         if (playing) {
             setIsBuffering(false);
             Animated.timing(bufferOpacity, {
@@ -114,12 +129,11 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
     const timeUpdate = useEvent(player, "timeUpdate");
     useEffect(() => {
-        if (!timeUpdate) return;
+        if (!timeUpdate || isDragging) return;
 
-        const { currentTime: time, bufferedPosition } = timeUpdate;
+        const { currentTime: time } = timeUpdate;
         setCurrentTime(time);
-        
-        // Get duration from player status instead of bufferedPosition
+
         if (player.duration && player.duration > 0) {
             setDuration(player.duration);
             const progress = player.duration > 0 ? time / player.duration : 0;
@@ -129,14 +143,16 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 useNativeDriver: false,
             }).start();
         }
-    }, [timeUpdate, player.duration]);
+    }, [timeUpdate, player.duration, isDragging]);
 
     const statusChange = useEvent(player, "statusChange");
     useEffect(() => {
         if (!statusChange) return;
 
         const { status } = statusChange;
-                
+
+        console.log('Video status changed:', status);
+
         if (status === "loading") {
             setIsBuffering(true);
             Animated.timing(bufferOpacity, {
@@ -152,8 +168,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 duration: 200,
                 useNativeDriver: true,
             }).start();
-            
-            // Auto-play if requested and ready
+
             if (autoPlay) {
                 player.play();
             }
@@ -163,17 +178,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         }
     }, [statusChange, autoPlay, player]);
 
-    // Control functions
-    const togglePlayPause = useCallback(() => {
-        if (!isReady) return;
-        
-        if (isPlaying) {
-            player.pause();
-        } else {
-            player.play();
-        }
-        showControlsTemporarily();
-    }, [isPlaying, player, isReady]);
 
     const showControlsTemporarily = useCallback(() => {
         setShowControls(true);
@@ -189,7 +193,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         }
 
         hideControlsTimer.current = setTimeout(() => {
-            if (isPlaying) {
+            if (isPlaying && !showSettings && !showChapters) {
                 Animated.timing(controlsOpacity, {
                     toValue: 0,
                     duration: 500,
@@ -199,11 +203,47 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 });
             }
         }, 3000);
-    }, [isPlaying, controlsOpacity]);
+    }, [isPlaying, controlsOpacity, showSettings, showChapters]);
+
+    // Control functions
+    const togglePlayPause = useCallback(() => {
+        if (!isReady) return;
+
+        if (isPlaying) {
+            player.pause();
+        } else {
+            player.play();
+        }
+        showControlsTemporarily();
+    }, [isPlaying, player, isReady]);
+
+    const toggleFullscreen = useCallback(() => {
+        setIsFullscreen(!isFullscreen);
+        showControlsTemporarily();
+    }, [isFullscreen]);
+
+    const togglePictureInPicture = useCallback(async () => {
+        try {
+            if (isPiPEnabled) {
+                setIsPiPEnabled(false);
+            } else {
+                setIsPiPEnabled(true);
+            }
+            showControlsTemporarily();
+        } catch (error) {
+            Alert.alert("Picture-in-Picture Error", "PiP mode is not supported on this device.");
+        }
+    }, [isPiPEnabled, showControlsTemporarily]);
+
+    const changeContentFit = useCallback((fit: VideoContentFit) => {
+        setContentFit(fit);
+        showControlsTemporarily();
+    }, [showControlsTemporarily]);
+
 
     const seekTo = useCallback((seconds: number) => {
         if (!isReady || duration <= 0) return;
-        
+
         const clampedTime = Math.max(0, Math.min(duration, seconds));
         player.seekBy(clampedTime - currentTime);
         showControlsTemporarily();
@@ -211,14 +251,14 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
     const skipTime = useCallback((seconds: number) => {
         if (!isReady || duration <= 0) return;
-        
+
         const newTime = Math.max(0, Math.min(duration, currentTime + seconds));
         seekTo(newTime);
     }, [currentTime, duration, seekTo, isReady]);
 
     const formatTime = useCallback((seconds: number) => {
         if (isNaN(seconds) || seconds < 0) return "0:00";
-        
+
         const hours = Math.floor(seconds / 3600);
         const minutes = Math.floor((seconds % 3600) / 60);
         const secs = Math.floor(seconds % 60);
@@ -236,46 +276,68 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const changePlaybackSpeed = useCallback((speed: number) => {
         setPlaybackSpeed(speed);
         player.playbackRate = speed;
-        setShowSettings(false);
         showControlsTemporarily();
     }, [player, showControlsTemporarily]);
 
-    // Gesture handler for seeking
-    const panResponder = useRef(
+    // Progress bar pan responder
+    const progressPanResponder = useRef(
         PanResponder.create({
-            onMoveShouldSetPanResponder: (evt, gestureState) => {
-                // Only respond to horizontal gestures
-                return Math.abs(gestureState.dx) > Math.abs(gestureState.dy) && Math.abs(gestureState.dx) > 10;
-            },
-            onPanResponderGrant: () => {
+            onStartShouldSetPanResponder: () => true,
+            onMoveShouldSetPanResponder: () => true,
+            onPanResponderGrant: (evt) => {
+                setIsDragging(true);
                 showControlsTemporarily();
+                const { locationX } = evt.nativeEvent;
+                const progressBarWidth = SCREEN_WIDTH - 80;
+                const progress = Math.max(0, Math.min(1, locationX / progressBarWidth));
+                setDragPosition(progress);
             },
-            onPanResponderMove: (evt, gestureState) => {
-                // Visual feedback could be added here
+            onPanResponderMove: (evt) => {
+                const { locationX } = evt.nativeEvent;
+                const progressBarWidth = SCREEN_WIDTH - 80;
+                const progress = Math.max(0, Math.min(1, locationX / progressBarWidth));
+                setDragPosition(progress);
+
+                Animated.timing(progressBarValue, {
+                    toValue: progress,
+                    duration: 0,
+                    useNativeDriver: false,
+                }).start();
             },
-            onPanResponderRelease: (evt, gestureState) => {
-                if (!isReady || duration <= 0) return;
-                
-                const { dx } = gestureState;
-                const seekAmount = (dx / SCREEN_WIDTH) * duration;
-                skipTime(seekAmount);
+            onPanResponderRelease: () => {
+                setIsDragging(false);
+                if (duration > 0) {
+                    const newTime = dragPosition * duration;
+                    seekTo(newTime);
+                }
             },
         })
     ).current;
 
+    // Close panels when touching outside
+    const handleOverlayPress = useCallback(() => {
+        if (showSettings) {
+            setShowSettings(false);
+        } else if (showChapters) {
+            setShowChapters(false);
+        } else {
+            showControlsTemporarily();
+        }
+    }, [showSettings, showChapters, showControlsTemporarily]);
+
     const currentChapter = getCurrentChapter();
+    const displayTime = isDragging ? dragPosition * duration : currentTime;
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, isFullscreen && styles.fullscreenContainer]}>
             <VideoView
                 ref={videoRef}
                 style={styles.video}
                 player={player}
                 allowsFullscreen={false}
-                allowsPictureInPicture={false}
+                allowsPictureInPicture={true}
                 nativeControls={false}
-                contentFit="contain"
-                {...panResponder.panHandlers}
+                contentFit={contentFit}
             />
 
             {/* Buffering indicator */}
@@ -294,7 +356,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
             <TouchableOpacity
                 style={styles.touchArea}
                 activeOpacity={1}
-                onPress={showControlsTemporarily}
+                onPress={handleOverlayPress}
             />
 
             {/* Controls overlay */}
@@ -329,10 +391,24 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                         </View>
 
                         <View style={styles.topRightControls}>
+                            <TouchableOpacity
+                                style={styles.controlButton}
+                                onPress={togglePictureInPicture}
+                            >
+                                <MaterialIcons
+                                    name="picture-in-picture-alt"
+                                    size={24}
+                                    color={isPiPEnabled ? "#007AFF" : "white"}
+                                />
+                            </TouchableOpacity>
+
                             {chapters.length > 0 && (
                                 <TouchableOpacity
                                     style={styles.controlButton}
-                                    onPress={() => setShowChapters(!showChapters)}
+                                    onPress={() => {
+                                        setShowChapters(!showChapters);
+                                        setShowSettings(false);
+                                    }}
                                 >
                                     <MaterialIcons name="list" size={24} color="white" />
                                 </TouchableOpacity>
@@ -340,9 +416,23 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
                             <TouchableOpacity
                                 style={styles.controlButton}
-                                onPress={() => setShowSettings(!showSettings)}
+                                onPress={() => {
+                                    setShowSettings(!showSettings);
+                                    setShowChapters(false);
+                                }}
                             >
                                 <Ionicons name="settings-outline" size={24} color="white" />
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={styles.controlButton}
+                                onPress={toggleFullscreen}
+                            >
+                                <MaterialIcons
+                                    name={isFullscreen ? "fullscreen-exit" : "fullscreen"}
+                                    size={24}
+                                    color="white"
+                                />
                             </TouchableOpacity>
                         </View>
                     </LinearGradient>
@@ -364,7 +454,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                         >
                             <Ionicons
                                 name={isPlaying ? "pause" : "play"}
-                                size={48}
+                                size={32}
                                 color={isReady ? "white" : "rgba(255,255,255,0.5)"}
                             />
                         </TouchableOpacity>
@@ -383,7 +473,16 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                         colors={['transparent', 'rgba(0,0,0,0.8)']}
                         style={styles.bottomControls}
                     >
-                        <View style={styles.progressContainer}>
+                        <View style={styles.timeContainer}>
+                            <Text style={styles.timeText}>
+                                {formatTime(displayTime)}
+                            </Text>
+                            <Text style={styles.timeText}>
+                                {formatTime(duration)}
+                            </Text>
+                        </View>
+
+                        <View style={styles.progressContainer} {...progressPanResponder.panHandlers}>
                             <View style={styles.progressBar}>
                                 <View style={styles.progressTrack} />
                                 <Animated.View
@@ -398,13 +497,22 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                         },
                                     ]}
                                 />
+                                <Animated.View
+                                    style={[
+                                        styles.progressThumb,
+                                        {
+                                            left: progressBarValue.interpolate({
+                                                inputRange: [0, 1],
+                                                outputRange: ['0%', '100%'],
+                                                extrapolate: 'clamp',
+                                            }),
+                                        },
+                                    ]}
+                                />
                             </View>
                         </View>
 
-                        <View style={styles.timeContainer}>
-                            <Text style={styles.timeText}>
-                                {formatTime(currentTime)} / {formatTime(duration)}
-                            </Text>
+                        <View style={styles.bottomRightControls}>
                             {playbackSpeed !== 1.0 && (
                                 <Text style={styles.speedText}>
                                     {playbackSpeed}x
@@ -417,90 +525,158 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
             {/* Settings panel */}
             {showSettings && (
-                <View style={styles.settingsPanel}>
-                    <View style={styles.settingsContent}>
-                        <Text style={styles.settingsTitle}>Playback Speed</Text>
-                        <View style={styles.speedOptions}>
-                            {[0.5, 0.75, 1.0, 1.25, 1.5, 2.0].map(speed => (
-                                <TouchableOpacity
-                                    key={speed}
-                                    style={[
-                                        styles.speedOption,
-                                        playbackSpeed === speed && styles.speedOptionSelected
-                                    ]}
-                                    onPress={() => changePlaybackSpeed(speed)}
-                                >
-                                    <Text style={[
-                                        styles.speedOptionText,
-                                        playbackSpeed === speed && styles.speedOptionTextSelected
-                                    ]}>
-                                        {speed}x
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-
-                        {subtitles.length > 0 && (
-                            <>
-                                <Text style={styles.settingsTitle}>Subtitles</Text>
-                                <View style={styles.subtitleOptions}>
+                <TouchableOpacity
+                    style={styles.settingsOverlay}
+                    activeOpacity={1}
+                    onPress={() => setShowSettings(false)}
+                >
+                    <TouchableOpacity
+                        style={styles.settingsPanel}
+                        activeOpacity={1}
+                        onPress={(e) => e.stopPropagation()}
+                    >
+                        <ScrollView style={styles.settingsContent}>
+                            <Text style={styles.settingsTitle}>Video Scale</Text>
+                            <View style={styles.scaleOptions}>
+                                {[
+                                    { value: 'contain', label: 'Fit' },
+                                    { value: 'cover', label: 'Fill' },
+                                    { value: 'fill', label: 'Stretch' },
+                                    { value: 'scaleDown', label: 'Scale Down' }
+                                ].map(option => (
                                     <TouchableOpacity
+                                        key={option.value}
                                         style={[
-                                            styles.subtitleOption,
-                                            selectedSubtitle === null && styles.subtitleOptionSelected
+                                            styles.scaleOption,
+                                            contentFit === option.value && styles.scaleOptionSelected
                                         ]}
-                                        onPress={() => setSelectedSubtitle(null)}
+                                        onPress={() => changeContentFit(option.value as any)}
                                     >
-                                        <Text style={styles.subtitleOptionText}>Off</Text>
+                                        <Text style={[
+                                            styles.scaleOptionText,
+                                            contentFit === option.value && styles.scaleOptionTextSelected
+                                        ]}>
+                                            {option.label}
+                                        </Text>
                                     </TouchableOpacity>
-                                    {subtitles.map(sub => (
+                                ))}
+                            </View>
+
+                            <Text style={styles.settingsTitle}>Playback Speed</Text>
+                            <View style={styles.speedOptions}>
+                                {[0.5, 0.75, 1.0, 1.25, 1.5, 2.0].map(speed => (
+                                    <TouchableOpacity
+                                        key={speed}
+                                        style={[
+                                            styles.speedOption,
+                                            playbackSpeed === speed && styles.speedOptionSelected
+                                        ]}
+                                        onPress={() => changePlaybackSpeed(speed)}
+                                    >
+                                        <Text style={[
+                                            styles.speedOptionText,
+                                            playbackSpeed === speed && styles.speedOptionTextSelected
+                                        ]}>
+                                            {speed}x
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+
+                            {subtitles.length > 0 && (
+                                <>
+                                    <Text style={styles.settingsTitle}>Subtitles</Text>
+                                    <View style={styles.subtitleOptions}>
                                         <TouchableOpacity
-                                            key={sub.language}
                                             style={[
                                                 styles.subtitleOption,
-                                                selectedSubtitle === sub.language && styles.subtitleOptionSelected
+                                                selectedSubtitle === null && styles.subtitleOptionSelected
                                             ]}
-                                            onPress={() => setSelectedSubtitle(sub.language)}
+                                            onPress={() => setSelectedSubtitle(null)}
                                         >
-                                            <Text style={styles.subtitleOptionText}>
-                                                {sub.label}
-                                            </Text>
+                                            <Text style={styles.subtitleOptionText}>Off</Text>
                                         </TouchableOpacity>
-                                    ))}
-                                </View>
-                            </>
-                        )}
-                    </View>
-                </View>
+                                        {subtitles.map(sub => (
+                                            <TouchableOpacity
+                                                key={sub.language}
+                                                style={[
+                                                    styles.subtitleOption,
+                                                    selectedSubtitle === sub.language && styles.subtitleOptionSelected
+                                                ]}
+                                                onPress={() => setSelectedSubtitle(sub.language)}
+                                            >
+                                                <Text style={styles.subtitleOptionText}>
+                                                    {sub.label}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </View>
+                                </>
+                            )}
+
+                            {audioTracks.length > 0 && (
+                                <>
+                                    <Text style={styles.settingsTitle}>Audio Track</Text>
+                                    <View style={styles.audioOptions}>
+                                        {audioTracks.map(track => (
+                                            <TouchableOpacity
+                                                key={track.id}
+                                                style={[
+                                                    styles.audioOption,
+                                                    selectedAudioTrack === track.id && styles.audioOptionSelected
+                                                ]}
+                                                onPress={() => setSelectedAudioTrack(track.id)}
+                                            >
+                                                <Text style={styles.audioOptionText}>
+                                                    {track.label}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </View>
+                                </>
+                            )}
+                        </ScrollView>
+                    </TouchableOpacity>
+                </TouchableOpacity>
             )}
 
             {/* Chapters panel */}
             {showChapters && chapters.length > 0 && (
-                <View style={styles.chaptersPanel}>
-                    <Text style={styles.chaptersPanelTitle}>Chapters</Text>
-                    <View style={styles.chaptersContent}>
-                        {chapters.map((chapter: Chapter, index: number) => (
-                            <TouchableOpacity
-                                key={index}
-                                style={[
-                                    styles.chapterItem,
-                                    currentChapter?.title === chapter.title && styles.chapterItemActive
-                                ]}
-                                onPress={() => {
-                                    seekTo(chapter.start);
-                                    setShowChapters(false);
-                                }}
-                            >
-                                <Text style={styles.chapterTime}>
-                                    {formatTime(chapter.start)}
-                                </Text>
-                                <Text style={styles.chapterTitle} numberOfLines={2}>
-                                    {chapter.title}
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                </View>
+                <TouchableOpacity
+                    style={styles.chaptersOverlay}
+                    activeOpacity={1}
+                    onPress={() => setShowChapters(false)}
+                >
+                    <TouchableOpacity
+                        style={styles.chaptersPanel}
+                        activeOpacity={1}
+                        onPress={(e) => e.stopPropagation()}
+                    >
+                        <Text style={styles.chaptersPanelTitle}>Chapters</Text>
+                        <ScrollView style={styles.chaptersContent}>
+                            {chapters.map((chapter: Chapter, index: number) => (
+                                <TouchableOpacity
+                                    key={index}
+                                    style={[
+                                        styles.chapterItem,
+                                        currentChapter?.title === chapter.title && styles.chapterItemActive
+                                    ]}
+                                    onPress={() => {
+                                        seekTo(chapter.start);
+                                        setShowChapters(false);
+                                    }}
+                                >
+                                    <Text style={styles.chapterTime}>
+                                        {formatTime(chapter.start)}
+                                    </Text>
+                                    <Text style={styles.chapterTitle} numberOfLines={2}>
+                                        {chapter.title}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                    </TouchableOpacity>
+                </TouchableOpacity>
             )}
         </View>
     );
@@ -510,6 +686,14 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: 'black',
+    },
+    fullscreenContainer: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 1000,
     },
     video: {
         width: '100%',
@@ -580,29 +764,36 @@ const styles = StyleSheet.create({
         marginHorizontal: 20,
     },
     playButton: {
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-        borderRadius: 40,
-        padding: 20,
+        padding: 16,
         marginHorizontal: 30,
+        borderRadius: 30,
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
     },
     disabledButton: {
         opacity: 0.5,
     },
     bottomControls: {
-        paddingHorizontal: 20,
+        paddingHorizontal: 40,
         paddingBottom: 40,
         paddingTop: 20,
-        height: 100,
+        height: 120,
+    },
+    timeContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 10,
     },
     progressContainer: {
         marginBottom: 16,
+        paddingVertical: 10,
     },
     progressBar: {
         height: 4,
         backgroundColor: 'rgba(255, 255, 255, 0.3)',
         borderRadius: 2,
         position: 'relative',
-        overflow: 'hidden',
+        overflow: 'visible',
     },
     progressTrack: {
         position: 'absolute',
@@ -619,9 +810,18 @@ const styles = StyleSheet.create({
         bottom: 0,
         backgroundColor: '#007AFF',
     },
-    timeContainer: {
+    progressThumb: {
+        position: 'absolute',
+        top: -6,
+        width: 16,
+        height: 16,
+        backgroundColor: '#007AFF',
+        borderRadius: 8,
+        marginLeft: -8,
+    },
+    bottomRightControls: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
+        justifyContent: 'flex-end',
         alignItems: 'center',
     },
     timeText: {
@@ -649,28 +849,38 @@ const styles = StyleSheet.create({
         fontSize: 16,
         marginTop: 8,
     },
-    settingsPanel: {
+    settingsOverlay: {
         position: 'absolute',
-        right: 20,
-        top: 100,
-        backgroundColor: 'rgba(0, 0, 0, 0.9)',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    settingsPanel: {
+        backgroundColor: 'rgba(0, 0, 0, 0.95)',
         borderRadius: 12,
         padding: 20,
-        minWidth: 200,
+        minWidth: 280,
+        maxWidth: '80%',
+        maxHeight: '70%',
     },
     settingsContent: {
-        // Add styles as needed
+        maxHeight: 400,
     },
     settingsTitle: {
         color: 'white',
         fontSize: 16,
         fontWeight: '600',
         marginBottom: 12,
+        marginTop: 20,
     },
     speedOptions: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        marginBottom: 20,
+        marginBottom: 10,
     },
     speedOption: {
         backgroundColor: 'rgba(255, 255, 255, 0.2)',
@@ -689,8 +899,30 @@ const styles = StyleSheet.create({
     speedOptionTextSelected: {
         fontWeight: '600',
     },
+    scaleOptions: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        marginBottom: 10,
+    },
+    scaleOption: {
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 6,
+        margin: 4,
+    },
+    scaleOptionSelected: {
+        backgroundColor: '#007AFF',
+    },
+    scaleOptionText: {
+        color: 'white',
+        fontSize: 14,
+    },
+    scaleOptionTextSelected: {
+        fontWeight: '600',
+    },
     subtitleOptions: {
-        // Add styles as needed
+        marginBottom: 10,
     },
     subtitleOption: {
         backgroundColor: 'rgba(255, 255, 255, 0.2)',
@@ -706,15 +938,39 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 14,
     },
-    chaptersPanel: {
+    audioOptions: {
+        marginBottom: 10,
+    },
+    audioOption: {
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        borderRadius: 6,
+        marginBottom: 8,
+    },
+    audioOptionSelected: {
+        backgroundColor: '#007AFF',
+    },
+    audioOptionText: {
+        color: 'white',
+        fontSize: 14,
+    },
+    chaptersOverlay: {
         position: 'absolute',
-        left: 20,
-        top: 100,
-        bottom: 100,
-        width: 300,
-        backgroundColor: 'rgba(0, 0, 0, 0.9)',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    chaptersPanel: {
+        backgroundColor: 'rgba(0, 0, 0, 0.95)',
         borderRadius: 12,
         padding: 20,
+        width: '80%',
+        maxHeight: '70%',
     },
     chaptersPanelTitle: {
         color: 'white',
@@ -723,19 +979,20 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     chaptersContent: {
-        flex: 1,
+        maxHeight: 400,
     },
     chapterItem: {
         flexDirection: 'row',
         alignItems: 'flex-start',
         paddingVertical: 12,
+        paddingHorizontal: 8,
         borderBottomWidth: 1,
         borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+        borderRadius: 6,
+        marginBottom: 4,
     },
     chapterItemActive: {
         backgroundColor: 'rgba(0, 122, 255, 0.2)',
-        borderRadius: 8,
-        paddingHorizontal: 12,
     },
     chapterTime: {
         color: '#007AFF',
