@@ -193,8 +193,10 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     useEffect(() => {
         if (!statusChange) return;
 
-        const { status } = statusChange;
-        console.log('Video status changed:', status);
+        const { status, error } = statusChange;
+        if (error) {
+            console.log('Video error:', error.message);
+        }
 
         switch (status) {
             case "loading":
@@ -789,7 +791,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 ))}
                             </View>
 
-                            {subtitles.length > 0 && (
+                            {player.availableSubtitleTracks.length > 0 && (
                                 <>
                                     <Text style={styles.settingsTitle}>Subtitles</Text>
                                     <View style={styles.subtitleOptions}>
@@ -802,7 +804,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                         >
                                             <Text style={styles.subtitleOptionText}>Off</Text>
                                         </TouchableOpacity>
-                                        {subtitles.map(sub => (
+                                        {player.availableSubtitleTracks.map(sub => (
                                             <TouchableOpacity
                                                 key={sub.language}
                                                 style={[
@@ -820,11 +822,11 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 </>
                             )}
 
-                            {audioTracks.length > 0 && (
+                            {player.availableAudioTracks.length > 0 && (
                                 <>
                                     <Text style={styles.settingsTitle}>Audio Track</Text>
                                     <View style={styles.audioOptions}>
-                                        {audioTracks.map(track => (
+                                        {player.availableAudioTracks.map(track => (
                                             <TouchableOpacity
                                                 key={track.id}
                                                 style={[
