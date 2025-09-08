@@ -5,9 +5,8 @@ import React from "react";
 const MediaPlayerScreen: React.FC = () => {
   const router = useRouter();
   const { videoUrl, title, artwork } = useLocalSearchParams();
-  const exampleSubtitles: Subtitle[] = [];
-
-  const exampleChapters: Chapter[] = [];
+  const subtitles: Subtitle[] = [];
+  const chapters: Chapter[] = [];
 
   const handleBack = (): void => {
     router.back();
@@ -18,8 +17,8 @@ const MediaPlayerScreen: React.FC = () => {
       videoUrl={videoUrl as string}
       title={title as string}
       subtitle={title as string}
-      subtitles={exampleSubtitles}
-      chapters={exampleChapters}
+      subtitles={subtitles}
+      chapters={chapters}
       onBack={handleBack}      
       autoPlay={true}
       artwork={artwork as string}
