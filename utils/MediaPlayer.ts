@@ -1,7 +1,7 @@
 import { getOriginalPlatform } from "./platform";
 
 export enum Players {
-    Default = 'Default',
+    Default = 'Default (Lite)',
     Browser = 'Browser',
     VLC = 'VLC',
     Infuse = 'Infuse',

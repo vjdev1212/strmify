@@ -7,17 +7,8 @@ import { MaterialIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { getOriginalPlatform, isHapticsSupported, showAlert } from '@/utils/platform';
 import BottomSpacing from '@/components/BottomSpacing';
+import { Players } from '@/utils/MediaPlayer';
 
-enum Players {
-    Default = 'Default',
-    Browser = 'Browser',
-    VLC = 'VLC',
-    Infuse = 'Infuse',
-    VidHub = 'VidHub',
-    MXPlayer = "MX Player",
-    MXPlayerPro = "MX PRO",
-    OutPlayer = 'OutPlayer'
-}
 
 interface PlayerConfig {
     name: string;
@@ -67,10 +58,12 @@ const MediaPlayerConfigScreen = () => {
             ];
         } else if (getOriginalPlatform() === 'web') {
             return [
+                baseConfig(Players.Default, 'STREAMURL', false),
                 baseConfig(Players.Browser, 'STREAMURL', false)
             ];
         } else if (getOriginalPlatform() === 'windows') {
             return [
+                baseConfig(Players.Default, 'STREAMURL', false),
                 baseConfig(Players.Browser, 'STREAMURL', false),
             ];
         } else if (getOriginalPlatform() === 'macos') {
