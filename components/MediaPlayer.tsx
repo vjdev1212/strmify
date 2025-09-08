@@ -20,6 +20,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import Slider from '@react-native-community/slider';
 import { showAlert } from "@/utils/platform";
+import * as Haptics from 'expo-haptics';
 
 export interface Subtitle {
     language: string;
@@ -268,10 +269,19 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     }, [isPlaying, controlsOpacity, showSettings, showChapters, showVolumeSlider, showBrightnessSlider]);
 
 
+    const playHaptic = async () => {
+        try {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        } catch (error) {
+            console.log('Haptics not supported');
+        }
+    }
+
     // Control functions
-    const togglePlayPause = useCallback(() => {
+    const togglePlayPause = useCallback(async () => {
         if (!isReady) return;
 
+        await playHaptic();
         if (isPlaying) {
             player.pause();
         } else {
@@ -282,6 +292,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
     const togglePictureInPicture = useCallback(async () => {
         try {
+            await playHaptic();
             if (videoRef.current && player && isReady) {
                 await videoRef.current.startPictureInPicture();
             }
@@ -292,7 +303,8 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         }
     }, [showControlsTemporarily, player, isReady]);
 
-    const cycleContentFit = useCallback(() => {
+    const cycleContentFit = useCallback(async () => {
+        await playHaptic();
         const currentIndex = contentFitOptions.indexOf(contentFit);
         const nextIndex = (currentIndex + 1) % contentFitOptions.length;
         setContentFit(contentFitOptions[nextIndex]);
@@ -331,14 +343,16 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         showControlsTemporarily();
     }, [duration, player, showControlsTemporarily, isReady]);
 
-    const skipTime = useCallback((seconds: number) => {
+    const skipTime = useCallback(async (seconds: number) => {
         if (!isReady || duration <= 0) return;
 
+        await playHaptic();
         const newTime = Math.max(0, Math.min(duration, currentTime + seconds));
         seekTo(newTime);
     }, [currentTime, duration, seekTo, isReady]);
 
-    const toggleBrightnessSlider = useCallback(() => {
+    const toggleBrightnessSlider = useCallback(async () => {
+        await playHaptic();
         setShowBrightnessSlider(!showBrightnessSlider);
         setShowSettings(false);
         setShowChapters(false);
@@ -352,13 +366,15 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     }, [showControlsTemporarily]);
 
     // Separate mute toggle
-    const toggleMute = useCallback(() => {
+    const toggleMute = useCallback(async () => {
+        await playHaptic();
         setIsMuted(!isMuted);
         showControlsTemporarily();
     }, [isMuted, showControlsTemporarily]);
 
     // Volume slider control
-    const toggleVolumeSlider = useCallback(() => {
+    const toggleVolumeSlider = useCallback(async () => {
+        await playHaptic();
         setShowVolumeSlider(!showVolumeSlider);
         setShowSettings(false);
         setShowChapters(false);
@@ -393,12 +409,14 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         return chapters.findLast(chapter => chapter.start <= currentTime);
     }, [chapters, currentTime]);
 
-    const changePlaybackSpeed = useCallback((speed: number) => {
+    const changePlaybackSpeed = useCallback(async (speed: number) => {
+        await playHaptic();
         setPlaybackSpeed(speed);
         showControlsTemporarily();
     }, [showControlsTemporarily]);
 
-    const changeContentFit = useCallback((fit: VideoContentFit) => {
+    const changeContentFit = useCallback(async (fit: VideoContentFit) => {
+        await playHaptic();
         setContentFit(fit);
         showControlsTemporarily();
     }, [showControlsTemporarily]);
@@ -549,7 +567,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                         colors={['rgba(0,0,0,0.8)', 'transparent']}
                         style={styles.topControls}
                     >
-                        <TouchableOpacity style={styles.backButton} onPress={onBack}>
+                        <TouchableOpacity style={styles.backButton} onPress={async () => { await playHaptic(); onBack(); }}>
                             <Ionicons name="chevron-back" size={28} color="white" />
                         </TouchableOpacity>
 
@@ -585,7 +603,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                             {/* Volume slider control */}
                             <TouchableOpacity
                                 style={styles.controlButton}
-                                onPress={toggleVolumeSlider}
+                                onPress={async () => { await playHaptic(); toggleVolumeSlider(); }}
                             >
                                 <MaterialIcons
                                     name="tune"
@@ -596,7 +614,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
                             <TouchableOpacity
                                 style={styles.controlButton}
-                                onPress={toggleBrightnessSlider}
+                                onPress={async () => { await playHaptic(); toggleBrightnessSlider(); }}
                             >
                                 <Ionicons
                                     name="sunny"
@@ -608,7 +626,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                             {/* Content fit control */}
                             <TouchableOpacity
                                 style={styles.controlButton}
-                                onPress={cycleContentFit}
+                                onPress={async () => { await playHaptic(); cycleContentFit(); }}
                             >
                                 <MaterialIcons
                                     name={getContentFitIcon()}
@@ -619,7 +637,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
                             <TouchableOpacity
                                 style={styles.controlButton}
-                                onPress={togglePictureInPicture}
+                                onPress={async () => { await playHaptic(); togglePictureInPicture(); }}
                             >
                                 <MaterialIcons
                                     name="picture-in-picture-alt"
@@ -631,7 +649,8 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                             {chapters.length > 0 && (
                                 <TouchableOpacity
                                     style={styles.controlButton}
-                                    onPress={() => {
+                                    onPress={async () => {
+                                        await playHaptic();
                                         setShowChapters(!showChapters);
                                         setShowSettings(false);
                                         setShowVolumeSlider(false);
@@ -643,7 +662,8 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
                             <TouchableOpacity
                                 style={styles.controlButton}
-                                onPress={() => {
+                                onPress={async () => {
+                                    await playHaptic();
                                     setShowSettings(!showSettings);
                                     setShowChapters(false);
                                     setShowVolumeSlider(false);
@@ -820,7 +840,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                             styles.scaleOption,
                                             contentFit === option.value && styles.scaleOptionSelected
                                         ]}
-                                        onPress={() => changeContentFit(option.value as VideoContentFit)}
+                                        onPress={async () => { await playHaptic(); changeContentFit(option.value as VideoContentFit); }}
                                     >
                                         <Text style={[
                                             styles.scaleOptionText,
@@ -841,7 +861,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                             styles.speedOption,
                                             playbackSpeed === speed && styles.speedOptionSelected
                                         ]}
-                                        onPress={() => changePlaybackSpeed(speed)}
+                                        onPress={async () => { await playHaptic(); changePlaybackSpeed(speed); }}
                                     >
                                         <Text style={[
                                             styles.speedOptionText,
@@ -862,7 +882,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                                 styles.subtitleOption,
                                                 selectedSubtitle === null && styles.subtitleOptionSelected
                                             ]}
-                                            onPress={() => setSelectedSubtitle(null)}
+                                            onPress={async () => { await playHaptic(); setSelectedSubtitle(null); }}
                                         >
                                             <Text style={styles.subtitleOptionText}>Off</Text>
                                         </TouchableOpacity>
@@ -873,7 +893,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                                     styles.subtitleOption,
                                                     selectedSubtitle === sub.language && styles.subtitleOptionSelected
                                                 ]}
-                                                onPress={() => setSelectedSubtitle(sub.language)}
+                                                onPress={async () => { await playHaptic(); setSelectedSubtitle(sub.language); }}
                                             >
                                                 <Text style={styles.subtitleOptionText}>
                                                     {sub.label}
@@ -895,8 +915,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                                     styles.audioOption,
                                                     selectedAudioTrack === track.id && styles.audioOptionSelected
                                                 ]}
-                                                onPress={() => setSelectedAudioTrack(track.id)}
-                                            >
+                                                onPress={async () => { await playHaptic(); setSelectedAudioTrack(track.id); }}                                            >
                                                 <Text style={styles.audioOptionText}>
                                                     {track.label}
                                                 </Text>
