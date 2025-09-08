@@ -22,6 +22,7 @@ const MediaPlayerScreen: React.FC = () => {
       chapters={exampleChapters}
       onBack={handleBack}      
       autoPlay={true}
+      artwork={artwork as string}
     />
   );
 };

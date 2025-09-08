@@ -11,6 +11,7 @@ import {
     ScrollView,
     ActivityIndicator,
     Platform,
+    Image,
 } from "react-native";
 import { useVideoPlayer, VideoContentFit, VideoView } from "expo-video";
 import { useEvent } from "expo";
@@ -47,6 +48,7 @@ interface MediaPlayerProps {
     chapters?: Chapter[];
     onBack: () => void;
     autoPlay?: boolean;
+    artwork?: string;
 }
 
 export const MediaPlayer: React.FC<MediaPlayerProps> = ({
@@ -58,6 +60,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     chapters = [],
     onBack,
     autoPlay = true,
+    artwork,
 }) => {
     const videoRef = useRef<VideoView>(null);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -455,6 +458,17 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 contentFit={contentFit}
                 crossOrigin="anonymous"
             />
+
+            {artwork && isBuffering && (
+                <View style={styles.artworkContainer}>
+                    <Image
+                        source={{ uri: artwork }}
+                        style={styles.artworkImage}
+                        resizeMode="cover"
+                    />
+                    <View style={styles.artworkOverlay} />
+                </View>
+            )}
 
             {/* Loading indicator */}
             {isBuffering && (
@@ -986,6 +1000,26 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
         marginLeft: 8,
+    },
+    artworkContainer: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 1,
+    },
+    artworkImage: {
+        width: '100%',
+        height: '100%',
+    },
+    artworkOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.3)',
     },
     volumeOverlay: {
         position: 'absolute',
