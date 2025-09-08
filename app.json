@@ -22,7 +22,10 @@
       "icon": "assets/images/icon.png",
       "supportsTablet": true,
       "backgroundColor": "#000000",
-      "bundleIdentifier": "com.vijayyuvi.strmify"
+      "bundleIdentifier": "com.vijayyuvi.strmify",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
