@@ -11,6 +11,7 @@ import {
     Alert,
     ScrollView,
     ActivityIndicator,
+    Platform,
 } from "react-native";
 import { useVideoPlayer, VideoContentFit, VideoView } from "expo-video";
 import { useEvent } from "expo";
@@ -104,19 +105,25 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     useEffect(() => {
         const setupOrientation = async () => {
             try {
-                await ScreenOrientation.lockAsync(
-                    ScreenOrientation.OrientationLock.LANDSCAPE
-                );
-                StatusBar.setHidden(true);
+                if (Platform.OS !== 'web') {
+                    await ScreenOrientation.lockAsync(
+                        ScreenOrientation.OrientationLock.LANDSCAPE
+                    );
+                    StatusBar.setHidden(true);
+                }
             } catch (error) {
                 console.warn("Failed to set orientation:", error);
             }
         };
+
         setupOrientation();
 
         return () => {
-            ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
-            StatusBar.setHidden(false);
+            if (Platform.OS !== 'web') {
+                ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+                StatusBar.setHidden(false);
+            }
+
             if (hideControlsTimer.current) {
                 clearTimeout(hideControlsTimer.current);
             }
