@@ -126,12 +126,18 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         };
     }, []);
 
-    // Update player settings when state changes
     useEffect(() => {
         if (player) {
             player.muted = isMuted;
             player.volume = isMuted ? 0 : volume;
             player.playbackRate = playbackSpeed;
+
+            if (typeof window !== 'undefined' && window.AudioContext) {
+                const audioContext = new (window.AudioContext)();
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+            }
         }
     }, [player, isMuted, volume, playbackSpeed]);
 
@@ -139,10 +145,10 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const playingChange = useEvent(player, "playingChange");
     useEffect(() => {
         if (!playingChange) return;
-        
+
         const { isPlaying: playing } = playingChange;
         setIsPlaying(playing);
-        
+
         if (playing) {
             setIsBuffering(false);
             Animated.timing(bufferOpacity, {
@@ -184,15 +190,17 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
         switch (status) {
             case "loading":
-                setIsBuffering(true);
-                setIsReady(false);
-                Animated.timing(bufferOpacity, {
-                    toValue: 1,
-                    duration: 200,
-                    useNativeDriver: true,
-                }).start();
+                // Only show buffering if not ready yet
+                if (!isReady) {
+                    setIsBuffering(true);
+                    Animated.timing(bufferOpacity, {
+                        toValue: 1,
+                        duration: 200,
+                        useNativeDriver: true,
+                    }).start();
+                }
                 break;
-                
+
             case "readyToPlay":
                 setIsBuffering(false);
                 setIsReady(true);
@@ -206,19 +214,19 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                     duration: 200,
                     useNativeDriver: true,
                 }).start();
-                
+
                 if (autoPlay) {
                     player.play();
                 }
                 break;
-                
+
             case "error":
                 Alert.alert("Video Error", "Failed to load video. Please check the video URL and try again.");
                 setIsBuffering(false);
                 setIsReady(false);
                 break;
         }
-    }, [statusChange, autoPlay, player, bufferOpacity]);
+    }, [statusChange, autoPlay, player, bufferOpacity, isReady]);
 
     const showControlsTemporarily = useCallback(() => {
         setShowControls(true);
@@ -274,7 +282,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         const currentIndex = contentFitOptions.indexOf(contentFit);
         const nextIndex = (currentIndex + 1) % contentFitOptions.length;
         setContentFit(contentFitOptions[nextIndex]);
-        
+
         // Show the label briefly
         setShowContentFitLabel(true);
         Animated.timing(contentFitLabelOpacity, {
@@ -370,11 +378,11 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     // Fixed progress bar with proper slider functionality
     const handleSliderValueChange = useCallback((value: number) => {
         if (!isReady || duration <= 0) return;
-        
+
         setIsDragging(true);
         setDragPosition(value);
         progressBarValue.setValue(value);
-        
+
         const newTime = value * duration;
         setCurrentTime(newTime);
     }, [duration, isReady]);
@@ -389,7 +397,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
             setIsDragging(false);
             return;
         }
-        
+
         setIsDragging(false);
         const newTime = value * duration;
         seekTo(newTime);
@@ -552,7 +560,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                     color="white"
                                 />
                             </TouchableOpacity>
-                          
+
                             <TouchableOpacity
                                 style={styles.controlButton}
                                 onPress={togglePictureInPicture}
@@ -598,10 +606,10 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 onPress={() => skipTime(-10)}
                                 disabled={!isReady}
                             >
-                                <MaterialIcons 
-                                    name="replay-10" 
-                                    size={36} 
-                                    color={isReady ? "white" : "rgba(255,255,255,0.5)"} 
+                                <MaterialIcons
+                                    name="replay-10"
+                                    size={36}
+                                    color={isReady ? "white" : "rgba(255,255,255,0.5)"}
                                 />
                             </TouchableOpacity>
 
@@ -622,10 +630,10 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 onPress={() => skipTime(30)}
                                 disabled={!isReady}
                             >
-                                <MaterialIcons 
-                                    name="forward-30" 
-                                    size={36} 
-                                    color={isReady ? "white" : "rgba(255,255,255,0.5)"} 
+                                <MaterialIcons
+                                    name="forward-30"
+                                    size={36}
+                                    color={isReady ? "white" : "rgba(255,255,255,0.5)"}
                                 />
                             </TouchableOpacity>
                         </View>
@@ -701,7 +709,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                     </TouchableOpacity>
                 </TouchableOpacity>
             )}
-            
+
             {/* Settings panel */}
             {showSettings && (
                 <TouchableOpacity
@@ -816,7 +824,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                         </ScrollView>
                     </TouchableOpacity>
                 </TouchableOpacity>
-            )}            
+            )}
         </View>
     );
 };
@@ -909,7 +917,7 @@ const styles = StyleSheet.create({
     timeContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center',        
+        alignItems: 'center',
     },
     progressContainerWithMargin: {
         marginBottom: 16,
