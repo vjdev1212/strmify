@@ -19,6 +19,7 @@ import * as ScreenOrientation from "expo-screen-orientation";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import Slider from '@react-native-community/slider';
+import { showAlert } from "@/utils/platform";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -228,7 +229,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 break;
 
             case "error":
-                Alert.alert("Video Error", "Failed to load video. Please check the video URL and try again.");
+                showAlert("Video Error", "Failed to load video. Use external media players for better playback.");
                 setIsBuffering(false);
                 setIsReady(false);
                 break;
@@ -281,7 +282,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
             showControlsTemporarily();
         } catch (error) {
             console.warn("PiP error:", error);
-            Alert.alert("Picture-in-Picture", "PiP mode is not supported on this device or video is not ready.");
+            showAlert("Picture-in-Picture", "PiP mode is not supported on this device or video is not ready.");
         }
     }, [showControlsTemporarily, player, isReady]);
 
