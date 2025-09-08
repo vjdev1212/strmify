@@ -8,7 +8,6 @@ import {
     Dimensions,
     StatusBar,
     PanResponder,
-    Alert,
     ScrollView,
     ActivityIndicator,
     Platform,
@@ -20,8 +19,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import Slider from '@react-native-community/slider';
 import { showAlert } from "@/utils/platform";
-
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 export interface Subtitle {
     language: string;
@@ -37,7 +34,7 @@ export interface AudioTrack {
 
 export interface Chapter {
     title: string;
-    start: number; // in seconds
+    start: number;
     thumbnail?: string;
 }
 
