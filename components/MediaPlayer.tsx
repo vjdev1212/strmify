@@ -7,13 +7,11 @@ import {
     Animated,
     Dimensions,
     StatusBar,
-    PanResponder,
     Alert,
     ScrollView,
     ActivityIndicator,
 } from "react-native";
-import { useVideoPlayer, VideoContentFit, VideoView } from "expo-video";
-import { useEvent } from "expo";
+import { PlayerResizeMode, VLCPlayer } from 'react-native-vlc-media-player';
 import * as ScreenOrientation from "expo-screen-orientation";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
@@ -60,7 +58,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     onBack,
     autoPlay = true,
 }) => {
-    const videoRef = useRef<VideoView>(null);
+    const vlcPlayerRef = useRef<VLCPlayer>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
@@ -69,7 +67,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const [selectedSubtitle, setSelectedSubtitle] = useState<string | null>(null);
     const [selectedAudioTrack, setSelectedAudioTrack] = useState<string | null>(null);
     const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
-    const [volume, setVolume] = useState(1.0);
+    const [volume, setVolume] = useState(100);
     const [isMuted, setIsMuted] = useState(true);
     const [showVolumeSlider, setShowVolumeSlider] = useState(false);
     const [showChapters, setShowChapters] = useState(false);
@@ -77,11 +75,11 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const [isReady, setIsReady] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const [dragPosition, setDragPosition] = useState(0);
-    const [contentFit, setContentFit] = useState<VideoContentFit>('contain');
+    const [resizeMode, setResizeMode] = useState<PlayerResizeMode>('contain');
     const [showContentFitLabel, setShowContentFitLabel] = useState(false);
 
     // Content fit options cycle
-    const contentFitOptions: VideoContentFit[] = ['contain', 'cover', 'fill'];
+    const contentFitOptions: (PlayerResizeMode)[] = ['contain', 'cover', 'fill', 'scale-down'];
 
     // Animated values
     const controlsOpacity = useRef(new Animated.Value(1)).current;
@@ -92,14 +90,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     // Auto-hide controls timer
     const hideControlsTimer = useRef<any>(null);
     const contentFitLabelTimer = useRef<any>(null);
-
-    // Initialize player
-    const player = useVideoPlayer(videoUrl, (player) => {
-        player.loop = false;
-        player.muted = isMuted;
-        player.volume = volume;
-        player.playbackRate = playbackSpeed;
-    });
 
     useEffect(() => {
         const setupOrientation = async () => {
@@ -125,100 +115,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
             }
         };
     }, []);
-
-    // Update player settings when state changes
-    useEffect(() => {
-        if (player) {
-            player.muted = isMuted;
-            player.volume = isMuted ? 0 : volume;
-            player.playbackRate = playbackSpeed;
-        }
-    }, [player, isMuted, volume, playbackSpeed]);
-
-    // Playing state change handler
-    const playingChange = useEvent(player, "playingChange");
-    useEffect(() => {
-        if (!playingChange) return;
-        
-        const { isPlaying: playing } = playingChange;
-        setIsPlaying(playing);
-        
-        if (playing) {
-            setIsBuffering(false);
-            Animated.timing(bufferOpacity, {
-                toValue: 0,
-                duration: 200,
-                useNativeDriver: true,
-            }).start();
-        }
-    }, [playingChange, bufferOpacity]);
-
-    // Time update handler
-    const timeUpdate = useEvent(player, "timeUpdate");
-    useEffect(() => {
-        if (!timeUpdate || isDragging) return;
-
-        const { currentTime: time } = timeUpdate;
-        setCurrentTime(time);
-
-        // Get duration from player
-        const videoDuration = player.duration || 0;
-        if (videoDuration > 0 && duration !== videoDuration) {
-            setDuration(videoDuration);
-        }
-
-        // Update progress bar
-        if (videoDuration > 0) {
-            const progress = time / videoDuration;
-            progressBarValue.setValue(progress);
-        }
-    }, [timeUpdate, player.duration, isDragging, duration]);
-
-    // Status change handler
-    const statusChange = useEvent(player, "statusChange");
-    useEffect(() => {
-        if (!statusChange) return;
-
-        const { status } = statusChange;
-        console.log('Video status changed:', status);
-
-        switch (status) {
-            case "loading":
-                setIsBuffering(true);
-                setIsReady(false);
-                Animated.timing(bufferOpacity, {
-                    toValue: 1,
-                    duration: 200,
-                    useNativeDriver: true,
-                }).start();
-                break;
-                
-            case "readyToPlay":
-                setIsBuffering(false);
-                setIsReady(true);
-                // Get duration when ready
-                const videoDuration = player.duration || 0;
-                if (videoDuration > 0) {
-                    setDuration(videoDuration);
-                }
-                Animated.timing(bufferOpacity, {
-                    toValue: 0,
-                    duration: 200,
-                    useNativeDriver: true,
-                }).start();
-                
-                if (autoPlay) {
-                    player.play();
-                }
-                break;
-                
-            case "error":
-                Alert.alert("Video Error", "Failed to load video. Please check the video URL and try again.");
-                setIsBuffering(false);
-                setIsReady(false);
-                break;
-        }
-    }, [statusChange, autoPlay, player, bufferOpacity]);
 
     const showControlsTemporarily = useCallback(() => {
         setShowControls(true);
@@ -246,34 +142,104 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         }, 3000);
     }, [isPlaying, controlsOpacity, showSettings, showChapters, showVolumeSlider]);
 
+    // VLC Player event handlers
+    const onVLCProgress = useCallback((data: any) => {
+        if (!isDragging && data) {
+            const { currentTime: time, duration: dur } = data;
+            setCurrentTime(time / 1000); // VLC returns time in milliseconds
+            
+            if (dur > 0 && duration !== dur / 1000) {
+                setDuration(dur / 1000);
+            }
+
+            // Update progress bar
+            if (dur > 0) {
+                const progress = time / dur;
+                progressBarValue.setValue(progress);
+            }
+        }
+    }, [isDragging, duration]);
+
+    const onVLCPlaying = useCallback(() => {
+        setIsPlaying(true);
+        setIsBuffering(false);
+        setIsReady(true);
+        
+        Animated.timing(bufferOpacity, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+        }).start();
+    }, [bufferOpacity]);
+
+    const onVLCPaused = useCallback(() => {
+        setIsPlaying(false);
+    }, []);
+
+    const onVLCBuffering = useCallback(() => {
+        setIsBuffering(true);
+        Animated.timing(bufferOpacity, {
+            toValue: 1,
+            duration: 200,
+            useNativeDriver: true,
+        }).start();
+    }, [bufferOpacity]);
+
+    const onVLCError = useCallback((error: any) => {
+        console.error('VLC Player Error:', error);
+        Alert.alert("Video Error", "Failed to load video. Please check the video URL and try again.");
+        setIsBuffering(false);
+        setIsReady(false);
+    }, []);
+
+    const onVLCEnd = useCallback(() => {
+        setIsPlaying(false);
+        setCurrentTime(0);
+        progressBarValue.setValue(0);
+    }, [progressBarValue]);
+
+    const onVLCLoad = useCallback((data: any) => {
+        if (data && data.duration) {
+            setDuration(data.duration / 1000); // Convert from milliseconds
+            setIsReady(true);
+            setIsBuffering(false);
+            
+            Animated.timing(bufferOpacity, {
+                toValue: 0,
+                duration: 200,
+                useNativeDriver: true,
+            }).start();
+        }
+    }, [bufferOpacity]);
+
     // Control functions
     const togglePlayPause = useCallback(() => {
         if (!isReady) return;
 
-        if (isPlaying) {
-            player.pause();
-        } else {
-            player.play();
+        if (vlcPlayerRef.current) {
+            if (isPlaying) {
+                vlcPlayerRef.current.pause();
+            } else {
+                vlcPlayerRef.current.play();
+            }
         }
         showControlsTemporarily();
-    }, [isPlaying, player, isReady, showControlsTemporarily]);
+    }, [isPlaying, isReady, showControlsTemporarily]);
 
     const togglePictureInPicture = useCallback(async () => {
         try {
-            if (videoRef.current && player && isReady) {
-                await videoRef.current.startPictureInPicture();
-            }
+            // VLC doesn't have built-in PiP, but we can show a message
+            Alert.alert("Picture-in-Picture", "Picture-in-Picture is not available with VLC player.");
             showControlsTemporarily();
         } catch (error) {
             console.warn("PiP error:", error);
-            Alert.alert("Picture-in-Picture", "PiP mode is not supported on this device or video is not ready.");
         }
-    }, [showControlsTemporarily, player, isReady]);
+    }, [showControlsTemporarily]);
 
     const cycleContentFit = useCallback(() => {
-        const currentIndex = contentFitOptions.indexOf(contentFit);
+        const currentIndex = contentFitOptions.indexOf(resizeMode);
         const nextIndex = (currentIndex + 1) % contentFitOptions.length;
-        setContentFit(contentFitOptions[nextIndex]);
+        setResizeMode(contentFitOptions[nextIndex]);
         
         // Show the label briefly
         setShowContentFitLabel(true);
@@ -298,16 +264,16 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         }, 1000);
 
         showControlsTemporarily();
-    }, [contentFit, showControlsTemporarily]);
+    }, [resizeMode, showControlsTemporarily]);
 
     const seekTo = useCallback((seconds: number) => {
-        if (!isReady || duration <= 0) return;
+        if (!isReady || duration <= 0 || !vlcPlayerRef.current) return;
 
         const clampedTime = Math.max(0, Math.min(duration, seconds));
-        player.seekBy(clampedTime);
+        vlcPlayerRef.current.seek(clampedTime); // VLC seek expects seconds
         setCurrentTime(clampedTime);
         showControlsTemporarily();
-    }, [duration, player, showControlsTemporarily, isReady]);
+    }, [duration, showControlsTemporarily, isReady]);
 
     const skipTime = useCallback((seconds: number) => {
         if (!isReady || duration <= 0) return;
@@ -359,11 +325,14 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
     const changePlaybackSpeed = useCallback((speed: number) => {
         setPlaybackSpeed(speed);
+        if (vlcPlayerRef.current) {            
+            vlcPlayerRef.current.setPlaybackRate(speed);
+        }
         showControlsTemporarily();
     }, [showControlsTemporarily]);
 
-    const changeContentFit = useCallback((fit: VideoContentFit) => {
-        setContentFit(fit);
+    const changeContentFit = useCallback((fit: PlayerResizeMode) => {
+        setResizeMode(fit);
         showControlsTemporarily();
     }, [showControlsTemporarily]);
 
@@ -409,22 +378,22 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     }, [showSettings, showChapters, showVolumeSlider, showControlsTemporarily]);
 
     const getContentFitIcon = useCallback(() => {
-        switch (contentFit) {
+        switch (resizeMode) {
             case 'contain': return 'fit-screen';
             case 'cover': return 'crop';
             case 'fill': return 'fullscreen';
             default: return 'fit-screen';
         }
-    }, [contentFit]);
+    }, [resizeMode]);
 
     const getContentFitLabel = useCallback(() => {
-        switch (contentFit) {
+        switch (resizeMode) {
             case 'contain': return 'Fit';
             case 'cover': return 'Fill';
             case 'fill': return 'Stretch';
             default: return 'Fit';
         }
-    }, [contentFit]);
+    }, [resizeMode]);
 
     const currentChapter = getCurrentChapter();
     const displayTime = isDragging ? dragPosition * duration : currentTime;
@@ -432,14 +401,23 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
     return (
         <View style={styles.container}>
-            <VideoView
-                ref={videoRef}
+            <VLCPlayer
+                ref={vlcPlayerRef}
                 style={styles.video}
-                player={player}
-                allowsFullscreen={false}
-                allowsPictureInPicture={true}
-                nativeControls={false}
-                contentFit={contentFit}
+                source={{ uri: videoUrl }}
+                autoplay={autoPlay}
+                volume={isMuted ? 0 : volume}
+                paused={!isPlaying}
+                resizeMode={resizeMode}
+                rate={playbackSpeed}
+                onProgress={onVLCProgress}
+                onPlaying={onVLCPlaying}
+                onPaused={onVLCPaused}
+                onBuffering={onVLCBuffering}
+                onError={onVLCError}
+                onEnd={onVLCEnd}
+                onLoad={onVLCLoad}                
+                progressUpdateInterval={1000}
             />
 
             {/* Loading indicator */}
@@ -690,7 +668,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                             <Slider
                                 style={styles.volumeSlider}
                                 minimumValue={0}
-                                maximumValue={1}
+                                maximumValue={100}
                                 value={volume}
                                 onValueChange={handleVolumeChange}
                                 minimumTrackTintColor="#007AFF"
@@ -720,19 +698,19 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 {[
                                     { value: 'contain', label: 'Fit' },
                                     { value: 'cover', label: 'Fill' },
-                                    { value: 'fill', label: 'Stretch' }
+                                    { value: 'stretch', label: 'Stretch' }
                                 ].map(option => (
                                     <TouchableOpacity
                                         key={option.value}
                                         style={[
                                             styles.scaleOption,
-                                            contentFit === option.value && styles.scaleOptionSelected
+                                            resizeMode === option.value && styles.scaleOptionSelected
                                         ]}
-                                        onPress={() => changeContentFit(option.value as VideoContentFit)}
+                                        onPress={() => changeContentFit(option.value as PlayerResizeMode)}
                                     >
                                         <Text style={[
                                             styles.scaleOptionText,
-                                            contentFit === option.value && styles.scaleOptionTextSelected
+                                            resizeMode === option.value && styles.scaleOptionTextSelected
                                         ]}>
                                             {option.label}
                                         </Text>
