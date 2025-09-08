@@ -455,6 +455,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 allowsPictureInPicture={true}
                 nativeControls={false}
                 contentFit={contentFit}
+                crossOrigin="anonymous"
             />
 
             {/* Loading indicator */}
@@ -757,7 +758,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
                             <Text style={styles.settingsTitle}>Playback Speed</Text>
                             <View style={styles.speedOptions}>
-                                {[0.5, 0.75, 1.0, 1.25, 1.5, 2.0].map(speed => (
+                                {[0.75, 0.8, 0.9, 1.0, 1.1, 1.2, 1.25].map(speed => (
                                     <TouchableOpacity
                                         key={speed}
                                         style={[
