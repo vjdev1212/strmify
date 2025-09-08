@@ -273,27 +273,6 @@ const MediaPlayerConfigScreen = () => {
     );
 };
 
-const getPlayerDescription = (playerName: string): string => {
-    switch (playerName) {
-        case Players.Browser:
-            return 'Play in default browser';
-        case Players.VLC:
-            return 'VLC Media Player';
-        case Players.Infuse:
-            return 'Infuse video player';
-        case Players.VidHub:
-            return 'VidHub video player';
-        case Players.MXPlayer:
-            return 'MX Player (Free)';
-        case Players.MXPlayerPro:
-            return 'MX Player Pro';
-        case Players.OutPlayer:
-            return 'OutPlayer video player';
-        default:
-            return 'Media player';
-    }
-};
-
 const styles = StyleSheet.create({
     container: {
         flex: 1,
