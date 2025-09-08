@@ -81,6 +81,9 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const [dragPosition, setDragPosition] = useState(0);
     const [contentFit, setContentFit] = useState<VideoContentFit>('fill');
     const [showContentFitLabel, setShowContentFitLabel] = useState(false);
+    const [brightness, setBrightness] = useState(1.0);
+    const [showBrightnessSlider, setShowBrightnessSlider] = useState(false);
+
 
     // Content fit options cycle
     const contentFitOptions: VideoContentFit[] = ['contain', 'cover', 'fill'];
@@ -252,7 +255,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         }
 
         hideControlsTimer.current = setTimeout(() => {
-            if (isPlaying && !showSettings && !showChapters && !showVolumeSlider) {
+            if (isPlaying && !showSettings && !showChapters && !showVolumeSlider && !showBrightnessSlider) {
                 Animated.timing(controlsOpacity, {
                     toValue: 0,
                     duration: 500,
@@ -262,7 +265,8 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 });
             }
         }, 1500);
-    }, [isPlaying, controlsOpacity, showSettings, showChapters, showVolumeSlider]);
+    }, [isPlaying, controlsOpacity, showSettings, showChapters, showVolumeSlider, showBrightnessSlider]);
+
 
     // Control functions
     const togglePlayPause = useCallback(() => {
@@ -334,6 +338,19 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         seekTo(newTime);
     }, [currentTime, duration, seekTo, isReady]);
 
+    const toggleBrightnessSlider = useCallback(() => {
+        setShowBrightnessSlider(!showBrightnessSlider);
+        setShowSettings(false);
+        setShowChapters(false);
+        setShowVolumeSlider(false);
+        showControlsTemporarily();
+    }, [showBrightnessSlider, showControlsTemporarily]);
+
+    const handleBrightnessChange = useCallback((value: number) => {
+        setBrightness(value);
+        showControlsTemporarily();
+    }, [showControlsTemporarily]);
+
     // Separate mute toggle
     const toggleMute = useCallback(() => {
         setIsMuted(!isMuted);
@@ -357,6 +374,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         }
         showControlsTemporarily();
     }, [isMuted, showControlsTemporarily]);
+
 
     const formatTime = useCallback((seconds: number) => {
         if (isNaN(seconds) || seconds < 0) return "0:00";
@@ -421,10 +439,12 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
             setShowChapters(false);
         } else if (showVolumeSlider) {
             setShowVolumeSlider(false);
+        } else if (showBrightnessSlider) {
+            setShowBrightnessSlider(false);
         } else {
             showControlsTemporarily();
         }
-    }, [showSettings, showChapters, showVolumeSlider, showControlsTemporarily]);
+    }, [showSettings, showChapters, showVolumeSlider, showBrightnessSlider, showControlsTemporarily]);
 
     const getContentFitIcon = useCallback(() => {
         switch (contentFit) {
@@ -452,7 +472,10 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         <View style={styles.container}>
             <VideoView
                 ref={videoRef}
-                style={styles.video}
+                style={[
+                    styles.video,
+                    { opacity: brightness }
+                ]}
                 player={player}
                 allowsFullscreen={false}
                 allowsPictureInPicture={true}
@@ -566,6 +589,17 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                             >
                                 <MaterialIcons
                                     name="tune"
+                                    size={24}
+                                    color="white"
+                                />
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={styles.controlButton}
+                                onPress={toggleBrightnessSlider}
+                            >
+                                <Ionicons
+                                    name="sunny"
                                     size={24}
                                     color="white"
                                 />
@@ -727,6 +761,34 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 maximumTrackTintColor="rgba(255,255,255,0.3)"
                             />
                             <Ionicons name="volume-high" size={20} color="white" />
+                        </View>
+                    </TouchableOpacity>
+                </TouchableOpacity>
+            )}
+
+            {showBrightnessSlider && (
+                <TouchableOpacity
+                    style={styles.brightnessOverlay}
+                    activeOpacity={1}
+                    onPress={() => setShowBrightnessSlider(false)}
+                >
+                    <TouchableOpacity
+                        style={styles.brightnessPanel}
+                        activeOpacity={1}
+                        onPress={(e) => e.stopPropagation()}
+                    >
+                        <View style={styles.brightnessControls}>
+                            <Ionicons name="sunny-outline" size={20} color="white" />
+                            <Slider
+                                style={styles.brightnessSlider}
+                                minimumValue={0.2}
+                                maximumValue={1.0}
+                                value={brightness}
+                                onValueChange={handleBrightnessChange}
+                                minimumTrackTintColor="#007AFF"
+                                maximumTrackTintColor="rgba(255,255,255,0.3)"
+                            />
+                            <Ionicons name="sunny" size={20} color="white" />
                         </View>
                     </TouchableOpacity>
                 </TouchableOpacity>
@@ -1052,6 +1114,31 @@ const styles = StyleSheet.create({
         backgroundColor: '#007AFF',
         width: 20,
         height: 20,
+    },
+    brightnessOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    brightnessPanel: {
+        backgroundColor: 'rgba(0, 0, 0, 0.9)',
+        borderRadius: 12,
+        padding: 20,
+        minWidth: 300,
+    },
+    brightnessControls: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    brightnessSlider: {
+        flex: 1,
+        height: 40,
+        marginHorizontal: 15,
     },
     settingsOverlay: {
         position: 'absolute',
