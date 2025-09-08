@@ -77,7 +77,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const [isReady, setIsReady] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const [dragPosition, setDragPosition] = useState(0);
-    const [contentFit, setContentFit] = useState<VideoContentFit>('contain');
+    const [contentFit, setContentFit] = useState<VideoContentFit>('fill');
     const [showContentFitLabel, setShowContentFitLabel] = useState(false);
 
     // Content fit options cycle
@@ -243,7 +243,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                     setShowControls(false);
                 });
             }
-        }, 3000);
+        }, 1500);
     }, [isPlaying, controlsOpacity, showSettings, showChapters, showVolumeSlider]);
 
     // Control functions
@@ -451,7 +451,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                     ]}
                     pointerEvents="none"
                 >
-                    <ActivityIndicator size="large" color="white" />
+                    <ActivityIndicator size="large" color="#535aff" />
                     <Text style={styles.bufferingText}>Loading...</Text>
                 </Animated.View>
             )}
