@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, ScrollView, Pressable, SafeAreaView, Alert } from 'react-native';
+import { StyleSheet, ScrollView, Pressable, SafeAreaView, Alert, Platform } from 'react-native';
 import { Text, View, StatusBar } from '@/components/Themed';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
@@ -38,16 +38,15 @@ const MediaPlayerConfigScreen = () => {
             isDefault: false
         });
 
-        if (getOriginalPlatform() === 'android') {
+        if (Platform.OS === 'android') {
             return [
-                baseConfig(Players.Default, 'STREAMURL', false),
                 baseConfig(Players.Browser, 'STREAMURL', false),
                 baseConfig(Players.VLC, 'vlc://STREAMURL', false),
                 baseConfig(Players.MXPlayer, 'intent:STREAMURL?sign=Yva5dQp8cFQpVAMUh1QxNWbZAZ2h05lYQ4qAxqf717w=:0#Intent;package=com.mxtech.videoplayer.ad;S.title=STREAMTITLE;end', false),
                 baseConfig(Players.MXPlayerPro, 'intent:STREAMURL?sign=Yva5dQp8cFQpVAMUh1QxNWbZAZ2h05lYQ4qAxqf717w=:0#Intent;package=com.mxtech.videoplayer.pro;S.title=STREAMTITLE;end', false),
                 baseConfig(Players.VidHub, 'open-vidhub://x-callback-url/open?url=STREAMURL', true),
             ];
-        } else if (getOriginalPlatform() === 'ios') {
+        } else if (Platform.OS === 'ios') {
             return [
                 baseConfig(Players.Default, 'STREAMURL', false),
                 baseConfig(Players.Browser, 'STREAMURL', false),
@@ -56,19 +55,17 @@ const MediaPlayerConfigScreen = () => {
                 baseConfig(Players.VidHub, 'open-vidhub://x-callback-url/open?url=STREAMURL', true),
                 baseConfig(Players.OutPlayer, 'outplayer://STREAMURL', false),
             ];
-        } else if (getOriginalPlatform() === 'web') {
+        } else if (Platform.OS === 'web') {
             return [
                 baseConfig(Players.Default, 'STREAMURL', false),
                 baseConfig(Players.Browser, 'STREAMURL', false)
             ];
-        } else if (getOriginalPlatform() === 'windows') {
+        } else if (Platform.OS === 'windows') {
             return [
-                baseConfig(Players.Default, 'STREAMURL', false),
                 baseConfig(Players.Browser, 'STREAMURL', false),
             ];
-        } else if (getOriginalPlatform() === 'macos') {
+        } else if (Platform.OS === 'macos') {
             return [
-                baseConfig(Players.Default, 'STREAMURL', false),
                 baseConfig(Players.Browser, 'STREAMURL', false),
                 baseConfig(Players.VLC, 'vlc://STREAMURL', false),
                 baseConfig(Players.Infuse, 'infuse://x-callback-url/play?url=STREAMURL', true),

@@ -1,3 +1,4 @@
+import { Platform } from "react-native";
 import { getOriginalPlatform } from "./platform";
 
 export enum Players {
@@ -12,37 +13,33 @@ export enum Players {
 }
 
 export const getPlatformSpecificPlayers = () => {
-    if (getOriginalPlatform() === 'android') {
+    if (Platform.OS === 'android') {
         return [
-            { name: Players.Default, scheme: 'STREAMURL', encodeUrl: false },
             { name: Players.Browser, scheme: 'STREAMURL', encodeUrl: false },
             { name: Players.VLC, scheme: 'vlc://STREAMURL', encodeUrl: false },
             { name: Players.MXPlayer, scheme: 'intent:STREAMURL?sign=Yva5dQp8cFQpVAMUh1QxNWbZAZ2h05lYQ4qAxqf717w=:0#Intent;package=com.mxtech.videoplayer.ad;S.title=STREAMTITLE;end', encodeUrl: false },
             { name: Players.MXPlayerPro, scheme: 'intent:STREAMURL?sign=Yva5dQp8cFQpVAMUh1QxNWbZAZ2h05lYQ4qAxqf717w=:0#Intent;package=com.mxtech.videoplayer.pro;S.title=STREAMTITLE;end', encodeUrl: false },
             { name: Players.VidHub, scheme: 'open-vidhub://x-callback-url/open?url=STREAMURL', encodeUrl: true },
         ];
-    } else if (getOriginalPlatform() === 'ios') {
+    } else if (Platform.OS === 'ios') {
         return [
-            { name: Players.Default, scheme: 'STREAMURL', encodeUrl: false },
             { name: Players.Browser, scheme: 'STREAMURL', encodeUrl: false },
             { name: Players.VLC, scheme: 'vlc://STREAMURL', encodeUrl: false },
             { name: Players.Infuse, scheme: 'infuse://x-callback-url/play?url=STREAMURL', encodeUrl: true },
             { name: Players.VidHub, scheme: 'open-vidhub://x-callback-url/open?url=STREAMURL', encodeUrl: true },
             { name: Players.OutPlayer, scheme: 'outplayer://STREAMURL', encodeUrl: false },
         ];
-    } else if (getOriginalPlatform() === 'web') {
+    } else if (Platform.OS === 'web') {
         return [
             { name: Players.Default, scheme: 'STREAMURL', encodeUrl: false },
             { name: Players.Browser, scheme: 'STREAMURL', encodeUrl: false }
         ];
-    } else if (getOriginalPlatform() === 'windows') {
+    } else if (Platform.OS === 'windows') {
         return [
-            { name: Players.Default, scheme: 'STREAMURL', encodeUrl: false },
             { name: Players.Browser, scheme: 'STREAMURL', encodeUrl: false },
         ];
-    } else if (getOriginalPlatform() === 'macos') {
+    } else if (Platform.OS === 'macos') {
         return [
-            { name: Players.Default, scheme: 'STREAMURL', encodeUrl: false },
             { name: Players.Browser, scheme: 'STREAMURL', encodeUrl: false },
             { name: Players.VLC, scheme: 'vlc://STREAMURL', encodeUrl: false },
             { name: Players.Infuse, scheme: 'infuse://x-callback-url/play?url=STREAMURL', encodeUrl: true },
