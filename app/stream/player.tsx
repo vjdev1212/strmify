@@ -15,8 +15,8 @@ const MediaPlayerScreen: React.FC = () => {
 
   const Player =
     Platform.OS === "web"
-      ? require("../../components/MediaPlayer").MediaPlayer // use named export
-      : null;
+      ? require("../../components/MediaPlayer").MediaPlayer
+      : require("../../components/NativeMediaPlayer").NativeMediaPlayer
 
 
   return (
