@@ -39,32 +39,35 @@ const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
   
   // Device category based on shortSide
   const getCastPerScreen = () => {
-    if (shortSide < 580) return isPortrait ? 3 : 5;       // mobile
-    if (shortSide < 1024) return isPortrait ? 6 : 8;      // tablet
-    if (shortSide < 1440) return isPortrait ? 7 : 9;      // laptop
-    return isPortrait ? 7 : 10;                           // desktop
+    if (shortSide < 580) return isPortrait ? 4 : 6;       // mobile - more avatars fit
+    if (shortSide < 1024) return isPortrait ? 7 : 9;      // tablet
+    if (shortSide < 1440) return isPortrait ? 8 : 10;     // laptop
+    return isPortrait ? 8 : 12;                           // desktop
   };
 
   const castPerScreen = getCastPerScreen();
-  const spacing = 12;
+  const spacing = 16;
   const containerMargin = 15;
   
-  const castWidth = useMemo(() => {
+  const avatarSize = useMemo(() => {
     const totalSpacing = spacing * (castPerScreen - 1);
     const totalMargins = containerMargin * 2; // left + right
-    return (width - totalSpacing - totalMargins) / castPerScreen;
-  }, [width, castPerScreen]);
-
-  const castHeight = castWidth * 1.5;
+    const availableWidth = width - totalSpacing - totalMargins;
+    const calculatedSize = availableWidth / castPerScreen;
+    
+    // Increase minimum size for smaller screens, keep reasonable maximum
+    const minSize = shortSide < 1024 ? 80 : 60; // Larger minimum for mobile devices
+    return Math.max(minSize, Math.min(120, calculatedSize));
+  }, [width, castPerScreen, shortSide]);
 
   // Modern color scheme
   const COLORS = {
     background: '#000000',
-    cardBackground: '#101010',
     primary: '#FFFFFF',
     secondary: '#B0B0B0',
-    accent: '#191919',
-    border: '#222222',
+    accent: '#333333',
+    border: '#444444',
+    placeholderBg: '#1a1a1a',
   };
 
   // Memoized cast items to prevent unnecessary re-renders
@@ -109,48 +112,67 @@ const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
           <Pressable
             key={item.id}
             style={[
-              styles.castCard,
+              styles.avatarContainer,
               {
-                width: castWidth,
+                width: avatarSize + 20, // Extra space for text
                 marginRight: index === castItems.length - 1 ? 0 : spacing,
-                backgroundColor: COLORS.cardBackground,
               }
             ]}
-            android_ripple={{ color: COLORS.accent, borderless: false }}
+            android_ripple={{ 
+              color: COLORS.accent, 
+              borderless: true,
+              radius: avatarSize / 2 + 10
+            }}
           >
-            <View style={styles.imageContainer}>
+            <View style={styles.avatarWrapper}>
               {item.hasImage ? (
                 <Image
                   source={{ uri: item.imageUri! }}
-                  style={[styles.profileImage as any, {
-                    width: castWidth,
-                    height: castHeight,
+                  style={[styles.avatar, {
+                    width: avatarSize,
+                    height: avatarSize,
+                    borderRadius: avatarSize / 2,
                   }]}
                 />
               ) : (
-                <View style={[styles.placeholderImage, {
-                  width: castWidth,
-                  height: castHeight,
-                  backgroundColor: COLORS.accent,
+                <View style={[styles.placeholderAvatar, {
+                  width: avatarSize,
+                  height: avatarSize,
+                  borderRadius: avatarSize / 2,
+                  backgroundColor: COLORS.placeholderBg,
                   borderColor: COLORS.border,
                 }]}>
                   <Text style={[styles.initials, {
-                    color: COLORS.primary
+                    color: COLORS.primary,
+                    fontSize: avatarSize * 0.3, // Scale initials with avatar size
                   }]}>{item.initials}</Text>
                 </View>
               )}
+              
+              {/* Optional: Add online indicator or badge */}
+              <View style={[styles.avatarBorder, {
+                width: avatarSize + 4,
+                height: avatarSize + 4,
+                borderRadius: (avatarSize + 4) / 2,
+              }]} />
             </View>
 
             <View style={styles.textContainer}>
               <Text
-                style={[styles.name, { color: COLORS.primary }]}
+                style={[styles.name, { 
+                  color: COLORS.primary,
+                  fontSize: Math.max(12, avatarSize * 0.12), // Scale text with avatar
+                }]}
                 numberOfLines={1}
                 ellipsizeMode="tail"
               >
                 {item.name}
               </Text>
               <Text
-                style={[styles.character, { color: COLORS.secondary }]}
+                style={[styles.character, { 
+                  color: COLORS.secondary,
+                  fontSize: Math.max(10, avatarSize * 0.1), // Scale text with avatar
+                }]}
                 numberOfLines={1}
                 ellipsizeMode="tail"
               >
@@ -182,20 +204,12 @@ const styles = StyleSheet.create({
   scrollContent: {
     // paddingRight handled dynamically
   },
-  castCard: {
-    borderRadius: 6,
-    paddingBottom: 10,
+  avatarContainer: {
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    paddingVertical: 8,
   },
-  imageContainer: {
+  avatarWrapper: {
+    position: 'relative',
     marginBottom: 12,
     shadowColor: "#000",
     shadowOffset: {
@@ -206,41 +220,48 @@ const styles = StyleSheet.create({
     shadowRadius: 4.65,
     elevation: 8,
   },
-  profileImage: {
-    borderTopStartRadius: 6,
-    borderTopEndRadius: 6,
+  avatar: {
+    // Dynamic styles applied inline
   },
-  placeholderImage: {
+  placeholderAvatar: {
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1,
-    borderTopStartRadius: 6,
-    borderTopEndRadius: 6,
+    borderWidth: 2,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  avatarBorder: {
+    position: 'absolute',
+    top: -2,
+    left: -2,
+    borderWidth: 0.5,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   initials: {
-    fontSize: 34,
-    fontWeight: '500',
+    fontWeight: '600',
     letterSpacing: 1,
   },
   textContainer: {
     alignItems: "center",
     width: "100%",
-    gap: 4,
+    gap: 2,
   },
   name: {
-    fontSize: 14,
     fontWeight: '500',
     textAlign: "center",
-    lineHeight: 18,
-    paddingHorizontal: 5
+    lineHeight: 16,
   },
   character: {
-    fontSize: 12,
     fontWeight: '400',
     textAlign: "center",
-    lineHeight: 16,
-    opacity: 0.8,
-    paddingHorizontal: 5
+    lineHeight: 14,
+    opacity: 0.7,
   },
 });
 
