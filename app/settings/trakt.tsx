@@ -5,7 +5,7 @@ import * as Haptics from 'expo-haptics';
 import { useCallback, useEffect, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { webLinking } from '@/utils/Web';
-import { clearTraktTokens, getTraktUserInfo, isUserAuthenticated, saveTraktTokens, TraktTokens } from '@/clients/trakt';
+import { clearTraktTokens, getTraktTokens, getTraktUserInfo, isUserAuthenticated, saveTraktTokens, TraktTokens } from '@/clients/trakt';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Storage key for Trakt enable preference
@@ -203,11 +203,38 @@ const TraktAuthScreen = () => {
 
                 showAlert('Success', 'Successfully connected to Trakt.tv!');
             } else {
-                const errorData = await response.json();
-                throw new Error(`Failed to exchange code for tokens: ${errorData.error || response.status}`);
+                const errorData = await response.json().catch(() => ({}));
+                console.error('Token exchange failed:', response.status, errorData);
+                
+                // Check if tokens were saved despite the error response
+                const savedTokens = await getTraktTokens();
+                if (savedTokens && savedTokens.access_token) {
+                    console.log('Tokens found despite exchange error - likely successful');
+                    setIsAuthenticated(true);
+                    await fetchUserInfo();
+                    showAlert('Success', 'Successfully connected to Trakt.tv!');
+                } else {
+                    throw new Error(`Failed to exchange code for tokens: ${errorData.error || response.status}`);
+                }
             }
         } catch (error) {
             console.error('Token exchange error:', error);
+            
+            // Final check: see if tokens exist (authentication might have succeeded)
+            try {
+                const savedTokens = await getTraktTokens();
+                if (savedTokens && savedTokens.access_token) {
+                    console.log('Authentication appears successful despite error - tokens found');
+                    setIsAuthenticated(true);
+                    await fetchUserInfo();
+                    showAlert('Success', 'Successfully connected to Trakt.tv!');
+                    return;
+                }
+            } catch (checkError) {
+                console.error('Error checking for saved tokens:', checkError);
+            }
+            
+            // Only show error if authentication actually failed
             showAlert('Error', 'Failed to complete authentication');
         } finally {
             setIsLoading(false);
@@ -234,6 +261,10 @@ const TraktAuthScreen = () => {
             
             if (authenticated) {
                 await fetchUserInfo();
+                // If we were loading and now we're authenticated, stop loading
+                if (isLoading) {
+                    setIsLoading(false);
+                }
             }
         } catch (error) {
             console.error('Failed to check auth status:', error);
