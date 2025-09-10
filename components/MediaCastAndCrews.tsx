@@ -161,7 +161,7 @@ const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
               <Text
                 style={[styles.name, { 
                   color: COLORS.primary,
-                  fontSize: Math.max(12, avatarSize * 0.12), // Scale text with avatar
+                  fontSize: Math.max(13, avatarSize * 0.12), // Scale text with avatar
                 }]}
                 numberOfLines={1}
                 ellipsizeMode="tail"
@@ -171,7 +171,7 @@ const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
               <Text
                 style={[styles.character, { 
                   color: COLORS.secondary,
-                  fontSize: Math.max(10, avatarSize * 0.1), // Scale text with avatar
+                  fontSize: Math.max(11, avatarSize * 0.1), // Scale text with avatar
                 }]}
                 numberOfLines={1}
                 ellipsizeMode="tail"
@@ -258,7 +258,6 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   character: {
-    fontWeight: '400',
     textAlign: "center",
     lineHeight: 14,
     opacity: 0.7,
