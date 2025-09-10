@@ -47,40 +47,83 @@ export const clearTraktTokens = async (): Promise<void> => {
 export const isUserAuthenticated = async (): Promise<boolean> => {
     try {
         const tokens = await getTraktTokens();
-        if (!tokens) return false;
-        
+        if (!tokens?.access_token) {
+            return false;
+        }
+
+        // If token is close to expiring (within 5 minutes), refresh it proactively
         const expiresAt = tokens.created_at + tokens.expires_in;
-        return Date.now() / 1000 < expiresAt;
+        const timeUntilExpiry = expiresAt - (Date.now() / 1000);
+
+        if (timeUntilExpiry < 300) { // Less than 5 minutes
+            console.log('Token expiring soon, refreshing proactively...');
+            const refreshSuccess = await refreshTraktTokens();
+            return refreshSuccess;
+        }
+
+        // Verify with a lightweight API call
+        const response = await fetch(`${TRAKT_API_BASE}/users/settings`, {
+            headers: {
+                'Authorization': `Bearer ${tokens.access_token}`,
+                'trakt-api-version': '2',
+                'trakt-api-key': TRAKT_CLIENT_ID,
+            },
+        });
+
+        if (response.status === 401) {
+            // Token is invalid, try to refresh
+            console.log('Got 401 during auth check, attempting refresh...');
+            const refreshSuccess = await refreshTraktTokens();
+            return refreshSuccess;
+        }
+
+        return response.ok;
     } catch (error) {
-        console.error('Failed to check authentication status:', error);
+        console.error('Auth check error:', error);
         return false;
     }
 };
 
-export const isTokenExpired = async (): Promise<boolean> => {
+export const isTokenExpired = (tokens: TraktTokens): boolean => {
+    if (!tokens.created_at || !tokens.expires_in) {
+        return true;
+    }
+
+    const now = Math.floor(Date.now() / 1000);
+    const expirationTime = tokens.created_at + tokens.expires_in;
+
+    // Consider token expired if it expires in the next 5 minutes
+    return (expirationTime - now) < 300;
+};
+
+export const ensureValidTokens = async (): Promise<boolean> => {
     try {
         const tokens = await getTraktTokens();
-        if (!tokens) return true;
-        
-        const expiresAt = tokens.created_at + tokens.expires_in;
-        return Date.now() / 1000 >= expiresAt;
-    } catch (error) {
-        console.error('Failed to check token expiration:', error);
+        if (!tokens) {
+            return false;
+        }
+
+        if (isTokenExpired(tokens)) {
+            console.log('Tokens expired, attempting refresh...');
+            return await refreshTraktTokens();
+        }
+
         return true;
+    } catch (error) {
+        console.error('Error ensuring valid tokens:', error);
+        return false;
     }
 };
 
 // Token refresh functionality
-export const refreshTraktTokens = async (): Promise<TraktTokens | null> => {
+export const refreshTraktTokens = async (): Promise<boolean> => {
     try {
         const tokens = await getTraktTokens();
         if (!tokens?.refresh_token) {
             console.log('No refresh token available');
-            return null;
+            return false;
         }
 
-        console.log('Refreshing Trakt tokens...');
-        
         const response = await fetch(`${TRAKT_API_BASE}/oauth/token`, {
             method: 'POST',
             headers: {
@@ -97,23 +140,22 @@ export const refreshTraktTokens = async (): Promise<TraktTokens | null> => {
             }),
         });
 
-        if (!response.ok) {
-            console.error(`Failed to refresh token: ${response.status}`);
+        if (response.ok) {
+            const newTokens: TraktTokens = await response.json();
+            newTokens.created_at = Math.floor(Date.now() / 1000);
+
+            await saveTraktTokens(newTokens);
+            console.log('Tokens refreshed successfully');
+            return true;
+        } else {
+            console.error('Failed to refresh tokens:', response.status, await response.text());
+            // If refresh fails, clear the invalid tokens
             await clearTraktTokens();
-            return null;
+            return false;
         }
-
-        const newTokens: TraktTokens = await response.json();
-        newTokens.created_at = Math.floor(Date.now() / 1000);
-
-        await saveTraktTokens(newTokens);
-        console.log('Tokens refreshed successfully');
-        
-        return newTokens;
     } catch (error) {
-        console.error('Failed to refresh Trakt tokens:', error);
-        await clearTraktTokens();
-        return null;
+        console.error('Token refresh error:', error);
+        return false;
     }
 };
 
@@ -134,7 +176,9 @@ export const makeTraktApiCallUnauthenticated = async (endpoint: string, options:
             throw new Error(`Trakt API error: ${response.status} ${response.statusText}`);
         }
 
-        return await response.json();
+        // Handle empty responses (like from DELETE requests)
+        const text = await response.text();
+        return text ? JSON.parse(text) : null;
     } catch (error) {
         console.error('Trakt API call failed (unauthenticated):', error);
         throw error;
@@ -149,13 +193,17 @@ export const makeTraktApiCallAuthenticated = async (endpoint: string, options: R
         }
 
         // Check if token is expired and refresh if needed
-        if (await isTokenExpired()) {
+        if (isTokenExpired(tokens)) {
             console.log('Token expired, attempting refresh...');
-            const refreshedTokens = await refreshTraktTokens();
-            if (!refreshedTokens) {
+            const refreshSuccess = await refreshTraktTokens();
+            if (!refreshSuccess) {
                 throw new Error('Failed to refresh expired token');
             }
-            tokens = refreshedTokens;
+            // Get the refreshed tokens
+            tokens = await getTraktTokens();
+            if (!tokens) {
+                throw new Error('Failed to retrieve refreshed tokens');
+            }
         }
 
         const response = await fetch(`${TRAKT_API_BASE}${endpoint}`, {
@@ -173,30 +221,39 @@ export const makeTraktApiCallAuthenticated = async (endpoint: string, options: R
             // If we get 401, try refreshing token once more
             if (response.status === 401) {
                 console.log('Got 401, attempting token refresh...');
-                const refreshedTokens = await refreshTraktTokens();
-                if (refreshedTokens) {
-                    // Retry the request with new token
-                    const retryResponse = await fetch(`${TRAKT_API_BASE}${endpoint}`, {
-                        ...options,
-                        headers: {
-                            'Authorization': `Bearer ${refreshedTokens.access_token}`,
-                            'trakt-api-version': '2',
-                            'trakt-api-key': TRAKT_CLIENT_ID,
-                            'Content-Type': 'application/json',
-                            ...options.headers,
-                        },
-                    });
-                    
-                    if (retryResponse.ok) {
-                        return await retryResponse.json();
+                const refreshSuccess = await refreshTraktTokens();
+                if (refreshSuccess) {
+                    // Get the refreshed tokens
+                    const refreshedTokens = await getTraktTokens();
+                    if (refreshedTokens) {
+                        // Retry the request with new token
+                        const retryResponse = await fetch(`${TRAKT_API_BASE}${endpoint}`, {
+                            ...options,
+                            headers: {
+                                'Authorization': `Bearer ${refreshedTokens.access_token}`,
+                                'trakt-api-version': '2',
+                                'trakt-api-key': TRAKT_CLIENT_ID,
+                                'Content-Type': 'application/json',
+                                ...options.headers,
+                            },
+                        });
+
+                        if (retryResponse.ok) {
+                            const text = await retryResponse.text();
+                            return text ? JSON.parse(text) : null;
+                        }
                     }
                 }
+                // If refresh failed, clear tokens
+                await clearTraktTokens();
             }
-            
+
             throw new Error(`Trakt API error: ${response.status} ${response.statusText}`);
         }
 
-        return await response.json();
+        // Handle empty responses (like from DELETE requests)
+        const text = await response.text();
+        return text ? JSON.parse(text) : null;
     } catch (error) {
         console.error('Trakt API call failed (authenticated):', error);
         throw error;
@@ -211,7 +268,7 @@ export const safeMakeTraktApiCall = async (endpoint: string, options: RequestIni
             console.log('User not authenticated, skipping API call to:', endpoint);
             return null;
         }
-        
+
         return await makeTraktApiCallAuthenticated(endpoint, options);
     } catch (error) {
         console.error('Safe Trakt API call failed:', error);
@@ -221,8 +278,8 @@ export const safeMakeTraktApiCall = async (endpoint: string, options: RequestIni
 
 // Flexible API call that can handle both authenticated and unauthenticated endpoints
 export const makeTraktApiCall = async (
-    endpoint: string, 
-    options: RequestInit = {}, 
+    endpoint: string,
+    options: RequestInit = {},
     requireAuth: boolean = true
 ): Promise<any> => {
     if (requireAuth) {
@@ -267,7 +324,7 @@ export const getTraktWatchlist = async (type: 'movies' | 'shows' = 'movies'): Pr
 };
 
 export const addToTraktWatchlist = async (
-    type: 'movies' | 'shows', 
+    type: 'movies' | 'shows',
     items: any[]
 ): Promise<boolean> => {
     try {
@@ -275,7 +332,7 @@ export const addToTraktWatchlist = async (
             method: 'POST',
             body: JSON.stringify({ [type]: items }),
         });
-        return !!response;
+        return response !== null;
     } catch (error) {
         console.error('Failed to add to watchlist:', error);
         return false;
@@ -283,7 +340,7 @@ export const addToTraktWatchlist = async (
 };
 
 export const removeFromTraktWatchlist = async (
-    type: 'movies' | 'shows', 
+    type: 'movies' | 'shows',
     items: any[]
 ): Promise<boolean> => {
     try {
@@ -291,7 +348,7 @@ export const removeFromTraktWatchlist = async (
             method: 'POST',
             body: JSON.stringify({ [type]: items }),
         });
-        return !!response;
+        return response !== null;
     } catch (error) {
         console.error('Failed to remove from watchlist:', error);
         return false;
@@ -326,7 +383,7 @@ export const scrobbleStart = async (item: any): Promise<boolean> => {
             method: 'POST',
             body: JSON.stringify(item),
         });
-        return !!response;
+        return response !== null;
     } catch (error) {
         console.error('Failed to start scrobble:', error);
         return false;
@@ -339,7 +396,7 @@ export const scrobbleStop = async (item: any): Promise<boolean> => {
             method: 'POST',
             body: JSON.stringify(item),
         });
-        return !!response;
+        return response !== null;
     } catch (error) {
         console.error('Failed to stop scrobble:', error);
         return false;

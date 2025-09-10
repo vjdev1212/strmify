@@ -3,7 +3,7 @@ import { StatusBar, Text, View } from '../../components/Themed';
 import { isHapticsSupported, showAlert } from '@/utils/platform';
 import * as Haptics from 'expo-haptics';
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import BottomSpacing from '@/components/BottomSpacing';
 import { isUserAuthenticated, makeTraktApiCall } from '@/clients/trakt';
@@ -90,7 +90,7 @@ const TraktScreen = () => {
             try {
                 const content = item.movie || item.show;
                 const tmdbId = content?.ids?.tmdb;
-                
+
                 if (!tmdbId) return item;
 
                 const cacheKey = `${item.movie ? 'movie' : 'tv'}-${tmdbId}`;
@@ -115,7 +115,7 @@ const TraktScreen = () => {
                     const tmdbData = await response.json();
                     // Cache the result
                     tmdbCache.set(cacheKey, { data: tmdbData, timestamp: now });
-                    
+
                     return {
                         ...item,
                         tmdb: tmdbData,
@@ -142,8 +142,8 @@ const TraktScreen = () => {
             if (a.rank === undefined && b.rank !== undefined) return 1;
 
             const getDate = (item: any) => {
-                return item.listed_at || item.last_watched_at || item.last_updated_at || 
-                       item.updated_at || item.watched_at || '1970-01-01';
+                return item.listed_at || item.last_watched_at || item.last_updated_at ||
+                    item.updated_at || item.watched_at || '1970-01-01';
             };
 
             const dateA = new Date(getDate(a)).getTime();
@@ -155,8 +155,8 @@ const TraktScreen = () => {
     const sortByRecentDate = useCallback((items: TraktItem[]) => {
         return items.sort((a: any, b: any) => {
             const getDate = (item: any) => {
-                return item.listed_at || item.last_watched_at || item.last_updated_at || 
-                       item.updated_at || item.watched_at || '1970-01-01';
+                return item.listed_at || item.last_watched_at || item.last_updated_at ||
+                    item.updated_at || item.watched_at || '1970-01-01';
             };
 
             const dateA = new Date(getDate(a)).getTime();
@@ -177,7 +177,7 @@ const TraktScreen = () => {
                 loadUserListData(),
                 loadCalendarData()
             ]);
-            
+
             setAllTabsLoaded(true);
         } catch (error) {
             console.error('Error loading data:', error);
@@ -197,7 +197,6 @@ const TraktScreen = () => {
 
     useEffect(() => {
         mountedRef.current = true;
-        checkAuthentication();
         return () => {
             mountedRef.current = false;
         };
@@ -214,6 +213,12 @@ const TraktScreen = () => {
         const authenticated = await isUserAuthenticated();
         setIsAuthenticated(authenticated);
     }, []);
+
+    useFocusEffect(
+        useCallback(() => {
+            checkAuthentication();
+        }, [checkAuthentication])
+    );
 
     // Movie data loading - no limits
     const loadMovieData = useCallback(async () => {
@@ -468,7 +473,7 @@ const TraktScreen = () => {
 
             // Load all user lists
             const userLists = await makeTraktApiCall('/users/me/lists');
-            
+
             for (const list of userLists) {
                 const listItems = await makeTraktApiCall(`/users/me/lists/${list.ids.slug}/items`);
                 if (listItems.length > 0) {
