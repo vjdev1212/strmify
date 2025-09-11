@@ -408,6 +408,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
         console.log('On Change Playback speed');
         await playHaptic();
         setPlaybackSpeed(speed);
+
         showControlsTemporarily();
     }, [showControlsTemporarily]);
 
@@ -415,6 +416,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
         console.log('On Change Resize Mode');
         await playHaptic();
         setResizeMode(mode);
+
         showControlsTemporarily();
     }, [showControlsTemporarily]);
 
