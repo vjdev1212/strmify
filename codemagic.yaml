@@ -104,3 +104,82 @@ workflows:
     artifacts:
       - ios/build/*.ipa
       - ios/build/**/*.xcarchive
+
+
+  strmify-ios-dev:     # <-- new development build
+    name: Strmify iOS Development Build
+    environment:
+      node: latest
+      xcode: latest
+      groups:
+        - EXPO
+    scripts:
+      - name: Install dependencies
+        script: npm install --force
+
+      - name: Install Expo CLI
+        script: npm install -g @expo/cli@latest --force
+
+      - name: Extract app version from app.json
+        script: |
+          if [ -f "app.json" ]; then
+            APP_VERSION=$(node -p "JSON.parse(require('fs').readFileSync('app.json', 'utf8')).expo.version")
+            APP_NAME=$(node -p "JSON.parse(require('fs').readFileSync('app.json', 'utf8')).expo.name.replace(/[^a-zA-Z0-9]/g, '')")
+            echo "📱 App Name: $APP_NAME"
+            echo "📋 Version: $APP_VERSION"
+            echo "APP_VERSION=$APP_VERSION" >> $CM_ENV
+            echo "APP_NAME=$APP_NAME" >> $CM_ENV
+          else
+            echo "⚠️  app.json not found, using defaults"
+            echo "APP_VERSION=1.0.0" >> $CM_ENV
+            echo "APP_NAME=Strmify" >> $CM_ENV
+          fi
+
+      - name: Clean and generate iOS project
+        script: |
+          rm -rf ios android
+          npx expo prebuild --platform ios
+
+      - name: Install iOS dependencies
+        script: |
+          cd ios
+          pod install
+
+      - name: Build with Xcode (Debug, unsigned)
+        script: |
+          cd ios
+          WORKSPACE=$(find . -name "*.xcworkspace" -maxdepth 1 | head -1)
+          SCHEME_NAME=$(basename "$WORKSPACE" .xcworkspace)
+
+          echo "📱 Building development scheme: $SCHEME_NAME"
+
+          xcodebuild -workspace "$WORKSPACE" \
+            -scheme "$SCHEME_NAME" \
+            -configuration Debug \
+            -destination generic/platform=iOS \
+            -archivePath "build/$SCHEME_NAME-dev.xcarchive" \
+            archive \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            DEVELOPMENT_TEAM=""
+
+          mkdir -p build/Payload
+          cp -r build/$SCHEME_NAME-dev.xcarchive/Products/Applications/*.app build/Payload/
+
+          APP_BUNDLE=$(ls build/Payload/ | head -1)
+          IPA_NAME="${APP_NAME}_Dev_v${APP_VERSION}"
+
+          cd build
+          zip -r "$IPA_NAME.ipa" Payload/
+
+          if [ -f "$IPA_NAME.ipa" ]; then
+            echo "✅ Development IPA created: $IPA_NAME.ipa"
+            ln -sf "$IPA_NAME.ipa" "latest-dev.ipa"
+          else
+            echo "❌ Failed to create Development IPA"
+            exit 1
+          fi
+
+    artifacts:
+      - ios/build/*.ipa
