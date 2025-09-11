@@ -63,6 +63,17 @@
           "supportsBackgroundPlayback": true,
           "supportsPictureInPicture": true
         }
+      ],
+      [
+        "react-native-vlc-media-player",
+        {
+          "ios": {
+              "includeVLCKit": false
+          },
+          "android": {
+              "legacyJetifier": false
+          }
+        }
       ]
     ],
     "experiments": {

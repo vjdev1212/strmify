@@ -12,12 +12,13 @@ import {
     Image,
     Alert,
 } from "react-native";
-import Video, { VideoRef, ResizeMode, OnLoadData, OnProgressData, OnBufferData, SelectedTrackType } from 'react-native-video';
+import { PlayerResizeMode, VLCPlayer } from 'react-native-vlc-media-player';
 import * as ScreenOrientation from "expo-screen-orientation";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import Slider from '@react-native-community/slider';
 import * as Haptics from 'expo-haptics';
+import * as Brightness from 'expo-brightness';
 
 export interface Subtitle {
     language: string;
@@ -60,24 +61,25 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
     autoPlay = true,
     artwork,
 }) => {
-    const videoRef = useRef<VideoRef>(null);
+    const playerRef = useRef<VLCPlayer>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
     const [showControls, setShowControls] = useState(true);
     const [isBuffering, setIsBuffering] = useState(true);
-    const [selectedSubtitle, setSelectedSubtitle] = useState<string | null>(null);
-    const [selectedAudioTrack, setSelectedAudioTrack] = useState<string | null>(null);
+    const [selectedSubtitle, setSelectedSubtitle] = useState<number>(0);
+    const [selectedAudioTrack, setSelectedAudioTrack] = useState<number>(0);
     const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
-    const [volume, setVolume] = useState(0.0);
-    const [isMuted, setIsMuted] = useState(true);
+    const [volume, setVolume] = useState(70);
+    const [isMuted, setIsMuted] = useState(false);
+    const [isPaused, setIsPaused] = useState(false);
     const [showVolumeSlider, setShowVolumeSlider] = useState(false);
     const [showChapters, setShowChapters] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
     const [isReady, setIsReady] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const [dragPosition, setDragPosition] = useState(0);
-    const [resizeMode, setResizeMode] = useState<ResizeMode>(ResizeMode.CONTAIN);
+    const [resizeMode, setResizeMode] = useState<PlayerResizeMode>('contain');
     const [showResizeModeLabel, setShowResizeModeLabel] = useState(false);
     const [brightness, setBrightness] = useState(1.0);
     const [showBrightnessSlider, setShowBrightnessSlider] = useState(false);
@@ -85,14 +87,13 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
     const [availableAudioTracks, setAvailableAudioTracks] = useState<any[]>([]);
     const [error, setError] = useState<string | null>(null);
 
-    // All resize mode options available in react-native-video
-    const resizeModeOptions: ResizeMode[] = [
-        ResizeMode.NONE, 
-        ResizeMode.CONTAIN, 
-        ResizeMode.COVER, 
-        ResizeMode.STRETCH
+    // VLC resize mode options
+    const resizeModeOptions: PlayerResizeMode[] = [
+        "fill",
+        "contain",
+        "cover",
+        "none"
     ];
-
     // Animated values
     const controlsOpacity = useRef(new Animated.Value(1)).current;
     const progressBarValue = useRef(new Animated.Value(0)).current;
@@ -134,19 +135,11 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
         };
     }, []);
 
-    const onLoad = useCallback((data: OnLoadData) => {
+    const onLoadStart = useCallback(() => {
+        console.log('VLC Player load start');
         setIsBuffering(false);
         setIsReady(true);
-        setDuration(data.duration);
-        setError(null); // Clear any previous errors
-
-        // Set available tracks
-        if (data.textTracks) {
-            setAvailableTextTracks(data.textTracks);
-        }
-        if (data.audioTracks) {
-            setAvailableAudioTracks(data.audioTracks);
-        }
+        setError(null);
 
         Animated.timing(bufferOpacity, {
             toValue: 0,
@@ -155,26 +148,34 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
         }).start();
     }, [bufferOpacity]);
 
-    const onProgress = useCallback((data: OnProgressData) => {
+    const onProgress = useCallback((data: any) => {
         if (isDragging) return;
 
-        setCurrentTime(data.currentTime);
+        const { currentTime: current, duration: dur } = data;
+        setCurrentTime(current / 1000); // VLC returns milliseconds
+
+        if (duration === 0 && dur > 0) {
+            setDuration(dur / 1000); // VLC returns milliseconds
+        }
 
         if (duration > 0) {
-            const progress = data.currentTime / duration;
+            const progress = (current / 1000) / duration;
             progressBarValue.setValue(progress);
         }
     }, [isDragging, duration]);
 
-    const onBuffer = useCallback((data: OnBufferData) => {
-        if (data.isBuffering && isReady) {
+    const onBuffering = useCallback((data: any) => {
+        console.log('On Buffering');
+        const { isBuffering: buffering } = data;
+
+        if (buffering && isReady) {
             setIsBuffering(true);
             Animated.timing(bufferOpacity, {
                 toValue: 1,
                 duration: 200,
                 useNativeDriver: true,
             }).start();
-        } else if (!data.isBuffering) {
+        } else if (!buffering) {
             setIsBuffering(false);
             Animated.timing(bufferOpacity, {
                 toValue: 0,
@@ -184,34 +185,38 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
         }
     }, [bufferOpacity, isReady]);
 
-    const onPlaybackStateChanged = useCallback((data: any) => {
-        setIsPlaying(data.isPlaying);
+    const onPlaying = useCallback(() => {
+        console.log('On Playing');
+        setIsPlaying(true);
+    }, []);
+
+    const onPaused = useCallback(() => {
+        console.log('On Paused');
+        setIsPlaying(false);
+    }, []);
+
+    const onStopped = useCallback(() => {
+        console.log('On Stopped');
+        setIsPlaying(false);
     }, []);
 
     const onError = useCallback((error: any) => {
-        console.log('Video error:', error);
+        console.log('VLC Player error:', error);
         let errorMessage = "Failed to load video.";
-        
+
         if (error?.error) {
-            if (error.error.code) {
-                errorMessage += ` Error code: ${error.error.code}`;
-            }
-            if (error.error.localizedDescription) {
-                errorMessage += ` - ${error.error.localizedDescription}`;
-            } else if (error.error.message) {
-                errorMessage += ` - ${error.error.message}`;
-            }
+            errorMessage += ` ${error.error}`;
         }
-        
+
         // Check for .mkv file format issue
         if (videoUrl.toLowerCase().includes('.mkv')) {
-            errorMessage += " MKV files may not be supported on all devices. Try converting to MP4 format.";
+            errorMessage += " Note: Some MKV files may have compatibility issues.";
         }
-        
+
         setError(errorMessage);
         setIsBuffering(false);
         setIsReady(false);
-        
+
         // Show native alert with detailed error
         Alert.alert("Video Error", errorMessage);
     }, [videoUrl]);
@@ -252,18 +257,32 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
 
     // Control functions
     const togglePlayPause = useCallback(async () => {
-        if (!isReady) return;
+        console.log('On Toggle');
+        if (!isReady || !playerRef.current) return;
 
         await playHaptic();
-        setIsPlaying(!isPlaying);
+        if (isPlaying) {
+            console.log('Pause');
+            setIsPaused(true);
+        } else {
+            console.log('Resume');
+            playerRef.current.resume();
+            setIsPaused(false);
+        }
+
         showControlsTemporarily();
     }, [isPlaying, isReady, showControlsTemporarily]);
 
     const cycleResizeMode = useCallback(async () => {
+        console.log('On Resize');
         await playHaptic();
         const currentIndex = resizeModeOptions.indexOf(resizeMode);
         const nextIndex = (currentIndex + 1) % resizeModeOptions.length;
-        setResizeMode(resizeModeOptions[nextIndex]);
+
+        const nextMode = resizeModeOptions[nextIndex];
+        setResizeMode(nextMode);
+
+        console.log('Resize Mode', resizeMode)
 
         // Show the label briefly
         setShowResizeModeLabel(true);
@@ -291,15 +310,24 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
     }, [resizeMode, showControlsTemporarily]);
 
     const seekTo = useCallback((seconds: number) => {
-        if (!isReady || duration <= 0 || !videoRef.current) return;
+        console.log("On Seek");
+        const currentPauseStatus = isPaused;
+        setIsPaused(true);
+        if (!isReady || duration <= 0 || !playerRef.current) return;
 
         const clampedTime = Math.max(0, Math.min(duration, seconds));
-        videoRef.current.seek(clampedTime);
+
+        const position = clampedTime / duration;
+
+        playerRef.current.seek(position);
+        setIsPaused(currentPauseStatus)
         setCurrentTime(clampedTime);
         showControlsTemporarily();
     }, [duration, showControlsTemporarily, isReady]);
 
+
     const skipTime = useCallback(async (seconds: number) => {
+        console.log('On SkipTime');
         if (!isReady || duration <= 0) return;
 
         await playHaptic();
@@ -308,6 +336,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
     }, [currentTime, duration, seekTo, isReady]);
 
     const toggleBrightnessSlider = useCallback(async () => {
+        console.log('On Toggle Brightness');
         await playHaptic();
         setShowBrightnessSlider(!showBrightnessSlider);
         setShowSettings(false);
@@ -316,27 +345,26 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
         showControlsTemporarily();
     }, [showBrightnessSlider, showControlsTemporarily]);
 
-    const handleBrightnessChange = useCallback((value: number) => {
+    const handleBrightnessChange = useCallback(async (value: number) => {
+        console.log('On Handle Brightness');
         setBrightness(value);
+        await Brightness.setBrightnessAsync(value)
         showControlsTemporarily();
     }, [showControlsTemporarily]);
 
     // Fixed mute toggle
     const toggleMute = useCallback(async () => {
+        console.log('On Toggle Mute');
         await playHaptic();
         const newMutedState = !isMuted;
         setIsMuted(newMutedState);
-        
-        // If unmuting and volume is 0, set to a reasonable level
-        if (!newMutedState && volume === 0) {
-            setVolume(0.7);
-        }
-        
+
         showControlsTemporarily();
-    }, [isMuted, volume, showControlsTemporarily]);
+    }, [isMuted, showControlsTemporarily]);
 
     // Volume slider control
     const toggleVolumeSlider = useCallback(async () => {
+        console.log('On Toggle Volume Slider');
         await playHaptic();
         setShowVolumeSlider(!showVolumeSlider);
         setShowSettings(false);
@@ -347,15 +375,17 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
 
     // Fixed volume handling
     const handleVolumeChange = useCallback((value: number) => {
-        setVolume(value);
-        
-        // Auto-mute/unmute based on volume
-        if (value === 0) {
+        console.log('On Handle Volume Change')
+        const newVolume = Math.round(value);
+        setVolume(newVolume);
+
+        console.log('New Volume', newVolume);
+        if (newVolume === 0) {
             setIsMuted(true);
-        } else if (isMuted && value > 0) {
+        } else if (isMuted && newVolume > 0) {
             setIsMuted(false);
         }
-        
+
         showControlsTemporarily();
     }, [isMuted, showControlsTemporarily]);
 
@@ -377,14 +407,18 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
     }, [chapters, currentTime]);
 
     const changePlaybackSpeed = useCallback(async (speed: number) => {
+        console.log('On Change Playback speed');
         await playHaptic();
         setPlaybackSpeed(speed);
+
         showControlsTemporarily();
     }, [showControlsTemporarily]);
 
-    const changeResizeMode = useCallback(async (mode: ResizeMode) => {
+    const changeResizeMode = useCallback(async (mode: PlayerResizeMode) => {
+        console.log('On Change Resize Mode');
         await playHaptic();
         setResizeMode(mode);
+
         showControlsTemporarily();
     }, [showControlsTemporarily]);
 
@@ -433,21 +467,21 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
 
     const getResizeModeIcon = useCallback(() => {
         switch (resizeMode) {
-            case ResizeMode.CONTAIN: return 'fit-screen';
-            case ResizeMode.COVER: return 'crop';
-            case ResizeMode.STRETCH: return 'fullscreen';
-            case ResizeMode.NONE: return 'aspect-ratio';
+            case 'contain': return 'fit-screen';
+            case 'cover': return 'crop';
+            case 'fill': return 'fullscreen';
+            case 'none': return 'aspect-ratio';
             default: return 'fit-screen';
         }
     }, [resizeMode]);
 
     const getResizeModeLabel = useCallback(() => {
         switch (resizeMode) {
-            case ResizeMode.CONTAIN: return 'Fit';
-            case ResizeMode.COVER: return 'Fill';
-            case ResizeMode.STRETCH: return 'Stretch';
-            case ResizeMode.NONE: return 'Original';
-            default: return 'Fit';
+            case 'contain': return 'Contain';
+            case 'cover': return 'Cover';
+            case 'fill': return 'Fill';
+            case 'none': return 'Original';
+            default: return 'Contain';
         }
     }, [resizeMode]);
 
@@ -455,36 +489,34 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
     const displayTime = isDragging ? dragPosition * duration : currentTime;
     const sliderValue = isDragging ? dragPosition : (duration > 0 ? currentTime / duration : 0);
 
-    // Calculate actual volume to pass to video player
-    const actualVolume = isMuted ? 0 : volume;
+    // Calculate volume for display
+    const displayVolume = isMuted ? 0 : Math.round(volume);
 
     return (
         <View style={styles.container}>
             {!error && (
-                <Video
-                    ref={videoRef}
+                <VLCPlayer
+                    ref={playerRef}
                     style={[
-                        styles.video,
-                        { opacity: brightness }
+                        styles.video
                     ]}
                     source={{ uri: videoUrl }}
+                    autoplay={autoPlay}
+                    autoAspectRatio={true}
                     resizeMode={resizeMode}
-                    paused={!isPlaying}
-                    volume={actualVolume} // Use calculated volume
                     rate={playbackSpeed}
-                    onLoad={onLoad}
+                    muted={isMuted}
+                    volume={isMuted ? 0 : Math.round(volume)}
+                    audioTrack={selectedAudioTrack}
+                    textTrack={selectedSubtitle}
+                    paused={isPaused}
+                    onPlaying={onPlaying}
                     onProgress={onProgress}
-                    onBuffer={onBuffer}
-                    onPlaybackStateChanged={onPlaybackStateChanged}
+                    onLoad={onLoadStart}
+                    onBuffering={onBuffering}
+                    onPaused={onPaused}
+                    onStopped={onStopped}
                     onError={onError}
-                    selectedTextTrack={selectedSubtitle ? { type: SelectedTrackType.LANGUAGE, value: selectedSubtitle } : { type: SelectedTrackType.DISABLED }}
-                    selectedAudioTrack={selectedAudioTrack ? { type: SelectedTrackType.INDEX, value: parseInt(selectedAudioTrack) } : { type: SelectedTrackType.INDEX }}
-                    bufferConfig={{
-                        minBufferMs: 15000,
-                        maxBufferMs: 50000,
-                        bufferForPlaybackMs: 2500,
-                        bufferForPlaybackAfterRebufferMs: 5000
-                    }}
                 />
             )}
 
@@ -597,7 +629,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                                 onPress={toggleMute}
                             >
                                 <Ionicons
-                                    name={isMuted || actualVolume === 0 ? "volume-mute" : actualVolume < 0.5 ? "volume-low" : "volume-high"}
+                                    name={isMuted || displayVolume === 0 ? "volume-mute" : displayVolume < 50 ? "volume-low" : "volume-high"}
                                     size={24}
                                     color="white"
                                 />
@@ -738,20 +770,6 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                                 disabled={!isReady || duration <= 0}
                             />
                         </View>
-
-                        {/* Show current volume and speed */}
-                        <View style={styles.bottomRightControls}>
-                            {!isMuted && actualVolume > 0 && (
-                                <Text style={styles.volumeText}>
-                                    {Math.round(actualVolume * 100)}%
-                                </Text>
-                            )}
-                            {playbackSpeed !== 1.0 && (
-                                <Text style={styles.speedText}>
-                                    {playbackSpeed}x
-                                </Text>
-                            )}
-                        </View>
                     </LinearGradient>
                 </Animated.View>
             )}
@@ -773,14 +791,14 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                             <Slider
                                 style={styles.volumeSlider}
                                 minimumValue={0}
-                                maximumValue={1}
+                                maximumValue={100}
                                 value={volume}
                                 onValueChange={handleVolumeChange}
                                 minimumTrackTintColor="#007AFF"
                                 maximumTrackTintColor="rgba(255,255,255,0.3)"
                             />
                             <Ionicons name="volume-high" size={20} color="white" />
-                            <Text style={styles.volumePercentage}>{Math.round(volume * 100)}%</Text>
+                            <Text style={styles.volumePercentage}>{Math.round(volume)}%</Text>
                         </View>
                     </TouchableOpacity>
                 </TouchableOpacity>
@@ -801,7 +819,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                             <Ionicons name="sunny-outline" size={20} color="white" />
                             <Slider
                                 style={styles.brightnessSlider}
-                                minimumValue={0.2}
+                                minimumValue={0.25}
                                 maximumValue={1.0}
                                 value={brightness}
                                 onValueChange={handleBrightnessChange}
@@ -831,10 +849,10 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                             <Text style={styles.settingsTitle}>Video Scale</Text>
                             <View style={styles.scaleOptions}>
                                 {[
-                                    { value: ResizeMode.CONTAIN, label: 'Fit' },
-                                    { value: ResizeMode.COVER, label: 'Fill' },
-                                    { value: ResizeMode.STRETCH, label: 'Stretch' },
-                                    { value: ResizeMode.NONE, label: 'Original' }
+                                    { value: 'contain', label: 'Contain' },
+                                    { value: 'fill', label: 'Fill' },
+                                    { value: 'cover', label: 'Cover' },
+                                    { value: 'none', label: 'Original' }
                                 ].map(option => (
                                     <TouchableOpacity
                                         key={option.value}
@@ -842,7 +860,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                                             styles.scaleOption,
                                             resizeMode === option.value && styles.scaleOptionSelected
                                         ]}
-                                        onPress={async () => { await playHaptic(); changeResizeMode(option.value); }}
+                                        onPress={async () => { await playHaptic(); changeResizeMode(option.value as PlayerResizeMode); }}
                                     >
                                         <Text style={[
                                             styles.scaleOptionText,
@@ -875,30 +893,30 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                                 ))}
                             </View>
 
-                            {availableTextTracks.length > 0 && (
+                            {subtitles.length > 0 && (
                                 <>
                                     <Text style={styles.settingsTitle}>Subtitles</Text>
                                     <View style={styles.subtitleOptions}>
                                         <TouchableOpacity
                                             style={[
                                                 styles.subtitleOption,
-                                                selectedSubtitle === null && styles.subtitleOptionSelected
+                                                selectedSubtitle === -1 && styles.subtitleOptionSelected
                                             ]}
-                                            onPress={async () => { await playHaptic(); setSelectedSubtitle(null); }}
+                                            onPress={async () => { await playHaptic(); setSelectedSubtitle(-1); }}
                                         >
                                             <Text style={styles.subtitleOptionText}>Off</Text>
                                         </TouchableOpacity>
-                                        {availableTextTracks.map((sub, index) => (
+                                        {subtitles.map((sub, index) => (
                                             <TouchableOpacity
                                                 key={index}
                                                 style={[
                                                     styles.subtitleOption,
-                                                    selectedSubtitle === sub.language && styles.subtitleOptionSelected
+                                                    selectedSubtitle === index && styles.subtitleOptionSelected
                                                 ]}
-                                                onPress={async () => { await playHaptic(); setSelectedSubtitle(sub.language); }}
+                                                onPress={async () => { await playHaptic(); setSelectedSubtitle(index); }}
                                             >
                                                 <Text style={styles.subtitleOptionText}>
-                                                    {sub.title || sub.language}
+                                                    {sub.label || sub.language}
                                                 </Text>
                                             </TouchableOpacity>
                                         ))}
@@ -906,21 +924,21 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                                 </>
                             )}
 
-                            {availableAudioTracks.length > 0 && (
+                            {audioTracks.length > 0 && (
                                 <>
                                     <Text style={styles.settingsTitle}>Audio Track</Text>
                                     <View style={styles.audioOptions}>
-                                        {availableAudioTracks.map((track, index) => (
+                                        {audioTracks.map((track, index) => (
                                             <TouchableOpacity
                                                 key={index}
                                                 style={[
                                                     styles.audioOption,
-                                                    selectedAudioTrack === index.toString() && styles.audioOptionSelected
+                                                    selectedAudioTrack === index && styles.audioOptionSelected
                                                 ]}
-                                                onPress={async () => { await playHaptic(); setSelectedAudioTrack(index.toString()); }}
+                                                onPress={async () => { await playHaptic(); setSelectedAudioTrack(index); }}
                                             >
                                                 <Text style={styles.audioOptionText}>
-                                                    {track.title || track.language || `Track ${index + 1}`}
+                                                    {track.label || track.language || `Track ${index + 1}`}
                                                 </Text>
                                             </TouchableOpacity>
                                         ))}
@@ -983,7 +1001,6 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: 'black',
     },
     video: {
         width: '100%',
