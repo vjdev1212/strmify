@@ -18,6 +18,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import Slider from '@react-native-community/slider';
 import * as Haptics from 'expo-haptics';
+import * as Brightness from 'expo-brightness';
 
 export interface Subtitle {
     language: string;
@@ -344,9 +345,10 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
         showControlsTemporarily();
     }, [showBrightnessSlider, showControlsTemporarily]);
 
-    const handleBrightnessChange = useCallback((value: number) => {
+    const handleBrightnessChange = useCallback(async (value: number) => {
         console.log('On Handle Brightness');
         setBrightness(value);
+        await Brightness.setBrightnessAsync(value)
         showControlsTemporarily();
     }, [showControlsTemporarily]);
 
@@ -496,8 +498,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                 <VLCPlayer
                     ref={playerRef}
                     style={[
-                        styles.video,
-                        { opacity: brightness }
+                        styles.video
                     ]}
                     source={{ uri: videoUrl }}
                     autoplay={autoPlay}
@@ -818,7 +819,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                             <Ionicons name="sunny-outline" size={20} color="white" />
                             <Slider
                                 style={styles.brightnessSlider}
-                                minimumValue={0.2}
+                                minimumValue={0.25}
                                 maximumValue={1.0}
                                 value={brightness}
                                 onValueChange={handleBrightnessChange}
@@ -1000,7 +1001,6 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: 'black',
     },
     video: {
         width: '100%',
