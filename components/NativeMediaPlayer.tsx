@@ -60,17 +60,18 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
     autoPlay = true,
     artwork,
 }) => {
-    const playerRef = useRef<any>(null);
+    const playerRef = useRef<VLCPlayer>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
     const [showControls, setShowControls] = useState(true);
     const [isBuffering, setIsBuffering] = useState(true);
-    const [selectedSubtitle, setSelectedSubtitle] = useState<number>(-1);
-    const [selectedAudioTrack, setSelectedAudioTrack] = useState<number>(-1);
+    const [selectedSubtitle, setSelectedSubtitle] = useState<number>(0);
+    const [selectedAudioTrack, setSelectedAudioTrack] = useState<number>(0);
     const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
     const [volume, setVolume] = useState(70);
     const [isMuted, setIsMuted] = useState(false);
+    const [isPaused, setIsPaused] = useState(false);
     const [showVolumeSlider, setShowVolumeSlider] = useState(false);
     const [showChapters, setShowChapters] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
@@ -86,7 +87,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
     const [error, setError] = useState<string | null>(null);
 
     // VLC resize mode options
-    const resizeModeOptions = ['none', 'contain', 'cover', 'stretch'];
+    const resizeModeOptions = ["fill", "contain", "cover", "none", "scale-down"];
 
     // Animated values
     const controlsOpacity = useRef(new Animated.Value(1)).current;
@@ -129,8 +130,21 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
         };
     }, []);
 
-    const onOpen = useCallback(() => {
-        console.log('VLC Player opened');
+    // const onOpen = useCallback(() => {
+    //     console.log('VLC Player opened');
+    //     setIsBuffering(false);
+    //     setIsReady(true);
+    //     setError(null);
+
+    //     Animated.timing(bufferOpacity, {
+    //         toValue: 0,
+    //         duration: 200,
+    //         useNativeDriver: true,
+    //     }).start();
+    // }, [bufferOpacity]);
+
+    const onLoadStart = useCallback(() => {
+        console.log('VLC Player load start');
         setIsBuffering(false);
         setIsReady(true);
         setError(null);
@@ -142,18 +156,12 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
         }).start();
     }, [bufferOpacity]);
 
-    const onLoadStart = useCallback(() => {
-        console.log('VLC Player load start');
-        setIsBuffering(true);
-        setIsReady(false);
-    }, []);
-
     const onProgress = useCallback((data: any) => {
         if (isDragging) return;
 
         const { currentTime: current, duration: dur } = data;
         setCurrentTime(current / 1000); // VLC returns milliseconds
-        
+
         if (duration === 0 && dur > 0) {
             setDuration(dur / 1000); // VLC returns milliseconds
         }
@@ -166,7 +174,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
 
     const onBuffering = useCallback((data: any) => {
         const { isBuffering: buffering } = data;
-        
+
         if (buffering && isReady) {
             setIsBuffering(true);
             Animated.timing(bufferOpacity, {
@@ -200,20 +208,20 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
     const onError = useCallback((error: any) => {
         console.log('VLC Player error:', error);
         let errorMessage = "Failed to load video.";
-        
+
         if (error?.error) {
             errorMessage += ` ${error.error}`;
         }
-        
+
         // Check for .mkv file format issue
         if (videoUrl.toLowerCase().includes('.mkv')) {
             errorMessage += " Note: Some MKV files may have compatibility issues.";
         }
-        
+
         setError(errorMessage);
         setIsBuffering(false);
         setIsReady(false);
-        
+
         // Show native alert with detailed error
         Alert.alert("Video Error", errorMessage);
     }, [videoUrl]);
@@ -257,13 +265,14 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
         if (!isReady || !playerRef.current) return;
 
         await playHaptic();
-        
+
         if (isPlaying) {
-            playerRef.current.pause();
+            setIsPaused(true);
         } else {
             playerRef.current.resume();
+            setIsPaused(false);
         }
-        
+
         showControlsTemporarily();
     }, [isPlaying, isReady, showControlsTemporarily]);
 
@@ -303,7 +312,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
 
         const clampedTime = Math.max(0, Math.min(duration, seconds));
         const seekTimeMs = clampedTime * 1000; // Convert to milliseconds for VLC
-        
+
         playerRef.current.seek(seekTimeMs);
         setCurrentTime(clampedTime);
         showControlsTemporarily();
@@ -336,7 +345,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
         await playHaptic();
         const newMutedState = !isMuted;
         setIsMuted(newMutedState);
-        
+
         showControlsTemporarily();
     }, [isMuted, showControlsTemporarily]);
 
@@ -352,16 +361,16 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
 
     // Fixed volume handling
     const handleVolumeChange = useCallback((value: number) => {
-        const newVolume = Math.round(value * 100);
+        const newVolume = Math.round(value);
         setVolume(newVolume);
-        
+
         // Auto-mute/unmute based on volume
         if (newVolume === 0) {
             setIsMuted(true);
         } else if (isMuted && newVolume > 0) {
             setIsMuted(false);
         }
-        
+
         showControlsTemporarily();
     }, [isMuted, showControlsTemporarily]);
 
@@ -385,11 +394,6 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
     const changePlaybackSpeed = useCallback(async (speed: number) => {
         await playHaptic();
         setPlaybackSpeed(speed);
-        
-        if (playerRef.current) {
-            playerRef.current.setPlaybackRate(speed);
-        }
-        
         showControlsTemporarily();
     }, [showControlsTemporarily]);
 
@@ -467,7 +471,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
     const sliderValue = isDragging ? dragPosition : (duration > 0 ? currentTime / duration : 0);
 
     // Calculate volume for display
-    const displayVolume = isMuted ? 0 : volume / 100;
+    const displayVolume = isMuted ? 0 : Math.round(volume);
 
     return (
         <View style={styles.container}>
@@ -480,15 +484,15 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                     ]}
                     source={{ uri: videoUrl }}
                     autoplay={autoPlay}
-                    autoAspectRatio={false}
+                    autoAspectRatio={true}
                     resizeMode={resizeMode}
-                    volume={isMuted ? 0 : volume}
-                    paused={!autoPlay}                    
-                    //onOpen={onOpen}
-                    onLoad={onLoadStart}
-                    onProgress={onProgress}
-                    onBuffering={onBuffering}
+                    rate={playbackSpeed}
+                    muted={isMuted}
+                    volume={isMuted ? 0 : Math.round(volume)}
                     onPlaying={onPlaying}
+                    onProgress={onProgress}
+                    onLoad={onLoadStart}
+                    onBuffering={onBuffering}
                     onPaused={onPaused}
                     onStopped={onStopped}
                     onError={onError}
@@ -604,7 +608,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                                 onPress={toggleMute}
                             >
                                 <Ionicons
-                                    name={isMuted || displayVolume === 0 ? "volume-mute" : displayVolume < 0.5 ? "volume-low" : "volume-high"}
+                                    name={isMuted || displayVolume === 0 ? "volume-mute" : displayVolume < 50 ? "volume-low" : "volume-high"}
                                     size={24}
                                     color="white"
                                 />
@@ -766,14 +770,14 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                             <Slider
                                 style={styles.volumeSlider}
                                 minimumValue={0}
-                                maximumValue={1}
+                                maximumValue={100}
                                 value={displayVolume}
                                 onValueChange={handleVolumeChange}
                                 minimumTrackTintColor="#007AFF"
                                 maximumTrackTintColor="rgba(255,255,255,0.3)"
                             />
                             <Ionicons name="volume-high" size={20} color="white" />
-                            <Text style={styles.volumePercentage}>{Math.round(displayVolume * 100)}%</Text>
+                            <Text style={styles.volumePercentage}>{displayVolume}%</Text>
                         </View>
                     </TouchableOpacity>
                 </TouchableOpacity>
