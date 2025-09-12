@@ -209,7 +209,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                     duration: 200,
                     useNativeDriver: true,
                 }).start();
-            }, 100);
+            }, 600);
         } else {
             setShowBufferingLoader(false);
             Animated.timing(bufferOpacity, {
@@ -616,7 +616,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                 </View>
             )}
 
-            Show artwork during loading and before first play
+            {/* Show artwork during loading and before first play */}
             {artwork && !hasStartedPlaying && !error && (
                 <View style={styles.artworkContainer}>
                     <Image
@@ -629,7 +629,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
             )}
 
             {/* Loading indicator - show during initial loading and delayed buffering */}
-            {(!hasStartedPlaying || showBufferingLoader) && !error && (
+            {!error && (
                 <Animated.View
                     style={[
                         styles.bufferingContainer,
