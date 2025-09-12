@@ -957,7 +957,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                         onPress={(e) => e.stopPropagation()}
                     >
                         <Text style={styles.panelTitle}>Subtitles</Text>
-                        <ScrollView style={styles.settingsContent}>
+                        <ScrollView style={styles.settingsContent} showsVerticalScrollIndicator={false}>
                             {availableTextTracks.map((sub) => (
                                 <TouchableOpacity
                                     key={sub.id}
@@ -993,7 +993,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                         onPress={(e) => e.stopPropagation()}
                     >
                         <Text style={styles.panelTitle}>Audio Track</Text>
-                        <ScrollView style={styles.settingsContent}>
+                        <ScrollView style={styles.settingsContent} showsVerticalScrollIndicator={false}>
                             {availableAudioTracks.map((track) => (
                                 <TouchableOpacity
                                     key={track.id}
@@ -1255,7 +1255,7 @@ const styles = StyleSheet.create({
         minWidth: 320,
         maxWidth: '85%',
         maxHeight: '70%',
-        borderWidth: 1,
+        borderWidth: StyleSheet.hairlineWidth,
         borderColor: 'rgba(255, 255, 255, 0.1)',
         shadowColor: '#000',
         shadowOffset: {
@@ -1285,7 +1285,7 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         borderRadius: 12,
         marginBottom: 8,
-        borderWidth: 1,
+        borderWidth: StyleSheet.hairlineWidth,
         borderColor: 'rgba(255, 255, 255, 0.1)',
     },
     settingOptionSelected: {
