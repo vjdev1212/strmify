@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import {
     View,
     Text,
@@ -41,24 +41,14 @@ export interface Chapter {
 interface MediaPlayerProps {
     videoUrl: string;
     title: string;
-    subtitle?: string;
-    subtitles?: Subtitle[];
-    audioTracks?: AudioTrack[];
-    chapters?: Chapter[];
     onBack: () => void;
-    autoPlay?: boolean;
     artwork?: string;
 }
 
 export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
     videoUrl,
     title,
-    subtitle,
-    subtitles = [],
-    audioTracks = [],
-    chapters = [],
     onBack,
-    autoPlay = true,
     artwork,
 }) => {
     const playerRef = useRef<VLCPlayer>(null);
@@ -96,7 +86,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
         "cover",
         "none"
     ];
-    
+
     // Animated values
     const controlsOpacity = useRef(new Animated.Value(1)).current;
     const progressBarValue = useRef(new Animated.Value(0)).current;
@@ -135,9 +125,9 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
             }
 
             // Clear all timers
-            [hideControlsTimer.current, resizeModeLabelTimer.current, 
-             bufferingTimer.current, controlsDebounceTimer.current, 
-             progressDebounceTimer.current].forEach(timer => {
+            [hideControlsTimer.current, resizeModeLabelTimer.current,
+            bufferingTimer.current, controlsDebounceTimer.current,
+            progressDebounceTimer.current].forEach(timer => {
                 if (timer) clearTimeout(timer);
             });
         };
@@ -155,12 +145,12 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
         console.log('VLC Player loaded:', data);
         setIsReady(true);
         setError(null);
-        
+        console.log(data);
         // Extract available tracks from VLC player
         if (data?.textTracks) {
             setAvailableTextTracks(data.textTracks);
         }
-        
+
         if (data?.audioTracks) {
             setAvailableAudioTracks(data.audioTracks);
         }
@@ -202,7 +192,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
     const onBuffering = useCallback((data: any) => {
         console.log('On Buffering:', data);
         const { isBuffering: buffering } = data;
-        
+
         setIsBuffering(buffering);
 
         // Clear existing buffering timer
@@ -237,7 +227,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
         setIsBuffering(false);
         setHasStartedPlaying(true);
         setShowBufferingLoader(false);
-        
+
         // Hide buffering overlay
         Animated.timing(bufferOpacity, {
             toValue: 0,
@@ -468,10 +458,6 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
         return `${minutes}:${secs.toString().padStart(2, '0')}`;
     }, []);
 
-    const getCurrentChapter = useCallback(() => {
-        return chapters.findLast(chapter => chapter.start <= currentTime);
-    }, [chapters, currentTime]);
-
     const changePlaybackSpeed = useCallback(async (speed: number) => {
         console.log('On Change Playback speed');
         await playHaptic();
@@ -549,26 +535,11 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
         }
     }, [resizeMode]);
 
-    const currentChapter = getCurrentChapter();
     const displayTime = isDragging ? dragPosition * duration : currentTime;
     const sliderValue = isDragging ? dragPosition : (duration > 0 ? currentTime / duration : 0);
 
     // Calculate volume for display
     const displayVolume = isMuted ? 0 : Math.round(volume);
-
-    // Combined available subtitles (from props + video)
-    const allSubtitles = [...subtitles, ...availableTextTracks.map((track, index) => ({
-        language: track.language || 'Unknown',
-        label: track.title || track.language || `Track ${index + 1}`,
-        url: '' // VLC handles internally
-    }))];
-
-    // Combined available audio tracks (from props + video)
-    const allAudioTracks = [...audioTracks, ...availableAudioTracks.map((track, index) => ({
-        id: track.id || index.toString(),
-        language: track.language || 'Unknown',
-        label: track.title || track.language || `Track ${index + 1}`
-    }))];
 
     return (
         <View style={styles.container}>
@@ -577,7 +548,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                     ref={playerRef}
                     style={styles.video}
                     source={{ uri: videoUrl }}
-                    autoplay={autoPlay}
+                    autoplay={true}
                     autoAspectRatio={false} // Let resizeMode handle aspect ratio
                     resizeMode={resizeMode}
                     rate={playbackSpeed}
@@ -690,16 +661,6 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                             <Text style={styles.titleText} numberOfLines={1}>
                                 {title}
                             </Text>
-                            {subtitle && (
-                                <Text style={styles.subtitleText} numberOfLines={1}>
-                                    {subtitle}
-                                </Text>
-                            )}
-                            {currentChapter && (
-                                <Text style={styles.chapterText} numberOfLines={1}>
-                                    {currentChapter.title}
-                                </Text>
-                            )}
                         </View>
 
                         <View style={styles.topRightControls}>
@@ -749,21 +710,6 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                                     color="white"
                                 />
                             </TouchableOpacity>
-
-                            {chapters.length > 0 && (
-                                <TouchableOpacity
-                                    style={styles.controlButton}
-                                    onPress={async () => {
-                                        await playHaptic();
-                                        setShowChapters(!showChapters);
-                                        setShowSettings(false);
-                                        setShowVolumeSlider(false);
-                                        setShowBrightnessSlider(false);
-                                    }}
-                                >
-                                    <MaterialIcons name="list" size={24} color="white" />
-                                </TouchableOpacity>
-                            )}
 
                             <TouchableOpacity
                                 style={styles.controlButton}
@@ -974,7 +920,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                             </View>
 
                             {/* Updated subtitles section with combined tracks */}
-                            {allSubtitles.length > 0 && (
+                            {availableTextTracks.length > 0 && (
                                 <>
                                     <Text style={styles.settingsTitle}>Subtitles</Text>
                                     <View style={styles.subtitleOptions}>
@@ -987,7 +933,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                                         >
                                             <Text style={styles.subtitleOptionText}>Off</Text>
                                         </TouchableOpacity>
-                                        {allSubtitles.map((sub, index) => (
+                                        {availableTextTracks.map((sub, index) => (
                                             <TouchableOpacity
                                                 key={index}
                                                 style={[
@@ -997,7 +943,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                                                 onPress={async () => { await playHaptic(); setSelectedSubtitle(index); }}
                                             >
                                                 <Text style={styles.subtitleOptionText}>
-                                                    {sub.label || sub.language}
+                                                    {sub.name || sub.id}
                                                 </Text>
                                             </TouchableOpacity>
                                         ))}
@@ -1006,11 +952,11 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                             )}
 
                             {/* Updated audio tracks section with combined tracks */}
-                            {allAudioTracks.length > 0 && (
+                            {availableAudioTracks.length > 0 && (
                                 <>
                                     <Text style={styles.settingsTitle}>Audio Track</Text>
                                     <View style={styles.audioOptions}>
-                                        {allAudioTracks.map((track, index) => (
+                                        {availableAudioTracks.map((track, index) => (
                                             <TouchableOpacity
                                                 key={index}
                                                 style={[
@@ -1020,58 +966,13 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                                                 onPress={async () => { await playHaptic(); setSelectedAudioTrack(index); }}
                                             >
                                                 <Text style={styles.audioOptionText}>
-                                                    {track.label || track.language || `Track ${index + 1}`}
+                                                    {track.name || `Track ${index + 1}`}
                                                 </Text>
                                             </TouchableOpacity>
                                         ))}
                                     </View>
                                 </>
                             )}
-                        </ScrollView>
-                    </TouchableOpacity>
-                </TouchableOpacity>
-            )}
-
-            {/* Chapters panel */}
-            {showChapters && chapters.length > 0 && (
-                <TouchableOpacity
-                    style={styles.chaptersOverlay}
-                    activeOpacity={1}
-                    onPress={() => setShowChapters(false)}
-                >
-                    <TouchableOpacity
-                        style={styles.chaptersPanel}
-                        activeOpacity={1}
-                        onPress={(e) => e.stopPropagation()}
-                    >
-                        <ScrollView style={styles.chaptersContent}>
-                            <Text style={styles.chaptersTitle}>Chapters</Text>
-                            {chapters.map((chapter, index) => (
-                                <TouchableOpacity
-                                    key={index}
-                                    style={[
-                                        styles.chapterItem,
-                                        currentChapter?.title === chapter.title && styles.chapterItemActive
-                                    ]}
-                                    onPress={async () => {
-                                        await playHaptic();
-                                        seekTo(chapter.start);
-                                        setShowChapters(false);
-                                    }}
-                                >
-                                    {chapter.thumbnail && (
-                                        <Image
-                                            source={{ uri: chapter.thumbnail }}
-                                            style={styles.chapterThumbnail}
-                                            resizeMode="cover"
-                                        />
-                                    )}
-                                    <View style={styles.chapterInfo}>
-                                        <Text style={styles.chapterTitle}>{chapter.title}</Text>
-                                        <Text style={styles.chapterTime}>{formatTime(chapter.start)}</Text>
-                                    </View>
-                                </TouchableOpacity>
-                            ))}
                         </ScrollView>
                     </TouchableOpacity>
                 </TouchableOpacity>

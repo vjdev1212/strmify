@@ -24,11 +24,7 @@ const MediaPlayerScreen: React.FC = () => {
     <Player
       videoUrl={videoUrl as string}
       title={title as string}
-      subtitle={title as string}
-      subtitles={subtitles}
-      chapters={chapters}
       onBack={handleBack}
-      autoPlay={true}
       artwork={artwork as string}
     />
   );
