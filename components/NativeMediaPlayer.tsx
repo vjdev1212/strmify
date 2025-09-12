@@ -652,7 +652,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
             )}
 
             {/* Loading indicator - show during initial loading and delayed buffering */}
-            {!error && (
+            {!hasStartedPlaying && !error && (
                 <Animated.View
                     style={[
                         styles.bufferingContainer,
