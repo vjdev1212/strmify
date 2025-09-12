@@ -602,6 +602,17 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
 
             {error && (
                 <View style={styles.errorContainer}>
+                    {/* Add back button to error screen */}
+                    <TouchableOpacity
+                        style={styles.errorBackButton}
+                        onPress={async () => {
+                            await playHaptic();
+                            onBack();
+                        }}
+                    >
+                        <Ionicons name="chevron-back" size={28} color="white" />
+                    </TouchableOpacity>
+
                     <MaterialIcons name="error-outline" size={64} color="#ff6b6b" />
                     <Text style={styles.errorTitle}>Playback Error</Text>
                     <Text style={styles.errorText}>{error}</Text>
@@ -784,7 +795,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                     </LinearGradient>
 
                     {/* Center controls - Hidden during buffering */}
-                    {!isBuffering && (
+                    {!isBuffering && !showSubtitleSettings && !showAudioSettings && !showSpeedSettings && !showVolumeSlider && !showBrightnessSlider && (
                         <View style={styles.centerControls}>
                             <TouchableOpacity
                                 style={[styles.skipButton, !isReady && styles.disabledButton]}
@@ -825,35 +836,37 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                     )}
 
                     {/* Bottom controls */}
-                    <LinearGradient
-                        colors={['transparent', 'rgba(0,0,0,0.8)']}
-                        style={styles.bottomControls}
-                    >
-                        <View style={styles.timeContainer}>
-                            <Text style={styles.timeText}>
-                                {formatTime(displayTime)}
-                            </Text>
-                            <Text style={styles.timeText}>
-                                {formatTime(duration)}
-                            </Text>
-                        </View>
+                    {!showSubtitleSettings && !showAudioSettings && !showSpeedSettings && !showVolumeSlider && !showBrightnessSlider && (
+                        <LinearGradient
+                            colors={['transparent', 'rgba(0,0,0,0.8)']}
+                            style={styles.bottomControls}
+                        >
+                            <View style={styles.timeContainer}>
+                                <Text style={styles.timeText}>
+                                    {formatTime(displayTime)}
+                                </Text>
+                                <Text style={styles.timeText}>
+                                    {formatTime(duration)}
+                                </Text>
+                            </View>
 
-                        {/* Progress bar with proper slider */}
-                        <View style={styles.progressContainerWithMargin}>
-                            <Slider
-                                style={styles.progressSlider}
-                                minimumValue={0}
-                                maximumValue={1}
-                                value={sliderValue}
-                                onValueChange={handleSliderValueChange}
-                                onSlidingStart={handleSliderSlidingStart}
-                                onSlidingComplete={handleSliderSlidingComplete}
-                                minimumTrackTintColor="#007AFF"
-                                maximumTrackTintColor="rgba(255,255,255,0.3)"
-                                disabled={!isReady || duration <= 0}
-                            />
-                        </View>
-                    </LinearGradient>
+                            {/* Progress bar with proper slider */}
+                            <View style={styles.progressContainerWithMargin}>
+                                <Slider
+                                    style={styles.progressSlider}
+                                    minimumValue={0}
+                                    maximumValue={1}
+                                    value={sliderValue}
+                                    onValueChange={handleSliderValueChange}
+                                    onSlidingStart={handleSliderSlidingStart}
+                                    onSlidingComplete={handleSliderSlidingComplete}
+                                    minimumTrackTintColor="#007AFF"
+                                    maximumTrackTintColor="rgba(255,255,255,0.3)"
+                                    disabled={!isReady || duration <= 0}
+                                />
+                            </View>
+                        </LinearGradient>
+                    )}
                 </Animated.View>
             )}
 
@@ -1213,35 +1226,33 @@ const styles = StyleSheet.create({
         bottom: 0,
         backgroundColor: 'rgba(0, 0, 0, 0.3)',
     },
-    // Glassmorphism styles
     glassOverlay: {
         position: 'absolute',
         top: 0,
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.3)',
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
         justifyContent: 'center',
         alignItems: 'center',
     },
     glassPanel: {
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        borderRadius: 20,
+        backgroundColor: 'rgba(40, 40, 40, 0.95)',
+        borderRadius: 12,
         padding: 24,
         minWidth: 320,
         maxWidth: '85%',
         maxHeight: '70%',
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.2)',
-        backdropFilter: 'blur(20px)',
+        borderColor: 'rgba(255, 255, 255, 0.1)',
         shadowColor: '#000',
         shadowOffset: {
             width: 0,
-            height: 10,
+            height: 4,
         },
         shadowOpacity: 0.3,
-        shadowRadius: 20,
-        elevation: 15,
+        shadowRadius: 8,
+        elevation: 8,
     },
     panelTitle: {
         color: 'white',
@@ -1336,5 +1347,12 @@ const styles = StyleSheet.create({
     speedOptionTextSelected: {
         fontWeight: '700',
         color: '#007AFF',
+    },
+    errorBackButton: {
+        position: 'absolute',
+        top: 40,
+        left: 20,
+        padding: 8,
+        zIndex: 1,
     },
 });
