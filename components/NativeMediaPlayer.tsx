@@ -371,11 +371,10 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
         showControlsTemporarily();
     }, [resizeMode, showControlsTemporarily]);
 
-    const seekTo = useCallback((seconds: number) => {
-        console.log("On Seek");
+    const seekTo = useCallback((absoluteSeconds: number) => {
         if (!isReady || duration <= 0 || !playerRef.current) return;
 
-        const clampedTime = Math.max(0, Math.min(duration, seconds));
+        const clampedTime = Math.max(0, Math.min(duration, absoluteSeconds));
         const position = clampedTime / duration;
 
         playerRef.current.seek(position);
@@ -383,12 +382,12 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
         showControlsTemporarily();
     }, [duration, showControlsTemporarily, isReady]);
 
-    const skipTime = useCallback(async (seconds: number) => {
-        console.log('On SkipTime');
+    const skipTime = useCallback(async (offsetSeconds: number) => {
         if (!isReady || duration <= 0) return;
 
         await playHaptic();
-        const newTime = Math.max(0, Math.min(duration, currentTime + seconds));
+
+        const newTime = currentTime + offsetSeconds;
         seekTo(newTime);
     }, [currentTime, duration, seekTo, isReady]);
 
@@ -467,25 +466,12 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
         showControlsTemporarily();
     }, [showControlsTemporarily]);
 
-    const changeResizeMode = useCallback(async (mode: PlayerResizeMode) => {
-        console.log('On Change Resize Mode');
-        await playHaptic();
-        setResizeMode(mode);
-        showControlsTemporarily();
-    }, [showControlsTemporarily]);
-
     // Subtitle selection handler
     const selectSubtitle = useCallback(async (index: number) => {
         console.log('On Select Subtitle:', index);
         await playHaptic();
         setSelectedSubtitle(index);
-        
-        // Apply subtitle to VLC player
-        if (playerRef.current && index >= 0) {
-            // VLC player will pick up the new textTrack from props
-            console.log('Setting subtitle track:', index);
-        }
-        
+
         showControlsTemporarily();
     }, [showControlsTemporarily]);
 
@@ -607,13 +593,13 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                     style={styles.video}
                     source={{ uri: videoUrl }}
                     autoplay={true}
-                    autoAspectRatio={false} // Let resizeMode handle aspect ratio
+                    autoAspectRatio={false}
                     resizeMode={resizeMode}
                     rate={playbackSpeed}
                     muted={isMuted}
                     volume={isMuted ? 0 : Math.round(volume)}
                     audioTrack={selectedAudioTrack}
-                    textTrack={selectedSubtitle >= 0 ? selectedSubtitle : -1}
+                    textTrack={selectedSubtitle}
                     paused={isPaused}
                     onPlaying={onPlaying}
                     onProgress={onProgress}
@@ -642,7 +628,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
             )}
 
             {/* Show artwork during loading and before first play */}
-            {artwork && (isBuffering && !hasStartedPlaying) && !error && (
+            {artwork && !hasStartedPlaying && !error && (
                 <View style={styles.artworkContainer}>
                     <Image
                         source={{ uri: artwork }}
@@ -654,7 +640,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
             )}
 
             {/* Loading indicator - show during initial loading and delayed buffering */}
-            {(isBuffering && (!hasStartedPlaying || showBufferingLoader)) && !error && (
+            {!hasStartedPlaying && !error && (
                 <Animated.View
                     style={[
                         styles.bufferingContainer,
@@ -970,19 +956,19 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                                     <Ionicons name="checkmark" size={20} color="#007AFF" />
                                 )}
                             </TouchableOpacity>
-                            {availableTextTracks.map((sub, index) => (
+                            {availableTextTracks.map((sub) => (
                                 <TouchableOpacity
-                                    key={index}
+                                    key={sub.id}
                                     style={[
                                         styles.settingOption,
-                                        selectedSubtitle === index && styles.settingOptionSelected
+                                        selectedSubtitle === sub.id && styles.settingOptionSelected
                                     ]}
-                                    onPress={() => selectSubtitle(index)}
+                                    onPress={() => selectSubtitle(sub.id)}
                                 >
                                     <Text style={styles.settingOptionText}>
-                                        {sub.name || `Track ${index + 1}`}
+                                        {sub.name}
                                     </Text>
-                                    {selectedSubtitle === index && (
+                                    {selectedSubtitle === sub.id && (
                                         <Ionicons name="checkmark" size={20} color="#007AFF" />
                                     )}
                                 </TouchableOpacity>
@@ -1006,19 +992,19 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                     >
                         <Text style={styles.panelTitle}>Audio Track</Text>
                         <ScrollView style={styles.settingsContent}>
-                            {availableAudioTracks.map((track, index) => (
+                            {availableAudioTracks.map((track) => (
                                 <TouchableOpacity
-                                    key={index}
+                                    key={track.id}
                                     style={[
                                         styles.settingOption,
-                                        selectedAudioTrack === index && styles.settingOptionSelected
+                                        selectedAudioTrack === -1 && styles.settingOptionSelected
                                     ]}
-                                    onPress={() => selectAudioTrack(index)}
+                                    onPress={() => selectAudioTrack(track.id)}
                                 >
                                     <Text style={styles.settingOptionText}>
-                                        {track.name || `Track ${index + 1}`}
+                                        {track.name}
                                     </Text>
-                                    {selectedAudioTrack === index && (
+                                    {selectedAudioTrack === track.id && (
                                         <Ionicons name="checkmark" size={20} color="#007AFF" />
                                     )}
                                 </TouchableOpacity>
