@@ -146,6 +146,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
     const onLoad = useCallback((data: any) => {
         console.log('VLC Player loaded:', data);
         setIsReady(true);
+        setHasStartedPlaying(true);
         setError(null);
         console.log(data);
         // Extract available tracks from VLC player
@@ -191,46 +192,39 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
         }, 100); // 100ms debounce
     }, [isDragging, duration]);
 
-    const onBuffering = useCallback(
-        debounce((data: any) => {
-            console.log("On Buffering:", data);
-            const { isBuffering: buffering } = data;
+    const onBuffering = useCallback((data: any) => {
+        const { isBuffering: buffering } = data;
 
-            setIsBuffering(buffering);
+        setIsBuffering(buffering);
 
-            // Clear existing buffering timer
-            if (bufferingTimer.current) {
-                clearTimeout(bufferingTimer.current);
-            }
+        if (bufferingTimer.current) {
+            clearTimeout(bufferingTimer.current);
+        }
 
-            if (buffering && hasStartedPlaying) {
-                // Show loader after 1 second of buffering
-                bufferingTimer.current = setTimeout(() => {
-                    setShowBufferingLoader(true);
-                    Animated.timing(bufferOpacity, {
-                        toValue: 1,
-                        duration: 200,
-                        useNativeDriver: true,
-                    }).start();
-                }, 1000);
-            } else {
-                setShowBufferingLoader(false);
+        if (buffering && hasStartedPlaying) {
+            bufferingTimer.current = setTimeout(() => {
+                setShowBufferingLoader(true);
                 Animated.timing(bufferOpacity, {
-                    toValue: 0,
+                    toValue: 1,
                     duration: 200,
                     useNativeDriver: true,
                 }).start();
-            }
-        }, 300), // ⬅️ debounce delay (ms)
-        [bufferOpacity, hasStartedPlaying]
-    );
+            }, 100);
+        } else {
+            setShowBufferingLoader(false);
+            Animated.timing(bufferOpacity, {
+                toValue: 0,
+                duration: 200,
+                useNativeDriver: true,
+            }).start();
+        }
+    }, [bufferOpacity, hasStartedPlaying]);
 
     const onPlaying = useCallback(() => {
         console.log('On Playing');
         setIsPlaying(true);
         setIsPaused(false);
         setIsBuffering(false);
-        setHasStartedPlaying(true);
         setShowBufferingLoader(false);
 
         // Hide buffering overlay
@@ -259,11 +253,6 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
 
         if (error?.error) {
             errorMessage += ` ${error.error}`;
-        }
-
-        // Check for .mkv file format issue
-        if (videoUrl.toLowerCase().includes('.mkv')) {
-            errorMessage += " Note: Some MKV files may have compatibility issues.";
         }
 
         setError(errorMessage);
@@ -627,7 +616,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                 </View>
             )}
 
-            {/* Show artwork during loading and before first play */}
+            Show artwork during loading and before first play
             {artwork && !hasStartedPlaying && !error && (
                 <View style={styles.artworkContainer}>
                     <Image
@@ -640,7 +629,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
             )}
 
             {/* Loading indicator - show during initial loading and delayed buffering */}
-            {!hasStartedPlaying && !error && (
+            {(!hasStartedPlaying || showBufferingLoader) && !error && (
                 <Animated.View
                     style={[
                         styles.bufferingContainer,
@@ -943,7 +932,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                         onPress={(e) => e.stopPropagation()}
                     >
                         <Text style={styles.panelTitle}>Subtitles</Text>
-                        <ScrollView style={styles.settingsContent}>                            
+                        <ScrollView style={styles.settingsContent}>
                             {availableTextTracks.map((sub) => (
                                 <TouchableOpacity
                                     key={sub.id}
