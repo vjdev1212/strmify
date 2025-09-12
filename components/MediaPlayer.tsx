@@ -55,12 +55,7 @@ interface MediaPlayerProps {
 export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     videoUrl,
     title,
-    subtitle,
-    subtitles = [],
-    audioTracks = [],
-    chapters = [],
     onBack,
-    autoPlay = true,
     artwork,
 }) => {
     const videoRef = useRef<VideoView>(null);
@@ -229,9 +224,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                     useNativeDriver: true,
                 }).start();
 
-                if (autoPlay) {
-                    player.play();
-                }
+                player.play();
                 break;
 
             case "error":
@@ -240,7 +233,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 setIsReady(false);
                 break;
         }
-    }, [statusChange, autoPlay, player, bufferOpacity, isReady]);
+    }, [statusChange, player, bufferOpacity, isReady]);
 
     const showControlsTemporarily = useCallback(() => {
         setShowControls(true);
@@ -405,10 +398,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         return `${minutes}:${secs.toString().padStart(2, '0')}`;
     }, []);
 
-    const getCurrentChapter = useCallback(() => {
-        return chapters.findLast(chapter => chapter.start <= currentTime);
-    }, [chapters, currentTime]);
-
     const changePlaybackSpeed = useCallback(async (speed: number) => {
         await playHaptic();
         setPlaybackSpeed(speed);
@@ -482,7 +471,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         }
     }, [contentFit]);
 
-    const currentChapter = getCurrentChapter();
     const displayTime = isDragging ? dragPosition * duration : currentTime;
     const sliderValue = isDragging ? dragPosition : (duration > 0 ? currentTime / duration : 0);
 
@@ -574,17 +562,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                         <View style={styles.titleContainer}>
                             <Text style={styles.titleText} numberOfLines={1}>
                                 {title}
-                            </Text>
-                            {subtitle && (
-                                <Text style={styles.subtitleText} numberOfLines={1}>
-                                    {subtitle}
-                                </Text>
-                            )}
-                            {currentChapter && (
-                                <Text style={styles.chapterText} numberOfLines={1}>
-                                    {currentChapter.title}
-                                </Text>
-                            )}
+                            </Text>                            
                         </View>
 
                         <View style={styles.topRightControls}>
@@ -645,21 +623,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                     color="white"
                                 />
                             </TouchableOpacity>
-
-                            {chapters.length > 0 && (
-                                <TouchableOpacity
-                                    style={styles.controlButton}
-                                    onPress={async () => {
-                                        await playHaptic();
-                                        setShowChapters(!showChapters);
-                                        setShowSettings(false);
-                                        setShowVolumeSlider(false);
-                                    }}
-                                >
-                                    <MaterialIcons name="list" size={24} color="white" />
-                                </TouchableOpacity>
-                            )}
-
+                            
                             <TouchableOpacity
                                 style={styles.controlButton}
                                 onPress={async () => {
