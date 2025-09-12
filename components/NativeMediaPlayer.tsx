@@ -20,6 +20,7 @@ import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import Slider from '@react-native-community/slider';
 import * as Haptics from 'expo-haptics';
 import * as Brightness from 'expo-brightness';
+import ImmersiveMode from "react-native-immersive-mode";
 
 export interface Subtitle {
     language: string;
@@ -132,6 +133,17 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
             progressDebounceTimer.current].forEach(timer => {
                 if (timer) clearTimeout(timer);
             });
+        };
+    }, []);
+
+    useEffect(() => {
+        if (Platform.OS === "android") {
+            ImmersiveMode.fullLayout(true);
+        }
+        return () => {
+            if (Platform.OS === "android") {
+                ImmersiveMode.fullLayout(true);
+            }
         };
     }, []);
 
