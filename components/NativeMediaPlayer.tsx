@@ -86,6 +86,8 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
     const [availableTextTracks, setAvailableTextTracks] = useState<any[]>([]);
     const [availableAudioTracks, setAvailableAudioTracks] = useState<any[]>([]);
     const [error, setError] = useState<string | null>(null);
+    const [showBufferingLoader, setShowBufferingLoader] = useState(false);
+    const [hasStartedPlaying, setHasStartedPlaying] = useState(false);
 
     // VLC resize mode options
     const resizeModeOptions: PlayerResizeMode[] = [
@@ -94,6 +96,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
         "cover",
         "none"
     ];
+    
     // Animated values
     const controlsOpacity = useRef(new Animated.Value(1)).current;
     const progressBarValue = useRef(new Animated.Value(0)).current;
@@ -103,6 +106,11 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
     // Auto-hide controls timer
     const hideControlsTimer = useRef<any>(null);
     const resizeModeLabelTimer = useRef<any>(null);
+    const bufferingTimer = useRef<any>(null);
+
+    // Debounce refs for performance
+    const controlsDebounceTimer = useRef<any>(null);
+    const progressDebounceTimer = useRef<any>(null);
 
     useEffect(() => {
         const setupOrientation = async () => {
@@ -126,20 +134,40 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                 StatusBar.setHidden(false);
             }
 
-            if (hideControlsTimer.current) {
-                clearTimeout(hideControlsTimer.current);
-            }
-            if (resizeModeLabelTimer.current) {
-                clearTimeout(resizeModeLabelTimer.current);
-            }
+            // Clear all timers
+            [hideControlsTimer.current, resizeModeLabelTimer.current, 
+             bufferingTimer.current, controlsDebounceTimer.current, 
+             progressDebounceTimer.current].forEach(timer => {
+                if (timer) clearTimeout(timer);
+            });
         };
     }, []);
 
     const onLoadStart = useCallback(() => {
         console.log('VLC Player load start');
-        setIsBuffering(false);
+        setIsBuffering(true);
+        setIsReady(false);
+        setError(null);
+        setHasStartedPlaying(false);
+    }, []);
+
+    const onLoad = useCallback((data: any) => {
+        console.log('VLC Player loaded:', data);
         setIsReady(true);
         setError(null);
+        
+        // Extract available tracks from VLC player
+        if (data?.textTracks) {
+            setAvailableTextTracks(data.textTracks);
+        }
+        
+        if (data?.audioTracks) {
+            setAvailableAudioTracks(data.audioTracks);
+        }
+
+        if (data?.duration) {
+            setDuration(data.duration / 1000); // VLC returns milliseconds
+        }
 
         Animated.timing(bufferOpacity, {
             toValue: 0,
@@ -151,53 +179,83 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
     const onProgress = useCallback((data: any) => {
         if (isDragging) return;
 
-        const { currentTime: current, duration: dur } = data;
-        setCurrentTime(current / 1000); // VLC returns milliseconds
-
-        if (duration === 0 && dur > 0) {
-            setDuration(dur / 1000); // VLC returns milliseconds
+        // Debounce progress updates for better performance
+        if (progressDebounceTimer.current) {
+            clearTimeout(progressDebounceTimer.current);
         }
 
-        if (duration > 0) {
-            const progress = (current / 1000) / duration;
-            progressBarValue.setValue(progress);
-        }
+        progressDebounceTimer.current = setTimeout(() => {
+            const { currentTime: current, duration: dur } = data;
+            setCurrentTime(current / 1000); // VLC returns milliseconds
+
+            if (duration === 0 && dur > 0) {
+                setDuration(dur / 1000); // VLC returns milliseconds
+            }
+
+            if (duration > 0) {
+                const progress = (current / 1000) / duration;
+                progressBarValue.setValue(progress);
+            }
+        }, 100); // 100ms debounce
     }, [isDragging, duration]);
 
     const onBuffering = useCallback((data: any) => {
-        console.log('On Buffering');
+        console.log('On Buffering:', data);
         const { isBuffering: buffering } = data;
+        
+        setIsBuffering(buffering);
 
-        if (buffering && isReady) {
-            setIsBuffering(true);
-            Animated.timing(bufferOpacity, {
-                toValue: 1,
-                duration: 200,
-                useNativeDriver: true,
-            }).start();
-        } else if (!buffering) {
-            setIsBuffering(false);
+        // Clear existing buffering timer
+        if (bufferingTimer.current) {
+            clearTimeout(bufferingTimer.current);
+        }
+
+        if (buffering && hasStartedPlaying) {
+            // Show loader after 1 second of buffering
+            bufferingTimer.current = setTimeout(() => {
+                setShowBufferingLoader(true);
+                Animated.timing(bufferOpacity, {
+                    toValue: 1,
+                    duration: 200,
+                    useNativeDriver: true,
+                }).start();
+            }, 1000);
+        } else {
+            setShowBufferingLoader(false);
             Animated.timing(bufferOpacity, {
                 toValue: 0,
                 duration: 200,
                 useNativeDriver: true,
             }).start();
         }
-    }, [bufferOpacity, isReady]);
+    }, [bufferOpacity, hasStartedPlaying]);
 
     const onPlaying = useCallback(() => {
         console.log('On Playing');
         setIsPlaying(true);
-    }, []);
+        setIsPaused(false);
+        setIsBuffering(false);
+        setHasStartedPlaying(true);
+        setShowBufferingLoader(false);
+        
+        // Hide buffering overlay
+        Animated.timing(bufferOpacity, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+        }).start();
+    }, [bufferOpacity]);
 
     const onPaused = useCallback(() => {
         console.log('On Paused');
         setIsPlaying(false);
+        setIsPaused(true);
     }, []);
 
     const onStopped = useCallback(() => {
         console.log('On Stopped');
         setIsPlaying(false);
+        setIsPaused(false);
     }, []);
 
     const onError = useCallback((error: any) => {
@@ -216,35 +274,44 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
         setError(errorMessage);
         setIsBuffering(false);
         setIsReady(false);
+        setShowBufferingLoader(false);
 
         // Show native alert with detailed error
         Alert.alert("Video Error", errorMessage);
     }, [videoUrl]);
 
+    // Debounced controls show function for better performance
     const showControlsTemporarily = useCallback(() => {
-        setShowControls(true);
-
-        Animated.timing(controlsOpacity, {
-            toValue: 1,
-            duration: 200,
-            useNativeDriver: true,
-        }).start();
-
-        if (hideControlsTimer.current) {
-            clearTimeout(hideControlsTimer.current);
+        // Clear existing debounce timer
+        if (controlsDebounceTimer.current) {
+            clearTimeout(controlsDebounceTimer.current);
         }
 
-        hideControlsTimer.current = setTimeout(() => {
-            if (isPlaying && !showSettings && !showChapters && !showVolumeSlider && !showBrightnessSlider) {
-                Animated.timing(controlsOpacity, {
-                    toValue: 0,
-                    duration: 500,
-                    useNativeDriver: true,
-                }).start(() => {
-                    setShowControls(false);
-                });
+        controlsDebounceTimer.current = setTimeout(() => {
+            setShowControls(true);
+
+            Animated.timing(controlsOpacity, {
+                toValue: 1,
+                duration: 200,
+                useNativeDriver: true,
+            }).start();
+
+            if (hideControlsTimer.current) {
+                clearTimeout(hideControlsTimer.current);
             }
-        }, 1500);
+
+            hideControlsTimer.current = setTimeout(() => {
+                if (isPlaying && !showSettings && !showChapters && !showVolumeSlider && !showBrightnessSlider) {
+                    Animated.timing(controlsOpacity, {
+                        toValue: 0,
+                        duration: 500,
+                        useNativeDriver: true,
+                    }).start(() => {
+                        setShowControls(false);
+                    });
+                }
+            }, 3000); // Increased timeout for better UX
+        }, 50); // 50ms debounce for responsiveness
     }, [isPlaying, controlsOpacity, showSettings, showChapters, showVolumeSlider, showBrightnessSlider]);
 
     const playHaptic = async () => {
@@ -282,7 +349,12 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
         const nextMode = resizeModeOptions[nextIndex];
         setResizeMode(nextMode);
 
-        console.log('Resize Mode', resizeMode)
+        console.log('Resize Mode changed to:', nextMode);
+
+        // Force player to update by setting the resize mode
+        if (playerRef.current) {
+            // VLC Player will pick up the new resizeMode from props
+        }
 
         // Show the label briefly
         setShowResizeModeLabel(true);
@@ -304,27 +376,22 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
             }).start(() => {
                 setShowResizeModeLabel(false);
             });
-        }, 1000);
+        }, 1500);
 
         showControlsTemporarily();
     }, [resizeMode, showControlsTemporarily]);
 
     const seekTo = useCallback((seconds: number) => {
         console.log("On Seek");
-        const currentPauseStatus = isPaused;
-        setIsPaused(true);
         if (!isReady || duration <= 0 || !playerRef.current) return;
 
         const clampedTime = Math.max(0, Math.min(duration, seconds));
-
         const position = clampedTime / duration;
 
         playerRef.current.seek(position);
-        setIsPaused(currentPauseStatus)
         setCurrentTime(clampedTime);
         showControlsTemporarily();
     }, [duration, showControlsTemporarily, isReady]);
-
 
     const skipTime = useCallback(async (seconds: number) => {
         console.log('On SkipTime');
@@ -358,7 +425,6 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
         await playHaptic();
         const newMutedState = !isMuted;
         setIsMuted(newMutedState);
-
         showControlsTemporarily();
     }, [isMuted, showControlsTemporarily]);
 
@@ -410,7 +476,6 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
         console.log('On Change Playback speed');
         await playHaptic();
         setPlaybackSpeed(speed);
-
         showControlsTemporarily();
     }, [showControlsTemporarily]);
 
@@ -418,7 +483,6 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
         console.log('On Change Resize Mode');
         await playHaptic();
         setResizeMode(mode);
-
         showControlsTemporarily();
     }, [showControlsTemporarily]);
 
@@ -492,17 +556,29 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
     // Calculate volume for display
     const displayVolume = isMuted ? 0 : Math.round(volume);
 
+    // Combined available subtitles (from props + video)
+    const allSubtitles = [...subtitles, ...availableTextTracks.map((track, index) => ({
+        language: track.language || 'Unknown',
+        label: track.title || track.language || `Track ${index + 1}`,
+        url: '' // VLC handles internally
+    }))];
+
+    // Combined available audio tracks (from props + video)
+    const allAudioTracks = [...audioTracks, ...availableAudioTracks.map((track, index) => ({
+        id: track.id || index.toString(),
+        language: track.language || 'Unknown',
+        label: track.title || track.language || `Track ${index + 1}`
+    }))];
+
     return (
         <View style={styles.container}>
             {!error && (
                 <VLCPlayer
                     ref={playerRef}
-                    style={[
-                        styles.video
-                    ]}
+                    style={styles.video}
                     source={{ uri: videoUrl }}
                     autoplay={autoPlay}
-                    autoAspectRatio={true}
+                    autoAspectRatio={false} // Let resizeMode handle aspect ratio
                     resizeMode={resizeMode}
                     rate={playbackSpeed}
                     muted={isMuted}
@@ -512,7 +588,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                     paused={isPaused}
                     onPlaying={onPlaying}
                     onProgress={onProgress}
-                    onLoad={onLoadStart}
+                    onLoad={onLoad}
                     onBuffering={onBuffering}
                     onPaused={onPaused}
                     onStopped={onStopped}
@@ -529,13 +605,15 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                         setError(null);
                         setIsReady(false);
                         setIsBuffering(true);
+                        setHasStartedPlaying(false);
                     }}>
                         <Text style={styles.retryButtonText}>Retry</Text>
                     </TouchableOpacity>
                 </View>
             )}
 
-            {artwork && isBuffering && !error && (
+            {/* Show artwork during loading and before first play */}
+            {artwork && (isBuffering && !hasStartedPlaying) && !error && (
                 <View style={styles.artworkContainer}>
                     <Image
                         source={{ uri: artwork }}
@@ -546,8 +624,8 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                 </View>
             )}
 
-            {/* Loading indicator */}
-            {isBuffering && !error && (
+            {/* Loading indicator - show during initial loading and delayed buffering */}
+            {(isBuffering && (!hasStartedPlaying || showBufferingLoader)) && !error && (
                 <Animated.View
                     style={[
                         styles.bufferingContainer,
@@ -556,7 +634,9 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                     pointerEvents="none"
                 >
                     <ActivityIndicator size="large" color="#535aff" />
-                    <Text style={styles.bufferingText}>Loading...</Text>
+                    <Text style={styles.bufferingText}>
+                        {!hasStartedPlaying ? "Loading..." : "Buffering..."}
+                    </Text>
                 </Animated.View>
             )}
 
@@ -893,7 +973,8 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                                 ))}
                             </View>
 
-                            {subtitles.length > 0 && (
+                            {/* Updated subtitles section with combined tracks */}
+                            {allSubtitles.length > 0 && (
                                 <>
                                     <Text style={styles.settingsTitle}>Subtitles</Text>
                                     <View style={styles.subtitleOptions}>
@@ -906,7 +987,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                                         >
                                             <Text style={styles.subtitleOptionText}>Off</Text>
                                         </TouchableOpacity>
-                                        {subtitles.map((sub, index) => (
+                                        {allSubtitles.map((sub, index) => (
                                             <TouchableOpacity
                                                 key={index}
                                                 style={[
@@ -924,11 +1005,12 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                                 </>
                             )}
 
-                            {audioTracks.length > 0 && (
+                            {/* Updated audio tracks section with combined tracks */}
+                            {allAudioTracks.length > 0 && (
                                 <>
                                     <Text style={styles.settingsTitle}>Audio Track</Text>
                                     <View style={styles.audioOptions}>
-                                        {audioTracks.map((track, index) => (
+                                        {allAudioTracks.map((track, index) => (
                                             <TouchableOpacity
                                                 key={index}
                                                 style={[
