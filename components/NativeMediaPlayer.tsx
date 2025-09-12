@@ -59,7 +59,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
     const [showControls, setShowControls] = useState(true);
     const [isBuffering, setIsBuffering] = useState(true);
     const [selectedSubtitle, setSelectedSubtitle] = useState<number>(-1);
-    const [selectedAudioTrack, setSelectedAudioTrack] = useState<number>(0);
+    const [selectedAudioTrack, setSelectedAudioTrack] = useState<number>(1);
     const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
     const [volume, setVolume] = useState(70);
     const [isMuted, setIsMuted] = useState(false);
@@ -943,19 +943,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                         onPress={(e) => e.stopPropagation()}
                     >
                         <Text style={styles.panelTitle}>Subtitles</Text>
-                        <ScrollView style={styles.settingsContent}>
-                            <TouchableOpacity
-                                style={[
-                                    styles.settingOption,
-                                    selectedSubtitle === -1 && styles.settingOptionSelected
-                                ]}
-                                onPress={() => selectSubtitle(-1)}
-                            >
-                                <Text style={styles.settingOptionText}>Off</Text>
-                                {selectedSubtitle === -1 && (
-                                    <Ionicons name="checkmark" size={20} color="#007AFF" />
-                                )}
-                            </TouchableOpacity>
+                        <ScrollView style={styles.settingsContent}>                            
                             {availableTextTracks.map((sub) => (
                                 <TouchableOpacity
                                     key={sub.id}
