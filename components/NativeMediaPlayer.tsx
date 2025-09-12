@@ -1058,6 +1058,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        backgroundColor: 'black',
     },
     video: {
         width: '100%',
