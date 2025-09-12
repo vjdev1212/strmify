@@ -12,6 +12,7 @@ import {
     Image,
     Alert,
 } from "react-native";
+import debounce from "lodash.debounce";
 import { PlayerResizeMode, VLCPlayer } from 'react-native-vlc-media-player';
 import * as ScreenOrientation from "expo-screen-orientation";
 import { LinearGradient } from "expo-linear-gradient";
@@ -189,36 +190,40 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
         }, 100); // 100ms debounce
     }, [isDragging, duration]);
 
-    const onBuffering = useCallback((data: any) => {
-        console.log('On Buffering:', data);
-        const { isBuffering: buffering } = data;
+    const onBuffering = useCallback(
+        debounce((data: any) => {
+            console.log("On Buffering:", data);
+            const { isBuffering: buffering } = data;
 
-        setIsBuffering(buffering);
+            setIsBuffering(buffering);
 
-        // Clear existing buffering timer
-        if (bufferingTimer.current) {
-            clearTimeout(bufferingTimer.current);
-        }
+            // Clear existing buffering timer
+            if (bufferingTimer.current) {
+                clearTimeout(bufferingTimer.current);
+            }
 
-        if (buffering && hasStartedPlaying) {
-            // Show loader after 1 second of buffering
-            bufferingTimer.current = setTimeout(() => {
-                setShowBufferingLoader(true);
+            if (buffering && hasStartedPlaying) {
+                // Show loader after 1 second of buffering
+                bufferingTimer.current = setTimeout(() => {
+                    setShowBufferingLoader(true);
+                    Animated.timing(bufferOpacity, {
+                        toValue: 1,
+                        duration: 200,
+                        useNativeDriver: true,
+                    }).start();
+                }, 1000);
+            } else {
+                setShowBufferingLoader(false);
                 Animated.timing(bufferOpacity, {
-                    toValue: 1,
+                    toValue: 0,
                     duration: 200,
                     useNativeDriver: true,
                 }).start();
-            }, 1000);
-        } else {
-            setShowBufferingLoader(false);
-            Animated.timing(bufferOpacity, {
-                toValue: 0,
-                duration: 200,
-                useNativeDriver: true,
-            }).start();
-        }
-    }, [bufferOpacity, hasStartedPlaying]);
+            }
+        }, 300), // ⬅️ debounce delay (ms)
+        [bufferOpacity, hasStartedPlaying]
+    );
+
 
     const onPlaying = useCallback(() => {
         console.log('On Playing');
@@ -872,6 +877,50 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                         onPress={(e) => e.stopPropagation()}
                     >
                         <ScrollView style={styles.settingsContent}>
+                            <Text style={styles.settingsTitle}>Subtitles</Text>
+                            <View style={styles.subtitleOptions}>
+                                <TouchableOpacity
+                                    style={[
+                                        styles.subtitleOption,
+                                        selectedSubtitle === -1 && styles.subtitleOptionSelected
+                                    ]}
+                                    onPress={async () => { await playHaptic(); setSelectedSubtitle(-1); }}
+                                >
+                                    <Text style={styles.subtitleOptionText}>Off</Text>
+                                </TouchableOpacity>
+                                {availableTextTracks.map((sub, index) => (
+                                    <TouchableOpacity
+                                        key={index}
+                                        style={[
+                                            styles.subtitleOption,
+                                            selectedSubtitle === index && styles.subtitleOptionSelected
+                                        ]}
+                                        onPress={async () => { await playHaptic(); setSelectedSubtitle(index); }}
+                                    >
+                                        <Text style={styles.subtitleOptionText}>
+                                            {sub.name || sub.id}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+
+                            <Text style={styles.settingsTitle}>Audio Track</Text>
+                            <View style={styles.audioOptions}>
+                                {availableAudioTracks.map((track, index) => (
+                                    <TouchableOpacity
+                                        key={index}
+                                        style={[
+                                            styles.audioOption,
+                                            selectedAudioTrack === index && styles.audioOptionSelected
+                                        ]}
+                                        onPress={async () => { await playHaptic(); setSelectedAudioTrack(index); }}
+                                    >
+                                        <Text style={styles.audioOptionText}>
+                                            {track.name || `Track ${index + 1}`}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
                             <Text style={styles.settingsTitle}>Video Scale</Text>
                             <View style={styles.scaleOptions}>
                                 {[
@@ -918,61 +967,6 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                                     </TouchableOpacity>
                                 ))}
                             </View>
-
-                            {/* Updated subtitles section with combined tracks */}
-                            {availableTextTracks.length > 0 && (
-                                <>
-                                    <Text style={styles.settingsTitle}>Subtitles</Text>
-                                    <View style={styles.subtitleOptions}>
-                                        <TouchableOpacity
-                                            style={[
-                                                styles.subtitleOption,
-                                                selectedSubtitle === -1 && styles.subtitleOptionSelected
-                                            ]}
-                                            onPress={async () => { await playHaptic(); setSelectedSubtitle(-1); }}
-                                        >
-                                            <Text style={styles.subtitleOptionText}>Off</Text>
-                                        </TouchableOpacity>
-                                        {availableTextTracks.map((sub, index) => (
-                                            <TouchableOpacity
-                                                key={index}
-                                                style={[
-                                                    styles.subtitleOption,
-                                                    selectedSubtitle === index && styles.subtitleOptionSelected
-                                                ]}
-                                                onPress={async () => { await playHaptic(); setSelectedSubtitle(index); }}
-                                            >
-                                                <Text style={styles.subtitleOptionText}>
-                                                    {sub.name || sub.id}
-                                                </Text>
-                                            </TouchableOpacity>
-                                        ))}
-                                    </View>
-                                </>
-                            )}
-
-                            {/* Updated audio tracks section with combined tracks */}
-                            {availableAudioTracks.length > 0 && (
-                                <>
-                                    <Text style={styles.settingsTitle}>Audio Track</Text>
-                                    <View style={styles.audioOptions}>
-                                        {availableAudioTracks.map((track, index) => (
-                                            <TouchableOpacity
-                                                key={index}
-                                                style={[
-                                                    styles.audioOption,
-                                                    selectedAudioTrack === index && styles.audioOptionSelected
-                                                ]}
-                                                onPress={async () => { await playHaptic(); setSelectedAudioTrack(index); }}
-                                            >
-                                                <Text style={styles.audioOptionText}>
-                                                    {track.name || `Track ${index + 1}`}
-                                                </Text>
-                                            </TouchableOpacity>
-                                        ))}
-                                    </View>
-                                </>
-                            )}
                         </ScrollView>
                     </TouchableOpacity>
                 </TouchableOpacity>
