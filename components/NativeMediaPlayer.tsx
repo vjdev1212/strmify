@@ -340,12 +340,13 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
         console.log('On Resize');
         await playHaptic();
         const currentIndex = resizeModeOptions.indexOf(resizeMode);
+        console.log('Current Resize Mode:', resizeMode, 'at index', currentIndex);
         const nextIndex = (currentIndex + 1) % resizeModeOptions.length;
+        console.log('Next Resize Mode index:', nextIndex);
 
         const nextMode = resizeModeOptions[nextIndex];
-        setResizeMode(nextMode);
-
         console.log('Resize Mode changed to:', nextMode);
+        setResizeMode(nextMode);
 
         // Show the label briefly
         setShowResizeModeLabel(true);
