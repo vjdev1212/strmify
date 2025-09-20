@@ -18,7 +18,6 @@ import * as Haptics from 'expo-haptics';
 import { isHapticsSupported, showAlert } from '@/utils/platform';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { SvgUri } from 'react-native-svg';
 import { StorageKeys, storageService } from '@/utils/StorageService';
 
 const ADDONS_KEY = StorageKeys.ADDONS_KEY;
@@ -119,22 +118,7 @@ const AddonsScreen = () => {
     }
   };
 
-  const isSvgUrl = (url: string): boolean => {
-    return url.toLowerCase().endsWith('.svg') || url.includes('image/svg+xml');
-  };
-
   const AddonLogo = ({ uri, style }: { uri: string; style: any }) => {
-    if (isSvgUrl(uri)) {
-      return (
-        <SvgUri
-          uri={uri}
-          width={style.width || 40}
-          height={style.height || 40}
-          style={style}
-        />
-      );
-    }
-
     return <Image source={{ uri }} style={style} />;
   };
 
