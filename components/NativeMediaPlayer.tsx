@@ -791,6 +791,39 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
 
                             <TouchableOpacity
                                 style={styles.controlButton}
+                                onPress={panelToggles.toggleVolumeSlider}
+                            >
+                                <MaterialIcons
+                                    name="tune"
+                                    size={24}
+                                    color="white"
+                                />
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={styles.controlButton}
+                                onPress={panelToggles.toggleBrightnessSlider}
+                            >
+                                <Ionicons
+                                    name="sunny"
+                                    size={24}
+                                    color="white"
+                                />
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={styles.controlButton}
+                                onPress={controlActions.cycleResizeMode}
+                            >
+                                <MaterialIcons
+                                    name={getResizeModeIcon()}
+                                    size={24}
+                                    color="white"
+                                />
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={styles.controlButton}
                                 onPress={panelToggles.toggleSubtitleSettings}
                             >
                                 <MaterialIcons
