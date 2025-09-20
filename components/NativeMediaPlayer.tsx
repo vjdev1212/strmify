@@ -106,11 +106,11 @@ const useUIState = () => {
 };
 
 const usePlayerSettings = () => {
-    const [volume, setVolume] = useState(100);
+    const [volume, setVolume] = useState(1);
     const [isMuted, setIsMuted] = useState(false);
     const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
     const [resizeMode, setResizeMode] = useState<PlayerResizeMode>('contain');
-    const [brightness, setBrightness] = useState(1.0);
+    const [brightness, setBrightness] = useState<number>(1);
     const [selectedSubtitle, setSelectedSubtitle] = useState<number>(-1);
     const [selectedAudioTrack, setSelectedAudioTrack] = useState<number>(1);
     const [availableTextTracks, setAvailableTextTracks] = useState<any[]>([]);
@@ -481,7 +481,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
 
         handleVolumeChange: (value: number) => {
             console.log('On Handle Volume Change');
-            const newVolume = Math.round(value);
+            const newVolume = value;
             settings.setVolume(newVolume);
 
             console.log('New Volume', newVolume);
@@ -635,7 +635,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
 
     const displayTime = playerState.isDragging ? playerState.dragPosition * playerState.duration : playerState.currentTime;
     const sliderValue = playerState.isDragging ? playerState.dragPosition : (playerState.duration > 0 ? playerState.currentTime / playerState.duration : 0);
-    const displayVolume = settings.isMuted ? 0 : Math.round(settings.volume);
+    const displayVolume = settings.isMuted ? 0 : settings.volume;
 
     return (
         <View style={styles.container}>
@@ -647,16 +647,17 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                     autoplay={true}
                     autoAspectRatio={false}
                     resizeMode={settings.resizeMode}
+                    playInBackground={true}
+                    acceptInvalidCertificates={true}
                     rate={settings.playbackSpeed}
                     muted={settings.isMuted}
-                    volume={settings.isMuted ? 0 : Math.round(settings.volume)}
+                    volume={settings.isMuted ? 0 : settings.volume}
                     audioTrack={settings.selectedAudioTrack}
                     textTrack={settings.selectedSubtitle}
                     paused={playerState.isPaused}
                     onPlaying={vlcHandlers.onPlaying}
                     onProgress={vlcHandlers.onProgress}
                     onLoad={vlcHandlers.onLoad}
-                    // onLoadStart={vlcHandlers.onLoadStart}
                     onBuffering={vlcHandlers.onBuffering}
                     onPaused={vlcHandlers.onPaused}
                     onStopped={vlcHandlers.onStopped}
@@ -950,14 +951,14 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                             <Slider
                                 style={styles.volumeSlider}
                                 minimumValue={0}
-                                maximumValue={100}
+                                maximumValue={1}
                                 value={settings.volume}
                                 onValueChange={controlActions.handleVolumeChange}
                                 minimumTrackTintColor="#007AFF"
                                 maximumTrackTintColor="rgba(255,255,255,0.3)"
                             />
                             <Ionicons name="volume-high" size={20} color="white" />
-                            <Text style={styles.volumePercentage}>{Math.round(settings.volume)}%</Text>
+                            <Text style={styles.volumePercentage}>{Math.round(settings.volume * 100)}%</Text>
                         </View>
                     </TouchableOpacity>
                 </TouchableOpacity>
@@ -980,8 +981,8 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                             <Ionicons name="sunny-outline" size={20} color="white" />
                             <Slider
                                 style={styles.brightnessSlider}
-                                minimumValue={0.1}
-                                maximumValue={2.0}
+                                minimumValue={0}
+                                maximumValue={1}
                                 value={settings.brightness}
                                 onValueChange={controlActions.handleBrightnessChange}
                                 minimumTrackTintColor="#007AFF"
