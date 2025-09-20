@@ -6,6 +6,7 @@ import { showAlert } from '@/utils/platform';
 import { useColorScheme } from '@/components/useColorScheme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StorageKeys, storageService } from '@/utils/StorageService';
+import { SvgUri } from 'react-native-svg';
 
 const defaultAddonLogo = 'https://i.ibb.co/fSJ42PJ/addon.png';
 
@@ -53,6 +54,62 @@ export default function AddAddonScreen() {
         return `${parsedUrl.protocol}//${parsedUrl.host}`;
     };
 
+    const isValidImageUrl = (url: string) => {
+        return url && url.match(/\.(png|jpg|jpeg|gif|webp)$/i);
+    };
+
+    const isSvgUrl = (url: string) => {
+        return url && url.match(/\.svg$/i);
+    };
+
+    const renderLogo = () => {
+        if (!manifestData?.logo) {
+            return (
+                <Image
+                    source={{ uri: defaultAddonLogo }}
+                    style={styles.logo}
+                    resizeMode="cover"
+                />
+            );
+        }
+
+        if (isSvgUrl(manifestData.logo)) {
+            return (
+                <SvgUri
+                    uri={manifestData.logo}
+                    width="100%"
+                    height="100%"
+                    onError={() => {
+                        // Fallback to default logo if SVG fails to load
+                        console.warn('Failed to load SVG logo, falling back to default');
+                    }}
+                />
+            );
+        }
+
+        if (isValidImageUrl(manifestData.logo)) {
+            return (
+                <Image
+                    source={{ uri: manifestData.logo }}
+                    style={styles.logo}
+                    resizeMode="cover"
+                    onError={() => {
+                        console.warn('Failed to load image logo');
+                    }}
+                />
+            );
+        }
+
+        // Fallback to default logo for invalid URLs
+        return (
+            <Image
+                source={{ uri: defaultAddonLogo }}
+                style={styles.logo}
+                resizeMode="cover"
+            />
+        );
+    };
+
     const addAddon = async () => {
         if (!manifestData) return;
 
@@ -60,7 +117,7 @@ export default function AddAddonScreen() {
             manifestData.manifestUrl = url;
             manifestData.baseUrl = getBaseUrl(url);
             manifestData.streamBaseUrl = url.replace('/manifest.json', '');
-            manifestData.logo = manifestData?.logo?.match(/\.(png|jpg|jpeg|svg)$/i) ? manifestData.logo : defaultAddonLogo;
+            manifestData.logo = manifestData?.logo || defaultAddonLogo;
             const storedAddons = await storageService.getItem(ADDONS_KEY);
             const addons = storedAddons ? JSON.parse(storedAddons) : {};
             const newKey = `${manifestData.id}`;
@@ -83,7 +140,7 @@ export default function AddAddonScreen() {
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar />
-            
+
             {/* Header Section */}
             <View style={styles.header}>
                 <Text style={styles.title}>Add New Addon</Text>
@@ -119,8 +176,8 @@ export default function AddAddonScreen() {
             )}
 
             {/* Content Section */}
-            <ScrollView 
-                showsVerticalScrollIndicator={false} 
+            <ScrollView
+                showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
                 style={styles.scrollView}
             >
@@ -129,15 +186,7 @@ export default function AddAddonScreen() {
                         {/* Addon Header */}
                         <View style={styles.addonHeader}>
                             <View style={styles.logoContainer}>
-                                <Image
-                                    source={{
-                                        uri: manifestData.logo?.match(/\.(png|jpg|jpeg)$/i)
-                                            ? manifestData.logo
-                                            : defaultAddonLogo,
-                                    }}
-                                    style={styles.logo}
-                                    resizeMode="cover"
-                                />
+                                {renderLogo()}
                             </View>
                             <View style={styles.addonTitleContainer}>
                                 <Text style={styles.addonName}>
@@ -173,8 +222,8 @@ export default function AddAddonScreen() {
                         )}
 
                         {/* Add Button */}
-                        <Pressable 
-                            style={[styles.addButton, styles.addButtonShadow]} 
+                        <Pressable
+                            style={[styles.addButton, styles.addButtonShadow]}
                             onPress={addAddon}
                         >
                             <Text style={styles.addButtonText}>Install Addon</Text>
@@ -270,6 +319,8 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
         backgroundColor: '#1a1a1a',
         marginRight: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     logo: {
         width: '100%',
