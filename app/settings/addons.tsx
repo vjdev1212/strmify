@@ -11,7 +11,7 @@ import {
   Dimensions
 } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import { StatusBar, Text } from '@/components/Themed';
 import { router } from 'expo-router';
 import * as Sharing from 'expo-sharing';
@@ -20,6 +20,8 @@ import { isHapticsSupported, showAlert } from '@/utils/platform';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SvgUri } from 'react-native-svg';
+
+const ADDONS_STORAGE_KEY = 'addons';
 
 const AddonsScreen = () => {
   const [addons, setAddons] = useState<any[]>([]);
@@ -37,7 +39,7 @@ const AddonsScreen = () => {
 
   const fetchAddons = async () => {
     try {
-      const storedAddons = await AsyncStorage.getItem('addons');
+      const storedAddons = await SecureStore.getItemAsync(ADDONS_STORAGE_KEY);
       if (storedAddons) {
         const parsedAddons = JSON.parse(storedAddons);
         setAddons(
@@ -49,6 +51,7 @@ const AddonsScreen = () => {
       }
     } catch (error) {
       console.error('Error fetching addons:', error);
+      showAlert('Error', 'Failed to load addons from secure storage.');
     }
   };
 
@@ -72,10 +75,21 @@ const AddonsScreen = () => {
       const updatedAddonsObject = Object.fromEntries(
         updatedAddons.map(addon => [addon.id, addon])
       );
-      await AsyncStorage.setItem('addons', JSON.stringify(updatedAddonsObject));
+      
+      if (updatedAddons.length === 0) {
+        // If no addons left, delete the key entirely
+        await SecureStore.deleteItemAsync(ADDONS_STORAGE_KEY);
+      } else {
+        // Otherwise, update with remaining addons
+        await SecureStore.setItemAsync(ADDONS_STORAGE_KEY, JSON.stringify(updatedAddonsObject));
+      }
+      
       showAlert('Success', 'Addon removed successfully!');
     } catch (error) {
-      showAlert('Error', 'Failed to remove addon.');
+      console.error('Error removing addon:', error);
+      showAlert('Error', 'Failed to remove addon from secure storage.');
+      // Revert the state change if storage operation failed
+      await fetchAddons();
     }
   };
 
