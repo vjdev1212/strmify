@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { StyleSheet, FlatList, Pressable, useWindowDimensions, Animated } from 'react-native';
+import { StyleSheet, FlatList, Pressable, useWindowDimensions, Animated, TouchableOpacity } from 'react-native';
 import { Text, View } from './Themed';
 import * as Haptics from 'expo-haptics';
 import { formatDate } from '@/utils/Date';
@@ -7,6 +7,7 @@ import { isHapticsSupported } from '@/utils/platform';
 import { useColorScheme } from './useColorScheme';
 import { SvgXml } from 'react-native-svg';
 import { DefaultEpisodeThumbnailImgXml } from '@/utils/Svg';
+import CustomContextMenu from './ContextMenu';
 
 // Type definitions
 interface Episode {
@@ -50,7 +51,7 @@ const getColumnsForDevice = (deviceType: string, isPortrait: boolean) => {
     laptop: { portrait: 2, landscape: 3 },
     desktop: { portrait: 3, landscape: 4 },
   };
-  
+
   return columnConfig[deviceType][isPortrait ? 'portrait' : 'landscape'];
 };
 
@@ -61,7 +62,7 @@ const EPISODE_DESCRIPTION_COLOR = '#efefef';
 const SELECTED_SEASON_COLOR = '#535aff';
 const DARK_SEASON_BUTTON_COLOR = '#101010';
 const LIGHT_SEASON_BUTTON_COLOR = '#f0f0f0';
-const ANIMATION_DURATION = 500;
+const ANIMATION_DURATION = 100;
 const IMAGE_LOAD_DELAY = 100;
 const THUMBNAIL_ASPECT_RATIO = 16 / 9;
 const PORTRAIT_THUMBNAIL_HEIGHT = 80;
@@ -210,16 +211,16 @@ const EpisodeItem: React.FC<EpisodeItemProps> = React.memo(({ item, onEpisodeSel
   };
 
   return (
-    <Animated.View 
+    <Animated.View
       style={[
-        styles.episodeContainer, 
-        { 
+        styles.episodeContainer,
+        {
           width: itemWidth as any,
           transform: [{ scale: scaleAnim }]
         }
       ]}
     >
-      <Pressable 
+      <Pressable
         onPress={handlePress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
@@ -253,6 +254,8 @@ const EpisodeItem: React.FC<EpisodeItemProps> = React.memo(({ item, onEpisodeSel
 const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisodeSelect }) => {
   const [selectedSeason, setSelectedSeason] = useState<number>(1);
   const { width, height } = useWindowDimensions();
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [anchorPosition, setAnchorPosition] = useState({ x: 0, y: 0 });
 
   // Memoized computed values
   const computedValues = useMemo(() => {
@@ -270,7 +273,7 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
       return acc;
     }, {} as Record<number, Episode[]>);
 
-    // Create season data for FlatList
+    // Create season data for dropdown
     const seasonData = [
       ...Object.keys(groupedEpisodes)
         .map(Number)
@@ -279,6 +282,14 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
       ...(groupedEpisodes[0] ? [0] : []),
     ];
 
+    // Create menu items for ContextMenu
+    const menuItems = seasonData.map((season, index) => ({
+      id: `season-${season}-${index}`,
+      title: season === 0 ? 'Specials' : `Season ${season}`,
+      value: season,
+      key: `season-item-${season}-${index}`
+    }));
+
     return {
       isPortrait,
       deviceType,
@@ -286,6 +297,7 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
       itemWidth,
       groupedEpisodes,
       seasonData,
+      menuItems,
     };
   }, [videos, height, width]);
 
@@ -295,35 +307,21 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
     }
     setSelectedSeason(season);
+    setMenuVisible(false);
   }, []);
 
-  const getSeasonButtonStyle = useCallback((season: number) => ({
-    ...styles.seasonButton,
-    backgroundColor: season === selectedSeason ? 'rgba(83, 90, 255, 0.3)' : 'rgba(255, 255, 255, 0.08)',
-    borderWidth: 1.5,
-    borderColor: season === selectedSeason ? 'rgba(83, 90, 255, 0.5)' : 'rgba(255, 255, 255, 0.15)',
-  }), [selectedSeason]);
+  const handleSeasonDropdownPress = useCallback((event: any) => {
+    const { pageX, pageY } = event.nativeEvent;
+    setAnchorPosition({ x: pageX, y: pageY });
+    setMenuVisible(true);
+  }, []);
 
-  const getSeasonTextStyle = useCallback((season: number) => ({
-    ...styles.seasonText,
-    color: season === selectedSeason ? '#ffffff' : '#cccccc',
-    fontWeight: season === selectedSeason ? '500' : '400',
-  }), [selectedSeason]);
+  const handleContextMenuItemSelect = useCallback((item: any) => {
+    handleSeasonSelect(item.value || item.id);
+  }, [handleSeasonSelect]);
 
-  const renderSeasonItem = useCallback(({ item }: { item: number }) => (
-    <Pressable
-      style={getSeasonButtonStyle(item)}
-      onPress={() => handleSeasonSelect(item)}
-    >
-      <Text style={getSeasonTextStyle(item) as any}>
-        {item === 0 ? 'Specials' : `Season ${item}`}
-      </Text>
-    </Pressable>
-  ), [getSeasonButtonStyle, getSeasonTextStyle, handleSeasonSelect]);
-
-  const renderEpisodeItem = useCallback((episode: Episode) => (
+  const renderEpisodeItem = useCallback((episode: Episode, index: number) => (
     <EpisodeItem
-      key={`${episode.season}-${episode.number}`}
       item={episode}
       onEpisodeSelect={onEpisodeSelect}
       isPortrait={computedValues.isPortrait}
@@ -331,15 +329,13 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
     />
   ), [onEpisodeSelect, computedValues.isPortrait, computedValues.itemWidth]);
 
-  const keyExtractor = useCallback((item: number) => `season-${item}`, []);
-
   // Handle initial selection when videos load
   useEffect(() => {
     if (videos.length > 0) {
       const availableSeasons = Object.keys(
         videos.reduce((acc, video) => ({ ...acc, [video.season]: true }), {})
       ).map(Number).sort((a, b) => a - b);
-      
+
       const defaultSeason = availableSeasons.find(s => s !== 0) || availableSeasons[0] || 1;
       setSelectedSeason(defaultSeason);
     }
@@ -354,27 +350,45 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
     );
   }
 
+  // Get current season display text
+  const getCurrentSeasonText = () => {
+    return selectedSeason === 0 ? 'Specials' : `Season ${selectedSeason}`;
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.seasonListContainer}>
-        <FlatList
-          data={computedValues.seasonData}
-          horizontal
-          keyExtractor={keyExtractor}
-          renderItem={renderSeasonItem}
-          contentContainerStyle={styles.seasonList}
-          showsHorizontalScrollIndicator={false}
-          ItemSeparatorComponent={() => <View style={styles.seasonSeparator} />}
+        <TouchableOpacity
+          style={styles.seasonDropdownButton}
+          onPress={handleSeasonDropdownPress}
+        >
+          <Text style={styles.seasonDropdownText}>
+            {getCurrentSeasonText()}
+          </Text>
+          <Text style={styles.seasonDropdownArrow}>▼</Text>
+        </TouchableOpacity>
+
+        <CustomContextMenu
+          visible={menuVisible}
+          onClose={() => setMenuVisible(false)}
+          items={computedValues.menuItems}
+          selectedItem={selectedSeason}
+          onItemSelect={handleContextMenuItemSelect}
+          anchorPosition={anchorPosition}
         />
       </View>
-      
+
       <View style={styles.episodeList}>
         {computedValues.groupedEpisodes[selectedSeason]?.length > 0 ? (
-          computedValues.groupedEpisodes[selectedSeason].map(renderEpisodeItem)
+          computedValues.groupedEpisodes[selectedSeason].map((episode, index) => (
+            <React.Fragment key={`episode-${episode.season}-${episode.episode || episode.number}-${index}`}>
+              {renderEpisodeItem(episode, index)}
+            </React.Fragment>
+          ))
         ) : (
           <View style={styles.noEpisodesContainer}>
             <Text style={styles.noEpisodesText}>
-              No episodes available for {selectedSeason === 0 ? 'Specials' : `Season ${selectedSeason}`}
+              No episodes available for {getCurrentSeasonText()}
             </Text>
           </View>
         )}
@@ -389,8 +403,38 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   seasonListContainer: {
-    paddingVertical: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 20,
     backgroundColor: 'transparent',
+  },
+  seasonDropdownButton: {
+    backgroundColor: 'rgba(42, 42, 42, 0.25)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 24,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minWidth: 150,
+    maxWidth: 200,
+    shadowColor: 'rgba(0, 0, 0, 0.3)',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  seasonDropdownText: {
+    fontSize: 16,
+    color: '#ffffff',
+    fontWeight: '500',
+    letterSpacing: 0.3,
+    flex: 1,
+  },
+  seasonDropdownArrow: {
+    fontSize: 14,
+    color: '#cccccc',    
   },
   seasonList: {
     paddingHorizontal: 20,
