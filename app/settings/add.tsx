@@ -21,6 +21,10 @@ export default function AddAddonScreen() {
             return;
         }
 
+        let refinedUrl = url.replace('stremio://', 'https://').trim();
+
+        setUrl(refinedUrl);
+
         if (!url.toLocaleLowerCase().endsWith('manifest.json')) {
             showAlert('Invalid Manifest URL', 'Please enter the valid Addon manifest URL.');
             return;
