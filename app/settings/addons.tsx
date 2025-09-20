@@ -7,6 +7,7 @@ import {
   ScrollView,
   View,
   Platform,
+  RefreshControl,
   Dimensions
 } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
@@ -23,6 +24,7 @@ import { SvgUri } from 'react-native-svg';
 const AddonsScreen = () => {
   const [addons, setAddons] = useState<any[]>([]);
   const [screenData, setScreenData] = useState(Dimensions.get('window'));
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     const onChange = (result: any) => {
@@ -33,24 +35,33 @@ const AddonsScreen = () => {
     return () => subscription?.remove();
   }, []);
 
-  useEffect(() => {
-    const fetchAddons = async () => {
-      try {
-        const storedAddons = await AsyncStorage.getItem('addons');
-        if (storedAddons) {
-          const parsedAddons = JSON.parse(storedAddons);
-          setAddons(
-            Object.keys(parsedAddons).map(key => ({
-              id: key,
-              ...parsedAddons[key],
-            }))
-          );
-        }
-      } catch (error) {
-        console.error('Error fetching addons:', error);
+  const fetchAddons = async () => {
+    try {
+      const storedAddons = await AsyncStorage.getItem('addons');
+      if (storedAddons) {
+        const parsedAddons = JSON.parse(storedAddons);
+        setAddons(
+          Object.keys(parsedAddons).map(key => ({
+            id: key,
+            ...parsedAddons[key],
+          }))
+        );
       }
-    };
+    } catch (error) {
+      console.error('Error fetching addons:', error);
+    }
+  };
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    if (isHapticsSupported()) {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    await fetchAddons();
+    setRefreshing(false);
+  };
+
+  useEffect(() => {
     fetchAddons();
   }, []);
 
@@ -232,6 +243,15 @@ const AddonsScreen = () => {
           styles.contentContainer,
           addons.length === 0 && styles.emptyContentContainer
         ]}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#535aff"
+            colors={['#535aff']}
+            progressBackgroundColor="#1a1a1a"
+          />
+        }
       >
         {addons.length > 0 ? (
           <View style={styles.addonList}>
