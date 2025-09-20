@@ -19,9 +19,9 @@ import { isHapticsSupported, showAlert } from '@/utils/platform';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SvgUri } from 'react-native-svg';
-import { storageService } from '@/utils/StorageService';
+import { StorageKeys, storageService } from '@/utils/StorageService';
 
-const ADDONS_STORAGE_KEY = 'addons';
+const ADDONS_KEY = StorageKeys.ADDONS;
 
 const AddonsScreen = () => {
   const [addons, setAddons] = useState<any[]>([]);
@@ -39,7 +39,7 @@ const AddonsScreen = () => {
 
   const fetchAddons = async () => {
     try {
-      const storedAddons = await storageService.getItem(ADDONS_STORAGE_KEY);
+      const storedAddons = await storageService.getItem(ADDONS_KEY);
       if (storedAddons) {
         const parsedAddons = JSON.parse(storedAddons);
         setAddons(
@@ -78,10 +78,10 @@ const AddonsScreen = () => {
       
       if (updatedAddons.length === 0) {
         // If no addons left, delete the key entirely
-        await storageService.removeItem(ADDONS_STORAGE_KEY);
+        await storageService.removeItem(ADDONS_KEY);
       } else {
         // Otherwise, update with remaining addons
-        await storageService.setItem(ADDONS_STORAGE_KEY, JSON.stringify(updatedAddonsObject));
+        await storageService.setItem(ADDONS_KEY, JSON.stringify(updatedAddonsObject));
       }
       
       showAlert('Success', 'Addon removed successfully!');

@@ -5,9 +5,11 @@ import { router } from 'expo-router';
 import { showAlert } from '@/utils/platform';
 import { useColorScheme } from '@/components/useColorScheme';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { storageService } from '@/utils/StorageService';
+import { StorageKeys, storageService } from '@/utils/StorageService';
 
 const defaultAddonLogo = 'https://i.ibb.co/fSJ42PJ/addon.png';
+
+const ADDONS_KEY = StorageKeys.ADDONS;
 
 export default function AddAddonScreen() {
     const [url, setUrl] = useState('');
@@ -55,7 +57,7 @@ export default function AddAddonScreen() {
             manifestData.baseUrl = getBaseUrl(url);
             manifestData.streamBaseUrl = url.replace('/manifest.json', '');
             manifestData.logo = manifestData?.logo?.match(/\.(png|jpg|jpeg|svg)$/i) ? manifestData.logo : defaultAddonLogo;
-            const storedAddons = await storageService.getItem('addons');
+            const storedAddons = await storageService.getItem(ADDONS_KEY);
             const addons = storedAddons ? JSON.parse(storedAddons) : {};
             const newKey = `${manifestData.id}`;
 
@@ -64,7 +66,7 @@ export default function AddAddonScreen() {
                 [newKey]: manifestData,
             };
 
-            await storageService.setItem('addons', JSON.stringify(updatedAddons));
+            await storageService.setItem(ADDONS_KEY, JSON.stringify(updatedAddons));
             showAlert('Success', 'Addon added successfully!');
             setManifestData(null);
             setUrl('');

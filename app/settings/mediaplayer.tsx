@@ -8,7 +8,7 @@ import { getOriginalPlatform, isHapticsSupported, showAlert } from '@/utils/plat
 import BottomSpacing from '@/components/BottomSpacing';
 import { Players } from '@/utils/MediaPlayer';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { storageService } from '@/utils/StorageService';
+import { StorageKeys, storageService } from '@/utils/StorageService';
 
 
 interface PlayerConfig {
@@ -18,7 +18,7 @@ interface PlayerConfig {
     isDefault: boolean;
 }
 
-const DEFAULT_MEDIA_PLAYER_KEY = 'defaultMediaPlayer';
+const DEFAULT_MEDIA_PLAYER_KEY = StorageKeys.DEFAULT_MEDIA_PLAYER;
 
 const MediaPlayerConfigScreen = () => {
     const [players, setPlayers] = useState<PlayerConfig[]>([]);

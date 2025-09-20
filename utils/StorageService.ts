@@ -2,6 +2,15 @@ import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
+
+export const StorageKeys = {
+    TRAKT_ENABLED: 'TRAKT_ENABLED',
+    TRAKT_TOKENS: 'TRAKT_TOKENS',
+    SERVERS: 'SERVERS',
+    ADDONS: 'ADDONS',
+    DEFAULT_MEDIA_PLAYER: 'DEFAULT_MEDIA_PLAYER',
+}
+
 // Storage interface for consistent API
 interface StorageService {
     getItem(key: string): Promise<string | null>;

@@ -15,7 +15,7 @@ import BottomSpacing from '@/components/BottomSpacing';
 import { getPlatformSpecificPlayers, Players } from '@/utils/MediaPlayer';
 import StatusModal from '@/components/StatusModal';
 import { extractQuality, extractSize, getStreamType } from '@/utils/StreamItem';
-import { storageService } from '@/utils/StorageService';
+import { StorageKeys, storageService } from '@/utils/StorageService';
 
 interface Stream {
     name: string;
@@ -38,7 +38,10 @@ interface StreamResponse {
 }
 
 const DEFAULT_STREMIO_URL = 'http://127.0.0.1:11470';
-const STORAGE_KEY = 'defaultMediaPlayer';
+const DEFAULT_MEDIA_PLAYER_KEY = StorageKeys.DEFAULT_MEDIA_PLAYER;
+
+const SERVERS_KEY = StorageKeys.SERVERS;
+const ADDONS_KEY = StorageKeys.ADDONS;
 
 const StreamListScreen = () => {
     const { imdbid, type, name: contentTitle, season, episode, colors } = useLocalSearchParams<{
@@ -71,7 +74,7 @@ const StreamListScreen = () => {
 
     const fetchServerConfigs = useCallback(async () => {
         try {
-            const storedServers = await storageService.getItem('servers');
+            const storedServers = await storageService.getItem(SERVERS_KEY);
             let stremioServerList: ServerConfig[] = [];
 
             if (!storedServers) {
@@ -115,7 +118,7 @@ const StreamListScreen = () => {
     // Load saved default player from config
     const loadDefaultPlayer = async () => {
         try {
-            const savedDefault = await storageService.getItem(STORAGE_KEY);
+            const savedDefault = await storageService.getItem(DEFAULT_MEDIA_PLAYER_KEY);
             if (savedDefault) {
                 const defaultPlayerName = JSON.parse(savedDefault);
                 setSelectedPlayer(defaultPlayerName);
@@ -285,7 +288,7 @@ const StreamListScreen = () => {
         try {
             setLoading(true);
 
-            const storedAddons = await storageService.getItem('addons');
+            const storedAddons = await storageService.getItem(ADDONS_KEY);
             if (!storedAddons) {
                 setAddons([]);
                 setLoading(false);

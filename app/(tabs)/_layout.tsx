@@ -6,10 +6,10 @@ import { Platform, StyleSheet, View } from 'react-native';
 import { isHapticsSupported } from '@/utils/platform';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import { storageService } from '@/utils/StorageService';
+import { StorageKeys, storageService } from '@/utils/StorageService';
 
 // Storage key for Trakt enable preference
-const TRAKT_ENABLED_KEY = '@trakt_enabled';
+const TRAKT_ENABLED_KEY = StorageKeys.TRAKT_ENABLED;
 
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];

@@ -1,4 +1,4 @@
-import { storageService } from "@/utils/StorageService";
+import { StorageKeys, storageService } from "@/utils/StorageService";
 
 export interface TraktTokens {
     access_token: string;
@@ -10,7 +10,7 @@ export interface TraktTokens {
 }
 
 // Trakt.tv API configuration from environment variables
-const TRAKT_TOKENS_KEY = 'trakt_tokens';
+const TRAKT_TOKENS_KEY = StorageKeys.TRAKT_TOKENS;
 const TRAKT_CLIENT_ID = process.env.EXPO_PUBLIC_TRAKT_CLIENT_ID || '';
 const TRAKT_CLIENT_SECRET = process.env.EXPO_PUBLIC_TRAKT_CLIENT_SECRET || '';
 const TRAKT_REDIRECT_URI = process.env.EXPO_PUBLIC_TRAKT_REDIRECT_URI || '';
@@ -19,7 +19,7 @@ const TRAKT_API_BASE = process.env.EXPO_PUBLIC_TRAKT_API_BASE || 'https://api.tr
 // Token management functions
 export const getTraktTokens = async (): Promise<TraktTokens | null> => {
     try {
-        const tokens = await storageService.getItem('trakt_tokens');
+        const tokens = await storageService.getItem(TRAKT_TOKENS_KEY);
         return tokens ? JSON.parse(tokens) : null;
     } catch (error) {
         console.error('Failed to get Trakt tokens:', error);
@@ -38,7 +38,7 @@ export const saveTraktTokens = async (tokens: TraktTokens): Promise<void> => {
 
 export const clearTraktTokens = async (): Promise<void> => {
     try {
-        await storageService.removeItem('trakt_tokens');
+        await storageService.removeItem(TRAKT_TOKENS_KEY);
     } catch (error) {
         console.error('Failed to clear Trakt tokens:', error);
     }

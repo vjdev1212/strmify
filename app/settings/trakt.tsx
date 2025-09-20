@@ -7,10 +7,10 @@ import { useFocusEffect } from '@react-navigation/native';
 import { webLinking } from '@/utils/Web';
 import { clearTraktTokens, getTraktTokens, getTraktUserInfo, isUserAuthenticated, saveTraktTokens, TraktTokens } from '@/clients/trakt';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { storageService } from '@/utils/StorageService';
+import { StorageKeys, storageService } from '@/utils/StorageService';
 
 // Storage key for Trakt enable preference
-const TRAKT_ENABLED_KEY = '@trakt_enabled';
+const TRAKT_ENABLED_KEY = StorageKeys.TRAKT_ENABLED;
 
 // Trakt.tv API configuration from environment variables
 const TRAKT_CLIENT_ID = process.env.EXPO_PUBLIC_TRAKT_CLIENT_ID || '';
