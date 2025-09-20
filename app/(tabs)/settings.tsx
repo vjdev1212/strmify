@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Pressable, View, ScrollView, Platform } from 'react-native';
+import { StyleSheet, Pressable, View, ScrollView } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { StatusBar, Text } from '@/components/Themed';
 import { useRouter } from 'expo-router';

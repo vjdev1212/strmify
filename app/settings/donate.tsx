@@ -1,9 +1,10 @@
 import React from 'react';
-import { StyleSheet, Pressable, Linking, SafeAreaView, ScrollView, View } from 'react-native';
+import { StyleSheet, Pressable, Linking, ScrollView, View } from 'react-native';
 import { Text, StatusBar } from '@/components/Themed';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics'
 import { isHapticsSupported } from '@/utils/platform';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const DonateScreen = () => {
 

@@ -1,4 +1,4 @@
-import { SafeAreaView, ScrollView, StyleSheet, Pressable, ActivityIndicator, Platform, Switch } from 'react-native';
+import { ScrollView, StyleSheet, Pressable, ActivityIndicator, Platform, Switch } from 'react-native';
 import { StatusBar, Text, View } from '../../components/Themed';
 import { isHapticsSupported, showAlert } from '@/utils/platform';
 import * as Haptics from 'expo-haptics';
@@ -7,6 +7,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { webLinking } from '@/utils/Web';
 import { clearTraktTokens, getTraktTokens, getTraktUserInfo, isUserAuthenticated, saveTraktTokens, TraktTokens } from '@/clients/trakt';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Storage key for Trakt enable preference
 const TRAKT_ENABLED_KEY = '@trakt_enabled';

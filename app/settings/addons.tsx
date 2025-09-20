@@ -5,7 +5,6 @@ import {
   Image,
   Alert,
   ScrollView,
-  SafeAreaView,
   View,
   Platform,
   Dimensions
@@ -19,6 +18,7 @@ import * as Haptics from 'expo-haptics';
 import { isHapticsSupported, showAlert } from '@/utils/platform';
 import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from '@/components/useColorScheme';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const AddonsScreen = () => {
   const [addons, setAddons] = useState<any[]>([]);

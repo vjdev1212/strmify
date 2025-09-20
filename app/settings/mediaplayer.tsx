@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, ScrollView, Pressable, SafeAreaView, Alert, Platform } from 'react-native';
+import { StyleSheet, ScrollView, Pressable, Alert, Platform } from 'react-native';
 import { Text, View, StatusBar } from '@/components/Themed';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
@@ -8,6 +8,7 @@ import * as Haptics from 'expo-haptics';
 import { getOriginalPlatform, isHapticsSupported, showAlert } from '@/utils/platform';
 import BottomSpacing from '@/components/BottomSpacing';
 import { Players } from '@/utils/MediaPlayer';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 
 interface PlayerConfig {
