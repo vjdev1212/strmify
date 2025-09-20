@@ -41,7 +41,7 @@ const CustomContextMenu: React.FC<ContextMenuProps> = ({
   const scaleAnim = useRef(new Animated.Value(0.95)).current;
   const slideAnim = useRef(new Animated.Value(-5)).current;
 
-  const menuWidth = 200;
+  const menuWidth = 100;
   const itemHeight = 50;
   const maxVisibleItems = 5;
   const maxHeight = maxVisibleItems * itemHeight;
@@ -151,7 +151,7 @@ const CustomContextMenu: React.FC<ContextMenuProps> = ({
           >
             <ScrollView
               style={[styles.menuScrollView, { maxHeight: maxHeight }]}
-              showsVerticalScrollIndicator={true}
+              showsVerticalScrollIndicator={false}
             >
               {items.map((item, index) => (
                 <TouchableOpacity
