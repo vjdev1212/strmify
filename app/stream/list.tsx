@@ -23,6 +23,8 @@ interface Stream {
     url?: string;
     embed?: string;
     infoHash?: string;
+    magnet?: string;
+    magnetLink?: string;
     description?: string;
 }
 
@@ -44,7 +46,7 @@ const SERVERS_KEY = StorageKeys.SERVERS_KEY;
 const ADDONS_KEY = StorageKeys.ADDONS_KEY;
 
 const StreamListScreen = () => {
-    const { imdbid, type, name: contentTitle, season, episode, colors } = useLocalSearchParams<{
+    const { imdbid, type, name: contentTitle, season, episode } = useLocalSearchParams<{
         imdbid: string;
         type: string;
         name: string;
@@ -160,6 +162,39 @@ const StreamListScreen = () => {
         }
     }, [stremioServers]);
 
+    // Helper function to get magnet link from stream (for copy/open actions only)
+    const getMagnetFromStream = (stream: Stream): string | null => {
+        const { magnet, magnetLink, infoHash } = stream;
+        
+        // For copy/open actions, prefer full magnet links with metadata
+        if (magnet) return magnet;
+        if (magnetLink) return magnetLink;
+        
+        // Convert infoHash to basic magnet link as fallback
+        if (infoHash) {
+            return convertInfoHashToMagnet(infoHash);
+        }
+        
+        return null;
+    };
+
+    // Helper function to extract infoHash from stream (for Stremio playback only)
+    const getInfoHashFromStream = (stream: Stream): string | null => {
+        const { infoHash, magnet, magnetLink } = stream;
+        
+        // For Stremio playback, prefer existing infoHash for direct processing
+        if (infoHash) return infoHash;
+        
+        // Extract infoHash from magnet links as fallback
+        const magnetToUse = magnet || magnetLink;
+        if (magnetToUse) {
+            const match = magnetToUse.match(/xt=urn:btih:([a-fA-F0-9]{40}|[a-fA-F0-9]{32})/i);
+            if (match) return match[1];
+        }
+        
+        return null;
+    };
+
     const generatePlayerUrlWithInfoHash = async (infoHash: string, serverUrl: string) => {
         try {
             setStatusText('Torrent details sent to the server. This may take a moment. Please wait...');
@@ -186,7 +221,8 @@ const StreamListScreen = () => {
             return;
         }
 
-        const { url, infoHash } = stream;
+        const { url } = stream;
+        const infoHash = getInfoHashFromStream(stream);
         const playerToUse = playerName || selectedPlayer;
         const serverIdToUse = forceServerId || selectedServerId;
 
@@ -365,7 +401,8 @@ const StreamListScreen = () => {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
 
-        const { embed, url, infoHash } = stream;
+        const { embed, url } = stream;
+        const infoHash = getInfoHashFromStream(stream);
 
         if (embed) {
             router.push({ pathname: '/stream/embed', params: { url: embed } });
@@ -376,7 +413,7 @@ const StreamListScreen = () => {
         setSelectedStream(stream);
 
         if (!url && infoHash) {
-            showServerSelection(stream);
+            showTorrentActions(stream);
         } else {
             // Check if we have a default player configured
             if (selectedPlayer) {
@@ -412,7 +449,7 @@ const StreamListScreen = () => {
         }
     };
 
-    const showServerSelection = (stream: Stream) => {
+    const showTorrentActions = (stream: Stream) => {
         // Check if any Stremio servers are available
         if (stremioServers.length === 0) {
             showAlert('Error', 'No Stremio servers are configured');
@@ -421,15 +458,17 @@ const StreamListScreen = () => {
 
         // Get the current server name to display
         const currentServer = stremioServers.find(server => server.serverId === selectedServerId);
-        const currentServerName = currentServer ? currentServer.serverName : stremioServers[0].serverName;
         const serverId = currentServer?.serverId || stremioServers[0].serverId;
 
-        const { url, infoHash } = stream;
+        const { url } = stream;
         let linkToUse = url || '';
         
-        // Convert infoHash to magnet link if no direct URL
-        if (!url && infoHash) {
-            linkToUse = convertInfoHashToMagnet(infoHash);
+        // Get magnet link from stream (handles infoHash, magnet, magnetLink)
+        if (!url) {
+            const magnetLink = getMagnetFromStream(stream);
+            if (magnetLink) {
+                linkToUse = magnetLink;
+            }
         }
 
         // Show action sheet with current server and additional options
