@@ -790,7 +790,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                                 onPress={controlActions.toggleMute}
                             >
                                 <Ionicons
-                                    name={settings.isMuted || displayVolume === 0 ? "volume-mute" : displayVolume < 50 ? "volume-low" : "volume-high"}
+                                    name={settings.isMuted || displayVolume === 0 ? "volume-mute" : displayVolume < 0.25 ? "volume-low" : "volume-high"}
                                     size={24}
                                     color="white"
                                 />
