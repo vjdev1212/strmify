@@ -199,7 +199,7 @@ const TraktAuthScreen = () => {
                 await fetchUserInfo();
 
                 if (!isWeb && isHapticsSupported()) {
-                    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 }
 
                 showAlert('Success', 'Successfully connected to Trakt.tv!');

@@ -131,7 +131,7 @@ const MediaPlayerConfigScreen = () => {
             await storageService.setItem(DEFAULT_MEDIA_PLAYER_KEY, JSON.stringify(selectedPlayer));
 
             if (isHapticsSupported()) {
-                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             }
 
             showAlert('Success', 'Default media player saved successfully');
@@ -164,7 +164,7 @@ const MediaPlayerConfigScreen = () => {
                             }
 
                             if (isHapticsSupported()) {
-                                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                             }
 
                             showAlert('Success', 'Player configuration reset to default');
