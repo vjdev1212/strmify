@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 14,
     borderRadius: 50,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: '#1a1a1a',
     backdropFilter: 'blur(20px)',
     marginRight: 8,
     borderWidth: 1,

@@ -304,14 +304,17 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
   // Memoized callbacks
   const handleSeasonSelect = useCallback(async (season: number) => {
     if (isHapticsSupported()) {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     setSelectedSeason(season);
     setMenuVisible(false);
   }, []);
 
-  const handleSeasonDropdownPress = useCallback((event: any) => {
+  const handleSeasonDropdownPress = useCallback(async (event: any) => {
     const { pageX, pageY } = event.nativeEvent;
+    if (isHapticsSupported()) {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     setAnchorPosition({ x: pageX, y: pageY });
     setMenuVisible(true);
   }, []);
@@ -408,9 +411,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   seasonDropdownButton: {
-    backgroundColor: 'rgba(42, 42, 42, 0.25)',
+    backgroundColor: 'rgba(83, 90, 255, 0.25)',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    borderColor: 'rgba(83, 90, 255, 0.15)',
     borderRadius: 24,
     paddingVertical: 14,
     paddingHorizontal: 24,
@@ -433,7 +436,7 @@ const styles = StyleSheet.create({
   },
   seasonDropdownArrow: {
     fontSize: 14,
-    color: '#cccccc',    
+    color: '#cccccc',
   },
   seasonList: {
     paddingHorizontal: 20,

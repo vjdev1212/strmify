@@ -14,6 +14,7 @@ import { SvgXml } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 import { isHapticsSupported } from '@/utils/platform';
 import { DefaultPosterImgXml } from '@/utils/Svg';
+import { Ionicons } from '@expo/vector-icons';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -170,7 +171,9 @@ const PosterList = ({
       <RNView style={styles.header}>
         <Text style={styles.title}>{title}</Text>
         <Pressable onPress={handleSeeAllPress}>
-          <Text style={styles.seeAllText}>See All</Text>
+          <Text style={styles.seeAllText}>
+            See All<Ionicons name="chevron-forward" size={16} color="#fff" />
+          </Text>
         </Pressable>
       </RNView>
 
