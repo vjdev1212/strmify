@@ -2,7 +2,6 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { StyleSheet, Pressable, View as RNView, ScrollView } from 'react-native';
 import { ActivityIndicator, Card, StatusBar, Text, View } from '@/components/Themed';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
 import { isHapticsSupported, showAlert } from '@/utils/platform';
@@ -16,6 +15,7 @@ import BottomSpacing from '@/components/BottomSpacing';
 import { getPlatformSpecificPlayers, Players } from '@/utils/MediaPlayer';
 import StatusModal from '@/components/StatusModal';
 import { extractQuality, extractSize, getStreamType } from '@/utils/StreamItem';
+import { storageService } from '@/utils/StorageService';
 
 interface Stream {
     name: string;
@@ -71,7 +71,7 @@ const StreamListScreen = () => {
 
     const fetchServerConfigs = useCallback(async () => {
         try {
-            const storedServers = await AsyncStorage.getItem('servers');
+            const storedServers = await storageService.getItem('servers');
             let stremioServerList: ServerConfig[] = [];
 
             if (!storedServers) {
@@ -115,7 +115,7 @@ const StreamListScreen = () => {
     // Load saved default player from config
     const loadDefaultPlayer = async () => {
         try {
-            const savedDefault = await AsyncStorage.getItem(STORAGE_KEY);
+            const savedDefault = await storageService.getItem(STORAGE_KEY);
             if (savedDefault) {
                 const defaultPlayerName = JSON.parse(savedDefault);
                 setSelectedPlayer(defaultPlayerName);
@@ -285,7 +285,7 @@ const StreamListScreen = () => {
         try {
             setLoading(true);
 
-            const storedAddons = await AsyncStorage.getItem('addons');
+            const storedAddons = await storageService.getItem('addons');
             if (!storedAddons) {
                 setAddons([]);
                 setLoading(false);

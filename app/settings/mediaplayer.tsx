@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, ScrollView, Pressable, Alert, Platform } from 'react-native';
 import { Text, View, StatusBar } from '@/components/Themed';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -9,6 +8,7 @@ import { getOriginalPlatform, isHapticsSupported, showAlert } from '@/utils/plat
 import BottomSpacing from '@/components/BottomSpacing';
 import { Players } from '@/utils/MediaPlayer';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { storageService } from '@/utils/StorageService';
 
 
 interface PlayerConfig {
@@ -84,7 +84,7 @@ const MediaPlayerConfigScreen = () => {
             const platformPlayers = getPlatformSpecificPlayers();
 
             // Load saved default player
-            const savedDefault = await AsyncStorage.getItem(STORAGE_KEY);
+            const savedDefault = await storageService.getItem(STORAGE_KEY);
 
             if (savedDefault) {
                 const defaultPlayerName = JSON.parse(savedDefault);
@@ -128,7 +128,7 @@ const MediaPlayerConfigScreen = () => {
         setSaving(true);
 
         try {
-            await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(selectedPlayer));
+            await storageService.setItem(STORAGE_KEY, JSON.stringify(selectedPlayer));
 
             if (isHapticsSupported()) {
                 await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -156,7 +156,7 @@ const MediaPlayerConfigScreen = () => {
                     text: 'Reset',
                     onPress: async () => {
                         try {
-                            await AsyncStorage.removeItem(STORAGE_KEY);
+                            await storageService.removeItem(STORAGE_KEY);
                             const platformPlayers = getPlatformSpecificPlayers();
                             setPlayers(platformPlayers);
                             if (platformPlayers.length > 0) {

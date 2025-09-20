@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { StyleSheet, Switch, TextInput, Pressable, ScrollView, Animated } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, Text } from '@/components/Themed';
 import { confirmAction, showAlert } from '@/utils/platform';
 import { MaterialIcons } from '@expo/vector-icons';
+import { storageService } from '@/utils/StorageService';
 
 interface ServerConfigProps {
   serverName: string;
@@ -48,7 +48,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
 
   const loadServers = async () => {
     try {
-      const savedConfigs = await AsyncStorage.getItem('servers');
+      const savedConfigs = await storageService.getItem('servers');
       const servers: ServerConfig[] = savedConfigs ? JSON.parse(savedConfigs) : [];
       const filteredServers = servers.filter(server => server.serverType === serverType);
 
@@ -80,7 +80,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
     }
 
     try {
-      const savedConfigs = await AsyncStorage.getItem('servers');
+      const savedConfigs = await storageService.getItem('servers');
       const allServers: ServerConfig[] = savedConfigs ? JSON.parse(savedConfigs) : [];
 
       let updatedAllServers: ServerConfig[];
@@ -116,7 +116,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
         updatedAllServers = [...otherServersOfSameType, configToSave];
       }
 
-      await AsyncStorage.setItem('servers', JSON.stringify(updatedAllServers));
+      await storageService.setItem('servers', JSON.stringify(updatedAllServers));
 
       setEditingId(null);
       setIsAddingNew(false);
@@ -213,14 +213,14 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
     }
 
     try {
-      const savedConfigs = await AsyncStorage.getItem('servers');
+      const savedConfigs = await storageService.getItem('servers');
       const allServers: ServerConfig[] = savedConfigs ? JSON.parse(savedConfigs) : [];
 
       const updatedAllServers = allServers.map(server =>
         server.serverId === inlineEditingId ? { ...server, serverUrl: inlineEditValue.trim() } : server
       );
 
-      await AsyncStorage.setItem('servers', JSON.stringify(updatedAllServers));
+      await storageService.setItem('servers', JSON.stringify(updatedAllServers));
 
       setInlineEditingId(null);
       setInlineEditValue('');
@@ -249,10 +249,10 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
     if (!confirmed) return;
 
     try {
-      const savedConfigs = await AsyncStorage.getItem('servers');
+      const savedConfigs = await storageService.getItem('servers');
       const allServers: ServerConfig[] = savedConfigs ? JSON.parse(savedConfigs) : [];
       const updatedAllServers = allServers.filter(server => server.serverId !== serverId);
-      await AsyncStorage.setItem('servers', JSON.stringify(updatedAllServers));
+      await storageService.setItem('servers', JSON.stringify(updatedAllServers));
       setSelectedServerId(null);
       await loadServers();
       showAlert('Success', 'Server configuration deleted.');
@@ -263,7 +263,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
 
   const handleSetAsCurrent = async (serverId: string) => {
     try {
-      const savedConfigs = await AsyncStorage.getItem('servers');
+      const savedConfigs = await storageService.getItem('servers');
       const allServers: ServerConfig[] = savedConfigs ? JSON.parse(savedConfigs) : [];
 
       const updatedServers = allServers.map(server => {
@@ -276,7 +276,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
         return server;
       });
 
-      await AsyncStorage.setItem('servers', JSON.stringify(updatedServers));
+      await storageService.setItem('servers', JSON.stringify(updatedServers));
       await loadServers();
 
       // Close the expanded row after setting as current

@@ -6,8 +6,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { webLinking } from '@/utils/Web';
 import { clearTraktTokens, getTraktTokens, getTraktUserInfo, isUserAuthenticated, saveTraktTokens, TraktTokens } from '@/clients/trakt';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { storageService } from '@/utils/StorageService';
 
 // Storage key for Trakt enable preference
 const TRAKT_ENABLED_KEY = '@trakt_enabled';
@@ -49,7 +49,7 @@ const TraktAuthScreen = () => {
 
     const loadTraktEnabledState = async () => {
         try {
-            const stored = await AsyncStorage.getItem(TRAKT_ENABLED_KEY);
+            const stored = await storageService.getItem(TRAKT_ENABLED_KEY);
             if (stored !== null) {
                 setIsTraktEnabled(JSON.parse(stored));
             }
@@ -60,7 +60,7 @@ const TraktAuthScreen = () => {
 
     const saveTraktEnabledState = async (enabled: boolean) => {
         try {
-            await AsyncStorage.setItem(TRAKT_ENABLED_KEY, JSON.stringify(enabled));
+            await storageService.setItem(TRAKT_ENABLED_KEY, JSON.stringify(enabled));
         } catch (error) {
             console.error('Failed to save Trakt enabled state:', error);
         }
