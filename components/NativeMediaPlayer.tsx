@@ -499,7 +499,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
             try {
                 const { status } = await Brightness.requestPermissionsAsync();
                 if (status === 'granted') {
-                    Brightness.setSystemBrightnessAsync(value);
+                    await Brightness.setSystemBrightnessAsync(value);
                 }
             } catch (error) {
                 console.log('Failed to set brightness:', error);
