@@ -10,7 +10,7 @@ const DonateScreen = () => {
 
     const handleDonate = async () => {
         if (isHapticsSupported()) {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
         const profileUsername = process.env.EXPO_PUBLIC_BUY_ME_COFFEE || '';
         const buyMeACoffeeUrl = `https://www.buymeacoffee.com/${profileUsername}`;

@@ -95,7 +95,7 @@ const AddonsScreen = () => {
 
   const openConfiguration = async (url: string) => {
     if (isHapticsSupported()) {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     try {
       await WebBrowser.openBrowserAsync(`${url}/configure`);
@@ -106,7 +106,7 @@ const AddonsScreen = () => {
 
   const shareManifestUrl = async (url: string) => {
     if (isHapticsSupported()) {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     try {
       if (await Sharing.isAvailableAsync()) {
@@ -197,7 +197,7 @@ const AddonsScreen = () => {
             style={[styles.actionButton, styles.removeButton]}
             onPress={async () => {
               if (isHapticsSupported()) {
-                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               }
               const message = `Are you sure you want to remove "${item.name}"?`;
               if (Platform.OS === 'ios' || Platform.OS === 'android') {
@@ -233,7 +233,7 @@ const AddonsScreen = () => {
 
   const onAddNewPress = async () => {
     if (isHapticsSupported()) {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     router.push('/settings/add');
   };

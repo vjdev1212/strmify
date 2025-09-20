@@ -282,7 +282,7 @@ const TraktAuthScreen = () => {
             setIsLoading(true);
 
             if (!isWeb && isHapticsSupported()) {
-                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             }
 
             const authUrl = `https://trakt.tv/oauth/authorize?response_type=code&client_id=${TRAKT_CLIENT_ID}&redirect_uri=${encodeURIComponent(TRAKT_REDIRECT_URI)}&state=app_auth`;
@@ -317,7 +317,7 @@ const TraktAuthScreen = () => {
     const logout = async () => {
         try {
             if (!isWeb && isHapticsSupported()) {
-                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             }
 
             // Use service function to clear tokens

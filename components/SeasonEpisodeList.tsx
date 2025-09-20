@@ -126,7 +126,7 @@ const EpisodeItem: React.FC<EpisodeItemProps> = React.memo(({ item, onEpisodeSel
 
   const handleEpisodeSelect = useCallback(async (season: number, episode: number) => {
     if (isHapticsSupported()) {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     setSelectedEpisode(episode);
     onEpisodeSelect(season, episode);

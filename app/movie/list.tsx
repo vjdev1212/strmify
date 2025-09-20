@@ -79,7 +79,7 @@ const MoviesList = () => {
 
     const handlePress = async () => {
       if (isHapticsSupported()) {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
       router.push({
         pathname: '/movie/details',

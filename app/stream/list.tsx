@@ -180,7 +180,7 @@ const StreamListScreen = () => {
     // Modified handlePlay to work with Stremio only
     const handlePlay = async (stream: Stream, playerName?: string, forceServerId?: string) => {
         if (isHapticsSupported()) {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
         if (isPlaying) {
             return;
@@ -194,7 +194,7 @@ const StreamListScreen = () => {
         setPlayBtnDisabled(true);
         setModalVisible(true);
         if (isHapticsSupported()) {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
 
         if (!playerToUse || (!url && !serverIdToUse)) {
@@ -354,7 +354,7 @@ const StreamListScreen = () => {
 
     const handleAddonPress = async (item: Addon): Promise<void> => {
         if (isHapticsSupported()) {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
         setSelectedAddon(item);
         fetchStreams(item);
@@ -362,7 +362,7 @@ const StreamListScreen = () => {
 
     const handleStreamSelected = async (stream: Stream): Promise<void> => {
         if (isHapticsSupported()) {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
 
         const { embed, url, infoHash } = stream;

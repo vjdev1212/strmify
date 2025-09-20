@@ -51,7 +51,7 @@ const SearchScreen = () => {
 
   const clearSearch = async () => {
     if (isHapticsSupported()) {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     setQuery('');
     setMoviesUrl(null);

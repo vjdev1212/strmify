@@ -657,7 +657,7 @@ const TraktScreen = () => {
     // Memoized handlers
     const handleMediaPress = useCallback(async (item: EnhancedTraktItem) => {
         if (isHapticsSupported()) {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
 
         const content = item.movie || item.show;
@@ -674,7 +674,7 @@ const TraktScreen = () => {
 
     const handleCalendarItemPress = useCallback(async (item: CalendarItem) => {
         if (isHapticsSupported()) {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
 
         const tmdbId = item.tmdb_id;
@@ -691,7 +691,7 @@ const TraktScreen = () => {
     const handleTabPress = useCallback(async (tab: 'user-lists' | 'movies' | 'shows' | 'calendar') => {
         setSelectedTab(tab);
         if (isHapticsSupported()) {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
     }, []);
 

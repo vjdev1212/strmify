@@ -45,7 +45,7 @@ const PosterItem = ({
 
   const handlePress = async () => {
     if (isHapticsSupported()) {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     router.push({
       pathname: `/${type}/details`,
@@ -156,7 +156,7 @@ const PosterList = ({
 
   const handleSeeAllPress = useCallback(async () => {
     if (isHapticsSupported()) {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     router.push({
       pathname: `/${type}/list`,

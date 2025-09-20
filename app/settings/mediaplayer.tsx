@@ -114,7 +114,7 @@ const MediaPlayerConfigScreen = () => {
 
     const handlePlayerSelect = async (playerName: string) => {
         if (isHapticsSupported()) {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
         setSelectedPlayer(playerName);
     };
