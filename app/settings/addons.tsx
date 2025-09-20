@@ -17,8 +17,8 @@ import * as Sharing from 'expo-sharing';
 import * as Haptics from 'expo-haptics';
 import { isHapticsSupported, showAlert } from '@/utils/platform';
 import { Ionicons } from '@expo/vector-icons';
-import { useColorScheme } from '@/components/useColorScheme';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { SvgUri } from 'react-native-svg';
 
 const AddonsScreen = () => {
   const [addons, setAddons] = useState<any[]>([]);
@@ -94,6 +94,25 @@ const AddonsScreen = () => {
     }
   };
 
+  const isSvgUrl = (url: string): boolean => {
+    return url.toLowerCase().endsWith('.svg') || url.includes('image/svg+xml');
+  };
+
+  const AddonLogo = ({ uri, style }: { uri: string; style: any }) => {
+    if (isSvgUrl(uri)) {
+      return (
+        <SvgUri
+          uri={uri}
+          width={style.width || 40}
+          height={style.height || 40}
+          style={style}
+        />
+      );
+    }
+
+    return <Image source={{ uri }} style={style} />;
+  };
+
   const renderAddonCard = (item: any, index: number) => {
     const configurable = item.behaviorHints?.configurable;
 
@@ -101,7 +120,7 @@ const AddonsScreen = () => {
       <View style={styles.addonCard} key={item.id}>
         {/* Header Section */}
         <View style={styles.cardHeader}>
-          <Image source={{ uri: item.logo }} style={styles.addonLogo} />
+          <AddonLogo uri={item.logo} style={styles.addonLogo} />
           <View style={styles.headerInfo}>
             <Text style={styles.addonName} numberOfLines={2}>{item.name}</Text>
             <Text style={styles.addonTypes} numberOfLines={1}>
