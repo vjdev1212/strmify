@@ -52,7 +52,23 @@ const secureStorageImpl: StorageService = {
 
     async clear(): Promise<void> {
         try {
-            console.warn('SecureStore does not have a native clear method. Consider implementing key tracking for bulk deletion.');
+            // Clear all defined storage keys
+            const keysToDelete = Object.values(StorageKeys);
+
+            const deletePromises = keysToDelete.map(async (key) => {
+                try {
+                    await SecureStore.deleteItemAsync(key);
+                    console.log(`Cleared key: ${key}`);
+                } catch (error) {
+                    console.warn(`Failed to clear key ${key}:`, error);
+                    // Continue with other keys even if one fails
+                }
+            });
+
+            // Wait for all deletion operations to complete
+            await Promise.all(deletePromises);
+
+            console.log('SecureStore cleared successfully');
         } catch (error) {
             console.error('Error clearing SecureStore:', error);
             throw error;
@@ -127,14 +143,14 @@ export const storageService = {
         if (Platform.OS === 'web') {
             return asyncStorageImpl;
         }
-        
+
         // On iOS/Android, prefer SecureStore but fallback to AsyncStorage if unavailable
         return secureStorageImpl;
     },
 
     async getItem(key: string): Promise<string | null> {
         const storage = this._getStorageImpl();
-        
+
         // If using SecureStore on native platforms, check availability first
         if (Platform.OS !== 'web') {
             const isSecureStoreAvailable = await secureStorageImpl.isAvailable();
@@ -143,13 +159,13 @@ export const storageService = {
                 return asyncStorageImpl.getItem(key);
             }
         }
-        
+
         return storage.getItem(key);
     },
 
     async setItem(key: string, value: string): Promise<void> {
         const storage = this._getStorageImpl();
-        
+
         // If using SecureStore on native platforms, check availability first
         if (Platform.OS !== 'web') {
             const isSecureStoreAvailable = await secureStorageImpl.isAvailable();
@@ -158,13 +174,13 @@ export const storageService = {
                 return asyncStorageImpl.setItem(key, value);
             }
         }
-        
+
         return storage.setItem(key, value);
     },
 
     async removeItem(key: string): Promise<void> {
         const storage = this._getStorageImpl();
-        
+
         // If using SecureStore on native platforms, check availability first
         if (Platform.OS !== 'web') {
             const isSecureStoreAvailable = await secureStorageImpl.isAvailable();
@@ -173,13 +189,13 @@ export const storageService = {
                 return asyncStorageImpl.removeItem(key);
             }
         }
-        
+
         return storage.removeItem(key);
     },
 
     async clear(): Promise<void> {
         const storage = this._getStorageImpl();
-        
+
         // If using SecureStore on native platforms, check availability first
         if (Platform.OS !== 'web') {
             const isSecureStoreAvailable = await secureStorageImpl.isAvailable();
@@ -188,7 +204,7 @@ export const storageService = {
                 return asyncStorageImpl.clear();
             }
         }
-        
+
         return storage.clear();
     },
 
@@ -205,7 +221,7 @@ export const storageService = {
                 console.warn('SecureStore not available, falling back to AsyncStorage (options ignored)');
                 return asyncStorageImpl.setItem(key, value);
             }
-            
+
             await SecureStore.setItemAsync(key, value, options);
         } catch (error) {
             console.error('Error writing to SecureStore with options:', error);
@@ -225,7 +241,7 @@ export const storageService = {
                 console.warn('SecureStore not available, falling back to AsyncStorage (options ignored)');
                 return asyncStorageImpl.getItem(key);
             }
-            
+
             const value = await SecureStore.getItemAsync(key, options);
             return value;
         } catch (error) {
