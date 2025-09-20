@@ -301,46 +301,6 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
     }
   };
 
-  const renderServerItem = ({ item }: { item: ServerConfig }) => (
-    <View style={styles.settingsRow}>
-      <Pressable
-        style={styles.settingsRowPressable}
-        onPress={() => handleSetAsCurrent(item.serverId)}
-      >
-        <View style={styles.settingsRowContent}>
-          <View style={styles.settingsRowLeft}>
-            <Text style={styles.settingsRowLabel}>Server URL</Text>
-            <Text style={styles.settingsRowValue}>{item.serverUrl}</Text>
-          </View>
-          <View style={styles.settingsRowRight}>
-            {item.current && <MaterialIcons name="check" size={20} color="#007AFF" />}
-          </View>
-        </View>
-      </Pressable>
-
-      <View style={styles.settingsRowActions}>
-        <Pressable
-          style={styles.actionButton}
-          onPress={() => startInlineEdit(item)}
-        >
-          <Text style={styles.actionButtonText}>Edit</Text>
-        </Pressable>
-
-        <View style={styles.actionDivider} />
-
-        <Pressable
-          style={[styles.actionButton, item.current && styles.disabledActionButton]}
-          onPress={() => handleDelete(item.serverId)}
-          disabled={item.current}
-        >
-          <Text style={[styles.deleteActionText, item.current && styles.disabledActionText]}>
-            Delete
-          </Text>
-        </Pressable>
-      </View>
-    </View>
-  );
-
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Header */}

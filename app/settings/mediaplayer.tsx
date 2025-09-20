@@ -18,7 +18,7 @@ interface PlayerConfig {
     isDefault: boolean;
 }
 
-const STORAGE_KEY = 'defaultMediaPlayer';
+const DEFAULT_MEDIA_PLAYER_KEY = 'defaultMediaPlayer';
 
 const MediaPlayerConfigScreen = () => {
     const [players, setPlayers] = useState<PlayerConfig[]>([]);
@@ -84,7 +84,7 @@ const MediaPlayerConfigScreen = () => {
             const platformPlayers = getPlatformSpecificPlayers();
 
             // Load saved default player
-            const savedDefault = await storageService.getItem(STORAGE_KEY);
+            const savedDefault = await storageService.getItem(DEFAULT_MEDIA_PLAYER_KEY);
 
             if (savedDefault) {
                 const defaultPlayerName = JSON.parse(savedDefault);
@@ -128,7 +128,7 @@ const MediaPlayerConfigScreen = () => {
         setSaving(true);
 
         try {
-            await storageService.setItem(STORAGE_KEY, JSON.stringify(selectedPlayer));
+            await storageService.setItem(DEFAULT_MEDIA_PLAYER_KEY, JSON.stringify(selectedPlayer));
 
             if (isHapticsSupported()) {
                 await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -156,7 +156,7 @@ const MediaPlayerConfigScreen = () => {
                     text: 'Reset',
                     onPress: async () => {
                         try {
-                            await storageService.removeItem(STORAGE_KEY);
+                            await storageService.removeItem(DEFAULT_MEDIA_PLAYER_KEY);
                             const platformPlayers = getPlatformSpecificPlayers();
                             setPlayers(platformPlayers);
                             if (platformPlayers.length > 0) {

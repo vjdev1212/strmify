@@ -10,6 +10,7 @@ export interface TraktTokens {
 }
 
 // Trakt.tv API configuration from environment variables
+const TRAKT_TOKENS_KEY = 'trakt_tokens';
 const TRAKT_CLIENT_ID = process.env.EXPO_PUBLIC_TRAKT_CLIENT_ID || '';
 const TRAKT_CLIENT_SECRET = process.env.EXPO_PUBLIC_TRAKT_CLIENT_SECRET || '';
 const TRAKT_REDIRECT_URI = process.env.EXPO_PUBLIC_TRAKT_REDIRECT_URI || '';
@@ -28,7 +29,7 @@ export const getTraktTokens = async (): Promise<TraktTokens | null> => {
 
 export const saveTraktTokens = async (tokens: TraktTokens): Promise<void> => {
     try {
-        await storageService.setItem('trakt_tokens', JSON.stringify(tokens));
+        await storageService.setItem(TRAKT_TOKENS_KEY, JSON.stringify(tokens));
     } catch (error) {
         console.error('Failed to save Trakt tokens:', error);
         throw error;
