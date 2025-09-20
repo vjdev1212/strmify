@@ -643,7 +643,13 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                 <VLCPlayer
                     ref={playerRef}
                     style={styles.video}
-                    source={{ uri: videoUrl }}
+                    source={{
+                        uri: videoUrl,
+                        initType: 2,
+                        initOptions: [
+                            "--network-caching=1000"
+                        ],
+                    }}
                     autoplay={true}
                     autoAspectRatio={false}
                     resizeMode={settings.resizeMode}
@@ -1081,7 +1087,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                     >
                         <Text style={styles.panelTitle}>Playback Speed</Text>
                         <View style={styles.speedOptionsGrid}>
-                            {[0.5, 0.75, 0.8, 0.9, 1.0, 1.1, 1.2, 1.25, 1.5, 2.0].map(speed => (
+                            {[0.75, 0.8, 0.9, 1.0, 1.1, 1.2, 1.25].map(speed => (
                                 <TouchableOpacity
                                     key={speed}
                                     style={[
