@@ -41,6 +41,12 @@ const CustomContextMenu: React.FC<ContextMenuProps> = ({
   const scaleAnim = useRef(new Animated.Value(0.95)).current;
   const slideAnim = useRef(new Animated.Value(-5)).current;
 
+  const menuWidth = 200;
+  const itemHeight = 50;
+  const maxVisibleItems = 5;
+  const maxHeight = maxVisibleItems * itemHeight;
+  const menuHeight = Math.min(items.length * itemHeight, maxHeight) + 16;
+
   useEffect(() => {
     if (visible) {
       Animated.parallel([
@@ -71,46 +77,17 @@ const CustomContextMenu: React.FC<ContextMenuProps> = ({
     }
   }, [visible]);
 
-
-
-  const handleItemPress = (item: any): void => {
-    onItemSelect?.(item);
-    onClose?.();
-  };
-
-  const calculateMenuPosition = () => {
-    const menuWidth = 200;
-    const itemHeight = 50;
-    const maxVisibleItems = 5;
-    const maxHeight = maxVisibleItems * itemHeight;
-    const menuHeight = Math.min(items.length * itemHeight, maxHeight) + 16;
-    
-    let x = anchorPosition.x;
-    let y = anchorPosition.y;
-
-    // Position below the anchor (like a dropdown)
-    // No adjustment for horizontal position unless it goes off screen
-    if (x + menuWidth > screenWidth - 20) {
-      x = screenWidth - menuWidth - 20;
-    }
-    if (x < 20) {
-      x = 20;
-    }
-
-    // Only adjust vertical position if dropdown would go off screen bottom
-    if (y + menuHeight > screenHeight - 100) {
-      y = y - menuHeight; // Show above if no space below
-    }
-
-    return { x, y, width: menuWidth, height: menuHeight, maxScrollHeight: maxHeight };
-  };
-
   const isItemSelected = (item: any): boolean => {
     if (!selectedItem) return false;
     if (typeof selectedItem === 'object' && typeof item === 'object') {
       return selectedItem.id === item.id || selectedItem === item;
     }
     return selectedItem === item;
+  };
+
+  const handleItemPress = (item: any): void => {
+    onItemSelect?.(item);
+    onClose?.();
   };
 
   const renderDefaultItem = (item: any): React.ReactNode => {
@@ -146,8 +123,6 @@ const CustomContextMenu: React.FC<ContextMenuProps> = ({
     );
   };
 
-  const menuPosition = calculateMenuPosition();
-
   if (!visible) return null;
 
   return (
@@ -163,10 +138,10 @@ const CustomContextMenu: React.FC<ContextMenuProps> = ({
             style={[
               styles.contextMenu,
               {
-                left: menuPosition.x,
-                top: menuPosition.y,
-                width: menuPosition.width,
-                maxHeight: menuPosition.height,
+                left: anchorPosition.x,
+                top: anchorPosition.y,
+                width: menuWidth,
+                maxHeight: menuHeight,
                 transform: [
                   { scale: scaleAnim },
                   { translateY: slideAnim },
@@ -175,8 +150,8 @@ const CustomContextMenu: React.FC<ContextMenuProps> = ({
             ]}
           >
             <ScrollView
-              style={[styles.menuScrollView, { maxHeight: menuPosition.maxScrollHeight }]}
-              showsVerticalScrollIndicator={false}
+              style={[styles.menuScrollView, { maxHeight: maxHeight }]}
+              showsVerticalScrollIndicator={true}
             >
               {items.map((item, index) => (
                 <TouchableOpacity
