@@ -9,7 +9,7 @@ import { BlurView } from 'expo-blur';
 import { StorageKeys, storageService } from '@/utils/StorageService';
 
 // Storage key for Trakt enable preference
-const TRAKT_ENABLED_KEY = StorageKeys.TRAKT_ENABLED;
+const TRAKT_ENABLED_KEY = StorageKeys.TRAKT_ENABLED_KEY;
 
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];

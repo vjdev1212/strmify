@@ -38,10 +38,10 @@ interface StreamResponse {
 }
 
 const DEFAULT_STREMIO_URL = 'http://127.0.0.1:11470';
-const DEFAULT_MEDIA_PLAYER_KEY = StorageKeys.DEFAULT_MEDIA_PLAYER;
+const DEFAULT_MEDIA_PLAYER_KEY = StorageKeys.DEFAULT_MEDIA_PLAYER_KEY;
 
-const SERVERS_KEY = StorageKeys.SERVERS;
-const ADDONS_KEY = StorageKeys.ADDONS;
+const SERVERS_KEY = StorageKeys.SERVERS_KEY;
+const ADDONS_KEY = StorageKeys.ADDONS_KEY;
 
 const StreamListScreen = () => {
     const { imdbid, type, name: contentTitle, season, episode, colors } = useLocalSearchParams<{

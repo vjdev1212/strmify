@@ -21,7 +21,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { SvgUri } from 'react-native-svg';
 import { StorageKeys, storageService } from '@/utils/StorageService';
 
-const ADDONS_KEY = StorageKeys.ADDONS;
+const ADDONS_KEY = StorageKeys.ADDONS_KEY;
 
 const AddonsScreen = () => {
   const [addons, setAddons] = useState<any[]>([]);

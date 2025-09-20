@@ -10,7 +10,7 @@ export interface TraktTokens {
 }
 
 // Trakt.tv API configuration from environment variables
-const TRAKT_TOKENS_KEY = StorageKeys.TRAKT_TOKENS;
+const TRAKT_TOKENS_KEY = StorageKeys.TRAKT_TOKENS_KEY;
 const TRAKT_CLIENT_ID = process.env.EXPO_PUBLIC_TRAKT_CLIENT_ID || '';
 const TRAKT_CLIENT_SECRET = process.env.EXPO_PUBLIC_TRAKT_CLIENT_SECRET || '';
 const TRAKT_REDIRECT_URI = process.env.EXPO_PUBLIC_TRAKT_REDIRECT_URI || '';

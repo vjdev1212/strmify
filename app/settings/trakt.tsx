@@ -10,7 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StorageKeys, storageService } from '@/utils/StorageService';
 
 // Storage key for Trakt enable preference
-const TRAKT_ENABLED_KEY = StorageKeys.TRAKT_ENABLED;
+const TRAKT_ENABLED_KEY = StorageKeys.TRAKT_ENABLED_KEY;
 
 // Trakt.tv API configuration from environment variables
 const TRAKT_CLIENT_ID = process.env.EXPO_PUBLIC_TRAKT_CLIENT_ID || '';

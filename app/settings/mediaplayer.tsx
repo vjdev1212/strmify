@@ -18,7 +18,7 @@ interface PlayerConfig {
     isDefault: boolean;
 }
 
-const DEFAULT_MEDIA_PLAYER_KEY = StorageKeys.DEFAULT_MEDIA_PLAYER;
+const DEFAULT_MEDIA_PLAYER_KEY = StorageKeys.DEFAULT_MEDIA_PLAYER_KEY;
 
 const MediaPlayerConfigScreen = () => {
     const [players, setPlayers] = useState<PlayerConfig[]>([]);

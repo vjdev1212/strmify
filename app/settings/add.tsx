@@ -9,7 +9,7 @@ import { StorageKeys, storageService } from '@/utils/StorageService';
 
 const defaultAddonLogo = 'https://i.ibb.co/fSJ42PJ/addon.png';
 
-const ADDONS_KEY = StorageKeys.ADDONS;
+const ADDONS_KEY = StorageKeys.ADDONS_KEY;
 
 export default function AddAddonScreen() {
     const [url, setUrl] = useState('');

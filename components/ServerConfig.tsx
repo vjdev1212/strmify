@@ -19,7 +19,7 @@ export interface ServerConfig {
   current: boolean;
 }
 
-const SERVERS_KEY = StorageKeys.SERVERS;
+const SERVERS_KEY = StorageKeys.SERVERS_KEY;
 
 const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverType, defaultUrl }) => {
   const [serverUrl, setServerUrl] = useState<string>(defaultUrl);
