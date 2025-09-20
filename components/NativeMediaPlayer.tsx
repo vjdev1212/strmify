@@ -329,7 +329,6 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
             setIsPaused(true);
         } else {
             console.log('Resume');
-            playerRef.current.resume();
             setIsPaused(false);
         }
 
@@ -393,7 +392,6 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
     }, [currentTime, duration, seekTo, isReady]);
 
     const toggleBrightnessSlider = useCallback(async () => {
-        console.log('On Toggle Brightness');
         await playHaptic();
         setShowBrightnessSlider(!showBrightnessSlider);
         setShowSubtitleSettings(false);
@@ -404,9 +402,15 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
     }, [showBrightnessSlider, showControlsTemporarily]);
 
     const handleBrightnessChange = useCallback(async (value: number) => {
-        console.log('On Handle Brightness');
         setBrightness(value);
-        await Brightness.setBrightnessAsync(value)
+        try {
+            const { status } = await Brightness.requestPermissionsAsync();
+            if (status === 'granted') {
+                Brightness.setSystemBrightnessAsync(value);
+            }
+        } catch (error) {
+            console.log('Failed to set brightness:', error);
+        }
         showControlsTemporarily();
     }, [showControlsTemporarily]);
 
@@ -416,6 +420,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
         await playHaptic();
         const newMutedState = !isMuted;
         setIsMuted(newMutedState);
+
         showControlsTemporarily();
     }, [isMuted, showControlsTemporarily]);
 
@@ -438,6 +443,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
         setVolume(newVolume);
 
         console.log('New Volume', newVolume);
+
         if (newVolume === 0) {
             setIsMuted(true);
         } else if (isMuted && newVolume > 0) {
@@ -464,6 +470,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
         console.log('On Change Playback speed');
         await playHaptic();
         setPlaybackSpeed(speed);
+
         showControlsTemporarily();
     }, [showControlsTemporarily]);
 
@@ -543,22 +550,32 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
         seekTo(newTime);
     }, [duration, seekTo, isReady]);
 
-    // Close panels when touching outside
+    // Fixed close panels when touching outside
     const handleOverlayPress = useCallback(() => {
-        if (showSubtitleSettings) {
+        if (showSubtitleSettings || showAudioSettings || showSpeedSettings || showVolumeSlider || showBrightnessSlider) {
+            // Close any open panels first
             setShowSubtitleSettings(false);
-        } else if (showAudioSettings) {
             setShowAudioSettings(false);
-        } else if (showSpeedSettings) {
             setShowSpeedSettings(false);
-        } else if (showVolumeSlider) {
             setShowVolumeSlider(false);
-        } else if (showBrightnessSlider) {
             setShowBrightnessSlider(false);
         } else {
-            showControlsTemporarily();
+            // Toggle controls visibility
+            if (showControls) {
+                // Hide controls
+                Animated.timing(controlsOpacity, {
+                    toValue: 0,
+                    duration: 300,
+                    useNativeDriver: true,
+                }).start(() => {
+                    setShowControls(false);
+                });
+            } else {
+                // Show controls temporarily
+                showControlsTemporarily();
+            }
         }
-    }, [showSubtitleSettings, showAudioSettings, showSpeedSettings, showVolumeSlider, showBrightnessSlider, showControlsTemporarily]);
+    }, [showSubtitleSettings, showAudioSettings, showSpeedSettings, showVolumeSlider, showBrightnessSlider, showControls, controlsOpacity, showControlsTemporarily]);
 
     const getResizeModeIcon = useCallback(() => {
         switch (resizeMode) {
@@ -639,7 +656,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                 </View>
             )}
 
-            {/* Show artwork during loading and before first play */}
+            {/* Show artwork during loading and before first play with activity indicator on top */}
             {artwork && !hasStartedPlaying && !error && (
                 <View style={styles.artworkContainer}>
                     <Image
@@ -648,11 +665,16 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                         resizeMode="cover"
                     />
                     <View style={styles.artworkOverlay} />
+                    {/* Activity indicator on top of artwork */}
+                    <View style={styles.artworkLoadingOverlay}>
+                        <ActivityIndicator size="large" color="#535aff" />
+                        <Text style={styles.bufferingText}>Loading...</Text>
+                    </View>
                 </View>
             )}
 
-            {/* Loading indicator - show during initial loading and delayed buffering */}
-            {!hasStartedPlaying && !error && (
+            {/* Loading indicator - show during buffering after started playing */}
+            {showBufferingLoader && hasStartedPlaying && !error && (
                 <Animated.View
                     style={[
                         styles.bufferingContainer,
@@ -661,9 +683,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                     pointerEvents="none"
                 >
                     <ActivityIndicator size="large" color="#535aff" />
-                    <Text style={styles.bufferingText}>
-                        {!hasStartedPlaying ? "Loading..." : "Buffering..."}
-                    </Text>
+                    <Text style={styles.bufferingText}>Buffering...</Text>
                 </Animated.View>
             )}
 
@@ -930,8 +950,8 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                             <Ionicons name="sunny-outline" size={20} color="white" />
                             <Slider
                                 style={styles.brightnessSlider}
-                                minimumValue={0.25}
-                                maximumValue={1.0}
+                                minimumValue={0.1}
+                                maximumValue={2.0}
                                 value={brightness}
                                 onValueChange={handleBrightnessChange}
                                 minimumTrackTintColor="#007AFF"
@@ -999,7 +1019,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                                     key={track.id}
                                     style={[
                                         styles.settingOption,
-                                        selectedAudioTrack === -1 && styles.settingOptionSelected
+                                        selectedAudioTrack === track.id && styles.settingOptionSelected
                                     ]}
                                     onPress={() => selectAudioTrack(track.id)}
                                 >
@@ -1238,6 +1258,16 @@ const styles = StyleSheet.create({
         right: 0,
         bottom: 0,
         backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    },
+    artworkLoadingOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 2,
     },
     glassOverlay: {
         position: 'absolute',
