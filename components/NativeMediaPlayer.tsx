@@ -138,17 +138,17 @@ const useTimers = () => {
 
     const clearAllTimers = () => {
         [hideControlsTimer.current, resizeModeLabelTimer.current, bufferingTimer.current,
-         controlsDebounceTimer.current, progressDebounceTimer.current]
+        controlsDebounceTimer.current, progressDebounceTimer.current]
             .forEach(timer => timer && clearTimeout(timer));
     };
 
-    return { 
-        hideControlsTimer, 
-        resizeModeLabelTimer, 
-        bufferingTimer, 
+    return {
+        hideControlsTimer,
+        resizeModeLabelTimer,
+        bufferingTimer,
         controlsDebounceTimer,
         progressDebounceTimer,
-        clearAllTimers 
+        clearAllTimers
     };
 };
 
@@ -270,7 +270,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
             }
 
             timers.hideControlsTimer.current = setTimeout(() => {
-                if (playerState.isPlaying && !uiState.showSubtitleSettings && !uiState.showAudioSettings && 
+                if (playerState.isPlaying && !uiState.showSubtitleSettings && !uiState.showAudioSettings &&
                     !uiState.showSpeedSettings && !uiState.showVolumeSlider && !uiState.showBrightnessSlider) {
                     Animated.timing(controlsOpacity, {
                         toValue: 0,
@@ -286,20 +286,14 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
 
     // VLC Event Handlers
     const vlcHandlers = useMemo(() => ({
-        onLoadStart: () => {
-            console.log('VLC Player load start');
+        onLoad: (data: any) => {
+            console.log('VLC Player loaded:', data);
             playerState.setIsBuffering(true);
             playerState.setIsReady(false);
             playerState.setError(null);
             playerState.setHasStartedPlaying(false);
-        },
+            playerState.setShowBufferingLoader(true);
 
-        onLoad: (data: any) => {
-            console.log('VLC Player loaded:', data);
-            playerState.setIsReady(true);
-            playerState.setHasStartedPlaying(true);
-            playerState.setError(null);
-            
             if (data?.textTracks) {
                 settings.setAvailableTextTracks(data.textTracks);
             }
@@ -347,15 +341,14 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                 clearTimeout(timers.bufferingTimer.current);
             }
 
-            if (buffering && playerState.hasStartedPlaying) {
-                timers.bufferingTimer.current = setTimeout(() => {
-                    playerState.setShowBufferingLoader(true);
-                    Animated.timing(bufferOpacity, {
-                        toValue: 1,
-                        duration: 200,
-                        useNativeDriver: true,
-                    }).start();
-                }, 600);
+            if (buffering) {
+                // Show buffering immediately for better UX
+                playerState.setShowBufferingLoader(true);
+                Animated.timing(bufferOpacity, {
+                    toValue: 1,
+                    duration: 200,
+                    useNativeDriver: true,
+                }).start();
             } else {
                 playerState.setShowBufferingLoader(false);
                 Animated.timing(bufferOpacity, {
@@ -368,7 +361,9 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
 
         onPlaying: () => {
             console.log('On Playing');
+            playerState.setIsReady(true);
             playerState.setIsPlaying(true);
+            playerState.setHasStartedPlaying(true);
             playerState.setIsPaused(false);
             playerState.setIsBuffering(false);
             playerState.setShowBufferingLoader(false);
@@ -398,7 +393,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
             if (error?.error) {
                 errorMessage += ` ${error.error}`;
             }
-            
+
             playerState.setError(errorMessage);
             playerState.setIsBuffering(false);
             playerState.setIsReady(false);
@@ -620,7 +615,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
     }, [settings, showControlsTemporarily]);
 
     const handleOverlayPress = useCallback(() => {
-        if (uiState.showSubtitleSettings || uiState.showAudioSettings || uiState.showSpeedSettings || 
+        if (uiState.showSubtitleSettings || uiState.showAudioSettings || uiState.showSpeedSettings ||
             uiState.showVolumeSlider || uiState.showBrightnessSlider) {
             uiState.hideAllPanels();
         } else {
@@ -661,6 +656,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                     onPlaying={vlcHandlers.onPlaying}
                     onProgress={vlcHandlers.onProgress}
                     onLoad={vlcHandlers.onLoad}
+                    // onLoadStart={vlcHandlers.onLoadStart}
                     onBuffering={vlcHandlers.onBuffering}
                     onPaused={vlcHandlers.onPaused}
                     onStopped={vlcHandlers.onStopped}
@@ -710,8 +706,8 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                 </View>
             )}
 
-            {/* Loading indicator */}
-            {playerState.showBufferingLoader && playerState.hasStartedPlaying && !playerState.error && (
+            {/* Loading indicator - show during any buffering */}
+            {(playerState.showBufferingLoader || playerState.isBuffering) && !playerState.error && (
                 <Animated.View
                     style={[
                         styles.bufferingContainer,
@@ -720,7 +716,9 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                     pointerEvents="none"
                 >
                     <ActivityIndicator size="large" color="#535aff" />
-                    <Text style={styles.bufferingText}>Buffering...</Text>
+                    <Text style={styles.bufferingText}>
+                        {playerState.hasStartedPlaying ? "Buffering..." : "Loading..."}
+                    </Text>
                 </Animated.View>
             )}
 
@@ -766,9 +764,9 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                         colors={['rgba(0,0,0,0.8)', 'transparent']}
                         style={styles.topControls}
                     >
-                        <TouchableOpacity style={styles.backButton} onPress={async () => { 
-                            await playHaptic(); 
-                            onBack(); 
+                        <TouchableOpacity style={styles.backButton} onPress={async () => {
+                            await playHaptic();
+                            onBack();
                         }}>
                             <Ionicons name="chevron-back" size={28} color="white" />
                         </TouchableOpacity>
@@ -782,10 +780,10 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                         <View style={styles.topRightControls}>
                             <TouchableOpacity
                                 style={styles.controlButton}
-                                onPress={controlActions.cycleResizeMode}
+                                onPress={controlActions.toggleMute}
                             >
-                                <MaterialIcons
-                                    name={getResizeModeIcon()}
+                                <Ionicons
+                                    name={settings.isMuted || displayVolume === 0 ? "volume-mute" : displayVolume < 50 ? "volume-low" : "volume-high"}
                                     size={24}
                                     color="white"
                                 />
