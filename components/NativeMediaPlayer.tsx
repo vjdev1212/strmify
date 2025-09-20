@@ -109,7 +109,7 @@ const usePlayerSettings = () => {
     const [volume, setVolume] = useState(1);
     const [isMuted, setIsMuted] = useState(false);
     const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
-    const [resizeMode, setResizeMode] = useState<PlayerResizeMode>('contain');
+    const [resizeMode, setResizeMode] = useState<PlayerResizeMode>('fill');
     const [brightness, setBrightness] = useState<number>(1);
     const [selectedSubtitle, setSelectedSubtitle] = useState<number>(-1);
     const [selectedAudioTrack, setSelectedAudioTrack] = useState<number>(1);
@@ -651,7 +651,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                         ],
                     }}
                     autoplay={true}
-                    autoAspectRatio={false}
+                    autoAspectRatio={true}
                     resizeMode={settings.resizeMode}
                     playInBackground={true}
                     acceptInvalidCertificates={true}
