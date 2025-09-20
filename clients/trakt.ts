@@ -1,4 +1,4 @@
-import { webSecureStore } from "@/utils/Web";
+import { storageService } from "@/utils/StorageService";
 
 export interface TraktTokens {
     access_token: string;
@@ -18,7 +18,7 @@ const TRAKT_API_BASE = process.env.EXPO_PUBLIC_TRAKT_API_BASE || 'https://api.tr
 // Token management functions
 export const getTraktTokens = async (): Promise<TraktTokens | null> => {
     try {
-        const tokens = await webSecureStore.getItem('trakt_tokens');
+        const tokens = await storageService.getItem('trakt_tokens');
         return tokens ? JSON.parse(tokens) : null;
     } catch (error) {
         console.error('Failed to get Trakt tokens:', error);
@@ -28,7 +28,7 @@ export const getTraktTokens = async (): Promise<TraktTokens | null> => {
 
 export const saveTraktTokens = async (tokens: TraktTokens): Promise<void> => {
     try {
-        await webSecureStore.setItem('trakt_tokens', JSON.stringify(tokens));
+        await storageService.setItem('trakt_tokens', JSON.stringify(tokens));
     } catch (error) {
         console.error('Failed to save Trakt tokens:', error);
         throw error;
@@ -37,7 +37,7 @@ export const saveTraktTokens = async (tokens: TraktTokens): Promise<void> => {
 
 export const clearTraktTokens = async (): Promise<void> => {
     try {
-        await webSecureStore.deleteItem('trakt_tokens');
+        await storageService.removeItem('trakt_tokens');
     } catch (error) {
         console.error('Failed to clear Trakt tokens:', error);
     }
