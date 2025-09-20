@@ -4,10 +4,10 @@ import {
     Text,
     ScrollView,
     StyleSheet,
-    SafeAreaView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import BottomSpacing from '@/components/BottomSpacing';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const DisclaimerScreen = () => {
     return (

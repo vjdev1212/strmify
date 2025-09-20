@@ -2,7 +2,6 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { StyleSheet, Pressable, View as RNView, ScrollView } from 'react-native';
 import { ActivityIndicator, Card, StatusBar, Text, View } from '@/components/Themed';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
 import { isHapticsSupported, showAlert } from '@/utils/platform';
@@ -16,6 +15,7 @@ import BottomSpacing from '@/components/BottomSpacing';
 import { getPlatformSpecificPlayers, Players } from '@/utils/MediaPlayer';
 import StatusModal from '@/components/StatusModal';
 import { extractQuality, extractSize, getStreamType } from '@/utils/StreamItem';
+import { StorageKeys, storageService } from '@/utils/StorageService';
 
 interface Stream {
     name: string;
@@ -23,6 +23,8 @@ interface Stream {
     url?: string;
     embed?: string;
     infoHash?: string;
+    magnet?: string;
+    magnetLink?: string;
     description?: string;
 }
 
@@ -38,10 +40,13 @@ interface StreamResponse {
 }
 
 const DEFAULT_STREMIO_URL = 'http://127.0.0.1:11470';
-const STORAGE_KEY = 'defaultMediaPlayer';
+const DEFAULT_MEDIA_PLAYER_KEY = StorageKeys.DEFAULT_MEDIA_PLAYER_KEY;
+
+const SERVERS_KEY = StorageKeys.SERVERS_KEY;
+const ADDONS_KEY = StorageKeys.ADDONS_KEY;
 
 const StreamListScreen = () => {
-    const { imdbid, type, name: contentTitle, season, episode, colors } = useLocalSearchParams<{
+    const { imdbid, type, name: contentTitle, season, episode } = useLocalSearchParams<{
         imdbid: string;
         type: string;
         name: string;
@@ -71,7 +76,7 @@ const StreamListScreen = () => {
 
     const fetchServerConfigs = useCallback(async () => {
         try {
-            const storedServers = await AsyncStorage.getItem('servers');
+            const storedServers = await storageService.getItem(SERVERS_KEY);
             let stremioServerList: ServerConfig[] = [];
 
             if (!storedServers) {
@@ -115,7 +120,7 @@ const StreamListScreen = () => {
     // Load saved default player from config
     const loadDefaultPlayer = async () => {
         try {
-            const savedDefault = await AsyncStorage.getItem(STORAGE_KEY);
+            const savedDefault = await storageService.getItem(DEFAULT_MEDIA_PLAYER_KEY);
             if (savedDefault) {
                 const defaultPlayerName = JSON.parse(savedDefault);
                 setSelectedPlayer(defaultPlayerName);
@@ -157,6 +162,39 @@ const StreamListScreen = () => {
         }
     }, [stremioServers]);
 
+    // Helper function to get magnet link from stream (for copy/open actions only)
+    const getMagnetFromStream = (stream: Stream): string | null => {
+        const { magnet, magnetLink, infoHash } = stream;
+        
+        // For copy/open actions, prefer full magnet links with metadata
+        if (magnet) return magnet;
+        if (magnetLink) return magnetLink;
+        
+        // Convert infoHash to basic magnet link as fallback
+        if (infoHash) {
+            return convertInfoHashToMagnet(infoHash);
+        }
+        
+        return null;
+    };
+
+    // Helper function to extract infoHash from stream (for Stremio playback only)
+    const getInfoHashFromStream = (stream: Stream): string | null => {
+        const { infoHash, magnet, magnetLink } = stream;
+        
+        // For Stremio playback, prefer existing infoHash for direct processing
+        if (infoHash) return infoHash;
+        
+        // Extract infoHash from magnet links as fallback
+        const magnetToUse = magnet || magnetLink;
+        if (magnetToUse) {
+            const match = magnetToUse.match(/xt=urn:btih:([a-fA-F0-9]{40}|[a-fA-F0-9]{32})/i);
+            if (match) return match[1];
+        }
+        
+        return null;
+    };
+
     const generatePlayerUrlWithInfoHash = async (infoHash: string, serverUrl: string) => {
         try {
             setStatusText('Torrent details sent to the server. This may take a moment. Please wait...');
@@ -177,13 +215,14 @@ const StreamListScreen = () => {
     // Modified handlePlay to work with Stremio only
     const handlePlay = async (stream: Stream, playerName?: string, forceServerId?: string) => {
         if (isHapticsSupported()) {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
         if (isPlaying) {
             return;
         }
 
-        const { url, infoHash } = stream;
+        const { url } = stream;
+        const infoHash = getInfoHashFromStream(stream);
         const playerToUse = playerName || selectedPlayer;
         const serverIdToUse = forceServerId || selectedServerId;
 
@@ -191,7 +230,7 @@ const StreamListScreen = () => {
         setPlayBtnDisabled(true);
         setModalVisible(true);
         if (isHapticsSupported()) {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
 
         if (!playerToUse || (!url && !serverIdToUse)) {
@@ -285,7 +324,7 @@ const StreamListScreen = () => {
         try {
             setLoading(true);
 
-            const storedAddons = await AsyncStorage.getItem('addons');
+            const storedAddons = await storageService.getItem(ADDONS_KEY);
             if (!storedAddons) {
                 setAddons([]);
                 setLoading(false);
@@ -351,7 +390,7 @@ const StreamListScreen = () => {
 
     const handleAddonPress = async (item: Addon): Promise<void> => {
         if (isHapticsSupported()) {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
         setSelectedAddon(item);
         fetchStreams(item);
@@ -359,10 +398,11 @@ const StreamListScreen = () => {
 
     const handleStreamSelected = async (stream: Stream): Promise<void> => {
         if (isHapticsSupported()) {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
 
-        const { embed, url, infoHash } = stream;
+        const { embed, url } = stream;
+        const infoHash = getInfoHashFromStream(stream);
 
         if (embed) {
             router.push({ pathname: '/stream/embed', params: { url: embed } });
@@ -373,7 +413,7 @@ const StreamListScreen = () => {
         setSelectedStream(stream);
 
         if (!url && infoHash) {
-            showServerSelection(stream);
+            showTorrentActions(stream);
         } else {
             // Check if we have a default player configured
             if (selectedPlayer) {
@@ -409,7 +449,7 @@ const StreamListScreen = () => {
         }
     };
 
-    const showServerSelection = (stream: Stream) => {
+    const showTorrentActions = (stream: Stream) => {
         // Check if any Stremio servers are available
         if (stremioServers.length === 0) {
             showAlert('Error', 'No Stremio servers are configured');
@@ -418,15 +458,17 @@ const StreamListScreen = () => {
 
         // Get the current server name to display
         const currentServer = stremioServers.find(server => server.serverId === selectedServerId);
-        const currentServerName = currentServer ? currentServer.serverName : stremioServers[0].serverName;
         const serverId = currentServer?.serverId || stremioServers[0].serverId;
 
-        const { url, infoHash } = stream;
+        const { url } = stream;
         let linkToUse = url || '';
         
-        // Convert infoHash to magnet link if no direct URL
-        if (!url && infoHash) {
-            linkToUse = convertInfoHashToMagnet(infoHash);
+        // Get magnet link from stream (handles infoHash, magnet, magnetLink)
+        if (!url) {
+            const magnetLink = getMagnetFromStream(stream);
+            if (magnetLink) {
+                linkToUse = magnetLink;
+            }
         }
 
         // Show action sheet with current server and additional options

@@ -1,4 +1,4 @@
-import { SafeAreaView, ScrollView, StyleSheet, Pressable, ActivityIndicator, RefreshControl, Image, FlatList, Dimensions } from 'react-native';
+import { ScrollView, StyleSheet, Pressable, ActivityIndicator, RefreshControl, Image, FlatList, Dimensions } from 'react-native';
 import { StatusBar, Text, View } from '../../components/Themed';
 import { isHapticsSupported, showAlert } from '@/utils/platform';
 import * as Haptics from 'expo-haptics';
@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import BottomSpacing from '@/components/BottomSpacing';
 import { isUserAuthenticated, makeTraktApiCall } from '@/clients/trakt';
 import { ListSection, CalendarSection, TraktItem, EnhancedTraktItem, CalendarItem } from '@/models/trakt';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
@@ -656,7 +657,7 @@ const TraktScreen = () => {
     // Memoized handlers
     const handleMediaPress = useCallback(async (item: EnhancedTraktItem) => {
         if (isHapticsSupported()) {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
 
         const content = item.movie || item.show;
@@ -673,7 +674,7 @@ const TraktScreen = () => {
 
     const handleCalendarItemPress = useCallback(async (item: CalendarItem) => {
         if (isHapticsSupported()) {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
 
         const tmdbId = item.tmdb_id;
@@ -690,7 +691,7 @@ const TraktScreen = () => {
     const handleTabPress = useCallback(async (tab: 'user-lists' | 'movies' | 'shows' | 'calendar') => {
         setSelectedTab(tab);
         if (isHapticsSupported()) {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
     }, []);
 

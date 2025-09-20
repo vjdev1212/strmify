@@ -1,6 +1,7 @@
 import ServerConfiguration from '@/components/ServerConfig';
-import { SafeAreaView, ScrollView, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { StatusBar } from '@/components/Themed';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const StremioServerScreen = () => {
     return (

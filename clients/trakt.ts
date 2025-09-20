@@ -1,4 +1,4 @@
-import { webSecureStore } from "@/utils/Web";
+import { StorageKeys, storageService } from "@/utils/StorageService";
 
 export interface TraktTokens {
     access_token: string;
@@ -10,16 +10,27 @@ export interface TraktTokens {
 }
 
 // Trakt.tv API configuration from environment variables
+const TRAKT_TOKENS_KEY = StorageKeys.TRAKT_TOKENS_KEY;
 const TRAKT_CLIENT_ID = process.env.EXPO_PUBLIC_TRAKT_CLIENT_ID || '';
 const TRAKT_CLIENT_SECRET = process.env.EXPO_PUBLIC_TRAKT_CLIENT_SECRET || '';
 const TRAKT_REDIRECT_URI = process.env.EXPO_PUBLIC_TRAKT_REDIRECT_URI || '';
 const TRAKT_API_BASE = process.env.EXPO_PUBLIC_TRAKT_API_BASE || 'https://api.trakt.tv';
 
+// Simple in-memory state
+let cachedTokens: TraktTokens | null = null;
+let isRefreshing = false;
+
 // Token management functions
 export const getTraktTokens = async (): Promise<TraktTokens | null> => {
+    if (cachedTokens) return cachedTokens;
+    
     try {
-        const tokens = await webSecureStore.getItem('trakt_tokens');
-        return tokens ? JSON.parse(tokens) : null;
+        const tokens = await storageService.getItem(TRAKT_TOKENS_KEY);
+        if (tokens) {
+            cachedTokens = JSON.parse(tokens);
+            return cachedTokens;
+        }
+        return null;
     } catch (error) {
         console.error('Failed to get Trakt tokens:', error);
         return null;
@@ -28,7 +39,8 @@ export const getTraktTokens = async (): Promise<TraktTokens | null> => {
 
 export const saveTraktTokens = async (tokens: TraktTokens): Promise<void> => {
     try {
-        await webSecureStore.setItem('trakt_tokens', JSON.stringify(tokens));
+        cachedTokens = tokens;
+        await storageService.setItem(TRAKT_TOKENS_KEY, JSON.stringify(tokens));
     } catch (error) {
         console.error('Failed to save Trakt tokens:', error);
         throw error;
@@ -37,7 +49,9 @@ export const saveTraktTokens = async (tokens: TraktTokens): Promise<void> => {
 
 export const clearTraktTokens = async (): Promise<void> => {
     try {
-        await webSecureStore.deleteItem('trakt_tokens');
+        cachedTokens = null;
+        isRefreshing = false;
+        await storageService.removeItem(TRAKT_TOKENS_KEY);
     } catch (error) {
         console.error('Failed to clear Trakt tokens:', error);
     }
@@ -47,37 +61,7 @@ export const clearTraktTokens = async (): Promise<void> => {
 export const isUserAuthenticated = async (): Promise<boolean> => {
     try {
         const tokens = await getTraktTokens();
-        if (!tokens?.access_token) {
-            return false;
-        }
-
-        // If token is close to expiring (within 5 minutes), refresh it proactively
-        const expiresAt = tokens.created_at + tokens.expires_in;
-        const timeUntilExpiry = expiresAt - (Date.now() / 1000);
-
-        if (timeUntilExpiry < 300) { // Less than 5 minutes
-            console.log('Token expiring soon, refreshing proactively...');
-            const refreshSuccess = await refreshTraktTokens();
-            return refreshSuccess;
-        }
-
-        // Verify with a lightweight API call
-        const response = await fetch(`${TRAKT_API_BASE}/users/settings`, {
-            headers: {
-                'Authorization': `Bearer ${tokens.access_token}`,
-                'trakt-api-version': '2',
-                'trakt-api-key': TRAKT_CLIENT_ID,
-            },
-        });
-
-        if (response.status === 401) {
-            // Token is invalid, try to refresh
-            console.log('Got 401 during auth check, attempting refresh...');
-            const refreshSuccess = await refreshTraktTokens();
-            return refreshSuccess;
-        }
-
-        return response.ok;
+        return tokens?.access_token ? true : false;
     } catch (error) {
         console.error('Auth check error:', error);
         return false;
@@ -117,12 +101,16 @@ export const ensureValidTokens = async (): Promise<boolean> => {
 
 // Token refresh functionality
 export const refreshTraktTokens = async (): Promise<boolean> => {
+    if (isRefreshing) return false;
+    
     try {
         const tokens = await getTraktTokens();
         if (!tokens?.refresh_token) {
             console.log('No refresh token available');
             return false;
         }
+
+        isRefreshing = true;
 
         const response = await fetch(`${TRAKT_API_BASE}/oauth/token`, {
             method: 'POST',
@@ -156,6 +144,8 @@ export const refreshTraktTokens = async (): Promise<boolean> => {
     } catch (error) {
         console.error('Token refresh error:', error);
         return false;
+    } finally {
+        isRefreshing = false;
     }
 };
 

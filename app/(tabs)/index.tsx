@@ -1,6 +1,5 @@
 import { router } from 'expo-router'; import React, { useState, useMemo } from 'react';
 import {
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   View,
@@ -79,7 +78,7 @@ export default function HomeScreen() {
 
   const handleFilterChange = async (newFilter: 'all' | 'movies' | 'series') => {
     if (isHapticsSupported()) {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     setFilter(newFilter);
   };
@@ -176,7 +175,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 14,
     borderRadius: 50,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: '#1a1a1a',
     backdropFilter: 'blur(20px)',
     marginRight: 8,
     borderWidth: 1,

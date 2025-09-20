@@ -6,10 +6,10 @@ import { Platform, StyleSheet, View } from 'react-native';
 import { isHapticsSupported } from '@/utils/platform';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { StorageKeys, storageService } from '@/utils/StorageService';
 
 // Storage key for Trakt enable preference
-const TRAKT_ENABLED_KEY = '@trakt_enabled';
+const TRAKT_ENABLED_KEY = StorageKeys.TRAKT_ENABLED_KEY;
 
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];
@@ -29,7 +29,7 @@ export const useTraktEnabled = () => {
 
   const loadTraktEnabledState = async () => {
     try {
-      const stored = await AsyncStorage.getItem(TRAKT_ENABLED_KEY);
+      const stored = await storageService.getItem(TRAKT_ENABLED_KEY);
       if (stored !== null) {
         setIsTraktEnabled(JSON.parse(stored));
       }
@@ -42,7 +42,7 @@ export const useTraktEnabled = () => {
 
   const setTraktEnabled = async (enabled: boolean) => {
     try {
-      await AsyncStorage.setItem(TRAKT_ENABLED_KEY, JSON.stringify(enabled));
+      await storageService.setItem(TRAKT_ENABLED_KEY, JSON.stringify(enabled));
       setIsTraktEnabled(enabled);
     } catch (error) {
       console.error('Failed to save Trakt enabled state:', error);

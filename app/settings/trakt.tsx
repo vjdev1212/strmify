@@ -1,4 +1,4 @@
-import { SafeAreaView, ScrollView, StyleSheet, Pressable, ActivityIndicator, Platform, Switch } from 'react-native';
+import { ScrollView, StyleSheet, Pressable, ActivityIndicator, Platform, Switch } from 'react-native';
 import { StatusBar, Text, View } from '../../components/Themed';
 import { isHapticsSupported, showAlert } from '@/utils/platform';
 import * as Haptics from 'expo-haptics';
@@ -6,10 +6,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { webLinking } from '@/utils/Web';
 import { clearTraktTokens, getTraktTokens, getTraktUserInfo, isUserAuthenticated, saveTraktTokens, TraktTokens } from '@/clients/trakt';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { StorageKeys, storageService } from '@/utils/StorageService';
 
 // Storage key for Trakt enable preference
-const TRAKT_ENABLED_KEY = '@trakt_enabled';
+const TRAKT_ENABLED_KEY = StorageKeys.TRAKT_ENABLED_KEY;
 
 // Trakt.tv API configuration from environment variables
 const TRAKT_CLIENT_ID = process.env.EXPO_PUBLIC_TRAKT_CLIENT_ID || '';
@@ -48,7 +49,7 @@ const TraktAuthScreen = () => {
 
     const loadTraktEnabledState = async () => {
         try {
-            const stored = await AsyncStorage.getItem(TRAKT_ENABLED_KEY);
+            const stored = await storageService.getItem(TRAKT_ENABLED_KEY);
             if (stored !== null) {
                 setIsTraktEnabled(JSON.parse(stored));
             }
@@ -59,7 +60,7 @@ const TraktAuthScreen = () => {
 
     const saveTraktEnabledState = async (enabled: boolean) => {
         try {
-            await AsyncStorage.setItem(TRAKT_ENABLED_KEY, JSON.stringify(enabled));
+            await storageService.setItem(TRAKT_ENABLED_KEY, JSON.stringify(enabled));
         } catch (error) {
             console.error('Failed to save Trakt enabled state:', error);
         }
@@ -198,7 +199,7 @@ const TraktAuthScreen = () => {
                 await fetchUserInfo();
 
                 if (!isWeb && isHapticsSupported()) {
-                    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 }
 
                 showAlert('Success', 'Successfully connected to Trakt.tv!');
@@ -281,7 +282,7 @@ const TraktAuthScreen = () => {
             setIsLoading(true);
 
             if (!isWeb && isHapticsSupported()) {
-                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             }
 
             const authUrl = `https://trakt.tv/oauth/authorize?response_type=code&client_id=${TRAKT_CLIENT_ID}&redirect_uri=${encodeURIComponent(TRAKT_REDIRECT_URI)}&state=app_auth`;
@@ -316,7 +317,7 @@ const TraktAuthScreen = () => {
     const logout = async () => {
         try {
             if (!isWeb && isHapticsSupported()) {
-                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             }
 
             // Use service function to clear tokens

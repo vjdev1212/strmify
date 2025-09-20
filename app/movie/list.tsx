@@ -5,7 +5,6 @@ import {
   StyleSheet,
   Pressable,
   useWindowDimensions,
-  SafeAreaView,
   View as RNView,
   Platform,
 } from 'react-native';
@@ -15,6 +14,7 @@ import * as Haptics from 'expo-haptics';
 import { isHapticsSupported } from '@/utils/platform';
 import { getYear } from '@/utils/Date';
 import BottomSpacing from '@/components/BottomSpacing';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -79,7 +79,7 @@ const MoviesList = () => {
 
     const handlePress = async () => {
       if (isHapticsSupported()) {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
       router.push({
         pathname: '/movie/details',

@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, ScrollView, Pressable, SafeAreaView, Alert, Platform } from 'react-native';
+import { StyleSheet, ScrollView, Pressable, Alert, Platform } from 'react-native';
 import { Text, View, StatusBar } from '@/components/Themed';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { getOriginalPlatform, isHapticsSupported, showAlert } from '@/utils/platform';
 import BottomSpacing from '@/components/BottomSpacing';
 import { Players } from '@/utils/MediaPlayer';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { StorageKeys, storageService } from '@/utils/StorageService';
 
 
 interface PlayerConfig {
@@ -17,7 +18,7 @@ interface PlayerConfig {
     isDefault: boolean;
 }
 
-const STORAGE_KEY = 'defaultMediaPlayer';
+const DEFAULT_MEDIA_PLAYER_KEY = StorageKeys.DEFAULT_MEDIA_PLAYER_KEY;
 
 const MediaPlayerConfigScreen = () => {
     const [players, setPlayers] = useState<PlayerConfig[]>([]);
@@ -83,7 +84,7 @@ const MediaPlayerConfigScreen = () => {
             const platformPlayers = getPlatformSpecificPlayers();
 
             // Load saved default player
-            const savedDefault = await AsyncStorage.getItem(STORAGE_KEY);
+            const savedDefault = await storageService.getItem(DEFAULT_MEDIA_PLAYER_KEY);
 
             if (savedDefault) {
                 const defaultPlayerName = JSON.parse(savedDefault);
@@ -113,7 +114,7 @@ const MediaPlayerConfigScreen = () => {
 
     const handlePlayerSelect = async (playerName: string) => {
         if (isHapticsSupported()) {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
         setSelectedPlayer(playerName);
     };
@@ -127,10 +128,10 @@ const MediaPlayerConfigScreen = () => {
         setSaving(true);
 
         try {
-            await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(selectedPlayer));
+            await storageService.setItem(DEFAULT_MEDIA_PLAYER_KEY, JSON.stringify(selectedPlayer));
 
             if (isHapticsSupported()) {
-                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             }
 
             showAlert('Success', 'Default media player saved successfully');
@@ -155,7 +156,7 @@ const MediaPlayerConfigScreen = () => {
                     text: 'Reset',
                     onPress: async () => {
                         try {
-                            await AsyncStorage.removeItem(STORAGE_KEY);
+                            await storageService.removeItem(DEFAULT_MEDIA_PLAYER_KEY);
                             const platformPlayers = getPlatformSpecificPlayers();
                             setPlayers(platformPlayers);
                             if (platformPlayers.length > 0) {
@@ -163,7 +164,7 @@ const MediaPlayerConfigScreen = () => {
                             }
 
                             if (isHapticsSupported()) {
-                                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                             }
 
                             showAlert('Success', 'Player configuration reset to default');

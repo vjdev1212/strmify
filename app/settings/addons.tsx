@@ -5,24 +5,28 @@ import {
   Image,
   Alert,
   ScrollView,
-  SafeAreaView,
   View,
   Platform,
+  RefreshControl,
   Dimensions
 } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StatusBar, Text } from '@/components/Themed';
 import { router } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import * as Haptics from 'expo-haptics';
 import { isHapticsSupported, showAlert } from '@/utils/platform';
 import { Ionicons } from '@expo/vector-icons';
-import { useColorScheme } from '@/components/useColorScheme';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { SvgUri } from 'react-native-svg';
+import { StorageKeys, storageService } from '@/utils/StorageService';
+
+const ADDONS_KEY = StorageKeys.ADDONS_KEY;
 
 const AddonsScreen = () => {
   const [addons, setAddons] = useState<any[]>([]);
   const [screenData, setScreenData] = useState(Dimensions.get('window'));
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     const onChange = (result: any) => {
@@ -33,24 +37,34 @@ const AddonsScreen = () => {
     return () => subscription?.remove();
   }, []);
 
-  useEffect(() => {
-    const fetchAddons = async () => {
-      try {
-        const storedAddons = await AsyncStorage.getItem('addons');
-        if (storedAddons) {
-          const parsedAddons = JSON.parse(storedAddons);
-          setAddons(
-            Object.keys(parsedAddons).map(key => ({
-              id: key,
-              ...parsedAddons[key],
-            }))
-          );
-        }
-      } catch (error) {
-        console.error('Error fetching addons:', error);
+  const fetchAddons = async () => {
+    try {
+      const storedAddons = await storageService.getItem(ADDONS_KEY);
+      if (storedAddons) {
+        const parsedAddons = JSON.parse(storedAddons);
+        setAddons(
+          Object.keys(parsedAddons).map(key => ({
+            id: key,
+            ...parsedAddons[key],
+          }))
+        );
       }
-    };
+    } catch (error) {
+      console.error('Error fetching addons:', error);
+      showAlert('Error', 'Failed to load addons from secure storage.');
+    }
+  };
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    if (isHapticsSupported()) {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    await fetchAddons();
+    setRefreshing(false);
+  };
+
+  useEffect(() => {
     fetchAddons();
   }, []);
 
@@ -61,16 +75,27 @@ const AddonsScreen = () => {
       const updatedAddonsObject = Object.fromEntries(
         updatedAddons.map(addon => [addon.id, addon])
       );
-      await AsyncStorage.setItem('addons', JSON.stringify(updatedAddonsObject));
+      
+      if (updatedAddons.length === 0) {
+        // If no addons left, delete the key entirely
+        await storageService.removeItem(ADDONS_KEY);
+      } else {
+        // Otherwise, update with remaining addons
+        await storageService.setItem(ADDONS_KEY, JSON.stringify(updatedAddonsObject));
+      }
+      
       showAlert('Success', 'Addon removed successfully!');
     } catch (error) {
-      showAlert('Error', 'Failed to remove addon.');
+      console.error('Error removing addon:', error);
+      showAlert('Error', 'Failed to remove addon from secure storage.');
+      // Revert the state change if storage operation failed
+      await fetchAddons();
     }
   };
 
   const openConfiguration = async (url: string) => {
     if (isHapticsSupported()) {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     try {
       await WebBrowser.openBrowserAsync(`${url}/configure`);
@@ -81,7 +106,7 @@ const AddonsScreen = () => {
 
   const shareManifestUrl = async (url: string) => {
     if (isHapticsSupported()) {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     try {
       if (await Sharing.isAvailableAsync()) {
@@ -94,6 +119,25 @@ const AddonsScreen = () => {
     }
   };
 
+  const isSvgUrl = (url: string): boolean => {
+    return url.toLowerCase().endsWith('.svg') || url.includes('image/svg+xml');
+  };
+
+  const AddonLogo = ({ uri, style }: { uri: string; style: any }) => {
+    if (isSvgUrl(uri)) {
+      return (
+        <SvgUri
+          uri={uri}
+          width={style.width || 40}
+          height={style.height || 40}
+          style={style}
+        />
+      );
+    }
+
+    return <Image source={{ uri }} style={style} />;
+  };
+
   const renderAddonCard = (item: any, index: number) => {
     const configurable = item.behaviorHints?.configurable;
 
@@ -101,7 +145,7 @@ const AddonsScreen = () => {
       <View style={styles.addonCard} key={item.id}>
         {/* Header Section */}
         <View style={styles.cardHeader}>
-          <Image source={{ uri: item.logo }} style={styles.addonLogo} />
+          <AddonLogo uri={item.logo} style={styles.addonLogo} />
           <View style={styles.headerInfo}>
             <Text style={styles.addonName} numberOfLines={2}>{item.name}</Text>
             <Text style={styles.addonTypes} numberOfLines={1}>
@@ -153,7 +197,7 @@ const AddonsScreen = () => {
             style={[styles.actionButton, styles.removeButton]}
             onPress={async () => {
               if (isHapticsSupported()) {
-                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               }
               const message = `Are you sure you want to remove "${item.name}"?`;
               if (Platform.OS === 'ios' || Platform.OS === 'android') {
@@ -189,7 +233,7 @@ const AddonsScreen = () => {
 
   const onAddNewPress = async () => {
     if (isHapticsSupported()) {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     router.push('/settings/add');
   };
@@ -213,6 +257,15 @@ const AddonsScreen = () => {
           styles.contentContainer,
           addons.length === 0 && styles.emptyContentContainer
         ]}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#535aff"
+            colors={['#535aff']}
+            progressBackgroundColor="#1a1a1a"
+          />
+        }
       >
         {addons.length > 0 ? (
           <View style={styles.addonList}>

@@ -1,15 +1,16 @@
 import React from 'react';
-import { StyleSheet, Pressable, Linking, SafeAreaView, ScrollView, View } from 'react-native';
+import { StyleSheet, Pressable, Linking, ScrollView, View } from 'react-native';
 import { Text, StatusBar } from '@/components/Themed';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics'
 import { isHapticsSupported } from '@/utils/platform';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const DonateScreen = () => {
 
     const handleDonate = async () => {
         if (isHapticsSupported()) {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
         const profileUsername = process.env.EXPO_PUBLIC_BUY_ME_COFFEE || '';
         const buyMeACoffeeUrl = `https://www.buymeacoffee.com/${profileUsername}`;

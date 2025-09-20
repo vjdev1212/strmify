@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import { StyleSheet, ActivityIndicator, Alert, Pressable, Image, SafeAreaView, ScrollView } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { StyleSheet, ActivityIndicator, Alert, Pressable, Image, ScrollView } from 'react-native';
 import { Text, View, TextInput, StatusBar } from '@/components/Themed';
 import { router } from 'expo-router';
 import { showAlert } from '@/utils/platform';
 import { useColorScheme } from '@/components/useColorScheme';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { StorageKeys, storageService } from '@/utils/StorageService';
 
 const defaultAddonLogo = 'https://i.ibb.co/fSJ42PJ/addon.png';
+
+const ADDONS_KEY = StorageKeys.ADDONS_KEY;
 
 export default function AddAddonScreen() {
     const [url, setUrl] = useState('');
@@ -53,8 +56,8 @@ export default function AddAddonScreen() {
             manifestData.manifestUrl = url;
             manifestData.baseUrl = getBaseUrl(url);
             manifestData.streamBaseUrl = url.replace('/manifest.json', '');
-            manifestData.logo = manifestData?.logo?.match(/\.(png|jpg|jpeg)$/i) ? manifestData.logo : defaultAddonLogo;
-            const storedAddons = await AsyncStorage.getItem('addons');
+            manifestData.logo = manifestData?.logo?.match(/\.(png|jpg|jpeg|svg)$/i) ? manifestData.logo : defaultAddonLogo;
+            const storedAddons = await storageService.getItem(ADDONS_KEY);
             const addons = storedAddons ? JSON.parse(storedAddons) : {};
             const newKey = `${manifestData.id}`;
 
@@ -63,7 +66,7 @@ export default function AddAddonScreen() {
                 [newKey]: manifestData,
             };
 
-            await AsyncStorage.setItem('addons', JSON.stringify(updatedAddons));
+            await storageService.setItem(ADDONS_KEY, JSON.stringify(updatedAddons));
             showAlert('Success', 'Addon added successfully!');
             setManifestData(null);
             setUrl('');

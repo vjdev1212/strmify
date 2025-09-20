@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { StyleSheet, Switch, TextInput, Pressable, ScrollView, Animated } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, Text } from '@/components/Themed';
 import { confirmAction, showAlert } from '@/utils/platform';
 import { MaterialIcons } from '@expo/vector-icons';
+import { StorageKeys, storageService } from '@/utils/StorageService';
 
 interface ServerConfigProps {
   serverName: string;
@@ -18,6 +18,8 @@ export interface ServerConfig {
   serverUrl: string;
   current: boolean;
 }
+
+const SERVERS_KEY = StorageKeys.SERVERS_KEY;
 
 const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverType, defaultUrl }) => {
   const [serverUrl, setServerUrl] = useState<string>(defaultUrl);
@@ -48,7 +50,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
 
   const loadServers = async () => {
     try {
-      const savedConfigs = await AsyncStorage.getItem('servers');
+      const savedConfigs = await storageService.getItem(SERVERS_KEY);
       const servers: ServerConfig[] = savedConfigs ? JSON.parse(savedConfigs) : [];
       const filteredServers = servers.filter(server => server.serverType === serverType);
 
@@ -80,7 +82,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
     }
 
     try {
-      const savedConfigs = await AsyncStorage.getItem('servers');
+      const savedConfigs = await storageService.getItem(SERVERS_KEY);
       const allServers: ServerConfig[] = savedConfigs ? JSON.parse(savedConfigs) : [];
 
       let updatedAllServers: ServerConfig[];
@@ -116,7 +118,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
         updatedAllServers = [...otherServersOfSameType, configToSave];
       }
 
-      await AsyncStorage.setItem('servers', JSON.stringify(updatedAllServers));
+      await storageService.setItem(SERVERS_KEY, JSON.stringify(updatedAllServers));
 
       setEditingId(null);
       setIsAddingNew(false);
@@ -213,14 +215,14 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
     }
 
     try {
-      const savedConfigs = await AsyncStorage.getItem('servers');
+      const savedConfigs = await storageService.getItem(SERVERS_KEY);
       const allServers: ServerConfig[] = savedConfigs ? JSON.parse(savedConfigs) : [];
 
       const updatedAllServers = allServers.map(server =>
         server.serverId === inlineEditingId ? { ...server, serverUrl: inlineEditValue.trim() } : server
       );
 
-      await AsyncStorage.setItem('servers', JSON.stringify(updatedAllServers));
+      await storageService.setItem(SERVERS_KEY, JSON.stringify(updatedAllServers));
 
       setInlineEditingId(null);
       setInlineEditValue('');
@@ -249,10 +251,10 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
     if (!confirmed) return;
 
     try {
-      const savedConfigs = await AsyncStorage.getItem('servers');
+      const savedConfigs = await storageService.getItem(SERVERS_KEY);
       const allServers: ServerConfig[] = savedConfigs ? JSON.parse(savedConfigs) : [];
       const updatedAllServers = allServers.filter(server => server.serverId !== serverId);
-      await AsyncStorage.setItem('servers', JSON.stringify(updatedAllServers));
+      await storageService.setItem(SERVERS_KEY, JSON.stringify(updatedAllServers));
       setSelectedServerId(null);
       await loadServers();
       showAlert('Success', 'Server configuration deleted.');
@@ -263,7 +265,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
 
   const handleSetAsCurrent = async (serverId: string) => {
     try {
-      const savedConfigs = await AsyncStorage.getItem('servers');
+      const savedConfigs = await storageService.getItem(SERVERS_KEY);
       const allServers: ServerConfig[] = savedConfigs ? JSON.parse(savedConfigs) : [];
 
       const updatedServers = allServers.map(server => {
@@ -276,7 +278,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
         return server;
       });
 
-      await AsyncStorage.setItem('servers', JSON.stringify(updatedServers));
+      await storageService.setItem(SERVERS_KEY, JSON.stringify(updatedServers));
       await loadServers();
 
       // Close the expanded row after setting as current
@@ -300,46 +302,6 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
       showAlert('Error', 'Failed to update current server.');
     }
   };
-
-  const renderServerItem = ({ item }: { item: ServerConfig }) => (
-    <View style={styles.settingsRow}>
-      <Pressable
-        style={styles.settingsRowPressable}
-        onPress={() => handleSetAsCurrent(item.serverId)}
-      >
-        <View style={styles.settingsRowContent}>
-          <View style={styles.settingsRowLeft}>
-            <Text style={styles.settingsRowLabel}>Server URL</Text>
-            <Text style={styles.settingsRowValue}>{item.serverUrl}</Text>
-          </View>
-          <View style={styles.settingsRowRight}>
-            {item.current && <MaterialIcons name="check" size={20} color="#007AFF" />}
-          </View>
-        </View>
-      </Pressable>
-
-      <View style={styles.settingsRowActions}>
-        <Pressable
-          style={styles.actionButton}
-          onPress={() => startInlineEdit(item)}
-        >
-          <Text style={styles.actionButtonText}>Edit</Text>
-        </Pressable>
-
-        <View style={styles.actionDivider} />
-
-        <Pressable
-          style={[styles.actionButton, item.current && styles.disabledActionButton]}
-          onPress={() => handleDelete(item.serverId)}
-          disabled={item.current}
-        >
-          <Text style={[styles.deleteActionText, item.current && styles.disabledActionText]}>
-            Delete
-          </Text>
-        </Pressable>
-      </View>
-    </View>
-  );
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>

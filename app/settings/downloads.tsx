@@ -6,11 +6,11 @@ import {
   StyleSheet,
   Linking,
   Dimensions,
-  SafeAreaView,
   ScrollView
 } from 'react-native';
 import * as Haptics from 'expo-haptics'
 import { isHapticsSupported } from '@/utils/platform';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 

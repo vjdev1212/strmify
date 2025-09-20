@@ -1,9 +1,10 @@
 import React from 'react';
-import { StyleSheet, Pressable, Linking, SafeAreaView, ScrollView } from 'react-native';
+import { StyleSheet, Pressable, Linking, ScrollView } from 'react-native';
 import { AntDesign, Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { View, Text, StatusBar } from '@/components/Themed';
 import { isHapticsSupported } from '@/utils/platform';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 type IconLibrary = 'AntDesign' | 'Ionicons';
 
@@ -27,7 +28,7 @@ const ContactScreen = () => {
             iconLibrary: 'AntDesign',
             action: async () => {
                 if (isHapticsSupported()) {
-                    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+                    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 }
                 Linking.openURL(feedbackUrl);
             },
@@ -39,7 +40,7 @@ const ContactScreen = () => {
             iconLibrary: 'Ionicons',
             action: async () => {
                 if (isHapticsSupported()) {
-                    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+                    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 }
                 Linking.openURL(reportBugUrl);
             },

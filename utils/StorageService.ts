@@ -1,7 +1,14 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// AsyncStorage functions
-export const asyncStorageService = {
+export const StorageKeys = {
+    TRAKT_ENABLED_KEY: 'STRMIFY_TRAKT_ENABLED',
+    TRAKT_TOKENS_KEY: 'STRMIFY_TRAKT_TOKENS',
+    SERVERS_KEY: 'STRMIFY_SERVERS',
+    ADDONS_KEY: 'STRMIFY_ADDONS',
+    DEFAULT_MEDIA_PLAYER_KEY: 'STRMIFY_DEFAULT_MEDIA_PLAYER',
+}
+
+export const storageService = {
     async getItem(key: string): Promise<string | null> {
         try {
             const value = await AsyncStorage.getItem(key);
@@ -33,9 +40,20 @@ export const asyncStorageService = {
     async clear(): Promise<void> {
         try {
             await AsyncStorage.clear();
+            console.log('AsyncStorage cleared successfully');
         } catch (error) {
             console.error('Error clearing AsyncStorage:', error);
             throw error;
+        }
+    },
+
+    async isAvailable(): Promise<boolean> {
+        try {
+            // AsyncStorage is generally available on all platforms where React Native runs
+            return true;
+        } catch (error) {
+            console.error('Error checking AsyncStorage availability:', error);
+            return false;
         }
     }
 };
