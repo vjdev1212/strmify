@@ -288,11 +288,11 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
     const vlcHandlers = useMemo(() => ({
         onLoad: (data: any) => {
             console.log('VLC Player loaded:', data);
-            playerState.setIsBuffering(true);
+            playerState.setIsBuffering(false);
             playerState.setIsReady(false);
             playerState.setError(null);
-            playerState.setHasStartedPlaying(false);
-            playerState.setShowBufferingLoader(true);
+            playerState.setHasStartedPlaying(true);
+            playerState.setShowBufferingLoader(false);
 
             if (data?.textTracks) {
                 settings.setAvailableTextTracks(data.textTracks);
