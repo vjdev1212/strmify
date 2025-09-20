@@ -106,7 +106,7 @@ const useUIState = () => {
 };
 
 const usePlayerSettings = () => {
-    const [volume, setVolume] = useState(70);
+    const [volume, setVolume] = useState(100);
     const [isMuted, setIsMuted] = useState(false);
     const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
     const [resizeMode, setResizeMode] = useState<PlayerResizeMode>('contain');
