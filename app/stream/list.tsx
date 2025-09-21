@@ -404,13 +404,8 @@ const StreamListScreen = () => {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
 
-        const { embed, url } = stream;
+        const { url } = stream;
         const infoHash = getInfoHashFromStream(stream);
-
-        if (embed) {
-            router.push({ pathname: '/stream/embed', params: { url: embed } });
-            return;
-        }
 
         // Keep in state for later reuse
         setSelectedStream(stream);
