@@ -1160,11 +1160,17 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                         initOptions: [
                             "--network-caching=1000",
                             "--file-caching=300",
-                            "--live-caching=300"
-                        ],
+                            "--live-caching=300",
+
+                            "--drop-late-frames",
+                            "--skip-frames",
+                            "--avcodec-threads=0",
+                            "--intf=dummy"
+                        ]
                     }}
                     autoplay={true}
-                    autoAspectRatio={false}
+                    autoAspectRatio={true}
+                    videoAspectRatio="16:9"
                     resizeMode={'cover'}
                     playInBackground={true}
                     acceptInvalidCertificates={true}
