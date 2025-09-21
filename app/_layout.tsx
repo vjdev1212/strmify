@@ -272,6 +272,21 @@ function RootLayoutNav() {
                   backgroundColor: 'transparent',
                 }
               }}
+            />
+            <Stack.Screen
+              name="settings/opensubtitles"
+              options={{
+                headerShown: true,
+                headerTransparent: true,
+                headerBackground: InvisibleHeaderBackground,
+                headerTitle: '',
+                headerTintColor: '#ffffff',
+                headerBackTitle: '',
+                headerShadowVisible: false,
+                headerStyle: {
+                  backgroundColor: 'transparent',
+                }
+              }}
             />                        
             <Stack.Screen
               name="settings/contact"
