@@ -204,6 +204,7 @@ const MediaPlayerScreen: React.FC = () => {
       artwork={artwork as string}
       subtitles={subtitles}
       chapters={chapters}
+      openSubtitlesClient={openSubtitlesClient}
       isLoadingSubtitles={isLoadingSubtitles}
     />
   );

@@ -19,8 +19,10 @@ import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import Slider from '@react-native-community/slider';
 import * as Haptics from 'expo-haptics';
 import ImmersiveMode from "react-native-immersive-mode";
+import OpenSubtitlesClient from "@/clients/opensubtitles";
 
 export interface Subtitle {
+    fileId: string | number | null;
     language: string;
     url: string;
     label: string;
@@ -44,6 +46,7 @@ interface MediaPlayerProps {
     onBack: () => void;
     artwork?: string;
     subtitles?: Subtitle[];
+    openSubtitlesClient: OpenSubtitlesClient
 }
 
 // Custom hooks for better state management
@@ -151,6 +154,47 @@ const useTimers = () => {
     };
 };
 
+// SRT Parser Function
+const parseSRT = (srtContent: string) => {
+    const subtitles = [];
+    const blocks = srtContent.trim().split('\n\n');
+
+    for (const block of blocks) {
+        const lines = block.split('\n');
+        if (lines.length >= 3) {
+            const index = lines[0].trim();
+            const timeString = lines[1].trim();
+            const text = lines.slice(2).join('\n').trim();
+
+            // Parse SRT time format: 00:00:20,000 --> 00:00:24,400
+            const timeMatch = timeString.match(/(\d{2}):(\d{2}):(\d{2}),(\d{3})\s*-->\s*(\d{2}):(\d{2}):(\d{2}),(\d{3})/);
+
+            if (timeMatch) {
+                const startTime = parseSRTTime(timeMatch[1], timeMatch[2], timeMatch[3], timeMatch[4]);
+                const endTime = parseSRTTime(timeMatch[5], timeMatch[6], timeMatch[7], timeMatch[8]);
+
+                subtitles.push({
+                    index: parseInt(index),
+                    start: startTime,
+                    end: endTime,
+                    text: text
+                });
+            }
+        }
+    }
+
+    return subtitles;
+};
+
+// Helper function to parse SRT time format
+const parseSRTTime = (hours: string, minutes: string, seconds: string, milliseconds: string): number => {
+    return parseInt(hours) * 3600 +
+        parseInt(minutes) * 60 +
+        parseInt(seconds) +
+        parseInt(milliseconds) / 1000;
+};
+
+// WebVTT Parser (keeping for compatibility)
 const parseWebVTT = (vttContent: string) => {
     const lines = vttContent.split('\n');
     const subtitles = [];
@@ -197,12 +241,34 @@ const parseVTTTime = (timeStr: string): number => {
     return 0;
 };
 
+// Auto-detect subtitle format and parse accordingly
+const parseSubtitleFile = (content: string) => {
+    const trimmedContent = content.trim();
+
+    // Check if it's WebVTT format
+    if (trimmedContent.startsWith('WEBVTT')) {
+        console.log('Detected WebVTT format');
+        return parseWebVTT(content);
+    }
+
+    // Check if it's SRT format (contains --> with comma for milliseconds)
+    if (trimmedContent.includes('-->') && trimmedContent.includes(',')) {
+        console.log('Detected SRT format');
+        return parseSRT(content);
+    }
+
+    // Default to SRT parsing
+    console.log('Defaulting to SRT format');
+    return parseSRT(content);
+};
+
 export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
     videoUrl,
     title,
     onBack,
     artwork,
-    subtitles = []
+    subtitles = [],
+    openSubtitlesClient
 }) => {
     const playerRef = useRef<VLCPlayer>(null);
     const playerState = usePlayerState();
@@ -254,22 +320,39 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
         };
     }, []);
 
-
+    // Updated subtitle loading effect
     useEffect(() => {
         if (subtitles.length > 0 && settings.selectedSubtitle >= 0 && settings.selectedSubtitle < subtitles.length) {
             const selectedSub = subtitles[settings.selectedSubtitle];
             subtitleState.setIsLoadingSubtitles(true);
 
+            console.log('Loading subtitle:', selectedSub.url);
+
             fetch(selectedSub.url)
-                .then(response => response.text())
-                .then(vttContent => {
-                    const parsed = parseWebVTT(vttContent);
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.text();
+                })
+                .then(subtitleContent => {
+                    console.log('Subtitle content loaded, length:', subtitleContent.length);
+                    console.log('First 200 chars:', subtitleContent.substring(0, 200));
+
+                    const parsed = parseSubtitleFile(subtitleContent);
+                    console.log('Parsed subtitles count:', parsed.length);
+
+                    if (parsed.length > 0) {
+                        console.log('First subtitle:', parsed[0]);
+                    }
+
                     subtitleState.setParsedSubtitles(parsed);
                     subtitleState.setIsLoadingSubtitles(false);
                 })
                 .catch(error => {
                     console.error('Failed to load subtitles:', error);
                     subtitleState.setIsLoadingSubtitles(false);
+                    subtitleState.setParsedSubtitles([]);
                 });
         } else {
             subtitleState.setParsedSubtitles([]);
@@ -277,6 +360,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
         }
     }, [settings.selectedSubtitle, subtitles]);
 
+    // Updated subtitle display effect
     useEffect(() => {
         if (subtitleState.parsedSubtitles.length > 0) {
             const currentTime = playerState.currentTime;
@@ -284,10 +368,17 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                 sub => currentTime >= sub.start && currentTime <= sub.end
             );
 
-            subtitleState.setCurrentSubtitle(activeSubtitle ? activeSubtitle.text : '');
+            const newSubtitleText = activeSubtitle ? activeSubtitle.text : '';
+
+            // Only update if the subtitle text has changed
+            if (newSubtitleText !== subtitleState.currentSubtitle) {
+                console.log(`Time: ${currentTime.toFixed(1)}s - Subtitle: "${newSubtitleText}"`);
+                subtitleState.setCurrentSubtitle(newSubtitleText);
+            }
+        } else if (subtitleState.currentSubtitle !== '') {
+            subtitleState.setCurrentSubtitle('');
         }
     }, [playerState.currentTime, subtitleState.parsedSubtitles]);
-
 
     // Utility functions
     const playHaptic = async () => {
@@ -743,6 +834,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                 />
             )}
 
+            {/* Subtitle display - Updated styling for better visibility */}
             {subtitleState.currentSubtitle && !playerState.error && (
                 <View style={styles.subtitleContainer} pointerEvents="none">
                     <Text style={styles.subtitleText}>{subtitleState.currentSubtitle}</Text>
@@ -784,7 +876,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                                     color="white"
                                 />
                             </TouchableOpacity>
-                            
+
                             <TouchableOpacity
                                 style={styles.controlButton}
                                 onPress={panelToggles.toggleSubtitleSettings}
@@ -792,7 +884,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                                 <MaterialIcons
                                     name="closed-caption"
                                     size={24}
-                                    color="white"
+                                    color={settings.selectedSubtitle >= 0 ? "#007AFF" : "white"}
                                 />
                             </TouchableOpacity>
 
@@ -814,7 +906,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                                 <MaterialIcons
                                     name="speed"
                                     size={24}
-                                    color="white"
+                                    color={settings.playbackSpeed !== 1.0 ? "#007AFF" : "white"}
                                 />
                             </TouchableOpacity>
                         </View>
@@ -908,6 +1000,12 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                         onPress={(e) => e.stopPropagation()}
                     >
                         <Text style={styles.panelTitle}>Subtitles</Text>
+                        {subtitleState.isLoadingSubtitles && (
+                            <View style={styles.loadingContainer}>
+                                <ActivityIndicator size="small" color="#007AFF" />
+                                <Text style={styles.loadingText}>Loading subtitles...</Text>
+                            </View>
+                        )}
                         <ScrollView style={styles.settingsContent} showsVerticalScrollIndicator={false}>
                             <TouchableOpacity
                                 style={[
@@ -957,23 +1055,27 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                     >
                         <Text style={styles.panelTitle}>Audio Track</Text>
                         <ScrollView style={styles.settingsContent} showsVerticalScrollIndicator={false}>
-                            {settings.availableAudioTracks.map((track) => (
-                                <TouchableOpacity
-                                    key={track.id}
-                                    style={[
-                                        styles.settingOption,
-                                        settings.selectedAudioTrack === track.id && styles.settingOptionSelected
-                                    ]}
-                                    onPress={() => selectAudioTrack(track.id)}
-                                >
-                                    <Text style={styles.settingOptionText}>
-                                        {track.name}
-                                    </Text>
-                                    {settings.selectedAudioTrack === track.id && (
-                                        <Ionicons name="checkmark" size={20} color="#007AFF" />
-                                    )}
-                                </TouchableOpacity>
-                            ))}
+                            {settings.availableAudioTracks.length === 0 ? (
+                                <Text style={styles.noTracksText}>No audio tracks available</Text>
+                            ) : (
+                                settings.availableAudioTracks.map((track) => (
+                                    <TouchableOpacity
+                                        key={track.id}
+                                        style={[
+                                            styles.settingOption,
+                                            settings.selectedAudioTrack === track.id && styles.settingOptionSelected
+                                        ]}
+                                        onPress={() => selectAudioTrack(track.id)}
+                                    >
+                                        <Text style={styles.settingOptionText}>
+                                            {track.name}
+                                        </Text>
+                                        {settings.selectedAudioTrack === track.id && (
+                                            <Ionicons name="checkmark" size={20} color="#007AFF" />
+                                        )}
+                                    </TouchableOpacity>
+                                ))
+                            )}
                         </ScrollView>
                     </TouchableOpacity>
                 </TouchableOpacity>
@@ -1160,7 +1262,7 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 16,
         marginTop: 8,
-    },    
+    },
     artworkContainer: {
         position: 'absolute',
         top: 0,
@@ -1249,7 +1351,7 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 16,
         fontWeight: '500',
-    },    
+    },
     speedOptionsGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
@@ -1296,21 +1398,40 @@ const styles = StyleSheet.create({
     },
     subtitleText: {
         color: 'white',
-        fontSize: 16,
-        fontWeight: '500',
+        fontSize: 18,
+        fontWeight: '600',
         textAlign: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 4,
-        lineHeight: 22,
+        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 8,
+        lineHeight: 24,
         shadowColor: '#000',
         shadowOffset: {
             width: 0,
-            height: 1,
+            height: 2,
         },
-        shadowOpacity: 0.8,
-        shadowRadius: 2,
-        elevation: 5,
+        shadowOpacity: 1,
+        shadowRadius: 4,
+        elevation: 8,
+        maxWidth: '90%',
+    },
+    loadingContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 16,
+        paddingVertical: 8,
+    },
+    loadingText: {
+        color: 'rgba(255, 255, 255, 0.7)',
+        fontSize: 14,
+        marginLeft: 8,
+    },
+    noTracksText: {
+        color: 'rgba(255, 255, 255, 0.6)',
+        fontSize: 16,
+        textAlign: 'center',
+        paddingVertical: 20,
     },
 });
