@@ -5,7 +5,6 @@ import {
     TextInput,
     TouchableOpacity,
     StyleSheet,
-    Alert,
     ActivityIndicator,
     ScrollView,
     KeyboardAvoidingView,
@@ -17,23 +16,16 @@ import { StorageKeys, storageService } from '@/utils/StorageService';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { showAlert } from '@/utils/platform';
 
-const STORAGE_KEYS = {
-    OPENSUBTITLES_API_KEY: StorageKeys.OPENSUBTITLES_API_KEY,
-    OPENSUBTITLES_USER_AGENT: StorageKeys.OPENSUBTITLES_USER_AGENT,
-};
-
 const DEFAULT_USER_AGENT = 'Strmify';
 
 const OpenSubtitlesConfigScreen: React.FC = () => {
     const [apiKey, setApiKey] = useState('');
-    const [userAgent] = useState(DEFAULT_USER_AGENT);
     const [isLoading, setIsLoading] = useState(false);
     const [isTestingConnection, setIsTestingConnection] = useState(false);
     const [connectionStatus, setConnectionStatus] = useState<'idle' | 'success' | 'error'>('idle');
     const [showApiKey, setShowApiKey] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
-    // Load saved configuration on component mount
     useEffect(() => {
         loadSavedConfig();
     }, []);
@@ -41,7 +33,7 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
     const loadSavedConfig = async () => {
         setIsLoading(true);
         try {
-            const savedApiKey = await storageService.getItem(STORAGE_KEYS.OPENSUBTITLES_API_KEY);
+            const savedApiKey = await storageService.getItem(StorageKeys.OPENSUBTITLES_API_KEY);
             if (savedApiKey) setApiKey(savedApiKey);
         } catch (error) {
             console.error('Failed to load saved config:', error);
@@ -60,31 +52,19 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
         setConnectionStatus('idle');
 
         try {
-            const client = new OpenSubtitlesClient(userAgent, apiKey);
+            const client = new OpenSubtitlesClient(DEFAULT_USER_AGENT, apiKey);
             const result = await client.getLanguages();
 
             if (result.success) {
                 setConnectionStatus('success');
-                showAlert(
-                    'Success!',
-                    'Connection to OpenSubtitles API established successfully.',
-                    [{ text: 'OK', style: 'default' }]
-                );
+                showAlert('Success!', 'Connection to OpenSubtitles API established successfully.');
             } else {
                 setConnectionStatus('error');
-                showAlert(
-                    'Connection Failed',
-                    `Failed to connect to OpenSubtitles API:\n${result.error}`,
-                    [{ text: 'OK', style: 'destructive' }]
-                );
+                showAlert('Connection Failed', `Failed to connect to OpenSubtitles API:\n${result.error}`);
             }
         } catch (error) {
             setConnectionStatus('error');
-            showAlert(
-                'Connection Error',
-                `An error occurred while testing the connection:\n${error instanceof Error ? error.message : 'Unknown error'}`,
-                [{ text: 'OK', style: 'destructive' }]
-            );
+            showAlert('Connection Error', `An error occurred while testing the connection:\n${error instanceof Error ? error.message : 'Unknown error'}`);
         } finally {
             setIsTestingConnection(false);
         }
@@ -99,48 +79,33 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
         setIsSaving(true);
 
         try {
-            await storageService.setItem(STORAGE_KEYS.OPENSUBTITLES_API_KEY, apiKey.trim());
-
-            const client = new OpenSubtitlesClient(userAgent, apiKey.trim());
-
-            showAlert(
-                'Configuration Saved',
-                'Your OpenSubtitles configuration has been saved successfully.',
-                [{ text: 'OK' }]
-            );
+            await storageService.setItem(StorageKeys.OPENSUBTITLES_API_KEY, apiKey.trim());
+            showAlert('Configuration Saved', 'Your OpenSubtitles configuration has been saved successfully.');
         } catch (error) {
-            showAlert(
-                'Save Failed',
-                `Failed to save configuration:\n${error instanceof Error ? error.message : 'Unknown error'}`,
-                [{ text: 'OK', style: 'destructive' }]
-            );
+            showAlert('Save Failed', `Failed to save configuration:\n${error instanceof Error ? error.message : 'Unknown error'}`);
         } finally {
             setIsSaving(false);
         }
     };
 
     const clearConfiguration = () => {
-        showAlert(
-            'Clear Configuration',
-            'Are you sure you want to clear the saved configuration?',
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Clear',
-                    style: 'destructive',
-                    onPress: async () => {
-                        try {
-                            await storageService.removeItem(STORAGE_KEYS.OPENSUBTITLES_API_KEY);
-                            setApiKey('');
-                            setConnectionStatus('idle');
-                            showAlert('Success', 'Configuration cleared successfully');
-                        } catch (error) {
-                            showAlert('Error', 'Failed to clear configuration');
-                        }
-                    },
+        showAlert('Clear Configuration', 'Are you sure you want to clear the saved configuration?', [
+            { text: 'Cancel', style: 'cancel' },
+            {
+                text: 'Clear',
+                style: 'destructive',
+                onPress: async () => {
+                    try {
+                        await storageService.removeItem(StorageKeys.OPENSUBTITLES_API_KEY);
+                        setApiKey('');
+                        setConnectionStatus('idle');
+                        showAlert('Success', 'Configuration cleared successfully');
+                    } catch (error) {
+                        showAlert('Error', 'Failed to clear configuration');
+                    }
                 },
-            ]
-        );
+            },
+        ]);
     };
 
     const getConnectionStatusIcon = () => {
@@ -169,8 +134,7 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
         <SafeAreaView style={styles.container}>
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                style={styles.keyboardAvoid}
-            >
+                style={styles.keyboardAvoid}>
                 <ScrollView contentContainerStyle={styles.scrollContent}>
                     <View style={styles.header}>
                         <Ionicons name="settings-outline" size={40} color="#535aff" />
@@ -189,10 +153,11 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
                                     value={apiKey}
                                     onChangeText={setApiKey}
                                     placeholder="Enter your OpenSubtitles API key"
-                                    placeholderTextColor={'#666'}
+                                    placeholderTextColor="#aaa"
                                     secureTextEntry={!showApiKey}
                                     autoCapitalize="none"
                                     autoCorrect={false}
+                                    submitBehavior='blurAndSubmit'
                                 />
                                 <TouchableOpacity
                                     style={styles.eyeButton}
@@ -212,7 +177,7 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
 
                         <View style={styles.buttonGroup}>
                             <TouchableOpacity
-                                style={styles.testButton}
+                                style={[styles.button, styles.testButton]}
                                 onPress={testConnection}
                                 disabled={isTestingConnection || !apiKey.trim()}
                             >
@@ -221,7 +186,7 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
                                 ) : (
                                     <>
                                         <Ionicons name="wifi-outline" size={16} color="#FFF" />
-                                        <Text style={styles.testButtonText}>Test Connection</Text>
+                                        <Text style={styles.buttonText}>Test</Text>
                                     </>
                                 )}
                                 {getConnectionStatusIcon()}
@@ -229,6 +194,7 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
 
                             <TouchableOpacity
                                 style={[
+                                    styles.button,
                                     styles.saveButton,
                                     !apiKey.trim() && styles.disabledButton,
                                 ]}
@@ -240,16 +206,16 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
                                 ) : (
                                     <>
                                         <Ionicons name="save-outline" size={16} color="#FFF" />
-                                        <Text style={styles.saveButtonText}>Save Configuration</Text>
+                                        <Text style={styles.buttonText}>Save</Text>
                                     </>
                                 )}
                             </TouchableOpacity>
-                        </View>
 
-                        <TouchableOpacity style={styles.clearButton} onPress={clearConfiguration}>
-                            <Ionicons name="trash-outline" size={16} color="#F44336" />
-                            <Text style={styles.clearButtonText}>Clear Configuration</Text>
-                        </TouchableOpacity>
+                            <TouchableOpacity style={[styles.button, styles.clearButton]} onPress={clearConfiguration}>
+                                <Ionicons name="trash-outline" size={16} color="#FFF" />
+                                <Text style={styles.clearButtonText}>Clear</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </ScrollView>
             </KeyboardAvoidingView>
@@ -310,14 +276,12 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
         color: '#fff',
-        marginBottom: 8,
+        marginBottom: 10,
     },
     input: {
-        borderWidth: StyleSheet.hairlineWidth,
-        borderColor: '#444',
         borderRadius: 8,
         padding: 12,
-        backgroundColor: '#303030',
+        backgroundColor: '#101010',
         color: '#fff',
     },
     passwordContainer: {
@@ -325,7 +289,7 @@ const styles = StyleSheet.create({
     },
     passwordInput: {
         paddingRight: 50,
-        backgroundColor: '#303030',
+        backgroundColor: '#202020',
     },
     eyeButton: {
         position: 'absolute',
@@ -335,84 +299,48 @@ const styles = StyleSheet.create({
     },
     helpText: {
         fontSize: 12,
-        color: '#888',
+        color: '#aaa',
         marginTop: 10,
         lineHeight: 16,
     },
     buttonGroup: {
+        marginTop: 30,
+        flexDirection: 'row',
         gap: 12,
     },
-    testButton: {
+    button: {
+        flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#535aff',
         paddingVertical: 12,
-        paddingHorizontal: 20,
+        paddingHorizontal: 16,
         borderRadius: 8,
-        gap: 8,
+        gap: 6,
     },
-    testButtonText: {
-        color: '#FFF',
-        fontSize: 16,
-        fontWeight: '600',
+    testButton: {
+        backgroundColor: '#535aff',
     },
     saveButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
         backgroundColor: '#535aff',
-        paddingVertical: 12,
-        paddingHorizontal: 20,
-        borderRadius: 8,
-        gap: 8,
     },
-    saveButtonText: {
+    clearButton: {
+        backgroundColor: '#F44336',
+        borderWidth: 1,
+        borderColor: '#F44336',
+    },
+    buttonText: {
         color: '#FFF',
-        fontSize: 16,
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    clearButtonText: {
+        color: '#fff',
+        fontSize: 14,
         fontWeight: '600',
     },
     disabledButton: {
-        backgroundColor: '#555',
-    },
-    clearButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: 'transparent',
-        paddingVertical: 12,
-        paddingHorizontal: 20,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#F44336',
-        gap: 8,
-        marginTop: 10,
-    },
-    clearButtonText: {
-        color: '#F44336',
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    infoSection: {
-        backgroundColor: '#2d2d2d',
-        borderRadius: 12,
-        padding: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        elevation: 3,
-    },
-    infoTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        color: '#fff',
-        marginBottom: 10,
-    },
-    infoText: {
-        fontSize: 14,
-        color: '#bbb',
-        lineHeight: 20,
+        backgroundColor: '#303030',
     },
 });
 
