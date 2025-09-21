@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { StyleSheet, Pressable, View as RNView, ScrollView } from 'react-native';
 import { ActivityIndicator, Card, StatusBar, Text, View } from '@/components/Themed';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -41,7 +41,6 @@ interface StreamResponse {
 
 const DEFAULT_STREMIO_URL = 'http://127.0.0.1:11470';
 const DEFAULT_MEDIA_PLAYER_KEY = StorageKeys.DEFAULT_MEDIA_PLAYER_KEY;
-
 const SERVERS_KEY = StorageKeys.SERVERS_KEY;
 const ADDONS_KEY = StorageKeys.ADDONS_KEY;
 
@@ -55,15 +54,11 @@ const StreamListScreen = () => {
         colors?: string;
     }>();
 
-    // Existing state
+    // State management
     const [addons, setAddons] = useState<Addon[]>([]);
     const [selectedAddon, setSelectedAddon] = useState<Addon | null>(null);
     const [streams, setStreams] = useState<Stream[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
-    const router = useRouter();
-    const { showActionSheetWithOptions } = useActionSheet();
-
-    // Stremio server state
     const [stremioServers, setStremioServers] = useState<ServerConfig[]>([]);
     const [selectedServerId, setSelectedServerId] = useState<string | null>(null);
     const [players, setPlayers] = useState<{ name: string; scheme: string; encodeUrl: boolean }[]>([]);
@@ -74,42 +69,39 @@ const StreamListScreen = () => {
     const [isPlaying, setIsPlaying] = useState(false);
     const [selectedStream, setSelectedStream] = useState<Stream | null>(null);
 
+    // Refs for race condition prevention
+    const abortControllerRef = useRef<AbortController | null>(null);
+    const currentAddonRef = useRef<string>('');
+
+    const router = useRouter();
+    const { showActionSheetWithOptions } = useActionSheet();
+
+    // Memoized server configuration fetcher
     const fetchServerConfigs = useCallback(async () => {
         try {
             const storedServers = await storageService.getItem(SERVERS_KEY);
-            let stremioServerList: ServerConfig[] = [];
+            const defaultStremio: ServerConfig = {
+                serverId: 'stremio-default',
+                serverType: 'stremio',
+                serverName: 'Stremio',
+                serverUrl: DEFAULT_STREMIO_URL,
+                current: true
+            };
+
+            let stremioServerList: ServerConfig[];
 
             if (!storedServers) {
-                // Create default Stremio server
-                const defaultStremio: ServerConfig = {
-                    serverId: `stremio-default`,
-                    serverType: 'stremio',
-                    serverName: 'Stremio',
-                    serverUrl: DEFAULT_STREMIO_URL,
-                    current: true
-                };
                 stremioServerList = [defaultStremio];
             } else {
                 const allServers: ServerConfig[] = JSON.parse(storedServers);
-                // Filter only Stremio servers
                 const filteredStremioServers = allServers.filter(server => server.serverType === 'stremio');
-
-                stremioServerList = filteredStremioServers.length > 0 ? filteredStremioServers : [{
-                    serverId: `stremio-default`,
-                    serverType: 'stremio',
-                    serverName: 'Stremio',
-                    serverUrl: DEFAULT_STREMIO_URL,
-                    current: true
-                }];
+                stremioServerList = filteredStremioServers.length > 0 ? filteredStremioServers : [defaultStremio];
             }
 
             setStremioServers(stremioServerList);
 
-            // Set default server ID
-            if (stremioServerList.length > 0) {
-                const currentServer = stremioServerList.find(server => server.current);
-                setSelectedServerId(currentServer ? currentServer.serverId : stremioServerList[0].serverId);
-            }
+            const currentServer = stremioServerList.find(server => server.current) || stremioServerList[0];
+            setSelectedServerId(currentServer.serverId);
 
         } catch (error) {
             console.error('Error loading server configurations:', error);
@@ -117,109 +109,75 @@ const StreamListScreen = () => {
         }
     }, []);
 
-    // Load saved default player from config
-    const loadDefaultPlayer = async () => {
+    // Optimized player loading
+    const loadDefaultPlayer = useCallback(async () => {
         try {
             const savedDefault = await storageService.getItem(DEFAULT_MEDIA_PLAYER_KEY);
-            if (savedDefault) {
-                const defaultPlayerName = JSON.parse(savedDefault);
-                setSelectedPlayer(defaultPlayerName);
-                return defaultPlayerName;
-            }
-            return null;
+            return savedDefault ? JSON.parse(savedDefault) : null;
         } catch (error) {
             console.error('Error loading default player:', error);
             return null;
         }
-    };
+    }, []);
 
+    // Combined initialization effect
     useEffect(() => {
-        const loadPlayers = async () => {
+        const initializeApp = async () => {
+            // Load platform players
             const platformPlayers = getPlatformSpecificPlayers();
             setPlayers(platformPlayers);
 
             // Load saved default player or use first available
             const savedPlayer = await loadDefaultPlayer();
-            if (!savedPlayer && platformPlayers.length > 0) {
-                setSelectedPlayer(platformPlayers[0].name);
-            }
-        };
+            setSelectedPlayer(savedPlayer || (platformPlayers.length > 0 ? platformPlayers[0].name : null));
 
-        const initializeData = async () => {
+            // Fetch server configs and addons
             await fetchServerConfigs();
-            await loadPlayers();
             await fetchAddons();
         };
 
-        initializeData();
-    }, [fetchServerConfigs]);
+        initializeApp();
+    }, [fetchServerConfigs, loadDefaultPlayer]);
 
-    useEffect(() => {
-        if (stremioServers.length > 0) {
-            const currentServer = stremioServers.find(server => server.current);
-            const newServerId = currentServer ? currentServer.serverId : stremioServers[0].serverId;
-            setSelectedServerId(newServerId);
-        }
-    }, [stremioServers]);
-
-    // Helper function to get magnet link from stream (for copy/open actions only)
-    const getMagnetFromStream = (stream: Stream): string | null => {
+    // Stream utility functions
+    const getMagnetFromStream = useCallback((stream: Stream): string | null => {
         const { magnet, magnetLink, infoHash } = stream;
+        return magnet || magnetLink || (infoHash ? `magnet:?xt=urn:btih:${infoHash}` : null);
+    }, []);
 
-        // For copy/open actions, prefer full magnet links with metadata
-        if (magnet) return magnet;
-        if (magnetLink) return magnetLink;
-
-        // Convert infoHash to basic magnet link as fallback
-        if (infoHash) {
-            return convertInfoHashToMagnet(infoHash);
-        }
-
-        return null;
-    };
-
-    // Helper function to extract infoHash from stream (for Stremio playback only)
-    const getInfoHashFromStream = (stream: Stream): string | null => {
+    const getInfoHashFromStream = useCallback((stream: Stream): string | null => {
         const { infoHash, magnet, magnetLink } = stream;
-
-        // For Stremio playback, prefer existing infoHash for direct processing
         if (infoHash) return infoHash;
 
-        // Extract infoHash from magnet links as fallback
         const magnetToUse = magnet || magnetLink;
         if (magnetToUse) {
             const match = magnetToUse.match(/xt=urn:btih:([a-fA-F0-9]{40}|[a-fA-F0-9]{32})/i);
-            if (match) return match[1];
+            return match?.[1] || null;
         }
-
         return null;
-    };
+    }, []);
 
-    const generatePlayerUrlWithInfoHash = async (infoHash: string, serverUrl: string) => {
-        try {
-            setStatusText('Torrent details sent to the server. This may take a moment. Please wait...');
-            return await generateStremioPlayerUrl(infoHash, serverUrl, type, season as string, episode as string);
-        } catch (error) {
-            console.error('Error generating player URL:', error);
-            throw error;
-        }
-    };
+    // Optimized stream URL generation
+    const generatePlayerUrlWithInfoHash = useCallback(async (infoHash: string, serverUrl: string) => {
+        setStatusText('Torrent details sent to the server. This may take a moment. Please wait...');
+        return await generateStremioPlayerUrl(infoHash, serverUrl, type, season as string, episode as string);
+    }, [type, season, episode]);
 
-    const handleCancel = () => {
+    // Modal handlers
+    const handleCancel = useCallback(() => {
         setPlayBtnDisabled(false);
         setModalVisible(false);
         setStatusText('');
         setIsPlaying(false);
-    };
+    }, []);
 
-    // Modified handlePlay to work with Stremio only
-    const handlePlay = async (stream: Stream, playerName?: string, forceServerId?: string) => {
+    // Optimized play handler
+    const handlePlay = useCallback(async (stream: Stream, playerName?: string, forceServerId?: string) => {
         if (isHapticsSupported()) {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
-        if (isPlaying) {
-            return;
-        }
+
+        if (isPlaying) return;
 
         const { url } = stream;
         const infoHash = getInfoHashFromStream(stream);
@@ -229,47 +187,38 @@ const StreamListScreen = () => {
         setIsPlaying(true);
         setPlayBtnDisabled(true);
         setModalVisible(true);
-        if (isHapticsSupported()) {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }
 
+        // Validation
         if (!playerToUse || (!url && !serverIdToUse)) {
-            console.error('Missing player or server:', { playerToUse, url, serverIdToUse });
-            setStatusText('Error: Please select a media player and server.');
-            showAlert('Error', 'Please select a media player and server.');
-            setPlayBtnDisabled(false);
-            setModalVisible(false);
-            setIsPlaying(false);
+            const errorMsg = 'Please select a media player and server.';
+            setStatusText(`Error: ${errorMsg}`);
+            showAlert('Error', errorMsg);
+            handleCancel();
             return;
         }
 
         const selectedServer = stremioServers.find(s => s.serverId === serverIdToUse);
-        console.log('Selected server:', selectedServer);
+        const player = players.find(p => p.name === playerToUse);
 
         if (!selectedServer && !url && infoHash) {
-            console.error('No Stremio server found for infoHash processing');
-            setStatusText('Error: Stremio server configuration not found.');
-            showAlert('Error', 'Stremio server configuration not found. Please try again.');
-            setPlayBtnDisabled(false);
-            setModalVisible(false);
-            setIsPlaying(false);
+            const errorMsg = 'Stremio server configuration not found. Please try again.';
+            setStatusText(`Error: ${errorMsg}`);
+            showAlert('Error', errorMsg);
+            handleCancel();
             return;
         }
 
-        const player = players.find((p) => p.name === playerToUse);
-
         if (!player) {
-            console.error('Player not found:', playerToUse);
-            setStatusText('Error: Invalid media player selection.');
-            showAlert('Error', 'Invalid media player selection.');
-            setPlayBtnDisabled(false);
-            setModalVisible(false);
-            setIsPlaying(false);
+            const errorMsg = 'Invalid media player selection.';
+            setStatusText(`Error: ${errorMsg}`);
+            showAlert('Error', errorMsg);
+            handleCancel();
             return;
         }
 
         try {
             let videoUrl = url || '';
+
             if (!url && infoHash && selectedServer) {
                 setStatusText('Processing the InfoHash...');
                 videoUrl = await generatePlayerUrlWithInfoHash(infoHash, selectedServer.serverUrl);
@@ -277,80 +226,71 @@ const StreamListScreen = () => {
             }
 
             if (!videoUrl) {
-                console.error('No video URL generated');
-                setStatusText('Error: Unable to generate a valid video URL.');
-                showAlert('Error', 'Unable to generate a valid video URL.');
-                setPlayBtnDisabled(false);
-                setModalVisible(false);
-                setIsPlaying(false);
+                const errorMsg = 'Unable to generate a valid video URL.';
+                setStatusText(`Error: ${errorMsg}`);
+                showAlert('Error', errorMsg);
+                handleCancel();
                 return;
             }
 
-            console.log('Url before encoding', videoUrl);
             const urlJs = new URL(videoUrl);
-            const filename = urlJs?.pathname?.split('/')?.pop() || '';
+            const filename = urlJs.pathname.split('/').pop() || '';
             const streamUrl = player.encodeUrl ? encodeURIComponent(videoUrl) : videoUrl;
-            const playerUrl = player.scheme.replace('STREAMURL', streamUrl)?.replace('STREAMTITLE', filename);
-            console.log('Final Player URL', playerUrl);
+            const playerUrl = player.scheme.replace('STREAMURL', streamUrl).replace('STREAMTITLE', filename);
 
-            if (playerUrl) {
-                if (playerToUse === Players.Default) {
-                    router.push({
-                        pathname: '/stream/player',
-                        params: {
-                            videoUrl: playerUrl,
-                            title: contentTitle,
-                            imdbid: imdbid,
-                            type: type,
-                            season: season,
-                            episode: episode
-                        },
-                    });
-                } else {
-                    setStatusText('Opening Stream in Media Player...');
-                    await Linking.openURL(playerUrl);
-                    setStatusText('Stream Opened in Media Player...');
-                }
+            if (playerToUse === Players.Default) {
+                router.push({
+                    pathname: '/stream/player',
+                    params: {
+                        videoUrl: playerUrl,
+                        title: contentTitle,
+                        imdbid,
+                        type,
+                        season,
+                        episode
+                    },
+                });
+            } else {
+                setStatusText('Opening Stream in Media Player...');
+                await Linking.openURL(playerUrl);
+                setStatusText('Stream Opened in Media Player...');
             }
         } catch (error) {
             console.error('Error during playback process:', error);
-            setStatusText('Error: An error occurred while trying to play the stream. Please check the server and try again.');
-            showAlert('Error', 'An error occurred while trying to play the stream. Please check the server and try again.');
+            const errorMsg = 'An error occurred while trying to play the stream. Please check the server and try again.';
+            setStatusText(`Error: ${errorMsg}`);
+            showAlert('Error', errorMsg);
         } finally {
-            setPlayBtnDisabled(false);
-            setModalVisible(false);
-            setIsPlaying(false);
+            handleCancel();
         }
-    };
+    }, [isPlaying, getInfoHashFromStream, selectedPlayer, selectedServerId, stremioServers, players, generatePlayerUrlWithInfoHash, handleCancel, router, contentTitle, imdbid, type, season, episode]);
 
-    const fetchAddons = async (): Promise<void> => {
+    // Fixed addon fetching with race condition prevention
+    const fetchAddons = useCallback(async (): Promise<void> => {
         try {
             setLoading(true);
 
             const storedAddons = await storageService.getItem(ADDONS_KEY);
             if (!storedAddons) {
                 setAddons([]);
-                setLoading(false);
                 return;
             }
 
             const addonsData = JSON.parse(storedAddons) as Record<string, Addon>;
             if (!addonsData || Object.keys(addonsData).length === 0) {
                 setAddons([]);
-                setLoading(false);
                 return;
             }
 
             const addonList = Object.values(addonsData);
-            const filteredAddons = addonList.filter((addon: Addon) => {
-                return addon?.types && addon.types.includes(type);
-            });
+            const filteredAddons = addonList.filter((addon: Addon) => addon?.types?.includes(type));
 
             setAddons(filteredAddons);
 
             if (filteredAddons.length > 0) {
                 const firstAddon = filteredAddons[0];
                 setSelectedAddon(firstAddon);
+                currentAddonRef.current = firstAddon.name;
                 await fetchStreams(firstAddon);
             }
         } catch (error) {
@@ -360,47 +300,76 @@ const StreamListScreen = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [type]);
 
-    const fetchStreams = async (addon: Addon): Promise<void> => {
+    // Fixed stream fetching with abort controller
+    const fetchStreams = useCallback(async (addon: Addon): Promise<void> => {
+        // Abort previous request if it exists
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+
+        // Create new abort controller
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+
+        // Clear streams immediately to prevent showing old data
+        setStreams([]);
         setLoading(true);
 
         try {
             const addonUrl = addon?.url || '';
             const streamBaseUrl = addon?.streamBaseUrl || addonUrl;
-            let streamUrl = '';
 
-            if (type === 'series') {
-                streamUrl = `${streamBaseUrl}/stream/series/${imdbid}${season && episode ? `:${season}:${episode}` : ''}.json`;
-            } else {
-                streamUrl = `${streamBaseUrl}/stream/${type}/${imdbid}.json`;
-            }
+            const streamUrl = type === 'series'
+                ? `${streamBaseUrl}/stream/series/${imdbid}${season && episode ? `:${season}:${episode}` : ''}.json`
+                : `${streamBaseUrl}/stream/${type}/${imdbid}.json`;
 
-            const response = await fetch(streamUrl);
+            const response = await fetch(streamUrl, { signal: controller.signal });
+
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`);
             }
 
             const data = await response.json() as StreamResponse;
-            setStreams(data.streams || []);
-        } catch (error) {
-            console.error('Error fetching streams:', error);
-            setStreams([]);
-        } finally {
-            setLoading(false);
-        }
-    };
 
-    const handleAddonPress = async (item: Addon): Promise<void> => {
+            // Only update streams if this is still the current addon
+            if (currentAddonRef.current === addon.name && !controller.signal.aborted) {
+                setStreams(data.streams || []);
+            }
+        } catch (error: any) {
+            // Only handle error if not aborted
+            if (error.name !== 'AbortError') {
+                console.error('Error fetching streams:', error);
+                // Only clear streams if this is still the current addon
+                if (currentAddonRef.current === addon.name) {
+                    setStreams([]);
+                }
+            }
+        } finally {
+            // Only stop loading if this is still the current addon
+            if (currentAddonRef.current === addon.name && !controller.signal.aborted) {
+                setLoading(false);
+            }
+        }
+    }, [imdbid, type, season, episode]);
+
+    // Optimized addon selection handler
+    const handleAddonPress = useCallback(async (item: Addon): Promise<void> => {
         if (isHapticsSupported()) {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
-        setStreams([]);
-        setSelectedAddon(item);
-        fetchStreams(item);
-    };
 
-    const handleStreamSelected = async (stream: Stream): Promise<void> => {
+        // Update current addon reference immediately
+        currentAddonRef.current = item.name;
+        setSelectedAddon(item);
+
+        // Fetch streams for the new addon
+        await fetchStreams(item);
+    }, [fetchStreams]);
+
+    // Stream selection handler
+    const handleStreamSelected = useCallback(async (stream: Stream): Promise<void> => {
         if (isHapticsSupported()) {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
@@ -408,28 +377,17 @@ const StreamListScreen = () => {
         const { url } = stream;
         const infoHash = getInfoHashFromStream(stream);
 
-        // Keep in state for later reuse
         setSelectedStream(stream);
 
         if (!url && infoHash) {
             showTorrentActions(stream);
         } else {
-            // Check if we have a default player configured
-            if (selectedPlayer) {
-                // Use the configured default player directly
-                handlePlay(stream, selectedPlayer);
-            } else {
-                // No default player, show selection
-                showPlayerSelection(undefined, stream);
-            }
+            selectedPlayer ? handlePlay(stream, selectedPlayer) : showPlayerSelection(undefined, stream);
         }
-    };
+    }, [getInfoHashFromStream, selectedPlayer, handlePlay]);
 
-    const convertInfoHashToMagnet = (infoHash: string) => {
-        return `magnet:?xt=urn:btih:${infoHash}`;
-    };
-
-    const copyToClipboard = async (text: string) => {
+    // Utility functions
+    const copyToClipboard = useCallback(async (text: string) => {
         try {
             await Clipboard.setStringAsync(text);
             showAlert('Success', 'Copied to clipboard');
@@ -437,52 +395,41 @@ const StreamListScreen = () => {
             console.error('Failed to copy:', error);
             showAlert('Error', 'Failed to copy to clipboard');
         }
-    };
+    }, []);
 
-    const openInBrowser = async (url: string) => {
+    const openInBrowser = useCallback(async (url: string) => {
         try {
             await Linking.openURL(url);
         } catch (error) {
             console.error('Failed to open URL:', error);
             showAlert('Error', 'Failed to open in browser');
         }
-    };
+    }, []);
 
-    const showTorrentActions = (stream: Stream) => {
-        // Check if any Stremio servers are available
+    // Action sheet handlers
+    const showTorrentActions = useCallback((stream: Stream) => {
         if (stremioServers.length === 0) {
             showAlert('Error', 'No Stremio servers are configured');
             return;
         }
 
-        // Get the current server name to display
         const currentServer = stremioServers.find(server => server.serverId === selectedServerId);
         const serverId = currentServer?.serverId || stremioServers[0].serverId;
-
         const { url } = stream;
-        let linkToUse = url || '';
+        let linkToUse = url || getMagnetFromStream(stream) || '';
 
-        // Get magnet link from stream (handles infoHash, magnet, magnetLink)
-        if (!url) {
-            const magnetLink = getMagnetFromStream(stream);
-            if (magnetLink) {
-                linkToUse = magnetLink;
-            }
-        }
-
-        // Show action sheet with current server and additional options
-        const serverOptions = [
-            'Play',
-            'Copy',
-            'Open with App',
-            'Cancel'
+        const options = ['Play', 'Copy', 'Open with App', 'Cancel'];
+        const icons = [
+            <Feather name="play" size={20} color="#ffffff" />,
+            <Feather name="copy" size={20} color="#ffffff" />,
+            <Feather name="external-link" size={20} color="#ffffff" />,
+            <Feather name="x" size={20} color="#ff6b6b" />
         ];
-        const cancelButtonIndex = 3;
 
         showActionSheetWithOptions(
             {
-                options: serverOptions,
-                cancelButtonIndex,
+                options,
+                cancelButtonIndex: 3,
                 title: 'Select action',
                 messageTextStyle: { color: '#ffffff', fontSize: 12 },
                 textStyle: { color: '#ffffff' },
@@ -490,51 +437,38 @@ const StreamListScreen = () => {
                 cancelButtonTintColor: '#ff6b6b',
                 containerStyle: { backgroundColor: '#101010' },
                 userInterfaceStyle: 'dark',
-                icons: [
-                    <Feather name="play" size={20} color="#ffffff" />,
-                    <Feather name="copy" size={20} color="#ffffff" />,
-                    <Feather name="external-link" size={20} color="#ffffff" />,
-                    <Feather name="x" size={20} color="#ff6b6b" />
-                ]
+                icons
             },
             (selectedIndex?: number) => {
-                if (selectedIndex !== undefined && selectedIndex !== cancelButtonIndex) {
-                    switch (selectedIndex) {
-                        case 0:
-                            setSelectedServerId(serverId);
-                            setTimeout(() => {
-                                // Check if we have a default player configured
-                                if (selectedPlayer) {
-                                    // Use the configured default player directly
-                                    handlePlay(stream, selectedPlayer, serverId);
-                                } else {
-                                    // No default player, show selection
-                                    showPlayerSelection(serverId, stream);
-                                }
-                            }, 100);
-                            break;
-                        case 1:
-                            copyToClipboard(linkToUse);
-                            break;
-                        case 2:
-                            openInBrowser(linkToUse);
-                            break;
-                    }
+                if (selectedIndex === undefined || selectedIndex === 3) return;
+
+                switch (selectedIndex) {
+                    case 0:
+                        setSelectedServerId(serverId);
+                        setTimeout(() => {
+                            selectedPlayer
+                                ? handlePlay(stream, selectedPlayer, serverId)
+                                : showPlayerSelection(serverId, stream);
+                        }, 100);
+                        break;
+                    case 1:
+                        copyToClipboard(linkToUse);
+                        break;
+                    case 2:
+                        openInBrowser(linkToUse);
+                        break;
                 }
             }
         );
-    };
+    }, [stremioServers, selectedServerId, getMagnetFromStream, selectedPlayer, handlePlay, copyToClipboard, openInBrowser, showActionSheetWithOptions]);
 
-    const showPlayerSelection = (selectedServerIdParam?: string, stream?: Stream) => {
-        const playerOptions = players.map(player => player.name);
-        playerOptions.push('Cancel');
-
-        const cancelButtonIndex = playerOptions.length - 1;
+    const showPlayerSelection = useCallback((selectedServerIdParam?: string, stream?: Stream) => {
+        const playerOptions = [...players.map(player => player.name), 'Cancel'];
 
         showActionSheetWithOptions(
             {
                 options: playerOptions,
-                cancelButtonIndex,
+                cancelButtonIndex: playerOptions.length - 1,
                 title: 'Media Player',
                 message: 'Select the Media Player for Streaming',
                 messageTextStyle: { color: '#ffffff', fontSize: 12 },
@@ -544,59 +478,45 @@ const StreamListScreen = () => {
                 userInterfaceStyle: 'dark'
             },
             (selectedIndex?: number) => {
-                if (selectedIndex !== undefined && selectedIndex !== cancelButtonIndex) {
-                    const selectedPlayerName = players[selectedIndex].name;
+                if (selectedIndex === undefined || selectedIndex === playerOptions.length - 1) return;
 
-                    setSelectedPlayer(selectedPlayerName);
-                    if (stream) {
-                        console.log('Starting playback with server info:', {
-                            selectedServerIdParam
-                        });
-                        handlePlay(stream, selectedPlayerName, selectedServerIdParam);
-                    }
+                const selectedPlayerName = players[selectedIndex].name;
+                setSelectedPlayer(selectedPlayerName);
+
+                if (stream) {
+                    handlePlay(stream, selectedPlayerName, selectedServerIdParam);
                 }
             }
         );
-    };
+    }, [players, handlePlay, showActionSheetWithOptions]);
 
-    interface AddonItemProps {
-        item: Addon;
-    }
+    // Cleanup effect
+    useEffect(() => {
+        return () => {
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+            }
+        };
+    }, []);
 
-    const RenderAddonItem = ({ item }: AddonItemProps): React.ReactElement | null => {
-        const { name, types } = item;
-
-        if (!types || !types.includes(type)) {
-            return null;
-        }
+    // Memoized components
+    const AddonItem = React.memo<{ item: Addon }>(({ item }) => {
+        if (!item.types?.includes(type)) return null;
 
         const isSelected = item.name === selectedAddon?.name;
         return (
             <Pressable
-                style={[
-                    styles.addonItem,
-                    isSelected && styles.selectedAddonItem,
-                ]}
+                style={[styles.addonItem, isSelected && styles.selectedAddonItem]}
                 onPress={() => handleAddonPress(item)}
             >
-                <Text
-                    style={[
-                        styles.addonName,
-                        isSelected && styles.selectedaddonName,
-                    ]}
-                    numberOfLines={1}
-                >
-                    {name}
+                <Text style={[styles.addonName, isSelected && styles.selectedaddonName]} numberOfLines={1}>
+                    {item.name}
                 </Text>
             </Pressable>
         );
-    };
+    });
 
-    interface StreamItemProps {
-        item: Stream;
-    }
-
-    const RenderStreamItem = ({ item }: StreamItemProps): React.ReactElement => {
+    const StreamItem = React.memo<{ item: Stream }>(({ item }) => {
         const { name, title, description } = item;
         const quality = extractQuality(name, title);
         const size = extractSize(description || title || '');
@@ -626,92 +546,77 @@ const StreamListScreen = () => {
 
                     <RNView style={styles.streamFooter}>
                         <RNView style={styles.streamMetadata}>
-                            {size && (
-                                <Text style={styles.streamSize}>{size}</Text>
-                            )}
-                            <Text style={styles.streamType}>
-                                {streamType}
-                            </Text>
+                            {size && <Text style={styles.streamSize}>{size}</Text>}
+                            <Text style={styles.streamType}>{streamType}</Text>
                         </RNView>
                     </RNView>
                 </Card>
             </Pressable>
         );
-    };
+    });
+
+    // Render helpers
+    const renderLoadingState = (message: string) => (
+        <RNView style={styles.loadingContainer}>
+            <View style={styles.centeredContainer}>
+                <ActivityIndicator size="large" style={styles.activityIndicator} color="#535aff" />
+                <Text style={styles.loadingText}>{message}</Text>
+            </View>
+        </RNView>
+    );
+
+    const renderEmptyState = (icon: string, message: string, topMargin = 0) => (
+        <RNView style={styles.loadingContainer}>
+            <View style={styles.centeredContainer}>
+                <Feather
+                    style={[topMargin ? { marginTop: topMargin } : undefined, { paddingBottom: 20 }]}
+                    name={icon as any}
+                    color={icon === 'alert-circle' ? '#ffffff' : '#535aff'}
+                    size={icon === 'alert-circle' ? 70 : 50}
+                />
+                <Text style={styles.noAddonsText}>{message}</Text>
+            </View>
+        </RNView>
+    );
 
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar />
-            {
-                loading && addons.length === 0 ? (
-                    <RNView style={styles.loadingContainer}>
-                        <View style={styles.centeredContainer}>
-                            <ActivityIndicator size="large" style={styles.activityIndicator} color="#535aff" />
-                            <Text style={styles.loadingText}>Loading addons...</Text>
-                        </View>
-                    </RNView>
-                ) : addons?.length > 0 ? (
-                    <View style={{
-                        borderBottomWidth: StyleSheet.hairlineWidth,
-                        borderColor: 'rgba(255,255,255, 0.05)'
-                    }}>
-                        <ScrollView
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                            contentContainerStyle={styles.addonListContainer}>
-                            {
-                                addons.map((item, index) => (
-                                    <RenderAddonItem key={`addon-${index}-${item.name}`} item={item} />
-                                ))
-                            }
-                        </ScrollView>
-                    </View>
-                ) : (
-                    <RNView style={styles.loadingContainer}>
-                        <View style={styles.centeredContainer}>
-                            <Feather style={styles.noAddons} name='alert-circle' color="#ffffff" size={70} />
-                            <Text style={[styles.noAddonsText]}>
-                                No addons have been found. Please ensure that you have configured the addons before searching.
-                            </Text>
-                        </View>
-                    </RNView>
-                )
-            }
-            {
-                loading && addons.length > 0 ? (
-                    <RNView style={styles.loadingContainer}>
-                        <View style={styles.centeredContainer}>
-                            <ActivityIndicator size="large" style={styles.activityIndicator} color="#535aff" />
-                            <Text style={styles.loadingText}>Loading streams...</Text>
-                        </View>
-                    </RNView>
-                ) : (
-                    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer}>
-                        <View style={styles.streamsContainer}>
-                            {
-                                streams.length > 0 ? (
-                                    streams.map((item, index) => (
-                                        <RenderStreamItem key={`stream-${index}-${item.name}`} item={item} />
-                                    ))
-                                ) : (
-                                    <>
-                                        {
-                                            addons.length > 0 && (
-                                                <View style={styles.centeredContainer}>
-                                                    <Feather style={styles.noStreams} name='alert-circle' color="#535aff" size={50} />
-                                                    <Text style={[styles.noStreamsText]}>
-                                                        No streams found!
-                                                    </Text>
-                                                </View>
-                                            )
-                                        }
-                                    </>
-                                )
-                            }
-                        </View>
+
+            {loading && addons.length === 0 ? (
+                renderLoadingState('Loading addons...')
+            ) : addons.length > 0 ? (
+                <View style={styles.addonBorderContainer}>
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.addonListContainer}
+                    >
+                        {addons.map((item, index) => (
+                            <AddonItem key={`${item.name}-${index}`} item={item} />
+                        ))}
                     </ScrollView>
-                )
-            }
+                </View>
+            ) : (
+                renderEmptyState('alert-circle', 'No addons have been found. Please ensure that you have configured the addons before searching.', 100)
+            )}
+
+            {loading && addons.length > 0 ? (
+                renderLoadingState('Loading streams...')
+            ) : (
+                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer}>
+                    <View style={styles.streamsContainer}>
+                        {streams.length > 0 ? (
+                            streams.map((item, index) => (
+                                <StreamItem key={`${item.name}-${index}`} item={item} />
+                            ))
+                        ) : (
+                            addons.length > 0 && renderEmptyState('alert-circle', 'No streams found!', -50)
+                        )}
+                    </View>
+                </ScrollView>
+            )}
+
             <BottomSpacing space={30} />
 
             <StatusModal
@@ -719,7 +624,7 @@ const StreamListScreen = () => {
                 statusText={statusText}
                 onCancel={handleCancel}
             />
-        </SafeAreaView >
+        </SafeAreaView>
     );
 };
 
@@ -734,14 +639,15 @@ const styles = StyleSheet.create({
         margin: 'auto',
         width: '100%'
     },
+    addonBorderContainer: {
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderColor: 'rgba(255,255,255, 0.05)'
+    },
     addonListContainer: {
         marginVertical: 15,
         marginHorizontal: 15,
         alignItems: 'center',
         justifyContent: 'center'
-    },
-    addonList: {
-        paddingHorizontal: 10,
     },
     addonItem: {
         borderRadius: 25,
@@ -778,10 +684,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#1a1a1a',
         shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
+        shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 3,
         elevation: 3,
@@ -817,9 +720,6 @@ const styles = StyleSheet.create({
         color: '#ffffff',
         fontSize: 12,
         fontWeight: '500'
-    },
-    streamIconContainer: {
-        padding: 4,
     },
     streamDescription: {
         fontSize: 14,
@@ -870,25 +770,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         padding: 20,
-    },
-    centeredText: {
-        fontSize: 18,
-        textAlign: 'center',
-        color: '#ffffff',
-    },
-    noStreams: {
-        marginTop: -50,
-        paddingBottom: 20
-    },
-    noStreamsText: {
-        fontSize: 16,
-        textAlign: 'center',
-        marginHorizontal: '10%',
-        color: '#fff'
-    },
-    noAddons: {
-        marginTop: 100,
-        paddingBottom: 20
     },
     noAddonsText: {
         fontSize: 16,

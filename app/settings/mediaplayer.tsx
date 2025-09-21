@@ -144,7 +144,7 @@ const MediaPlayerConfigScreen = () => {
     };
 
     const resetToDefault = async () => {
-        Alert.alert(
+        showAlert(
             'Reset to Default',
             'Are you sure you want to reset to the default media player?',
             [

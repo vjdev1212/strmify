@@ -19,6 +19,7 @@ import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import Slider from '@react-native-assets/slider';
 import * as Haptics from 'expo-haptics';
 import ImmersiveMode from "react-native-immersive-mode";
+import { showAlert } from "@/utils/platform";
 
 export interface Subtitle {
     fileId: string | number | null;
@@ -369,7 +370,7 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                             console.error('OpenSubtitles API error:', response.message);
                             subtitleState.setIsLoadingSubtitles(false);
                             subtitleState.setParsedSubtitles([]);
-                            Alert.alert("Subtitle Error", `Failed to download subtitle: ${response.message}`);
+                            showAlert("Subtitle Error", `Failed to download subtitle: ${response.message}`);
                             return;
                         }
 
@@ -387,11 +388,8 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                         }
 
                         const subtitleContent = await subtitleResponse.text();
-                        console.log('Subtitle content loaded, length:', subtitleContent.length);
-                        console.log('First 200 chars:', subtitleContent.substring(0, 200));
 
                         const parsed = parseSubtitleFile(subtitleContent);
-                        console.log('Parsed subtitles count:', parsed.length);
 
                         if (parsed.length > 0) {
                             console.log('First subtitle:', parsed[0]);
@@ -404,7 +402,7 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                         console.error('Failed to download/parse subtitle:', error);
                         subtitleState.setIsLoadingSubtitles(false);
                         subtitleState.setParsedSubtitles([]);
-                        Alert.alert("Subtitle Error", `Failed to load subtitle: ${error.message}`);
+                        showAlert("Subtitle Error", `Failed to load subtitle: ${error.message}`);
                     });
             }
             // Fallback to direct URL if no fileId or openSubtitlesClient
@@ -437,7 +435,7 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                         console.error('Failed to load subtitles from URL:', error);
                         subtitleState.setIsLoadingSubtitles(false);
                         subtitleState.setParsedSubtitles([]);
-                        Alert.alert("Subtitle Error", `Failed to load subtitle: ${error.message}`);
+                        showAlert("Subtitle Error", `Failed to load subtitle: ${error.message}`);
                     });
             } else {
                 console.warn('No valid fileId or direct URL for subtitle:', selectedSub);
@@ -462,7 +460,6 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
 
             // Only update if the subtitle text has changed
             if (newSubtitleText !== subtitleState.currentSubtitle) {
-                console.log(`Time: ${currentTime.toFixed(1)}s - Subtitle: "${newSubtitleText}"`);
                 subtitleState.setCurrentSubtitle(newSubtitleText);
             }
         } else if (subtitleState.currentSubtitle !== '') {
@@ -632,7 +629,7 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
             playerState.setIsBuffering(false);
             playerState.setIsReady(false);
             playerState.setShowBufferingLoader(false);
-            Alert.alert("Video Error", errorMessage);
+            showAlert("Video Error", errorMessage);
         }
     }), [playerState, settings, bufferOpacity, timers, progressBarValue]);
 

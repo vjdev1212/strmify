@@ -185,7 +185,7 @@ const AddonsScreen = () => {
               }
               const message = `Are you sure you want to remove "${item.name}"?`;
               if (Platform.OS === 'ios' || Platform.OS === 'android') {
-                Alert.alert(
+                showAlert(
                   'Remove Addon',
                   message,
                   [
