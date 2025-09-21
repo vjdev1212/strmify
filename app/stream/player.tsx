@@ -86,11 +86,12 @@ const MediaPlayerScreen: React.FC = () => {
           return;
         }
         const sortedData = response.data.sort((a, b) => b.download_count - a.download_count);
+        console.log('Fetched subtitles:', sortedData);
 
         const transformedSubtitles: Subtitle[] = sortedData.map((subtitle) => ({
           language: subtitle.language,
           url: subtitle.url,
-          label: `${subtitle.name} (${getLanguageName(subtitle.language)})`
+          label: `${getLanguageName(subtitle.language)} - ${subtitle.name}`
         }));
 
         setSubtitles(transformedSubtitles);
