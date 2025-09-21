@@ -1351,8 +1351,8 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                                     minimumTrackTintColor="#007AFF"
                                     maximumTrackTintColor="rgba(255,255,255,0.4)"
                                     thumbTintColor={'#fff'}
-                                    thumbSize={20}
-                                    trackHeight={5}
+                                    thumbSize={25}
+                                    trackHeight={6}
                                     enabled={playerState.isReady || playerState.duration >= 0}
                                 />
                             </View>
