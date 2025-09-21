@@ -96,6 +96,7 @@ class OpenSubtitlesClient {
       headers['Api-Key'] = this.apiKey;
     }
 
+    console.log('Headers:', headers);
     return headers;
   }
 
