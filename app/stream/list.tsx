@@ -395,6 +395,7 @@ const StreamListScreen = () => {
         if (isHapticsSupported()) {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
+        setStreams([]);
         setSelectedAddon(item);
         fetchStreams(item);
     };
