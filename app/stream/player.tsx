@@ -28,7 +28,7 @@ const MediaPlayerScreen: React.FC = () => {
     try {
       const userAgent = await storageService.getItem(StorageKeys.OPENSUBTITLES_USER_AGENT) || 'Strmify';
       const apiKey = await storageService.getItem(StorageKeys.OPENSUBTITLES_API_KEY) || '';
-      
+
       const client = new OpenSubtitlesClient(userAgent, apiKey);
       setOpenSubtitlesClient(client);
     } catch (error) {
@@ -80,30 +80,27 @@ const MediaPlayerScreen: React.FC = () => {
       }
 
       if (response.success) {
-        // Transform OpenSubtitles results to match your Subtitle interface
-        const transformedSubtitles: Subtitle[] = response.data.map((subtitle: any) => ({
+        if (response.data.length === 0) {
+          setSubtitles([]);
+          setIsLoadingSubtitles(false);
+          return;
+        }
+        const sortedData = response.data.sort((a, b) => b.download_count - a.download_count);
+
+        const transformedSubtitles: Subtitle[] = sortedData.map((subtitle) => ({
           language: subtitle.language,
           url: subtitle.url,
-          label: `${getLanguageName(subtitle.language)} (${subtitle.format.toUpperCase()}) - ${subtitle.download_count} downloads`
+          label: `${subtitle.name} (${getLanguageName(subtitle.language)})`
         }));
-
-        // Sort by download count (most popular first)
-        transformedSubtitles.sort((a, b) => {
-          const aDownloads = parseInt(a.label.match(/(\d+) downloads/)?.[1] || '0');
-          const bDownloads = parseInt(b.label.match(/(\d+) downloads/)?.[1] || '0');
-          return bDownloads - aDownloads;
-        });
 
         setSubtitles(transformedSubtitles);
       } else {
         console.error('Failed to fetch subtitles:', response.error);
-        
-        // Handle specific error cases
+
         if (response.error.includes('You cannot consume this service')) {
           console.error('Authentication issue: Please check your API key or registration status');
-          // Optionally show user-friendly message
         }
-        
+
         setSubtitles([]);
       }
     } catch (error) {
