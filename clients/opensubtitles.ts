@@ -75,7 +75,7 @@ class OpenSubtitlesClient {
   private userAgent: string;
   private apiKey?: string;
 
-  constructor(userAgent = 'MyApp v1.0', apiKey?: string) {
+  constructor(userAgent = 'Strmify', apiKey?: string) {
     this.userAgent = userAgent;
     this.apiKey = apiKey;
   }
