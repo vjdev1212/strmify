@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, Switch, TextInput, Pressable, ScrollView, Animated } from 'react-native';
+import { StyleSheet, Switch, TextInput, Pressable, ScrollView, Animated, ActivityIndicator } from 'react-native';
 import { View, Text } from '@/components/Themed';
 import { confirmAction, showAlert } from '@/utils/platform';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -19,6 +19,10 @@ export interface ServerConfig {
   current: boolean;
 }
 
+interface ConnectionStatus {
+  [serverId: string]: 'checking' | 'connected' | 'disconnected' | 'error';
+}
+
 const SERVERS_KEY = StorageKeys.SERVERS_KEY;
 
 const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverType, defaultUrl }) => {
@@ -31,6 +35,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
   const [inlineEditingId, setInlineEditingId] = useState<string | null>(null);
   const [inlineEditValue, setInlineEditValue] = useState<string>('');
   const [animatedValues, setAnimatedValues] = useState<{ [key: string]: { rotation: Animated.Value, height: Animated.Value } }>({});
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({});
 
   useEffect(() => {
     loadServers();
@@ -48,6 +53,13 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
     setAnimatedValues(newAnimatedValues);
   }, [serverConfigs]);
 
+  useEffect(() => {
+    // Check connection status for all servers when they change
+    if (serverConfigs.length > 0) {
+      checkAllConnections();
+    }
+  }, [serverConfigs]);
+
   const loadServers = async () => {
     try {
       const savedConfigs = await storageService.getItem(SERVERS_KEY);
@@ -63,6 +75,120 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
       }
     } catch (error) {
       console.error('Error loading settings:', error);
+    }
+  };
+
+  const checkServerConnection = async (server: ServerConfig): Promise<'connected' | 'disconnected' | 'error'> => {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+      const response = await fetch(server.serverUrl, {
+        method: 'HEAD',
+        signal: controller.signal,
+        headers: {
+          'Accept': '*/*',
+        },
+      });
+
+      clearTimeout(timeoutId);
+      
+      if (response.ok || response.status < 500) {
+        return 'connected';
+      } else {
+        return 'disconnected';
+      }
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        return 'disconnected'; // Timeout
+      }
+      return 'error';
+    }
+  };
+
+  const checkAllConnections = async () => {
+    const newStatus: ConnectionStatus = {};
+    
+    // Set all servers to checking state
+    serverConfigs.forEach(server => {
+      newStatus[server.serverId] = 'checking';
+    });
+    setConnectionStatus(newStatus);
+
+    // Check each server connection
+    const promises = serverConfigs.map(async (server) => {
+      const status = await checkServerConnection(server);
+      return { serverId: server.serverId, status };
+    });
+
+    const results = await Promise.all(promises);
+    
+    const finalStatus: ConnectionStatus = {};
+    results.forEach(({ serverId, status }) => {
+      finalStatus[serverId] = status;
+    });
+    
+    setConnectionStatus(finalStatus);
+  };
+
+  const refreshConnection = async (serverId: string) => {
+    const server = serverConfigs.find(s => s.serverId === serverId);
+    if (!server) return;
+
+    setConnectionStatus(prev => ({ ...prev, [serverId]: 'checking' }));
+    const status = await checkServerConnection(server);
+    setConnectionStatus(prev => ({ ...prev, [serverId]: status }));
+  };
+
+  const renderConnectionIndicator = (serverId: string) => {
+    const status = connectionStatus[serverId];
+    
+    switch (status) {
+      case 'checking':
+        return (
+          <View style={styles.connectionIndicator}>
+            <ActivityIndicator size="small" color="#8E8E93" />
+          </View>
+        );
+      case 'connected':
+        return (
+          <View style={styles.connectionIndicator}>
+            <View style={[styles.statusDot, styles.connectedDot]} />
+          </View>
+        );
+      case 'disconnected':
+        return (
+          <View style={styles.connectionIndicator}>
+            <View style={[styles.statusDot, styles.disconnectedDot]} />
+          </View>
+        );
+      case 'error':
+        return (
+          <View style={styles.connectionIndicator}>
+            <View style={[styles.statusDot, styles.errorDot]} />
+          </View>
+        );
+      default:
+        return (
+          <View style={styles.connectionIndicator}>
+            <View style={[styles.statusDot, styles.unknownDot]} />
+          </View>
+        );
+    }
+  };
+
+  const getConnectionStatusText = (status: string | undefined) => {
+    switch (status) {
+      case 'checking':
+        return 'Checking...';
+      case 'connected':
+        return 'Connected';
+      case 'disconnected':
+        return 'Disconnected';
+      case 'error':
+        return 'Connection Error';
+      default:
+        return 'Unknown';
     }
   };
 
@@ -235,7 +361,6 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
     }
   };  
 
-
   const handleDelete = async (serverId: string) => {
     const serverToDelete = serverConfigs.find(server => server.serverId === serverId);
     if (serverToDelete?.current) {
@@ -371,9 +496,22 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
         <View style={styles.settingsSection}>
           <View style={styles.sectionHeaderContainer}>
             <Text style={styles.sectionHeader}>SERVERS</Text>
-            <Pressable style={styles.addButton} onPress={handleAddNew}>
-              <Text style={styles.addButtonText}>Add</Text>
-            </Pressable>
+            <View style={styles.headerActions}>
+              <Pressable 
+                style={styles.refreshButton} 
+                onPress={checkAllConnections}
+                disabled={Object.values(connectionStatus).some(status => status === 'checking')}
+              >
+                <MaterialIcons 
+                  name="refresh" 
+                  size={20} 
+                  color={Object.values(connectionStatus).some(status => status === 'checking') ? '#8E8E93' : '#007AFF'} 
+                />
+              </Pressable>
+              <Pressable style={styles.addButton} onPress={handleAddNew}>
+                <Text style={styles.addButtonText}>Add</Text>
+              </Pressable>
+            </View>
           </View>
 
           {serverConfigs.length > 0 ? (
@@ -417,7 +555,12 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
                       >
                         <View style={styles.settingsRowContent}>
                           <View style={styles.settingsRowLeft}>
-                            <Text style={styles.settingsRowValue}>{item.serverUrl}</Text>
+                            <View style={styles.serverInfo}>
+                              {renderConnectionIndicator(item.serverId)}
+                              <View style={styles.serverDetails}>
+                                <Text style={styles.settingsRowValue}>{item.serverUrl}</Text>
+                              </View>
+                            </View>
                           </View>
                           <View style={styles.settingsRowRight}>
                             {item.current ? (
@@ -449,6 +592,15 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
                             }) || 1
                           }
                         ]}>
+                          <Pressable
+                            style={styles.actionButton}
+                            onPress={() => refreshConnection(item.serverId)}
+                          >
+                            <Text style={styles.actionButtonText}>Test</Text>
+                          </Pressable>
+
+                          <View style={styles.actionDivider} />
+
                           <Pressable
                             style={styles.actionButton}
                             onPress={() => startInlineEdit(item)}
@@ -535,6 +687,15 @@ const styles = StyleSheet.create({
     paddingLeft: 4,
     paddingBottom: 10
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  refreshButton: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+  },
   addButton: {
     paddingVertical: 4,
     paddingHorizontal: 8,
@@ -574,6 +735,42 @@ const styles = StyleSheet.create({
   },
   settingsRowRight: {
     marginLeft: 16,
+  },
+  serverInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  serverDetails: {
+    flex: 1,
+  },
+  connectionIndicator: {
+    width: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  connectedDot: {
+    backgroundColor: '#30D158',
+  },
+  disconnectedDot: {
+    backgroundColor: '#FF3B30',
+  },
+  unknownDot: {
+    backgroundColor: '#8E8E93',
+  },
+  errorDot: {
+    backgroundColor: '#FF3B30',
+  },
+  connectionStatusText: {
+    fontSize: 13,
+    color: '#8E8E93',
+    marginTop: 2,
   },
   settingsRowLabel: {
     fontSize: 17,
@@ -702,8 +899,7 @@ const styles = StyleSheet.create({
     color: '#007AFF',
     fontWeight: '400',
   },
-  serverUrlContainer:
-  {
+  serverUrlContainer: {
     borderBottomWidth: 0.5,
     paddingBottom: 10,
     borderBottomColor: '#2C2C2E',
