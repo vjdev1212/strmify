@@ -28,14 +28,21 @@ const MediaPlayerScreen: React.FC = () => {
     try {
       const userAgent = await storageService.getItem(StorageKeys.OPENSUBTITLES_USER_AGENT) || 'Strmify';
       const apiKey = await storageService.getItem(StorageKeys.OPENSUBTITLES_API_KEY) || '';
-
-      const client = new OpenSubtitlesClient(userAgent, apiKey);
-      setOpenSubtitlesClient(client);
+      
+      if (apiKey && apiKey.trim() !== '') {
+        const client = new OpenSubtitlesClient(userAgent, apiKey);
+        setOpenSubtitlesClient(client);
+      } else {
+        console.log('No API key provided, subtitles will not be loaded');
+        setOpenSubtitlesClient(null);
+        setSubtitles([]);
+        setIsLoadingSubtitles(false);
+      }
     } catch (error) {
       console.error('Failed to initialize OpenSubtitles client:', error);
-      // Fallback to default client
-      const client = new OpenSubtitlesClient('Strmify', '');
-      setOpenSubtitlesClient(client);
+      setOpenSubtitlesClient(null);
+      setSubtitles([]);
+      setIsLoadingSubtitles(false);
     }
   };
 

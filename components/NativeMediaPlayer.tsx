@@ -973,16 +973,18 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                                 />
                             </TouchableOpacity>
 
-                            <TouchableOpacity
-                                style={styles.controlButton}
-                                onPress={panelToggles.toggleSubtitleSettings}
-                            >
-                                <MaterialIcons
-                                    name="closed-caption"
-                                    size={24}
-                                    color={settings.selectedSubtitle >= 0 ? "#007AFF" : "white"}
-                                />
-                            </TouchableOpacity>
+                            {subtitles.length > 0 && (
+                                <TouchableOpacity
+                                    style={styles.controlButton}
+                                    onPress={panelToggles.toggleSubtitleSettings}
+                                >
+                                    <MaterialIcons
+                                        name="closed-caption"
+                                        size={24}
+                                        color={"white"}
+                                    />
+                                </TouchableOpacity>
+                            )}
 
                             <TouchableOpacity
                                 style={styles.controlButton}
