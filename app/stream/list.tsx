@@ -93,7 +93,7 @@ const StreamListScreen = () => {
                 const allServers: ServerConfig[] = JSON.parse(storedServers);
                 // Filter only Stremio servers
                 const filteredStremioServers = allServers.filter(server => server.serverType === 'stremio');
-                
+
                 stremioServerList = filteredStremioServers.length > 0 ? filteredStremioServers : [{
                     serverId: `stremio-default`,
                     serverType: 'stremio',
@@ -137,7 +137,7 @@ const StreamListScreen = () => {
         const loadPlayers = async () => {
             const platformPlayers = getPlatformSpecificPlayers();
             setPlayers(platformPlayers);
-            
+
             // Load saved default player or use first available
             const savedPlayer = await loadDefaultPlayer();
             if (!savedPlayer && platformPlayers.length > 0) {
@@ -165,33 +165,33 @@ const StreamListScreen = () => {
     // Helper function to get magnet link from stream (for copy/open actions only)
     const getMagnetFromStream = (stream: Stream): string | null => {
         const { magnet, magnetLink, infoHash } = stream;
-        
+
         // For copy/open actions, prefer full magnet links with metadata
         if (magnet) return magnet;
         if (magnetLink) return magnetLink;
-        
+
         // Convert infoHash to basic magnet link as fallback
         if (infoHash) {
             return convertInfoHashToMagnet(infoHash);
         }
-        
+
         return null;
     };
 
     // Helper function to extract infoHash from stream (for Stremio playback only)
     const getInfoHashFromStream = (stream: Stream): string | null => {
         const { infoHash, magnet, magnetLink } = stream;
-        
+
         // For Stremio playback, prefer existing infoHash for direct processing
         if (infoHash) return infoHash;
-        
+
         // Extract infoHash from magnet links as fallback
         const magnetToUse = magnet || magnetLink;
         if (magnetToUse) {
             const match = magnetToUse.match(/xt=urn:btih:([a-fA-F0-9]{40}|[a-fA-F0-9]{32})/i);
             if (match) return match[1];
         }
-        
+
         return null;
     };
 
@@ -300,7 +300,11 @@ const StreamListScreen = () => {
                         params: {
                             videoUrl: playerUrl,
                             title: contentTitle,
-                            artwork: `https://images.metahub.space/background/medium/${imdbid}/img`
+                            artwork: `https://images.metahub.space/background/medium/${imdbid}/img`,
+                            imdbid: imdbid,
+                            type: type,
+                            season: season,
+                            episode: episode
                         },
                     });
                 } else {
@@ -439,7 +443,7 @@ const StreamListScreen = () => {
             showAlert('Error', 'Failed to copy to clipboard');
         }
     };
-    
+
     const openInBrowser = async (url: string) => {
         try {
             await Linking.openURL(url);
@@ -462,7 +466,7 @@ const StreamListScreen = () => {
 
         const { url } = stream;
         let linkToUse = url || '';
-        
+
         // Get magnet link from stream (handles infoHash, magnet, magnetLink)
         if (!url) {
             const magnetLink = getMagnetFromStream(stream);
@@ -517,9 +521,9 @@ const StreamListScreen = () => {
                         case 1:
                             copyToClipboard(linkToUse);
                             break;
-                        case 2: 
+                        case 2:
                             openInBrowser(linkToUse);
-                            break;                        
+                            break;
                     }
                 }
             }
@@ -896,7 +900,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginHorizontal: '10%',
         color: '#fff'
-    }    
+    }
 });
 
 export default StreamListScreen;

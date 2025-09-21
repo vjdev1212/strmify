@@ -5,7 +5,7 @@ import { Platform } from "react-native";
 
 const MediaPlayerScreen: React.FC = () => {
   const router = useRouter();
-  const { videoUrl, title, artwork } = useLocalSearchParams();
+  const { videoUrl, title, artwork, imdbid, type, season, episode } = useLocalSearchParams();
   const subtitles: Subtitle[] = [];
   const chapters: Chapter[] = [];
 
