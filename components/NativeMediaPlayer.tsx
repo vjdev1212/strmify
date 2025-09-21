@@ -636,9 +636,7 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
     // Control actions
     const controlActions = useMemo(() => ({
         togglePlayPause: async () => {
-            console.log('On Toggle');
-            if (!playerState.isReady || !playerRef.current) return;
-
+            if (!playerState.isReady) return;
             await playHaptic();
             if (playerState.isPlaying) {
                 console.log('Pause');
@@ -675,9 +673,10 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         },
 
         toggleMute: async () => {
-            console.log('On Toggle Mute');
             await playHaptic();
-            settings.setIsMuted(!settings.isMuted);
+            const newState = !settings.isMuted;
+            settings.setIsMuted(newState);
+            console.log('On Toggle Mute');
             showControlsTemporarily();
         },
 
@@ -1340,6 +1339,7 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 16,
         marginTop: 8,
+        fontWeight: '500'
     },
     artworkContainer: {
         position: 'absolute',
@@ -1468,7 +1468,7 @@ const styles = StyleSheet.create({
     },
     subtitleContainer: {
         position: 'absolute',
-        bottom: 25,
+        bottom: 20,
         left: 20,
         right: 20,
         alignItems: 'center',
@@ -1477,21 +1477,13 @@ const styles = StyleSheet.create({
     subtitleText: {
         color: '#fff',
         fontSize: 16,
-        fontWeight: '400',
+        fontWeight: '500',
         textAlign: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.1)',
+        backgroundColor: 'rgba(0, 0, 0, 0.25)',
         paddingHorizontal: 16,
-        paddingVertical: 8,
+        paddingVertical: 4,
         borderRadius: 8,
         lineHeight: 24,
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 1,
-        shadowRadius: 4,
-        elevation: 8,
         maxWidth: '90%',
     },
     loadingContainer: {
