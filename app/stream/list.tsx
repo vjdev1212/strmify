@@ -300,7 +300,6 @@ const StreamListScreen = () => {
                         params: {
                             videoUrl: playerUrl,
                             title: contentTitle,
-                            artwork: `https://images.metahub.space/background/medium/${imdbid}/img`,
                             imdbid: imdbid,
                             type: type,
                             season: season,

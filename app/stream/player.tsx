@@ -5,9 +5,10 @@ import { Platform } from "react-native";
 
 const MediaPlayerScreen: React.FC = () => {
   const router = useRouter();
-  const { videoUrl, title, artwork, imdbid, type, season, episode } = useLocalSearchParams();
+  const { videoUrl, title, imdbid, type, season, episode } = useLocalSearchParams();
   const subtitles: Subtitle[] = [];
   const chapters: Chapter[] = [];
+  const artwork = `https://images.metahub.space/background/medium/${imdbid}/img`;
 
   const handleBack = (): void => {
     router.back();
@@ -16,7 +17,6 @@ const MediaPlayerScreen: React.FC = () => {
   const Player =
     Platform.OS === "web"
       ? require("../../components/MediaPlayer").MediaPlayer
-      // : require("../../components/MediaPlayer").MediaPlayer
       : require("../../components/NativeMediaPlayer").NativeMediaPlayer
 
 
