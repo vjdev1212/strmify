@@ -159,7 +159,8 @@ const useTimers = () => {
         controlsDebounce: null as ReturnType<typeof setTimeout> | null,
         progressDebounce: null as ReturnType<typeof setTimeout> | null,
         seekDebounce: null as ReturnType<typeof setTimeout> | null,
-        bufferingTimeout: null as ReturnType<typeof setTimeout> | null
+        bufferingTimeout: null as ReturnType<typeof setTimeout> | null,
+        doubleTap: null as ReturnType<typeof setTimeout> | null
     });
 
     const clearTimer = useCallback((timerName: keyof typeof timersRef.current) => {
@@ -301,6 +302,125 @@ const parseSubtitleFile = (content: string) => {
     return parseSRT(content);
 };
 
+// Gesture handling hook for double-tap seek
+const useGestureHandling = (
+    onSeekForward: (seconds: number) => void,
+    onSeekBackward: (seconds: number) => void,
+    onToggleControls: () => void,
+    timers: any,
+    isReady: boolean
+) => {
+    const lastTap = useRef<{ timestamp: number; side: 'left' | 'right' | null }>({
+        timestamp: 0,
+        side: null
+    });
+
+    const handleTouchablePress = useCallback((event: any) => {
+        if (!isReady) return;
+
+        const { locationX } = event.nativeEvent;
+        const screenWidth = event.nativeEvent.target?.offsetWidth || 400; // Fallback width
+        const currentTime = Date.now();
+        const tapSide = locationX < screenWidth / 2 ? 'left' : 'right';
+
+        // Double tap detection (within 300ms)
+        if (currentTime - lastTap.current.timestamp < 300 && lastTap.current.side === tapSide) {
+            // Double tap detected
+            timers.clearTimer('doubleTap');
+
+            if (tapSide === 'left') {
+                onSeekBackward(10);
+            } else {
+                onSeekForward(10);
+            }
+
+            // Reset tap data
+            lastTap.current = { timestamp: 0, side: null };
+        } else {
+            // Single tap - wait to see if it becomes a double tap
+            lastTap.current = { timestamp: currentTime, side: tapSide };
+
+            timers.clearTimer('doubleTap');
+            timers.setTimer('doubleTap', () => {
+                // If we get here, it was a single tap
+                onToggleControls();
+                lastTap.current = { timestamp: 0, side: null };
+            }, 300);
+        }
+    }, [isReady, onSeekForward, onSeekBackward, onToggleControls, timers]);
+
+    return { handleTouchablePress };
+};
+
+// Seek feedback component
+const SeekFeedback: React.FC<{
+    show: boolean;
+    direction: 'forward' | 'backward';
+    seconds: number;
+}> = React.memo(({ show, direction, seconds }) => {
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+    const scaleAnim = useRef(new Animated.Value(0.8)).current;
+
+    useEffect(() => {
+        if (show) {
+            Animated.parallel([
+                Animated.timing(fadeAnim, {
+                    toValue: 1,
+                    duration: 200,
+                    useNativeDriver: true,
+                }),
+                Animated.spring(scaleAnim, {
+                    toValue: 1,
+                    tension: 100,
+                    friction: 8,
+                    useNativeDriver: true,
+                })
+            ]).start(() => {
+                setTimeout(() => {
+                    Animated.parallel([
+                        Animated.timing(fadeAnim, {
+                            toValue: 0,
+                            duration: 300,
+                            useNativeDriver: true,
+                        }),
+                        Animated.timing(scaleAnim, {
+                            toValue: 0.8,
+                            duration: 300,
+                            useNativeDriver: true,
+                        })
+                    ]).start();
+                }, 800);
+            });
+        }
+    }, [show, fadeAnim, scaleAnim]);
+
+    if (!show) return null;
+
+    return (
+        <Animated.View
+            style={[
+                styles.seekFeedback,
+                {
+                    opacity: fadeAnim,
+                    transform: [{ scale: scaleAnim }],
+                    left: direction === 'backward' ? '20%' : undefined,
+                    right: direction === 'forward' ? '20%' : undefined,
+                }
+            ]}
+            pointerEvents="none"
+        >
+            <View style={styles.seekFeedbackContent}>
+                <Ionicons
+                    name={direction === 'forward' ? 'play-forward' : 'play-back'}
+                    size={32}
+                    color="white"
+                />
+                <Text style={styles.seekFeedbackText}>{seconds}s</Text>
+            </View>
+        </Animated.View>
+    );
+});
+
 const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
     videoUrl,
     title,
@@ -315,6 +435,26 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
     const subtitleState = useSubtitleState();
     const settings = usePlayerSettings();
     const timers = useTimers();
+
+    const playHaptic = useCallback(async () => {
+        try {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        } catch (error) {
+            console.log('Haptics not supported');
+        }
+    }, []);
+
+
+    // Seek feedback state
+    const [seekFeedback, setSeekFeedback] = useState<{
+        show: boolean;
+        direction: 'forward' | 'backward';
+        seconds: number;
+    }>({
+        show: false,
+        direction: 'forward',
+        seconds: 10
+    });
 
     // State refs for avoiding stale closures
     const stateRefs = useRef({
@@ -497,36 +637,29 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
             );
 
             const newSubtitleText = activeSubtitle ? activeSubtitle.text : '';
-            
+
             if (newSubtitleText !== currentSubtitle) {
                 return newSubtitleText;
             }
-            
+
             return currentSubtitle;
         };
     }, []);
 
+
     useEffect(() => {
         const newSubtitle = updateSubtitle(
-            playerState.currentTime, 
-            subtitleState.parsedSubtitles, 
+            playerState.currentTime,
+            subtitleState.parsedSubtitles,
             subtitleState.currentSubtitle
         );
-        
+
         if (newSubtitle !== subtitleState.currentSubtitle) {
             subtitleState.setCurrentSubtitle(newSubtitle);
         }
     }, [playerState.currentTime, subtitleState.parsedSubtitles, updateSubtitle]);
 
-    // Utility functions
-    const playHaptic = useCallback(async () => {
-        try {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        } catch (error) {
-            console.log('Haptics not supported');
-        }
-    }, []);
-
+    // Utility functions    
     const formatTime = useCallback((seconds: number) => {
         if (isNaN(seconds) || seconds < 0) return "0:00";
         const hours = Math.floor(seconds / 3600);
@@ -545,8 +678,8 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
 
         timers.clearTimer('hideControls');
         timers.setTimer('hideControls', () => {
-            if (stateRefs.current.isPlaying && 
-                !uiState.showSubtitleSettings && 
+            if (stateRefs.current.isPlaying &&
+                !uiState.showSubtitleSettings &&
                 !uiState.showAudioSettings &&
                 !uiState.showSpeedSettings) {
                 Animated.timing(controlsOpacity, {
@@ -598,7 +731,7 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
             timers.setTimer('progressDebounce', () => {
                 const { currentTime: current, duration: dur } = data;
                 const newCurrentTime = current / 1000;
-                
+
                 playerState.setCurrentTime(newCurrentTime);
 
                 if (playerState.duration === 0 && dur > 0) {
@@ -614,10 +747,10 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
 
         onBuffering: (data: any) => {
             const { isBuffering: buffering } = data;
-            
+
             // Clear any existing buffering timeout
             timers.clearTimer('bufferingTimeout');
-            
+
             if (buffering) {
                 // Show buffering immediately but with a slight delay for quick buffers
                 timers.setTimer('bufferingTimeout', () => {
@@ -635,7 +768,7 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                 playerState.setIsBuffering(false);
                 playerState.setShowBufferingLoader(false);
                 playerState.setIsSeeking(false); // Clear seeking state when buffering ends
-                
+
                 Animated.timing(bufferOpacity, {
                     toValue: 0,
                     duration: 300,
@@ -690,7 +823,7 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
             playerState.setIsReady(false);
             playerState.setShowBufferingLoader(false);
             playerState.setIsSeeking(false);
-            
+
             timers.clearTimer('bufferingTimeout');
             showAlert("Video Error", errorMessage);
         }
@@ -701,7 +834,7 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         togglePlayPause: async () => {
             if (!stateRefs.current.isReady) return;
             await playHaptic();
-            
+
             if (stateRefs.current.isPlaying) {
                 console.log('Pause');
                 playerState.setIsPaused(true);
@@ -727,7 +860,7 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
 
             // Show buffering during seek for better UX
             playerState.setShowBufferingLoader(true);
-            
+
             // Use debounced seek to avoid too many seek calls
             timers.clearTimer('seekDebounce');
             timers.setTimer('seekDebounce', () => {
@@ -869,16 +1002,64 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         }
     }, [uiState, controlsOpacity, showControlsTemporarily]);
 
+    // Gesture-based seeking functions
+    const handleSeekForward = useCallback(async (seconds: number) => {
+        if (!stateRefs.current.isReady || stateRefs.current.duration <= 0) return;
+
+        await playHaptic();
+        controlActions.skipTime(seconds);
+
+        // Show feedback
+        setSeekFeedback({
+            show: true,
+            direction: 'forward',
+            seconds
+        });
+
+        // Hide feedback after animation
+        setTimeout(() => {
+            setSeekFeedback(prev => ({ ...prev, show: false }));
+        }, 50);
+    }, [controlActions, playHaptic]);
+
+    const handleSeekBackward = useCallback(async (seconds: number) => {
+        if (!stateRefs.current.isReady || stateRefs.current.duration <= 0) return;
+
+        await playHaptic();
+        controlActions.skipTime(-seconds);
+
+        // Show feedback
+        setSeekFeedback({
+            show: true,
+            direction: 'backward',
+            seconds
+        });
+
+        // Hide feedback after animation
+        setTimeout(() => {
+            setSeekFeedback(prev => ({ ...prev, show: false }));
+        }, 50);
+    }, [controlActions, playHaptic]);
+
+    // Gesture handling
+    const gestureHandling = useGestureHandling(
+        handleSeekForward,
+        handleSeekBackward,
+        handleOverlayPress,
+        timers,
+        playerState.isReady
+    );
+
     // Optimized display calculations
     const displayValues = useMemo(() => {
-        const displayTime = playerState.isDragging ? 
-            playerState.dragPosition * playerState.duration : 
+        const displayTime = playerState.isDragging ?
+            playerState.dragPosition * playerState.duration :
             playerState.currentTime;
-        
-        const sliderValue = playerState.isDragging ? 
-            playerState.dragPosition : 
+
+        const sliderValue = playerState.isDragging ?
+            playerState.dragPosition :
             (playerState.duration > 0 ? playerState.currentTime / playerState.duration : 0);
-            
+
         return { displayTime, sliderValue };
     }, [
         playerState.isDragging,
@@ -890,7 +1071,7 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
     // Memoized components to prevent unnecessary re-renders
     const ErrorComponent = useMemo(() => {
         if (!playerState.error) return null;
-        
+
         return (
             <View style={styles.errorContainer}>
                 <TouchableOpacity
@@ -921,7 +1102,7 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
 
     const ArtworkComponent = useMemo(() => {
         if (!artwork || playerState.hasStartedPlaying || playerState.error) return null;
-        
+
         return (
             <View style={styles.artworkContainer}>
                 <Image
@@ -940,7 +1121,7 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
 
     const BufferingComponent = useMemo(() => {
         if (!(playerState.showBufferingLoader || playerState.isBuffering) || playerState.error) return null;
-        
+
         return (
             <Animated.View
                 style={[
@@ -959,7 +1140,7 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
 
     const SubtitleComponent = useMemo(() => {
         if (!subtitleState.currentSubtitle || playerState.error) return null;
-        
+
         return (
             <View style={styles.subtitleContainer} pointerEvents="none">
                 <Text style={styles.subtitleText}>{subtitleState.currentSubtitle}</Text>
@@ -1005,16 +1186,23 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
             {ArtworkComponent}
             {BufferingComponent}
 
-            {/* Touch area for showing controls */}
+            {/* Touch area for gesture controls */}
             {!playerState.error && (
                 <TouchableOpacity
                     style={styles.touchArea}
                     activeOpacity={1}
-                    onPress={handleOverlayPress}
+                    onPress={gestureHandling.handleTouchablePress}
                 />
             )}
 
             {SubtitleComponent}
+
+            {/* Seek feedback indicators */}
+            <SeekFeedback
+                show={seekFeedback.show}
+                direction={seekFeedback.direction}
+                seconds={seekFeedback.seconds}
+            />
 
             {/* Controls overlay */}
             {uiState.showControls && !playerState.error && (
@@ -1622,6 +1810,24 @@ const styles = StyleSheet.create({
         color: 'rgba(255, 255, 255, 0.5)',
         fontSize: 12,
         marginTop: 2,
+    },
+    seekFeedback: {
+        position: 'absolute',
+        top: '40%',
+        zIndex: 15,
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        borderRadius: 12,
+        padding: 16,
+    },
+    seekFeedbackContent: {
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    seekFeedbackText: {
+        color: 'white',
+        fontSize: 14,
+        fontWeight: '600',
+        marginTop: 8,
     },
 });
 
