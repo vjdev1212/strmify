@@ -14,7 +14,8 @@ import { Ionicons } from '@expo/vector-icons';
 import OpenSubtitlesClient from '@/clients/opensubtitles';
 import { StorageKeys, storageService } from '@/utils/StorageService';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { showAlert } from '@/utils/platform';
+import { isHapticsSupported, showAlert } from '@/utils/platform';
+import * as Haptics from 'expo-haptics';
 
 const DEFAULT_USER_AGENT = 'Strmify';
 
@@ -43,6 +44,9 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
     };
 
     const testConnection = async () => {
+        if (isHapticsSupported()) {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
         if (!apiKey.trim()) {
             showAlert('Error', 'Please enter an API key first');
             return;
@@ -71,6 +75,9 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
     };
 
     const saveConfiguration = async () => {
+        if (isHapticsSupported()) {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
         if (!apiKey.trim()) {
             showAlert('Error', 'Please enter an API key');
             return;
@@ -88,7 +95,10 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
         }
     };
 
-    const clearConfiguration = () => {
+    const clearConfiguration = async () => {
+        if (isHapticsSupported()) {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
         showAlert('Clear Configuration', 'Are you sure you want to clear the saved configuration?', [
             { text: 'Cancel', style: 'cancel' },
             {
