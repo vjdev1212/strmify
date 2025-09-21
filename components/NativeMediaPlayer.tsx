@@ -530,7 +530,7 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
             if (timers.hideControlsTimer.current) {
                 clearTimeout(timers.hideControlsTimer.current);
             }
-            
+
             if (data?.audioTracks) {
                 settings.setAvailableAudioTracks(data.audioTracks);
             }
@@ -654,13 +654,18 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         },
 
         seekTo: (absoluteSeconds: number) => {
-            if (!playerState.isReady || playerState.duration <= 0 || !playerRef.current) return;
+            if (!playerRef.current || playerState.duration <= 0) return;
 
             const clampedTime = Math.max(0, Math.min(playerState.duration, absoluteSeconds));
             const position = clampedTime / playerState.duration;
 
-            playerRef.current.seek(position);
+            console.log(`Seeking to: ${clampedTime}s (${(position * 100).toFixed(1)}%)`);
+
             playerState.setCurrentTime(clampedTime);
+            progressBarValue.setValue(position);
+
+            playerRef.current.seek(position);
+
             showControlsTemporarily();
         },
 
