@@ -1,4 +1,4 @@
-import OpenSubtitlesClient from "@/clients/opensubtitles";
+import OpenSubtitlesClient, { SubtitleResult } from "@/clients/opensubtitles";
 import { Subtitle, Chapter, MediaPlayer } from "@/components/MediaPlayer";
 import { StorageKeys, storageService } from "@/utils/StorageService";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -86,9 +86,9 @@ const MediaPlayerScreen: React.FC = () => {
           return;
         }
         const sortedData = response.data.sort((a, b) => b.download_count - a.download_count);
-        console.log('Fetched subtitles:', sortedData);
 
-        const transformedSubtitles: Subtitle[] = sortedData.map((subtitle) => ({
+        const transformedSubtitles: Subtitle[] = sortedData.map((subtitle: SubtitleResult) => ({
+          fileId: subtitle.file_id,
           language: subtitle.language,
           url: subtitle.url,
           label: `${getLanguageName(subtitle.language)} - ${subtitle.name}`

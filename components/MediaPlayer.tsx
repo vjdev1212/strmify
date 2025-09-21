@@ -23,6 +23,7 @@ import { showAlert } from "@/utils/platform";
 import * as Haptics from 'expo-haptics';
 
 export interface Subtitle {
+    fileId: string | number | null;
     language: string;
     url: string;
     label: string;
@@ -43,10 +44,8 @@ export interface Chapter {
 interface MediaPlayerProps {
     videoUrl: string;
     title: string;
-    subtitle?: string;
     subtitles?: Subtitle[];
     audioTracks?: AudioTrack[];
-    chapters?: Chapter[];
     onBack: () => void;
     autoPlay?: boolean;
     artwork?: string;

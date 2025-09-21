@@ -26,7 +26,6 @@ export interface SubtitleResult {
   file_id: string | null;
   language: string;
   download_count: number;
-  format: string;
 }
 
 export interface SearchResponse {
@@ -40,7 +39,7 @@ export interface ErrorResponse {
   error: string;
 }
 
-export type ApiResponse<T = SubtitleResult[]> = 
+export type ApiResponse<T = SubtitleResult[]> =
   | (T extends SubtitleResult[] ? SearchResponse : { success: true; data: T })
   | ErrorResponse;
 
@@ -104,12 +103,12 @@ class OpenSubtitlesClient {
   async searchSubtitles(params: SubtitleSearchParams): Promise<ApiResponse> {
     try {
       const queryParams = new URLSearchParams();
-      
+
       // Set default format to SRT if not specified
       if (!params.format) {
         params.format = 'srt';
       }
-      
+
       // Add search parameters
       Object.keys(params).forEach(key => {
         const value = params[key];
@@ -125,42 +124,43 @@ class OpenSubtitlesClient {
 
       const data = await response.json();
 
+      console.log('Search subtitles response:', data);
       if (response.ok) {
-        // Extract only name and URL from results
-        const simplifiedData: SubtitleResult[] = data.data.map((subtitle: any) => ({
-          name: subtitle.attributes.release || 
-                subtitle.attributes.feature_details?.movie_name || 
-                'Unknown',
-          url: subtitle.attributes.url,
-          file_id: subtitle.attributes.files[0]?.file_id || null,
-          language: subtitle.attributes.language,
-          download_count: subtitle.attributes.download_count,
-          format: subtitle.attributes.format
-        }));
+        const simplifiedData: SubtitleResult[] = data.data.map((subtitle: any) => {
+          return {
+            name: subtitle.attributes.release ||
+              subtitle.attributes.feature_details?.movie_name ||
+              'Unknown',
+            url: subtitle.attributes.url,
+            file_id: subtitle.attributes.files[0]?.file_id || null,
+            language: subtitle.attributes.language,
+            download_count: subtitle.attributes.download_count,
+          };
+        });
 
-        return { 
-          success: true, 
-          data: simplifiedData, 
-          total: data.total_count 
+        return {
+          success: true,
+          data: simplifiedData,
+          total: data.total_count
         };
       } else {
-        return { 
-          success: false, 
-          error: data.message || 'Search failed' 
+        return {
+          success: false,
+          error: data.message || 'Search failed'
         };
       }
     } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
   }
 
   // Search subtitles for movies
   async searchMovieSubtitles(
-    imdbId: string, 
-    languages: string[] = ['en'], 
+    imdbId: string,
+    languages: string[] = ['en'],
     options: SearchOptions = {}
   ): Promise<ApiResponse> {
     const params: SubtitleSearchParams = {
@@ -175,10 +175,10 @@ class OpenSubtitlesClient {
 
   // Search subtitles for TV show episodes
   async searchTVSubtitles(
-    imdbId: string, 
-    season: number, 
-    episode: number, 
-    languages: string[] = ['en'], 
+    imdbId: string,
+    season: number,
+    episode: number,
+    languages: string[] = ['en'],
     options: SearchOptions = {}
   ): Promise<ApiResponse> {
     const params: SubtitleSearchParams = {
@@ -195,9 +195,9 @@ class OpenSubtitlesClient {
 
   // Search by TMDb ID
   async searchByTMDbId(
-    tmdbId: string, 
-    type: 'movie' | 'tvshow' = 'movie', 
-    languages: string[] = ['en'], 
+    tmdbId: string,
+    type: 'movie' | 'tvshow' = 'movie',
+    languages: string[] = ['en'],
     options: SearchOptions = {}
   ): Promise<ApiResponse> {
     const params: SubtitleSearchParams = {
@@ -213,9 +213,9 @@ class OpenSubtitlesClient {
 
   // Search by file hash (for exact matching)
   async searchByFileHash(
-    moviehash: string, 
-    moviebytesize: number, 
-    languages: string[] = ['en'], 
+    moviehash: string,
+    moviebytesize: number,
+    languages: string[] = ['en'],
     options: SearchOptions = {}
   ): Promise<ApiResponse> {
     const params: SubtitleSearchParams = {
@@ -243,22 +243,22 @@ class OpenSubtitlesClient {
       const data = await response.json();
 
       if (response.ok) {
-        return { 
-          success: true, 
+        return {
+          success: true,
           link: data.link,
           file_name: data.file_name,
-          requests: data.requests 
+          requests: data.requests
         };
       } else {
-        return { 
-          success: false, 
-          error: data.message || 'Download failed' 
+        return {
+          success: false,
+          error: data.message || 'Download failed'
         };
       }
     } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
   }
@@ -276,15 +276,15 @@ class OpenSubtitlesClient {
       if (response.ok) {
         return { success: true, data };
       } else {
-        return { 
-          success: false, 
-          error: data.message || 'Failed to get languages' 
+        return {
+          success: false,
+          error: data.message || 'Failed to get languages'
         };
       }
     } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
   }
@@ -302,15 +302,15 @@ class OpenSubtitlesClient {
       if (response.ok) {
         return { success: true, data };
       } else {
-        return { 
-          success: false, 
-          error: data.message || 'Failed to get formats' 
+        return {
+          success: false,
+          error: data.message || 'Failed to get formats'
         };
       }
     } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
   }
