@@ -19,7 +19,6 @@ import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import Slider from '@react-native-community/slider';
 import * as Haptics from 'expo-haptics';
 import ImmersiveMode from "react-native-immersive-mode";
-import OpenSubtitlesClient from "@/clients/opensubtitles";
 
 export interface Subtitle {
     fileId: string | number | null;
@@ -40,13 +39,30 @@ export interface Chapter {
     thumbnail?: string;
 }
 
+interface OpenSubtitlesClient {
+    downloadSubtitle(fileId: string): Promise<DownloadResponse | ErrorResponse>;
+}
+
+interface DownloadResponse {
+    link: string;
+    file_name: string;
+    requests: number;
+    remaining: number;
+    message: string;
+}
+
+interface ErrorResponse {
+    message: string;
+    status: number;
+}
+
 interface MediaPlayerProps {
     videoUrl: string;
     title: string;
     onBack: () => void;
     artwork?: string;
     subtitles?: Subtitle[];
-    openSubtitlesClient: OpenSubtitlesClient
+    openSubtitlesClient: OpenSubtitlesClient;
 }
 
 // Custom hooks for better state management
@@ -168,11 +184,11 @@ const parseSRT = (srtContent: string) => {
 
             // Parse SRT time format: 00:00:20,000 --> 00:00:24,400
             const timeMatch = timeString.match(/(\d{2}):(\d{2}):(\d{2}),(\d{3})\s*-->\s*(\d{2}):(\d{2}):(\d{2}),(\d{3})/);
-
+            
             if (timeMatch) {
                 const startTime = parseSRTTime(timeMatch[1], timeMatch[2], timeMatch[3], timeMatch[4]);
                 const endTime = parseSRTTime(timeMatch[5], timeMatch[6], timeMatch[7], timeMatch[8]);
-
+                
                 subtitles.push({
                     index: parseInt(index),
                     start: startTime,
@@ -188,10 +204,10 @@ const parseSRT = (srtContent: string) => {
 
 // Helper function to parse SRT time format
 const parseSRTTime = (hours: string, minutes: string, seconds: string, milliseconds: string): number => {
-    return parseInt(hours) * 3600 +
-        parseInt(minutes) * 60 +
-        parseInt(seconds) +
-        parseInt(milliseconds) / 1000;
+    return parseInt(hours) * 3600 + 
+           parseInt(minutes) * 60 + 
+           parseInt(seconds) + 
+           parseInt(milliseconds) / 1000;
 };
 
 // WebVTT Parser (keeping for compatibility)
@@ -244,19 +260,19 @@ const parseVTTTime = (timeStr: string): number => {
 // Auto-detect subtitle format and parse accordingly
 const parseSubtitleFile = (content: string) => {
     const trimmedContent = content.trim();
-
+    
     // Check if it's WebVTT format
     if (trimmedContent.startsWith('WEBVTT')) {
         console.log('Detected WebVTT format');
         return parseWebVTT(content);
     }
-
+    
     // Check if it's SRT format (contains --> with comma for milliseconds)
     if (trimmedContent.includes('-->') && trimmedContent.includes(',')) {
         console.log('Detected SRT format');
         return parseSRT(content);
     }
-
+    
     // Default to SRT parsing
     console.log('Defaulting to SRT format');
     return parseSRT(content);
@@ -320,45 +336,103 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
         };
     }, []);
 
-    // Updated subtitle loading effect
+    // Updated subtitle loading effect using OpenSubtitles client
     useEffect(() => {
         if (subtitles.length > 0 && settings.selectedSubtitle >= 0 && settings.selectedSubtitle < subtitles.length) {
             const selectedSub = subtitles[settings.selectedSubtitle];
-            subtitleState.setIsLoadingSubtitles(true);
+            
+            // Check if we have a fileId to download from OpenSubtitles
+            if (selectedSub.fileId && openSubtitlesClient) {
+                subtitleState.setIsLoadingSubtitles(true);
+                console.log('Downloading subtitle from OpenSubtitles, fileId:', selectedSub.fileId);
 
-            console.log('Loading subtitle:', selectedSub.url);
+                openSubtitlesClient.downloadSubtitle(String(selectedSub.fileId))
+                    .then(async (response) => {
+                        // Check if response is an error
+                        if ('status' in response && response.status !== 200) {
+                            console.error('OpenSubtitles API error:', response.message);
+                            subtitleState.setIsLoadingSubtitles(false);
+                            subtitleState.setParsedSubtitles([]);
+                            Alert.alert("Subtitle Error", `Failed to download subtitle: ${response.message}`);
+                            return;
+                        }
 
-            fetch(selectedSub.url)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.text();
-                })
-                .then(subtitleContent => {
-                    console.log('Subtitle content loaded, length:', subtitleContent.length);
-                    console.log('First 200 chars:', subtitleContent.substring(0, 200));
+                        const downloadResponse = response as DownloadResponse;
+                        console.log('Subtitle download response:', downloadResponse);
+                        
+                        if (!downloadResponse.link) {
+                            throw new Error('No download link provided');
+                        }
 
-                    const parsed = parseSubtitleFile(subtitleContent);
-                    console.log('Parsed subtitles count:', parsed.length);
+                        // Fetch the actual subtitle file from the download link
+                        const subtitleResponse = await fetch(downloadResponse.link);
+                        if (!subtitleResponse.ok) {
+                            throw new Error(`HTTP error! status: ${subtitleResponse.status}`);
+                        }
+                        
+                        const subtitleContent = await subtitleResponse.text();
+                        console.log('Subtitle content loaded, length:', subtitleContent.length);
+                        console.log('First 200 chars:', subtitleContent.substring(0, 200));
+                        
+                        const parsed = parseSubtitleFile(subtitleContent);
+                        console.log('Parsed subtitles count:', parsed.length);
+                        
+                        if (parsed.length > 0) {
+                            console.log('First subtitle:', parsed[0]);
+                        }
+                        
+                        subtitleState.setParsedSubtitles(parsed);
+                        subtitleState.setIsLoadingSubtitles(false);
+                    })
+                    .catch(error => {
+                        console.error('Failed to download/parse subtitle:', error);
+                        subtitleState.setIsLoadingSubtitles(false);
+                        subtitleState.setParsedSubtitles([]);
+                        Alert.alert("Subtitle Error", `Failed to load subtitle: ${error.message}`);
+                    });
+            } 
+            // Fallback to direct URL if no fileId or openSubtitlesClient
+            else if (selectedSub.url && selectedSub.url !== '' && !selectedSub.url.includes('opensubtitles.org')) {
+                subtitleState.setIsLoadingSubtitles(true);
+                console.log('Loading subtitle from direct URL:', selectedSub.url);
 
-                    if (parsed.length > 0) {
-                        console.log('First subtitle:', parsed[0]);
-                    }
-
-                    subtitleState.setParsedSubtitles(parsed);
-                    subtitleState.setIsLoadingSubtitles(false);
-                })
-                .catch(error => {
-                    console.error('Failed to load subtitles:', error);
-                    subtitleState.setIsLoadingSubtitles(false);
-                    subtitleState.setParsedSubtitles([]);
-                });
+                fetch(selectedSub.url)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.text();
+                    })
+                    .then(subtitleContent => {
+                        console.log('Subtitle content loaded, length:', subtitleContent.length);
+                        console.log('First 200 chars:', subtitleContent.substring(0, 200));
+                        
+                        const parsed = parseSubtitleFile(subtitleContent);
+                        console.log('Parsed subtitles count:', parsed.length);
+                        
+                        if (parsed.length > 0) {
+                            console.log('First subtitle:', parsed[0]);
+                        }
+                        
+                        subtitleState.setParsedSubtitles(parsed);
+                        subtitleState.setIsLoadingSubtitles(false);
+                    })
+                    .catch(error => {
+                        console.error('Failed to load subtitles from URL:', error);
+                        subtitleState.setIsLoadingSubtitles(false);
+                        subtitleState.setParsedSubtitles([]);
+                        Alert.alert("Subtitle Error", `Failed to load subtitle: ${error.message}`);
+                    });
+            } else {
+                console.warn('No valid fileId or direct URL for subtitle:', selectedSub);
+                subtitleState.setParsedSubtitles([]);
+                subtitleState.setCurrentSubtitle('');
+            }
         } else {
             subtitleState.setParsedSubtitles([]);
             subtitleState.setCurrentSubtitle('');
         }
-    }, [settings.selectedSubtitle, subtitles]);
+    }, [settings.selectedSubtitle, subtitles, openSubtitlesClient]);
 
     // Updated subtitle display effect
     useEffect(() => {
@@ -369,7 +443,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
             );
 
             const newSubtitleText = activeSubtitle ? activeSubtitle.text : '';
-
+            
             // Only update if the subtitle text has changed
             if (newSubtitleText !== subtitleState.currentSubtitle) {
                 console.log(`Time: ${currentTime.toFixed(1)}s - Subtitle: "${newSubtitleText}"`);
@@ -876,7 +950,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                                     color="white"
                                 />
                             </TouchableOpacity>
-
+                            
                             <TouchableOpacity
                                 style={styles.controlButton}
                                 onPress={panelToggles.toggleSubtitleSettings}
@@ -1003,7 +1077,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                         {subtitleState.isLoadingSubtitles && (
                             <View style={styles.loadingContainer}>
                                 <ActivityIndicator size="small" color="#007AFF" />
-                                <Text style={styles.loadingText}>Loading subtitles...</Text>
+                                <Text style={styles.loadingText}>Downloading subtitles...</Text>
                             </View>
                         )}
                         <ScrollView style={styles.settingsContent} showsVerticalScrollIndicator={false}>
@@ -1028,9 +1102,17 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                                     ]}
                                     onPress={() => selectSubtitle(index)}
                                 >
-                                    <Text style={styles.settingOptionText}>
-                                        {sub.label}
-                                    </Text>
+                                    <View style={styles.subtitleOptionContent}>
+                                        <Text style={styles.settingOptionText}>
+                                            {sub.label}
+                                        </Text>
+                                        {sub.fileId && (
+                                            <Text style={styles.subtitleSourceText}>OpenSubtitles</Text>
+                                        )}
+                                        {!sub.fileId && sub.url && !sub.url.includes('opensubtitles.org') && (
+                                            <Text style={styles.subtitleSourceText}>Direct URL</Text>
+                                        )}
+                                    </View>
                                     {settings.selectedSubtitle === index && (
                                         <Ionicons name="checkmark" size={20} color="#007AFF" />
                                     )}
@@ -1262,7 +1344,7 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 16,
         marginTop: 8,
-    },
+    },    
     artworkContainer: {
         position: 'absolute',
         top: 0,
@@ -1351,7 +1433,7 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 16,
         fontWeight: '500',
-    },
+    },    
     speedOptionsGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
@@ -1433,5 +1515,13 @@ const styles = StyleSheet.create({
         fontSize: 16,
         textAlign: 'center',
         paddingVertical: 20,
+    },
+    subtitleOptionContent: {
+        flex: 1,
+    },
+    subtitleSourceText: {
+        color: 'rgba(255, 255, 255, 0.5)',
+        fontSize: 12,
+        marginTop: 2,
     },
 });
