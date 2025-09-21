@@ -317,8 +317,6 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
     const bufferOpacity = useRef(new Animated.Value(1)).current;
     const resizeModeLabelOpacity = useRef(new Animated.Value(0)).current;
 
-    const resizeModeOptions: PlayerResizeMode[] = ["fill", "contain", "cover", "none"];
-
     // Setup and cleanup
     useEffect(() => {
         const setupOrientation = async () => {
@@ -515,38 +513,26 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
         }
     };
 
-    // Debounced controls show function
     const showControlsTemporarily = useCallback(() => {
-        if (timers.controlsDebounceTimer.current) {
-            clearTimeout(timers.controlsDebounceTimer.current);
+        uiState.setShowControls(true);
+        controlsOpacity.setValue(1);
+
+        if (timers.hideControlsTimer.current) {
+            clearTimeout(timers.hideControlsTimer.current);
         }
 
-        timers.controlsDebounceTimer.current = setTimeout(() => {
-            uiState.setShowControls(true);
-
-            Animated.timing(controlsOpacity, {
-                toValue: 1,
-                duration: 200,
-                useNativeDriver: true,
-            }).start();
-
-            if (timers.hideControlsTimer.current) {
-                clearTimeout(timers.hideControlsTimer.current);
+        timers.hideControlsTimer.current = setTimeout(() => {
+            if (playerState.isPlaying && !uiState.showSubtitleSettings && !uiState.showAudioSettings &&
+                !uiState.showSpeedSettings) {
+                Animated.timing(controlsOpacity, {
+                    toValue: 0,
+                    duration: 500,
+                    useNativeDriver: true,
+                }).start(() => {
+                    uiState.setShowControls(false);
+                });
             }
-
-            timers.hideControlsTimer.current = setTimeout(() => {
-                if (playerState.isPlaying && !uiState.showSubtitleSettings && !uiState.showAudioSettings &&
-                    !uiState.showSpeedSettings) {
-                    Animated.timing(controlsOpacity, {
-                        toValue: 0,
-                        duration: 500,
-                        useNativeDriver: true,
-                    }).start(() => {
-                        uiState.setShowControls(false);
-                    });
-                }
-            }, 3000);
-        }, 50);
+        }, 2000);
     }, [playerState.isPlaying, controlsOpacity, uiState, timers]);
 
     // VLC Event Handlers
@@ -559,6 +545,24 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
             playerState.setHasStartedPlaying(true);
             playerState.setIsPlaying(true);
             playerState.setShowBufferingLoader(false);
+
+            uiState.setShowControls(true);
+            controlsOpacity.setValue(1);
+
+            if (timers.hideControlsTimer.current) {
+                clearTimeout(timers.hideControlsTimer.current);
+            }
+            timers.hideControlsTimer.current = setTimeout(() => {
+                if (playerState.isPlaying) {
+                    Animated.timing(controlsOpacity, {
+                        toValue: 0,
+                        duration: 500,
+                        useNativeDriver: true,
+                    }).start(() => {
+                        uiState.setShowControls(false);
+                    });
+                }
+            }, 2000);
 
             if (data?.audioTracks) {
                 settings.setAvailableAudioTracks(data.audioTracks);
@@ -708,7 +712,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
             showControlsTemporarily();
         },
 
-    }), [playerState, settings, showControlsTemporarily, resizeModeOptions, timers, resizeModeLabelOpacity, uiState]);
+    }), [playerState, settings, showControlsTemporarily, timers, resizeModeLabelOpacity, uiState]);
 
     // Slider handlers
     const sliderHandlers = useMemo(() => ({
@@ -841,8 +845,8 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                         ],
                     }}
                     autoplay={true}
-                    autoAspectRatio={true}
-                    resizeMode={'cover'}
+                    autoAspectRatio={false}
+                    resizeMode={'fill'}
                     playInBackground={true}
                     acceptInvalidCertificates={true}
                     rate={settings.playbackSpeed}
