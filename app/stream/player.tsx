@@ -1,6 +1,6 @@
 import OpenSubtitlesClient from "@/clients/opensubtitles";
 import { Subtitle, Chapter, MediaPlayer } from "@/components/MediaPlayer";
-import { StorageKeys } from "@/utils/StorageService";
+import { StorageKeys, storageService } from "@/utils/StorageService";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Platform } from "react-native";
@@ -10,20 +10,37 @@ const MediaPlayerScreen: React.FC = () => {
   const { videoUrl, title, imdbid, type, season, episode } = useLocalSearchParams();
   const [subtitles, setSubtitles] = useState<Subtitle[]>([]);
   const [isLoadingSubtitles, setIsLoadingSubtitles] = useState(true);
+  const [openSubtitlesClient, setOpenSubtitlesClient] = useState<OpenSubtitlesClient | null>(null);
   const chapters: Chapter[] = [];
   const artwork = `https://images.metahub.space/background/medium/${imdbid}/img`;
 
-  const openSubtitlesClient = new OpenSubtitlesClient(
-    StorageKeys.OPENSUBTITLES_USER_AGENT || 'Strmify',
-    StorageKeys.OPENSUBTITLES_API_KEY || ''
-  );
+  useEffect(() => {
+    initializeClient();
+  }, []);
 
   useEffect(() => {
-    fetchSubtitles();
-  }, [imdbid, type, season, episode]);
+    if (openSubtitlesClient) {
+      fetchSubtitles();
+    }
+  }, [imdbid, type, season, episode, openSubtitlesClient]);
+
+  const initializeClient = async () => {
+    try {
+      const userAgent = await storageService.getItem(StorageKeys.OPENSUBTITLES_USER_AGENT) || 'Strmify';
+      const apiKey = await storageService.getItem(StorageKeys.OPENSUBTITLES_API_KEY) || '';
+      
+      const client = new OpenSubtitlesClient(userAgent, apiKey);
+      setOpenSubtitlesClient(client);
+    } catch (error) {
+      console.error('Failed to initialize OpenSubtitles client:', error);
+      // Fallback to default client
+      const client = new OpenSubtitlesClient('Strmify', '');
+      setOpenSubtitlesClient(client);
+    }
+  };
 
   const fetchSubtitles = async () => {
-    if (!imdbid) {
+    if (!imdbid || !openSubtitlesClient) {
       setIsLoadingSubtitles(false);
       return;
     }
@@ -51,7 +68,7 @@ const MediaPlayerScreen: React.FC = () => {
         // For movies
         response = await openSubtitlesClient.searchMovieSubtitles(
           imdbid as string,
-          ['en', 'es', 'fr', 'de', 'it', 'pt'],
+          ['en', 'es', 'fr', 'de', 'it', 'pt'], // Multiple languages
           {
             format: 'srt',
             ai_translated: 'include',
