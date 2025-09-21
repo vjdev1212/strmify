@@ -45,6 +45,7 @@ interface MediaPlayerProps {
     title: string;
     onBack: () => void;
     artwork?: string;
+    subtitles?: Subtitle[];
 }
 
 // Custom hooks for better state management
@@ -157,6 +158,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
     title,
     onBack,
     artwork,
+    subtitles = []
 }) => {
     const playerRef = useRef<VLCPlayer>(null);
     const playerState = usePlayerState();
