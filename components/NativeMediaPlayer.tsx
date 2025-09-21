@@ -374,6 +374,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
             playerState.setIsReady(false);
             playerState.setError(null);
             playerState.setHasStartedPlaying(true);
+            playerState.setIsPlaying(true);
             playerState.setShowBufferingLoader(false);
 
             if (data?.audioTracks) {
@@ -783,29 +784,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                                     color="white"
                                 />
                             </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={styles.controlButton}
-                                onPress={panelToggles.toggleVolumeSlider}
-                            >
-                                <MaterialIcons
-                                    name="tune"
-                                    size={24}
-                                    color="white"
-                                />
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={styles.controlButton}
-                                onPress={panelToggles.toggleBrightnessSlider}
-                            >
-                                <Ionicons
-                                    name="sunny"
-                                    size={24}
-                                    color="white"
-                                />
-                            </TouchableOpacity>
-
+                            
                             <TouchableOpacity
                                 style={styles.controlButton}
                                 onPress={panelToggles.toggleSubtitleSettings}
@@ -1181,28 +1160,7 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 16,
         marginTop: 8,
-    },
-    resizeModeLabelOverlay: {
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        transform: [{ translateX: -75 }, { translateY: -50 }],
-        zIndex: 5,
-    },
-    resizeModeLabelContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        paddingHorizontal: 20,
-        paddingVertical: 12,
-        borderRadius: 25,
-    },
-    resizeModeLabelText: {
-        color: 'white',
-        fontSize: 16,
-        fontWeight: '600',
-        marginLeft: 8,
-    },
+    },    
     artworkContainer: {
         position: 'absolute',
         top: 0,
@@ -1291,41 +1249,7 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 16,
         fontWeight: '500',
-    },
-    volumeControls: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    volumeSlider: {
-        flex: 1,
-        height: 40,
-        marginHorizontal: 15,
-    },
-    volumePercentage: {
-        color: 'white',
-        fontSize: 16,
-        fontWeight: '600',
-        minWidth: 45,
-        textAlign: 'center',
-        marginLeft: 10,
-    },
-    brightnessControls: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    brightnessSlider: {
-        flex: 1,
-        height: 40,
-        marginHorizontal: 15,
-    },
-    brightnessPercentage: {
-        color: 'white',
-        fontSize: 16,
-        fontWeight: '600',
-        minWidth: 45,
-        textAlign: 'center',
-        marginLeft: 10,
-    },
+    },    
     speedOptionsGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
