@@ -518,7 +518,7 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         onLoad: (data: any) => {
             console.log('VLC Player loaded:', data);
             playerState.setIsBuffering(false);
-            playerState.setIsReady(false);
+            playerState.setIsReady(true);
             playerState.setError(null);
             playerState.setHasStartedPlaying(true);
             playerState.setIsPlaying(true);
@@ -530,18 +530,7 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
             if (timers.hideControlsTimer.current) {
                 clearTimeout(timers.hideControlsTimer.current);
             }
-            timers.hideControlsTimer.current = setTimeout(() => {
-                if (playerState.isPlaying) {
-                    Animated.timing(controlsOpacity, {
-                        toValue: 0,
-                        duration: 500,
-                        useNativeDriver: true,
-                    }).start(() => {
-                        uiState.setShowControls(false);
-                    });
-                }
-            }, 2000);
-
+            
             if (data?.audioTracks) {
                 settings.setAvailableAudioTracks(data.audioTracks);
             }
