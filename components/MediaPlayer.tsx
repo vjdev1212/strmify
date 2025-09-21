@@ -18,11 +18,12 @@ import { useEvent } from "expo";
 import * as ScreenOrientation from "expo-screen-orientation";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import Slider from '@react-native-community/slider';
+import Slider from '@react-native-assets/slider';
 import { showAlert } from "@/utils/platform";
 import * as Haptics from 'expo-haptics';
 
 export interface Subtitle {
+    fileId: string | number | null;
     language: string;
     url: string;
     label: string;
@@ -43,10 +44,8 @@ export interface Chapter {
 interface MediaPlayerProps {
     videoUrl: string;
     title: string;
-    subtitle?: string;
     subtitles?: Subtitle[];
     audioTracks?: AudioTrack[];
-    chapters?: Chapter[];
     onBack: () => void;
     autoPlay?: boolean;
     artwork?: string;
@@ -562,7 +561,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                         <View style={styles.titleContainer}>
                             <Text style={styles.titleText} numberOfLines={1}>
                                 {title}
-                            </Text>                            
+                            </Text>
                         </View>
 
                         <View style={styles.topRightControls}>
@@ -623,7 +622,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                     color="white"
                                 />
                             </TouchableOpacity>
-                            
+
                             <TouchableOpacity
                                 style={styles.controlButton}
                                 onPress={async () => {
@@ -705,7 +704,10 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 onSlidingComplete={handleSliderSlidingComplete}
                                 minimumTrackTintColor="#007AFF"
                                 maximumTrackTintColor="rgba(255,255,255,0.3)"
-                                disabled={!isReady || duration <= 0}
+                                thumbTintColor={'#fff'}
+                                thumbSize={20}
+                                trackHeight={5}
+                                enabled={isReady || duration >= 0}
                             />
                         </View>
 
