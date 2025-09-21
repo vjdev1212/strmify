@@ -77,6 +77,18 @@ const usePlayerState = () => {
     };
 };
 
+const useSubtitleState = () => {
+    const [currentSubtitle, setCurrentSubtitle] = useState<string>('');
+    const [parsedSubtitles, setParsedSubtitles] = useState<any[]>([]);
+    const [isLoadingSubtitles, setIsLoadingSubtitles] = useState(false);
+
+    return {
+        currentSubtitle, setCurrentSubtitle,
+        parsedSubtitles, setParsedSubtitles,
+        isLoadingSubtitles, setIsLoadingSubtitles
+    };
+};
+
 const useUIState = () => {
     const [showControls, setShowControls] = useState(true);
     const [showVolumeSlider, setShowVolumeSlider] = useState(false);
@@ -114,7 +126,6 @@ const usePlayerSettings = () => {
     const [brightness, setBrightness] = useState<number>(1);
     const [selectedSubtitle, setSelectedSubtitle] = useState<number>(-1);
     const [selectedAudioTrack, setSelectedAudioTrack] = useState<number>(1);
-    const [availableTextTracks, setAvailableTextTracks] = useState<any[]>([]);
     const [availableAudioTracks, setAvailableAudioTracks] = useState<any[]>([]);
 
     return {
@@ -125,7 +136,6 @@ const usePlayerSettings = () => {
         brightness, setBrightness,
         selectedSubtitle, setSelectedSubtitle,
         selectedAudioTrack, setSelectedAudioTrack,
-        availableTextTracks, setAvailableTextTracks,
         availableAudioTracks, setAvailableAudioTracks
     };
 };
@@ -153,6 +163,52 @@ const useTimers = () => {
     };
 };
 
+const parseWebVTT = (vttContent: string) => {
+    const lines = vttContent.split('\n');
+    const subtitles = [];
+    let currentSubtitle = null;
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+
+        if (line.includes('-->')) {
+            const [start, end] = line.split('-->').map(t => t.trim());
+            currentSubtitle = {
+                start: parseVTTTime(start),
+                end: parseVTTTime(end),
+                text: ''
+            };
+        } else if (line && currentSubtitle && !line.startsWith('NOTE') && !line.startsWith('WEBVTT')) {
+            if (currentSubtitle.text) {
+                currentSubtitle.text += '\n' + line;
+            } else {
+                currentSubtitle.text = line;
+            }
+        } else if (!line && currentSubtitle) {
+            subtitles.push(currentSubtitle);
+            currentSubtitle = null;
+        }
+    }
+
+    if (currentSubtitle) {
+        subtitles.push(currentSubtitle);
+    }
+
+    return subtitles;
+};
+
+const parseVTTTime = (timeStr: string): number => {
+    const parts = timeStr.split(':');
+    if (parts.length === 3) {
+        const [hours, minutes, seconds] = parts;
+        return parseInt(hours) * 3600 + parseInt(minutes) * 60 + parseFloat(seconds);
+    } else if (parts.length === 2) {
+        const [minutes, seconds] = parts;
+        return parseInt(minutes) * 60 + parseFloat(seconds);
+    }
+    return 0;
+};
+
 export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
     videoUrl,
     title,
@@ -163,6 +219,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
     const playerRef = useRef<VLCPlayer>(null);
     const playerState = usePlayerState();
     const uiState = useUIState();
+    const subtitleState = useSubtitleState();
     const settings = usePlayerSettings();
     const timers = useTimers();
 
@@ -208,6 +265,41 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
             }
         };
     }, []);
+
+
+    useEffect(() => {
+        if (subtitles.length > 0 && settings.selectedSubtitle >= 0 && settings.selectedSubtitle < subtitles.length) {
+            const selectedSub = subtitles[settings.selectedSubtitle];
+            subtitleState.setIsLoadingSubtitles(true);
+
+            fetch(selectedSub.url)
+                .then(response => response.text())
+                .then(vttContent => {
+                    const parsed = parseWebVTT(vttContent);
+                    subtitleState.setParsedSubtitles(parsed);
+                    subtitleState.setIsLoadingSubtitles(false);
+                })
+                .catch(error => {
+                    console.error('Failed to load subtitles:', error);
+                    subtitleState.setIsLoadingSubtitles(false);
+                });
+        } else {
+            subtitleState.setParsedSubtitles([]);
+            subtitleState.setCurrentSubtitle('');
+        }
+    }, [settings.selectedSubtitle, subtitles]);
+
+    useEffect(() => {
+        if (subtitleState.parsedSubtitles.length > 0) {
+            const currentTime = playerState.currentTime;
+            const activeSubtitle = subtitleState.parsedSubtitles.find(
+                sub => currentTime >= sub.start && currentTime <= sub.end
+            );
+
+            subtitleState.setCurrentSubtitle(activeSubtitle ? activeSubtitle.text : '');
+        }
+    }, [playerState.currentTime, subtitleState.parsedSubtitles]);
+
 
     // Utility functions
     const playHaptic = async () => {
@@ -296,9 +388,6 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
             playerState.setHasStartedPlaying(true);
             playerState.setShowBufferingLoader(false);
 
-            if (data?.textTracks) {
-                settings.setAvailableTextTracks(data.textTracks);
-            }
             if (data?.audioTracks) {
                 settings.setAvailableAudioTracks(data.audioTracks);
             }
@@ -661,7 +750,6 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                     muted={settings.isMuted}
                     volume={settings.isMuted ? 0 : settings.volume}
                     audioTrack={settings.selectedAudioTrack}
-                    textTrack={settings.selectedSubtitle}
                     paused={playerState.isPaused}
                     onPlaying={vlcHandlers.onPlaying}
                     onProgress={vlcHandlers.onProgress}
@@ -760,6 +848,12 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                     activeOpacity={1}
                     onPress={handleOverlayPress}
                 />
+            )}
+
+            {subtitleState.currentSubtitle && !playerState.error && (
+                <View style={styles.subtitleContainer} pointerEvents="none">
+                    <Text style={styles.subtitleText}>{subtitleState.currentSubtitle}</Text>
+                </View>
             )}
 
             {/* Controls overlay */}
@@ -1017,19 +1111,31 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                     >
                         <Text style={styles.panelTitle}>Subtitles</Text>
                         <ScrollView style={styles.settingsContent} showsVerticalScrollIndicator={false}>
-                            {settings.availableTextTracks.map((sub) => (
+                            <TouchableOpacity
+                                style={[
+                                    styles.settingOption,
+                                    settings.selectedSubtitle === -1 && styles.settingOptionSelected
+                                ]}
+                                onPress={() => selectSubtitle(-1)}
+                            >
+                                <Text style={styles.settingOptionText}>Off</Text>
+                                {settings.selectedSubtitle === -1 && (
+                                    <Ionicons name="checkmark" size={20} color="#007AFF" />
+                                )}
+                            </TouchableOpacity>
+                            {subtitles.map((sub, index) => (
                                 <TouchableOpacity
-                                    key={sub.id}
+                                    key={index}
                                     style={[
                                         styles.settingOption,
-                                        settings.selectedSubtitle === sub.id && styles.settingOptionSelected
+                                        settings.selectedSubtitle === index && styles.settingOptionSelected
                                     ]}
-                                    onPress={() => selectSubtitle(sub.id)}
+                                    onPress={() => selectSubtitle(index)}
                                 >
                                     <Text style={styles.settingOptionText}>
-                                        {sub.name}
+                                        {sub.label}
                                     </Text>
-                                    {settings.selectedSubtitle === sub.id && (
+                                    {settings.selectedSubtitle === index && (
                                         <Ionicons name="checkmark" size={20} color="#007AFF" />
                                     )}
                                 </TouchableOpacity>
@@ -1436,5 +1542,32 @@ const styles = StyleSheet.create({
         left: 20,
         padding: 8,
         zIndex: 1,
+    },
+    subtitleContainer: {
+        position: 'absolute',
+        bottom: 140,
+        left: 20,
+        right: 20,
+        alignItems: 'center',
+        zIndex: 5,
+    },
+    subtitleText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: '500',
+        textAlign: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 4,
+        lineHeight: 22,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowOpacity: 0.8,
+        shadowRadius: 2,
+        elevation: 5,
     },
 });
