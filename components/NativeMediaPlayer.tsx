@@ -16,7 +16,7 @@ import { PlayerResizeMode, VLCPlayer } from 'react-native-vlc-media-player';
 import * as ScreenOrientation from "expo-screen-orientation";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import Slider from '@react-native-community/slider';
+import Slider from '@react-native-assets/slider';
 import * as Haptics from 'expo-haptics';
 import ImmersiveMode from "react-native-immersive-mode";
 
@@ -1074,8 +1074,11 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                                     onSlidingStart={sliderHandlers.handleSliderSlidingStart}
                                     onSlidingComplete={sliderHandlers.handleSliderSlidingComplete}
                                     minimumTrackTintColor="#007AFF"
-                                    maximumTrackTintColor="rgba(255,255,255,0.3)"
-                                    disabled={!playerState.isReady || playerState.duration <= 0}
+                                    maximumTrackTintColor="rgba(255,255,255,0.4)"
+                                    thumbTintColor={'#fff'}
+                                    thumbSize={20}
+                                    trackHeight={5}
+                                    enabled={playerState.isReady || playerState.duration >= 0}
                                 />
                             </View>
                         </LinearGradient>
@@ -1331,6 +1334,7 @@ const styles = StyleSheet.create({
         paddingBottom: 40,
         paddingTop: 20,
         height: 120,
+        marginHorizontal: 20
     },
     timeContainer: {
         flexDirection: 'row',
@@ -1339,17 +1343,16 @@ const styles = StyleSheet.create({
     },
     progressContainerWithMargin: {
         marginBottom: 16,
-        paddingVertical: 10,
+        paddingVertical: 10
     },
     progressSlider: {
         width: '100%',
-        height: 40,
+        height: 40
     },
     timeText: {
         color: 'white',
         fontSize: 14,
         fontWeight: '500',
-        marginHorizontal: 10
     },
     bufferingContainer: {
         position: 'absolute',
