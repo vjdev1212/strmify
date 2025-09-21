@@ -24,7 +24,11 @@
       "backgroundColor": "#000000",
       "bundleIdentifier": "com.vijayyuvi.strmify",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true,
+          "NSAllowsLocalNetworking": true
+        }
       }
     },
     "android": {
@@ -33,7 +37,9 @@
         "backgroundColor": "#000000"
       },
       "package": "com.vijayyuvi.strmify",
-      "icon": "assets/images/icon.png"
+      "icon": "assets/images/icon.png",
+      "usesCleartextTraffic": true,
+      "networkSecurityConfig": "@xml/network_security_config"
     },
     "web": {
       "bundler": "metro",
@@ -68,10 +74,10 @@
         "react-native-vlc-media-player",
         {
           "ios": {
-              "includeVLCKit": false
+            "includeVLCKit": false
           },
           "android": {
-              "legacyJetifier": false
+            "legacyJetifier": false
           }
         }
       ]
