@@ -66,7 +66,7 @@ interface MediaPlayerProps {
     openSubtitlesClient: OpenSubtitlesClient;
 }
 
-// Custom hooks for better state management
+// Optimized state management with reduced re-renders
 const usePlayerState = () => {
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
@@ -79,6 +79,7 @@ const usePlayerState = () => {
     const [error, setError] = useState<string | null>(null);
     const [showBufferingLoader, setShowBufferingLoader] = useState(false);
     const [hasStartedPlaying, setHasStartedPlaying] = useState(false);
+    const [isSeeking, setIsSeeking] = useState(false);
 
     return {
         isPlaying, setIsPlaying,
@@ -91,7 +92,8 @@ const usePlayerState = () => {
         dragPosition, setDragPosition,
         error, setError,
         showBufferingLoader, setShowBufferingLoader,
-        hasStartedPlaying, setHasStartedPlaying
+        hasStartedPlaying, setHasStartedPlaying,
+        isSeeking, setIsSeeking
     };
 };
 
@@ -113,11 +115,11 @@ const useUIState = () => {
     const [showAudioSettings, setShowAudioSettings] = useState(false);
     const [showSpeedSettings, setShowSpeedSettings] = useState(false);
 
-    const hideAllPanels = () => {
+    const hideAllPanels = useCallback(() => {
         setShowSubtitleSettings(false);
         setShowAudioSettings(false);
         setShowSpeedSettings(false);
-    };
+    }, []);
 
     return {
         showControls, setShowControls,
@@ -148,30 +150,44 @@ const usePlayerSettings = () => {
     };
 };
 
+// Optimized timer management
 const useTimers = () => {
-    const hideControlsTimer = useRef<any>(null);
-    const resizeModeLabelTimer = useRef<any>(null);
-    const bufferingTimer = useRef<any>(null);
-    const controlsDebounceTimer = useRef<any>(null);
-    const progressDebounceTimer = useRef<any>(null);
+    const timersRef = useRef({
+        hideControls: null as ReturnType<typeof setTimeout> | null,
+        resizeModeLabel: null as ReturnType<typeof setTimeout> | null,
+        buffering: null as ReturnType<typeof setTimeout> | null,
+        controlsDebounce: null as ReturnType<typeof setTimeout> | null,
+        progressDebounce: null as ReturnType<typeof setTimeout> | null,
+        seekDebounce: null as ReturnType<typeof setTimeout> | null,
+        bufferingTimeout: null as ReturnType<typeof setTimeout> | null
+    });
 
-    const clearAllTimers = () => {
-        [hideControlsTimer.current, resizeModeLabelTimer.current, bufferingTimer.current,
-        controlsDebounceTimer.current, progressDebounceTimer.current]
-            .forEach(timer => timer && clearTimeout(timer));
-    };
+    const clearTimer = useCallback((timerName: keyof typeof timersRef.current) => {
+        if (timersRef.current[timerName]) {
+            clearTimeout(timersRef.current[timerName]!);
+            timersRef.current[timerName] = null;
+        }
+    }, []);
+
+    const setTimer = useCallback((timerName: keyof typeof timersRef.current, callback: () => void, delay: number) => {
+        clearTimer(timerName);
+        timersRef.current[timerName] = setTimeout(callback, delay);
+    }, [clearTimer]);
+
+    const clearAllTimers = useCallback(() => {
+        Object.keys(timersRef.current).forEach(key => {
+            clearTimer(key as keyof typeof timersRef.current);
+        });
+    }, [clearTimer]);
 
     return {
-        hideControlsTimer,
-        resizeModeLabelTimer,
-        bufferingTimer,
-        controlsDebounceTimer,
-        progressDebounceTimer,
+        clearTimer,
+        setTimer,
         clearAllTimers
     };
 };
 
-// SRT Parser Function
+// SRT Parser Function (unchanged for compatibility)
 const parseSRT = (srtContent: string) => {
     const subtitles = [];
     const blocks = srtContent.trim().split('\n\n');
@@ -183,7 +199,6 @@ const parseSRT = (srtContent: string) => {
             const timeString = lines[1].trim();
             const text = lines.slice(2).join('\n').trim();
 
-            // Parse SRT time format: 00:00:20,000 --> 00:00:24,400
             const timeMatch = timeString.match(/(\d{2}):(\d{2}):(\d{2}),(\d{3})\s*-->\s*(\d{2}):(\d{2}):(\d{2}),(\d{3})/);
 
             if (timeMatch) {
@@ -203,7 +218,6 @@ const parseSRT = (srtContent: string) => {
     return subtitles;
 };
 
-// Helper function to parse SRT time format
 const parseSRTTime = (hours: string, minutes: string, seconds: string, milliseconds: string): number => {
     return parseInt(hours) * 3600 +
         parseInt(minutes) * 60 +
@@ -211,23 +225,17 @@ const parseSRTTime = (hours: string, minutes: string, seconds: string, milliseco
         parseInt(milliseconds) / 1000;
 };
 
-// Clean subtitle text by removing HTML tags and formatting codes
 const cleanSubtitleText = (text: string): string => {
     return text
-        // Remove HTML tags like <i>, </i>, <b>, </b>, etc.
         .replace(/<[^>]*>/g, '')
-        // Remove SRT/ASS formatting codes like {\an8}, {\pos(x,y)}, etc.
         .replace(/\{[^}]*\}/g, '')
-        // Remove common subtitle formatting
-        .replace(/\\N/g, '\n') // Convert \N to actual line breaks
-        .replace(/\\h/g, ' ')  // Convert \h to spaces
-        // Clean up multiple spaces and line breaks
+        .replace(/\\N/g, '\n')
+        .replace(/\\h/g, ' ')
         .replace(/\s+/g, ' ')
         .replace(/\n\s+/g, '\n')
         .trim();
 };
 
-// WebVTT Parser (keeping for compatibility)
 const parseWebVTT = (vttContent: string) => {
     const lines = vttContent.split('\n');
     const subtitles = [];
@@ -276,27 +284,22 @@ const parseVTTTime = (timeStr: string): number => {
     return 0;
 };
 
-// Auto-detect subtitle format and parse accordingly
 const parseSubtitleFile = (content: string) => {
     const trimmedContent = content.trim();
 
-    // Check if it's WebVTT format
     if (trimmedContent.startsWith('WEBVTT')) {
         console.log('Detected WebVTT format');
         return parseWebVTT(content);
     }
 
-    // Check if it's SRT format (contains --> with comma for milliseconds)
     if (trimmedContent.includes('-->') && trimmedContent.includes(',')) {
         console.log('Detected SRT format');
         return parseSRT(content);
     }
 
-    // Default to SRT parsing
     console.log('Defaulting to SRT format');
     return parseSRT(content);
 };
-
 
 const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
     videoUrl,
@@ -312,6 +315,41 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
     const subtitleState = useSubtitleState();
     const settings = usePlayerSettings();
     const timers = useTimers();
+
+    // State refs for avoiding stale closures
+    const stateRefs = useRef({
+        isPlaying: false,
+        isReady: false,
+        isDragging: false,
+        isSeeking: false,
+        currentTime: 0,
+        duration: 0
+    });
+
+    // Update refs when state changes
+    useEffect(() => {
+        stateRefs.current.isPlaying = playerState.isPlaying;
+    }, [playerState.isPlaying]);
+
+    useEffect(() => {
+        stateRefs.current.isReady = playerState.isReady;
+    }, [playerState.isReady]);
+
+    useEffect(() => {
+        stateRefs.current.isDragging = playerState.isDragging;
+    }, [playerState.isDragging]);
+
+    useEffect(() => {
+        stateRefs.current.isSeeking = playerState.isSeeking;
+    }, [playerState.isSeeking]);
+
+    useEffect(() => {
+        stateRefs.current.currentTime = playerState.currentTime;
+    }, [playerState.currentTime]);
+
+    useEffect(() => {
+        stateRefs.current.duration = playerState.duration;
+    }, [playerState.duration]);
 
     // Animated values
     const controlsOpacity = useRef(new Animated.Value(1)).current;
@@ -354,12 +392,11 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         };
     }, []);
 
-    // Updated subtitle loading effect using OpenSubtitles client
+    // Optimized subtitle loading effect
     useEffect(() => {
         if (subtitles.length > 0 && settings.selectedSubtitle >= 0 && settings.selectedSubtitle < subtitles.length) {
             const selectedSub = subtitles[settings.selectedSubtitle];
 
-            // Check if we have a fileId to download from OpenSubtitles
             if (selectedSub.fileId && openSubtitlesClient) {
                 subtitleState.setIsLoadingSubtitles(true);
                 console.log('Downloading subtitle from OpenSubtitles, fileId:', selectedSub.fileId);
@@ -381,14 +418,12 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                             throw new Error('No download link provided');
                         }
 
-                        // Fetch the actual subtitle file from the download link
                         const subtitleResponse = await fetch(downloadResponse.link);
                         if (!subtitleResponse.ok) {
                             throw new Error(`HTTP error! status: ${subtitleResponse.status}`);
                         }
 
                         const subtitleContent = await subtitleResponse.text();
-
                         const parsed = parseSubtitleFile(subtitleContent);
 
                         if (parsed.length > 0) {
@@ -405,7 +440,6 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                         showAlert("Subtitle Error", `Failed to load subtitle: ${error.message}`);
                     });
             }
-            // Fallback to direct URL if no fileId or openSubtitlesClient
             else if (selectedSub.url && selectedSub.url !== '' && !selectedSub.url.includes('opensubtitles.org')) {
                 subtitleState.setIsLoadingSubtitles(true);
                 console.log('Loading subtitle from direct URL:', selectedSub.url);
@@ -448,33 +482,50 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         }
     }, [settings.selectedSubtitle, subtitles, openSubtitlesClient]);
 
-    // Updated subtitle display effect
-    useEffect(() => {
-        if (subtitleState.parsedSubtitles.length > 0) {
-            const currentTime = playerState.currentTime;
-            const activeSubtitle = subtitleState.parsedSubtitles.find(
+    // Optimized subtitle display effect with debouncing
+    const updateSubtitle = useMemo(() => {
+        return (currentTime: number, parsedSubtitles: any[], currentSubtitle: string) => {
+            if (parsedSubtitles.length === 0) {
+                if (currentSubtitle !== '') {
+                    return '';
+                }
+                return currentSubtitle;
+            }
+
+            const activeSubtitle = parsedSubtitles.find(
                 sub => currentTime >= sub.start && currentTime <= sub.end
             );
 
             const newSubtitleText = activeSubtitle ? activeSubtitle.text : '';
-
-            // Only update if the subtitle text has changed
-            if (newSubtitleText !== subtitleState.currentSubtitle) {
-                subtitleState.setCurrentSubtitle(newSubtitleText);
+            
+            if (newSubtitleText !== currentSubtitle) {
+                return newSubtitleText;
             }
-        } else if (subtitleState.currentSubtitle !== '') {
-            subtitleState.setCurrentSubtitle('');
+            
+            return currentSubtitle;
+        };
+    }, []);
+
+    useEffect(() => {
+        const newSubtitle = updateSubtitle(
+            playerState.currentTime, 
+            subtitleState.parsedSubtitles, 
+            subtitleState.currentSubtitle
+        );
+        
+        if (newSubtitle !== subtitleState.currentSubtitle) {
+            subtitleState.setCurrentSubtitle(newSubtitle);
         }
-    }, [playerState.currentTime, subtitleState.parsedSubtitles]);
+    }, [playerState.currentTime, subtitleState.parsedSubtitles, updateSubtitle]);
 
     // Utility functions
-    const playHaptic = async () => {
+    const playHaptic = useCallback(async () => {
         try {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         } catch (error) {
             console.log('Haptics not supported');
         }
-    };
+    }, []);
 
     const formatTime = useCallback((seconds: number) => {
         if (isNaN(seconds) || seconds < 0) return "0:00";
@@ -492,12 +543,11 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         uiState.setShowControls(true);
         controlsOpacity.setValue(1);
 
-        if (timers.hideControlsTimer.current) {
-            clearTimeout(timers.hideControlsTimer.current);
-        }
-
-        timers.hideControlsTimer.current = setTimeout(() => {
-            if (playerState.isPlaying && !uiState.showSubtitleSettings && !uiState.showAudioSettings &&
+        timers.clearTimer('hideControls');
+        timers.setTimer('hideControls', () => {
+            if (stateRefs.current.isPlaying && 
+                !uiState.showSubtitleSettings && 
+                !uiState.showAudioSettings &&
                 !uiState.showSpeedSettings) {
                 Animated.timing(controlsOpacity, {
                     toValue: 0,
@@ -507,10 +557,10 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                     uiState.setShowControls(false);
                 });
             }
-        }, 2000);
-    }, [playerState.isPlaying, controlsOpacity, uiState, timers]);
+        }, 3000); // Increased timeout for better UX
+    }, [controlsOpacity, uiState, timers]);
 
-    // VLC Event Handlers
+    // Optimized VLC Event Handlers with better buffering management
     const vlcHandlers = useMemo(() => ({
         onLoad: (data: any) => {
             console.log('VLC Player loaded:', data);
@@ -520,13 +570,12 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
             playerState.setHasStartedPlaying(true);
             playerState.setIsPlaying(true);
             playerState.setShowBufferingLoader(false);
+            playerState.setIsSeeking(false);
 
             uiState.setShowControls(true);
             controlsOpacity.setValue(1);
 
-            if (timers.hideControlsTimer.current) {
-                clearTimeout(timers.hideControlsTimer.current);
-            }
+            timers.clearTimer('hideControls');
 
             if (data?.audioTracks) {
                 settings.setAvailableAudioTracks(data.audioTracks);
@@ -537,54 +586,59 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
 
             Animated.timing(bufferOpacity, {
                 toValue: 0,
-                duration: 200,
+                duration: 300,
                 useNativeDriver: true,
             }).start();
         },
 
         onProgress: (data: any) => {
-            if (playerState.isDragging) return;
+            if (stateRefs.current.isDragging || stateRefs.current.isSeeking) return;
 
-            if (timers.progressDebounceTimer.current) {
-                clearTimeout(timers.progressDebounceTimer.current);
-            }
-
-            timers.progressDebounceTimer.current = setTimeout(() => {
+            timers.clearTimer('progressDebounce');
+            timers.setTimer('progressDebounce', () => {
                 const { currentTime: current, duration: dur } = data;
-                playerState.setCurrentTime(current / 1000);
+                const newCurrentTime = current / 1000;
+                
+                playerState.setCurrentTime(newCurrentTime);
 
                 if (playerState.duration === 0 && dur > 0) {
                     playerState.setDuration(dur / 1000);
                 }
 
-                if (playerState.duration > 0) {
-                    const progress = (current / 1000) / playerState.duration;
-                    progressBarValue.setValue(progress);
+                if (stateRefs.current.duration > 0) {
+                    const progress = newCurrentTime / stateRefs.current.duration;
+                    progressBarValue.setValue(Math.max(0, Math.min(1, progress)));
                 }
-            }, 100);
+            }, 50); // Reduced debounce for smoother updates
         },
 
         onBuffering: (data: any) => {
             const { isBuffering: buffering } = data;
-            playerState.setIsBuffering(buffering);
-
-            if (timers.bufferingTimer.current) {
-                clearTimeout(timers.bufferingTimer.current);
-            }
-
+            
+            // Clear any existing buffering timeout
+            timers.clearTimer('bufferingTimeout');
+            
             if (buffering) {
-                // Show buffering immediately for better UX
-                playerState.setShowBufferingLoader(true);
-                Animated.timing(bufferOpacity, {
-                    toValue: 1,
-                    duration: 200,
-                    useNativeDriver: true,
-                }).start();
+                // Show buffering immediately but with a slight delay for quick buffers
+                timers.setTimer('bufferingTimeout', () => {
+                    if (stateRefs.current.isReady) { // Only show if we were previously ready
+                        playerState.setIsBuffering(true);
+                        playerState.setShowBufferingLoader(true);
+                        Animated.timing(bufferOpacity, {
+                            toValue: 1,
+                            duration: 150,
+                            useNativeDriver: true,
+                        }).start();
+                    }
+                }, 200); // Small delay to avoid flickering on quick buffers
             } else {
+                playerState.setIsBuffering(false);
                 playerState.setShowBufferingLoader(false);
+                playerState.setIsSeeking(false); // Clear seeking state when buffering ends
+                
                 Animated.timing(bufferOpacity, {
                     toValue: 0,
-                    duration: 200,
+                    duration: 300,
                     useNativeDriver: true,
                 }).start();
             }
@@ -598,10 +652,14 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
             playerState.setIsPaused(false);
             playerState.setIsBuffering(false);
             playerState.setShowBufferingLoader(false);
+            playerState.setIsSeeking(false);
+
+            // Clear buffering timeout when playing starts
+            timers.clearTimer('bufferingTimeout');
 
             Animated.timing(bufferOpacity, {
                 toValue: 0,
-                duration: 200,
+                duration: 300,
                 useNativeDriver: true,
             }).start();
         },
@@ -610,12 +668,14 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
             console.log('On Paused');
             playerState.setIsPlaying(false);
             playerState.setIsPaused(true);
+            playerState.setIsSeeking(false);
         },
 
         onStopped: () => {
             console.log('On Stopped');
             playerState.setIsPlaying(false);
             playerState.setIsPaused(false);
+            playerState.setIsSeeking(false);
         },
 
         onError: (error: any) => {
@@ -629,16 +689,20 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
             playerState.setIsBuffering(false);
             playerState.setIsReady(false);
             playerState.setShowBufferingLoader(false);
+            playerState.setIsSeeking(false);
+            
+            timers.clearTimer('bufferingTimeout');
             showAlert("Video Error", errorMessage);
         }
-    }), [playerState, settings, bufferOpacity, timers, progressBarValue]);
+    }), [playerState, settings, bufferOpacity, timers, progressBarValue, controlsOpacity, uiState]);
 
-    // Control actions
+    // Optimized control actions
     const controlActions = useMemo(() => ({
         togglePlayPause: async () => {
-            if (!playerState.isReady) return;
+            if (!stateRefs.current.isReady) return;
             await playHaptic();
-            if (playerState.isPlaying) {
+            
+            if (stateRefs.current.isPlaying) {
                 console.log('Pause');
                 playerState.setIsPaused(true);
             } else {
@@ -649,26 +713,35 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         },
 
         seekTo: (absoluteSeconds: number) => {
-            if (!playerRef.current || playerState.duration <= 0) return;
+            if (!playerRef.current || stateRefs.current.duration <= 0) return;
 
-            const clampedTime = Math.max(0, Math.min(playerState.duration, absoluteSeconds));
-            const position = clampedTime / playerState.duration;
+            const clampedTime = Math.max(0, Math.min(stateRefs.current.duration, absoluteSeconds));
+            const position = clampedTime / stateRefs.current.duration;
 
             console.log(`Seeking to: ${clampedTime}s (${(position * 100).toFixed(1)}%)`);
 
+            // Set seeking state to prevent progress updates during seek
+            playerState.setIsSeeking(true);
             playerState.setCurrentTime(clampedTime);
             progressBarValue.setValue(position);
 
-            playerRef.current.seek(position);
+            // Show buffering during seek for better UX
+            playerState.setShowBufferingLoader(true);
+            
+            // Use debounced seek to avoid too many seek calls
+            timers.clearTimer('seekDebounce');
+            timers.setTimer('seekDebounce', () => {
+                playerRef.current?.seek(position);
+            }, 100);
 
             showControlsTemporarily();
         },
 
         skipTime: async (offsetSeconds: number) => {
-            if (!playerState.isReady || playerState.duration <= 0) return;
+            if (!stateRefs.current.isReady || stateRefs.current.duration <= 0) return;
 
             await playHaptic();
-            const newTime = playerState.currentTime + offsetSeconds;
+            const newTime = stateRefs.current.currentTime + offsetSeconds;
             controlActions.seekTo(newTime);
         },
 
@@ -680,18 +753,18 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
             showControlsTemporarily();
         },
 
-    }), [playerState, settings, showControlsTemporarily, timers, resizeModeLabelOpacity, uiState]);
+    }), [playerState, settings, showControlsTemporarily, timers, progressBarValue]);
 
-    // Slider handlers
+    // Optimized slider handlers
     const sliderHandlers = useMemo(() => ({
         handleSliderValueChange: (value: number) => {
-            if (!playerState.isReady || playerState.duration <= 0) return;
+            if (!stateRefs.current.isReady || stateRefs.current.duration <= 0) return;
 
             playerState.setIsDragging(true);
             playerState.setDragPosition(value);
             progressBarValue.setValue(value);
 
-            const newTime = value * playerState.duration;
+            const newTime = value * stateRefs.current.duration;
             playerState.setCurrentTime(newTime);
         },
 
@@ -701,13 +774,13 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         },
 
         handleSliderSlidingComplete: (value: number) => {
-            if (!playerState.isReady || playerState.duration <= 0) {
+            if (!stateRefs.current.isReady || stateRefs.current.duration <= 0) {
                 playerState.setIsDragging(false);
                 return;
             }
 
             playerState.setIsDragging(false);
-            const newTime = value * playerState.duration;
+            const newTime = value * stateRefs.current.duration;
             controlActions.seekTo(newTime);
         }
     }), [playerState, showControlsTemporarily, controlActions, progressBarValue]);
@@ -754,7 +827,7 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
             uiState.setShowAudioSettings(false);
             showControlsTemporarily();
         }
-    }), [uiState, showControlsTemporarily]);
+    }), [uiState, showControlsTemporarily, playHaptic]);
 
     // Selection handlers
     const selectSubtitle = useCallback(async (index: number) => {
@@ -762,21 +835,21 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         await playHaptic();
         settings.setSelectedSubtitle(index);
         showControlsTemporarily();
-    }, [settings, showControlsTemporarily]);
+    }, [settings, showControlsTemporarily, playHaptic]);
 
     const selectAudioTrack = useCallback(async (index: number) => {
         console.log('On Select Audio Track:', index);
         await playHaptic();
         settings.setSelectedAudioTrack(index);
         showControlsTemporarily();
-    }, [settings, showControlsTemporarily]);
+    }, [settings, showControlsTemporarily, playHaptic]);
 
     const changePlaybackSpeed = useCallback(async (speed: number) => {
         console.log('On Change Playback speed');
         await playHaptic();
         settings.setPlaybackSpeed(speed);
         showControlsTemporarily();
-    }, [settings, showControlsTemporarily]);
+    }, [settings, showControlsTemporarily, playHaptic]);
 
     const handleOverlayPress = useCallback(() => {
         if (uiState.showSubtitleSettings || uiState.showAudioSettings || uiState.showSpeedSettings) {
@@ -796,8 +869,103 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         }
     }, [uiState, controlsOpacity, showControlsTemporarily]);
 
-    const displayTime = playerState.isDragging ? playerState.dragPosition * playerState.duration : playerState.currentTime;
-    const sliderValue = playerState.isDragging ? playerState.dragPosition : (playerState.duration > 0 ? playerState.currentTime / playerState.duration : 0);
+    // Optimized display calculations
+    const displayValues = useMemo(() => {
+        const displayTime = playerState.isDragging ? 
+            playerState.dragPosition * playerState.duration : 
+            playerState.currentTime;
+        
+        const sliderValue = playerState.isDragging ? 
+            playerState.dragPosition : 
+            (playerState.duration > 0 ? playerState.currentTime / playerState.duration : 0);
+            
+        return { displayTime, sliderValue };
+    }, [
+        playerState.isDragging,
+        playerState.dragPosition,
+        playerState.currentTime,
+        playerState.duration
+    ]);
+
+    // Memoized components to prevent unnecessary re-renders
+    const ErrorComponent = useMemo(() => {
+        if (!playerState.error) return null;
+        
+        return (
+            <View style={styles.errorContainer}>
+                <TouchableOpacity
+                    style={styles.errorBackButton}
+                    onPress={async () => {
+                        await playHaptic();
+                        onBack();
+                    }}
+                >
+                    <Ionicons name="chevron-back" size={28} color="white" />
+                </TouchableOpacity>
+
+                <MaterialIcons name="error-outline" size={64} color="#ff6b6b" />
+                <Text style={styles.errorTitle}>Playback Error</Text>
+                <Text style={styles.errorText}>{playerState.error}</Text>
+                <TouchableOpacity style={styles.retryButton} onPress={() => {
+                    playerState.setError(null);
+                    playerState.setIsReady(false);
+                    playerState.setIsBuffering(true);
+                    playerState.setHasStartedPlaying(false);
+                    playerState.setIsSeeking(false);
+                }}>
+                    <Text style={styles.retryButtonText}>Retry</Text>
+                </TouchableOpacity>
+            </View>
+        );
+    }, [playerState.error, playHaptic, onBack, playerState]);
+
+    const ArtworkComponent = useMemo(() => {
+        if (!artwork || playerState.hasStartedPlaying || playerState.error) return null;
+        
+        return (
+            <View style={styles.artworkContainer}>
+                <Image
+                    source={{ uri: artwork }}
+                    style={styles.artworkImage}
+                    resizeMode="cover"
+                />
+                <View style={styles.artworkOverlay} />
+                <View style={styles.artworkLoadingOverlay}>
+                    <ActivityIndicator size="large" color="#535aff" />
+                    <Text style={styles.bufferingText}>Loading...</Text>
+                </View>
+            </View>
+        );
+    }, [artwork, playerState.hasStartedPlaying, playerState.error]);
+
+    const BufferingComponent = useMemo(() => {
+        if (!(playerState.showBufferingLoader || playerState.isBuffering) || playerState.error) return null;
+        
+        return (
+            <Animated.View
+                style={[
+                    styles.bufferingContainer,
+                    { opacity: bufferOpacity }
+                ]}
+                pointerEvents="none"
+            >
+                <ActivityIndicator size="large" color="#535aff" />
+                <Text style={styles.bufferingText}>
+                    {playerState.hasStartedPlaying ? "Buffering..." : "Loading..."}
+                </Text>
+            </Animated.View>
+        );
+    }, [playerState.showBufferingLoader, playerState.isBuffering, playerState.error, playerState.hasStartedPlaying, bufferOpacity]);
+
+    const SubtitleComponent = useMemo(() => {
+        if (!subtitleState.currentSubtitle || playerState.error) return null;
+        
+        return (
+            <View style={styles.subtitleContainer} pointerEvents="none">
+                <Text style={styles.subtitleText}>{subtitleState.currentSubtitle}</Text>
+            </View>
+        );
+    }, [subtitleState.currentSubtitle, playerState.error]);
 
     return (
         <View style={styles.container}>
@@ -809,7 +977,9 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                         uri: videoUrl,
                         initType: 2,
                         initOptions: [
-                            "--network-caching=1000"
+                            "--network-caching=1000",
+                            "--file-caching=300",
+                            "--live-caching=300"
                         ],
                     }}
                     autoplay={true}
@@ -831,63 +1001,9 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                 />
             )}
 
-            {playerState.error && (
-                <View style={styles.errorContainer}>
-                    <TouchableOpacity
-                        style={styles.errorBackButton}
-                        onPress={async () => {
-                            await playHaptic();
-                            onBack();
-                        }}
-                    >
-                        <Ionicons name="chevron-back" size={28} color="white" />
-                    </TouchableOpacity>
-
-                    <MaterialIcons name="error-outline" size={64} color="#ff6b6b" />
-                    <Text style={styles.errorTitle}>Playback Error</Text>
-                    <Text style={styles.errorText}>{playerState.error}</Text>
-                    <TouchableOpacity style={styles.retryButton} onPress={() => {
-                        playerState.setError(null);
-                        playerState.setIsReady(false);
-                        playerState.setIsBuffering(true);
-                        playerState.setHasStartedPlaying(false);
-                    }}>
-                        <Text style={styles.retryButtonText}>Retry</Text>
-                    </TouchableOpacity>
-                </View>
-            )}
-
-            {/* Show artwork during loading */}
-            {artwork && !playerState.hasStartedPlaying && !playerState.error && (
-                <View style={styles.artworkContainer}>
-                    <Image
-                        source={{ uri: artwork }}
-                        style={styles.artworkImage}
-                        resizeMode="cover"
-                    />
-                    <View style={styles.artworkOverlay} />
-                    <View style={styles.artworkLoadingOverlay}>
-                        <ActivityIndicator size="large" color="#535aff" />
-                        <Text style={styles.bufferingText}>Loading...</Text>
-                    </View>
-                </View>
-            )}
-
-            {/* Loading indicator - show during any buffering */}
-            {(playerState.showBufferingLoader || playerState.isBuffering) && !playerState.error && (
-                <Animated.View
-                    style={[
-                        styles.bufferingContainer,
-                        { opacity: bufferOpacity }
-                    ]}
-                    pointerEvents="none"
-                >
-                    <ActivityIndicator size="large" color="#535aff" />
-                    <Text style={styles.bufferingText}>
-                        {playerState.hasStartedPlaying ? "Buffering..." : "Loading..."}
-                    </Text>
-                </Animated.View>
-            )}
+            {ErrorComponent}
+            {ArtworkComponent}
+            {BufferingComponent}
 
             {/* Touch area for showing controls */}
             {!playerState.error && (
@@ -898,12 +1014,7 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                 />
             )}
 
-            {/* Subtitle display - Updated styling for better visibility */}
-            {subtitleState.currentSubtitle && !playerState.error && (
-                <View style={styles.subtitleContainer} pointerEvents="none">
-                    <Text style={styles.subtitleText}>{subtitleState.currentSubtitle}</Text>
-                </View>
-            )}
+            {SubtitleComponent}
 
             {/* Controls overlay */}
             {uiState.showControls && !playerState.error && (
@@ -1027,7 +1138,7 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                         >
                             <View style={styles.timeContainer}>
                                 <Text style={styles.timeText}>
-                                    {formatTime(displayTime)}
+                                    {formatTime(displayValues.displayTime)}
                                 </Text>
                                 <Text style={styles.timeText}>
                                     {formatTime(playerState.duration)}
@@ -1039,7 +1150,7 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                                     style={styles.progressSlider}
                                     minimumValue={0}
                                     maximumValue={1}
-                                    value={sliderValue}
+                                    value={displayValues.sliderValue}
                                     onValueChange={sliderHandlers.handleSliderValueChange}
                                     onSlidingStart={sliderHandlers.handleSliderSlidingStart}
                                     onSlidingComplete={sliderHandlers.handleSliderSlidingComplete}
