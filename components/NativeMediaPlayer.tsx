@@ -842,7 +842,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                     }}
                     autoplay={true}
                     autoAspectRatio={true}
-                    resizeMode={'fill'}
+                    resizeMode={'cover'}
                     playInBackground={true}
                     acceptInvalidCertificates={true}
                     rate={settings.playbackSpeed}
@@ -1121,7 +1121,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                                     onPress={() => selectSubtitle(index)}
                                 >
                                     <View style={styles.subtitleOptionContent}>
-                                        <Text style={styles.settingOptionText}>
+                                        <Text style={styles.settingOptionText} numberOfLines={5}>
                                             {sub.label}
                                         </Text>
                                         {sub.fileId && (
@@ -1404,12 +1404,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     glassPanel: {
-        backgroundColor: 'rgba(40, 40, 40, 0.95)',
+        backgroundColor: '#1a1a1af2',
         borderRadius: 12,
         padding: 24,
-        minWidth: 320,
-        maxWidth: '85%',
-        maxHeight: '70%',
+        minWidth: 500,
+        maxWidth: '90%',
+        maxHeight: '75%',
         borderWidth: StyleSheet.hairlineWidth,
         borderColor: 'rgba(255, 255, 255, 0.1)',
         shadowColor: '#000',
@@ -1435,7 +1435,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        backgroundColor: 'rgba(142, 142, 142, 0.1)',
         paddingHorizontal: 16,
         paddingVertical: 12,
         borderRadius: 12,
@@ -1498,21 +1498,21 @@ const styles = StyleSheet.create({
     },
     subtitleText: {
         color: '#fff',
-        fontSize: 14,
-        fontWeight: '500',
+        fontSize: 16,
+        fontWeight: '400',
         textAlign: 'center',
-        backgroundColor: 'rgba(189, 189, 189, 0.25)',
-        paddingHorizontal: 8,
-        paddingVertical: 2,
+        backgroundColor: 'rgba(0, 0, 0, 0.1)',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
         borderRadius: 8,
         lineHeight: 24,
-        // shadowColor: '#000',
-        // shadowOffset: {
-        //     width: 0,
-        //     height: 2,
-        // },
-        // shadowOpacity: 1,
-        // shadowRadius: 4,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 1,
+        shadowRadius: 4,
         elevation: 8,
         maxWidth: '90%',
     },
