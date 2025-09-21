@@ -12,14 +12,12 @@ import {
     Image,
     Alert,
 } from "react-native";
-import debounce from "lodash.debounce";
 import { PlayerResizeMode, VLCPlayer } from 'react-native-vlc-media-player';
 import * as ScreenOrientation from "expo-screen-orientation";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import Slider from '@react-native-community/slider';
 import * as Haptics from 'expo-haptics';
-import * as Brightness from 'expo-brightness';
 import ImmersiveMode from "react-native-immersive-mode";
 
 export interface Subtitle {
@@ -91,35 +89,26 @@ const useSubtitleState = () => {
 
 const useUIState = () => {
     const [showControls, setShowControls] = useState(true);
-    const [showVolumeSlider, setShowVolumeSlider] = useState(false);
     const [showSubtitleSettings, setShowSubtitleSettings] = useState(false);
     const [showAudioSettings, setShowAudioSettings] = useState(false);
     const [showSpeedSettings, setShowSpeedSettings] = useState(false);
-    const [showBrightnessSlider, setShowBrightnessSlider] = useState(false);
-    const [showResizeModeLabel, setShowResizeModeLabel] = useState(false);
 
     const hideAllPanels = () => {
-        setShowVolumeSlider(false);
         setShowSubtitleSettings(false);
         setShowAudioSettings(false);
         setShowSpeedSettings(false);
-        setShowBrightnessSlider(false);
     };
 
     return {
         showControls, setShowControls,
-        showVolumeSlider, setShowVolumeSlider,
         showSubtitleSettings, setShowSubtitleSettings,
         showAudioSettings, setShowAudioSettings,
         showSpeedSettings, setShowSpeedSettings,
-        showBrightnessSlider, setShowBrightnessSlider,
-        showResizeModeLabel, setShowResizeModeLabel,
         hideAllPanels
     };
 };
 
 const usePlayerSettings = () => {
-    const [volume, setVolume] = useState(1);
     const [isMuted, setIsMuted] = useState(false);
     const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
     const [resizeMode, setResizeMode] = useState<PlayerResizeMode>('fill');
@@ -129,7 +118,6 @@ const usePlayerSettings = () => {
     const [availableAudioTracks, setAvailableAudioTracks] = useState<any[]>([]);
 
     return {
-        volume, setVolume,
         isMuted, setIsMuted,
         playbackSpeed, setPlaybackSpeed,
         resizeMode, setResizeMode,
@@ -365,7 +353,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
 
             timers.hideControlsTimer.current = setTimeout(() => {
                 if (playerState.isPlaying && !uiState.showSubtitleSettings && !uiState.showAudioSettings &&
-                    !uiState.showSpeedSettings && !uiState.showVolumeSlider && !uiState.showBrightnessSlider) {
+                    !uiState.showSpeedSettings) {
                     Animated.timing(controlsOpacity, {
                         toValue: 0,
                         duration: 500,
@@ -529,40 +517,6 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
             controlActions.seekTo(newTime);
         },
 
-        cycleResizeMode: async () => {
-            console.log('On Resize');
-            await playHaptic();
-            const currentIndex = resizeModeOptions.indexOf(settings.resizeMode);
-            const nextIndex = (currentIndex + 1) % resizeModeOptions.length;
-            const nextMode = resizeModeOptions[nextIndex];
-            settings.setResizeMode(nextMode);
-
-            console.log('Resize Mode changed to:', nextMode);
-
-            uiState.setShowResizeModeLabel(true);
-            Animated.timing(resizeModeLabelOpacity, {
-                toValue: 1,
-                duration: 200,
-                useNativeDriver: true,
-            }).start();
-
-            if (timers.resizeModeLabelTimer.current) {
-                clearTimeout(timers.resizeModeLabelTimer.current);
-            }
-
-            timers.resizeModeLabelTimer.current = setTimeout(() => {
-                Animated.timing(resizeModeLabelOpacity, {
-                    toValue: 0,
-                    duration: 300,
-                    useNativeDriver: true,
-                }).start(() => {
-                    uiState.setShowResizeModeLabel(false);
-                });
-            }, 1500);
-
-            showControlsTemporarily();
-        },
-
         toggleMute: async () => {
             console.log('On Toggle Mute');
             await playHaptic();
@@ -570,33 +524,6 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
             showControlsTemporarily();
         },
 
-        handleVolumeChange: (value: number) => {
-            console.log('On Handle Volume Change');
-            const newVolume = value;
-            settings.setVolume(newVolume);
-
-            console.log('New Volume', newVolume);
-
-            if (newVolume === 0) {
-                settings.setIsMuted(true);
-            } else if (settings.isMuted && newVolume > 0) {
-                settings.setIsMuted(false);
-            }
-            showControlsTemporarily();
-        },
-
-        handleBrightnessChange: async (value: number) => {
-            settings.setBrightness(value);
-            try {
-                const { status } = await Brightness.requestPermissionsAsync();
-                if (status === 'granted') {
-                    await Brightness.setSystemBrightnessAsync(value);
-                }
-            } catch (error) {
-                console.log('Failed to set brightness:', error);
-            }
-            showControlsTemporarily();
-        }
     }), [playerState, settings, showControlsTemporarily, resizeModeOptions, timers, resizeModeLabelOpacity, uiState]);
 
     // Slider handlers
@@ -634,21 +561,17 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
         toggleVolumeSlider: async () => {
             console.log('On Toggle Volume Slider');
             await playHaptic();
-            uiState.setShowVolumeSlider(!uiState.showVolumeSlider);
             uiState.setShowSubtitleSettings(false);
             uiState.setShowAudioSettings(false);
             uiState.setShowSpeedSettings(false);
-            uiState.setShowBrightnessSlider(false);
             showControlsTemporarily();
         },
 
         toggleBrightnessSlider: async () => {
             await playHaptic();
-            uiState.setShowBrightnessSlider(!uiState.showBrightnessSlider);
             uiState.setShowSubtitleSettings(false);
             uiState.setShowAudioSettings(false);
             uiState.setShowSpeedSettings(false);
-            uiState.setShowVolumeSlider(false);
             showControlsTemporarily();
         },
 
@@ -657,8 +580,6 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
             uiState.setShowSubtitleSettings(!uiState.showSubtitleSettings);
             uiState.setShowAudioSettings(false);
             uiState.setShowSpeedSettings(false);
-            uiState.setShowVolumeSlider(false);
-            uiState.setShowBrightnessSlider(false);
             showControlsTemporarily();
         },
 
@@ -667,8 +588,6 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
             uiState.setShowAudioSettings(!uiState.showAudioSettings);
             uiState.setShowSubtitleSettings(false);
             uiState.setShowSpeedSettings(false);
-            uiState.setShowVolumeSlider(false);
-            uiState.setShowBrightnessSlider(false);
             showControlsTemporarily();
         },
 
@@ -677,8 +596,6 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
             uiState.setShowSpeedSettings(!uiState.showSpeedSettings);
             uiState.setShowSubtitleSettings(false);
             uiState.setShowAudioSettings(false);
-            uiState.setShowVolumeSlider(false);
-            uiState.setShowBrightnessSlider(false);
             showControlsTemporarily();
         }
     }), [uiState, showControlsTemporarily]);
@@ -706,8 +623,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
     }, [settings, showControlsTemporarily]);
 
     const handleOverlayPress = useCallback(() => {
-        if (uiState.showSubtitleSettings || uiState.showAudioSettings || uiState.showSpeedSettings ||
-            uiState.showVolumeSlider || uiState.showBrightnessSlider) {
+        if (uiState.showSubtitleSettings || uiState.showAudioSettings || uiState.showSpeedSettings) {
             uiState.hideAllPanels();
         } else {
             if (uiState.showControls) {
@@ -726,7 +642,6 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
 
     const displayTime = playerState.isDragging ? playerState.dragPosition * playerState.duration : playerState.currentTime;
     const sliderValue = playerState.isDragging ? playerState.dragPosition : (playerState.duration > 0 ? playerState.currentTime / playerState.duration : 0);
-    const displayVolume = settings.isMuted ? 0 : settings.volume;
 
     return (
         <View style={styles.container}>
@@ -743,12 +658,11 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                     }}
                     autoplay={true}
                     autoAspectRatio={true}
-                    resizeMode={settings.resizeMode}
+                    resizeMode={'fill'}
                     playInBackground={true}
                     acceptInvalidCertificates={true}
                     rate={settings.playbackSpeed}
                     muted={settings.isMuted}
-                    volume={settings.isMuted ? 0 : settings.volume}
                     audioTrack={settings.selectedAudioTrack}
                     paused={playerState.isPaused}
                     onPlaying={vlcHandlers.onPlaying}
@@ -819,28 +733,6 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                 </Animated.View>
             )}
 
-            {/* Resize mode label overlay */}
-            {uiState.showResizeModeLabel && (
-                <Animated.View
-                    style={[
-                        styles.resizeModeLabelOverlay,
-                        { opacity: resizeModeLabelOpacity }
-                    ]}
-                    pointerEvents="none"
-                >
-                    <View style={styles.resizeModeLabelContainer}>
-                        <MaterialIcons
-                            name={getResizeModeIcon()}
-                            size={32}
-                            color="white"
-                        />
-                        <Text style={styles.resizeModeLabelText}>
-                            {getResizeModeLabel()}
-                        </Text>
-                    </View>
-                </Animated.View>
-            )}
-
             {/* Touch area for showing controls */}
             {!playerState.error && (
                 <TouchableOpacity
@@ -886,7 +778,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                                 onPress={controlActions.toggleMute}
                             >
                                 <Ionicons
-                                    name={settings.isMuted || displayVolume === 0 ? "volume-mute" : displayVolume < 0.25 ? "volume-low" : "volume-high"}
+                                    name={settings.isMuted ? "volume-mute" : "volume-high"}
                                     size={24}
                                     color="white"
                                 />
@@ -909,17 +801,6 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                             >
                                 <Ionicons
                                     name="sunny"
-                                    size={24}
-                                    color="white"
-                                />
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={styles.controlButton}
-                                onPress={controlActions.cycleResizeMode}
-                            >
-                                <MaterialIcons
-                                    name={getResizeModeIcon()}
                                     size={24}
                                     color="white"
                                 />
@@ -961,7 +842,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                     </LinearGradient>
 
                     {/* Center controls - Hidden during buffering */}
-                    {!playerState.isBuffering && !uiState.showSubtitleSettings && !uiState.showAudioSettings && !uiState.showSpeedSettings && !uiState.showVolumeSlider && !uiState.showBrightnessSlider && (
+                    {!playerState.isBuffering && !uiState.showSubtitleSettings && !uiState.showAudioSettings && !uiState.showSpeedSettings && (
                         <View style={styles.centerControls}>
                             <TouchableOpacity
                                 style={[styles.skipButton, !playerState.isReady && styles.disabledButton]}
@@ -1002,7 +883,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                     )}
 
                     {/* Bottom controls */}
-                    {!uiState.showSubtitleSettings && !uiState.showAudioSettings && !uiState.showSpeedSettings && !uiState.showVolumeSlider && !uiState.showBrightnessSlider && (
+                    {!uiState.showSubtitleSettings && !uiState.showAudioSettings && !uiState.showSpeedSettings && (
                         <LinearGradient
                             colors={['transparent', 'rgba(0,0,0,0.8)']}
                             style={styles.bottomControls}
@@ -1033,68 +914,6 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                         </LinearGradient>
                     )}
                 </Animated.View>
-            )}
-
-            {/* Volume slider with glassmorphism */}
-            {uiState.showVolumeSlider && (
-                <TouchableOpacity
-                    style={styles.glassOverlay}
-                    activeOpacity={1}
-                    onPress={() => uiState.setShowVolumeSlider(false)}
-                >
-                    <TouchableOpacity
-                        style={styles.glassPanel}
-                        activeOpacity={1}
-                        onPress={(e) => e.stopPropagation()}
-                    >
-                        <Text style={styles.panelTitle}>Volume</Text>
-                        <View style={styles.volumeControls}>
-                            <Ionicons name="volume-low" size={20} color="white" />
-                            <Slider
-                                style={styles.volumeSlider}
-                                minimumValue={0}
-                                maximumValue={1}
-                                value={settings.volume}
-                                onValueChange={controlActions.handleVolumeChange}
-                                minimumTrackTintColor="#007AFF"
-                                maximumTrackTintColor="rgba(255,255,255,0.3)"
-                            />
-                            <Ionicons name="volume-high" size={20} color="white" />
-                            <Text style={styles.volumePercentage}>{Math.round(settings.volume * 100)}%</Text>
-                        </View>
-                    </TouchableOpacity>
-                </TouchableOpacity>
-            )}
-
-            {/* Brightness slider with glassmorphism */}
-            {uiState.showBrightnessSlider && (
-                <TouchableOpacity
-                    style={styles.glassOverlay}
-                    activeOpacity={1}
-                    onPress={() => uiState.setShowBrightnessSlider(false)}
-                >
-                    <TouchableOpacity
-                        style={styles.glassPanel}
-                        activeOpacity={1}
-                        onPress={(e) => e.stopPropagation()}
-                    >
-                        <Text style={styles.panelTitle}>Brightness</Text>
-                        <View style={styles.brightnessControls}>
-                            <Ionicons name="sunny-outline" size={20} color="white" />
-                            <Slider
-                                style={styles.brightnessSlider}
-                                minimumValue={0}
-                                maximumValue={1}
-                                value={settings.brightness}
-                                onValueChange={controlActions.handleBrightnessChange}
-                                minimumTrackTintColor="#007AFF"
-                                maximumTrackTintColor="rgba(255,255,255,0.3)"
-                            />
-                            <Ionicons name="sunny" size={20} color="white" />
-                            <Text style={styles.brightnessPercentage}>{Math.round(settings.brightness * 100)}%</Text>
-                        </View>
-                    </TouchableOpacity>
-                </TouchableOpacity>
             )}
 
             {/* Subtitle settings with glassmorphism */}
