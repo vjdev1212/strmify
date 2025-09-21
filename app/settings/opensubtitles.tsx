@@ -7,26 +7,26 @@ import {
     StyleSheet,
     Alert,
     ActivityIndicator,
-    ScrollView, 
+    ScrollView,
     KeyboardAvoidingView,
     Platform,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import OpenSubtitlesClient from '@/clients/opensubtitles';
-import { StorageKeys } from '@/utils/StorageService';
+import { StorageKeys, storageService } from '@/utils/StorageService';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { showAlert } from '@/utils/platform';
 
 const STORAGE_KEYS = {
-    API_KEY: StorageKeys.OPENSUBTITLES_API_KEY,
-    USER_AGENT: StorageKeys.OPENSUBTITLES_USER_AGENT,
+    OPENSUBTITLES_API_KEY: StorageKeys.OPENSUBTITLES_API_KEY,
+    OPENSUBTITLES_USER_AGENT: StorageKeys.OPENSUBTITLES_USER_AGENT,
 };
 
 const DEFAULT_USER_AGENT = 'Strmify';
 
 const OpenSubtitlesConfigScreen: React.FC = () => {
     const [apiKey, setApiKey] = useState('');
-    const [userAgent, setUserAgent] = useState(DEFAULT_USER_AGENT);
+    const [userAgent] = useState(DEFAULT_USER_AGENT);
     const [isLoading, setIsLoading] = useState(false);
     const [isTestingConnection, setIsTestingConnection] = useState(false);
     const [connectionStatus, setConnectionStatus] = useState<'idle' | 'success' | 'error'>('idle');
@@ -41,13 +41,8 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
     const loadSavedConfig = async () => {
         setIsLoading(true);
         try {
-            const [savedApiKey, savedUserAgent] = await Promise.all([
-                AsyncStorage.getItem(STORAGE_KEYS.API_KEY),
-                AsyncStorage.getItem(STORAGE_KEYS.USER_AGENT),
-            ]);
-
+            const savedApiKey = await storageService.getItem(STORAGE_KEYS.OPENSUBTITLES_API_KEY);
             if (savedApiKey) setApiKey(savedApiKey);
-            if (savedUserAgent) setUserAgent(savedUserAgent);
         } catch (error) {
             console.error('Failed to load saved config:', error);
         } finally {
@@ -57,7 +52,7 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
 
     const testConnection = async () => {
         if (!apiKey.trim()) {
-            Alert.alert('Error', 'Please enter an API key first');
+            showAlert('Error', 'Please enter an API key first');
             return;
         }
 
@@ -70,14 +65,14 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
 
             if (result.success) {
                 setConnectionStatus('success');
-                Alert.alert(
+                showAlert(
                     'Success!',
                     'Connection to OpenSubtitles API established successfully.',
                     [{ text: 'OK', style: 'default' }]
                 );
             } else {
                 setConnectionStatus('error');
-                Alert.alert(
+                showAlert(
                     'Connection Failed',
                     `Failed to connect to OpenSubtitles API:\n${result.error}`,
                     [{ text: 'OK', style: 'destructive' }]
@@ -85,7 +80,7 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
             }
         } catch (error) {
             setConnectionStatus('error');
-            Alert.alert(
+            showAlert(
                 'Connection Error',
                 `An error occurred while testing the connection:\n${error instanceof Error ? error.message : 'Unknown error'}`,
                 [{ text: 'OK', style: 'destructive' }]
@@ -97,32 +92,24 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
 
     const saveConfiguration = async () => {
         if (!apiKey.trim()) {
-            Alert.alert('Error', 'Please enter an API key');
-            return;
-        }
-
-        if (!userAgent.trim()) {
-            Alert.alert('Error', 'Please enter a user agent');
+            showAlert('Error', 'Please enter an API key');
             return;
         }
 
         setIsSaving(true);
 
         try {
-            await Promise.all([
-                AsyncStorage.setItem(STORAGE_KEYS.API_KEY, apiKey.trim()),
-                AsyncStorage.setItem(STORAGE_KEYS.USER_AGENT, userAgent.trim()),
-            ]);
+            await storageService.setItem(STORAGE_KEYS.OPENSUBTITLES_API_KEY, apiKey.trim());
 
-            const client = new OpenSubtitlesClient(userAgent.trim(), apiKey.trim());
+            const client = new OpenSubtitlesClient(userAgent, apiKey.trim());
 
-            Alert.alert(
+            showAlert(
                 'Configuration Saved',
                 'Your OpenSubtitles configuration has been saved successfully.',
                 [{ text: 'OK' }]
             );
         } catch (error) {
-            Alert.alert(
+            showAlert(
                 'Save Failed',
                 `Failed to save configuration:\n${error instanceof Error ? error.message : 'Unknown error'}`,
                 [{ text: 'OK', style: 'destructive' }]
@@ -133,7 +120,7 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
     };
 
     const clearConfiguration = () => {
-        Alert.alert(
+        showAlert(
             'Clear Configuration',
             'Are you sure you want to clear the saved configuration?',
             [
@@ -143,16 +130,12 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
                     style: 'destructive',
                     onPress: async () => {
                         try {
-                            await Promise.all([
-                                AsyncStorage.removeItem(STORAGE_KEYS.API_KEY),
-                                AsyncStorage.removeItem(STORAGE_KEYS.USER_AGENT),
-                            ]);
+                            await storageService.removeItem(STORAGE_KEYS.OPENSUBTITLES_API_KEY);
                             setApiKey('');
-                            setUserAgent('MyApp v1.0');
                             setConnectionStatus('idle');
-                            Alert.alert('Success', 'Configuration cleared successfully');
+                            showAlert('Success', 'Configuration cleared successfully');
                         } catch (error) {
-                            Alert.alert('Error', 'Failed to clear configuration');
+                            showAlert('Error', 'Failed to clear configuration');
                         }
                     },
                 },
@@ -175,7 +158,7 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
         return (
             <SafeAreaView style={styles.container}>
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#007AFF" />
+                    <ActivityIndicator size="large" color="#535aff" />
                     <Text style={styles.loadingText}>Loading configuration...</Text>
                 </View>
             </SafeAreaView>
@@ -190,7 +173,7 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
             >
                 <ScrollView contentContainerStyle={styles.scrollContent}>
                     <View style={styles.header}>
-                        <Ionicons name="settings-outline" size={40} color="#007AFF" />
+                        <Ionicons name="settings-outline" size={40} color="#535aff" />
                         <Text style={styles.title}>OpenSubtitles Configuration</Text>
                         <Text style={styles.subtitle}>
                             Configure your API credentials to access subtitle services
@@ -217,27 +200,12 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
                                     <Ionicons
                                         name={showApiKey ? 'eye-off-outline' : 'eye-outline'}
                                         size={20}
-                                        color="#666"
+                                        color="#bbb"
                                     />
                                 </TouchableOpacity>
                             </View>
                             <Text style={styles.helpText}>
                                 Get your API key from OpenSubtitles.com account settings
-                            </Text>
-                        </View>
-
-                        <View style={styles.inputGroup}>
-                            <Text style={styles.label}>User Agent *</Text>
-                            <TextInput
-                                style={styles.input}
-                                value={userAgent}
-                                onChangeText={setUserAgent}
-                                placeholder="e.g., MyApp v1.0"
-                                autoCapitalize="none"
-                                autoCorrect={false}
-                            />
-                            <Text style={styles.helpText}>
-                                Identify your app to the OpenSubtitles API
                             </Text>
                         </View>
 
@@ -261,10 +229,10 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
                             <TouchableOpacity
                                 style={[
                                     styles.saveButton,
-                                    (!apiKey.trim() || !userAgent.trim()) && styles.disabledButton,
+                                    !apiKey.trim() && styles.disabledButton,
                                 ]}
                                 onPress={saveConfiguration}
-                                disabled={isSaving || !apiKey.trim() || !userAgent.trim()}
+                                disabled={isSaving || !apiKey.trim()}
                             >
                                 {isSaving ? (
                                     <ActivityIndicator size="small" color="#FFF" />
@@ -282,16 +250,6 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
                             <Text style={styles.clearButtonText}>Clear Configuration</Text>
                         </TouchableOpacity>
                     </View>
-
-                    <View style={styles.infoSection}>
-                        <Text style={styles.infoTitle}>About OpenSubtitles API</Text>
-                        <Text style={styles.infoText}>
-                            • Free tier available with rate limits{'\n'}
-                            • Premium subscriptions offer higher limits{'\n'}
-                            • Supports multiple subtitle formats{'\n'}
-                            • Access to millions of subtitles
-                        </Text>
-                    </View>
                 </ScrollView>
             </KeyboardAvoidingView>
         </SafeAreaView>
@@ -300,7 +258,11 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1
+        flex: 1,
+        marginTop: 30,
+        width: '100%',
+        maxWidth: 780,
+        margin: 'auto'
     },
     keyboardAvoid: {
         flex: 1,
@@ -317,6 +279,7 @@ const styles = StyleSheet.create({
     loadingText: {
         marginTop: 10,
         fontSize: 16,
+        color: '#bbb',
     },
     header: {
         alignItems: 'center',
@@ -325,11 +288,13 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 24,
         fontWeight: 'bold',
+        color: '#fff',
         marginTop: 10,
         textAlign: 'center',
     },
     subtitle: {
         fontSize: 16,
+        color: '#bbb',
         textAlign: 'center',
         marginTop: 5,
         lineHeight: 22,
@@ -341,7 +306,7 @@ const styles = StyleSheet.create({
         marginBottom: 20,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
+        shadowOpacity: 0.3,
         shadowRadius: 4,
         elevation: 3,
     },
@@ -351,15 +316,17 @@ const styles = StyleSheet.create({
     label: {
         fontSize: 16,
         fontWeight: '600',
+        color: '#fff',
         marginBottom: 8,
     },
     input: {
         borderWidth: 1,
-        borderColor: '#DDD',
+        borderColor: '#444',
         borderRadius: 8,
         padding: 12,
         fontSize: 16,
-        backgroundColor: '#FFF',
+        backgroundColor: '#3a3a3a',
+        color: '#fff',
     },
     passwordContainer: {
         position: 'relative',
@@ -375,6 +342,7 @@ const styles = StyleSheet.create({
     },
     helpText: {
         fontSize: 12,
+        color: '#888',
         marginTop: 4,
         lineHeight: 16,
     },
@@ -385,7 +353,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#2196F3',
+        backgroundColor: '#535aff',
         paddingVertical: 12,
         paddingHorizontal: 20,
         borderRadius: 8,
@@ -400,7 +368,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#4CAF50',
+        backgroundColor: '#535aff',
         paddingVertical: 12,
         paddingHorizontal: 20,
         borderRadius: 8,
@@ -412,7 +380,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     disabledButton: {
-        backgroundColor: '#CCC',
+        backgroundColor: '#555',
     },
     clearButton: {
         flexDirection: 'row',
@@ -433,24 +401,24 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     infoSection: {
-        backgroundColor: '#FFF',
+        backgroundColor: '#2d2d2d',
         borderRadius: 12,
         padding: 20,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
+        shadowOpacity: 0.3,
         shadowRadius: 4,
         elevation: 3,
     },
     infoTitle: {
         fontSize: 18,
         fontWeight: '600',
-        color: '#333',
+        color: '#fff',
         marginBottom: 10,
     },
     infoText: {
         fontSize: 14,
-        color: '#666',
+        color: '#bbb',
         lineHeight: 20,
     },
 });
