@@ -296,7 +296,8 @@ const parseSubtitleFile = (content: string) => {
     return parseSRT(content);
 };
 
-export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
+
+const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
     videoUrl,
     title,
     onBack,
@@ -489,28 +490,6 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
         }
         return `${minutes}:${secs.toString().padStart(2, '0')}`;
     }, []);
-
-    const getResizeModeIcon = () => {
-        switch (settings.resizeMode) {
-            case 'contain': return 'aspect-ratio';
-            case 'cover': return 'crop';
-            case 'fill': return 'fullscreen';
-            case 'none': return 'photo-size-select-actual';
-            case 'scale-down': return 'zoom-out-map';
-            default: return 'aspect-ratio';
-        }
-    };
-
-    const getResizeModeLabel = () => {
-        switch (settings.resizeMode) {
-            case 'contain': return 'Contain';
-            case 'cover': return 'Cover';
-            case 'fill': return 'Fill';
-            case 'none': return 'Original';
-            case 'scale-down': return 'Scale Down';
-            default: return 'Contain';
-        }
-    };
 
     const showControlsTemporarily = useCallback(() => {
         uiState.setShowControls(true);
@@ -845,7 +824,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                     }}
                     autoplay={true}
                     autoAspectRatio={false}
-                    resizeMode={'fill'}
+                    resizeMode={'cover'}
                     playInBackground={true}
                     acceptInvalidCertificates={true}
                     rate={settings.playbackSpeed}
@@ -1551,3 +1530,5 @@ const styles = StyleSheet.create({
         marginTop: 2,
     },
 });
+
+export const NativeMediaPlayer = React.memo(NativeMediaPlayerComponent);
