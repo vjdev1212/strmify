@@ -18,7 +18,7 @@ const SettingsScreen = () => {
   const integrationList: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [
     { title: 'Stremio', route: '/settings/stremioserver', icon: 'magnet-outline' },
     { title: 'Trakt', route: '/settings/trakt', icon: 'checkmark-done-outline' },
-    { title: 'OpenSubtitles', route: '/settings/opensubtitles', icon: 'chatbox-ellipses-outline' }
+    { title: 'Open Subtitles', route: '/settings/opensubtitles', icon: 'chatbox-ellipses-outline' }
   ];
 
   const General: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [

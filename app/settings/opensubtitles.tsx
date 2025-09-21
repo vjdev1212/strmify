@@ -11,21 +11,16 @@ import {
     Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import OpenSubtitlesClient from '@/clients/opensubtitles';
 import { StorageKeys, storageService } from '@/utils/StorageService';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { isHapticsSupported, showAlert } from '@/utils/platform';
 import * as Haptics from 'expo-haptics';
 
-const DEFAULT_USER_AGENT = 'Strmify';
-
 const OpenSubtitlesConfigScreen: React.FC = () => {
     const [apiKey, setApiKey] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [isTestingConnection, setIsTestingConnection] = useState(false);
-    const [connectionStatus, setConnectionStatus] = useState<'idle' | 'success' | 'error'>('idle');
-    const [showApiKey, setShowApiKey] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [showApiKey, setShowApiKey] = useState(false);
 
     useEffect(() => {
         loadSavedConfig();
@@ -35,7 +30,9 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
         setIsLoading(true);
         try {
             const savedApiKey = await storageService.getItem(StorageKeys.OPENSUBTITLES_API_KEY);
-            if (savedApiKey) setApiKey(savedApiKey);
+            if (savedApiKey) {
+                setApiKey(savedApiKey);
+            }
         } catch (error) {
             console.error('Failed to load saved config:', error);
         } finally {
@@ -43,41 +40,11 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
         }
     };
 
-    const testConnection = async () => {
-        if (isHapticsSupported()) {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }
-        if (!apiKey.trim()) {
-            showAlert('Error', 'Please enter an API key first');
-            return;
-        }
-
-        setIsTestingConnection(true);
-        setConnectionStatus('idle');
-
-        try {
-            const client = new OpenSubtitlesClient(DEFAULT_USER_AGENT, apiKey);
-            const result = await client.getLanguages();
-
-            if (result.success) {
-                setConnectionStatus('success');
-                showAlert('Success!', 'Connection to OpenSubtitles API established successfully.');
-            } else {
-                setConnectionStatus('error');
-                showAlert('Connection Failed', `Failed to connect to OpenSubtitles API:\n${result.error}`);
-            }
-        } catch (error) {
-            setConnectionStatus('error');
-            showAlert('Connection Error', `An error occurred while testing the connection:\n${error instanceof Error ? error.message : 'Unknown error'}`);
-        } finally {
-            setIsTestingConnection(false);
-        }
-    };
-
     const saveConfiguration = async () => {
         if (isHapticsSupported()) {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
+        
         if (!apiKey.trim()) {
             showAlert('Error', 'Please enter an API key');
             return;
@@ -108,7 +75,6 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
                     try {
                         await storageService.removeItem(StorageKeys.OPENSUBTITLES_API_KEY);
                         setApiKey('');
-                        setConnectionStatus('idle');
                         showAlert('Success', 'Configuration cleared successfully');
                     } catch (error) {
                         showAlert('Error', 'Failed to clear configuration');
@@ -116,17 +82,6 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
                 },
             },
         ]);
-    };
-
-    const getConnectionStatusIcon = () => {
-        switch (connectionStatus) {
-            case 'success':
-                return <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />;
-            case 'error':
-                return <Ionicons name="close-circle" size={20} color="#F44336" />;
-            default:
-                return null;
-        }
     };
 
     if (isLoading) {
@@ -187,22 +142,6 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
 
                         <View style={styles.buttonGroup}>
                             <TouchableOpacity
-                                style={[styles.button, styles.testButton]}
-                                onPress={testConnection}
-                                disabled={isTestingConnection || !apiKey.trim()}
-                            >
-                                {isTestingConnection ? (
-                                    <ActivityIndicator size="small" color="#FFF" />
-                                ) : (
-                                    <>
-                                        <Ionicons name="wifi-outline" size={16} color="#FFF" />
-                                        <Text style={styles.buttonText}>Test</Text>
-                                    </>
-                                )}
-                                {getConnectionStatusIcon()}
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
                                 style={[
                                     styles.button,
                                     styles.saveButton,
@@ -221,7 +160,11 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
                                 )}
                             </TouchableOpacity>
 
-                            <TouchableOpacity style={[styles.button, styles.clearButton]} onPress={clearConfiguration}>
+                            <TouchableOpacity 
+                                style={[styles.button, styles.clearButton]} 
+                                onPress={clearConfiguration}
+                                disabled={isSaving}
+                            >
                                 <Ionicons name="trash-outline" size={16} color="#FFF" />
                                 <Text style={styles.clearButtonText}>Clear</Text>
                             </TouchableOpacity>
@@ -327,9 +270,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         borderRadius: 8,
         gap: 6,
-    },
-    testButton: {
-        backgroundColor: '#535aff',
     },
     saveButton: {
         backgroundColor: '#535aff',
