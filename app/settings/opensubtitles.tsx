@@ -182,13 +182,14 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
 
                     <View style={styles.form}>
                         <View style={styles.inputGroup}>
-                            <Text style={styles.label}>API Key *</Text>
+                            <Text style={styles.label}>API Key</Text>
                             <View style={styles.passwordContainer}>
                                 <TextInput
                                     style={[styles.input, styles.passwordInput]}
                                     value={apiKey}
                                     onChangeText={setApiKey}
                                     placeholder="Enter your OpenSubtitles API key"
+                                    placeholderTextColor={'#666'}
                                     secureTextEntry={!showApiKey}
                                     autoCapitalize="none"
                                     autoCorrect={false}
@@ -269,7 +270,7 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         flexGrow: 1,
-        padding: 20,
+        padding: 15,
     },
     loadingContainer: {
         flex: 1,
@@ -300,15 +301,7 @@ const styles = StyleSheet.create({
         lineHeight: 22,
     },
     form: {
-        backgroundColor: '#2a2a2a',
-        borderRadius: 12,
-        padding: 20,
-        marginBottom: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        elevation: 3,
+        padding: 10,
     },
     inputGroup: {
         marginBottom: 20,
@@ -320,12 +313,11 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     input: {
-        borderWidth: 1,
+        borderWidth: StyleSheet.hairlineWidth,
         borderColor: '#444',
         borderRadius: 8,
         padding: 12,
-        fontSize: 16,
-        backgroundColor: '#3a3a3a',
+        backgroundColor: '#303030',
         color: '#fff',
     },
     passwordContainer: {
@@ -333,17 +325,18 @@ const styles = StyleSheet.create({
     },
     passwordInput: {
         paddingRight: 50,
+        backgroundColor: '#303030',
     },
     eyeButton: {
         position: 'absolute',
-        right: 12,
-        top: 12,
+        right: 10,
+        top: 8,
         padding: 4,
     },
     helpText: {
         fontSize: 12,
         color: '#888',
-        marginTop: 4,
+        marginTop: 10,
         lineHeight: 16,
     },
     buttonGroup: {
