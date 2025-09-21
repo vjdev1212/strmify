@@ -184,16 +184,16 @@ const parseSRT = (srtContent: string) => {
 
             // Parse SRT time format: 00:00:20,000 --> 00:00:24,400
             const timeMatch = timeString.match(/(\d{2}):(\d{2}):(\d{2}),(\d{3})\s*-->\s*(\d{2}):(\d{2}):(\d{2}),(\d{3})/);
-            
+
             if (timeMatch) {
                 const startTime = parseSRTTime(timeMatch[1], timeMatch[2], timeMatch[3], timeMatch[4]);
                 const endTime = parseSRTTime(timeMatch[5], timeMatch[6], timeMatch[7], timeMatch[8]);
-                
+
                 subtitles.push({
                     index: parseInt(index),
                     start: startTime,
                     end: endTime,
-                    text: text
+                    text: cleanSubtitleText(text)
                 });
             }
         }
@@ -204,10 +204,26 @@ const parseSRT = (srtContent: string) => {
 
 // Helper function to parse SRT time format
 const parseSRTTime = (hours: string, minutes: string, seconds: string, milliseconds: string): number => {
-    return parseInt(hours) * 3600 + 
-           parseInt(minutes) * 60 + 
-           parseInt(seconds) + 
-           parseInt(milliseconds) / 1000;
+    return parseInt(hours) * 3600 +
+        parseInt(minutes) * 60 +
+        parseInt(seconds) +
+        parseInt(milliseconds) / 1000;
+};
+
+// Clean subtitle text by removing HTML tags and formatting codes
+const cleanSubtitleText = (text: string): string => {
+    return text
+        // Remove HTML tags like <i>, </i>, <b>, </b>, etc.
+        .replace(/<[^>]*>/g, '')
+        // Remove SRT/ASS formatting codes like {\an8}, {\pos(x,y)}, etc.
+        .replace(/\{[^}]*\}/g, '')
+        // Remove common subtitle formatting
+        .replace(/\\N/g, '\n') // Convert \N to actual line breaks
+        .replace(/\\h/g, ' ')  // Convert \h to spaces
+        // Clean up multiple spaces and line breaks
+        .replace(/\s+/g, ' ')
+        .replace(/\n\s+/g, '\n')
+        .trim();
 };
 
 // WebVTT Parser (keeping for compatibility)
@@ -233,12 +249,14 @@ const parseWebVTT = (vttContent: string) => {
                 currentSubtitle.text = line;
             }
         } else if (!line && currentSubtitle) {
+            currentSubtitle.text = cleanSubtitleText(currentSubtitle.text);
             subtitles.push(currentSubtitle);
             currentSubtitle = null;
         }
     }
 
     if (currentSubtitle) {
+        currentSubtitle.text = cleanSubtitleText(currentSubtitle.text);
         subtitles.push(currentSubtitle);
     }
 
@@ -260,19 +278,19 @@ const parseVTTTime = (timeStr: string): number => {
 // Auto-detect subtitle format and parse accordingly
 const parseSubtitleFile = (content: string) => {
     const trimmedContent = content.trim();
-    
+
     // Check if it's WebVTT format
     if (trimmedContent.startsWith('WEBVTT')) {
         console.log('Detected WebVTT format');
         return parseWebVTT(content);
     }
-    
+
     // Check if it's SRT format (contains --> with comma for milliseconds)
     if (trimmedContent.includes('-->') && trimmedContent.includes(',')) {
         console.log('Detected SRT format');
         return parseSRT(content);
     }
-    
+
     // Default to SRT parsing
     console.log('Defaulting to SRT format');
     return parseSRT(content);
@@ -340,7 +358,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
     useEffect(() => {
         if (subtitles.length > 0 && settings.selectedSubtitle >= 0 && settings.selectedSubtitle < subtitles.length) {
             const selectedSub = subtitles[settings.selectedSubtitle];
-            
+
             // Check if we have a fileId to download from OpenSubtitles
             if (selectedSub.fileId && openSubtitlesClient) {
                 subtitleState.setIsLoadingSubtitles(true);
@@ -359,7 +377,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
 
                         const downloadResponse = response as DownloadResponse;
                         console.log('Subtitle download response:', downloadResponse);
-                        
+
                         if (!downloadResponse.link) {
                             throw new Error('No download link provided');
                         }
@@ -369,18 +387,18 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                         if (!subtitleResponse.ok) {
                             throw new Error(`HTTP error! status: ${subtitleResponse.status}`);
                         }
-                        
+
                         const subtitleContent = await subtitleResponse.text();
                         console.log('Subtitle content loaded, length:', subtitleContent.length);
                         console.log('First 200 chars:', subtitleContent.substring(0, 200));
-                        
+
                         const parsed = parseSubtitleFile(subtitleContent);
                         console.log('Parsed subtitles count:', parsed.length);
-                        
+
                         if (parsed.length > 0) {
                             console.log('First subtitle:', parsed[0]);
                         }
-                        
+
                         subtitleState.setParsedSubtitles(parsed);
                         subtitleState.setIsLoadingSubtitles(false);
                     })
@@ -390,7 +408,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                         subtitleState.setParsedSubtitles([]);
                         Alert.alert("Subtitle Error", `Failed to load subtitle: ${error.message}`);
                     });
-            } 
+            }
             // Fallback to direct URL if no fileId or openSubtitlesClient
             else if (selectedSub.url && selectedSub.url !== '' && !selectedSub.url.includes('opensubtitles.org')) {
                 subtitleState.setIsLoadingSubtitles(true);
@@ -406,14 +424,14 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                     .then(subtitleContent => {
                         console.log('Subtitle content loaded, length:', subtitleContent.length);
                         console.log('First 200 chars:', subtitleContent.substring(0, 200));
-                        
+
                         const parsed = parseSubtitleFile(subtitleContent);
                         console.log('Parsed subtitles count:', parsed.length);
-                        
+
                         if (parsed.length > 0) {
                             console.log('First subtitle:', parsed[0]);
                         }
-                        
+
                         subtitleState.setParsedSubtitles(parsed);
                         subtitleState.setIsLoadingSubtitles(false);
                     })
@@ -443,7 +461,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
             );
 
             const newSubtitleText = activeSubtitle ? activeSubtitle.text : '';
-            
+
             // Only update if the subtitle text has changed
             if (newSubtitleText !== subtitleState.currentSubtitle) {
                 console.log(`Time: ${currentTime.toFixed(1)}s - Subtitle: "${newSubtitleText}"`);
@@ -950,7 +968,7 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
                                     color="white"
                                 />
                             </TouchableOpacity>
-                            
+
                             <TouchableOpacity
                                 style={styles.controlButton}
                                 onPress={panelToggles.toggleSubtitleSettings}
@@ -1344,7 +1362,7 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 16,
         marginTop: 8,
-    },    
+    },
     artworkContainer: {
         position: 'absolute',
         top: 0,
@@ -1433,7 +1451,7 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 16,
         fontWeight: '500',
-    },    
+    },
     speedOptionsGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
@@ -1472,29 +1490,29 @@ const styles = StyleSheet.create({
     },
     subtitleContainer: {
         position: 'absolute',
-        bottom: 140,
+        bottom: 10,
         left: 20,
         right: 20,
         alignItems: 'center',
         zIndex: 5,
     },
     subtitleText: {
-        color: 'white',
-        fontSize: 18,
-        fontWeight: '600',
+        color: '#fff',
+        fontSize: 14,
+        fontWeight: '500',
         textAlign: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+        backgroundColor: 'rgba(133, 133, 133, 0.1)',
         paddingHorizontal: 16,
-        paddingVertical: 8,
+        paddingVertical: 4,
         borderRadius: 8,
         lineHeight: 24,
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 1,
-        shadowRadius: 4,
+        // shadowColor: '#000',
+        // shadowOffset: {
+        //     width: 0,
+        //     height: 2,
+        // },
+        // shadowOpacity: 1,
+        // shadowRadius: 4,
         elevation: 8,
         maxWidth: '90%',
     },
