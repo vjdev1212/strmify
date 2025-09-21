@@ -95,7 +95,6 @@ class OpenSubtitlesClient {
       headers['Api-Key'] = this.apiKey;
     }
 
-    console.log('Headers:', headers);
     return headers;
   }
 
@@ -124,7 +123,6 @@ class OpenSubtitlesClient {
 
       const data = await response.json();
 
-      console.log('Search subtitles response:', data);
       if (response.ok) {
         const simplifiedData: SubtitleResult[] = data.data.map((subtitle: any) => {
           return {
