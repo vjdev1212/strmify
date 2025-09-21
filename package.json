@@ -16,8 +16,7 @@
   "jest": {
     "preset": "jest-expo"
   },
-  "dependencies": {
-    "@bounceapp/iframe": "^0.4.0",
+  "dependencies": {    
     "@expo/metro-runtime": "~6.1.2",
     "@expo/react-native-action-sheet": "^4.1.1",
     "@expo/vector-icons": "^15.0.2",
