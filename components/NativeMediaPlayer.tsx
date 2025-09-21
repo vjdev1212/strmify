@@ -364,7 +364,6 @@ export const NativeMediaPlayer: React.FC<MediaPlayerProps> = ({
 
                 openSubtitlesClient.downloadSubtitle(String(selectedSub.fileId))
                     .then(async (response) => {
-                        // Check if response is an error
                         if ('status' in response && response.status !== 200) {
                             console.error('OpenSubtitles API error:', response.message);
                             subtitleState.setIsLoadingSubtitles(false);

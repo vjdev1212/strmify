@@ -314,8 +314,8 @@ const StreamListScreen = () => {
             }
         } catch (error) {
             console.error('Error during playback process:', error);
-            setStatusText('Error: An error occurred while trying to play the stream.');
-            showAlert('Error', 'An error occurred while trying to play the stream.');
+            setStatusText('Error: An error occurred while trying to play the stream. Please check the server and try again.');
+            showAlert('Error', 'An error occurred while trying to play the stream. Please check the server and try again.');
         } finally {
             setPlayBtnDisabled(false);
             setModalVisible(false);
