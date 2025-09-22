@@ -1169,8 +1169,6 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                         ]
                     }}
                     autoplay={true}
-                    autoAspectRatio={true}
-                    resizeMode={'cover'}
                     playInBackground={true}
                     acceptInvalidCertificates={true}
                     rate={settings.playbackSpeed}
