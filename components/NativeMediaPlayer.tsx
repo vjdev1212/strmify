@@ -544,11 +544,23 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
 
                 openSubtitlesClient.downloadSubtitle(String(selectedSub.fileId))
                     .then(async (response) => {
-                        if ('status' in response && response.status !== 200) {
-                            console.error('OpenSubtitles API error:', response.message);
+                        // Check for various error response formats
+                        if (('status' in response && response.status !== 200) ||
+                            ('success' in response && response.success === false) ||
+                            ('error' in response && response.error)) {
+
+                            // Handle different error message formats
+                            let errorMessage: string = 'Unknown error occurred';
+                            if ('error' in response && response.error) {
+                                errorMessage = response.error as string;
+                            } else if ('message' in response && response.message) {
+                                errorMessage = response.message as string;
+                            }
+
+                            console.error('OpenSubtitles API error:', errorMessage);
                             subtitleState.setIsLoadingSubtitles(false);
                             subtitleState.setParsedSubtitles([]);
-                            showAlert("Subtitle Error", `Failed to download subtitle: ${response.message}`);
+                            showAlert("Subtitle Error", `Failed to download subtitle: ${errorMessage}`);
                             return;
                         }
 
