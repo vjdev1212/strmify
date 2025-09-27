@@ -54,15 +54,15 @@ const MediaPlayerScreen: React.FC = () => {
 
     try {
       setIsLoadingSubtitles(true);
-      let response;
 
-      // Check if it's a TV show episode
-      if (type === 'tvshow' && season && episode) {
+      let response;
+      if (type === 'series' && season && episode) {
         response = await openSubtitlesClient.searchTVSubtitles(
           imdbid as string,
           parseInt(season as string),
           parseInt(episode as string),
-          ['en', 'es', 'fr', 'de', 'it', 'pt'], // Multiple languages
+          'episode',
+          ['en'],
           {
             format: 'srt',
             ai_translated: 'include',
@@ -75,7 +75,8 @@ const MediaPlayerScreen: React.FC = () => {
         // For movies
         response = await openSubtitlesClient.searchMovieSubtitles(
           imdbid as string,
-          ['en', 'es', 'fr', 'de', 'it', 'pt'], // Multiple languages
+          'movie',
+          ['en'],
           {
             format: 'srt',
             ai_translated: 'include',

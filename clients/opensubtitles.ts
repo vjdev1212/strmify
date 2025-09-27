@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export interface SubtitleSearchParams {
   imdb_id?: string;
   tmdb_id?: string;
-  type?: 'movie' | 'tvshow';
+  type?: 'movie' | 'episode';
   season_number?: number;
   episode_number?: number;
   languages?: string;
@@ -158,12 +158,14 @@ class OpenSubtitlesClient {
   // Search subtitles for movies
   async searchMovieSubtitles(
     imdbId: string,
+    type: 'movie' | 'episode' = 'movie',
     languages: string[] = ['en'],
     options: SearchOptions = {}
   ): Promise<ApiResponse> {
     const params: SubtitleSearchParams = {
       imdb_id: imdbId,
       languages: languages.join(','),
+      type: type,
       format: options.format || 'srt',
       ...options
     };
@@ -176,6 +178,7 @@ class OpenSubtitlesClient {
     imdbId: string,
     season: number,
     episode: number,
+    type: 'movie' | 'episode' = 'episode',
     languages: string[] = ['en'],
     options: SearchOptions = {}
   ): Promise<ApiResponse> {
@@ -183,6 +186,7 @@ class OpenSubtitlesClient {
       imdb_id: imdbId,
       season_number: season,
       episode_number: episode,
+      type: type,
       languages: languages.join(','),
       format: options.format || 'srt',
       ...options
@@ -194,7 +198,7 @@ class OpenSubtitlesClient {
   // Search by TMDb ID
   async searchByTMDbId(
     tmdbId: string,
-    type: 'movie' | 'tvshow' = 'movie',
+    type: 'movie' | 'episode' = 'movie',
     languages: string[] = ['en'],
     options: SearchOptions = {}
   ): Promise<ApiResponse> {
