@@ -650,7 +650,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center'
     },
     addonItem: {
-        borderRadius: 8,
+        borderRadius: 25,
         paddingVertical: 12,
         paddingHorizontal: 24,
         marginHorizontal: 10,
