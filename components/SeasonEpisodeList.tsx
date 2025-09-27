@@ -360,6 +360,7 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
           onPressAction={handleMenuPress}
           actions={computedValues.menuActions}
           shouldOpenOnLongPress={false}
+          themeVariant='dark'
         >
           <TouchableOpacity style={styles.seasonDropdownButton}>
             <Text style={styles.seasonDropdownText}>
