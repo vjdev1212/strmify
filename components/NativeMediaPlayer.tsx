@@ -435,6 +435,7 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
     const subtitleState = useSubtitleState();
     const settings = usePlayerSettings();
     const timers = useTimers();
+    const [videoScale, setVideoScale] = useState({ x: 1.0, y: 1.0 });
 
     const playHaptic = useCallback(async () => {
         try {
@@ -1138,6 +1139,20 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         );
     }, [playerState.showBufferingLoader, playerState.isBuffering, playerState.error, playerState.hasStartedPlaying, bufferOpacity]);
 
+    const zoomIn = () => {
+        setVideoScale(prev => ({
+            x: Math.min(prev.x + 0.025, 2.0),
+            y: Math.min(prev.y + 0.025, 2.0)
+        }));
+    };
+
+    const zoomOut = () => {
+        setVideoScale(prev => ({
+            x: Math.max(prev.x - 0.025, 1.0),
+            y: Math.max(prev.y - 0.025, 1.0)
+        }));
+    };
+
     const SubtitleComponent = useMemo(() => {
         if (!subtitleState.currentSubtitle || playerState.error) return null;
 
@@ -1153,7 +1168,10 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
             {!playerState.error && (
                 <VLCPlayer
                     ref={playerRef}
-                    style={styles.video}
+                    style={[styles.video,
+                    {
+                        transform: [{ scaleX: videoScale.x }, { scaleY: videoScale.y }]
+                    }]}
                     source={{
                         uri: videoUrl,
                         initType: 2,
@@ -1170,7 +1188,9 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                     }}
                     autoplay={true}
                     playInBackground={true}
-                    autoAspectRatio={true}
+                    autoAspectRatio={false}
+                    resizeMode="cover"
+                    videoAspectRatio="16:9"
                     textTrack={-1}
                     acceptInvalidCertificates={true}
                     rate={settings.playbackSpeed}
@@ -1216,9 +1236,7 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                     pointerEvents="box-none"
                 >
                     {/* Top controls */}
-                    <LinearGradient
-                        colors={['rgba(0,0,0,0.8)', 'transparent']}
-                        style={styles.topControls}
+                    <View style={styles.topControls}
                     >
                         <TouchableOpacity style={styles.backButton} onPress={async () => {
                             await playHaptic();
@@ -1234,6 +1252,28 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                         </View>
 
                         <View style={styles.topRightControls}>
+                            <TouchableOpacity
+                                style={styles.controlButton}
+                                onPress={zoomOut}
+                            >
+                                <MaterialIcons
+                                    name="zoom-out"
+                                    size={24}
+                                    color="white"
+                                />
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={styles.controlButton}
+                                onPress={zoomIn}
+                            >
+                                <MaterialIcons
+                                    name="zoom-in"
+                                    size={24}
+                                    color="white"
+                                />
+                            </TouchableOpacity>
+
                             <TouchableOpacity
                                 style={styles.controlButton}
                                 onPress={controlActions.toggleMute}
@@ -1280,7 +1320,7 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                                 />
                             </TouchableOpacity>
                         </View>
-                    </LinearGradient>
+                    </View>
 
                     {/* Center controls - Hidden during buffering */}
                     {!playerState.isBuffering && !uiState.showSubtitleSettings && !uiState.showAudioSettings && !uiState.showSpeedSettings && (
@@ -1325,9 +1365,7 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
 
                     {/* Bottom controls */}
                     {!uiState.showSubtitleSettings && !uiState.showAudioSettings && !uiState.showSpeedSettings && (
-                        <LinearGradient
-                            colors={['transparent', 'rgba(0,0,0,0.8)']}
-                            style={styles.bottomControls}
+                        <View style={styles.bottomControls}
                         >
                             <View style={styles.timeContainer}>
                                 <Text style={styles.timeText}>
@@ -1355,7 +1393,7 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                                     enabled={playerState.isReady || playerState.duration >= 0}
                                 />
                             </View>
-                        </LinearGradient>
+                        </View>
                     )}
                 </Animated.View>
             )}
@@ -1780,10 +1818,9 @@ const styles = StyleSheet.create({
     },
     subtitleText: {
         color: '#fff',
-        fontSize: 16,
         fontWeight: '500',
         textAlign: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.25)',
+        backgroundColor: '#10101080',
         paddingHorizontal: 16,
         paddingVertical: 4,
         borderRadius: 8,
