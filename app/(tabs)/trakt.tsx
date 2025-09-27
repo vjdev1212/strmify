@@ -1013,7 +1013,7 @@ const TraktScreen = () => {
                     >
                         <Ionicons
                             name={tab.icon as any}
-                            size={16}
+                            size={18}
                             color={selectedTab === tab.key ? '#fff' : '#bbb'}
                             style={{ marginRight: 6 }}
                         />
@@ -1156,30 +1156,26 @@ const styles = StyleSheet.create({
     },
     tab: {
         flexDirection: 'row',
-        paddingVertical: 12,
-        paddingHorizontal: 20,
-        borderRadius: 25,
-        marginRight: 12,
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.1)',
+        paddingVertical: 14,
+        paddingHorizontal: 24,
+        borderRadius: 8,
+        marginRight: 14,
+        alignItems: 'center',       
         backgroundColor: 'rgba(255, 255, 255, 0.05)',
-        backdropFilter: 'blur(20px)',
         shadowColor: 'rgba(0, 0, 0, 0.2)',
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.2,
         shadowRadius: 4,
-        elevation: 4,
+        elevation: 4
     },
     activeTab: {
-        backgroundColor: 'rgba(83, 90, 255, 0.3)',
-        borderColor: 'rgba(83, 90, 255, 0.5)',
-        backdropFilter: 'blur(25px)',
+        backgroundColor: 'rgba(83, 90, 255, 0.5)',
         shadowColor: '#535aff',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
         elevation: 8,
+        fontWeight: '500',
     },
     tabText: {
         fontWeight: '500',

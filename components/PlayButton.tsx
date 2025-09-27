@@ -5,7 +5,7 @@ import { Text } from './Themed';
 
 const PlayButton = ({ onPress }: { onPress: () => void }) => (
   <Pressable style={styles.button} onPress={onPress}>
-    <Ionicons name="play" size={18} color="#fff" style={styles.icon} />
+    <Ionicons name="play-outline" size={24} color="#fff" style={styles.icon} />
     <Text style={styles.text}>Watch Now</Text>
   </Pressable>
 );
@@ -13,25 +13,14 @@ const PlayButton = ({ onPress }: { onPress: () => void }) => (
 const styles = StyleSheet.create({
   button: {
     paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 30,
+    paddingHorizontal: 30,
+    borderRadius: 8,
     alignItems: 'center',
     marginVertical: 20,
     alignSelf: 'center',
     flexDirection: 'row',
     justifyContent: 'center',
-    backgroundColor: 'rgba(83, 90, 255, 0.3)',
-    borderWidth: 1,
-    borderColor: 'rgba(83, 90, 255, 0.5)',
-    backdropFilter: 'blur(20px)',
-    shadowColor: 'rgba(83, 90, 255, 0.4)',
-    shadowOffset: {
-      width: 0,
-      height: 6,
-    },
-    shadowOpacity: 0.4,
-    shadowRadius: 15,
-    elevation: 8,
+    backgroundColor: 'rgba(83, 90, 255, 0.75)',    
   },
   text: {
     color: '#fff',

@@ -571,8 +571,8 @@ const StreamListScreen = () => {
                 <Feather
                     style={[topMargin ? { marginTop: topMargin } : undefined, { paddingBottom: 20 }]}
                     name={icon as any}
-                    color={icon === 'alert-circle' ? '#ffffff' : '#535aff'}
-                    size={icon === 'alert-circle' ? 70 : 50}
+                    color={'#535aff'}
+                    size={50}
                 />
                 <Text style={styles.noAddonsText}>{message}</Text>
             </View>
@@ -650,13 +650,11 @@ const styles = StyleSheet.create({
         justifyContent: 'center'
     },
     addonItem: {
-        borderRadius: 25,
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        marginHorizontal: 5,
-        backgroundColor: '#101010',
-        borderWidth: StyleSheet.hairlineWidth,
-        borderColor: '#333',
+        borderRadius: 8,
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+        marginHorizontal: 10,
+        backgroundColor: '#202020',
     },
     selectedAddonItem: {
         backgroundColor: 'rgba(83, 90, 255, 0.75)',
