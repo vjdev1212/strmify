@@ -77,7 +77,8 @@
             "includeVLCKit": false
           },
           "android": {
-            "legacyJetifier": false
+            "legacyJetifier": false,
+            "skipGradleConfiguration": true
           }
         }
       ]
