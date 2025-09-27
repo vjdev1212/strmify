@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { StyleSheet, FlatList, Pressable, useWindowDimensions, Animated, TouchableOpacity } from 'react-native';
 import { Text, View } from './Themed';
 import * as Haptics from 'expo-haptics';
@@ -7,7 +7,7 @@ import { isHapticsSupported } from '@/utils/platform';
 import { useColorScheme } from './useColorScheme';
 import { SvgXml } from 'react-native-svg';
 import { DefaultEpisodeThumbnailImgXml } from '@/utils/Svg';
-import CustomContextMenu from './ContextMenu';
+import { MenuView, MenuComponentRef } from '@react-native-menu/menu';
 
 // Type definitions
 interface Episode {
@@ -254,8 +254,7 @@ const EpisodeItem: React.FC<EpisodeItemProps> = React.memo(({ item, onEpisodeSel
 const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisodeSelect }) => {
   const [selectedSeason, setSelectedSeason] = useState<number>(1);
   const { width, height } = useWindowDimensions();
-  const [menuVisible, setMenuVisible] = useState(false);
-  const [anchorPosition, setAnchorPosition] = useState({ x: 0, y: 0 });
+  const menuRef = useRef<MenuComponentRef>(null);
 
   // Memoized computed values
   const computedValues = useMemo(() => {
@@ -282,12 +281,12 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
       ...(groupedEpisodes[0] ? [0] : []),
     ];
 
-    // Create menu items for ContextMenu
-    const menuItems = seasonData.map((season, index) => ({
-      id: `season-${season}-${index}`,
+    // Create menu actions for @react-native-menu/menu
+    const menuActions = seasonData.map((season) => ({
+      id: `season-${season}`,
       title: season === 0 ? 'Specials' : `Season ${season}`,
-      value: season,
-      key: `season-item-${season}-${index}`
+      titleColor: selectedSeason === season ? SELECTED_SEASON_COLOR : '#ffffff',
+      state: selectedSeason === season ? ('on' as const) : undefined,
     }));
 
     return {
@@ -297,9 +296,9 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
       itemWidth,
       groupedEpisodes,
       seasonData,
-      menuItems,
+      menuActions,
     };
-  }, [videos, height, width]);
+  }, [videos, height, width, selectedSeason]);
 
   // Memoized callbacks
   const handleSeasonSelect = useCallback(async (season: number) => {
@@ -307,20 +306,15 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     setSelectedSeason(season);
-    setMenuVisible(false);
   }, []);
 
-  const handleSeasonDropdownPress = useCallback(async (event: any) => {
-    const { pageX, pageY } = event.nativeEvent;
-    if (isHapticsSupported()) {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  const handleMenuPress = useCallback(({ nativeEvent }: any) => {
+    const actionId = nativeEvent.event;
+    const seasonMatch = actionId.match(/season-(\d+)/);
+    if (seasonMatch) {
+      const season = parseInt(seasonMatch[1], 10);
+      handleSeasonSelect(season);
     }
-    setAnchorPosition({ x: pageX, y: pageY });
-    setMenuVisible(true);
-  }, []);
-
-  const handleContextMenuItemSelect = useCallback((item: any) => {
-    handleSeasonSelect(item.value || item.id);
   }, [handleSeasonSelect]);
 
   const renderEpisodeItem = useCallback((episode: Episode, index: number) => (
@@ -361,24 +355,19 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
   return (
     <View style={styles.container}>
       <View style={styles.seasonListContainer}>
-        <TouchableOpacity
-          style={styles.seasonDropdownButton}
-          onPress={handleSeasonDropdownPress}
+        <MenuView
+          ref={menuRef}
+          onPressAction={handleMenuPress}
+          actions={computedValues.menuActions}
+          shouldOpenOnLongPress={false}
         >
-          <Text style={styles.seasonDropdownText}>
-            {getCurrentSeasonText()}
-          </Text>
-          <Text style={styles.seasonDropdownArrow}>▼</Text>
-        </TouchableOpacity>
-
-        <CustomContextMenu
-          visible={menuVisible}
-          onClose={() => setMenuVisible(false)}
-          items={computedValues.menuItems}
-          selectedItem={selectedSeason}
-          onItemSelect={handleContextMenuItemSelect}
-          anchorPosition={anchorPosition}
-        />
+          <TouchableOpacity style={styles.seasonDropdownButton}>
+            <Text style={styles.seasonDropdownText}>
+              {getCurrentSeasonText()}
+            </Text>
+            <Text style={styles.seasonDropdownArrow}>▼</Text>
+          </TouchableOpacity>
+        </MenuView>
       </View>
 
       <View style={styles.episodeList}>
