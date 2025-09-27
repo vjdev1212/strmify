@@ -8,6 +8,7 @@ import { useColorScheme } from './useColorScheme';
 import { SvgXml } from 'react-native-svg';
 import { DefaultEpisodeThumbnailImgXml } from '@/utils/Svg';
 import { MenuView, MenuComponentRef } from '@react-native-menu/menu';
+import { Ionicons } from '@expo/vector-icons';
 
 // Type definitions
 interface Episode {
@@ -308,7 +309,10 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
     setSelectedSeason(season);
   }, []);
 
-  const handleMenuPress = useCallback(({ nativeEvent }: any) => {
+  const handleMenuPress = useCallback(async ({ nativeEvent }: any) => {
+    if (isHapticsSupported()) {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     const actionId = nativeEvent.event;
     const seasonMatch = actionId.match(/season-(\d+)/);
     if (seasonMatch) {
@@ -366,7 +370,7 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
             <Text style={styles.seasonDropdownText}>
               {getCurrentSeasonText()}
             </Text>
-            <Text style={styles.seasonDropdownArrow}>▼</Text>
+            <Ionicons name='caret-down-circle-outline' size={24} color='#ffffff' />
           </TouchableOpacity>
         </MenuView>
       </View>
@@ -401,16 +405,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   seasonDropdownButton: {
-    backgroundColor: 'rgba(83, 90, 255, 0.25)',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(83, 90, 255, 0.15)',
-    borderRadius: 24,
+    backgroundColor: '#202020bf',
+    borderRadius: 8,
     paddingVertical: 14,
     paddingHorizontal: 24,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    width: 150,
+    width: 160,
     shadowColor: 'rgba(0, 0, 0, 0.3)',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
