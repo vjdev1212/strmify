@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
   seasonDropdownButton: {
     backgroundColor: '#202020bf',
     borderRadius: 10,
-    paddingVertical: 14,
+    paddingVertical: 12,
     paddingHorizontal: 24,
     flexDirection: 'row',
     alignItems: 'center',
