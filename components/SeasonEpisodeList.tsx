@@ -1,13 +1,13 @@
 import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { StyleSheet, FlatList, Pressable, useWindowDimensions, Animated, TouchableOpacity } from 'react-native';
+import { StyleSheet, Pressable, useWindowDimensions, Animated, TouchableOpacity, Platform } from 'react-native';
 import { Text, View } from './Themed';
 import * as Haptics from 'expo-haptics';
 import { formatDate } from '@/utils/Date';
 import { isHapticsSupported } from '@/utils/platform';
-import { useColorScheme } from './useColorScheme';
 import { SvgXml } from 'react-native-svg';
 import { DefaultEpisodeThumbnailImgXml } from '@/utils/Svg';
 import { MenuView, MenuComponentRef } from '@react-native-menu/menu';
+import CustomContextMenu from './ContextMenu';
 import { Ionicons } from '@expo/vector-icons';
 
 // Type definitions
@@ -257,6 +257,10 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
   const { width, height } = useWindowDimensions();
   const menuRef = useRef<MenuComponentRef>(null);
 
+  // Web-only dropdown state for CustomContextMenu
+  const [webMenuVisible, setWebMenuVisible] = useState(false);
+  const [anchorPosition, setAnchorPosition] = useState({ x: 0, y: 0 });
+
   // Memoized computed values
   const computedValues = useMemo(() => {
     const isPortrait = height > width;
@@ -290,6 +294,14 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
       state: selectedSeason === season ? ('on' as const) : undefined,
     }));
 
+    // Create menu items for CustomContextMenu (web)
+    const webMenuItems = seasonData.map((season, index) => ({
+      id: `season-${season}-${index}`,
+      title: season === 0 ? 'Specials' : `Season ${season}`,
+      value: season,
+      key: `season-item-${season}-${index}`
+    }));
+
     return {
       isPortrait,
       deviceType,
@@ -298,6 +310,7 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
       groupedEpisodes,
       seasonData,
       menuActions,
+      webMenuItems,
     };
   }, [videos, height, width, selectedSeason]);
 
@@ -307,6 +320,7 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     setSelectedSeason(season);
+    setWebMenuVisible(false);
   }, []);
 
   const handleMenuPress = useCallback(async ({ nativeEvent }: any) => {
@@ -319,6 +333,20 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
       const season = parseInt(seasonMatch[1], 10);
       handleSeasonSelect(season);
     }
+  }, [handleSeasonSelect]);
+
+  // Web dropdown handlers for CustomContextMenu
+  const handleWebSeasonDropdownPress = useCallback(async (event: any) => {
+    const { pageX, pageY } = event.nativeEvent;
+    if (isHapticsSupported()) {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setAnchorPosition({ x: pageX, y: pageY });
+    setWebMenuVisible(true);
+  }, []);
+
+  const handleWebContextMenuItemSelect = useCallback((item: any) => {
+    handleSeasonSelect(item.value || item.id);
   }, [handleSeasonSelect]);
 
   const renderEpisodeItem = useCallback((episode: Episode, index: number) => (
@@ -359,20 +387,43 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
   return (
     <View style={styles.container}>
       <View style={styles.seasonListContainer}>
-        <MenuView
-          ref={menuRef}
-          onPressAction={handleMenuPress}
-          actions={computedValues.menuActions}
-          shouldOpenOnLongPress={false}
-          themeVariant='dark'
-        >
-          <TouchableOpacity style={styles.seasonDropdownButton}>
-            <Text style={styles.seasonDropdownText}>
-              {getCurrentSeasonText()}
-            </Text>
-            <Ionicons name='caret-down-circle-outline' size={24} color='#ffffff' />
-          </TouchableOpacity>
-        </MenuView>
+        {Platform.OS === 'web' ? (
+          <>
+            <TouchableOpacity
+              style={styles.seasonDropdownButton}
+              onPress={handleWebSeasonDropdownPress}
+            >
+              <Text style={styles.seasonDropdownText}>
+                {getCurrentSeasonText()}
+              </Text>
+              <Text style={styles.seasonDropdownArrow}>▼</Text>
+            </TouchableOpacity>
+
+            <CustomContextMenu
+              visible={webMenuVisible}
+              onClose={() => setWebMenuVisible(false)}
+              items={computedValues.webMenuItems}
+              selectedItem={selectedSeason}
+              onItemSelect={handleWebContextMenuItemSelect}
+              anchorPosition={anchorPosition}
+            />
+          </>
+        ) : (
+          <MenuView
+            ref={menuRef}
+            onPressAction={handleMenuPress}
+            actions={computedValues.menuActions}
+            shouldOpenOnLongPress={false}
+            themeVariant='dark'
+          >
+            <TouchableOpacity style={styles.seasonDropdownButton}>
+              <Text style={styles.seasonDropdownText}>
+                {getCurrentSeasonText()}
+              </Text>
+              <Ionicons name='caret-down-circle-outline' size={24} color='#ffffff' />
+            </TouchableOpacity>
+          </MenuView>
+        )}
       </View>
 
       <View style={styles.episodeList}>
