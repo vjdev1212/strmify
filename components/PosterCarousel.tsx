@@ -335,7 +335,7 @@ export default function AppleTVCarousel({
             {data.length > 1 && (
                 <View style={[styles.paginationContainer, {
                     bottom: dimensions.isLandscape ? 15 : 20,
-                    left: dimensions.isLandscape ? 35 : 0,
+                    left: dimensions.isLandscape ? 35 : 20,
                 }]}>
                     <BlurView intensity={20} style={[styles.paginationBlur]}>
                         <View style={styles.paginationDots}>
@@ -451,7 +451,7 @@ const styles = StyleSheet.create({
         overflow: 'hidden'
     },
     paginationBlur: {
-        paddingHorizontal: 16,
+        paddingHorizontal: 8,
         paddingVertical: 8,
     },
     paginationDots: {

@@ -63,23 +63,12 @@ const DisclaimerScreen = () => {
                         </Text>
                     </View>
 
-                    <View style={styles.section}>
-                        <Text style={styles.sectionHeader}>✅ Recommendations</Text>
-                        <Text style={styles.sectionText}>
-                            We strongly recommend using only legitimate streaming services such as Netflix, Amazon Prime Video, Disney+, Hulu, HBO Max, and other authorized content distributors for accessing movies and TV shows.
-                        </Text>
-                    </View>
-
                     <View style={styles.warningBox}>
                         <Ionicons name="alert-circle" size={24} color="#535aff" />
                         <Text style={styles.warningText}>
                             This disclaimer serves to inform users of their responsibilities. The developer assumes no responsibility for how users choose to utilize third-party addons or external content sources accessible through this dashboard application.
                         </Text>
                     </View>
-
-                    <Text style={styles.footerText}>
-                        Use this application responsibly and in accordance with your local laws and regulations.
-                    </Text>
                 </View>
                 <BottomSpacing space={50} />
             </ScrollView>

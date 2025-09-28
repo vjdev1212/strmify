@@ -110,7 +110,7 @@ const useSubtitleState = () => {
 };
 
 const useUIState = () => {
-    const [showControls, setShowControls] = useState(true);
+    const [showControls, setShowControls] = useState(false);
     const [showSubtitleSettings, setShowSubtitleSettings] = useState(false);
     const [showAudioSettings, setShowAudioSettings] = useState(false);
     const [showSpeedSettings, setShowSpeedSettings] = useState(false);
@@ -579,10 +579,6 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                         const subtitleContent = await subtitleResponse.text();
                         const parsed = parseSubtitleFile(subtitleContent);
 
-                        if (parsed.length > 0) {
-                            console.log('First subtitle:', parsed[0]);
-                        }
-
                         subtitleState.setParsedSubtitles(parsed);
                         subtitleState.setIsLoadingSubtitles(false);
                     })
@@ -610,10 +606,6 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
 
                         const parsed = parseSubtitleFile(subtitleContent);
                         console.log('Parsed subtitles count:', parsed.length);
-
-                        if (parsed.length > 0) {
-                            console.log('First subtitle:', parsed[0]);
-                        }
 
                         subtitleState.setParsedSubtitles(parsed);
                         subtitleState.setIsLoadingSubtitles(false);
@@ -717,8 +709,6 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
             playerState.setIsPlaying(true);
             playerState.setShowBufferingLoader(false);
             playerState.setIsSeeking(false);
-
-            uiState.setShowControls(true);
             controlsOpacity.setValue(1);
 
             timers.clearTimer('hideControls');
@@ -1188,21 +1178,21 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                         uri: videoUrl,
                         initType: 2,
                         initOptions: [
-                            "--network-caching=1000",
-                            "--file-caching=300",
-                            "--live-caching=300",
-
+                            "--network-caching=2000",
+                            "--file-caching=1000",
+                            "--live-caching=500",
                             "--drop-late-frames",
                             "--skip-frames",
                             "--avcodec-threads=0",
-                            "--intf=dummy"
+                            "--intf=dummy",
+                            "--no-video-title-show",
+                            "--quiet"
                         ]
                     }}
                     autoplay={true}
                     playInBackground={true}
-                    autoAspectRatio={false}
+                    autoAspectRatio={true}
                     resizeMode="cover"
-                    videoAspectRatio="16:9"
                     textTrack={-1}
                     acceptInvalidCertificates={true}
                     rate={settings.playbackSpeed}
@@ -1553,12 +1543,11 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
-        backgroundColor: 'black',
+        flex: 1
     },
     video: {
-        width: '100%',
-        height: '100%',
+        minWidth: '100%',
+        minHeight: '100%',
     },
     touchArea: {
         position: 'absolute',
@@ -1832,12 +1821,13 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontWeight: '500',
         textAlign: 'center',
-        backgroundColor: '#10101080',
+        backgroundColor: 'rgba(16, 16, 16, 0.5)',
         paddingHorizontal: 16,
-        paddingVertical: 4,
+        paddingVertical: 6,
         borderRadius: 8,
         lineHeight: 24,
         maxWidth: '90%',
+        margin: 'auto'
     },
     loadingContainer: {
         flexDirection: 'row',
