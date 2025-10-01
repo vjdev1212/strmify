@@ -13,7 +13,7 @@ export enum Players {
 }
 
 export const getPlatformSpecificPlayers = () => {
-    if (Platform.OS === 'android') {
+    if (getOriginalPlatform() === 'android') {
         return [
             { name: Players.Default, scheme: 'STREAMURL', encodeUrl: false },
             { name: Players.Browser, scheme: 'STREAMURL', encodeUrl: false },
@@ -22,7 +22,7 @@ export const getPlatformSpecificPlayers = () => {
             { name: Players.MXPlayerPro, scheme: 'intent:STREAMURL?sign=Yva5dQp8cFQpVAMUh1QxNWbZAZ2h05lYQ4qAxqf717w=:0#Intent;package=com.mxtech.videoplayer.pro;S.title=STREAMTITLE;end', encodeUrl: false },
             { name: Players.VidHub, scheme: 'open-vidhub://x-callback-url/open?url=STREAMURL', encodeUrl: true },
         ];
-    } else if (Platform.OS === 'ios') {
+    } else if (getOriginalPlatform() === 'ios') {
         return [
             { name: Players.Default, scheme: 'STREAMURL', encodeUrl: false },
             { name: Players.Browser, scheme: 'STREAMURL', encodeUrl: false },
@@ -31,17 +31,17 @@ export const getPlatformSpecificPlayers = () => {
             { name: Players.VidHub, scheme: 'open-vidhub://x-callback-url/open?url=STREAMURL', encodeUrl: true },
             { name: Players.OutPlayer, scheme: 'outplayer://STREAMURL', encodeUrl: false },
         ];
-    } else if (Platform.OS === 'web') {
+    } else if (getOriginalPlatform() === 'web') {
         return [
             { name: Players.Default, scheme: 'STREAMURL', encodeUrl: false },
             { name: Players.Browser, scheme: 'STREAMURL', encodeUrl: false }
         ];
-    } else if (Platform.OS === 'windows') {
+    } else if (getOriginalPlatform() === 'windows') {
         return [
             { name: Players.Default, scheme: 'STREAMURL', encodeUrl: false },
             { name: Players.Browser, scheme: 'STREAMURL', encodeUrl: false },
         ];
-    } else if (Platform.OS === 'macos') {
+    } else if (getOriginalPlatform() === 'macos') {
         return [
             { name: Players.Default, scheme: 'STREAMURL', encodeUrl: false },
             { name: Players.Browser, scheme: 'STREAMURL', encodeUrl: false },

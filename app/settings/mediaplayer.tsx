@@ -39,7 +39,7 @@ const MediaPlayerConfigScreen = () => {
             isDefault: false
         });
 
-        if (Platform.OS === 'android') {
+        if (getOriginalPlatform() === 'android') {
             return [
                 baseConfig(Players.Default, 'STREAMURL', false),
                 baseConfig(Players.Browser, 'STREAMURL', false),
@@ -48,7 +48,7 @@ const MediaPlayerConfigScreen = () => {
                 baseConfig(Players.MXPlayerPro, 'intent:STREAMURL?sign=Yva5dQp8cFQpVAMUh1QxNWbZAZ2h05lYQ4qAxqf717w=:0#Intent;package=com.mxtech.videoplayer.pro;S.title=STREAMTITLE;end', false),
                 baseConfig(Players.VidHub, 'open-vidhub://x-callback-url/open?url=STREAMURL', true),
             ];
-        } else if (Platform.OS === 'ios') {
+        } else if (getOriginalPlatform() === 'ios') {
             return [
                 baseConfig(Players.Default, 'STREAMURL', false),
                 baseConfig(Players.Browser, 'STREAMURL', false),
@@ -57,17 +57,17 @@ const MediaPlayerConfigScreen = () => {
                 baseConfig(Players.VidHub, 'open-vidhub://x-callback-url/open?url=STREAMURL', true),
                 baseConfig(Players.OutPlayer, 'outplayer://STREAMURL', false),
             ];
-        } else if (Platform.OS === 'web') {
+        } else if (getOriginalPlatform() === 'web') {
             return [
                 baseConfig(Players.Default, 'STREAMURL', false),
                 baseConfig(Players.Browser, 'STREAMURL', false)
             ];
-        } else if (Platform.OS === 'windows') {
+        } else if (getOriginalPlatform() === 'windows') {
             return [
                 baseConfig(Players.Default, 'STREAMURL', false),
                 baseConfig(Players.Browser, 'STREAMURL', false),
             ];
-        } else if (Platform.OS === 'macos') {
+        } else if (getOriginalPlatform() === 'macos') {
             return [
                 baseConfig(Players.Default, 'STREAMURL', false),
                 baseConfig(Players.Browser, 'STREAMURL', false),
