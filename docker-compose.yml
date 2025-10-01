@@ -13,7 +13,6 @@ services:
       - EXPO_PUBLIC_TRAKT_REDIRECT_URI=http://strmify.local/settings/trakt      
       - EXPO_PUBLIC_BUY_ME_COFFEE=your_buymeacoffee_username
       - EXPO_PUBLIC_FEEDBACK_URL=https://your-feedback-url.com      
-      - EXPO_PUBLIC_ENABLE_STREMIO=true
       - EXPO_PUBLIC_SHOW_CONTACT=false      
       - EXPO_PUBLIC_TRAKT_API_BASE=https://api.trakt.tv
     restart: unless-stopped
