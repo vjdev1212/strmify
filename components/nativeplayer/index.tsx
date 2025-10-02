@@ -430,10 +430,10 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 onValueChange={handleSliderValueChange}
                                 onSlidingStart={handleSliderSlidingStart}
                                 onSlidingComplete={handleSliderSlidingComplete}
-                                minimumTrackTintColor="#535aff"
-                                maximumTrackTintColor="rgba(255,255,255,0.15)"
+                                minimumTrackTintColor="#007AFF"
+                                maximumTrackTintColor="rgba(255,255,255,0.4)"
                                 thumbTintColor={'#fff'}
-                                thumbSize={24}
+                                thumbSize={25}
                                 trackHeight={6}
                                 enabled={isReady && duration > 0}
                             />
