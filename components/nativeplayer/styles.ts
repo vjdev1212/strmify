@@ -71,11 +71,9 @@ export const styles = StyleSheet.create({
         width: 56,
         height: 56,
         borderRadius: 28,
-        backgroundColor: 'rgba(255, 255, 255, 0.15)',
+        backgroundColor: 'transparent',
         justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 1.5,
-        borderColor: 'rgba(255, 255, 255, 0.2)',
+        alignItems: 'center'
     },
     playButton: {
         padding: 8,
@@ -84,14 +82,9 @@ export const styles = StyleSheet.create({
         width: 72,
         height: 72,
         borderRadius: 36,
-        backgroundColor: '#535aff',
+        backgroundColor: 'transparent',
         justifyContent: 'center',
-        alignItems: 'center',
-        shadowColor: '#535aff',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.4,
-        shadowRadius: 12,
-        elevation: 8,
+        alignItems: 'center'
     },
     disabledButton: {
         opacity: 0.4,
@@ -103,6 +96,7 @@ export const styles = StyleSheet.create({
     },
     progressContainerWithMargin: {
         marginBottom: 12,
+        marginHorizontal: 20
     },
     progressSlider: {
         width: '100%',
@@ -142,7 +136,6 @@ export const styles = StyleSheet.create({
         bottom: 0,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(26, 26, 26, 0.9)',
         zIndex: 10,
     },
     bufferingText: {
@@ -169,7 +162,7 @@ export const styles = StyleSheet.create({
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(26, 26, 26, 0.5)',
+        backgroundColor: 'transparent',
     },
     settingsOverlay: {
         position: 'absolute',

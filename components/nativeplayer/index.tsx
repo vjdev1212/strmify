@@ -323,9 +323,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                     pointerEvents="box-none"
                 >
                     {/* Top controls */}
-                    <LinearGradient
-                        colors={['rgba(26,26,26,0.95)', 'transparent']}
-                        style={styles.topControls}
+                    <View style={styles.topControls}
                     >
                         <TouchableOpacity style={styles.backButton} onPress={async () => { await playHaptic(); onBack(); }}>
                             <Ionicons name="chevron-back" size={28} color="white" />
@@ -370,7 +368,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 <Ionicons name="settings-outline" size={24} color="white" />
                             </TouchableOpacity>
                         </View>
-                    </LinearGradient>
+                    </View>
 
                     {/* Center controls */}
                     {!isBuffering && (
@@ -383,7 +381,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 <View style={styles.skipButtonInner}>
                                     <MaterialIcons
                                         name="replay-10"
-                                        size={32}
+                                        size={40}
                                         color={isReady ? "white" : "rgba(255,255,255,0.5)"}
                                     />
                                 </View>
@@ -397,7 +395,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 <View style={styles.playButtonInner}>
                                     <Ionicons
                                         name={isPlaying ? "pause" : "play"}
-                                        size={40}
+                                        size={60}
                                         color={isReady ? "white" : "rgba(255,255,255,0.5)"}
                                     />
                                 </View>
@@ -411,7 +409,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 <View style={styles.skipButtonInner}>
                                     <MaterialIcons
                                         name="forward-30"
-                                        size={32}
+                                        size={40}
                                         color={isReady ? "white" : "rgba(255,255,255,0.5)"}
                                     />
                                 </View>
@@ -420,8 +418,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                     )}
 
                     {/* Bottom controls */}
-                    <LinearGradient
-                        colors={['transparent', 'rgba(26,26,26,0.95)']}
+                    <View
                         style={styles.bottomControls}
                     >
                         <View style={styles.progressContainerWithMargin}>
@@ -436,8 +433,8 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 minimumTrackTintColor="#535aff"
                                 maximumTrackTintColor="rgba(255,255,255,0.15)"
                                 thumbTintColor={'#fff'}
-                                thumbSize={16}
-                                trackHeight={4}
+                                thumbSize={24}
+                                trackHeight={6}
                                 enabled={isReady && duration > 0}
                             />
                         </View>
@@ -457,7 +454,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 </Text>
                             </View>
                         </View>
-                    </LinearGradient>
+                    </View>
                 </Animated.View>
             )}
 

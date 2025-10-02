@@ -201,7 +201,8 @@ const MediaPlayerScreen: React.FC = () => {
   const Player =
     Platform.OS === "web"
       ? require("../../components/nativeplayer").MediaPlayer
-      : require("../../components/vlcplayer").NativeMediaPlayer;
+      : require("../../components/nativeplayer").MediaPlayer;
+      // : require("../../components/vlcplayer").MediaPlayer;
 
   return (
     <Player
