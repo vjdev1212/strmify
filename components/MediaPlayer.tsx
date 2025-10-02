@@ -5,16 +5,13 @@ import {
     StyleSheet,
     TouchableOpacity,
     Animated,
-    Dimensions,
     StatusBar,
-    PanResponder,
     ScrollView,
     ActivityIndicator,
     Platform,
     Image,
 } from "react-native";
-import { useVideoPlayer, VideoContentFit, VideoView } from "expo-video";
-import { useEvent } from "expo";
+import Video, { VideoRef, OnLoadData, OnProgressData, SelectedTrackType } from 'react-native-video';
 import * as ScreenOrientation from "expo-screen-orientation";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
@@ -35,12 +32,6 @@ export interface AudioTrack {
     id: string;
 }
 
-export interface Chapter {
-    title: string;
-    start: number;
-    thumbnail?: string;
-}
-
 interface MediaPlayerProps {
     videoUrl: string;
     title: string;
@@ -51,55 +42,46 @@ interface MediaPlayerProps {
     artwork?: string;
 }
 
+type ResizeMode = 'contain' | 'cover' | 'stretch';
+
 export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     videoUrl,
     title,
+    subtitles = [],
     onBack,
     artwork,
 }) => {
-    const videoRef = useRef<VideoView>(null);
+    const videoRef = useRef<VideoRef>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
     const [showControls, setShowControls] = useState(true);
     const [isBuffering, setIsBuffering] = useState(true);
     const [selectedSubtitle, setSelectedSubtitle] = useState<string | null>(null);
-    const [selectedAudioTrack, setSelectedAudioTrack] = useState<string | null>(null);
     const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
     const [volume, setVolume] = useState(1.0);
-    const [isMuted, setIsMuted] = useState(true);
+    const [isMuted, setIsMuted] = useState(false);
     const [showVolumeSlider, setShowVolumeSlider] = useState(false);
-    const [showChapters, setShowChapters] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
     const [isReady, setIsReady] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const [dragPosition, setDragPosition] = useState(0);
-    const [contentFit, setContentFit] = useState<VideoContentFit>('fill');
-    const [showContentFitLabel, setShowContentFitLabel] = useState(false);
+    const [resizeMode, setResizeMode] = useState<ResizeMode>('contain');
+    const [showResizeModeLabel, setShowResizeModeLabel] = useState(false);
     const [brightness, setBrightness] = useState(1.0);
     const [showBrightnessSlider, setShowBrightnessSlider] = useState(false);
 
-
-    // Content fit options cycle
-    const contentFitOptions: VideoContentFit[] = ['contain', 'cover', 'fill'];
+    // Resize mode options cycle
+    const resizeModeOptions: ResizeMode[] = ['contain', 'cover', 'stretch'];
 
     // Animated values
     const controlsOpacity = useRef(new Animated.Value(1)).current;
-    const progressBarValue = useRef(new Animated.Value(0)).current;
     const bufferOpacity = useRef(new Animated.Value(1)).current;
-    const contentFitLabelOpacity = useRef(new Animated.Value(0)).current;
+    const resizeModeLabelOpacity = useRef(new Animated.Value(0)).current;
 
     // Auto-hide controls timer
     const hideControlsTimer = useRef<any>(null);
-    const contentFitLabelTimer = useRef<any>(null);
-
-    // Initialize player
-    const player = useVideoPlayer(videoUrl, (player) => {
-        player.loop = false;
-        player.muted = isMuted;
-        player.volume = volume;
-        player.playbackRate = playbackSpeed;
-    });
+    const resizeModeLabelTimer = useRef<any>(null);
 
     useEffect(() => {
         const setupOrientation = async () => {
@@ -126,113 +108,11 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
             if (hideControlsTimer.current) {
                 clearTimeout(hideControlsTimer.current);
             }
-            if (contentFitLabelTimer.current) {
-                clearTimeout(contentFitLabelTimer.current);
+            if (resizeModeLabelTimer.current) {
+                clearTimeout(resizeModeLabelTimer.current);
             }
         };
     }, []);
-
-    useEffect(() => {
-        if (player) {
-            player.muted = isMuted;
-            player.volume = isMuted ? 0 : volume;
-            player.playbackRate = playbackSpeed;
-
-            if (typeof window !== 'undefined' && window.AudioContext) {
-                const audioContext = new (window.AudioContext)();
-                if (audioContext.state === 'suspended') {
-                    audioContext.resume();
-                }
-            }
-        }
-    }, [player, isMuted, volume, playbackSpeed]);
-
-    // Playing state change handler
-    const playingChange = useEvent(player, "playingChange");
-    useEffect(() => {
-        if (!playingChange) return;
-
-        const { isPlaying: playing } = playingChange;
-        setIsPlaying(playing);
-
-        if (playing) {
-            setIsBuffering(false);
-            Animated.timing(bufferOpacity, {
-                toValue: 0,
-                duration: 200,
-                useNativeDriver: true,
-            }).start();
-        }
-    }, [playingChange, bufferOpacity]);
-
-    // Time update handler
-    const timeUpdate = useEvent(player, "timeUpdate");
-    useEffect(() => {
-        if (!timeUpdate || isDragging) return;
-
-        const { currentTime: time } = timeUpdate;
-        setCurrentTime(time);
-
-        // Get duration from player
-        const videoDuration = player.duration || 0;
-        if (videoDuration > 0 && duration !== videoDuration) {
-            setDuration(videoDuration);
-        }
-
-        // Update progress bar
-        if (videoDuration > 0) {
-            const progress = time / videoDuration;
-            progressBarValue.setValue(progress);
-        }
-    }, [timeUpdate, player.duration, isDragging, duration]);
-
-    // Status change handler
-    const statusChange = useEvent(player, "statusChange");
-    useEffect(() => {
-        if (!statusChange) return;
-
-        const { status, error } = statusChange;
-        if (error) {
-            console.log('Video error:', error.message);
-        }
-
-        switch (status) {
-            case "loading":
-                // Only show buffering if not ready yet
-                if (!isReady) {
-                    setIsBuffering(true);
-                    Animated.timing(bufferOpacity, {
-                        toValue: 1,
-                        duration: 200,
-                        useNativeDriver: true,
-                    }).start();
-                }
-                break;
-
-            case "readyToPlay":
-                setIsBuffering(false);
-                setIsReady(true);
-                // Get duration when ready
-                const videoDuration = player.duration || 0;
-                if (videoDuration > 0) {
-                    setDuration(videoDuration);
-                }
-                Animated.timing(bufferOpacity, {
-                    toValue: 0,
-                    duration: 200,
-                    useNativeDriver: true,
-                }).start();
-
-                player.play();
-                break;
-
-            case "error":
-                showAlert("Video Error", "Failed to load video. Use external media players for better playback.");
-                setIsBuffering(false);
-                setIsReady(false);
-                break;
-        }
-    }, [statusChange, player, bufferOpacity, isReady]);
 
     const showControlsTemporarily = useCallback(() => {
         setShowControls(true);
@@ -248,7 +128,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         }
 
         hideControlsTimer.current = setTimeout(() => {
-            if (isPlaying && !showSettings && !showChapters && !showVolumeSlider && !showBrightnessSlider) {
+            if (isPlaying && !showSettings && !showVolumeSlider && !showBrightnessSlider) {
                 Animated.timing(controlsOpacity, {
                     toValue: 0,
                     duration: 500,
@@ -257,9 +137,8 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                     setShowControls(false);
                 });
             }
-        }, 1500);
-    }, [isPlaying, controlsOpacity, showSettings, showChapters, showVolumeSlider, showBrightnessSlider]);
-
+        }, 3000);
+    }, [isPlaying, controlsOpacity, showSettings, showVolumeSlider, showBrightnessSlider]);
 
     const playHaptic = async () => {
         try {
@@ -269,75 +148,96 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         }
     }
 
+    // Video event handlers
+    const onLoad = useCallback((data: OnLoadData) => {
+        setDuration(data.duration);
+        setIsReady(true);
+        setIsBuffering(false);
+        Animated.timing(bufferOpacity, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+        }).start();
+    }, [bufferOpacity]);
+
+    const onProgress = useCallback((data: OnProgressData) => {
+        if (!isDragging) {
+            setCurrentTime(data.currentTime);
+        }
+    }, [isDragging]);
+
+    const onBuffer = useCallback(({ isBuffering: buffering }: { isBuffering: boolean }) => {
+        if (isReady) {
+            setIsBuffering(buffering);
+            Animated.timing(bufferOpacity, {
+                toValue: buffering ? 1 : 0,
+                duration: 200,
+                useNativeDriver: true,
+            }).start();
+        }
+    }, [bufferOpacity, isReady]);
+
+    const onError = useCallback((error: any) => {
+        console.log('Video error:', error);
+        showAlert("Video Error", "Failed to load video. Please try again or use an external media player.");
+        setIsBuffering(false);
+        setIsReady(false);
+    }, []);
+
+    const onEnd = useCallback(() => {
+        setIsPlaying(false);
+        videoRef.current?.seek(0);
+    }, []);
+
     // Control functions
     const togglePlayPause = useCallback(async () => {
         if (!isReady) return;
-
         await playHaptic();
-        if (isPlaying) {
-            player.pause();
-        } else {
-            player.play();
-        }
+        setIsPlaying(!isPlaying);
         showControlsTemporarily();
-    }, [isPlaying, player, isReady, showControlsTemporarily]);
+    }, [isPlaying, isReady, showControlsTemporarily]);
 
-    const togglePictureInPicture = useCallback(async () => {
-        try {
-            await playHaptic();
-            if (videoRef.current && player && isReady) {
-                await videoRef.current.startPictureInPicture();
-            }
-            showControlsTemporarily();
-        } catch (error) {
-            console.warn("PiP error:", error);
-            showAlert("Picture-in-Picture", "PiP mode is not supported on this device or video is not ready.");
-        }
-    }, [showControlsTemporarily, player, isReady]);
-
-    const cycleContentFit = useCallback(async () => {
+    const cycleResizeMode = useCallback(async () => {
         await playHaptic();
-        const currentIndex = contentFitOptions.indexOf(contentFit);
-        const nextIndex = (currentIndex + 1) % contentFitOptions.length;
-        setContentFit(contentFitOptions[nextIndex]);
+        const currentIndex = resizeModeOptions.indexOf(resizeMode);
+        const nextIndex = (currentIndex + 1) % resizeModeOptions.length;
+        setResizeMode(resizeModeOptions[nextIndex]);
 
         // Show the label briefly
-        setShowContentFitLabel(true);
-        Animated.timing(contentFitLabelOpacity, {
+        setShowResizeModeLabel(true);
+        Animated.timing(resizeModeLabelOpacity, {
             toValue: 1,
             duration: 200,
             useNativeDriver: true,
         }).start();
 
-        if (contentFitLabelTimer.current) {
-            clearTimeout(contentFitLabelTimer.current);
+        if (resizeModeLabelTimer.current) {
+            clearTimeout(resizeModeLabelTimer.current);
         }
 
-        contentFitLabelTimer.current = setTimeout(() => {
-            Animated.timing(contentFitLabelOpacity, {
+        resizeModeLabelTimer.current = setTimeout(() => {
+            Animated.timing(resizeModeLabelOpacity, {
                 toValue: 0,
                 duration: 300,
                 useNativeDriver: true,
             }).start(() => {
-                setShowContentFitLabel(false);
+                setShowResizeModeLabel(false);
             });
         }, 1000);
 
         showControlsTemporarily();
-    }, [contentFit, showControlsTemporarily]);
+    }, [resizeMode, showControlsTemporarily]);
 
     const seekTo = useCallback((seconds: number) => {
         if (!isReady || duration <= 0) return;
-
         const clampedTime = Math.max(0, Math.min(duration, seconds));
-        player.seekBy(clampedTime);
+        videoRef.current?.seek(clampedTime);
         setCurrentTime(clampedTime);
         showControlsTemporarily();
-    }, [duration, player, showControlsTemporarily, isReady]);
+    }, [duration, isReady, showControlsTemporarily]);
 
     const skipTime = useCallback(async (seconds: number) => {
         if (!isReady || duration <= 0) return;
-
         await playHaptic();
         const newTime = Math.max(0, Math.min(duration, currentTime + seconds));
         seekTo(newTime);
@@ -347,7 +247,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         await playHaptic();
         setShowBrightnessSlider(!showBrightnessSlider);
         setShowSettings(false);
-        setShowChapters(false);
         setShowVolumeSlider(false);
         showControlsTemporarily();
     }, [showBrightnessSlider, showControlsTemporarily]);
@@ -357,19 +256,17 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         showControlsTemporarily();
     }, [showControlsTemporarily]);
 
-    // Separate mute toggle
     const toggleMute = useCallback(async () => {
         await playHaptic();
         setIsMuted(!isMuted);
         showControlsTemporarily();
     }, [isMuted, showControlsTemporarily]);
 
-    // Volume slider control
     const toggleVolumeSlider = useCallback(async () => {
         await playHaptic();
         setShowVolumeSlider(!showVolumeSlider);
         setShowSettings(false);
-        setShowChapters(false);
+        setShowBrightnessSlider(false);
         showControlsTemporarily();
     }, [showVolumeSlider, showControlsTemporarily]);
 
@@ -382,7 +279,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         }
         showControlsTemporarily();
     }, [isMuted, showControlsTemporarily]);
-
 
     const formatTime = useCallback((seconds: number) => {
         if (isNaN(seconds) || seconds < 0) return "0:00";
@@ -403,20 +299,16 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         showControlsTemporarily();
     }, [showControlsTemporarily]);
 
-    const changeContentFit = useCallback(async (fit: VideoContentFit) => {
+    const changeResizeMode = useCallback(async (mode: ResizeMode) => {
         await playHaptic();
-        setContentFit(fit);
+        setResizeMode(mode);
         showControlsTemporarily();
     }, [showControlsTemporarily]);
 
-    // Fixed progress bar with proper slider functionality
     const handleSliderValueChange = useCallback((value: number) => {
         if (!isReady || duration <= 0) return;
-
         setIsDragging(true);
         setDragPosition(value);
-        progressBarValue.setValue(value);
-
         const newTime = value * duration;
         setCurrentTime(newTime);
     }, [duration, isReady]);
@@ -431,18 +323,14 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
             setIsDragging(false);
             return;
         }
-
         setIsDragging(false);
         const newTime = value * duration;
         seekTo(newTime);
     }, [duration, seekTo, isReady]);
 
-    // Close panels when touching outside
     const handleOverlayPress = useCallback(() => {
         if (showSettings) {
             setShowSettings(false);
-        } else if (showChapters) {
-            setShowChapters(false);
         } else if (showVolumeSlider) {
             setShowVolumeSlider(false);
         } else if (showBrightnessSlider) {
@@ -450,44 +338,53 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         } else {
             showControlsTemporarily();
         }
-    }, [showSettings, showChapters, showVolumeSlider, showBrightnessSlider, showControlsTemporarily]);
+    }, [showSettings, showVolumeSlider, showBrightnessSlider, showControlsTemporarily]);
 
-    const getContentFitIcon = useCallback(() => {
-        switch (contentFit) {
+    const getResizeModeIcon = useCallback(() => {
+        switch (resizeMode) {
             case 'contain': return 'fit-screen';
             case 'cover': return 'crop';
-            case 'fill': return 'fullscreen';
+            case 'stretch': return 'fullscreen';
             default: return 'fit-screen';
         }
-    }, [contentFit]);
+    }, [resizeMode]);
 
-    const getContentFitLabel = useCallback(() => {
-        switch (contentFit) {
+    const getResizeModeLabel = useCallback(() => {
+        switch (resizeMode) {
             case 'contain': return 'Fit';
             case 'cover': return 'Fill';
-            case 'fill': return 'Stretch';
+            case 'stretch': return 'Stretch';
             default: return 'Fit';
         }
-    }, [contentFit]);
+    }, [resizeMode]);
 
     const displayTime = isDragging ? dragPosition * duration : currentTime;
     const sliderValue = isDragging ? dragPosition : (duration > 0 ? currentTime / duration : 0);
 
+    // Get selected subtitle track
+    const selectedSubtitleTrack = subtitles.find(sub => sub.language === selectedSubtitle);
+
     return (
         <View style={styles.container}>
-            <VideoView
-                ref={videoRef}
-                style={[
-                    styles.video,
-                    { opacity: brightness }
-                ]}
-                player={player}
-                allowsFullscreen={false}
-                allowsPictureInPicture={true}
-                nativeControls={false}
-                contentFit={contentFit}
-                crossOrigin="anonymous"
-            />
+            <View style={[styles.videoWrapper, { opacity: brightness }]}>
+                <Video
+                    ref={videoRef}
+                    source={{ uri: videoUrl }}
+                    style={styles.video}
+                    resizeMode={resizeMode}
+                    paused={!isPlaying}
+                    volume={isMuted ? 0 : volume}
+                    rate={playbackSpeed}
+                    onLoad={onLoad}
+                    onProgress={onProgress}
+                    onBuffer={onBuffer}
+                    onError={onError}
+                    onEnd={onEnd}
+                    repeat={false}
+                    playInBackground={false}
+                    playWhenInactive={false}                                    
+                />
+            </View>
 
             {artwork && isBuffering && (
                 <View style={styles.artworkContainer}>
@@ -514,27 +411,27 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 </Animated.View>
             )}
 
-            {/* Content fit label overlay */}
-            {showContentFitLabel && (
+            {/* Resize mode label overlay */}
+            {/* {showResizeModeLabel && (
                 <Animated.View
                     style={[
-                        styles.contentFitLabelOverlay,
-                        { opacity: contentFitLabelOpacity }
+                        styles.resizeModeLabelOverlay,
+                        { opacity: resizeModeLabelOpacity }
                     ]}
                     pointerEvents="none"
                 >
-                    <View style={styles.contentFitLabelContainer}>
+                    <View style={styles.resizeModeLabelContainer}>
                         <MaterialIcons
-                            name={getContentFitIcon()}
+                            name={getResizeModeIcon()}
                             size={32}
                             color="white"
                         />
-                        <Text style={styles.contentFitLabelText}>
-                            {getContentFitLabel()}
+                        <Text style={styles.resizeModeLabelText}>
+                            {getResizeModeLabel()}
                         </Text>
                     </View>
                 </Animated.View>
-            )}
+            )} */}
 
             {/* Touch area for showing controls */}
             <TouchableOpacity
@@ -551,7 +448,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 >
                     {/* Top controls */}
                     <LinearGradient
-                        colors={['rgba(0,0,0,0.8)', 'transparent']}
+                        colors={['rgba(26,26,26,0.95)', 'transparent']}
                         style={styles.topControls}
                     >
                         <TouchableOpacity style={styles.backButton} onPress={async () => { await playHaptic(); onBack(); }}>
@@ -565,7 +462,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                         </View>
 
                         <View style={styles.topRightControls}>
-                            {/* Separate Mute button */}
                             <TouchableOpacity
                                 style={styles.controlButton}
                                 onPress={toggleMute}
@@ -577,10 +473,9 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 />
                             </TouchableOpacity>
 
-                            {/* Volume slider control */}
                             <TouchableOpacity
                                 style={styles.controlButton}
-                                onPress={async () => { await playHaptic(); toggleVolumeSlider(); }}
+                                onPress={toggleVolumeSlider}
                             >
                                 <MaterialIcons
                                     name="tune"
@@ -591,7 +486,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
                             <TouchableOpacity
                                 style={styles.controlButton}
-                                onPress={async () => { await playHaptic(); toggleBrightnessSlider(); }}
+                                onPress={toggleBrightnessSlider}
                             >
                                 <Ionicons
                                     name="sunny"
@@ -600,24 +495,12 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 />
                             </TouchableOpacity>
 
-                            {/* Content fit control */}
                             <TouchableOpacity
                                 style={styles.controlButton}
-                                onPress={async () => { await playHaptic(); cycleContentFit(); }}
+                                onPress={cycleResizeMode}
                             >
                                 <MaterialIcons
-                                    name={getContentFitIcon()}
-                                    size={24}
-                                    color="white"
-                                />
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={styles.controlButton}
-                                onPress={async () => { await playHaptic(); togglePictureInPicture(); }}
-                            >
-                                <MaterialIcons
-                                    name="picture-in-picture-alt"
+                                    name={getResizeModeIcon()}
                                     size={24}
                                     color="white"
                                 />
@@ -628,8 +511,8 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 onPress={async () => {
                                     await playHaptic();
                                     setShowSettings(!showSettings);
-                                    setShowChapters(false);
                                     setShowVolumeSlider(false);
+                                    setShowBrightnessSlider(false);
                                 }}
                             >
                                 <Ionicons name="settings-outline" size={24} color="white" />
@@ -637,7 +520,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                         </View>
                     </LinearGradient>
 
-                    {/* Center controls - Hidden during buffering */}
+                    {/* Center controls */}
                     {!isBuffering && (
                         <View style={styles.centerControls}>
                             <TouchableOpacity
@@ -680,7 +563,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
                     {/* Bottom controls */}
                     <LinearGradient
-                        colors={['transparent', 'rgba(0,0,0,0.8)']}
+                        colors={['transparent', 'rgba(26,26,26,0.95)']}
                         style={styles.bottomControls}
                     >
                         <View style={styles.timeContainer}>
@@ -692,7 +575,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                             </Text>
                         </View>
 
-                        {/* Fixed progress bar with proper slider */}
                         <View style={styles.progressContainerWithMargin}>
                             <Slider
                                 style={styles.progressSlider}
@@ -702,16 +584,15 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 onValueChange={handleSliderValueChange}
                                 onSlidingStart={handleSliderSlidingStart}
                                 onSlidingComplete={handleSliderSlidingComplete}
-                                minimumTrackTintColor="#007AFF"
+                                minimumTrackTintColor="#535aff"
                                 maximumTrackTintColor="rgba(255,255,255,0.3)"
                                 thumbTintColor={'#fff'}
                                 thumbSize={20}
                                 trackHeight={5}
-                                enabled={isReady || duration >= 0}
+                                enabled={isReady && duration > 0}
                             />
                         </View>
 
-                        {/* Only show speed when not default */}
                         {playbackSpeed !== 1.0 && (
                             <View style={styles.bottomRightControls}>
                                 <Text style={styles.speedText}>
@@ -743,7 +624,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 maximumValue={1}
                                 value={volume}
                                 onValueChange={handleVolumeChange}
-                                minimumTrackTintColor="#007AFF"
+                                minimumTrackTintColor="#535aff"
                                 maximumTrackTintColor="rgba(255,255,255,0.3)"
                             />
                             <Ionicons name="volume-high" size={20} color="white" />
@@ -771,7 +652,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 maximumValue={1.0}
                                 value={brightness}
                                 onValueChange={handleBrightnessChange}
-                                minimumTrackTintColor="#007AFF"
+                                minimumTrackTintColor="#535aff"
                                 maximumTrackTintColor="rgba(255,255,255,0.3)"
                             />
                             <Ionicons name="sunny" size={20} color="white" />
@@ -798,19 +679,19 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 {[
                                     { value: 'contain', label: 'Fit' },
                                     { value: 'cover', label: 'Fill' },
-                                    { value: 'fill', label: 'Stretch' }
+                                    { value: 'stretch', label: 'Stretch' }
                                 ].map(option => (
                                     <TouchableOpacity
                                         key={option.value}
                                         style={[
                                             styles.scaleOption,
-                                            contentFit === option.value && styles.scaleOptionSelected
+                                            resizeMode === option.value && styles.scaleOptionSelected
                                         ]}
-                                        onPress={async () => { await playHaptic(); changeContentFit(option.value as VideoContentFit); }}
+                                        onPress={() => changeResizeMode(option.value as ResizeMode)}
                                     >
                                         <Text style={[
                                             styles.scaleOptionText,
-                                            contentFit === option.value && styles.scaleOptionTextSelected
+                                            resizeMode === option.value && styles.scaleOptionTextSelected
                                         ]}>
                                             {option.label}
                                         </Text>
@@ -827,7 +708,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                             styles.speedOption,
                                             playbackSpeed === speed && styles.speedOptionSelected
                                         ]}
-                                        onPress={async () => { await playHaptic(); changePlaybackSpeed(speed); }}
+                                        onPress={() => changePlaybackSpeed(speed)}
                                     >
                                         <Text style={[
                                             styles.speedOptionText,
@@ -839,7 +720,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 ))}
                             </View>
 
-                            {player.availableSubtitleTracks.length > 0 && (
+                            {subtitles.length > 0 && (
                                 <>
                                     <Text style={styles.settingsTitle}>Subtitles</Text>
                                     <View style={styles.subtitleOptions}>
@@ -852,7 +733,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                         >
                                             <Text style={styles.subtitleOptionText}>Off</Text>
                                         </TouchableOpacity>
-                                        {player.availableSubtitleTracks.map(sub => (
+                                        {subtitles.map(sub => (
                                             <TouchableOpacity
                                                 key={sub.language}
                                                 style={[
@@ -863,27 +744,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                             >
                                                 <Text style={styles.subtitleOptionText}>
                                                     {sub.label}
-                                                </Text>
-                                            </TouchableOpacity>
-                                        ))}
-                                    </View>
-                                </>
-                            )}
-
-                            {player.availableAudioTracks.length > 0 && (
-                                <>
-                                    <Text style={styles.settingsTitle}>Audio Track</Text>
-                                    <View style={styles.audioOptions}>
-                                        {player.availableAudioTracks.map(track => (
-                                            <TouchableOpacity
-                                                key={track.id}
-                                                style={[
-                                                    styles.audioOption,
-                                                    selectedAudioTrack === track.id && styles.audioOptionSelected
-                                                ]}
-                                                onPress={async () => { await playHaptic(); setSelectedAudioTrack(track.id); }}                                            >
-                                                <Text style={styles.audioOptionText}>
-                                                    {track.label}
                                                 </Text>
                                             </TouchableOpacity>
                                         ))}
@@ -901,11 +761,16 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: 'black',
+        backgroundColor: '#1a1a1a',
+    },
+    videoWrapper: {
+        width: '100%',
+        height: '100%',
     },
     video: {
         width: '100%',
         height: '100%',
+        backgroundColor: '#1a1a1a',
     },
     touchArea: {
         position: 'absolute',
@@ -941,16 +806,6 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 18,
         fontWeight: '600',
-    },
-    subtitleText: {
-        color: 'rgba(255, 255, 255, 0.8)',
-        fontSize: 14,
-        marginTop: 2,
-    },
-    chapterText: {
-        color: 'rgba(255, 255, 255, 0.6)',
-        fontSize: 12,
-        marginTop: 4,
     },
     topRightControls: {
         flexDirection: 'row',
