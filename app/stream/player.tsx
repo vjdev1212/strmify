@@ -27,7 +27,7 @@ const MediaPlayerScreen: React.FC = () => {
     try {
       const userAgent = await storageService.getItem(StorageKeys.OPENSUBTITLES_USER_AGENT) || 'Strmify';
       const apiKey = await storageService.getItem(StorageKeys.OPENSUBTITLES_API_KEY) || '';
-      
+
       if (apiKey && apiKey.trim() !== '') {
         const client = new OpenSubtitlesClient(userAgent, apiKey);
         setOpenSubtitlesClient(client);
@@ -198,11 +198,19 @@ const MediaPlayerScreen: React.FC = () => {
     router.back();
   };
 
-  const Player =
-    Platform.OS === "web"
-      ? require("../../components/nativeplayer").MediaPlayer
-      : require("../../components/nativeplayer").MediaPlayer;
-      // : require("../../components/vlcplayer").MediaPlayer;
+  function getPlayer(videoUrl: string) {
+    if (Platform.OS === "web") {
+      return require("../../components/nativeplayer").MediaPlayer;
+    }
+
+    // if (videoUrl.toLowerCase().endsWith(".mkv")) {
+    //   return require("../../components/vlcplayer").MediaPlayer;
+    // }
+
+    return require("../../components/vlcplayer").MediaPlayer;
+  }
+
+  const Player = getPlayer(videoUrl as string);
 
   return (
     <Player
