@@ -614,7 +614,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                     </LinearGradient>
                 </Animated.View>
             )}
-                        
+
             {/* Settings panel */}
             {showSettings && (
                 <TouchableOpacity
@@ -627,32 +627,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                         activeOpacity={1}
                         onPress={(e) => e.stopPropagation()}
                     >
-                        <ScrollView style={styles.settingsContent}>
-                            <Text style={styles.settingsTitle}>Video Scale</Text>
-                            <View style={styles.scaleOptions}>
-                                {[
-                                    { value: 'contain', label: 'Fit' },
-                                    { value: 'cover', label: 'Fill' },
-                                    { value: 'fill', label: 'Stretch' }
-                                ].map(option => (
-                                    <TouchableOpacity
-                                        key={option.value}
-                                        style={[
-                                            styles.scaleOption,
-                                            contentFit === option.value && styles.scaleOptionSelected
-                                        ]}
-                                        onPress={async () => { await playHaptic(); changeContentFit(option.value as VideoContentFit); }}
-                                    >
-                                        <Text style={[
-                                            styles.scaleOptionText,
-                                            contentFit === option.value && styles.scaleOptionTextSelected
-                                        ]}>
-                                            {option.label}
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-
+                        <ScrollView style={styles.settingsContent}>                            
                             <Text style={styles.settingsTitle}>Playback Speed</Text>
                             <View style={styles.speedOptions}>
                                 {[0.75, 0.8, 0.9, 1.0, 1.1, 1.2, 1.25].map(speed => (
