@@ -28,7 +28,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     artwork,
 }) => {
     const videoRef = useRef<any>(null);
-    const [isPlaying, setIsPlaying] = useState(false);
+    const [isPlaying, setIsPlaying] = useState(true);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
     const [showControls, setShowControls] = useState(true);
@@ -284,7 +284,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 />
             </View>
 
-            {artwork && isBuffering && (
+            {artwork && !isReady && (
                 <View style={styles.artworkContainer}>
                     <Image
                         source={{ uri: artwork }}
