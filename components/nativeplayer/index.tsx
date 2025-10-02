@@ -66,7 +66,13 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const contentFitLabelTimer = useRef<any>(null);
 
     // Initialize player
-    const player = useVideoPlayer(videoUrl, (player) => {
+    const player = useVideoPlayer({
+        uri: videoUrl,
+        metadata: {
+            title: title,
+            artwork: artwork
+        }
+    }, (player) => {
         player.loop = false;
         player.muted = isMuted;
         player.playbackRate = playbackSpeed;
