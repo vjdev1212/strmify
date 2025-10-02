@@ -731,7 +731,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                         activeOpacity={1}
                         onPress={(e) => e.stopPropagation()}
                     >
-                        <ScrollView style={styles.settingsContent}>
+                        <ScrollView style={styles.settingsContent} showsVerticalScrollIndicator={false}>
                             <Text style={styles.settingsTitle}>Subtitles</Text>
                             <View style={styles.subtitleOptions}>
                                 <TouchableOpacity
@@ -747,9 +747,9 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 >
                                     <Text style={styles.subtitleOptionText}>Off</Text>
                                 </TouchableOpacity>
-                                {player.availableSubtitleTracks.map(sub => (
+                                {player.availableSubtitleTracks.map((sub, index) => (
                                     <TouchableOpacity
-                                        key={sub.language}
+                                        key={`${index}-${sub.id}-${sub.label}`}
                                         style={[
                                             styles.subtitleOption,
                                             selectedSubtitle === sub.language && styles.subtitleOptionSelected
@@ -786,9 +786,9 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                         <ScrollView style={styles.settingsContent}>
                             <Text style={styles.settingsTitle}>Audio Track</Text>
                             <View style={styles.audioOptions}>
-                                {player.availableAudioTracks.map(track => (
+                                {player.availableAudioTracks.map((track, index) => (
                                     <TouchableOpacity
-                                        key={track.id}
+                                        key={`${index}-${track.id}`}
                                         style={[
                                             styles.audioOption,
                                             selectedAudioTrack === track.id && styles.audioOptionSelected
