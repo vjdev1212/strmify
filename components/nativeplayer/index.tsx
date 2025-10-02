@@ -470,37 +470,12 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                         activeOpacity={1}
                         onPress={(e) => e.stopPropagation()}
                     >
-                        <ScrollView style={styles.settingsContent}>
-                            <Text style={styles.settingsTitle}>Video Scale</Text>
-                            <View style={styles.optionGroup}>
-                                {[
-                                    { value: 'contain', label: 'Fit' },
-                                    { value: 'cover', label: 'Fill' },
-                                    { value: 'stretch', label: 'Stretch' }
-                                ].map(option => (
-                                    <TouchableOpacity
-                                        key={option.value}
-                                        style={[
-                                            styles.option,
-                                            resizeMode === option.value && styles.optionSelected
-                                        ]}
-                                        onPress={() => changeResizeMode(option.value as ResizeMode)}
-                                    >
-                                        <Text style={[
-                                            styles.optionText,
-                                            resizeMode === option.value && styles.optionTextSelected
-                                        ]}>
-                                            {option.label}
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-
+                        <ScrollView style={styles.settingsContent}>                            
                             <Text style={styles.settingsTitle}>Playback Speed</Text>
                             <View style={styles.optionGroup}>
                                 {[0.75, 0.8, 0.9, 1.0, 1.1, 1.2, 1.25].map(speed => (
                                     <TouchableOpacity
-                                        key={speed}
+                                        key={`speed-${speed}`}
                                         style={[
                                             styles.option,
                                             playbackSpeed === speed && styles.optionSelected
@@ -535,9 +510,9 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                                 Off
                                             </Text>
                                         </TouchableOpacity>
-                                        {subtitles.map(sub => (
+                                        {subtitles.map((sub, index) => (
                                             <TouchableOpacity
-                                                key={sub.language}
+                                                key={`${index}-${sub.language}`}
                                                 style={[
                                                     styles.subtitleOption,
                                                     selectedSubtitle === sub.language && styles.subtitleOptionSelected

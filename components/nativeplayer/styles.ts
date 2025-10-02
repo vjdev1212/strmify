@@ -100,13 +100,13 @@ export const styles = StyleSheet.create({
     },
     progressSlider: {
         width: '100%',
-        height: 40,
+        height: 10,
     },
     timeContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 4,
+        marginHorizontal: 20
     },
     rightTimeControls: {
         flexDirection: 'row',
