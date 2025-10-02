@@ -42,6 +42,7 @@ const MediaPlayerConfigScreen = () => {
         if (getOriginalPlatform() === 'android') {
             return [
                 baseConfig(Players.Default, 'STREAMURL', false),
+                baseConfig(Players.VLCKit, 'STREAMURL', false),
                 baseConfig(Players.Browser, 'STREAMURL', false),
                 baseConfig(Players.VLC, 'vlc://STREAMURL', false),
                 baseConfig(Players.MXPlayer, 'intent:STREAMURL?sign=Yva5dQp8cFQpVAMUh1QxNWbZAZ2h05lYQ4qAxqf717w=:0#Intent;package=com.mxtech.videoplayer.ad;S.title=STREAMTITLE;end', false),
@@ -51,6 +52,7 @@ const MediaPlayerConfigScreen = () => {
         } else if (getOriginalPlatform() === 'ios') {
             return [
                 baseConfig(Players.Default, 'STREAMURL', false),
+                baseConfig(Players.VLCKit, 'STREAMURL', false),
                 baseConfig(Players.Browser, 'STREAMURL', false),
                 baseConfig(Players.VLC, 'vlc://STREAMURL', false),
                 baseConfig(Players.Infuse, 'infuse://x-callback-url/play?url=STREAMURL', true),
@@ -65,11 +67,13 @@ const MediaPlayerConfigScreen = () => {
         } else if (getOriginalPlatform() === 'windows') {
             return [
                 baseConfig(Players.Default, 'STREAMURL', false),
+                baseConfig(Players.VLCKit, 'STREAMURL', false),
                 baseConfig(Players.Browser, 'STREAMURL', false),
             ];
         } else if (getOriginalPlatform() === 'macos') {
             return [
                 baseConfig(Players.Default, 'STREAMURL', false),
+                baseConfig(Players.VLCKit, 'STREAMURL', false),
                 baseConfig(Players.Browser, 'STREAMURL', false),
                 baseConfig(Players.VLC, 'vlc://STREAMURL', false),
                 baseConfig(Players.Infuse, 'infuse://x-callback-url/play?url=STREAMURL', true),

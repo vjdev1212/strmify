@@ -1,5 +1,5 @@
 import OpenSubtitlesClient, { SubtitleResult } from "@/clients/opensubtitles";
-import { Subtitle, Chapter, MediaPlayer } from "@/components/MediaPlayer";
+import { Subtitle } from "@/components/nativeplayer/models";
 import { StorageKeys, storageService } from "@/utils/StorageService";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -7,11 +7,10 @@ import { Platform } from "react-native";
 
 const MediaPlayerScreen: React.FC = () => {
   const router = useRouter();
-  const { videoUrl, title, imdbid, type, season, episode } = useLocalSearchParams();
+  const { videoUrl, title, imdbid, type, season, episode, useVlcKit } = useLocalSearchParams();
   const [subtitles, setSubtitles] = useState<Subtitle[]>([]);
   const [isLoadingSubtitles, setIsLoadingSubtitles] = useState(true);
   const [openSubtitlesClient, setOpenSubtitlesClient] = useState<OpenSubtitlesClient | null>(null);
-  const chapters: Chapter[] = [];
   const artwork = `https://images.metahub.space/background/medium/${imdbid}/img`;
 
   useEffect(() => {
@@ -28,7 +27,7 @@ const MediaPlayerScreen: React.FC = () => {
     try {
       const userAgent = await storageService.getItem(StorageKeys.OPENSUBTITLES_USER_AGENT) || 'Strmify';
       const apiKey = await storageService.getItem(StorageKeys.OPENSUBTITLES_API_KEY) || '';
-      
+
       if (apiKey && apiKey.trim() !== '') {
         const client = new OpenSubtitlesClient(userAgent, apiKey);
         setOpenSubtitlesClient(client);
@@ -199,10 +198,17 @@ const MediaPlayerScreen: React.FC = () => {
     router.back();
   };
 
-  const Player =
-    Platform.OS === "web"
-      ? require("../../components/MediaPlayer").MediaPlayer
-      : require("../../components/vlcplayer").NativeMediaPlayer;
+  function getPlayer() {
+    if (Platform.OS === "web") {
+      return require("../../components/nativeplayer").MediaPlayer;
+    }
+    if (useVlcKit == 'true') {
+      return require("../../components/vlcplayer").MediaPlayer;
+    }
+    return require("../../components/nativeplayer").MediaPlayer;
+  }
+
+  const Player = getPlayer();
 
   return (
     <Player
@@ -211,7 +217,6 @@ const MediaPlayerScreen: React.FC = () => {
       onBack={handleBack}
       artwork={artwork as string}
       subtitles={subtitles}
-      chapters={chapters}
       openSubtitlesClient={openSubtitlesClient}
       isLoadingSubtitles={isLoadingSubtitles}
     />

@@ -3,6 +3,7 @@ import { getOriginalPlatform } from "./platform";
 
 export enum Players {
     Default = 'Default (Lite)',
+    VLCKit = 'VLCKit',
     Browser = 'Browser',
     VLC = 'VLC',
     Infuse = 'Infuse',
@@ -16,6 +17,7 @@ export const getPlatformSpecificPlayers = () => {
     if (getOriginalPlatform() === 'android') {
         return [
             { name: Players.Default, scheme: 'STREAMURL', encodeUrl: false },
+            { name: Players.VLCKit, scheme: 'STREAMURL', encodeUrl: false },
             { name: Players.Browser, scheme: 'STREAMURL', encodeUrl: false },
             { name: Players.VLC, scheme: 'vlc://STREAMURL', encodeUrl: false },
             { name: Players.MXPlayer, scheme: 'intent:STREAMURL?sign=Yva5dQp8cFQpVAMUh1QxNWbZAZ2h05lYQ4qAxqf717w=:0#Intent;package=com.mxtech.videoplayer.ad;S.title=STREAMTITLE;end', encodeUrl: false },
@@ -25,6 +27,7 @@ export const getPlatformSpecificPlayers = () => {
     } else if (getOriginalPlatform() === 'ios') {
         return [
             { name: Players.Default, scheme: 'STREAMURL', encodeUrl: false },
+            { name: Players.VLCKit, scheme: 'STREAMURL', encodeUrl: false },
             { name: Players.Browser, scheme: 'STREAMURL', encodeUrl: false },
             { name: Players.VLC, scheme: 'vlc://STREAMURL', encodeUrl: false },
             { name: Players.Infuse, scheme: 'infuse://x-callback-url/play?url=STREAMURL', encodeUrl: true },
@@ -44,6 +47,7 @@ export const getPlatformSpecificPlayers = () => {
     } else if (getOriginalPlatform() === 'macos') {
         return [
             { name: Players.Default, scheme: 'STREAMURL', encodeUrl: false },
+            { name: Players.VLCKit, scheme: 'STREAMURL', encodeUrl: false },
             { name: Players.Browser, scheme: 'STREAMURL', encodeUrl: false },
             { name: Players.VLC, scheme: 'vlc://STREAMURL', encodeUrl: false },
             { name: Players.Infuse, scheme: 'infuse://x-callback-url/play?url=STREAMURL', encodeUrl: true },

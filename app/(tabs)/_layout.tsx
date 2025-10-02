@@ -133,7 +133,23 @@ export default function TabLayout() {
           tabBarIconStyle: { marginVertical: 5 },
         }}
       />
-      
+            
+      <Tabs.Screen
+        name="search"
+        listeners={{
+          tabPress: () => {
+            if (isHapticsSupported()) {
+              Haptics.selectionAsync();
+            }
+          },
+        }}
+        options={{
+          title: 'Search',
+          tabBarIcon: ({ color }) => <TabBarIcon name="search" color={color} />,
+          tabBarIconStyle: { marginVertical: 5 },
+        }}
+      />
+
       <Tabs.Screen
         name="trakt"
         listeners={{
@@ -150,23 +166,7 @@ export default function TabLayout() {
           tabBarItemStyle: isTraktEnabled ? {} : { display: 'none' },
           tabBarButton: isTraktEnabled ? undefined : () => null,
         }}
-      />
-      
-      <Tabs.Screen
-        name="search"
-        listeners={{
-          tabPress: () => {
-            if (isHapticsSupported()) {
-              Haptics.selectionAsync();
-            }
-          },
-        }}
-        options={{
-          title: 'Search',
-          tabBarIcon: ({ color }) => <TabBarIcon name="search" color={color} />,
-          tabBarIconStyle: { marginVertical: 5 },
-        }}
-      />
+      />      
       
       <Tabs.Screen
         name="settings"

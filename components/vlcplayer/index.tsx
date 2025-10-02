@@ -1366,4 +1366,4 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
 };
 
 
-export const NativeMediaPlayer = React.memo(NativeMediaPlayerComponent);
+export const MediaPlayer = React.memo(NativeMediaPlayerComponent);
