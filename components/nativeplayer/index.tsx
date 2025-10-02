@@ -42,11 +42,13 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const [selectedAudioTrack, setSelectedAudioTrack] = useState<string | null>(null);
     const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
     const [isMuted, setIsMuted] = useState(true);
-    const [showSettings, setShowSettings] = useState(false);
+    const [showSpeedMenu, setShowSpeedMenu] = useState(false);
+    const [showSubtitleMenu, setShowSubtitleMenu] = useState(false);
+    const [showAudioMenu, setShowAudioMenu] = useState(false);
     const [isReady, setIsReady] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const [dragPosition, setDragPosition] = useState(0);
-    const [contentFit, setContentFit] = useState<VideoContentFit>('fill');
+    const [contentFit, setContentFit] = useState<VideoContentFit>('cover');
     const [showContentFitLabel, setShowContentFitLabel] = useState(false);
 
 
@@ -216,7 +218,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         }
 
         hideControlsTimer.current = setTimeout(() => {
-            if (isPlaying && !showSettings) {
+            if (isPlaying && !showSpeedMenu && !showSubtitleMenu && !showAudioMenu) {
                 Animated.timing(controlsOpacity, {
                     toValue: 0,
                     duration: 500,
@@ -225,8 +227,8 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                     setShowControls(false);
                 });
             }
-        }, 1500);
-    }, [isPlaying, controlsOpacity, showSettings]);
+        }, 3000);
+    }, [isPlaying, controlsOpacity, showSpeedMenu, showSubtitleMenu, showAudioMenu]);
 
     // Control functions
     const togglePlayPause = useCallback(async () => {
@@ -325,6 +327,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const changePlaybackSpeed = useCallback(async (speed: number) => {
         await playHaptic();
         setPlaybackSpeed(speed);
+        setShowSpeedMenu(false);
         showControlsTemporarily();
     }, [showControlsTemporarily]);
 
@@ -364,13 +367,25 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
     // Close panels when touching outside
     const handleOverlayPress = useCallback(() => {
-        if (showSettings) {
-            setShowSettings(false);
+        if (showSpeedMenu || showSubtitleMenu || showAudioMenu) {
+            setShowSpeedMenu(false);
+            setShowSubtitleMenu(false);
+            setShowAudioMenu(false);
+        }
+        else if (showControls) {
+            // Hide controls immediately if already showing
+            Animated.timing(controlsOpacity, {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: true,
+            }).start(() => {
+                setShowControls(false);
+            });
         }
         else {
             showControlsTemporarily();
         }
-    }, [showSettings, showControlsTemporarily]);
+    }, [showSpeedMenu, showSubtitleMenu, showAudioMenu, showControls, controlsOpacity, showControlsTemporarily]);
 
     const getContentFitIcon = useCallback(() => {
         switch (contentFit) {
@@ -399,7 +414,13 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 ref={videoRef}
                 style={[styles.video,]}
                 player={player}
-                allowsFullscreen={false}
+                fullscreenOptions={
+                    {
+                        enable: true,
+                        orientation: 'landscape',
+                        autoExitOnRotate: true
+                    }
+                }
                 allowsPictureInPicture={true}
                 nativeControls={false}
                 contentFit={contentFit}
@@ -494,6 +515,61 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 />
                             </TouchableOpacity>
 
+                            {/* Playback Speed */}
+                            <TouchableOpacity
+                                style={styles.controlButton}
+                                onPress={async () => {
+                                    await playHaptic();
+                                    setShowSpeedMenu(!showSpeedMenu);
+                                    setShowSubtitleMenu(false);
+                                    setShowAudioMenu(false);
+                                }}
+                            >
+                                <MaterialIcons
+                                    name="speed"
+                                    size={24}
+                                    color="white"
+                                />
+                            </TouchableOpacity>
+
+                            {/* Subtitles */}
+                            {player.availableSubtitleTracks.length > 0 && (
+                                <TouchableOpacity
+                                    style={styles.controlButton}
+                                    onPress={async () => {
+                                        await playHaptic();
+                                        setShowSubtitleMenu(!showSubtitleMenu);
+                                        setShowSpeedMenu(false);
+                                        setShowAudioMenu(false);
+                                    }}
+                                >
+                                    <MaterialIcons
+                                        name="closed-caption"
+                                        size={24}
+                                        color="white"
+                                    />
+                                </TouchableOpacity>
+                            )}
+
+                            {/* Audio Track */}
+                            {player.availableAudioTracks.length > 0 && (
+                                <TouchableOpacity
+                                    style={styles.controlButton}
+                                    onPress={async () => {
+                                        await playHaptic();
+                                        setShowAudioMenu(!showAudioMenu);
+                                        setShowSpeedMenu(false);
+                                        setShowSubtitleMenu(false);
+                                    }}
+                                >
+                                    <MaterialIcons
+                                        name="audiotrack"
+                                        size={24}
+                                        color="white"
+                                    />
+                                </TouchableOpacity>
+                            )}
+
                             {/* Content fit control */}
                             <TouchableOpacity
                                 style={styles.controlButton}
@@ -515,16 +591,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                     size={24}
                                     color="white"
                                 />
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={styles.controlButton}
-                                onPress={async () => {
-                                    await playHaptic();
-                                    setShowSettings(!showSettings);
-                                }}
-                            >
-                                <Ionicons name="settings-outline" size={24} color="white" />
                             </TouchableOpacity>
                         </View>
                     </LinearGradient>
@@ -615,29 +681,29 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 </Animated.View>
             )}
 
-            {/* Settings panel */}
-            {showSettings && (
+            {/* Speed Menu */}
+            {showSpeedMenu && (
                 <TouchableOpacity
                     style={styles.settingsOverlay}
                     activeOpacity={1}
-                    onPress={() => setShowSettings(false)}
+                    onPress={() => setShowSpeedMenu(false)}
                 >
                     <TouchableOpacity
                         style={styles.settingsPanel}
                         activeOpacity={1}
                         onPress={(e) => e.stopPropagation()}
                     >
-                        <ScrollView style={styles.settingsContent}>                            
+                        <ScrollView style={styles.settingsContent}>
                             <Text style={styles.settingsTitle}>Playback Speed</Text>
                             <View style={styles.speedOptions}>
-                                {[0.75, 0.8, 0.9, 1.0, 1.1, 1.2, 1.25].map(speed => (
+                                {[0.75, 0.8, 0.9, 1.0, 1.1, 1.2, 1.25, 1.5, 1.75, 2.0].map(speed => (
                                     <TouchableOpacity
                                         key={speed}
                                         style={[
                                             styles.speedOption,
                                             playbackSpeed === speed && styles.speedOptionSelected
                                         ]}
-                                        onPress={async () => { await playHaptic(); changePlaybackSpeed(speed); }}
+                                        onPress={() => changePlaybackSpeed(speed)}
                                     >
                                         <Text style={[
                                             styles.speedOptionText,
@@ -648,58 +714,97 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                     </TouchableOpacity>
                                 ))}
                             </View>
+                        </ScrollView>
+                    </TouchableOpacity>
+                </TouchableOpacity>
+            )}
 
-                            {player.availableSubtitleTracks.length > 0 && (
-                                <>
-                                    <Text style={styles.settingsTitle}>Subtitles</Text>
-                                    <View style={styles.subtitleOptions}>
-                                        <TouchableOpacity
-                                            style={[
-                                                styles.subtitleOption,
-                                                selectedSubtitle === null && styles.subtitleOptionSelected
-                                            ]}
-                                            onPress={async () => { await playHaptic(); setSelectedSubtitle(null); }}
-                                        >
-                                            <Text style={styles.subtitleOptionText}>Off</Text>
-                                        </TouchableOpacity>
-                                        {player.availableSubtitleTracks.map(sub => (
-                                            <TouchableOpacity
-                                                key={sub.language}
-                                                style={[
-                                                    styles.subtitleOption,
-                                                    selectedSubtitle === sub.language && styles.subtitleOptionSelected
-                                                ]}
-                                                onPress={async () => { await playHaptic(); setSelectedSubtitle(sub.language); }}
-                                            >
-                                                <Text style={styles.subtitleOptionText}>
-                                                    {sub.label}
-                                                </Text>
-                                            </TouchableOpacity>
-                                        ))}
-                                    </View>
-                                </>
-                            )}
+            {/* Subtitle Menu */}
+            {showSubtitleMenu && (
+                <TouchableOpacity
+                    style={styles.settingsOverlay}
+                    activeOpacity={1}
+                    onPress={() => setShowSubtitleMenu(false)}
+                >
+                    <TouchableOpacity
+                        style={styles.settingsPanel}
+                        activeOpacity={1}
+                        onPress={(e) => e.stopPropagation()}
+                    >
+                        <ScrollView style={styles.settingsContent}>
+                            <Text style={styles.settingsTitle}>Subtitles</Text>
+                            <View style={styles.subtitleOptions}>
+                                <TouchableOpacity
+                                    style={[
+                                        styles.subtitleOption,
+                                        selectedSubtitle === null && styles.subtitleOptionSelected
+                                    ]}
+                                    onPress={async () => {
+                                        await playHaptic();
+                                        setSelectedSubtitle(null);
+                                        setShowSubtitleMenu(false);
+                                    }}
+                                >
+                                    <Text style={styles.subtitleOptionText}>Off</Text>
+                                </TouchableOpacity>
+                                {player.availableSubtitleTracks.map(sub => (
+                                    <TouchableOpacity
+                                        key={sub.language}
+                                        style={[
+                                            styles.subtitleOption,
+                                            selectedSubtitle === sub.language && styles.subtitleOptionSelected
+                                        ]}
+                                        onPress={async () => {
+                                            await playHaptic();
+                                            setSelectedSubtitle(sub.language);
+                                            setShowSubtitleMenu(false);
+                                        }}
+                                    >
+                                        <Text style={styles.subtitleOptionText}>
+                                            {sub.label}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        </ScrollView>
+                    </TouchableOpacity>
+                </TouchableOpacity>
+            )}
 
-                            {player.availableAudioTracks.length > 0 && (
-                                <>
-                                    <Text style={styles.settingsTitle}>Audio Track</Text>
-                                    <View style={styles.audioOptions}>
-                                        {player.availableAudioTracks.map(track => (
-                                            <TouchableOpacity
-                                                key={track.id}
-                                                style={[
-                                                    styles.audioOption,
-                                                    selectedAudioTrack === track.id && styles.audioOptionSelected
-                                                ]}
-                                                onPress={async () => { await playHaptic(); setSelectedAudioTrack(track.id); }}                                            >
-                                                <Text style={styles.audioOptionText}>
-                                                    {track.label}
-                                                </Text>
-                                            </TouchableOpacity>
-                                        ))}
-                                    </View>
-                                </>
-                            )}
+            {/* Audio Track Menu */}
+            {showAudioMenu && (
+                <TouchableOpacity
+                    style={styles.settingsOverlay}
+                    activeOpacity={1}
+                    onPress={() => setShowAudioMenu(false)}
+                >
+                    <TouchableOpacity
+                        style={styles.settingsPanel}
+                        activeOpacity={1}
+                        onPress={(e) => e.stopPropagation()}
+                    >
+                        <ScrollView style={styles.settingsContent}>
+                            <Text style={styles.settingsTitle}>Audio Track</Text>
+                            <View style={styles.audioOptions}>
+                                {player.availableAudioTracks.map(track => (
+                                    <TouchableOpacity
+                                        key={track.id}
+                                        style={[
+                                            styles.audioOption,
+                                            selectedAudioTrack === track.id && styles.audioOptionSelected
+                                        ]}
+                                        onPress={async () => {
+                                            await playHaptic();
+                                            setSelectedAudioTrack(track.id);
+                                            setShowAudioMenu(false);
+                                        }}
+                                    >
+                                        <Text style={styles.audioOptionText}>
+                                            {track.label}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
                         </ScrollView>
                     </TouchableOpacity>
                 </TouchableOpacity>
@@ -707,4 +812,3 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         </View>
     );
 };
-

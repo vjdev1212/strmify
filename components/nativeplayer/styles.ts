@@ -137,7 +137,7 @@ export const styles = StyleSheet.create({
         top: '50%',
         left: '50%',
         transform: [{ translateX: -75 }, { translateY: -50 }],
-        zIndex: 5,
+        zIndex: 5
     },
     contentFitLabelContainer: {
         flexDirection: 'row',
@@ -242,12 +242,12 @@ export const styles = StyleSheet.create({
         backgroundColor: 'rgba(0, 0, 0, 0.95)',
         borderRadius: 12,
         padding: 20,
-        minWidth: 280,
+        minWidth: 500,
         maxWidth: '80%',
-        maxHeight: '70%',
+        maxHeight: '90%',
     },
     settingsContent: {
-        maxHeight: 400,
+        maxHeight: '90%',
     },
     settingsTitle: {
         color: 'white',
