@@ -3,16 +3,11 @@ import { StyleSheet } from "react-native";
 export const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#000000',
-    },
-    videoWrapper: {
-        width: '100%',
-        height: '100%',
+        backgroundColor: 'black',
     },
     video: {
         width: '100%',
         height: '100%',
-        backgroundColor: '#000000',
     },
     touchArea: {
         position: 'absolute',
@@ -32,101 +27,93 @@ export const styles = StyleSheet.create({
     topControls: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingTop: 16,
-        paddingBottom: 24,
+        paddingHorizontal: 20,
+        paddingTop: 20,
+        paddingBottom: 20,
     },
     backButton: {
         padding: 8,
-        marginRight: 12,
+        marginRight: 16,
     },
     titleContainer: {
         flex: 1,
-        marginRight: 12,
+        marginRight: 16,
     },
     titleText: {
         color: 'white',
-        fontSize: 16,
+        fontSize: 18,
         fontWeight: '600',
-        letterSpacing: 0.3,
+    },
+    subtitleText: {
+        color: 'rgba(255, 255, 255, 0.8)',
+        fontSize: 14,
+        marginTop: 2,
+    },
+    chapterText: {
+        color: 'rgba(255, 255, 255, 0.6)',
+        fontSize: 12,
+        marginTop: 4,
     },
     topRightControls: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 4,
     },
     controlButton: {
-        padding: 10,
+        padding: 8,
+        marginLeft: 12,
     },
     centerControls: {
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        gap: 32,
+        paddingHorizontal: 60,
     },
     skipButton: {
-        padding: 8,
-    },
-    skipButtonInner: {
-        width: 56,
-        height: 56,
-        borderRadius: 28,
-        backgroundColor: 'transparent',
-        justifyContent: 'center',
-        alignItems: 'center'
+        padding: 20,
+        marginHorizontal: 20,
     },
     playButton: {
-        padding: 8,
-    },
-    playButtonInner: {
-        width: 72,
-        height: 72,
-        borderRadius: 36,
-        backgroundColor: 'transparent',
-        justifyContent: 'center',
-        alignItems: 'center'
+        padding: 16,
+        marginHorizontal: 30,
     },
     disabledButton: {
-        opacity: 0.4,
+        opacity: 0.5,
     },
     bottomControls: {
-        paddingHorizontal: 20,
-        paddingBottom: 24,
-        paddingTop: 16,
-    },
-    progressContainerWithMargin: {
-        marginBottom: 12,
-        marginHorizontal: 20
-    },
-    progressSlider: {
-        width: '100%',
-        height: 10,
+        paddingHorizontal: 40,
+        paddingBottom: 40,
+        paddingTop: 20,
+        height: 120,
     },
     timeContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginHorizontal: 20
     },
-    rightTimeControls: {
+    progressContainerWithMargin: {
+        marginBottom: 16,
+        paddingVertical: 10,
+    },
+    progressSlider: {
+        width: '100%',
+        height: 40,
+    },
+    bottomRightControls: {
         flexDirection: 'row',
+        justifyContent: 'flex-end',
         alignItems: 'center',
-        gap: 12,
     },
     timeText: {
-        color: 'rgba(255, 255, 255, 0.85)',
-        fontSize: 13,
+        color: 'white',
+        fontSize: 14,
         fontWeight: '500',
-        fontVariant: ['tabular-nums'],
+        marginHorizontal: 10
     },
     speedText: {
-        color: '#535aff',
-        fontSize: 13,
-        fontWeight: '600',
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-        backgroundColor: 'rgba(83, 90, 255, 0.15)',
-        borderRadius: 6,
+        color: '#007AFF',
+        fontSize: 14,
+        fontWeight: '500',
+        marginLeft: 12,
     },
     bufferingContainer: {
         position: 'absolute',
@@ -136,13 +123,34 @@ export const styles = StyleSheet.create({
         bottom: 0,
         justifyContent: 'center',
         alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
         zIndex: 10,
     },
     bufferingText: {
-        color: 'rgba(255, 255, 255, 0.9)',
-        fontSize: 14,
-        marginTop: 12,
-        fontWeight: '500',
+        color: 'white',
+        fontSize: 16,
+        marginTop: 8,
+    },
+    contentFitLabelOverlay: {
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: [{ translateX: -75 }, { translateY: -50 }],
+        zIndex: 5,
+    },
+    contentFitLabelContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+        borderRadius: 25,
+    },
+    contentFitLabelText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: '600',
+        marginLeft: 8,
     },
     artworkContainer: {
         position: 'absolute',
@@ -162,7 +170,62 @@ export const styles = StyleSheet.create({
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'transparent',
+        backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    },
+    volumeOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    volumePanel: {
+        backgroundColor: 'rgba(0, 0, 0, 0.9)',
+        borderRadius: 12,
+        padding: 20,
+        minWidth: 300,
+    },
+    volumeControls: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    volumeSlider: {
+        flex: 1,
+        height: 40,
+        marginHorizontal: 15,
+    },
+    sliderThumb: {
+        backgroundColor: '#007AFF',
+        width: 20,
+        height: 20,
+    },
+    brightnessOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    brightnessPanel: {
+        backgroundColor: 'rgba(0, 0, 0, 0.9)',
+        borderRadius: 12,
+        padding: 20,
+        minWidth: 300,
+    },
+    brightnessControls: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    brightnessSlider: {
+        flex: 1,
+        height: 40,
+        marginHorizontal: 15,
     },
     settingsOverlay: {
         position: 'absolute',
@@ -170,81 +233,104 @@ export const styles = StyleSheet.create({
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.75)',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
         justifyContent: 'center',
         alignItems: 'center',
     },
     settingsPanel: {
-        backgroundColor: '#1a1a1a',
-        borderRadius: 16,
-        padding: 24,
-        minWidth: 320,
-        maxWidth: '85%',
-        maxHeight: '75%',
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.1)',
+        backgroundColor: 'rgba(0, 0, 0, 0.95)',
+        borderRadius: 12,
+        padding: 20,
+        minWidth: 280,
+        maxWidth: '80%',
+        maxHeight: '70%',
     },
     settingsContent: {
-        maxHeight: 450,
+        maxHeight: 400,
     },
     settingsTitle: {
-        color: 'rgba(255, 255, 255, 0.95)',
-        fontSize: 15,
+        color: 'white',
+        fontSize: 16,
         fontWeight: '600',
         marginBottom: 12,
-        marginTop: 16,
-        letterSpacing: 0.3,
+        marginTop: 20,
     },
-    optionGroup: {
+    speedOptions: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: 8,
-        marginBottom: 8,
+        marginBottom: 10,
     },
-    option: {
-        backgroundColor: 'rgba(255, 255, 255, 0.08)',
-        paddingHorizontal: 16,
-        paddingVertical: 10,
-        borderRadius: 8,
-        borderWidth: 1.5,
-        borderColor: 'transparent',
+    speedOption: {
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 6,
+        margin: 4,
     },
-    optionSelected: {
-        backgroundColor: 'rgba(83, 90, 255, 0.2)',
-        borderColor: '#535aff',
+    speedOptionSelected: {
+        backgroundColor: '#007AFF',
     },
-    optionText: {
-        color: 'rgba(255, 255, 255, 0.85)',
+    speedOptionText: {
+        color: 'white',
         fontSize: 14,
-        fontWeight: '500',
     },
-    optionTextSelected: {
-        color: '#fff',
+    speedOptionTextSelected: {
         fontWeight: '600',
     },
-    subtitleOptionsGroup: {
-        gap: 8,
-        marginBottom: 8,
+    scaleOptions: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        marginBottom: 10,
+    },
+    scaleOption: {
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 6,
+        margin: 4,
+    },
+    scaleOptionSelected: {
+        backgroundColor: '#007AFF',
+    },
+    scaleOptionText: {
+        color: 'white',
+        fontSize: 14,
+    },
+    scaleOptionTextSelected: {
+        fontWeight: '600',
+    },
+    subtitleOptions: {
+        marginBottom: 10,
     },
     subtitleOption: {
-        backgroundColor: 'rgba(255, 255, 255, 0.08)',
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        borderRadius: 8,
-        borderWidth: 1.5,
-        borderColor: 'transparent',
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        borderRadius: 6,
+        marginBottom: 8,
     },
     subtitleOptionSelected: {
-        backgroundColor: 'rgba(83, 90, 255, 0.2)',
-        borderColor: '#535aff',
+        backgroundColor: '#007AFF',
     },
     subtitleOptionText: {
-        color: 'rgba(255, 255, 255, 0.85)',
+        color: 'white',
         fontSize: 14,
-        fontWeight: '500',
     },
-    subtitleOptionTextSelected: {
-        color: '#fff',
-        fontWeight: '600',
+    audioOptions: {
+        marginBottom: 10,
+    },
+    audioOption: {
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        borderRadius: 6,
+        marginBottom: 8,
+    },
+    audioOptionSelected: {
+        backgroundColor: '#007AFF',
+    },
+    audioOptionText: {
+        color: 'white',
+        fontSize: 14,
     },
 });

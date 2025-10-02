@@ -11,6 +11,12 @@ export interface AudioTrack {
     id: string;
 }
 
+export interface Chapter {
+    title: string;
+    start: number;
+    thumbnail?: string;
+}
+
 export interface MediaPlayerProps {
     videoUrl: string;
     title: string;
@@ -20,5 +26,3 @@ export interface MediaPlayerProps {
     autoPlay?: boolean;
     artwork?: string;
 }
-
-type ResizeMode = 'contain' | 'cover' | 'stretch';
