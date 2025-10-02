@@ -38,8 +38,8 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const [duration, setDuration] = useState(0);
     const [showControls, setShowControls] = useState(true);
     const [isBuffering, setIsBuffering] = useState(true);
-    const [selectedSubtitle, setSelectedSubtitle] = useState<SubtitleTrack | null>(null);
-    const [selectedAudioTrack, setSelectedAudioTrack] = useState<AudioTrack | null>(null);
+    const [selectedSubtitle, setSelectedSubtitle] = useState<string | null>(null);
+    const [selectedAudioTrack, setSelectedAudioTrack] = useState<string | null>(null);
     const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
     const [isMuted, setIsMuted] = useState(true);
     const [showSpeedMenu, setShowSpeedMenu] = useState(false);
@@ -331,11 +331,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         showControlsTemporarily();
     }, [showControlsTemporarily]);
 
-    const changeContentFit = useCallback(async (fit: VideoContentFit) => {
-        await playHaptic();
-        setContentFit(fit);
-        showControlsTemporarily();
-    }, [showControlsTemporarily]);
 
     // Fixed progress bar with proper slider functionality
     const handleSliderValueChange = useCallback((value: number) => {
@@ -753,11 +748,11 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                         key={`${index}-${sub.id}-${sub.label}`}
                                         style={[
                                             styles.subtitleOption,
-                                            selectedSubtitle?.id === sub.id && styles.subtitleOptionSelected
+                                            selectedSubtitle === sub.id && styles.subtitleOptionSelected
                                         ]}
                                         onPress={async () => {
                                             await playHaptic();
-                                            setSelectedSubtitle(sub);
+                                            setSelectedSubtitle(sub.id);
                                             player.subtitleTrack = sub;
                                             setShowSubtitleMenu(false);
                                         }}
@@ -793,11 +788,11 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                         key={`${index}-${track.id}`}
                                         style={[
                                             styles.audioOption,
-                                            selectedAudioTrack?.id === track.id && styles.audioOptionSelected
+                                            selectedAudioTrack === track.id && styles.audioOptionSelected
                                         ]}
                                         onPress={async () => {
                                             await playHaptic();
-                                            setSelectedAudioTrack(track);
+                                            setSelectedAudioTrack(track.id);
                                             player.audioTrack = track;
                                             setShowAudioMenu(false);
                                         }}
