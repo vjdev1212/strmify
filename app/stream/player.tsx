@@ -1,5 +1,5 @@
 import OpenSubtitlesClient, { SubtitleResult } from "@/clients/opensubtitles";
-import { Subtitle, Chapter, MediaPlayer } from "@/components/MediaPlayer";
+import { Subtitle } from "@/components/nativeplayer/models";
 import { StorageKeys, storageService } from "@/utils/StorageService";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -11,7 +11,6 @@ const MediaPlayerScreen: React.FC = () => {
   const [subtitles, setSubtitles] = useState<Subtitle[]>([]);
   const [isLoadingSubtitles, setIsLoadingSubtitles] = useState(true);
   const [openSubtitlesClient, setOpenSubtitlesClient] = useState<OpenSubtitlesClient | null>(null);
-  const chapters: Chapter[] = [];
   const artwork = `https://images.metahub.space/background/medium/${imdbid}/img`;
 
   useEffect(() => {
@@ -201,7 +200,7 @@ const MediaPlayerScreen: React.FC = () => {
 
   const Player =
     Platform.OS === "web"
-      ? require("../../components/MediaPlayer").MediaPlayer
+      ? require("../../components/nativeplayer").MediaPlayer
       : require("../../components/vlcplayer").NativeMediaPlayer;
 
   return (
@@ -211,7 +210,6 @@ const MediaPlayerScreen: React.FC = () => {
       onBack={handleBack}
       artwork={artwork as string}
       subtitles={subtitles}
-      chapters={chapters}
       openSubtitlesClient={openSubtitlesClient}
       isLoadingSubtitles={isLoadingSubtitles}
     />

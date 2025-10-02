@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
     View,
     Text,
-    StyleSheet,
     TouchableOpacity,
     Animated,
     StatusBar,
@@ -11,38 +10,15 @@ import {
     Platform,
     Image,
 } from "react-native";
-import Video, { VideoRef, OnLoadData, OnProgressData, SelectedTrackType } from 'react-native-video';
+import Video, { ResizeMode } from 'react-native-video';
 import * as ScreenOrientation from "expo-screen-orientation";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import Slider from '@react-native-assets/slider';
 import { showAlert } from "@/utils/platform";
-import * as Haptics from 'expo-haptics';
-
-export interface Subtitle {
-    fileId: string | number | null;
-    language: string;
-    url: string;
-    label: string;
-}
-
-export interface AudioTrack {
-    language: string;
-    label: string;
-    id: string;
-}
-
-interface MediaPlayerProps {
-    videoUrl: string;
-    title: string;
-    subtitles?: Subtitle[];
-    audioTracks?: AudioTrack[];
-    onBack: () => void;
-    autoPlay?: boolean;
-    artwork?: string;
-}
-
-type ResizeMode = 'contain' | 'cover' | 'stretch';
+import { styles } from "./styles";
+import { playHaptic } from "./utils";
+import { MediaPlayerProps } from "./models";
 
 export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     videoUrl,
@@ -51,7 +27,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     onBack,
     artwork,
 }) => {
-    const videoRef = useRef<VideoRef>(null);
+    const videoRef = useRef<any>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
@@ -59,29 +35,19 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const [isBuffering, setIsBuffering] = useState(true);
     const [selectedSubtitle, setSelectedSubtitle] = useState<string | null>(null);
     const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
-    const [volume, setVolume] = useState(1.0);
     const [isMuted, setIsMuted] = useState(false);
-    const [showVolumeSlider, setShowVolumeSlider] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
     const [isReady, setIsReady] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const [dragPosition, setDragPosition] = useState(0);
-    const [resizeMode, setResizeMode] = useState<ResizeMode>('contain');
-    const [showResizeModeLabel, setShowResizeModeLabel] = useState(false);
-    const [brightness, setBrightness] = useState(1.0);
-    const [showBrightnessSlider, setShowBrightnessSlider] = useState(false);
-
-    // Resize mode options cycle
-    const resizeModeOptions: ResizeMode[] = ['contain', 'cover', 'stretch'];
+    const [resizeMode, setResizeMode] = useState<ResizeMode>(ResizeMode.CONTAIN);
 
     // Animated values
     const controlsOpacity = useRef(new Animated.Value(1)).current;
     const bufferOpacity = useRef(new Animated.Value(1)).current;
-    const resizeModeLabelOpacity = useRef(new Animated.Value(0)).current;
 
     // Auto-hide controls timer
     const hideControlsTimer = useRef<any>(null);
-    const resizeModeLabelTimer = useRef<any>(null);
 
     useEffect(() => {
         const setupOrientation = async () => {
@@ -108,9 +74,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
             if (hideControlsTimer.current) {
                 clearTimeout(hideControlsTimer.current);
             }
-            if (resizeModeLabelTimer.current) {
-                clearTimeout(resizeModeLabelTimer.current);
-            }
         };
     }, []);
 
@@ -128,7 +91,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         }
 
         hideControlsTimer.current = setTimeout(() => {
-            if (isPlaying && !showSettings && !showVolumeSlider && !showBrightnessSlider) {
+            if (isPlaying && !showSettings) {
                 Animated.timing(controlsOpacity, {
                     toValue: 0,
                     duration: 500,
@@ -138,18 +101,11 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 });
             }
         }, 3000);
-    }, [isPlaying, controlsOpacity, showSettings, showVolumeSlider, showBrightnessSlider]);
+    }, [isPlaying, controlsOpacity, showSettings]);
 
-    const playHaptic = async () => {
-        try {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        } catch (error) {
-            console.log('Haptics not supported');
-        }
-    }
 
     // Video event handlers
-    const onLoad = useCallback((data: OnLoadData) => {
+    const onLoad = useCallback((data: any) => {
         setDuration(data.duration);
         setIsReady(true);
         setIsBuffering(false);
@@ -160,7 +116,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         }).start();
     }, [bufferOpacity]);
 
-    const onProgress = useCallback((data: OnProgressData) => {
+    const onProgress = useCallback((data: any) => {
         if (!isDragging) {
             setCurrentTime(data.currentTime);
         }
@@ -199,32 +155,10 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
     const cycleResizeMode = useCallback(async () => {
         await playHaptic();
-        const currentIndex = resizeModeOptions.indexOf(resizeMode);
-        const nextIndex = (currentIndex + 1) % resizeModeOptions.length;
-        setResizeMode(resizeModeOptions[nextIndex]);
-
-        // Show the label briefly
-        setShowResizeModeLabel(true);
-        Animated.timing(resizeModeLabelOpacity, {
-            toValue: 1,
-            duration: 200,
-            useNativeDriver: true,
-        }).start();
-
-        if (resizeModeLabelTimer.current) {
-            clearTimeout(resizeModeLabelTimer.current);
-        }
-
-        resizeModeLabelTimer.current = setTimeout(() => {
-            Animated.timing(resizeModeLabelOpacity, {
-                toValue: 0,
-                duration: 300,
-                useNativeDriver: true,
-            }).start(() => {
-                setShowResizeModeLabel(false);
-            });
-        }, 1000);
-
+        const modes: ResizeMode[] = ['contain' as ResizeMode, 'cover' as ResizeMode, 'stretch' as ResizeMode];
+        const currentIndex = modes.indexOf(resizeMode);
+        const nextIndex = (currentIndex + 1) % modes.length;
+        setResizeMode(modes[nextIndex]);
         showControlsTemporarily();
     }, [resizeMode, showControlsTemporarily]);
 
@@ -243,40 +177,9 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         seekTo(newTime);
     }, [currentTime, duration, seekTo, isReady]);
 
-    const toggleBrightnessSlider = useCallback(async () => {
-        await playHaptic();
-        setShowBrightnessSlider(!showBrightnessSlider);
-        setShowSettings(false);
-        setShowVolumeSlider(false);
-        showControlsTemporarily();
-    }, [showBrightnessSlider, showControlsTemporarily]);
-
-    const handleBrightnessChange = useCallback((value: number) => {
-        setBrightness(value);
-        showControlsTemporarily();
-    }, [showControlsTemporarily]);
-
     const toggleMute = useCallback(async () => {
         await playHaptic();
         setIsMuted(!isMuted);
-        showControlsTemporarily();
-    }, [isMuted, showControlsTemporarily]);
-
-    const toggleVolumeSlider = useCallback(async () => {
-        await playHaptic();
-        setShowVolumeSlider(!showVolumeSlider);
-        setShowSettings(false);
-        setShowBrightnessSlider(false);
-        showControlsTemporarily();
-    }, [showVolumeSlider, showControlsTemporarily]);
-
-    const handleVolumeChange = useCallback((value: number) => {
-        setVolume(value);
-        if (value === 0) {
-            setIsMuted(true);
-        } else if (isMuted) {
-            setIsMuted(false);
-        }
         showControlsTemporarily();
     }, [isMuted, showControlsTemporarily]);
 
@@ -331,14 +234,10 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const handleOverlayPress = useCallback(() => {
         if (showSettings) {
             setShowSettings(false);
-        } else if (showVolumeSlider) {
-            setShowVolumeSlider(false);
-        } else if (showBrightnessSlider) {
-            setShowBrightnessSlider(false);
         } else {
             showControlsTemporarily();
         }
-    }, [showSettings, showVolumeSlider, showBrightnessSlider, showControlsTemporarily]);
+    }, [showSettings, showControlsTemporarily]);
 
     const getResizeModeIcon = useCallback(() => {
         switch (resizeMode) {
@@ -361,19 +260,16 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const displayTime = isDragging ? dragPosition * duration : currentTime;
     const sliderValue = isDragging ? dragPosition : (duration > 0 ? currentTime / duration : 0);
 
-    // Get selected subtitle track
-    const selectedSubtitleTrack = subtitles.find(sub => sub.language === selectedSubtitle);
-
     return (
         <View style={styles.container}>
-            <View style={[styles.videoWrapper, { opacity: brightness }]}>
+            <View style={styles.videoWrapper}>
                 <Video
                     ref={videoRef}
                     source={{ uri: videoUrl }}
                     style={styles.video}
                     resizeMode={resizeMode}
                     paused={!isPlaying}
-                    volume={isMuted ? 0 : volume}
+                    muted={isMuted}
                     rate={playbackSpeed}
                     onLoad={onLoad}
                     onProgress={onProgress}
@@ -382,7 +278,9 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                     onEnd={onEnd}
                     repeat={false}
                     playInBackground={false}
-                    playWhenInactive={false}                                    
+                    playWhenInactive={false}
+                    ignoreSilentSwitch="ignore"
+                    mixWithOthers="mix"
                 />
             </View>
 
@@ -410,28 +308,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                     <Text style={styles.bufferingText}>Loading...</Text>
                 </Animated.View>
             )}
-
-            {/* Resize mode label overlay */}
-            {/* {showResizeModeLabel && (
-                <Animated.View
-                    style={[
-                        styles.resizeModeLabelOverlay,
-                        { opacity: resizeModeLabelOpacity }
-                    ]}
-                    pointerEvents="none"
-                >
-                    <View style={styles.resizeModeLabelContainer}>
-                        <MaterialIcons
-                            name={getResizeModeIcon()}
-                            size={32}
-                            color="white"
-                        />
-                        <Text style={styles.resizeModeLabelText}>
-                            {getResizeModeLabel()}
-                        </Text>
-                    </View>
-                </Animated.View>
-            )} */}
 
             {/* Touch area for showing controls */}
             <TouchableOpacity
@@ -475,28 +351,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
                             <TouchableOpacity
                                 style={styles.controlButton}
-                                onPress={toggleVolumeSlider}
-                            >
-                                <MaterialIcons
-                                    name="tune"
-                                    size={24}
-                                    color="white"
-                                />
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={styles.controlButton}
-                                onPress={toggleBrightnessSlider}
-                            >
-                                <Ionicons
-                                    name="sunny"
-                                    size={24}
-                                    color="white"
-                                />
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={styles.controlButton}
                                 onPress={cycleResizeMode}
                             >
                                 <MaterialIcons
@@ -511,8 +365,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 onPress={async () => {
                                     await playHaptic();
                                     setShowSettings(!showSettings);
-                                    setShowVolumeSlider(false);
-                                    setShowBrightnessSlider(false);
                                 }}
                             >
                                 <Ionicons name="settings-outline" size={24} color="white" />
@@ -528,11 +380,13 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 onPress={() => skipTime(-10)}
                                 disabled={!isReady}
                             >
-                                <MaterialIcons
-                                    name="replay-10"
-                                    size={36}
-                                    color={isReady ? "white" : "rgba(255,255,255,0.5)"}
-                                />
+                                <View style={styles.skipButtonInner}>
+                                    <MaterialIcons
+                                        name="replay-10"
+                                        size={32}
+                                        color={isReady ? "white" : "rgba(255,255,255,0.5)"}
+                                    />
+                                </View>
                             </TouchableOpacity>
 
                             <TouchableOpacity
@@ -540,11 +394,13 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 onPress={togglePlayPause}
                                 disabled={!isReady}
                             >
-                                <Ionicons
-                                    name={isPlaying ? "pause" : "play"}
-                                    size={60}
-                                    color={isReady ? "white" : "rgba(255,255,255,0.5)"}
-                                />
+                                <View style={styles.playButtonInner}>
+                                    <Ionicons
+                                        name={isPlaying ? "pause" : "play"}
+                                        size={40}
+                                        color={isReady ? "white" : "rgba(255,255,255,0.5)"}
+                                    />
+                                </View>
                             </TouchableOpacity>
 
                             <TouchableOpacity
@@ -552,11 +408,13 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 onPress={() => skipTime(30)}
                                 disabled={!isReady}
                             >
-                                <MaterialIcons
-                                    name="forward-30"
-                                    size={36}
-                                    color={isReady ? "white" : "rgba(255,255,255,0.5)"}
-                                />
+                                <View style={styles.skipButtonInner}>
+                                    <MaterialIcons
+                                        name="forward-30"
+                                        size={32}
+                                        color={isReady ? "white" : "rgba(255,255,255,0.5)"}
+                                    />
+                                </View>
                             </TouchableOpacity>
                         </View>
                     )}
@@ -566,15 +424,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                         colors={['transparent', 'rgba(26,26,26,0.95)']}
                         style={styles.bottomControls}
                     >
-                        <View style={styles.timeContainer}>
-                            <Text style={styles.timeText}>
-                                {formatTime(displayTime)}
-                            </Text>
-                            <Text style={styles.timeText}>
-                                {formatTime(duration)}
-                            </Text>
-                        </View>
-
                         <View style={styles.progressContainerWithMargin}>
                             <Slider
                                 style={styles.progressSlider}
@@ -585,80 +434,31 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 onSlidingStart={handleSliderSlidingStart}
                                 onSlidingComplete={handleSliderSlidingComplete}
                                 minimumTrackTintColor="#535aff"
-                                maximumTrackTintColor="rgba(255,255,255,0.3)"
+                                maximumTrackTintColor="rgba(255,255,255,0.15)"
                                 thumbTintColor={'#fff'}
-                                thumbSize={20}
-                                trackHeight={5}
+                                thumbSize={16}
+                                trackHeight={4}
                                 enabled={isReady && duration > 0}
                             />
                         </View>
 
-                        {playbackSpeed !== 1.0 && (
-                            <View style={styles.bottomRightControls}>
-                                <Text style={styles.speedText}>
-                                    {playbackSpeed}x
+                        <View style={styles.timeContainer}>
+                            <Text style={styles.timeText}>
+                                {formatTime(displayTime)}
+                            </Text>
+                            <View style={styles.rightTimeControls}>
+                                {playbackSpeed !== 1.0 && (
+                                    <Text style={styles.speedText}>
+                                        {playbackSpeed}x
+                                    </Text>
+                                )}
+                                <Text style={styles.timeText}>
+                                    {formatTime(duration)}
                                 </Text>
                             </View>
-                        )}
+                        </View>
                     </LinearGradient>
                 </Animated.View>
-            )}
-
-            {/* Volume slider */}
-            {showVolumeSlider && (
-                <TouchableOpacity
-                    style={styles.volumeOverlay}
-                    activeOpacity={1}
-                    onPress={() => setShowVolumeSlider(false)}
-                >
-                    <TouchableOpacity
-                        style={styles.volumePanel}
-                        activeOpacity={1}
-                        onPress={(e) => e.stopPropagation()}
-                    >
-                        <View style={styles.volumeControls}>
-                            <Ionicons name="volume-low" size={20} color="white" />
-                            <Slider
-                                style={styles.volumeSlider}
-                                minimumValue={0}
-                                maximumValue={1}
-                                value={volume}
-                                onValueChange={handleVolumeChange}
-                                minimumTrackTintColor="#535aff"
-                                maximumTrackTintColor="rgba(255,255,255,0.3)"
-                            />
-                            <Ionicons name="volume-high" size={20} color="white" />
-                        </View>
-                    </TouchableOpacity>
-                </TouchableOpacity>
-            )}
-
-            {showBrightnessSlider && (
-                <TouchableOpacity
-                    style={styles.brightnessOverlay}
-                    activeOpacity={1}
-                    onPress={() => setShowBrightnessSlider(false)}
-                >
-                    <TouchableOpacity
-                        style={styles.brightnessPanel}
-                        activeOpacity={1}
-                        onPress={(e) => e.stopPropagation()}
-                    >
-                        <View style={styles.brightnessControls}>
-                            <Ionicons name="sunny-outline" size={20} color="white" />
-                            <Slider
-                                style={styles.brightnessSlider}
-                                minimumValue={0.2}
-                                maximumValue={1.0}
-                                value={brightness}
-                                onValueChange={handleBrightnessChange}
-                                minimumTrackTintColor="#535aff"
-                                maximumTrackTintColor="rgba(255,255,255,0.3)"
-                            />
-                            <Ionicons name="sunny" size={20} color="white" />
-                        </View>
-                    </TouchableOpacity>
-                </TouchableOpacity>
             )}
 
             {/* Settings panel */}
@@ -675,7 +475,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                     >
                         <ScrollView style={styles.settingsContent}>
                             <Text style={styles.settingsTitle}>Video Scale</Text>
-                            <View style={styles.scaleOptions}>
+                            <View style={styles.optionGroup}>
                                 {[
                                     { value: 'contain', label: 'Fit' },
                                     { value: 'cover', label: 'Fill' },
@@ -684,14 +484,14 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                     <TouchableOpacity
                                         key={option.value}
                                         style={[
-                                            styles.scaleOption,
-                                            resizeMode === option.value && styles.scaleOptionSelected
+                                            styles.option,
+                                            resizeMode === option.value && styles.optionSelected
                                         ]}
                                         onPress={() => changeResizeMode(option.value as ResizeMode)}
                                     >
                                         <Text style={[
-                                            styles.scaleOptionText,
-                                            resizeMode === option.value && styles.scaleOptionTextSelected
+                                            styles.optionText,
+                                            resizeMode === option.value && styles.optionTextSelected
                                         ]}>
                                             {option.label}
                                         </Text>
@@ -700,19 +500,19 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                             </View>
 
                             <Text style={styles.settingsTitle}>Playback Speed</Text>
-                            <View style={styles.speedOptions}>
+                            <View style={styles.optionGroup}>
                                 {[0.75, 0.8, 0.9, 1.0, 1.1, 1.2, 1.25].map(speed => (
                                     <TouchableOpacity
                                         key={speed}
                                         style={[
-                                            styles.speedOption,
-                                            playbackSpeed === speed && styles.speedOptionSelected
+                                            styles.option,
+                                            playbackSpeed === speed && styles.optionSelected
                                         ]}
                                         onPress={() => changePlaybackSpeed(speed)}
                                     >
                                         <Text style={[
-                                            styles.speedOptionText,
-                                            playbackSpeed === speed && styles.speedOptionTextSelected
+                                            styles.optionText,
+                                            playbackSpeed === speed && styles.optionTextSelected
                                         ]}>
                                             {speed}x
                                         </Text>
@@ -723,7 +523,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                             {subtitles.length > 0 && (
                                 <>
                                     <Text style={styles.settingsTitle}>Subtitles</Text>
-                                    <View style={styles.subtitleOptions}>
+                                    <View style={styles.subtitleOptionsGroup}>
                                         <TouchableOpacity
                                             style={[
                                                 styles.subtitleOption,
@@ -731,7 +531,12 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                             ]}
                                             onPress={async () => { await playHaptic(); setSelectedSubtitle(null); }}
                                         >
-                                            <Text style={styles.subtitleOptionText}>Off</Text>
+                                            <Text style={[
+                                                styles.subtitleOptionText,
+                                                selectedSubtitle === null && styles.subtitleOptionTextSelected
+                                            ]}>
+                                                Off
+                                            </Text>
                                         </TouchableOpacity>
                                         {subtitles.map(sub => (
                                             <TouchableOpacity
@@ -742,7 +547,10 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                                 ]}
                                                 onPress={async () => { await playHaptic(); setSelectedSubtitle(sub.language); }}
                                             >
-                                                <Text style={styles.subtitleOptionText}>
+                                                <Text style={[
+                                                    styles.subtitleOptionText,
+                                                    selectedSubtitle === sub.language && styles.subtitleOptionTextSelected
+                                                ]}>
                                                     {sub.label}
                                                 </Text>
                                             </TouchableOpacity>
@@ -758,332 +566,3 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     );
 };
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#1a1a1a',
-    },
-    videoWrapper: {
-        width: '100%',
-        height: '100%',
-    },
-    video: {
-        width: '100%',
-        height: '100%',
-        backgroundColor: '#1a1a1a',
-    },
-    touchArea: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-    },
-    controlsOverlay: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        justifyContent: 'space-between',
-    },
-    topControls: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingTop: 20,
-        paddingBottom: 20,
-    },
-    backButton: {
-        padding: 8,
-        marginRight: 16,
-    },
-    titleContainer: {
-        flex: 1,
-        marginRight: 16,
-    },
-    titleText: {
-        color: 'white',
-        fontSize: 18,
-        fontWeight: '600',
-    },
-    topRightControls: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    controlButton: {
-        padding: 8,
-        marginLeft: 12,
-    },
-    centerControls: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingHorizontal: 60,
-    },
-    skipButton: {
-        padding: 20,
-        marginHorizontal: 20,
-    },
-    playButton: {
-        padding: 16,
-        marginHorizontal: 30,
-    },
-    disabledButton: {
-        opacity: 0.5,
-    },
-    bottomControls: {
-        paddingHorizontal: 40,
-        paddingBottom: 40,
-        paddingTop: 20,
-        height: 120,
-    },
-    timeContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    progressContainerWithMargin: {
-        marginBottom: 16,
-        paddingVertical: 10,
-    },
-    progressSlider: {
-        width: '100%',
-        height: 40,
-    },
-    bottomRightControls: {
-        flexDirection: 'row',
-        justifyContent: 'flex-end',
-        alignItems: 'center',
-    },
-    timeText: {
-        color: 'white',
-        fontSize: 14,
-        fontWeight: '500',
-        marginHorizontal: 10
-    },
-    speedText: {
-        color: '#007AFF',
-        fontSize: 14,
-        fontWeight: '500',
-        marginLeft: 12,
-    },
-    bufferingContainer: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
-        zIndex: 10,
-    },
-    bufferingText: {
-        color: 'white',
-        fontSize: 16,
-        marginTop: 8,
-    },
-    contentFitLabelOverlay: {
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        transform: [{ translateX: -75 }, { translateY: -50 }],
-        zIndex: 5,
-    },
-    contentFitLabelContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        paddingHorizontal: 20,
-        paddingVertical: 12,
-        borderRadius: 25,
-    },
-    contentFitLabelText: {
-        color: 'white',
-        fontSize: 16,
-        fontWeight: '600',
-        marginLeft: 8,
-    },
-    artworkContainer: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 1,
-    },
-    artworkImage: {
-        width: '100%',
-        height: '100%',
-    },
-    artworkOverlay: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    },
-    volumeOverlay: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    volumePanel: {
-        backgroundColor: 'rgba(0, 0, 0, 0.9)',
-        borderRadius: 12,
-        padding: 20,
-        minWidth: 300,
-    },
-    volumeControls: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    volumeSlider: {
-        flex: 1,
-        height: 40,
-        marginHorizontal: 15,
-    },
-    sliderThumb: {
-        backgroundColor: '#007AFF',
-        width: 20,
-        height: 20,
-    },
-    brightnessOverlay: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    brightnessPanel: {
-        backgroundColor: 'rgba(0, 0, 0, 0.9)',
-        borderRadius: 12,
-        padding: 20,
-        minWidth: 300,
-    },
-    brightnessControls: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    brightnessSlider: {
-        flex: 1,
-        height: 40,
-        marginHorizontal: 15,
-    },
-    settingsOverlay: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    settingsPanel: {
-        backgroundColor: 'rgba(0, 0, 0, 0.95)',
-        borderRadius: 12,
-        padding: 20,
-        minWidth: 280,
-        maxWidth: '80%',
-        maxHeight: '70%',
-    },
-    settingsContent: {
-        maxHeight: 400,
-    },
-    settingsTitle: {
-        color: 'white',
-        fontSize: 16,
-        fontWeight: '600',
-        marginBottom: 12,
-        marginTop: 20,
-    },
-    speedOptions: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        marginBottom: 10,
-    },
-    speedOption: {
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 6,
-        margin: 4,
-    },
-    speedOptionSelected: {
-        backgroundColor: '#007AFF',
-    },
-    speedOptionText: {
-        color: 'white',
-        fontSize: 14,
-    },
-    speedOptionTextSelected: {
-        fontWeight: '600',
-    },
-    scaleOptions: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        marginBottom: 10,
-    },
-    scaleOption: {
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 6,
-        margin: 4,
-    },
-    scaleOptionSelected: {
-        backgroundColor: '#007AFF',
-    },
-    scaleOptionText: {
-        color: 'white',
-        fontSize: 14,
-    },
-    scaleOptionTextSelected: {
-        fontWeight: '600',
-    },
-    subtitleOptions: {
-        marginBottom: 10,
-    },
-    subtitleOption: {
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-        paddingHorizontal: 12,
-        paddingVertical: 10,
-        borderRadius: 6,
-        marginBottom: 8,
-    },
-    subtitleOptionSelected: {
-        backgroundColor: '#007AFF',
-    },
-    subtitleOptionText: {
-        color: 'white',
-        fontSize: 14,
-    },
-    audioOptions: {
-        marginBottom: 10,
-    },
-    audioOption: {
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-        paddingHorizontal: 12,
-        paddingVertical: 10,
-        borderRadius: 6,
-        marginBottom: 8,
-    },
-    audioOptionSelected: {
-        backgroundColor: '#007AFF',
-    },
-    audioOptionText: {
-        color: 'white',
-        fontSize: 14,
-    },
-});
