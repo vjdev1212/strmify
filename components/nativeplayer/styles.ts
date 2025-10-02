@@ -277,29 +277,7 @@ export const styles = StyleSheet.create({
     },
     speedOptionTextSelected: {
         fontWeight: '600',
-    },
-    scaleOptions: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        marginBottom: 10,
-    },
-    scaleOption: {
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 6,
-        margin: 4,
-    },
-    scaleOptionSelected: {
-        backgroundColor: '#007AFF',
-    },
-    scaleOptionText: {
-        color: 'white',
-        fontSize: 14,
-    },
-    scaleOptionTextSelected: {
-        fontWeight: '600',
-    },
+    },    
     subtitleOptions: {
         marginBottom: 10,
     },

@@ -38,8 +38,8 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const [duration, setDuration] = useState(0);
     const [showControls, setShowControls] = useState(true);
     const [isBuffering, setIsBuffering] = useState(true);
-    const [selectedSubtitle, setSelectedSubtitle] = useState<string | null>(null);
-    const [selectedAudioTrack, setSelectedAudioTrack] = useState<string | null>(null);
+    const [selectedSubtitle, setSelectedSubtitle] = useState<number>(-1);
+    const [selectedAudioTrack, setSelectedAudioTrack] = useState<number>(-1);
     const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
     const [isMuted, setIsMuted] = useState(true);
     const [showSpeedMenu, setShowSpeedMenu] = useState(false);
@@ -453,28 +453,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 </Animated.View>
             )}
 
-            {/* Content fit label overlay */}
-            {showContentFitLabel && (
-                <Animated.View
-                    style={[
-                        styles.contentFitLabelOverlay,
-                        { opacity: contentFitLabelOpacity }
-                    ]}
-                    pointerEvents="none"
-                >
-                    <View style={styles.contentFitLabelContainer}>
-                        <MaterialIcons
-                            name={getContentFitIcon()}
-                            size={32}
-                            color="white"
-                        />
-                        <Text style={styles.contentFitLabelText}>
-                            {getContentFitLabel()}
-                        </Text>
-                    </View>
-                </Animated.View>
-            )}
-
             {/* Touch area for showing controls */}
             <TouchableOpacity
                 style={styles.touchArea}
@@ -516,41 +494,17 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 />
                             </TouchableOpacity>
 
-                            {/* Playback Speed */}
+                            {/* Content fit control */}
                             <TouchableOpacity
                                 style={styles.controlButton}
-                                onPress={async () => {
-                                    await playHaptic();
-                                    setShowSpeedMenu(!showSpeedMenu);
-                                    setShowSubtitleMenu(false);
-                                    setShowAudioMenu(false);
-                                }}
+                                onPress={async () => { await playHaptic(); cycleContentFit(); }}
                             >
                                 <MaterialIcons
-                                    name="speed"
+                                    name={getContentFitIcon()}
                                     size={24}
                                     color="white"
                                 />
                             </TouchableOpacity>
-
-                            {/* Subtitles */}
-                            {player.availableSubtitleTracks.length > 0 && (
-                                <TouchableOpacity
-                                    style={styles.controlButton}
-                                    onPress={async () => {
-                                        await playHaptic();
-                                        setShowSubtitleMenu(!showSubtitleMenu);
-                                        setShowSpeedMenu(false);
-                                        setShowAudioMenu(false);
-                                    }}
-                                >
-                                    <MaterialIcons
-                                        name="closed-caption"
-                                        size={24}
-                                        color="white"
-                                    />
-                                </TouchableOpacity>
-                            )}
 
                             {/* Audio Track */}
                             {player.availableAudioTracks.length > 0 && (
@@ -571,24 +525,49 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 </TouchableOpacity>
                             )}
 
-                            {/* Content fit control */}
-                            <TouchableOpacity
-                                style={styles.controlButton}
-                                onPress={async () => { await playHaptic(); cycleContentFit(); }}
-                            >
-                                <MaterialIcons
-                                    name={getContentFitIcon()}
-                                    size={24}
-                                    color="white"
-                                />
-                            </TouchableOpacity>
+                            {/* Subtitles */}
+                            {player.availableSubtitleTracks.length > 0 && (
+                                <TouchableOpacity
+                                    style={styles.controlButton}
+                                    onPress={async () => {
+                                        await playHaptic();
+                                        setShowSubtitleMenu(!showSubtitleMenu);
+                                        setShowSpeedMenu(false);
+                                        setShowAudioMenu(false);
+                                    }}
+                                >
+                                    <MaterialIcons
+                                        name="closed-caption"
+                                        size={24}
+                                        color="white"
+                                    />
+                                </TouchableOpacity>
+                            )}
 
+                            {/* Picture in Picture */}
                             <TouchableOpacity
                                 style={styles.controlButton}
                                 onPress={async () => { await playHaptic(); togglePictureInPicture(); }}
                             >
                                 <MaterialIcons
                                     name="picture-in-picture-alt"
+                                    size={24}
+                                    color="white"
+                                />
+                            </TouchableOpacity>
+
+                            {/* Playback Speed */}
+                            <TouchableOpacity
+                                style={styles.controlButton}
+                                onPress={async () => {
+                                    await playHaptic();
+                                    setShowSpeedMenu(!showSpeedMenu);
+                                    setShowSubtitleMenu(false);
+                                    setShowAudioMenu(false);
+                                }}
+                            >
+                                <MaterialIcons
+                                    name="speed"
                                     size={24}
                                     color="white"
                                 />
@@ -742,7 +721,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                     ]}
                                     onPress={async () => {
                                         await playHaptic();
-                                        setSelectedSubtitle(null);
+                                        setSelectedSubtitle(-1);
                                         player.subtitleTrack = null;
                                         setShowSubtitleMenu(false);
                                     }}
@@ -751,14 +730,14 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 </TouchableOpacity>
                                 {player.availableSubtitleTracks.map((sub, index) => (
                                     <TouchableOpacity
-                                        key={`${index}-${sub.id}-${sub.label}`}
+                                        key={index}
                                         style={[
                                             styles.subtitleOption,
-                                            selectedSubtitle === sub.id && styles.subtitleOptionSelected
+                                            selectedSubtitle === index && styles.subtitleOptionSelected
                                         ]}
                                         onPress={async () => {
                                             await playHaptic();
-                                            setSelectedSubtitle(sub.id);
+                                            setSelectedSubtitle(index);
                                             player.subtitleTrack = sub;
                                             setShowSubtitleMenu(false);
                                         }}
@@ -791,14 +770,14 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                             <View style={styles.audioOptions}>
                                 {player.availableAudioTracks.map((track, index) => (
                                     <TouchableOpacity
-                                        key={`${index}-${track.id}`}
+                                        key={index}
                                         style={[
                                             styles.audioOption,
-                                            selectedAudioTrack === track.id && styles.audioOptionSelected
+                                            selectedAudioTrack === index && styles.audioOptionSelected
                                         ]}
                                         onPress={async () => {
                                             await playHaptic();
-                                            setSelectedAudioTrack(track.id);
+                                            setSelectedAudioTrack(index);
                                             player.audioTrack = track;
                                             setShowAudioMenu(false);
                                         }}
