@@ -3,7 +3,7 @@ import { StyleSheet } from "react-native";
 export const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#1a1a1a',
+        backgroundColor: '#000000',
     },
     videoWrapper: {
         width: '100%',
@@ -12,7 +12,7 @@ export const styles = StyleSheet.create({
     video: {
         width: '100%',
         height: '100%',
-        backgroundColor: '#1a1a1a',
+        backgroundColor: '#000000',
     },
     touchArea: {
         position: 'absolute',
