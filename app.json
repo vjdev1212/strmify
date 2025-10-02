@@ -56,7 +56,7 @@
         {
           "android": {
             "usesCleartextTraffic": true,
-            "minSdkVersion": 24,
+            "minSdkVersion": 26,
             "compileSdkVersion": 35,
             "targetSdkVersion": 35,
             "buildToolsVersion": "35.0.0"
@@ -69,7 +69,18 @@
           "supportsBackgroundPlayback": true,
           "supportsPictureInPicture": true
         }
-      ]      
+      ],
+      [
+        "react-native-vlc-media-player",
+        {
+          "ios": {
+            "includeVLCKit": false
+          },
+          "android": {
+            "legacyJetifier": false
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
