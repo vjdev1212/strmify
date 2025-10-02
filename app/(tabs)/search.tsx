@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerContainer: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 15,
     paddingTop: 20,
     paddingBottom: 16,
   },
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
   },
   searchSection: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 15,
     paddingBottom: 24,
   },
   searchInputContainer: {
@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#1a1a1a',
-    borderRadius: 14,
+    borderRadius: 12,
     height: 40,
     paddingHorizontal: 16,
     shadowColor: '#000',

@@ -5,8 +5,6 @@ import {
   StyleSheet,
   Pressable,
   useWindowDimensions,
-  View as RNView,
-  Platform,
 } from 'react-native';
 import { ActivityIndicator, StatusBar, Text, View } from '@/components/Themed';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -112,10 +110,8 @@ const SeriesList = () => {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <RNView style={[styles.container, {
-        marginTop: Platform.OS === 'web' ? 50 : 0
-      }]}>
+    <SafeAreaView style={styles.container}>
+      <View>
         <StatusBar />
         {loading ? (
           <View style={styles.centeredContainer}>
@@ -133,7 +129,8 @@ const SeriesList = () => {
             showsVerticalScrollIndicator={false}
           />
         )}
-      </RNView>
+      </View>
+      <BottomSpacing space={30} />
     </SafeAreaView>
   );
 };
@@ -142,7 +139,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 5,
-    marginTop: 30
+    marginTop: 40
   },
   listContent: {
   },
