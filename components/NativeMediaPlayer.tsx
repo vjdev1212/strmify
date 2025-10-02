@@ -989,8 +989,23 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
 
     const handleOverlayPress = useCallback(() => {
         if (uiState.showSubtitleSettings || uiState.showAudioSettings || uiState.showSpeedSettings) {
+            // Close all panels first
             uiState.hideAllPanels();
+
+            // Always hide controls after closing overlay panels
+            // Use a shorter delay or immediate hide
+            timers.setTimer('hideControls', () => {
+                Animated.timing(controlsOpacity, {
+                    toValue: 0,
+                    duration: 300,
+                    useNativeDriver: true,
+                }).start(() => {
+                    uiState.setShowControls(false);
+                });
+            }, 500); // Shorter delay for better UX
+
         } else {
+            // Normal control toggle behavior
             if (uiState.showControls) {
                 Animated.timing(controlsOpacity, {
                     toValue: 0,
@@ -1003,7 +1018,7 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                 showControlsTemporarily();
             }
         }
-    }, [uiState, controlsOpacity, showControlsTemporarily]);
+    }, [uiState, controlsOpacity, showControlsTemporarily, timers]);
 
     // Gesture-based seeking functions
     const handleSeekForward = useCallback(async (seconds: number) => {
