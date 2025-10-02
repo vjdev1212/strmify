@@ -38,8 +38,10 @@
       },
       "package": "com.vijayyuvi.strmify",
       "icon": "assets/images/icon.png",
-      "usesCleartextTraffic": true,
-      "networkSecurityConfig": "@xml/network_security_config"
+      "config": {
+        "usesCleartextTraffic": true,
+        "networkSecurityConfig": "@xml/network_security_config"
+      }
     },
     "web": {
       "bundler": "metro",
@@ -69,7 +71,7 @@
           "supportsBackgroundPlayback": true,
           "supportsPictureInPicture": true
         }
-      ]      
+      ]
     ],
     "experiments": {
       "typedRoutes": true
