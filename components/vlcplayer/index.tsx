@@ -14,11 +14,10 @@ import { PlayerResizeMode, VLCPlayer } from 'react-native-vlc-media-player';
 import * as ScreenOrientation from "expo-screen-orientation";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import Slider from '@react-native-assets/slider';
-import * as Haptics from 'expo-haptics';
 import ImmersiveMode from "react-native-immersive-mode";
 import { showAlert } from "@/utils/platform";
 import { MediaPlayerProps, DownloadResponse } from "./models";
-import { formatTime } from "./utils";
+import { formatTime, playHaptic } from "./utils";
 import { parseSubtitleFile } from "./subtitle";
 import { styles } from "./styles";
 
@@ -277,16 +276,7 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
     const subtitleState = useSubtitleState();
     const settings = usePlayerSettings();
     const timers = useTimers();
-    const [videoScale, setVideoScale] = useState({ x: 1.0, y: 1.0 });
-
-    const playHaptic = useCallback(async () => {
-        try {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        } catch (error) {
-            console.log('Haptics not supported');
-        }
-    }, []);
-
+    const [videoScale, setVideoScale] = useState({ x: 1.0, y: 1.0 });    
 
     // Seek feedback state
     const [seekFeedback, setSeekFeedback] = useState<{

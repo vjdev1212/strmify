@@ -1,4 +1,14 @@
 import { useCallback } from "react";
+import * as Haptics from 'expo-haptics';
+
+export const playHaptic = useCallback(async () => {
+        try {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        } catch (error) {
+            console.log('Haptics not supported');
+        }
+    }, []);
+
 
 export const formatTime = useCallback((seconds: number) => {
         if (isNaN(seconds) || seconds < 0) return "0:00";
