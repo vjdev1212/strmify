@@ -419,7 +419,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                     {
                         enable: true,
                         orientation: 'landscape',
-                        autoExitOnRotate: true
                     }
                 }
                 allowsPictureInPicture={true}

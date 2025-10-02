@@ -7,7 +7,7 @@ import { Platform } from "react-native";
 
 const MediaPlayerScreen: React.FC = () => {
   const router = useRouter();
-  const { videoUrl, title, imdbid, type, season, episode } = useLocalSearchParams();
+  const { videoUrl, title, imdbid, type, season, episode, useVlcKit } = useLocalSearchParams();
   const [subtitles, setSubtitles] = useState<Subtitle[]>([]);
   const [isLoadingSubtitles, setIsLoadingSubtitles] = useState(true);
   const [openSubtitlesClient, setOpenSubtitlesClient] = useState<OpenSubtitlesClient | null>(null);
@@ -198,19 +198,17 @@ const MediaPlayerScreen: React.FC = () => {
     router.back();
   };
 
-  function getPlayer(videoUrl: string) {
+  function getPlayer() {
     if (Platform.OS === "web") {
       return require("../../components/nativeplayer").MediaPlayer;
     }
-
-    // if (videoUrl.toLowerCase().endsWith(".mkv")) {
-    //   return require("../../components/vlcplayer").MediaPlayer;
-    // }
-
-    return require("../../components/vlcplayer").MediaPlayer;
+    if (useVlcKit == 'true') {
+      return require("../../components/vlcplayer").MediaPlayer;
+    }
+    return require("../../components/nativeplayer").MediaPlayer;
   }
 
-  const Player = getPlayer(videoUrl as string);
+  const Player = getPlayer();
 
   return (
     <Player

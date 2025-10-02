@@ -238,7 +238,7 @@ const StreamListScreen = () => {
             const streamUrl = player.encodeUrl ? encodeURIComponent(videoUrl) : videoUrl;
             const playerUrl = player.scheme.replace('STREAMURL', streamUrl).replace('STREAMTITLE', filename);
 
-            if (playerToUse === Players.Default) {
+            if (playerToUse === Players.Default || playerToUse === Players.VLCKit) {
                 router.push({
                     pathname: '/stream/player',
                     params: {
@@ -247,7 +247,8 @@ const StreamListScreen = () => {
                         imdbid,
                         type,
                         season,
-                        episode
+                        episode,
+                        useVlcKit: playerToUse === Players.VLCKit ? 'true': 'false'
                     },
                 });
             } else {
