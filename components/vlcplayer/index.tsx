@@ -160,13 +160,11 @@ const useGestureHandling = (
         if (!isReady) return;
 
         const { locationX } = event.nativeEvent;
-        const screenWidth = event.nativeEvent.target?.offsetWidth || 400; // Fallback width
+        const screenWidth = event.nativeEvent.target?.offsetWidth || 400;
         const currentTime = Date.now();
         const tapSide = locationX < screenWidth / 2 ? 'left' : 'right';
 
-        // Double tap detection (within 300ms)
         if (currentTime - lastTap.current.timestamp < 300 && lastTap.current.side === tapSide) {
-            // Double tap detected
             timers.clearTimer('doubleTap');
 
             if (tapSide === 'left') {
@@ -175,15 +173,12 @@ const useGestureHandling = (
                 onSeekForward(10);
             }
 
-            // Reset tap data
             lastTap.current = { timestamp: 0, side: null };
         } else {
-            // Single tap - wait to see if it becomes a double tap
             lastTap.current = { timestamp: currentTime, side: tapSide };
 
             timers.clearTimer('doubleTap');
             timers.setTimer('doubleTap', () => {
-                // If we get here, it was a single tap
                 onToggleControls();
                 lastTap.current = { timestamp: 0, side: null };
             }, 300);
@@ -278,7 +273,6 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
     const timers = useTimers();
     const [videoScale, setVideoScale] = useState({ x: 1.0, y: 1.0 });    
 
-    // Seek feedback state
     const [seekFeedback, setSeekFeedback] = useState<{
         show: boolean;
         direction: 'forward' | 'backward';
@@ -289,7 +283,6 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         seconds: 10
     });
 
-    // State refs for avoiding stale closures
     const stateRefs = useRef({
         isPlaying: false,
         isReady: false,
@@ -299,7 +292,6 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         duration: 0
     });
 
-    // Update refs when state changes
     useEffect(() => {
         stateRefs.current.isPlaying = playerState.isPlaying;
     }, [playerState.isPlaying]);
@@ -324,13 +316,11 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         stateRefs.current.duration = playerState.duration;
     }, [playerState.duration]);
 
-    // Animated values
     const controlsOpacity = useRef(new Animated.Value(1)).current;
     const progressBarValue = useRef(new Animated.Value(0)).current;
     const bufferOpacity = useRef(new Animated.Value(1)).current;
     const resizeModeLabelOpacity = useRef(new Animated.Value(0)).current;
 
-    // Setup and cleanup
     useEffect(() => {
         const setupOrientation = async () => {
             try {
@@ -365,7 +355,6 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         };
     }, []);
 
-    // Optimized subtitle loading effect
     useEffect(() => {
         if (subtitles.length > 0 && settings.selectedSubtitle >= 0 && settings.selectedSubtitle < subtitles.length) {
             const selectedSub = subtitles[settings.selectedSubtitle];
@@ -376,12 +365,10 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
 
                 openSubtitlesClient.downloadSubtitle(String(selectedSub.fileId))
                     .then(async (response) => {
-                        // Check for various error response formats
                         if (('status' in response && response.status !== 200) ||
                             ('success' in response && response.success === false) ||
                             ('error' in response && response.error)) {
 
-                            // Handle different error message formats
                             let errorMessage: string = 'Unknown error occurred';
                             if ('error' in response && response.error) {
                                 errorMessage = response.error as string;
@@ -459,7 +446,6 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         }
     }, [settings.selectedSubtitle, subtitles, openSubtitlesClient]);
 
-    // Optimized subtitle display effect with debouncing
     const updateSubtitle = useMemo(() => {
         return (currentTime: number, parsedSubtitles: any[], currentSubtitle: string) => {
             if (parsedSubtitles.length === 0) {
@@ -483,7 +469,6 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         };
     }, []);
 
-
     useEffect(() => {
         const newSubtitle = updateSubtitle(
             playerState.currentTime,
@@ -496,8 +481,6 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         }
     }, [playerState.currentTime, subtitleState.parsedSubtitles, updateSubtitle]);
 
-    // Utility functions    
-    
     const showControlsTemporarily = useCallback(() => {
         uiState.setShowControls(true);
         controlsOpacity.setValue(1);
@@ -516,10 +499,9 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                     uiState.setShowControls(false);
                 });
             }
-        }, 3000); // Increased timeout for better UX
+        }, 3000);
     }, [controlsOpacity, uiState, timers]);
 
-    // Optimized VLC Event Handlers with better buffering management
     const vlcHandlers = useMemo(() => ({
         onLoad: (data: any) => {
             console.log('VLC Player loaded:', data);
@@ -566,19 +548,17 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                     const progress = newCurrentTime / stateRefs.current.duration;
                     progressBarValue.setValue(Math.max(0, Math.min(1, progress)));
                 }
-            }, 50); // Reduced debounce for smoother updates
+            }, 50);
         },
 
         onBuffering: (data: any) => {
             const { isBuffering: buffering } = data;
 
-            // Clear any existing buffering timeout
             timers.clearTimer('bufferingTimeout');
 
             if (buffering) {
-                // Show buffering immediately but with a slight delay for quick buffers
                 timers.setTimer('bufferingTimeout', () => {
-                    if (stateRefs.current.isReady) { // Only show if we were previously ready
+                    if (stateRefs.current.isReady) {
                         playerState.setIsBuffering(true);
                         playerState.setShowBufferingLoader(true);
                         Animated.timing(bufferOpacity, {
@@ -587,11 +567,11 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                             useNativeDriver: true,
                         }).start();
                     }
-                }, 200); // Small delay to avoid flickering on quick buffers
+                }, 200);
             } else {
                 playerState.setIsBuffering(false);
                 playerState.setShowBufferingLoader(false);
-                playerState.setIsSeeking(false); // Clear seeking state when buffering ends
+                playerState.setIsSeeking(false);
 
                 Animated.timing(bufferOpacity, {
                     toValue: 0,
@@ -611,7 +591,6 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
             playerState.setShowBufferingLoader(false);
             playerState.setIsSeeking(false);
 
-            // Clear buffering timeout when playing starts
             timers.clearTimer('bufferingTimeout');
 
             Animated.timing(bufferOpacity, {
@@ -653,7 +632,6 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         }
     }), [playerState, settings, bufferOpacity, timers, progressBarValue, controlsOpacity, uiState]);
 
-    // Optimized control actions
     const controlActions = useMemo(() => ({
         togglePlayPause: async () => {
             if (!stateRefs.current.isReady) return;
@@ -677,15 +655,12 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
 
             console.log(`Seeking to: ${clampedTime}s (${(position * 100).toFixed(1)}%)`);
 
-            // Set seeking state to prevent progress updates during seek
             playerState.setIsSeeking(true);
             playerState.setCurrentTime(clampedTime);
             progressBarValue.setValue(position);
 
-            // Show buffering during seek for better UX
             playerState.setShowBufferingLoader(true);
 
-            // Use debounced seek to avoid too many seek calls
             timers.clearTimer('seekDebounce');
             timers.setTimer('seekDebounce', () => {
                 playerRef.current?.seek(position);
@@ -712,7 +687,6 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
 
     }), [playerState, settings, showControlsTemporarily, timers, progressBarValue]);
 
-    // Optimized slider handlers
     const sliderHandlers = useMemo(() => ({
         handleSliderValueChange: (value: number) => {
             if (!stateRefs.current.isReady || stateRefs.current.duration <= 0) return;
@@ -1014,7 +988,7 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                         uri: videoUrl,
                         initType: 2,
                         initOptions: [
-                            "--network-caching=2000",
+                            "--network-caching=5000",
                             "--file-caching=1000",
                             "--live-caching=500",
                             "--drop-late-frames",
