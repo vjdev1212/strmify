@@ -93,6 +93,7 @@ export const styles = StyleSheet.create({
     progressContainerWithMargin: {
         marginBottom: 16,
         paddingVertical: 10,
+        marginHorizontal: 20
     },
     progressSlider: {
         width: '100%',
@@ -107,7 +108,7 @@ export const styles = StyleSheet.create({
         color: 'white',
         fontSize: 14,
         fontWeight: '500',
-        marginHorizontal: 10
+        marginHorizontal: 20
     },
     speedText: {
         color: '#007AFF',

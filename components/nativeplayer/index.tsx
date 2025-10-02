@@ -41,18 +41,13 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const [selectedSubtitle, setSelectedSubtitle] = useState<string | null>(null);
     const [selectedAudioTrack, setSelectedAudioTrack] = useState<string | null>(null);
     const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
-    const [volume, setVolume] = useState(1.0);
     const [isMuted, setIsMuted] = useState(true);
-    const [showVolumeSlider, setShowVolumeSlider] = useState(false);
-    const [showChapters, setShowChapters] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
     const [isReady, setIsReady] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const [dragPosition, setDragPosition] = useState(0);
     const [contentFit, setContentFit] = useState<VideoContentFit>('fill');
     const [showContentFitLabel, setShowContentFitLabel] = useState(false);
-    const [brightness, setBrightness] = useState(1.0);
-    const [showBrightnessSlider, setShowBrightnessSlider] = useState(false);
 
 
     // Content fit options cycle
@@ -72,7 +67,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const player = useVideoPlayer(videoUrl, (player) => {
         player.loop = false;
         player.muted = isMuted;
-        player.volume = volume;
         player.playbackRate = playbackSpeed;
     });
 
@@ -110,7 +104,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     useEffect(() => {
         if (player) {
             player.muted = isMuted;
-            player.volume = isMuted ? 0 : volume;
             player.playbackRate = playbackSpeed;
 
             if (typeof window !== 'undefined' && window.AudioContext) {
@@ -120,7 +113,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 }
             }
         }
-    }, [player, isMuted, volume, playbackSpeed]);
+    }, [player, isMuted, playbackSpeed]);
 
     // Playing state change handler
     const playingChange = useEvent(player, "playingChange");
@@ -223,7 +216,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         }
 
         hideControlsTimer.current = setTimeout(() => {
-            if (isPlaying && !showSettings && !showChapters && !showVolumeSlider && !showBrightnessSlider) {
+            if (isPlaying && !showSettings) {
                 Animated.timing(controlsOpacity, {
                     toValue: 0,
                     duration: 500,
@@ -233,7 +226,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 });
             }
         }, 1500);
-    }, [isPlaying, controlsOpacity, showSettings, showChapters, showVolumeSlider, showBrightnessSlider]);
+    }, [isPlaying, controlsOpacity, showSettings]);
 
     // Control functions
     const togglePlayPause = useCallback(async () => {
@@ -309,46 +302,12 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         seekTo(newTime);
     }, [currentTime, duration, seekTo, isReady]);
 
-    const toggleBrightnessSlider = useCallback(async () => {
-        await playHaptic();
-        setShowBrightnessSlider(!showBrightnessSlider);
-        setShowSettings(false);
-        setShowChapters(false);
-        setShowVolumeSlider(false);
-        showControlsTemporarily();
-    }, [showBrightnessSlider, showControlsTemporarily]);
-
-    const handleBrightnessChange = useCallback((value: number) => {
-        setBrightness(value);
-        showControlsTemporarily();
-    }, [showControlsTemporarily]);
-
     // Separate mute toggle
     const toggleMute = useCallback(async () => {
         await playHaptic();
         setIsMuted(!isMuted);
         showControlsTemporarily();
     }, [isMuted, showControlsTemporarily]);
-
-    // Volume slider control
-    const toggleVolumeSlider = useCallback(async () => {
-        await playHaptic();
-        setShowVolumeSlider(!showVolumeSlider);
-        setShowSettings(false);
-        setShowChapters(false);
-        showControlsTemporarily();
-    }, [showVolumeSlider, showControlsTemporarily]);
-
-    const handleVolumeChange = useCallback((value: number) => {
-        setVolume(value);
-        if (value === 0) {
-            setIsMuted(true);
-        } else if (isMuted) {
-            setIsMuted(false);
-        }
-        showControlsTemporarily();
-    }, [isMuted, showControlsTemporarily]);
-
 
     const formatTime = useCallback((seconds: number) => {
         if (isNaN(seconds) || seconds < 0) return "0:00";
@@ -407,16 +366,11 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const handleOverlayPress = useCallback(() => {
         if (showSettings) {
             setShowSettings(false);
-        } else if (showChapters) {
-            setShowChapters(false);
-        } else if (showVolumeSlider) {
-            setShowVolumeSlider(false);
-        } else if (showBrightnessSlider) {
-            setShowBrightnessSlider(false);
-        } else {
+        }
+        else {
             showControlsTemporarily();
         }
-    }, [showSettings, showChapters, showVolumeSlider, showBrightnessSlider, showControlsTemporarily]);
+    }, [showSettings, showControlsTemporarily]);
 
     const getContentFitIcon = useCallback(() => {
         switch (contentFit) {
@@ -443,10 +397,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         <View style={styles.container}>
             <VideoView
                 ref={videoRef}
-                style={[
-                    styles.video,
-                    { opacity: brightness }
-                ]}
+                style={[styles.video,]}
                 player={player}
                 allowsFullscreen={false}
                 allowsPictureInPicture={true}
@@ -543,29 +494,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 />
                             </TouchableOpacity>
 
-                            {/* Volume slider control */}
-                            <TouchableOpacity
-                                style={styles.controlButton}
-                                onPress={async () => { await playHaptic(); toggleVolumeSlider(); }}
-                            >
-                                <MaterialIcons
-                                    name="tune"
-                                    size={24}
-                                    color="white"
-                                />
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={styles.controlButton}
-                                onPress={async () => { await playHaptic(); toggleBrightnessSlider(); }}
-                            >
-                                <Ionicons
-                                    name="sunny"
-                                    size={24}
-                                    color="white"
-                                />
-                            </TouchableOpacity>
-
                             {/* Content fit control */}
                             <TouchableOpacity
                                 style={styles.controlButton}
@@ -594,8 +522,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 onPress={async () => {
                                     await playHaptic();
                                     setShowSettings(!showSettings);
-                                    setShowChapters(false);
-                                    setShowVolumeSlider(false);
                                 }}
                             >
                                 <Ionicons name="settings-outline" size={24} color="white" />
@@ -688,64 +614,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                     </LinearGradient>
                 </Animated.View>
             )}
-
-            {/* Volume slider */}
-            {showVolumeSlider && (
-                <TouchableOpacity
-                    style={styles.volumeOverlay}
-                    activeOpacity={1}
-                    onPress={() => setShowVolumeSlider(false)}
-                >
-                    <TouchableOpacity
-                        style={styles.volumePanel}
-                        activeOpacity={1}
-                        onPress={(e) => e.stopPropagation()}
-                    >
-                        <View style={styles.volumeControls}>
-                            <Ionicons name="volume-low" size={20} color="white" />
-                            <Slider
-                                style={styles.volumeSlider}
-                                minimumValue={0}
-                                maximumValue={1}
-                                value={volume}
-                                onValueChange={handleVolumeChange}
-                                minimumTrackTintColor="#007AFF"
-                                maximumTrackTintColor="rgba(255,255,255,0.3)"
-                            />
-                            <Ionicons name="volume-high" size={20} color="white" />
-                        </View>
-                    </TouchableOpacity>
-                </TouchableOpacity>
-            )}
-
-            {showBrightnessSlider && (
-                <TouchableOpacity
-                    style={styles.brightnessOverlay}
-                    activeOpacity={1}
-                    onPress={() => setShowBrightnessSlider(false)}
-                >
-                    <TouchableOpacity
-                        style={styles.brightnessPanel}
-                        activeOpacity={1}
-                        onPress={(e) => e.stopPropagation()}
-                    >
-                        <View style={styles.brightnessControls}>
-                            <Ionicons name="sunny-outline" size={20} color="white" />
-                            <Slider
-                                style={styles.brightnessSlider}
-                                minimumValue={0.2}
-                                maximumValue={1.0}
-                                value={brightness}
-                                onValueChange={handleBrightnessChange}
-                                minimumTrackTintColor="#007AFF"
-                                maximumTrackTintColor="rgba(255,255,255,0.3)"
-                            />
-                            <Ionicons name="sunny" size={20} color="white" />
-                        </View>
-                    </TouchableOpacity>
-                </TouchableOpacity>
-            )}
-
+                        
             {/* Settings panel */}
             {showSettings && (
                 <TouchableOpacity
