@@ -13,7 +13,7 @@ import {
     Platform,
     Image,
 } from "react-native";
-import { useVideoPlayer, VideoContentFit, VideoView } from "expo-video";
+import { AudioTrack, SubtitleTrack, useVideoPlayer, VideoContentFit, VideoView } from "expo-video";
 import { useEvent } from "expo";
 import * as ScreenOrientation from "expo-screen-orientation";
 import { LinearGradient } from "expo-linear-gradient";
@@ -38,8 +38,8 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const [duration, setDuration] = useState(0);
     const [showControls, setShowControls] = useState(true);
     const [isBuffering, setIsBuffering] = useState(true);
-    const [selectedSubtitle, setSelectedSubtitle] = useState<string | null>(null);
-    const [selectedAudioTrack, setSelectedAudioTrack] = useState<string | null>(null);
+    const [selectedSubtitle, setSelectedSubtitle] = useState<SubtitleTrack | null>(null);
+    const [selectedAudioTrack, setSelectedAudioTrack] = useState<AudioTrack | null>(null);
     const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
     const [isMuted, setIsMuted] = useState(true);
     const [showSpeedMenu, setShowSpeedMenu] = useState(false);
@@ -742,6 +742,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                     onPress={async () => {
                                         await playHaptic();
                                         setSelectedSubtitle(null);
+                                        player.subtitleTrack = null;
                                         setShowSubtitleMenu(false);
                                     }}
                                 >
@@ -752,11 +753,12 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                         key={`${index}-${sub.id}-${sub.label}`}
                                         style={[
                                             styles.subtitleOption,
-                                            selectedSubtitle === sub.language && styles.subtitleOptionSelected
+                                            selectedSubtitle?.id === sub.id && styles.subtitleOptionSelected
                                         ]}
                                         onPress={async () => {
                                             await playHaptic();
-                                            setSelectedSubtitle(sub.language);
+                                            setSelectedSubtitle(sub);
+                                            player.subtitleTrack = sub;
                                             setShowSubtitleMenu(false);
                                         }}
                                     >
@@ -791,11 +793,12 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                         key={`${index}-${track.id}`}
                                         style={[
                                             styles.audioOption,
-                                            selectedAudioTrack === track.id && styles.audioOptionSelected
+                                            selectedAudioTrack?.id === track.id && styles.audioOptionSelected
                                         ]}
                                         onPress={async () => {
                                             await playHaptic();
-                                            setSelectedAudioTrack(track.id);
+                                            setSelectedAudioTrack(track);
+                                            player.audioTrack = track;
                                             setShowAudioMenu(false);
                                         }}
                                     >
