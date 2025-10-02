@@ -1213,6 +1213,20 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
             {ArtworkComponent}
             {BufferingComponent}
 
+            {!playerState.hasStartedPlaying && !playerState.error && (
+                <View style={styles.loadingBackButtonContainer} pointerEvents="box-none">
+                    <TouchableOpacity
+                        style={styles.backButton}
+                        onPress={async () => {
+                            await playHaptic();
+                            onBack();
+                        }}
+                    >
+                        <Ionicons name="chevron-back" size={28} color="white" />
+                    </TouchableOpacity>
+                </View>
+            )}
+
             {/* Touch area for gesture controls */}
             {!playerState.error && (
                 <TouchableOpacity
@@ -1603,6 +1617,17 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingTop: 20,
         paddingBottom: 20,
+    },
+    loadingBackButtonContainer: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        paddingTop: 20,
+        paddingHorizontal: 20,
+        zIndex: 1000,
+        flexDirection: "row",
+        alignItems: "center",
     },
     backButton: {
         padding: 8,
