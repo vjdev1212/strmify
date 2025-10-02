@@ -37,11 +37,7 @@
         "backgroundColor": "#000000"
       },
       "package": "com.vijayyuvi.strmify",
-      "icon": "assets/images/icon.png",
-      "config": {
-        "usesCleartextTraffic": true,
-        "networkSecurityConfig": "@xml/network_security_config"
-      }
+      "icon": "assets/images/icon.png"      
     },
     "web": {
       "bundler": "metro",
@@ -58,6 +54,7 @@
         {
           "android": {
             "usesCleartextTraffic": true,
+            "networkSecurityConfig": "@xml/network_security_config",
             "minSdkVersion": 26,
             "compileSdkVersion": 35,
             "targetSdkVersion": 35,
