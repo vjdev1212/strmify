@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { StyleSheet, Pressable, View as RNView, ScrollView } from 'react-native';
 import { ActivityIndicator, Card, StatusBar, Text, View } from '@/components/Themed';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -13,9 +13,10 @@ import { ServerConfig } from '@/components/ServerConfig';
 import { Linking } from 'react-native';
 import BottomSpacing from '@/components/BottomSpacing';
 import { getPlatformSpecificPlayers, Players } from '@/utils/MediaPlayer';
-import StatusModal from '@/components/StatusModal';
 import { extractQuality, extractSize, getStreamType } from '@/utils/StreamItem';
 import { StorageKeys, storageService } from '@/utils/StorageService';
+import BottomSheet, { BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 interface Stream {
     name: string;
@@ -64,10 +65,13 @@ const StreamListScreen = () => {
     const [players, setPlayers] = useState<{ name: string; scheme: string; encodeUrl: boolean }[]>([]);
     const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
     const [playBtnDisabled, setPlayBtnDisabled] = useState<boolean>(false);
-    const [isModalVisible, setModalVisible] = useState(false);
     const [statusText, setStatusText] = useState('');
     const [isPlaying, setIsPlaying] = useState(false);
     const [selectedStream, setSelectedStream] = useState<Stream | null>(null);
+
+    // Bottom Sheet refs
+    const bottomSheetRef = useRef<BottomSheet>(null);
+    const snapPoints = useMemo(() => ['40%', '60%'], []);
 
     // Refs for race condition prevention
     const abortControllerRef = useRef<AbortController | null>(null);
@@ -163,13 +167,32 @@ const StreamListScreen = () => {
         return await generateStremioPlayerUrl(infoHash, serverUrl, type, season as string, episode as string);
     }, [type, season, episode]);
 
-    // Modal handlers
-    const handleCancel = useCallback(() => {
-        setPlayBtnDisabled(false);
-        setModalVisible(false);
-        setStatusText('');
-        setIsPlaying(false);
+    // Bottom Sheet handlers
+    const handleOpenBottomSheet = useCallback(() => {
+        bottomSheetRef.current?.snapToIndex(1); // Snap to second snap point (35%)
     }, []);
+
+    const handleCloseBottomSheet = useCallback(() => {
+        bottomSheetRef.current?.close();
+        setTimeout(() => {
+            setPlayBtnDisabled(false);
+            setStatusText('');
+            setIsPlaying(false);
+        }, 300);
+    }, []);
+
+    // Render backdrop for bottom sheet
+    const renderBackdrop = useCallback(
+        (props: any) => (
+            <BottomSheetBackdrop
+                {...props}
+                disappearsOnIndex={-1}
+                appearsOnIndex={0}
+                opacity={0.5}
+            />
+        ),
+        []
+    );
 
     // Optimized play handler
     const handlePlay = useCallback(async (stream: Stream, playerName?: string, forceServerId?: string) => {
@@ -186,14 +209,14 @@ const StreamListScreen = () => {
 
         setIsPlaying(true);
         setPlayBtnDisabled(true);
-        setModalVisible(true);
+        handleOpenBottomSheet();
 
         // Validation
         if (!playerToUse || (!url && !serverIdToUse)) {
             const errorMsg = 'Please select a media player and server.';
             setStatusText(`Error: ${errorMsg}`);
             showAlert('Error', errorMsg);
-            handleCancel();
+            handleCloseBottomSheet();
             return;
         }
 
@@ -204,7 +227,7 @@ const StreamListScreen = () => {
             const errorMsg = 'Stremio server configuration not found. Please try again.';
             setStatusText(`Error: ${errorMsg}`);
             showAlert('Error', errorMsg);
-            handleCancel();
+            handleCloseBottomSheet();
             return;
         }
 
@@ -212,7 +235,7 @@ const StreamListScreen = () => {
             const errorMsg = 'Invalid media player selection.';
             setStatusText(`Error: ${errorMsg}`);
             showAlert('Error', errorMsg);
-            handleCancel();
+            handleCloseBottomSheet();
             return;
         }
 
@@ -229,7 +252,7 @@ const StreamListScreen = () => {
                 const errorMsg = 'Unable to generate a valid video URL.';
                 setStatusText(`Error: ${errorMsg}`);
                 showAlert('Error', errorMsg);
-                handleCancel();
+                handleCloseBottomSheet();
                 return;
             }
 
@@ -248,7 +271,7 @@ const StreamListScreen = () => {
                         type,
                         season,
                         episode,
-                        useVlcKit: playerToUse === Players.VLCKit ? 'true': 'false'
+                        useVlcKit: playerToUse === Players.VLCKit ? 'true' : 'false'
                     },
                 });
             } else {
@@ -262,9 +285,9 @@ const StreamListScreen = () => {
             setStatusText(`Error: ${errorMsg}`);
             showAlert('Error', errorMsg);
         } finally {
-            handleCancel();
+            handleCloseBottomSheet();
         }
-    }, [isPlaying, getInfoHashFromStream, selectedPlayer, selectedServerId, stremioServers, players, generatePlayerUrlWithInfoHash, handleCancel, router, contentTitle, imdbid, type, season, episode]);
+    }, [isPlaying, getInfoHashFromStream, selectedPlayer, selectedServerId, stremioServers, players, generatePlayerUrlWithInfoHash, handleCloseBottomSheet, handleOpenBottomSheet, router, contentTitle, imdbid, type, season, episode]);
 
     // Fixed addon fetching with race condition prevention
     const fetchAddons = useCallback(async (): Promise<void> => {
@@ -581,51 +604,76 @@ const StreamListScreen = () => {
     );
 
     return (
-        <SafeAreaView style={styles.container}>
-            <StatusBar />
+        <GestureHandlerRootView style={{ flex: 1 }}>
+            <SafeAreaView style={styles.container}>
+                <StatusBar />
 
-            {loading && addons.length === 0 ? (
-                renderLoadingState('Loading addons...')
-            ) : addons.length > 0 ? (
-                <View style={styles.addonBorderContainer}>
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.addonListContainer}
-                    >
-                        {addons.map((item, index) => (
-                            <AddonItem key={`${item.name}-${index}`} item={item} />
-                        ))}
-                    </ScrollView>
-                </View>
-            ) : (
-                renderEmptyState('alert-circle', 'No addons have been found. Please ensure that you have configured the addons before searching.', 100)
-            )}
-
-            {loading && addons.length > 0 ? (
-                renderLoadingState('Loading streams...')
-            ) : (
-                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer}>
-                    <View style={styles.streamsContainer}>
-                        {streams.length > 0 ? (
-                            streams.map((item, index) => (
-                                <StreamItem key={`${item.name}-${index}`} item={item} />
-                            ))
-                        ) : (
-                            addons.length > 0 && renderEmptyState('alert-circle', 'No streams found!', -50)
-                        )}
+                {loading && addons.length === 0 ? (
+                    renderLoadingState('Loading addons...')
+                ) : addons.length > 0 ? (
+                    <View style={styles.addonBorderContainer}>
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.addonListContainer}
+                        >
+                            {addons.map((item, index) => (
+                                <AddonItem key={`${item.name}-${index}`} item={item} />
+                            ))}
+                        </ScrollView>
                     </View>
-                </ScrollView>
-            )}
+                ) : (
+                    renderEmptyState('alert-circle', 'No addons have been found. Please ensure that you have configured the addons before searching.', 100)
+                )}
 
-            <BottomSpacing space={30} />
+                {loading && addons.length > 0 ? (
+                    renderLoadingState('Loading streams...')
+                ) : (
+                    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer}>
+                        <View style={styles.streamsContainer}>
+                            {streams.length > 0 ? (
+                                streams.map((item, index) => (
+                                    <StreamItem key={`${item.name}-${index}`} item={item} />
+                                ))
+                            ) : (
+                                addons.length > 0 && renderEmptyState('alert-circle', 'No streams found!', -50)
+                            )}
+                        </View>
+                    </ScrollView>
+                )}
 
-            <StatusModal
-                visible={isModalVisible}
-                statusText={statusText}
-                onCancel={handleCancel}
-            />
-        </SafeAreaView>
+                <BottomSpacing space={30} />
+
+                <BottomSheet
+                    ref={bottomSheetRef}
+                    index={-1}
+                    snapPoints={snapPoints}
+                    enablePanDownToClose={true}
+                    backdropComponent={renderBackdrop}
+                    backgroundStyle={styles.bottomSheetBackground}
+                    handleIndicatorStyle={styles.bottomSheetIndicator}
+                    onChange={(index) => {
+                        if (index === -1) {
+                            setPlayBtnDisabled(false);
+                            setStatusText('');
+                            setIsPlaying(false);
+                        }
+                    }}
+                >
+                    <BottomSheetView style={styles.bottomSheetContent}>
+                        <RNView style={styles.statusContainer}>
+                            <ActivityIndicator size="large" color="#535aff" style={styles.bottomSheetLoader} />
+                            <Text style={styles.statusText}>{statusText}</Text>
+                            <Pressable
+                                style={styles.cancelButton}
+                                onPress={handleCloseBottomSheet}>
+                                <Text style={styles.cancelButtonText}>Cancel</Text>
+                            </Pressable>
+                        </RNView>
+                    </BottomSheetView>
+                </BottomSheet>
+            </SafeAreaView>
+        </GestureHandlerRootView>
     );
 };
 
@@ -775,7 +823,52 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginHorizontal: '10%',
         color: '#fff'
-    }
+    },
+    bottomSheetBackground: {
+        backgroundColor: '#101010',
+        borderTopLeftRadius: 10,
+        borderTopRightRadius: 10,
+    },
+    bottomSheetIndicator: {
+        backgroundColor: '#535aff',
+        width: 40,
+    },
+    bottomSheetContent: {
+        flex: 1,
+        paddingHorizontal: 20,
+        paddingBottom: 20,
+        marginBottom: 20
+    },
+    statusContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: 20,
+    },
+    bottomSheetLoader: {
+        marginBottom: 20,
+    },
+    statusText: {
+        fontSize: 16,
+        color: '#ffffff',
+        textAlign: 'center',
+        marginBottom: 30,
+        paddingHorizontal: 20,
+        lineHeight: 22,
+    },
+    cancelButton: {
+        backgroundColor: '#535aff',
+        paddingVertical: 12,
+        paddingHorizontal: 40,
+        borderRadius: 8,
+        minWidth: 120,
+        alignItems: 'center',
+    },
+    cancelButtonText: {
+        color: '#ffffff',
+        fontSize: 16,
+        fontWeight: '600',
+    },
 });
 
 export default StreamListScreen;
