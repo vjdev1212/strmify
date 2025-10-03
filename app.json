@@ -2,7 +2,7 @@
   "expo": {
     "name": "Strmify",
     "slug": "strmify",
-    "version": "1.0.19-beta",
+    "version": "1.0.19",
     "orientation": "default",
     "icon": "assets/images/icon.png",
     "scheme": "strmify",
