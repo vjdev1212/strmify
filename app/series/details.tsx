@@ -129,27 +129,24 @@ const SeriesDetails = () => {
       const officialTrailers = videosResult.results.filter(
         (video: any) =>
           video.site === 'YouTube' &&
-          (video.type === 'Trailer' || video.type === 'Teaser') &&
+          (video.type === 'Trailer') &&
           video.official === true
       );
 
       if (officialTrailers.length > 0) {
-        const latestTrailer = officialTrailers.sort(
-          (a: any, b: any) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime()
-        )[0];
+        const latestTrailer = officialTrailers[0];
         return latestTrailer.key;
       }
 
-      const fallbackTrailers = videosResult.results.filter(
+      const fallbackTeasers = videosResult.results.filter(
         (video: any) =>
           video.site === 'YouTube' &&
-          (video.type === 'Trailer' || video.type === 'Teaser')
+          (video.type === 'Teaser') &&
+          video.official === true
       );
 
-      if (fallbackTrailers.length > 0) {
-        const latestFallback = fallbackTrailers.sort(
-          (a: any, b: any) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime()
-        )[0];
+      if (fallbackTeasers.length > 0) {
+        const latestFallback = fallbackTeasers[0];
         return latestFallback.key;
       }
 
