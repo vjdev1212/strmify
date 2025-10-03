@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, Pressable, ActivityIndicator, Platform, Switch } from 'react-native';
+import { ScrollView, StyleSheet, Pressable, ActivityIndicator, Platform, Switch, Modal } from 'react-native';
 import { StatusBar, Text, View } from '../../components/Themed';
 import { isHapticsSupported, showAlert } from '@/utils/platform';
 import * as Haptics from 'expo-haptics';
@@ -8,6 +8,8 @@ import { webLinking } from '@/utils/Web';
 import { clearTraktTokens, getTraktTokens, getTraktUserInfo, isUserAuthenticated, saveTraktTokens, TraktTokens } from '@/clients/trakt';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StorageKeys, storageService } from '@/utils/StorageService';
+import { WebView } from 'react-native-webview';
+import Constants from 'expo-constants';
 
 // Storage key for Trakt enable preference
 const TRAKT_ENABLED_KEY = StorageKeys.TRAKT_ENABLED_KEY;
@@ -41,6 +43,8 @@ const TraktAuthScreen = () => {
     const [userInfo, setUserInfo] = useState<any>(null);
     const [isInitialized, setIsInitialized] = useState<boolean>(false);
     const [isTraktEnabled, setIsTraktEnabled] = useState<boolean>(true);
+    const [showWebView, setShowWebView] = useState<boolean>(false);
+    const [webViewUrl, setWebViewUrl] = useState<string>('');
 
     useEffect(() => {
         initializeAuth();
@@ -167,6 +171,41 @@ const TraktAuthScreen = () => {
         }
     };
 
+    // Handle WebView navigation state changes
+    const handleWebViewNavigationStateChange = (navState: any) => {
+        const { url } = navState;
+        console.log('WebView navigation:', url);
+
+        try {
+            // Check if the URL matches our redirect URI
+            if (url.startsWith(TRAKT_REDIRECT_URI)) {
+                console.log('Redirect URI detected in WebView');
+
+                const urlObj = new URL(url);
+                const code = urlObj.searchParams.get('code');
+                const state = urlObj.searchParams.get('state');
+                const error = urlObj.searchParams.get('error');
+
+                // Close the WebView
+                setShowWebView(false);
+
+                if (error) {
+                    console.error('Auth error:', error);
+                    setIsLoading(false);
+                    showAlert('Authentication Failed', `Error: ${error}`);
+                    return;
+                }
+
+                if (code && state === 'app_auth') {
+                    console.log('Received auth code from WebView:', code);
+                    exchangeCodeForTokens(code);
+                }
+            }
+        } catch (error) {
+            console.error('Error parsing WebView URL:', error);
+        }
+    };
+
     // Exchange authorization code for tokens (OAuth flow)
     const exchangeCodeForTokens = async (code: string) => {
         try {
@@ -206,7 +245,7 @@ const TraktAuthScreen = () => {
             } else {
                 const errorData = await response.json().catch(() => ({}));
                 console.error('Token exchange failed:', response.status, errorData);
-                
+
                 // Check if tokens were saved despite the error response
                 const savedTokens = await getTraktTokens();
                 if (savedTokens && savedTokens.access_token) {
@@ -220,7 +259,7 @@ const TraktAuthScreen = () => {
             }
         } catch (error) {
             console.error('Token exchange error:', error);
-            
+
             // Final check: see if tokens exist (authentication might have succeeded)
             try {
                 const savedTokens = await getTraktTokens();
@@ -234,7 +273,7 @@ const TraktAuthScreen = () => {
             } catch (checkError) {
                 console.error('Error checking for saved tokens:', checkError);
             }
-            
+
             // Only show error if authentication actually failed
             showAlert('Error', 'Failed to complete authentication');
         } finally {
@@ -259,7 +298,7 @@ const TraktAuthScreen = () => {
             // Use service function to check authentication
             const authenticated = await isUserAuthenticated();
             setIsAuthenticated(authenticated);
-            
+
             if (authenticated) {
                 await fetchUserInfo();
                 // If we were loading and now we're authenticated, stop loading
@@ -271,7 +310,7 @@ const TraktAuthScreen = () => {
             console.error('Failed to check auth status:', error);
         }
     };
-    
+
     const authenticateWithTrakt = async () => {
         if (!validateConfig()) {
             showAlert('Configuration Error', 'Missing required Trakt.tv API configuration');
@@ -286,11 +325,17 @@ const TraktAuthScreen = () => {
             }
 
             const authUrl = `https://trakt.tv/oauth/authorize?response_type=code&client_id=${TRAKT_CLIENT_ID}&redirect_uri=${encodeURIComponent(TRAKT_REDIRECT_URI)}&state=app_auth`;
-            
-            console.log('Opening auth URL:', authUrl);
-            await webLinking.openURL(authUrl);
 
-            // Don't set loading to false immediately - let the redirect handle it
+            console.log('Opening auth URL:', authUrl);
+
+            // For web, open in new window/tab as before
+            if (isWeb) {
+                await webLinking.openURL(authUrl);
+            } else {
+                // For mobile, use WebView
+                setWebViewUrl(authUrl);
+                setShowWebView(true);
+            }
         } catch (error) {
             console.error('Authentication error:', error);
             setIsLoading(false);
@@ -358,6 +403,11 @@ const TraktAuthScreen = () => {
         }
     };
 
+    const closeWebView = () => {
+        setShowWebView(false);
+        setIsLoading(false);
+    };
+
     const renderUserInfoTable = () => {
         if (!userInfo) return null;
 
@@ -375,8 +425,8 @@ const TraktAuthScreen = () => {
                 <Text style={styles.tableHeader}>Account Information</Text>
                 <View style={styles.table}>
                     {userDetails.map((detail, index) => (
-                        <View 
-                            key={detail.label} 
+                        <View
+                            key={detail.label}
                             style={[
                                 styles.tableRow,
                                 index === userDetails.length - 1 && styles.lastRow
@@ -403,7 +453,7 @@ const TraktAuthScreen = () => {
                 <View style={styles.toggleInfo}>
                     <Text style={styles.toggleTitle}>Trakt.tv Integration</Text>
                     <Text style={styles.toggleSubtitle}>
-                        {isTraktEnabled 
+                        {isTraktEnabled
                             ? 'Sync your watched history and ratings with Trakt.tv'
                             : 'Enable to sync with Trakt.tv'
                         }
@@ -520,9 +570,9 @@ const TraktAuthScreen = () => {
                         )}
                     </Pressable>
 
-                    {isLoading && !isWeb && (
+                    {isLoading && isWeb && (
                         <Text style={styles.helpText}>
-                            Complete authentication in your browser to continue
+                            Complete authentication in the new tab to continue
                         </Text>
                     )}
                 </>
@@ -562,6 +612,28 @@ const TraktAuthScreen = () => {
             >
                 {isAuthenticated ? renderAuthenticatedView() : renderUnauthenticatedView()}
             </ScrollView>
+
+            {/* WebView Modal for OAuth on mobile */}
+            {!isWeb && (
+                <Modal
+                    visible={showWebView}
+                    animationType="slide"
+                    presentationStyle="pageSheet"
+                    onRequestClose={closeWebView}
+                >
+                    <SafeAreaView style={styles.webViewContainer}>                        
+                        {webViewUrl ? (
+                            <WebView
+                                showsVerticalScrollIndicator={false}
+                                forceDarkOn={true}
+                                source={{ uri: webViewUrl }}
+                                onNavigationStateChange={handleWebViewNavigationStateChange}
+                                startInLoadingState={true}                                
+                            />
+                        ) : null}
+                    </SafeAreaView>
+                </Modal>
+            )}
         </SafeAreaView>
     );
 };
@@ -820,6 +892,11 @@ const styles = StyleSheet.create({
         lineHeight: 20,
         paddingHorizontal: 20,
     },
+    webViewContainer: {
+        flex: 1,
+        marginTop: Constants.statusBarHeight,
+        backgroundColor: '#1a1a1a'
+    },    
 });
 
 export default TraktAuthScreen;
