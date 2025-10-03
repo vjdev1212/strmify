@@ -44,10 +44,10 @@ const WatchTrailerButton: React.FC<WatchTrailerButtonProps> = ({ trailerKey }) =
 
 const styles = StyleSheet.create({
     button: {
-        paddingVertical: 12,
+        paddingVertical: 10,
         paddingHorizontal: 20,
-        borderRadius: 25,
-        minWidth: 160,
+        borderRadius: 8,
+        minWidth: 150,
         alignItems: 'center',
         marginVertical: 20,
         alignSelf: 'center',

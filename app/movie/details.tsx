@@ -14,7 +14,6 @@ import PosterList from '@/components/PosterList';
 import PlayButton from '@/components/PlayButton';
 import MediaContentDetailsList from '@/components/MediaContentDetailsList';
 import WatchTrailerButton from '@/components/WatchTrailer';
-
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
 const MovieDetails = () => {
@@ -93,48 +92,46 @@ const MovieDetails = () => {
         `https://api.themoviedb.org/3/movie/${moviedbid}/videos?api_key=${EXPO_PUBLIC_TMDB_API_KEY}`
       );
       const videosResult = await videosResponse.json();
-      
+
       if (!videosResult.results || videosResult.results.length === 0) {
         return null;
       }
-      console.log('Results', videosResult)
 
       // Filter official trailers/teasers from YouTube
       const officialTrailers = videosResult.results.filter(
-        (video: any) => 
-          video.site === 'YouTube' && 
+        (video: any) =>
+          video.site === 'YouTube' &&
           (video.type === 'Trailer' || video.type === 'Teaser') &&
           video.official === true
       );
 
-      // If official trailers exist, get the one with maximum size
       if (officialTrailers.length > 0) {
-        const maxSizeTrailer = officialTrailers.sort(
-          (a: any, b: any) => (b.size || 0) - (a.size || 0)
+        const latestTrailer = officialTrailers.sort(
+          (a: any, b: any) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime()
         )[0];
-        return maxSizeTrailer.key;
+        return latestTrailer.key;
       }
-      
-      // Fallback: find any trailer or teaser, sorted by size
+
       const fallbackTrailers = videosResult.results.filter(
-        (video: any) => 
-          video.site === 'YouTube' && 
+        (video: any) =>
+          video.site === 'YouTube' &&
           (video.type === 'Trailer' || video.type === 'Teaser')
       );
 
       if (fallbackTrailers.length > 0) {
-        const maxSizeFallback = fallbackTrailers.sort(
-          (a: any, b: any) => (b.size || 0) - (a.size || 0)
+        const latestFallback = fallbackTrailers.sort(
+          (a: any, b: any) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime()
         )[0];
-        return maxSizeFallback.key;
+        return latestFallback.key;
       }
-      
+
       return null;
     } catch (error) {
       console.error('Error fetching trailer:', error);
       return null;
     }
   };
+
 
   if (loading) {
     return (
@@ -176,7 +173,7 @@ const MovieDetails = () => {
           padding: isPortrait ? null : '2%',
           alignItems: isPortrait ? 'center' : 'flex-end',
         }]}>
-          <MediaContentPoster background={data.background} isPortrait={isPortrait} trailerKey={trailerKey} />
+          <MediaContentPoster background={data.background} isPortrait={isPortrait} />
         </View>
 
         <View style={[styles.detailsContainer, {
@@ -194,7 +191,10 @@ const MovieDetails = () => {
               imdbRating={data.imdbRating}
               releaseInfo={data.releaseInfo}
             />)}
-          <PlayButton onPress={handlePlayPress} />
+          <View style={styles.buttonsContainer}>
+            <PlayButton onPress={handlePlayPress} />
+            <WatchTrailerButton trailerKey={trailerKey} />
+          </View>
           <MediaContentDescription description={data.description} />
           {
             isPortrait && (
@@ -235,6 +235,12 @@ const styles = StyleSheet.create({
   },
   landscapeDetailsContainer: {
     flexWrap: 'wrap',
+  },
+  buttonsContainer: {
+    flexDirection: 'row',
+    gap: 20,
+    justifyContent: 'center',
+    alignItems: 'center'
   },
   activityIndicator: {
     marginBottom: 10,
