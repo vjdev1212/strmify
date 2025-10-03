@@ -13,6 +13,7 @@ import MediaCastAndCrews from '@/components/MediaCastAndCrews';
 import PosterList from '@/components/PosterList';
 import PlayButton from '@/components/PlayButton';
 import MediaContentDetailsList from '@/components/MediaContentDetailsList';
+import WatchTrailerButton from '@/components/WatchTrailer';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -22,6 +23,7 @@ const MovieDetails = () => {
   const [imdbid, setImdbId] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [cast, setCast] = useState<any[]>([]);
+  const [trailerKey, setTrailerKey] = useState<string | null>(null);
   const { width, height } = useWindowDimensions();
   const isPortrait = height > width;
   const ref = useRef<ScrollView | null>(null);
@@ -36,8 +38,10 @@ const MovieDetails = () => {
         if (result) {
           const externalIds = await getExternalIds();
           const castAndCrews = await getCastandCrew();
+          const trailer = await getTrailer();
           setCast(castAndCrews);
           setImdbId(externalIds.imdb_id);
+          setTrailerKey(trailer);
           const logo = `https://images.metahub.space/logo/medium/${externalIds.imdb_id}/img`;
           const movie = result;
           const movieData = {
@@ -83,6 +87,55 @@ const MovieDetails = () => {
     return castAndCrewResult.cast || [];
   };
 
+  const getTrailer = async () => {
+    try {
+      const videosResponse = await fetch(
+        `https://api.themoviedb.org/3/movie/${moviedbid}/videos?api_key=${EXPO_PUBLIC_TMDB_API_KEY}`
+      );
+      const videosResult = await videosResponse.json();
+      
+      if (!videosResult.results || videosResult.results.length === 0) {
+        return null;
+      }
+      console.log('Results', videosResult)
+
+      // Filter official trailers/teasers from YouTube
+      const officialTrailers = videosResult.results.filter(
+        (video: any) => 
+          video.site === 'YouTube' && 
+          (video.type === 'Trailer' || video.type === 'Teaser') &&
+          video.official === true
+      );
+
+      // If official trailers exist, get the one with maximum size
+      if (officialTrailers.length > 0) {
+        const maxSizeTrailer = officialTrailers.sort(
+          (a: any, b: any) => (b.size || 0) - (a.size || 0)
+        )[0];
+        return maxSizeTrailer.key;
+      }
+      
+      // Fallback: find any trailer or teaser, sorted by size
+      const fallbackTrailers = videosResult.results.filter(
+        (video: any) => 
+          video.site === 'YouTube' && 
+          (video.type === 'Trailer' || video.type === 'Teaser')
+      );
+
+      if (fallbackTrailers.length > 0) {
+        const maxSizeFallback = fallbackTrailers.sort(
+          (a: any, b: any) => (b.size || 0) - (a.size || 0)
+        )[0];
+        return maxSizeFallback.key;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error fetching trailer:', error);
+      return null;
+    }
+  };
+
   if (loading) {
     return (
       <View style={styles.centeredContainer}>
@@ -123,7 +176,7 @@ const MovieDetails = () => {
           padding: isPortrait ? null : '2%',
           alignItems: isPortrait ? 'center' : 'flex-end',
         }]}>
-          <MediaContentPoster background={data.background} isPortrait={isPortrait} />
+          <MediaContentPoster background={data.background} isPortrait={isPortrait} trailerKey={trailerKey} />
         </View>
 
         <View style={[styles.detailsContainer, {
