@@ -110,17 +110,6 @@ const MovieDetails = () => {
     });
   };
 
-  const Divider = () => {
-    const dividerColor = {
-      color: '#ffffff',
-    };
-    return (
-      <View>
-        <Text style={[styles.divider, dividerColor]}>...</Text>
-      </View>
-    )
-  };
-
   return (
     <ScrollView showsVerticalScrollIndicator={false} style={styles.container} ref={ref}>
       <StatusBar />
