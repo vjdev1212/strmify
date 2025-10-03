@@ -15,14 +15,14 @@ const TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 const SearchScreen = () => {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
-  const debounceTimeoutRef = useRef<any>(null);
+  const debounceTimeoutRef = useRef<any| null>(null);
 
   const [moviesUrl, setMoviesUrl] = useState<string | null>(null);
   const [seriesUrl, setSeriesUrl] = useState<string | null>(null);
 
   const urls = useMemo(() => {
     if (!query.trim()) return { movies: null, series: null };
-    
+
     const encoded = encodeURIComponent(query);
     return {
       movies: `https://api.themoviedb.org/3/search/movie?query=${encoded}&api_key=${TMDB_API_KEY}`,
@@ -30,34 +30,32 @@ const SearchScreen = () => {
     };
   }, [query]);
 
-  const fetchData = useCallback(() => {
-    setMoviesUrl(urls.movies);
-    setSeriesUrl(urls.series);
-  }, [urls]);
-
   useEffect(() => {
+    // Clear existing timeout
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
-      debounceTimeoutRef.current = null;
     }
 
+    // If query is empty, clear results immediately
     if (!query.trim()) {
       setMoviesUrl(null);
       setSeriesUrl(null);
       return;
     }
 
+    // Debounce the search
     debounceTimeoutRef.current = setTimeout(() => {
-      fetchData();
+      setMoviesUrl(urls.movies);
+      setSeriesUrl(urls.series);
     }, 300);
 
+    // Cleanup
     return () => {
       if (debounceTimeoutRef.current) {
         clearTimeout(debounceTimeoutRef.current);
-        debounceTimeoutRef.current = null;
       }
     };
-  }, [query, fetchData]);
+  }, [query, urls]);
 
   const clearSearch = useCallback(async () => {
     if (isHapticsSupported()) {
@@ -70,7 +68,7 @@ const SearchScreen = () => {
     const hasQuery = query.length > 0;
     return {
       title: hasQuery ? 'No results found' : 'Start your search',
-      subtitle: hasQuery 
+      subtitle: hasQuery
         ? 'Try searching with different keywords'
         : 'What would you like to watch today?'
     };
@@ -101,6 +99,8 @@ const SearchScreen = () => {
             value={query}
             onChangeText={handleTextChange}
             submitBehavior="blurAndSubmit"
+            autoCorrect={false}
+            autoCapitalize="none"
           />
           {query.length > 0 && (
             <Pressable onPress={clearSearch} style={styles.clearButton}>
@@ -122,6 +122,7 @@ const SearchScreen = () => {
         showsVerticalScrollIndicator={false}
         style={styles.contentContainer}
         contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
       >
         {!loading && !moviesUrl && !seriesUrl && (
           <View style={styles.emptyStateContainer}>

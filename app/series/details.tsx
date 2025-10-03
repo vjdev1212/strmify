@@ -12,6 +12,7 @@ import MediaCastAndCrews from '@/components/MediaCastAndCrews';
 import PosterList from '@/components/PosterList';
 import MediaContentDetailsList from '@/components/MediaContentDetailsList';
 import PlayButton from '@/components/PlayButton';
+import WatchTrailerButton from '@/components/WatchTrailer';
 import { isHapticsSupported } from '@/utils/platform';
 import * as Haptics from 'expo-haptics';
 
@@ -24,6 +25,7 @@ const SeriesDetails = () => {
   const [imdbid, setImdbId] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [cast, setCast] = useState<any[]>([]);
+  const [trailerKey, setTrailerKey] = useState<string | null>(null);
   const { width, height } = useWindowDimensions();
   const isPortrait = height > width;
   const ref = useRef<ScrollView | null>(null);
@@ -39,9 +41,11 @@ const SeriesDetails = () => {
         if (result) {
           const externalIds = await getExternalIds();
           const castAndCrews = await getCastandCrew();
+          const trailer = await getTrailer();
           setCast(castAndCrews);
-          const logo = `https://images.metahub.space/logo/medium/${externalIds.imdb_id}/img`;
           setImdbId(externalIds.imdb_id);
+          setTrailerKey(trailer);
+          const logo = `https://images.metahub.space/logo/medium/${externalIds.imdb_id}/img`;
 
           const seasonPromises = result.seasons.map(async (season: any) => {
             const episodes = await getEpisodes(season.season_number);
@@ -109,6 +113,52 @@ const SeriesDetails = () => {
     const castAndCrewResult = await castAndCrewsResponse.json();
     return castAndCrewResult.cast || [];
   }
+
+  const getTrailer = async () => {
+    try {
+      const videosResponse = await fetch(
+        `https://api.themoviedb.org/3/tv/${moviedbid}/videos?api_key=${EXPO_PUBLIC_TMDB_API_KEY}`
+      );
+      const videosResult = await videosResponse.json();
+
+      if (!videosResult.results || videosResult.results.length === 0) {
+        return null;
+      }
+
+      // Filter official trailers/teasers from YouTube
+      const officialTrailers = videosResult.results.filter(
+        (video: any) =>
+          video.site === 'YouTube' &&
+          (video.type === 'Trailer' || video.type === 'Teaser') &&
+          video.official === true
+      );
+
+      if (officialTrailers.length > 0) {
+        const latestTrailer = officialTrailers.sort(
+          (a: any, b: any) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime()
+        )[0];
+        return latestTrailer.key;
+      }
+
+      const fallbackTrailers = videosResult.results.filter(
+        (video: any) =>
+          video.site === 'YouTube' &&
+          (video.type === 'Trailer' || video.type === 'Teaser')
+      );
+
+      if (fallbackTrailers.length > 0) {
+        const latestFallback = fallbackTrailers.sort(
+          (a: any, b: any) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime()
+        )[0];
+        return latestFallback.key;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error fetching trailer:', error);
+      return null;
+    }
+  };
 
   if (loading) {
     return (
@@ -183,7 +233,10 @@ const SeriesDetails = () => {
               imdbRating={data.imdbRating}
               releaseInfo={data.releaseInfo}
             />)}
-          <PlayButton onPress={handlePlayPress} />
+          <View style={styles.buttonsContainer}>
+            <PlayButton onPress={handlePlayPress} />
+            <WatchTrailerButton trailerKey={trailerKey} />
+          </View>
           <MediaContentDescription description={data.description} />
           {
             isPortrait && (
@@ -236,6 +289,12 @@ const styles = StyleSheet.create({
   },
   landscapeDetailsContainer: {
     flexWrap: 'wrap',
+  },
+  buttonsContainer: {
+    flexDirection: 'row',
+    gap: 20,
+    justifyContent: 'center',
+    alignItems: 'center'
   },
   activityIndicator: {
     marginBottom: 10,

@@ -46,7 +46,7 @@ const styles = StyleSheet.create({
     button: {
         paddingVertical: 10,
         paddingHorizontal: 20,
-        borderRadius: 8,
+        borderRadius: 25,
         minWidth: 150,
         alignItems: 'center',
         marginVertical: 20,
@@ -56,9 +56,9 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255, 255, 255, 0.9)',
     },
     buttonDisabled: {
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        backgroundColor: 'rgba(119, 119, 119, 1)',
         borderColor: 'rgba(255, 255, 255, 0.1)',
-        opacity: 0.5,
+        opacity: 1,
     },
     buttonText: {
         color: '#000000',
