@@ -71,7 +71,7 @@ const StreamListScreen = () => {
 
     // Bottom Sheet refs
     const bottomSheetRef = useRef<BottomSheet>(null);
-    const snapPoints = useMemo(() => ['25%', '35%'], []);
+    const snapPoints = useMemo(() => ['40%', '60%'], []);
 
     // Refs for race condition prevention
     const abortControllerRef = useRef<AbortController | null>(null);
@@ -169,14 +169,16 @@ const StreamListScreen = () => {
 
     // Bottom Sheet handlers
     const handleOpenBottomSheet = useCallback(() => {
-        bottomSheetRef.current?.expand();
+        bottomSheetRef.current?.snapToIndex(1); // Snap to second snap point (35%)
     }, []);
 
     const handleCloseBottomSheet = useCallback(() => {
         bottomSheetRef.current?.close();
-        setPlayBtnDisabled(false);
-        setStatusText('');
-        setIsPlaying(false);
+        setTimeout(() => {
+            setPlayBtnDisabled(false);
+            setStatusText('');
+            setIsPlaying(false);
+        }, 300);
     }, []);
 
     // Render backdrop for bottom sheet
@@ -650,6 +652,13 @@ const StreamListScreen = () => {
                     backdropComponent={renderBackdrop}
                     backgroundStyle={styles.bottomSheetBackground}
                     handleIndicatorStyle={styles.bottomSheetIndicator}
+                    onChange={(index) => {
+                        if (index === -1) {
+                            setPlayBtnDisabled(false);
+                            setStatusText('');
+                            setIsPlaying(false);
+                        }
+                    }}
                 >
                     <BottomSheetView style={styles.bottomSheetContent}>
                         <RNView style={styles.statusContainer}>
@@ -657,9 +666,7 @@ const StreamListScreen = () => {
                             <Text style={styles.statusText}>{statusText}</Text>
                             <Pressable
                                 style={styles.cancelButton}
-                                onPress={handleCloseBottomSheet}
-                                disabled={playBtnDisabled}
-                            >
+                                onPress={handleCloseBottomSheet}>
                                 <Text style={styles.cancelButtonText}>Cancel</Text>
                             </Pressable>
                         </RNView>
@@ -818,9 +825,9 @@ const styles = StyleSheet.create({
         color: '#fff'
     },
     bottomSheetBackground: {
-        backgroundColor: '#1a1a1a',
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
+        backgroundColor: '#101010',
+        borderTopLeftRadius: 10,
+        borderTopRightRadius: 10,
     },
     bottomSheetIndicator: {
         backgroundColor: '#535aff',
@@ -830,6 +837,7 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingHorizontal: 20,
         paddingBottom: 20,
+        marginBottom: 20
     },
     statusContainer: {
         flex: 1,
@@ -852,7 +860,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#535aff',
         paddingVertical: 12,
         paddingHorizontal: 40,
-        borderRadius: 12,
+        borderRadius: 8,
         minWidth: 120,
         alignItems: 'center',
     },
