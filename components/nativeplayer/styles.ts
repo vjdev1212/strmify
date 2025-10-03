@@ -172,61 +172,11 @@ export const styles = StyleSheet.create({
         right: 0,
         bottom: 0,
         backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    },
-    volumeOverlay: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    volumePanel: {
-        backgroundColor: 'rgba(0, 0, 0, 0.9)',
-        borderRadius: 12,
-        padding: 20,
-        minWidth: 300,
-    },
-    volumeControls: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    volumeSlider: {
-        flex: 1,
-        height: 40,
-        marginHorizontal: 15,
-    },
+    },    
     sliderThumb: {
         backgroundColor: '#007AFF',
         width: 20,
         height: 20,
-    },
-    brightnessOverlay: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    brightnessPanel: {
-        backgroundColor: 'rgba(0, 0, 0, 0.9)',
-        borderRadius: 12,
-        padding: 20,
-        minWidth: 300,
-    },
-    brightnessControls: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    brightnessSlider: {
-        flex: 1,
-        height: 40,
-        marginHorizontal: 15,
     },
     settingsOverlay: {
         position: 'absolute',
@@ -277,7 +227,7 @@ export const styles = StyleSheet.create({
     },
     speedOptionTextSelected: {
         fontWeight: '600',
-    },    
+    },
     subtitleOptions: {
         marginBottom: 10,
     },
@@ -311,5 +261,19 @@ export const styles = StyleSheet.create({
     audioOptionText: {
         color: 'white',
         fontSize: 14,
+    },
+    persistentBackButton: {
+        position: 'absolute',
+        top: 20,
+        left: 15,
+        zIndex: 1000,
+    },
+    backButtonPersistent: {
+        borderRadius: 8,
+        overflow: 'hidden',
+    },
+    backButtonGradient: {
+        padding: 8,
+        borderRadius: 8,
     },
 });

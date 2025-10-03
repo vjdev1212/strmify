@@ -13,8 +13,9 @@ const PlayButton = ({ onPress }: { onPress: () => void }) => (
 const styles = StyleSheet.create({
   button: {
     paddingVertical: 12,
-    paddingHorizontal: 30,
+    paddingHorizontal: 20,
     borderRadius: 25,
+    minWidth: 150,
     alignItems: 'center',
     marginVertical: 20,
     alignSelf: 'center',
@@ -24,7 +25,7 @@ const styles = StyleSheet.create({
   },
   text: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '500'
   },
   icon: {

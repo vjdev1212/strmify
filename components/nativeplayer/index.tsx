@@ -459,6 +459,32 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 onPress={handleOverlayPress}
             />
 
+            {/* Touch area for showing controls */}
+            <TouchableOpacity
+                style={styles.touchArea}
+                activeOpacity={1}
+                onPress={handleOverlayPress}
+            />
+
+            {/* Persistent back button - always visible */}
+            {
+                !isReady && (
+                    <View style={styles.persistentBackButton} pointerEvents="box-none">
+                        <TouchableOpacity
+                            style={styles.backButtonPersistent}
+                            onPress={async () => {
+                                await playHaptic();
+                                onBack();
+                            }}
+                        >
+                            <View style={styles.backButtonGradient}>
+                                <Ionicons name="chevron-back" size={28} color="white" />
+                            </View>
+                        </TouchableOpacity>
+                    </View>
+                )
+            }
+
             {/* Controls overlay */}
             {showControls && (
                 <Animated.View
