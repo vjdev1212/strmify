@@ -277,7 +277,7 @@ export const styles = StyleSheet.create({
     },
     speedOptionTextSelected: {
         fontWeight: '600',
-    },    
+    },
     subtitleOptions: {
         marginBottom: 10,
     },
@@ -311,5 +311,19 @@ export const styles = StyleSheet.create({
     audioOptionText: {
         color: 'white',
         fontSize: 14,
+    },
+    persistentBackButton: {
+        position: 'absolute',
+        top: 20,
+        left: 15,
+        zIndex: 1000,
+    },
+    backButtonPersistent: {
+        borderRadius: 8,
+        overflow: 'hidden',
+    },
+    backButtonGradient: {
+        padding: 8,
+        borderRadius: 8,
     },
 });
