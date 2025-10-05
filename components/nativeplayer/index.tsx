@@ -14,7 +14,7 @@ import { useVideoPlayer, VideoView } from "expo-video";
 import { useEvent } from "expo";
 import * as ScreenOrientation from "expo-screen-orientation";
 import { LinearGradient } from "expo-linear-gradient";
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import Slider from '@react-native-assets/slider';
 import { showAlert } from "@/utils/platform";
 import { styles } from "./styles";
@@ -42,7 +42,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     artwork,
     subtitles = [],
     openSubtitlesClient,
-    onVideoError
+    onSwitchMediaPlayer
 }) => {
     const videoRef = useRef<VideoView>(null);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -342,22 +342,14 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
             case "error":
                 if (!isReady) {
-                    showAlert("Playback Error", "Unable to load the video. We will retry VLC as a fallback");
+                    showAlert("Playback Error", "Unable to load the video. Try with VLC.");
                     setLoadingText("Unable to load the video. Retrying with VLC...")
-                    setTimeout(() => {
-                        if (onVideoError) {
-                            onVideoError({
-                                message: error?.message || "Failed to load video",
-                            });
-                        }
-                        setLoadingText("Loading...")
-                    }, 3000);
                 }
                 setIsBuffering(false);
                 setIsReady(false);
                 break;
         }
-    }, [statusChange, player, bufferOpacity, isReady, onVideoError]);
+    }, [statusChange, player, bufferOpacity, isReady, onSwitchMediaPlayer]);
 
     const showControlsTemporarily = useCallback(() => {
         setShowControls(true);
@@ -462,6 +454,15 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         setIsMuted(!isMuted);
         showControlsTemporarily();
     }, [isMuted, showControlsTemporarily]);
+
+    const toggleMediaPlayer = useCallback(async () => {
+        await playHaptic();
+        if (onSwitchMediaPlayer) {
+            onSwitchMediaPlayer({ message: '', player: "native" })
+        }
+        setIsMuted(!isMuted);
+        showControlsTemporarily();
+    }, [showControlsTemporarily]);
 
     const changePlaybackSpeed = useCallback(async (speed: number) => {
         await playHaptic();
@@ -627,6 +628,16 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                         </View>
 
                         <View style={styles.topRightControls}>
+                            <TouchableOpacity
+                                style={styles.controlButton}
+                                onPress={toggleMediaPlayer}
+                            >
+                                <MaterialCommunityIcons
+                                    name="vlc"
+                                    size={24}
+                                    color="white"
+                                />
+                            </TouchableOpacity>
                             <TouchableOpacity
                                 style={styles.controlButton}
                                 onPress={toggleMute}

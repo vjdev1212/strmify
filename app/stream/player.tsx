@@ -6,9 +6,10 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Platform } from "react-native";
 
-interface VideoError {
+interface PlayerSwitch {
   message: string;
   code?: string;
+  player: "native" | "vlc"
 }
 
 const MediaPlayerScreen: React.FC = () => {
@@ -131,16 +132,20 @@ const MediaPlayerScreen: React.FC = () => {
     router.back();
   };
 
-  const handleVideoError = (error: VideoError): void => {
-    console.log('Video playback failed:', error.message);
-    
-    // Only switch to VLC on non-web platforms
-    if (Platform.OS !== "web" && !forceVlc && useVlcKit !== 'true') {
-      console.log('Switching to VLC player...');
+  const handleSwitchMediaPlayer = (error: PlayerSwitch): void => {
+    console.log(`Video playback failed (${error.player}):`, error.message);
+
+    // Only switch players if not on web
+    if (Platform.OS === "web") return;
+
+    if (error.player === "native" && !forceVlc && useVlcKit !== 'true') {
+      console.log("Switching to VLC player...");
       setForceVlc(true);
+    } else if (error.player === "vlc") {
+      console.log("VLC player failed. Switching back to native player...");
+      setForceVlc(false);
     }
   };
-
   function getPlayer() {
     if (Platform.OS === "web") {
       return require("../../components/nativeplayer").MediaPlayer;
@@ -162,7 +167,7 @@ const MediaPlayerScreen: React.FC = () => {
       subtitles={subtitles}
       openSubtitlesClient={openSubtitlesClient}
       isLoadingSubtitles={isLoadingSubtitles}
-      onVideoError={handleVideoError}
+      onSwitchMediaPlayer={handleSwitchMediaPlayer}
     />
   );
 };
