@@ -28,15 +28,11 @@ const useSubtitleState = () => {
     const [currentSubtitle, setCurrentSubtitle] = useState<string>('');
     const [parsedSubtitles, setParsedSubtitles] = useState<any[]>([]);
     const [isLoadingSubtitles, setIsLoadingSubtitles] = useState(false);
-    const [subtitleFontSize, setSubtitleFontSize] = useState(18);
-    const [subtitleBackgroundOpacity, setSubtitleBackgroundOpacity] = useState(0.75);
 
     return {
         currentSubtitle, setCurrentSubtitle,
         parsedSubtitles, setParsedSubtitles,
         isLoadingSubtitles, setIsLoadingSubtitles,
-        subtitleFontSize, setSubtitleFontSize,
-        subtitleBackgroundOpacity, setSubtitleBackgroundOpacity
     };
 };
 
@@ -69,6 +65,9 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
     // Subtitle state
     const subtitleState = useSubtitleState();
+
+    // Check if we should use custom subtitles
+    const useCustomSubtitles = subtitles.length > 0;
 
     // Animated values
     const controlsOpacity = useRef(new Animated.Value(1)).current;
@@ -136,9 +135,16 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         }
     }, [player, isMuted, playbackSpeed]);
 
-    // Load subtitles when selection changes
+    // Load custom subtitles when selection changes
     useEffect(() => {
-        if (subtitles.length > 0 && selectedSubtitle >= 0 && selectedSubtitle < subtitles.length) {
+        if (!useCustomSubtitles) {
+            // Clear custom subtitles if array is empty
+            subtitleState.setParsedSubtitles([]);
+            subtitleState.setCurrentSubtitle('');
+            return;
+        }
+
+        if (selectedSubtitle >= 0 && selectedSubtitle < subtitles.length) {
             const selectedSub = subtitles[selectedSubtitle];
 
             if (selectedSub.fileId && openSubtitlesClient) {
@@ -146,7 +152,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 console.log('Downloading subtitle from OpenSubtitles, fileId:', selectedSub.fileId);
 
                 openSubtitlesClient.downloadSubtitle(String(selectedSub.fileId))
-                    .then(async (response: any) => {
+                    .then(async (response) => {
                         if (('status' in response && response.status !== 200) ||
                             ('success' in response && response.success === false) ||
                             ('error' in response && response.error)) {
@@ -178,12 +184,16 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                         }
 
                         const subtitleContent = await subtitleResponse.text();
+                        console.log('Subtitle content loaded, length:', subtitleContent.length);
+                        
                         const parsed = parseSubtitleFile(subtitleContent);
+                        console.log('Parsed subtitles count:', parsed.length);
 
                         subtitleState.setParsedSubtitles(parsed);
                         subtitleState.setIsLoadingSubtitles(false);
+                        subtitleState.setCurrentSubtitle(''); // Reset current subtitle
                     })
-                    .catch((error: any) => {
+                    .catch(error => {
                         console.error('Failed to download/parse subtitle:', error);
                         subtitleState.setIsLoadingSubtitles(false);
                         subtitleState.setParsedSubtitles([]);
@@ -209,6 +219,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
                         subtitleState.setParsedSubtitles(parsed);
                         subtitleState.setIsLoadingSubtitles(false);
+                        subtitleState.setCurrentSubtitle(''); // Reset current subtitle
                     })
                     .catch(error => {
                         console.error('Failed to load subtitles from URL:', error);
@@ -225,43 +236,27 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
             subtitleState.setParsedSubtitles([]);
             subtitleState.setCurrentSubtitle('');
         }
-    }, [selectedSubtitle, subtitles, openSubtitlesClient]);
+    }, [selectedSubtitle, subtitles, openSubtitlesClient, useCustomSubtitles]);
 
     // Update subtitle based on current time
-    const updateSubtitle = useMemo(() => {
-        return (currentTime: number, parsedSubtitles: any[], currentSubtitle: string) => {
-            if (parsedSubtitles.length === 0) {
-                if (currentSubtitle !== '') {
-                    return '';
-                }
-                return currentSubtitle;
-            }
-
-            const activeSubtitle = parsedSubtitles.find(
-                sub => currentTime >= sub.start && currentTime <= sub.end
-            );
-
-            const newSubtitleText = activeSubtitle ? activeSubtitle.text : '';
-
-            if (newSubtitleText !== currentSubtitle) {
-                return newSubtitleText;
-            }
-
-            return currentSubtitle;
-        };
-    }, []);
-
     useEffect(() => {
-        const newSubtitle = updateSubtitle(
-            currentTime,
-            subtitleState.parsedSubtitles,
-            subtitleState.currentSubtitle
+        if (subtitleState.parsedSubtitles.length === 0) {
+            if (subtitleState.currentSubtitle !== '') {
+                subtitleState.setCurrentSubtitle('');
+            }
+            return;
+        }
+
+        const activeSubtitle = subtitleState.parsedSubtitles.find(
+            sub => currentTime >= sub.start && currentTime <= sub.end
         );
 
-        if (newSubtitle !== subtitleState.currentSubtitle) {
-            subtitleState.setCurrentSubtitle(newSubtitle);
+        const newSubtitleText = activeSubtitle ? activeSubtitle.text : '';
+
+        if (newSubtitleText !== subtitleState.currentSubtitle) {
+            subtitleState.setCurrentSubtitle(newSubtitleText);
         }
-    }, [currentTime, subtitleState.parsedSubtitles, updateSubtitle]);
+    }, [currentTime, subtitleState.parsedSubtitles]);
 
     // Playing state change handler
     const playingChange = useEvent(player, "playingChange");
@@ -567,21 +562,11 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 onPress={handleOverlayPress}
             />
 
-            {/* Custom subtitle display */}
-            {subtitleState.currentSubtitle && (
+            {/* Custom subtitle display - only show if using custom subtitles */}
+            {useCustomSubtitles && subtitleState.currentSubtitle && (
                 <View style={styles.subtitleContainer} pointerEvents="none">
-                    <View 
-                        style={[
-                            styles.subtitleBackground,
-                            { backgroundColor: `rgba(0, 0, 0, ${subtitleState.subtitleBackgroundOpacity})` }
-                        ]}
-                    >
-                        <Text 
-                            style={[
-                                styles.subtitleText,
-                                { fontSize: subtitleState.subtitleFontSize }
-                            ]}
-                        >
+                    <View style={styles.subtitleBackground}>
+                        <Text style={styles.subtitleText}>
                             {subtitleState.currentSubtitle}
                         </Text>
                     </View>
@@ -664,8 +649,8 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 </TouchableOpacity>
                             )}
 
-                            {/* Custom subtitles button - show if we have custom subtitles */}
-                            {subtitles.length > 0 && (
+                            {/* Show subtitle button based on custom or native subtitles */}
+                            {(useCustomSubtitles || player.availableSubtitleTracks.length > 0) && (
                                 <TouchableOpacity
                                     style={styles.controlButton}
                                     onPress={async () => {
@@ -832,7 +817,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 </TouchableOpacity>
             )}
 
-            {/* Custom Subtitle Menu with Settings */}
+            {/* Subtitle Menu - Show custom subtitles if available, otherwise native */}
             {showSubtitleMenu && (
                 <TouchableOpacity
                     style={styles.settingsOverlay}
@@ -853,99 +838,103 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                             </View>
                         )}
 
-                        {/* Font Size Control */}
-                        {/* <View style={styles.subtitleControlSection}>
-                            <Text style={styles.subtitleControlLabel}>Font Size</Text>
-                            <View style={styles.fontSizeButtons}>
-                                {[14, 16, 18, 20, 22, 24].map(size => (
+                        <ScrollView style={styles.settingsContent} showsVerticalScrollIndicator={false}>
+                            {useCustomSubtitles ? (
+                                // Show custom subtitles
+                                <>
                                     <TouchableOpacity
-                                        key={size}
                                         style={[
-                                            styles.fontSizeButton,
-                                            subtitleState.subtitleFontSize === size && styles.fontSizeButtonSelected
+                                            styles.subtitleOption,
+                                            selectedSubtitle === -1 && styles.subtitleOptionSelected
+                                        ]}
+                                        onPress={() => {
+                                            selectSubtitle(-1);
+                                            setShowSubtitleMenu(false);
+                                        }}
+                                    >
+                                        <Text style={styles.subtitleOptionText}>Off</Text>
+                                        {selectedSubtitle === -1 && (
+                                            <Ionicons name="checkmark" size={20} color="#007AFF" />
+                                        )}
+                                    </TouchableOpacity>
+
+                                    {subtitles.map((sub, index) => (
+                                        <TouchableOpacity
+                                            key={index}
+                                            style={[
+                                                styles.subtitleOption,
+                                                selectedSubtitle === index && styles.subtitleOptionSelected
+                                            ]}
+                                            onPress={() => {
+                                                selectSubtitle(index);
+                                                setShowSubtitleMenu(false);
+                                            }}
+                                        >
+                                            <View style={styles.subtitleOptionContent}>
+                                                <Text style={styles.subtitleOptionText} numberOfLines={2}>
+                                                    {sub.label}
+                                                </Text>
+                                                {sub.fileId && (
+                                                    <Text style={styles.subtitleSourceText}>
+                                                        OpenSubtitles
+                                                    </Text>
+                                                )}
+                                                {!sub.fileId && sub.url && !sub.url.includes('opensubtitles.org') && (
+                                                    <Text style={styles.subtitleSourceText}>
+                                                        Direct URL
+                                                    </Text>
+                                                )}
+                                            </View>
+                                            {selectedSubtitle === index && (
+                                                <Ionicons name="checkmark" size={20} color="#007AFF" />
+                                            )}
+                                        </TouchableOpacity>
+                                    ))}
+                                </>
+                            ) : (
+                                // Show native video subtitles
+                                <>
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.subtitleOption,
+                                            selectedSubtitle === -1 && styles.subtitleOptionSelected
                                         ]}
                                         onPress={async () => {
                                             await playHaptic();
-                                            subtitleState.setSubtitleFontSize(size);
+                                            setSelectedSubtitle(-1);
+                                            player.subtitleTrack = null;
+                                            setShowSubtitleMenu(false);
                                         }}
                                     >
-                                        <Text style={[
-                                            styles.fontSizeButtonText,
-                                            subtitleState.subtitleFontSize === size && styles.fontSizeButtonTextSelected
-                                        ]}>
-                                            {size}
-                                        </Text>
+                                        <Text style={styles.subtitleOptionText}>Off</Text>
+                                        {selectedSubtitle === -1 && (
+                                            <Ionicons name="checkmark" size={20} color="#007AFF" />
+                                        )}
                                     </TouchableOpacity>
-                                ))}
-                            </View>
-                        </View> */}
-
-                        {/* Background Opacity Control */}
-                        {/* <View style={styles.subtitleControlSection}>
-                            <Text style={styles.subtitleControlLabel}>
-                                Background: {Math.round(subtitleState.subtitleBackgroundOpacity * 100)}%
-                            </Text>
-                            <Slider
-                                style={styles.subtitleOpacitySlider}
-                                minimumValue={0}
-                                maximumValue={1}
-                                value={subtitleState.subtitleBackgroundOpacity}
-                                onValueChange={(value) => subtitleState.setSubtitleBackgroundOpacity(value)}
-                                minimumTrackTintColor="#007AFF"
-                                maximumTrackTintColor="rgba(255,255,255,0.3)"
-                                thumbTintColor="#fff"
-                                thumbSize={16}
-                                trackHeight={4}
-                            />
-                        </View> */}
-
-                        {/* Subtitle Track Selection */}
-                        <ScrollView style={styles.settingsContent} showsVerticalScrollIndicator={false}>
-                            <TouchableOpacity
-                                style={[
-                                    styles.settingOption,
-                                    selectedSubtitle === -1 && styles.settingOptionSelected
-                                ]}
-                                onPress={() => selectSubtitle(-1)}
-                            >
-                                <Text style={styles.settingOptionText}>Off</Text>
-                                {selectedSubtitle === -1 && (
-                                    <Ionicons name="checkmark" size={20} color="#007AFF" />
-                                )}
-                            </TouchableOpacity>
-
-                            {subtitles.map((sub, index) => (
-                                <TouchableOpacity
-                                    key={index}
-                                    style={[
-                                        styles.settingOption,
-                                        selectedSubtitle === index && styles.settingOptionSelected
-                                    ]}
-                                    onPress={() => {
-                                        selectSubtitle(index);
-                                        setShowSubtitleMenu(false);
-                                    }}
-                                >
-                                    <View style={styles.subtitleOptionContent}>
-                                        <Text style={styles.settingOptionText} numberOfLines={2}>
-                                            {sub.label}
-                                        </Text>
-                                        {sub.fileId && (
-                                            <Text style={styles.subtitleSourceText}>
-                                                OpenSubtitles
+                                    {player.availableSubtitleTracks.map((sub, index) => (
+                                        <TouchableOpacity
+                                            key={index}
+                                            style={[
+                                                styles.subtitleOption,
+                                                selectedSubtitle === index && styles.subtitleOptionSelected
+                                            ]}
+                                            onPress={async () => {
+                                                await playHaptic();
+                                                setSelectedSubtitle(index);
+                                                player.subtitleTrack = sub;
+                                                setShowSubtitleMenu(false);
+                                            }}
+                                        >
+                                            <Text style={styles.subtitleOptionText}>
+                                                {sub.label}
                                             </Text>
-                                        )}
-                                        {!sub.fileId && sub.url && !sub.url.includes('opensubtitles.org') && (
-                                            <Text style={styles.subtitleSourceText}>
-                                                Direct URL
-                                            </Text>
-                                        )}
-                                    </View>
-                                    {selectedSubtitle === index && (
-                                        <Ionicons name="checkmark" size={20} color="#007AFF" />
-                                    )}
-                                </TouchableOpacity>
-                            ))}
+                                            {selectedSubtitle === index && (
+                                                <Ionicons name="checkmark" size={20} color="#007AFF" />
+                                            )}
+                                        </TouchableOpacity>
+                                    ))}
+                                </>
+                            )}
                         </ScrollView>
                     </TouchableOpacity>
                 </TouchableOpacity>

@@ -332,14 +332,10 @@ export const styles = StyleSheet.create({
         color: 'white',
         fontWeight: '600',
     },
-
-    // Subtitle Opacity Slider
     subtitleOpacitySlider: {
         width: '100%',
         height: 40,
     },
-
-    // Subtitle Option Content
     subtitleOptionContent: {
         flex: 1,
         marginRight: 10,
