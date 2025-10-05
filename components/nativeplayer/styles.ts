@@ -46,7 +46,7 @@ export const styles = StyleSheet.create({
     },
     subtitleText: {
         color: 'rgba(255, 255, 255, 1)',
-        fontSize: 16
+        fontWeight: 500
     },
     chapterText: {
         color: 'rgba(255, 255, 255, 0.6)',
@@ -241,7 +241,7 @@ export const styles = StyleSheet.create({
         backgroundColor: '#007AFF',
     },
     subtitleOptionText: {
-        color: 'white',
+        color: '#ffffff',
         fontSize: 14,
     },
     audioOptions: {
@@ -277,7 +277,7 @@ export const styles = StyleSheet.create({
     },
     subtitleContainer: {
         position: 'absolute',
-        bottom: 80,
+        bottom: 20,
         left: 0,
         right: 0,
         alignItems: 'center',
@@ -288,7 +288,7 @@ export const styles = StyleSheet.create({
         paddingVertical: 8,
         borderRadius: 8,
         maxWidth: '90%',
-        backgroundColor: 'rgba(16, 16, 16, 0.5)',
+        backgroundColor: 'rgba(16, 16, 16, 0.7)',
     },
     subtitleControlSection: {
         paddingHorizontal: 20,

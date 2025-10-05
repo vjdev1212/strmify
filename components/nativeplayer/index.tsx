@@ -669,7 +669,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                     <MaterialIcons
                                         name="closed-caption"
                                         size={24}
-                                        color={selectedSubtitle >= 0 ? "#007AFF" : "white"}
+                                        color={"white"}
                                     />
                                 </TouchableOpacity>
                             )}
