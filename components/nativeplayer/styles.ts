@@ -46,7 +46,7 @@ export const styles = StyleSheet.create({
     },
     subtitleText: {
         color: 'rgba(255, 255, 255, 1)',
-        fontWeight: 500
+        fontWeight: 400
     },
     chapterText: {
         color: 'rgba(255, 255, 255, 0.6)',
@@ -288,7 +288,8 @@ export const styles = StyleSheet.create({
         paddingVertical: 8,
         borderRadius: 8,
         maxWidth: '90%',
-        backgroundColor: 'rgba(16, 16, 16, 0.7)',
+        margin: 'auto',
+        backgroundColor: 'rgba(16, 16, 16, 0.6)',
     },
     subtitleControlSection: {
         paddingHorizontal: 20,

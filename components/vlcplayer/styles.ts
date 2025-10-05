@@ -291,7 +291,7 @@ export const styles = StyleSheet.create({
     },
     subtitleText: {
         color: '#fff',
-        fontWeight: '500',
+        fontWeight: 400,
         textAlign: 'center',
         backgroundColor: 'rgba(16, 16, 16, 0.5)',
         paddingHorizontal: 16,
