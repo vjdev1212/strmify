@@ -274,10 +274,14 @@ const StreamListScreen = () => {
                         useVlcKit: playerToUse === Players.VLCKit ? 'true' : 'false'
                     },
                 });
+                handleCloseBottomSheet();
             } else {
                 setStatusText('Opening Stream in Media Player...');
                 await Linking.openURL(playerUrl);
                 setStatusText('Stream Opened in Media Player...');
+                setTimeout(() => {
+                    handleCloseBottomSheet();
+                }, 1000);
             }
         } catch (error) {
             console.error('Error during playback process:', error);
