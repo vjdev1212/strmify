@@ -1,9 +1,16 @@
 import OpenSubtitlesClient, { SubtitleResult } from "@/clients/opensubtitles";
 import { Subtitle } from "@/components/nativeplayer/models";
+import { getLanguageName } from "@/utils/Helpers";
 import { StorageKeys, storageService } from "@/utils/StorageService";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Platform } from "react-native";
+
+interface PlayerSwitch {
+  message: string;
+  code?: string;
+  player: "native" | "vlc"
+}
 
 const MediaPlayerScreen: React.FC = () => {
   const router = useRouter();
@@ -11,6 +18,7 @@ const MediaPlayerScreen: React.FC = () => {
   const [subtitles, setSubtitles] = useState<Subtitle[]>([]);
   const [isLoadingSubtitles, setIsLoadingSubtitles] = useState(true);
   const [openSubtitlesClient, setOpenSubtitlesClient] = useState<OpenSubtitlesClient | null>(null);
+  const [forceVlc, setForceVlc] = useState(false);
   const artwork = `https://images.metahub.space/background/medium/${imdbid}/img`;
 
   useEffect(() => {
@@ -119,90 +127,30 @@ const MediaPlayerScreen: React.FC = () => {
     }
   };
 
-  // Helper function to get language name from language code
-  const getLanguageName = (languageCode: string): string => {
-    const languageMap: { [key: string]: string } = {
-      'en': 'English',
-      'es': 'Spanish',
-      'fr': 'French',
-      'de': 'German',
-      'it': 'Italian',
-      'pt': 'Portuguese',
-      'zh': 'Chinese',
-      'ja': 'Japanese',
-      'ko': 'Korean',
-      'ru': 'Russian',
-      'ar': 'Arabic',
-      'hi': 'Hindi',
-      'nl': 'Dutch',
-      'sv': 'Swedish',
-      'da': 'Danish',
-      'no': 'Norwegian',
-      'fi': 'Finnish',
-      'pl': 'Polish',
-      'cs': 'Czech',
-      'hu': 'Hungarian',
-      'ro': 'Romanian',
-      'bg': 'Bulgarian',
-      'hr': 'Croatian',
-      'sk': 'Slovak',
-      'sl': 'Slovenian',
-      'et': 'Estonian',
-      'lv': 'Latvian',
-      'lt': 'Lithuanian',
-      'el': 'Greek',
-      'tr': 'Turkish',
-      'he': 'Hebrew',
-      'th': 'Thai',
-      'vi': 'Vietnamese',
-      'id': 'Indonesian',
-      'ms': 'Malay',
-      'tl': 'Filipino',
-      'uk': 'Ukrainian',
-      'be': 'Belarusian',
-      'ka': 'Georgian',
-      'hy': 'Armenian',
-      'az': 'Azerbaijani',
-      'kk': 'Kazakh',
-      'ky': 'Kyrgyz',
-      'uz': 'Uzbek',
-      'tj': 'Tajik',
-      'mn': 'Mongolian',
-      'my': 'Burmese',
-      'km': 'Khmer',
-      'lo': 'Lao',
-      'si': 'Sinhala',
-      'ta': 'Tamil',
-      'te': 'Telugu',
-      'ml': 'Malayalam',
-      'kn': 'Kannada',
-      'bn': 'Bengali',
-      'gu': 'Gujarati',
-      'pa': 'Punjabi',
-      'ur': 'Urdu',
-      'fa': 'Persian',
-      'ps': 'Pashto',
-      'sw': 'Swahili',
-      'am': 'Amharic',
-      'ha': 'Hausa',
-      'ig': 'Igbo',
-      'yo': 'Yoruba',
-      'zu': 'Zulu',
-      'af': 'Afrikaans'
-    };
-
-    return languageMap[languageCode] || languageCode.toUpperCase();
-  };
 
   const handleBack = (): void => {
     router.back();
   };
 
+  const handleSwitchMediaPlayer = (error: PlayerSwitch): void => {
+    console.log(`Video playback failed (${error.player}):`, error.message);
+
+    // Only switch players if not on web
+    if (Platform.OS === "web") return;
+
+    if (error.player === "native" && !forceVlc && useVlcKit !== 'true') {
+      console.log("Switching to VLC player...");
+      setForceVlc(true);
+    } else if (error.player === "vlc") {
+      console.log("VLC player failed. Switching back to native player...");
+      setForceVlc(false);
+    }
+  };
   function getPlayer() {
     if (Platform.OS === "web") {
       return require("../../components/nativeplayer").MediaPlayer;
     }
-    if (useVlcKit == 'true') {
+    if (useVlcKit === 'true' || forceVlc) {
       return require("../../components/vlcplayer").MediaPlayer;
     }
     return require("../../components/nativeplayer").MediaPlayer;
@@ -219,6 +167,7 @@ const MediaPlayerScreen: React.FC = () => {
       subtitles={subtitles}
       openSubtitlesClient={openSubtitlesClient}
       isLoadingSubtitles={isLoadingSubtitles}
+      onSwitchMediaPlayer={handleSwitchMediaPlayer}
     />
   );
 };

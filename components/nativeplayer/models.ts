@@ -20,9 +20,34 @@ export interface Chapter {
 export interface MediaPlayerProps {
     videoUrl: string;
     title: string;
-    subtitles?: Subtitle[];
     audioTracks?: AudioTrack[];
     onBack: () => void;
     autoPlay?: boolean;
     artwork?: string;
+    subtitles?: Subtitle[];
+    openSubtitlesClient: OpenSubtitlesClient;
+    onSwitchMediaPlayer?: (error: PlayerSwitch) => void;
+}
+
+interface PlayerSwitch {
+  message: string;
+  code?: string;
+  player: "native" | "vlc"
+}
+
+export interface OpenSubtitlesClient {
+    downloadSubtitle(fileId: string): Promise<DownloadResponse | ErrorResponse>;
+}
+
+export interface DownloadResponse {
+    link: string;
+    file_name: string;
+    requests: number;
+    remaining: number;
+    message: string;
+}
+
+export interface ErrorResponse {
+    message: string;
+    status: number;
 }
