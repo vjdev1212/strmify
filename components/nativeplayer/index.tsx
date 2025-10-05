@@ -1,36 +1,52 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import {
     View,
     Text,
     StyleSheet,
     TouchableOpacity,
     Animated,
-    Dimensions,
     StatusBar,
-    PanResponder,
     ScrollView,
     ActivityIndicator,
     Platform,
     Image,
 } from "react-native";
-import { AudioTrack, SubtitleTrack, useVideoPlayer, VideoContentFit, VideoView } from "expo-video";
+import { useVideoPlayer, VideoView } from "expo-video";
 import { useEvent } from "expo";
 import * as ScreenOrientation from "expo-screen-orientation";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import Slider from '@react-native-assets/slider';
 import { showAlert } from "@/utils/platform";
-import * as Haptics from 'expo-haptics';
 import { styles } from "./styles";
-import { MediaPlayerProps } from "./models";
-import { playHaptic } from "./utils";
+import { MediaPlayerProps, DownloadResponse } from "./models";
+import { playHaptic, formatTime } from "./utils";
+import { parseSubtitleFile } from "./subtitle";
 
+// Subtitle state management
+const useSubtitleState = () => {
+    const [currentSubtitle, setCurrentSubtitle] = useState<string>('');
+    const [parsedSubtitles, setParsedSubtitles] = useState<any[]>([]);
+    const [isLoadingSubtitles, setIsLoadingSubtitles] = useState(false);
+    const [subtitleFontSize, setSubtitleFontSize] = useState(18);
+    const [subtitleBackgroundOpacity, setSubtitleBackgroundOpacity] = useState(0.75);
+
+    return {
+        currentSubtitle, setCurrentSubtitle,
+        parsedSubtitles, setParsedSubtitles,
+        isLoadingSubtitles, setIsLoadingSubtitles,
+        subtitleFontSize, setSubtitleFontSize,
+        subtitleBackgroundOpacity, setSubtitleBackgroundOpacity
+    };
+};
 
 export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     videoUrl,
     title,
     onBack,
     artwork,
+    subtitles = [],
+    openSubtitlesClient
 }) => {
     const videoRef = useRef<VideoView>(null);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -41,19 +57,18 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const [selectedSubtitle, setSelectedSubtitle] = useState<number>(-1);
     const [selectedAudioTrack, setSelectedAudioTrack] = useState<number>(-1);
     const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
-    const [isMuted, setIsMuted] = useState(true);
+    const [isMuted, setIsMuted] = useState(false);
     const [showSpeedMenu, setShowSpeedMenu] = useState(false);
     const [showSubtitleMenu, setShowSubtitleMenu] = useState(false);
     const [showAudioMenu, setShowAudioMenu] = useState(false);
     const [isReady, setIsReady] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const [dragPosition, setDragPosition] = useState(0);
-    const [contentFit, setContentFit] = useState<VideoContentFit>('cover');
+    const [contentFit, setContentFit] = useState<'contain' | 'cover' | 'fill'>('cover');
     const [showContentFitLabel, setShowContentFitLabel] = useState(false);
 
-
-    // Content fit options cycle
-    const contentFitOptions: VideoContentFit[] = ['contain', 'cover', 'fill'];
+    // Subtitle state
+    const subtitleState = useSubtitleState();
 
     // Animated values
     const controlsOpacity = useRef(new Animated.Value(1)).current;
@@ -61,9 +76,12 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const bufferOpacity = useRef(new Animated.Value(1)).current;
     const contentFitLabelOpacity = useRef(new Animated.Value(0)).current;
 
-    // Auto-hide controls timer
+    // Timers
     const hideControlsTimer = useRef<any>(null);
     const contentFitLabelTimer = useRef<any>(null);
+
+    // Content fit options cycle
+    const contentFitOptions: Array<'contain' | 'cover' | 'fill'> = ['contain', 'cover', 'fill'];
 
     // Initialize player
     const player = useVideoPlayer({
@@ -78,6 +96,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         player.playbackRate = playbackSpeed;
     });
 
+    // Setup orientation
     useEffect(() => {
         const setupOrientation = async () => {
             try {
@@ -109,19 +128,140 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         };
     }, []);
 
+    // Update player settings
     useEffect(() => {
         if (player) {
             player.muted = isMuted;
             player.playbackRate = playbackSpeed;
-
-            if (typeof window !== 'undefined' && window.AudioContext) {
-                const audioContext = new (window.AudioContext)();
-                if (audioContext.state === 'suspended') {
-                    audioContext.resume();
-                }
-            }
         }
     }, [player, isMuted, playbackSpeed]);
+
+    // Load subtitles when selection changes
+    useEffect(() => {
+        if (subtitles.length > 0 && selectedSubtitle >= 0 && selectedSubtitle < subtitles.length) {
+            const selectedSub = subtitles[selectedSubtitle];
+
+            if (selectedSub.fileId && openSubtitlesClient) {
+                subtitleState.setIsLoadingSubtitles(true);
+                console.log('Downloading subtitle from OpenSubtitles, fileId:', selectedSub.fileId);
+
+                openSubtitlesClient.downloadSubtitle(String(selectedSub.fileId))
+                    .then(async (response: any) => {
+                        if (('status' in response && response.status !== 200) ||
+                            ('success' in response && response.success === false) ||
+                            ('error' in response && response.error)) {
+
+                            let errorMessage: string = 'Unknown error occurred';
+                            if ('error' in response && response.error) {
+                                errorMessage = response.error as string;
+                            } else if ('message' in response && response.message) {
+                                errorMessage = response.message as string;
+                            }
+
+                            console.error('OpenSubtitles API error:', errorMessage);
+                            subtitleState.setIsLoadingSubtitles(false);
+                            subtitleState.setParsedSubtitles([]);
+                            showAlert("Subtitle Error", `Failed to download subtitle: ${errorMessage}`);
+                            return;
+                        }
+
+                        const downloadResponse = response as DownloadResponse;
+                        console.log('Subtitle download response:', downloadResponse);
+
+                        if (!downloadResponse.link) {
+                            throw new Error('No download link provided');
+                        }
+
+                        const subtitleResponse = await fetch(downloadResponse.link);
+                        if (!subtitleResponse.ok) {
+                            throw new Error(`HTTP error! status: ${subtitleResponse.status}`);
+                        }
+
+                        const subtitleContent = await subtitleResponse.text();
+                        const parsed = parseSubtitleFile(subtitleContent);
+
+                        subtitleState.setParsedSubtitles(parsed);
+                        subtitleState.setIsLoadingSubtitles(false);
+                    })
+                    .catch((error: any) => {
+                        console.error('Failed to download/parse subtitle:', error);
+                        subtitleState.setIsLoadingSubtitles(false);
+                        subtitleState.setParsedSubtitles([]);
+                        showAlert("Subtitle Error", `Failed to load subtitle: ${error.message}`);
+                    });
+            }
+            else if (selectedSub.url && selectedSub.url !== '' && !selectedSub.url.includes('opensubtitles.org')) {
+                subtitleState.setIsLoadingSubtitles(true);
+                console.log('Loading subtitle from direct URL:', selectedSub.url);
+
+                fetch(selectedSub.url)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.text();
+                    })
+                    .then(subtitleContent => {
+                        console.log('Subtitle content loaded, length:', subtitleContent.length);
+
+                        const parsed = parseSubtitleFile(subtitleContent);
+                        console.log('Parsed subtitles count:', parsed.length);
+
+                        subtitleState.setParsedSubtitles(parsed);
+                        subtitleState.setIsLoadingSubtitles(false);
+                    })
+                    .catch(error => {
+                        console.error('Failed to load subtitles from URL:', error);
+                        subtitleState.setIsLoadingSubtitles(false);
+                        subtitleState.setParsedSubtitles([]);
+                        showAlert("Subtitle Error", `Failed to load subtitle: ${error.message}`);
+                    });
+            } else {
+                console.warn('No valid fileId or direct URL for subtitle:', selectedSub);
+                subtitleState.setParsedSubtitles([]);
+                subtitleState.setCurrentSubtitle('');
+            }
+        } else {
+            subtitleState.setParsedSubtitles([]);
+            subtitleState.setCurrentSubtitle('');
+        }
+    }, [selectedSubtitle, subtitles, openSubtitlesClient]);
+
+    // Update subtitle based on current time
+    const updateSubtitle = useMemo(() => {
+        return (currentTime: number, parsedSubtitles: any[], currentSubtitle: string) => {
+            if (parsedSubtitles.length === 0) {
+                if (currentSubtitle !== '') {
+                    return '';
+                }
+                return currentSubtitle;
+            }
+
+            const activeSubtitle = parsedSubtitles.find(
+                sub => currentTime >= sub.start && currentTime <= sub.end
+            );
+
+            const newSubtitleText = activeSubtitle ? activeSubtitle.text : '';
+
+            if (newSubtitleText !== currentSubtitle) {
+                return newSubtitleText;
+            }
+
+            return currentSubtitle;
+        };
+    }, []);
+
+    useEffect(() => {
+        const newSubtitle = updateSubtitle(
+            currentTime,
+            subtitleState.parsedSubtitles,
+            subtitleState.currentSubtitle
+        );
+
+        if (newSubtitle !== subtitleState.currentSubtitle) {
+            subtitleState.setCurrentSubtitle(newSubtitle);
+        }
+    }, [currentTime, subtitleState.parsedSubtitles, updateSubtitle]);
 
     // Playing state change handler
     const playingChange = useEvent(player, "playingChange");
@@ -149,16 +289,14 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         const { currentTime: time } = timeUpdate;
         setCurrentTime(time);
 
-        // Get duration from player
         const videoDuration = player.duration || 0;
         if (videoDuration > 0 && duration !== videoDuration) {
             setDuration(videoDuration);
         }
 
-        // Update progress bar
         if (videoDuration > 0) {
             const progress = time / videoDuration;
-            progressBarValue.setValue(progress);
+            progressBarValue.setValue(Math.max(0, Math.min(1, progress)));
         }
     }, [timeUpdate, player.duration, isDragging, duration]);
 
@@ -174,7 +312,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
         switch (status) {
             case "loading":
-                // Only show buffering if not ready yet
                 if (!isReady) {
                     setIsBuffering(true);
                     Animated.timing(bufferOpacity, {
@@ -188,7 +325,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
             case "readyToPlay":
                 setIsBuffering(false);
                 setIsReady(true);
-                // Get duration when ready
                 const videoDuration = player.duration || 0;
                 if (videoDuration > 0) {
                     setDuration(videoDuration);
@@ -203,7 +339,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 break;
 
             case "error":
-                showAlert("Video Error", "Failed to load video. Use external media players for better playback.");
+                showAlert("Video Error", "Failed to load video.");
                 setIsBuffering(false);
                 setIsReady(false);
                 break;
@@ -236,7 +372,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         }, 3000);
     }, [isPlaying, controlsOpacity, showSpeedMenu, showSubtitleMenu, showAudioMenu]);
 
-    // Control functions
     const togglePlayPause = useCallback(async () => {
         if (!isReady) return;
 
@@ -258,7 +393,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
             showControlsTemporarily();
         } catch (error) {
             console.warn("PiP error:", error);
-            showAlert("Picture-in-Picture", "PiP mode is not supported on this device or video is not ready.");
+            showAlert("Picture-in-Picture", "PiP mode is not supported on this device.");
         }
     }, [showControlsTemporarily, player, isReady]);
 
@@ -268,7 +403,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         const nextIndex = (currentIndex + 1) % contentFitOptions.length;
         setContentFit(contentFitOptions[nextIndex]);
 
-        // Show the label briefly
         setShowContentFitLabel(true);
         Animated.timing(contentFitLabelOpacity, {
             toValue: 1,
@@ -297,7 +431,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         if (!isReady || duration <= 0) return;
 
         const clampedTime = Math.max(0, Math.min(duration, seconds));
-        player.seekBy(clampedTime);
+        player.currentTime = clampedTime;
         setCurrentTime(clampedTime);
         showControlsTemporarily();
     }, [duration, player, showControlsTemporarily, isReady]);
@@ -310,25 +444,11 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         seekTo(newTime);
     }, [currentTime, duration, seekTo, isReady]);
 
-    // Separate mute toggle
     const toggleMute = useCallback(async () => {
         await playHaptic();
         setIsMuted(!isMuted);
         showControlsTemporarily();
     }, [isMuted, showControlsTemporarily]);
-
-    const formatTime = useCallback((seconds: number) => {
-        if (isNaN(seconds) || seconds < 0) return "0:00";
-
-        const hours = Math.floor(seconds / 3600);
-        const minutes = Math.floor((seconds % 3600) / 60);
-        const secs = Math.floor(seconds % 60);
-
-        if (hours > 0) {
-            return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-        }
-        return `${minutes}:${secs.toString().padStart(2, '0')}`;
-    }, []);
 
     const changePlaybackSpeed = useCallback(async (speed: number) => {
         await playHaptic();
@@ -337,8 +457,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         showControlsTemporarily();
     }, [showControlsTemporarily]);
 
-
-    // Fixed progress bar with proper slider functionality
     const handleSliderValueChange = useCallback((value: number) => {
         if (!isReady || duration <= 0) return;
 
@@ -366,7 +484,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         seekTo(newTime);
     }, [duration, seekTo, isReady]);
 
-    // Close panels when touching outside
     const handleOverlayPress = useCallback(() => {
         if (showSpeedMenu || showSubtitleMenu || showAudioMenu) {
             setShowSpeedMenu(false);
@@ -374,7 +491,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
             setShowAudioMenu(false);
         }
         else if (showControls) {
-            // Hide controls immediately if already showing
             Animated.timing(controlsOpacity, {
                 toValue: 0,
                 duration: 300,
@@ -388,21 +504,18 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         }
     }, [showSpeedMenu, showSubtitleMenu, showAudioMenu, showControls, controlsOpacity, showControlsTemporarily]);
 
+    const selectSubtitle = useCallback(async (index: number) => {
+        await playHaptic();
+        setSelectedSubtitle(index);
+        showControlsTemporarily();
+    }, [showControlsTemporarily]);
+
     const getContentFitIcon = useCallback(() => {
         switch (contentFit) {
             case 'contain': return 'fit-screen';
             case 'cover': return 'crop';
             case 'fill': return 'fullscreen';
             default: return 'fit-screen';
-        }
-    }, [contentFit]);
-
-    const getContentFitLabel = useCallback(() => {
-        switch (contentFit) {
-            case 'contain': return 'Fit';
-            case 'cover': return 'Fill';
-            case 'fill': return 'Stretch';
-            default: return 'Fit';
         }
     }, [contentFit]);
 
@@ -413,18 +526,15 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         <View style={styles.container}>
             <VideoView
                 ref={videoRef}
-                style={[styles.video,]}
+                style={styles.video}
                 player={player}
-                fullscreenOptions={
-                    {
-                        enable: true,
-                        orientation: 'landscape',
-                    }
-                }
+                fullscreenOptions={{
+                    enable: true,
+                    orientation: 'landscape',
+                }}
                 allowsPictureInPicture={true}
                 nativeControls={false}
                 contentFit={contentFit}
-                crossOrigin="anonymous"
             />
 
             {artwork && isBuffering && (
@@ -438,7 +548,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 </View>
             )}
 
-            {/* Loading indicator */}
             {isBuffering && (
                 <Animated.View
                     style={[
@@ -452,46 +561,54 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 </Animated.View>
             )}
 
-            {/* Touch area for showing controls */}
             <TouchableOpacity
                 style={styles.touchArea}
                 activeOpacity={1}
                 onPress={handleOverlayPress}
             />
 
-            {/* Touch area for showing controls */}
-            <TouchableOpacity
-                style={styles.touchArea}
-                activeOpacity={1}
-                onPress={handleOverlayPress}
-            />
-
-            {/* Persistent back button - always visible */}
-            {
-                !isReady && (
-                    <View style={styles.persistentBackButton} pointerEvents="box-none">
-                        <TouchableOpacity
-                            style={styles.backButtonPersistent}
-                            onPress={async () => {
-                                await playHaptic();
-                                onBack();
-                            }}
+            {/* Custom subtitle display */}
+            {subtitleState.currentSubtitle && (
+                <View style={styles.subtitleContainer} pointerEvents="none">
+                    <View 
+                        style={[
+                            styles.subtitleBackground,
+                            { backgroundColor: `rgba(0, 0, 0, ${subtitleState.subtitleBackgroundOpacity})` }
+                        ]}
+                    >
+                        <Text 
+                            style={[
+                                styles.subtitleText,
+                                { fontSize: subtitleState.subtitleFontSize }
+                            ]}
                         >
-                            <View style={styles.backButtonGradient}>
-                                <Ionicons name="chevron-back" size={28} color="white" />
-                            </View>
-                        </TouchableOpacity>
+                            {subtitleState.currentSubtitle}
+                        </Text>
                     </View>
-                )
-            }
+                </View>
+            )}
 
-            {/* Controls overlay */}
+            {!isReady && (
+                <View style={styles.persistentBackButton} pointerEvents="box-none">
+                    <TouchableOpacity
+                        style={styles.backButtonPersistent}
+                        onPress={async () => {
+                            await playHaptic();
+                            onBack();
+                        }}
+                    >
+                        <View style={styles.backButtonGradient}>
+                            <Ionicons name="chevron-back" size={28} color="white" />
+                        </View>
+                    </TouchableOpacity>
+                </View>
+            )}
+
             {showControls && (
                 <Animated.View
                     style={[styles.controlsOverlay, { opacity: controlsOpacity }]}
                     pointerEvents="box-none"
                 >
-                    {/* Top controls */}
                     <LinearGradient
                         colors={['rgba(0,0,0,0.8)', 'transparent']}
                         style={styles.topControls}
@@ -507,7 +624,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                         </View>
 
                         <View style={styles.topRightControls}>
-                            {/* Separate Mute button */}
                             <TouchableOpacity
                                 style={styles.controlButton}
                                 onPress={toggleMute}
@@ -519,10 +635,9 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 />
                             </TouchableOpacity>
 
-                            {/* Content fit control */}
                             <TouchableOpacity
                                 style={styles.controlButton}
-                                onPress={async () => { await playHaptic(); cycleContentFit(); }}
+                                onPress={cycleContentFit}
                             >
                                 <MaterialIcons
                                     name={getContentFitIcon()}
@@ -531,7 +646,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 />
                             </TouchableOpacity>
 
-                            {/* Audio Track */}
                             {player.availableAudioTracks.length > 0 && (
                                 <TouchableOpacity
                                     style={styles.controlButton}
@@ -550,8 +664,8 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 </TouchableOpacity>
                             )}
 
-                            {/* Subtitles */}
-                            {player.availableSubtitleTracks.length > 0 && (
+                            {/* Custom subtitles button - show if we have custom subtitles */}
+                            {subtitles.length > 0 && (
                                 <TouchableOpacity
                                     style={styles.controlButton}
                                     onPress={async () => {
@@ -564,15 +678,14 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                     <MaterialIcons
                                         name="closed-caption"
                                         size={24}
-                                        color="white"
+                                        color={selectedSubtitle >= 0 ? "#007AFF" : "white"}
                                     />
                                 </TouchableOpacity>
                             )}
 
-                            {/* Picture in Picture */}
                             <TouchableOpacity
                                 style={styles.controlButton}
-                                onPress={async () => { await playHaptic(); togglePictureInPicture(); }}
+                                onPress={togglePictureInPicture}
                             >
                                 <MaterialIcons
                                     name="picture-in-picture-alt"
@@ -581,7 +694,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 />
                             </TouchableOpacity>
 
-                            {/* Playback Speed */}
                             <TouchableOpacity
                                 style={styles.controlButton}
                                 onPress={async () => {
@@ -594,13 +706,12 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 <MaterialIcons
                                     name="speed"
                                     size={24}
-                                    color="white"
+                                    color={playbackSpeed !== 1.0 ? "#007AFF" : "white"}
                                 />
                             </TouchableOpacity>
                         </View>
                     </LinearGradient>
 
-                    {/* Center controls - Hidden during buffering */}
                     {!isBuffering && (
                         <View style={styles.centerControls}>
                             <TouchableOpacity
@@ -641,7 +752,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                         </View>
                     )}
 
-                    {/* Bottom controls */}
                     <LinearGradient
                         colors={['transparent', 'rgba(0,0,0,0.8)']}
                         style={styles.bottomControls}
@@ -655,7 +765,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                             </Text>
                         </View>
 
-                        {/* Fixed progress bar with proper slider */}
                         <View style={styles.progressContainerWithMargin}>
                             <Slider
                                 style={styles.progressSlider}
@@ -674,7 +783,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                             />
                         </View>
 
-                        {/* Only show speed when not default */}
                         {playbackSpeed !== 1.0 && (
                             <View style={styles.bottomRightControls}>
                                 <Text style={styles.speedText}>
@@ -724,7 +832,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 </TouchableOpacity>
             )}
 
-            {/* Subtitle Menu */}
+            {/* Custom Subtitle Menu with Settings */}
             {showSubtitleMenu && (
                 <TouchableOpacity
                     style={styles.settingsOverlay}
@@ -736,43 +844,108 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                         activeOpacity={1}
                         onPress={(e) => e.stopPropagation()}
                     >
-                        <ScrollView style={styles.settingsContent} showsVerticalScrollIndicator={false}>
-                            <Text style={styles.settingsTitle}>Subtitles</Text>
-                            <View style={styles.subtitleOptions}>
-                                <TouchableOpacity
-                                    style={[
-                                        styles.subtitleOption,
-                                        selectedSubtitle === null && styles.subtitleOptionSelected
-                                    ]}
-                                    onPress={async () => {
-                                        await playHaptic();
-                                        setSelectedSubtitle(-1);
-                                        player.subtitleTrack = null;
-                                        setShowSubtitleMenu(false);
-                                    }}
-                                >
-                                    <Text style={styles.subtitleOptionText}>Off</Text>
-                                </TouchableOpacity>
-                                {player.availableSubtitleTracks.map((sub, index) => (
+                        <Text style={styles.settingsTitle}>Subtitles</Text>
+                        
+                        {subtitleState.isLoadingSubtitles && (
+                            <View style={styles.loadingContainer}>
+                                <ActivityIndicator size="small" color="#007AFF" />
+                                <Text style={styles.loadingText}>Loading subtitles...</Text>
+                            </View>
+                        )}
+
+                        {/* Font Size Control */}
+                        {/* <View style={styles.subtitleControlSection}>
+                            <Text style={styles.subtitleControlLabel}>Font Size</Text>
+                            <View style={styles.fontSizeButtons}>
+                                {[14, 16, 18, 20, 22, 24].map(size => (
                                     <TouchableOpacity
-                                        key={index}
+                                        key={size}
                                         style={[
-                                            styles.subtitleOption,
-                                            selectedSubtitle === index && styles.subtitleOptionSelected
+                                            styles.fontSizeButton,
+                                            subtitleState.subtitleFontSize === size && styles.fontSizeButtonSelected
                                         ]}
                                         onPress={async () => {
                                             await playHaptic();
-                                            setSelectedSubtitle(index);
-                                            player.subtitleTrack = sub;
-                                            setShowSubtitleMenu(false);
+                                            subtitleState.setSubtitleFontSize(size);
                                         }}
                                     >
-                                        <Text style={styles.subtitleOptionText}>
-                                            {sub.label}
+                                        <Text style={[
+                                            styles.fontSizeButtonText,
+                                            subtitleState.subtitleFontSize === size && styles.fontSizeButtonTextSelected
+                                        ]}>
+                                            {size}
                                         </Text>
                                     </TouchableOpacity>
                                 ))}
                             </View>
+                        </View> */}
+
+                        {/* Background Opacity Control */}
+                        {/* <View style={styles.subtitleControlSection}>
+                            <Text style={styles.subtitleControlLabel}>
+                                Background: {Math.round(subtitleState.subtitleBackgroundOpacity * 100)}%
+                            </Text>
+                            <Slider
+                                style={styles.subtitleOpacitySlider}
+                                minimumValue={0}
+                                maximumValue={1}
+                                value={subtitleState.subtitleBackgroundOpacity}
+                                onValueChange={(value) => subtitleState.setSubtitleBackgroundOpacity(value)}
+                                minimumTrackTintColor="#007AFF"
+                                maximumTrackTintColor="rgba(255,255,255,0.3)"
+                                thumbTintColor="#fff"
+                                thumbSize={16}
+                                trackHeight={4}
+                            />
+                        </View> */}
+
+                        {/* Subtitle Track Selection */}
+                        <ScrollView style={styles.settingsContent} showsVerticalScrollIndicator={false}>
+                            <TouchableOpacity
+                                style={[
+                                    styles.settingOption,
+                                    selectedSubtitle === -1 && styles.settingOptionSelected
+                                ]}
+                                onPress={() => selectSubtitle(-1)}
+                            >
+                                <Text style={styles.settingOptionText}>Off</Text>
+                                {selectedSubtitle === -1 && (
+                                    <Ionicons name="checkmark" size={20} color="#007AFF" />
+                                )}
+                            </TouchableOpacity>
+
+                            {subtitles.map((sub, index) => (
+                                <TouchableOpacity
+                                    key={index}
+                                    style={[
+                                        styles.settingOption,
+                                        selectedSubtitle === index && styles.settingOptionSelected
+                                    ]}
+                                    onPress={() => {
+                                        selectSubtitle(index);
+                                        setShowSubtitleMenu(false);
+                                    }}
+                                >
+                                    <View style={styles.subtitleOptionContent}>
+                                        <Text style={styles.settingOptionText} numberOfLines={2}>
+                                            {sub.label}
+                                        </Text>
+                                        {sub.fileId && (
+                                            <Text style={styles.subtitleSourceText}>
+                                                OpenSubtitles
+                                            </Text>
+                                        )}
+                                        {!sub.fileId && sub.url && !sub.url.includes('opensubtitles.org') && (
+                                            <Text style={styles.subtitleSourceText}>
+                                                Direct URL
+                                            </Text>
+                                        )}
+                                    </View>
+                                    {selectedSubtitle === index && (
+                                        <Ionicons name="checkmark" size={20} color="#007AFF" />
+                                    )}
+                                </TouchableOpacity>
+                            ))}
                         </ScrollView>
                     </TouchableOpacity>
                 </TouchableOpacity>

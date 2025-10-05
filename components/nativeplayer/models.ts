@@ -20,9 +20,27 @@ export interface Chapter {
 export interface MediaPlayerProps {
     videoUrl: string;
     title: string;
-    subtitles?: Subtitle[];
     audioTracks?: AudioTrack[];
     onBack: () => void;
     autoPlay?: boolean;
     artwork?: string;
+    subtitles?: Subtitle[];
+    openSubtitlesClient: OpenSubtitlesClient;
+}
+
+export interface OpenSubtitlesClient {
+    downloadSubtitle(fileId: string): Promise<DownloadResponse | ErrorResponse>;
+}
+
+export interface DownloadResponse {
+    link: string;
+    file_name: string;
+    requests: number;
+    remaining: number;
+    message: string;
+}
+
+export interface ErrorResponse {
+    message: string;
+    status: number;
 }
