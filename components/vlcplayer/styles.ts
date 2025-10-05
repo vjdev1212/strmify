@@ -291,13 +291,12 @@ export const styles = StyleSheet.create({
     },
     subtitleText: {
         color: '#fff',
-        fontWeight: '500',
+        fontWeight: 500,
         textAlign: 'center',
-        backgroundColor: 'rgba(16, 16, 16, 0.5)',
+        backgroundColor: 'rgba(16, 16, 16, 0.6)',
         paddingHorizontal: 16,
         paddingVertical: 6,
         borderRadius: 8,
-        lineHeight: 24,
         maxWidth: '90%',
         margin: 'auto'
     },

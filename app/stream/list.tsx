@@ -208,10 +208,10 @@ const StreamListScreen = () => {
         const serverIdToUse = forceServerId || selectedServerId;
 
         setIsPlaying(true);
-        setPlayBtnDisabled(true);
-        handleOpenBottomSheet();
-
-        // Validation
+        setPlayBtnDisabled(true);        
+        if (!url || infoHash) {
+            handleOpenBottomSheet();
+        }
         if (!playerToUse || (!url && !serverIdToUse)) {
             const errorMsg = 'Please select a media player and server.';
             setStatusText(`Error: ${errorMsg}`);
@@ -428,6 +428,7 @@ const StreamListScreen = () => {
     const openInBrowser = useCallback(async (url: string) => {
         try {
             await Linking.openURL(url);
+            handleCloseBottomSheet();
         } catch (error) {
             console.error('Failed to open URL:', error);
             showAlert('Error', 'Failed to open in browser');
