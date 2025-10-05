@@ -1,8 +1,7 @@
-import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
     View,
     Text,
-    StyleSheet,
     TouchableOpacity,
     Animated,
     StatusBar,
@@ -42,7 +41,8 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     onBack,
     artwork,
     subtitles = [],
-    openSubtitlesClient
+    openSubtitlesClient,
+    onVideoError
 }) => {
     const videoRef = useRef<VideoView>(null);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -62,6 +62,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const [dragPosition, setDragPosition] = useState(0);
     const [contentFit, setContentFit] = useState<'contain' | 'cover' | 'fill'>('cover');
     const [showContentFitLabel, setShowContentFitLabel] = useState(false);
+    const [loadingText, setLoadingText] = useState('Loading...')
 
     // Subtitle state
     const subtitleState = useSubtitleState();
@@ -340,12 +341,23 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 break;
 
             case "error":
-                showAlert("Video Error", "Failed to load video.");
+                if (!isReady) {
+                    showAlert("Playback Error", "Unable to load the video. We will retry VLC as a fallback");
+                    setLoadingText("Unable to load the video. Retrying with VLC...")
+                    setTimeout(() => {
+                        if (onVideoError) {
+                            onVideoError({
+                                message: error?.message || "Failed to load video",
+                            });
+                        }
+                        setLoadingText("Loading...")
+                    }, 3000);
+                }
                 setIsBuffering(false);
                 setIsReady(false);
                 break;
         }
-    }, [statusChange, player, bufferOpacity, isReady]);
+    }, [statusChange, player, bufferOpacity, isReady, onVideoError]);
 
     const showControlsTemporarily = useCallback(() => {
         setShowControls(true);
@@ -558,7 +570,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                     pointerEvents="none"
                 >
                     <ActivityIndicator size="large" color="#535aff" />
-                    <Text style={styles.bufferingText}>Loading...</Text>
+                    <Text style={styles.bufferingText}>{loadingText}</Text>
                 </Animated.View>
             )}
 
