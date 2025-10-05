@@ -185,7 +185,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
                         const subtitleContent = await subtitleResponse.text();
                         console.log('Subtitle content loaded, length:', subtitleContent.length);
-                        
+
                         const parsed = parseSubtitleFile(subtitleContent);
                         console.log('Parsed subtitles count:', parsed.length);
 
@@ -238,25 +238,31 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         }
     }, [selectedSubtitle, subtitles, openSubtitlesClient, useCustomSubtitles]);
 
-    // Update subtitle based on current time
+    // Update subtitle based on current time - using polling for reliability
     useEffect(() => {
         if (subtitleState.parsedSubtitles.length === 0) {
-            if (subtitleState.currentSubtitle !== '') {
-                subtitleState.setCurrentSubtitle('');
-            }
             return;
         }
 
-        const activeSubtitle = subtitleState.parsedSubtitles.find(
-            sub => currentTime >= sub.start && currentTime <= sub.end
-        );
+        const updateSubtitle = () => {
+            const time = player.currentTime;
 
-        const newSubtitleText = activeSubtitle ? activeSubtitle.text : '';
+            const activeSubtitle = subtitleState.parsedSubtitles.find(
+                sub => time >= sub.start && time <= sub.end
+            );
 
-        if (newSubtitleText !== subtitleState.currentSubtitle) {
+            const newSubtitleText = activeSubtitle ? activeSubtitle.text : '';
             subtitleState.setCurrentSubtitle(newSubtitleText);
-        }
-    }, [currentTime, subtitleState.parsedSubtitles]);
+        };
+
+        // Update immediately
+        updateSubtitle();
+
+        // Poll every 100ms for subtitle updates
+        const interval = setInterval(updateSubtitle, 100);
+
+        return () => clearInterval(interval);
+    }, [subtitleState.parsedSubtitles, player]);
 
     // Playing state change handler
     const playingChange = useEvent(player, "playingChange");
@@ -830,7 +836,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                         onPress={(e) => e.stopPropagation()}
                     >
                         <Text style={styles.settingsTitle}>Subtitles</Text>
-                        
+
                         {subtitleState.isLoadingSubtitles && (
                             <View style={styles.loadingContainer}>
                                 <ActivityIndicator size="small" color="#007AFF" />

@@ -45,9 +45,8 @@ export const styles = StyleSheet.create({
         fontWeight: '600',
     },
     subtitleText: {
-        color: 'rgba(255, 255, 255, 0.8)',
-        fontSize: 14,
-        marginTop: 2,
+        color: 'rgba(255, 255, 255, 1)',
+        fontSize: 16
     },
     chapterText: {
         color: 'rgba(255, 255, 255, 0.6)',
@@ -276,9 +275,6 @@ export const styles = StyleSheet.create({
         padding: 8,
         borderRadius: 8,
     },
-    // Add these styles to your existing styles.ts file
-
-    // Subtitle Container and Display
     subtitleContainer: {
         position: 'absolute',
         bottom: 80,
@@ -286,13 +282,13 @@ export const styles = StyleSheet.create({
         right: 0,
         alignItems: 'center',
         paddingHorizontal: 20,
-        zIndex: 10,
     },
     subtitleBackground: {
         paddingHorizontal: 16,
         paddingVertical: 8,
         borderRadius: 8,
         maxWidth: '90%',
+        backgroundColor: 'rgba(16, 16, 16, 0.5)',
     },
     subtitleControlSection: {
         paddingHorizontal: 20,
@@ -368,8 +364,6 @@ export const styles = StyleSheet.create({
         marginLeft: 10,
         fontWeight: '500',
     },
-
-    // Setting Options (if not already present)
     settingOption: {
         flexDirection: 'row',
         alignItems: 'center',
