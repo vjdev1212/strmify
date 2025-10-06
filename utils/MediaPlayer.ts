@@ -10,7 +10,7 @@ export enum Players {
     VidHub = 'VidHub',
     MXPlayer = "MX Player",
     MXPlayerPro = "MX PRO",
-    OutPlayer = 'OutPlayer'
+    Outplayer = 'Outplayer'
 }
 
 export const getPlatformSpecificPlayers = () => {
@@ -32,7 +32,7 @@ export const getPlatformSpecificPlayers = () => {
             { name: Players.VLC, scheme: 'vlc://STREAMURL', encodeUrl: false },
             { name: Players.Infuse, scheme: 'infuse://x-callback-url/play?url=STREAMURL', encodeUrl: true },
             { name: Players.VidHub, scheme: 'open-vidhub://x-callback-url/open?url=STREAMURL', encodeUrl: true },
-            { name: Players.OutPlayer, scheme: 'outplayer://STREAMURL', encodeUrl: false },
+            { name: Players.Outplayer, scheme: 'outplayer://STREAMURL', encodeUrl: false },
         ];
     } else if (getOriginalPlatform() === 'web') {
         return [

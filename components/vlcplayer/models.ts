@@ -41,6 +41,11 @@ export interface MediaPlayerProps {
     artwork?: string;
     subtitles?: Subtitle[];
     openSubtitlesClient: OpenSubtitlesClient;
-    onVideoError?: (error: { message: string; code?: string }) => void;
+    onSwitchMediaPlayer?: (error: PlayerSwitch) => void;
 }
 
+interface PlayerSwitch {
+  message: string;
+  code?: string;
+  player: "native" | "vlc"
+}
