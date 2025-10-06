@@ -129,7 +129,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
                 if (sub.fileId && openSubtitlesClient) {
                     const response = await openSubtitlesClient.downloadSubtitle(String(sub.fileId));
-                    
+
                     if ('error' in response || 'status' in response && response.status !== 200) {
                         throw new Error(response.message || 'Download failed');
                     }
@@ -192,10 +192,10 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const timeUpdate = useEvent(player, "timeUpdate");
     useEffect(() => {
         if (!timeUpdate || isDragging) return;
-        
+
         setCurrentTime(timeUpdate.currentTime);
         const videoDuration = player.duration || 0;
-        
+
         if (videoDuration > 0) {
             setDuration(videoDuration);
         }
@@ -451,7 +451,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                             <TouchableOpacity style={styles.controlButton} onPress={cycleContentFit}>
                                 <MaterialIcons name={getContentFitIcon()} size={24} color="white" />
                             </TouchableOpacity>
-                            
+
                             {/* Audio Track Menu */}
                             {player.availableAudioTracks.length > 0 && (
                                 <MenuView
