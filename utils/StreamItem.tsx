@@ -1,7 +1,7 @@
 
 // Helper function to extract quality from stream name
 export const extractQuality = (name: string, title: string | undefined): string => {
-    const qualities = ['4K', '2160p', '1440p', '1080p', '720p', '480p', '360p', 'TeleSync', 'HDTS', 'DVD', 'WEB-DL', 'WEBDL', 'CAM'];
+    const qualities = ['2160p', '1440p', '1080p', '720p', '480p', '360p', '4K', '2K', 'TeleSync', 'HDTS', 'DVD', 'WEB-DL', 'WEBDL', 'CAM'];
 
     for (const quality of qualities) {
         const lowerQuality = quality.toLowerCase();
