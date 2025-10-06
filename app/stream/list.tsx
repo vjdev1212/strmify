@@ -835,7 +835,7 @@ const styles = StyleSheet.create({
         borderTopRightRadius: 10,
     },
     bottomSheetIndicator: {
-        backgroundColor: '#535aff',
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
         width: 40,
     },
     bottomSheetContent: {
