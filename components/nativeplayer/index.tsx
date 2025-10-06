@@ -17,7 +17,6 @@ import { playHaptic, formatTime } from "./utils";
 import { parseSubtitleFile } from "./subtitle";
 
 // Constants
-const CONTROLS_HIDE_DELAY = 3000;
 const CONTENT_FIT_LABEL_DELAY = 1000;
 const SUBTITLE_UPDATE_INTERVAL = 100;
 const PLAYBACK_SPEEDS = [0.75, 0.8, 0.85, 0.9, 0.95, 1.0, 1.1, 1.15, 1.20, 1.25];
@@ -240,12 +239,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         Animated.timing(controlsOpacity, { toValue: 1, duration: 200, useNativeDriver: true }).start();
 
         clearTimeout(hideControlsTimer.current);
-        hideControlsTimer.current = setTimeout(() => {
-            if (isPlaying) {
-                Animated.timing(controlsOpacity, { toValue: 0, duration: 500, useNativeDriver: true })
-                    .start(() => setShowControls(false));
-            }
-        }, CONTROLS_HIDE_DELAY);
     }, [isPlaying]);
 
     const showContentFitLabelTemporarily = useCallback(() => {
