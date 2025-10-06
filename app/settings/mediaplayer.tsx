@@ -57,7 +57,7 @@ const MediaPlayerConfigScreen = () => {
                 baseConfig(Players.VLC, 'vlc://STREAMURL', false),
                 baseConfig(Players.Infuse, 'infuse://x-callback-url/play?url=STREAMURL', true),
                 baseConfig(Players.VidHub, 'open-vidhub://x-callback-url/open?url=STREAMURL', true),
-                baseConfig(Players.OutPlayer, 'outplayer://STREAMURL', false),
+                baseConfig(Players.Outplayer, 'outplayer://STREAMURL', false),
             ];
         } else if (getOriginalPlatform() === 'web') {
             return [
