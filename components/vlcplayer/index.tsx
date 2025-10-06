@@ -1028,11 +1028,13 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                                     const trackId = parseInt(nativeEvent.event.replace('audio-', ''));
                                     selectAudioTrack(trackId);
                                 }}
+                                onCloseMenu={showControlsTemporarily}
                                 actions={settings.availableAudioTracks.map((track) => ({
                                     id: `audio-${track.id}`,
                                     title: track.name,
                                     state: settings.selectedAudioTrack === track.id ? 'on' : 'off'
                                 }))}
+                                themeVariant="dark"
                             >
                                 <View style={styles.controlButton}>
                                     <MaterialIcons name="audiotrack" size={24} color="white" />
@@ -1050,6 +1052,7 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                                             selectSubtitle(index);
                                         }
                                     }}
+                                    onCloseMenu={showControlsTemporarily}
                                     actions={[
                                         {
                                             id: 'off',
@@ -1073,6 +1076,7 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                                             };
                                         })
                                     ]}
+                                    themeVariant="dark"
                                 >
                                     <View style={styles.controlButton}>
                                         <MaterialIcons name="closed-caption" size={24} color="white" />
@@ -1086,11 +1090,13 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                                     const speed = parseFloat(nativeEvent.event.replace('speed-', ''));
                                     changePlaybackSpeed(speed);
                                 }}
+                                onCloseMenu={showControlsTemporarily}
                                 actions={[0.75, 0.8, 0.85, 0.9, 0.95, 1.0, 1.1, 1.15, 1.20, 1.25].map(speed => ({
                                     id: `speed-${speed}`,
                                     title: `${speed}x`,
                                     state: settings.playbackSpeed === speed ? 'on' : 'off'
                                 }))}
+                                themeVariant="dark"
                             >
                                 <View style={styles.controlButton}>
                                     <MaterialIcons

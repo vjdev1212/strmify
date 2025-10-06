@@ -456,6 +456,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                     actions={audioActions}
                                     shouldOpenOnLongPress={false}
                                     themeVariant="dark"
+                                    onCloseMenu={showControlsTemporarily}
                                 >
                                     <View style={styles.controlButton}>
                                         <MaterialIcons name="audiotrack" size={24} color="white" />
@@ -478,6 +479,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                     actions={subtitleActions}
                                     shouldOpenOnLongPress={false}
                                     themeVariant="dark"
+                                    onCloseMenu={showControlsTemporarily}
                                 >
                                     <View style={styles.controlButton}>
                                         <MaterialIcons name="closed-caption" size={24} color="white" />
@@ -495,6 +497,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 actions={speedActions}
                                 shouldOpenOnLongPress={false}
                                 themeVariant="dark"
+                                onCloseMenu={showControlsTemporarily}
                             >
                                 <View style={styles.controlButton}>
                                     <MaterialIcons name="speed" size={24} color={playbackSpeed !== 1.0 ? "#007AFF" : "white"} />
