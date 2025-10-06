@@ -529,7 +529,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                             <Text style={styles.subtitleOptionText} numberOfLines={2}>{sub.label}</Text>
                                             {sub.fileId && <Text style={styles.subtitleSourceText}>OpenSubtitles</Text>}
                                         </View>
-                                        {selectedSubtitle === i && <Ionicons name="checkmark" size={20} color="#007AFF" />}
+                                        {selectedSubtitle === i && <Ionicons name="checkmark" size={20} color="#ffffff" />}
                                     </TouchableOpacity>
                                 ))
                             ) : (
@@ -540,7 +540,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                         onPress={async () => { await playHaptic(); setSelectedSubtitle(i); player.subtitleTrack = sub; menuState.setShowSubtitle(false); }}
                                     >
                                         <Text style={styles.subtitleOptionText}>{sub.label}</Text>
-                                        {selectedSubtitle === i && <Ionicons name="checkmark" size={20} color="#007AFF" />}
+                                        {selectedSubtitle === i && <Ionicons name="checkmark" size={20} color="#ffffff" />}
                                     </TouchableOpacity>
                                 ))
                             )}
