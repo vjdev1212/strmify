@@ -271,7 +271,7 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
     const subtitleState = useSubtitleState();
     const settings = usePlayerSettings();
     const timers = useTimers();
-    const [videoScale, setVideoScale] = useState({ x: 1.0, y: 1.0 });    
+    const [videoScale, setVideoScale] = useState({ x: 1.0, y: 1.0 });
 
     const [seekFeedback, setSeekFeedback] = useState<{
         show: boolean;
@@ -1340,7 +1340,7 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                     >
                         <Text style={styles.panelTitle}>Playback Speed</Text>
                         <View style={styles.speedOptionsGrid}>
-                            {[0.75, 0.8, 0.9, 1.0, 1.1, 1.2, 1.25].map(speed => (
+                            {[0.75, 0.8, 0.85, 0.9, 0.95, 1.0, 1.1, 1.15, 1.20, 1.25].map(speed => (
                                 <TouchableOpacity
                                     key={speed}
                                     style={[

@@ -20,7 +20,7 @@ import { parseSubtitleFile } from "./subtitle";
 const CONTROLS_HIDE_DELAY = 3000;
 const CONTENT_FIT_LABEL_DELAY = 1000;
 const SUBTITLE_UPDATE_INTERVAL = 100;
-const PLAYBACK_SPEEDS = [0.75, 0.8, 0.9, 1.0, 1.1, 1.2, 1.25, 1.5, 1.75, 2.0];
+const PLAYBACK_SPEEDS = [0.75, 0.8, 0.85, 0.9, 0.95, 1.0, 1.1, 1.15, 1.20, 1.25];
 const CONTENT_FIT_OPTIONS: Array<'contain' | 'cover' | 'fill'> = ['contain', 'cover', 'fill'];
 
 // Subtitle hook
