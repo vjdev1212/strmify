@@ -38,6 +38,7 @@ export interface MediaPlayerProps {
     videoUrl: string;
     title: string;
     onBack: () => void;
+    progress?: number;
     artwork?: string;
     subtitles?: Subtitle[];
     openSubtitlesClient: OpenSubtitlesClient;
@@ -45,7 +46,8 @@ export interface MediaPlayerProps {
 }
 
 interface PlayerSwitch {
-  message: string;
-  code?: string;
-  player: "native" | "vlc"
+    message: string;
+    code?: string;
+    player: "native" | "vlc",
+    progress: number;
 }

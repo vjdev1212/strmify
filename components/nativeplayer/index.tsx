@@ -450,7 +450,11 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
                         <View style={styles.topRightControls}>
                             {onSwitchMediaPlayer && (
-                                <TouchableOpacity style={styles.controlButton} onPress={async () => { await playHaptic(); onSwitchMediaPlayer({ message: '', player: "native" }); }}>
+                                <TouchableOpacity style={styles.controlButton} onPress={async () => {
+                                    await playHaptic();
+                                    const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+                                    onSwitchMediaPlayer({ message: '', player: "native", progress: progress  });
+                                }}>
                                     <MaterialCommunityIcons name="vlc" size={24} color="white" />
                                 </TouchableOpacity>
                             )}

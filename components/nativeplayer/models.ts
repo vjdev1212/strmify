@@ -22,6 +22,7 @@ export interface MediaPlayerProps {
     title: string;
     audioTracks?: AudioTrack[];
     onBack: () => void;
+    progress?: number;
     autoPlay?: boolean;
     artwork?: string;
     subtitles?: Subtitle[];
@@ -30,9 +31,10 @@ export interface MediaPlayerProps {
 }
 
 interface PlayerSwitch {
-  message: string;
-  code?: string;
-  player: "native" | "vlc"
+    message: string;
+    code?: string;
+    player: "native" | "vlc",
+    progress: number
 }
 
 export interface OpenSubtitlesClient {

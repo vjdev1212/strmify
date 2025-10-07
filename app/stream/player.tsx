@@ -9,7 +9,8 @@ import { Platform } from "react-native";
 interface PlayerSwitch {
   message: string;
   code?: string;
-  player: "native" | "vlc"
+  player: "native" | "vlc",
+  progress: number;
 }
 
 const MediaPlayerScreen: React.FC = () => {
@@ -19,6 +20,7 @@ const MediaPlayerScreen: React.FC = () => {
   const [isLoadingSubtitles, setIsLoadingSubtitles] = useState(true);
   const [openSubtitlesClient, setOpenSubtitlesClient] = useState<OpenSubtitlesClient | null>(null);
   const [forceVlc, setForceVlc] = useState(false);
+  const [progress, setProgress] = useState(0);
   const artwork = `https://images.metahub.space/background/medium/${imdbid}/img`;
 
   useEffect(() => {
@@ -132,16 +134,17 @@ const MediaPlayerScreen: React.FC = () => {
     router.back();
   };
 
-  const handleSwitchMediaPlayer = (error: PlayerSwitch): void => {
-    console.log(`Video playback failed (${error.player}):`, error.message);
+  const handleSwitchMediaPlayer = (event: PlayerSwitch): void => {
+    console.log(`Video playback failed (${event.player}):`, event.message);
 
     // Only switch players if not on web
     if (Platform.OS === "web") return;
 
-    if (error.player === "native" && !forceVlc && useVlcKit !== 'true') {
+    setProgress(event.progress);
+    if (event.player === "native" && !forceVlc && useVlcKit !== 'true') {
       console.log("Switching to VLC player...");
       setForceVlc(true);
-    } else if (error.player === "vlc") {
+    } else if (event.player === "vlc") {
       console.log("VLC player failed. Switching back to native player...");
       setForceVlc(false);
     }
@@ -163,6 +166,7 @@ const MediaPlayerScreen: React.FC = () => {
       videoUrl={videoUrl as string}
       title={title as string}
       onBack={handleBack}
+      progress={progress}
       artwork={artwork as string}
       subtitles={subtitles}
       openSubtitlesClient={openSubtitlesClient}
