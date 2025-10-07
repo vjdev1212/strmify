@@ -270,7 +270,7 @@ const SeekFeedback: React.FC<SeekFeedbackState> = React.memo(({ show, direction,
 // MAIN COMPONENT
 // ============================================================================
 
-const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
+const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
     videoUrl,
     title,
     onBack,
@@ -1100,4 +1100,4 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
     );
 };
 
-export const MediaPlayer = React.memo(NativeMediaPlayerComponent);
+export const MediaPlayer = React.memo(VlcMediaPlayerComponent);
