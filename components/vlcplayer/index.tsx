@@ -67,9 +67,11 @@ const useSubtitleState = () => {
 
 const useUIState = () => {
     const [showControls, setShowControls] = useState(false);
+    const [preventAutoHide, setPreventAutoHide] = useState(false);
 
     return {
-        showControls, setShowControls
+        showControls, setShowControls,
+        preventAutoHide, setPreventAutoHide
     };
 };
 
@@ -245,13 +247,14 @@ const SeekFeedback: React.FC<{
     );
 });
 
-const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
+const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
     videoUrl,
     title,
-    onBack,
+    back,
     artwork,
     subtitles = [],
-    openSubtitlesClient
+    openSubtitlesClient,
+    updateProgress
 }) => {
     const playerRef = useRef<VLCPlayer>(null);
     const playerState = usePlayerState();
@@ -474,7 +477,20 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         controlsOpacity.setValue(1);
 
         timers.clearTimer('hideControls');
-    }, [controlsOpacity, uiState, timers]);
+
+        // Only set auto-hide timer if not prevented
+        if (!uiState.preventAutoHide) {
+            timers.setTimer('hideControls', () => {
+                Animated.timing(controlsOpacity, {
+                    toValue: 0,
+                    duration: 300,
+                    useNativeDriver: true,
+                }).start(() => {
+                    uiState.setShowControls(false);
+                });
+            }, 3000);
+        }
+    }, [controlsOpacity, uiState.preventAutoHide, uiState.setShowControls, timers]);
 
     const vlcHandlers = useMemo(() => ({
         onLoad: (data: any) => {
@@ -583,6 +599,13 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
 
         onStopped: () => {
             console.log('On Stopped');
+            playerState.setIsPlaying(false);
+            playerState.setIsPaused(false);
+            playerState.setIsSeeking(false);
+        },
+
+        onEnd: () => {
+            console.log('On End');
             playerState.setIsPlaying(false);
             playerState.setIsPaused(false);
             playerState.setIsSeeking(false);
@@ -802,7 +825,9 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                     style={styles.errorBackButton}
                     onPress={async () => {
                         await playHaptic();
-                        onBack();
+                        const progress = playerState.duration > 0 ? (playerState.currentTime / playerState.duration) * 100 : 0;
+                        updateProgress({ progress });
+                        back({ message: '', player: "vlc" });
                     }}
                 >
                     <Ionicons name="chevron-back" size={28} color="white" />
@@ -822,7 +847,7 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                 </TouchableOpacity>
             </View>
         );
-    }, [playerState.error, playHaptic, onBack, playerState]);
+    }, [playerState.error, playHaptic, back, playerState]);
 
     const ArtworkComponent = useMemo(() => {
         if (!artwork || playerState.hasStartedPlaying || playerState.error) return null;
@@ -926,6 +951,7 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                     onBuffering={vlcHandlers.onBuffering}
                     onPaused={vlcHandlers.onPaused}
                     onStopped={vlcHandlers.onStopped}
+                    onEnd={vlcHandlers.onEnd}
                     onError={vlcHandlers.onError}
                 />
             )}
@@ -940,7 +966,9 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                         style={styles.backButton}
                         onPress={async () => {
                             await playHaptic();
-                            onBack();
+                            const progress = playerState.duration > 0 ? (playerState.currentTime / playerState.duration) * 100 : 0;
+                            updateProgress({ progress });
+                            back({ message: '', player: "vlc" });
                         }}
                     >
                         <Ionicons name="chevron-back" size={28} color="white" />
@@ -977,7 +1005,9 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                     >
                         <TouchableOpacity style={styles.backButton} onPress={async () => {
                             await playHaptic();
-                            onBack();
+                            const progress = playerState.duration > 0 ? (playerState.currentTime / playerState.duration) * 100 : 0;
+                            updateProgress({ progress });
+                            back({ message: '', player: "vlc" });
                         }}>
                             <Ionicons name="chevron-back" size={28} color="white" />
                         </TouchableOpacity>
@@ -1028,13 +1058,17 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                                     const trackId = parseInt(nativeEvent.event.replace('audio-', ''));
                                     selectAudioTrack(trackId);
                                 }}
-                                onCloseMenu={showControlsTemporarily}
                                 actions={settings.availableAudioTracks.map((track) => ({
                                     id: `audio-${track.id}`,
                                     title: track.name,
                                     state: settings.selectedAudioTrack === track.id ? 'on' : 'off'
                                 }))}
                                 themeVariant="dark"
+                                onOpenMenu={() => uiState.setPreventAutoHide(true)}
+                                onCloseMenu={() => {
+                                    uiState.setPreventAutoHide(false);
+                                    showControlsTemporarily();
+                                }}
                             >
                                 <View style={styles.controlButton}>
                                     <MaterialIcons name="audiotrack" size={24} color="white" />
@@ -1052,7 +1086,6 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                                             selectSubtitle(index);
                                         }
                                     }}
-                                    onCloseMenu={showControlsTemporarily}
                                     actions={[
                                         {
                                             id: 'off',
@@ -1077,6 +1110,11 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                                         })
                                     ]}
                                     themeVariant="dark"
+                                    onOpenMenu={() => uiState.setPreventAutoHide(true)}
+                                    onCloseMenu={() => {
+                                        uiState.setPreventAutoHide(false);
+                                        showControlsTemporarily();
+                                    }}
                                 >
                                     <View style={styles.controlButton}>
                                         <MaterialIcons name="closed-caption" size={24} color="white" />
@@ -1090,19 +1128,23 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                                     const speed = parseFloat(nativeEvent.event.replace('speed-', ''));
                                     changePlaybackSpeed(speed);
                                 }}
-                                onCloseMenu={showControlsTemporarily}
                                 actions={[0.75, 0.8, 0.85, 0.9, 0.95, 1.0, 1.1, 1.15, 1.20, 1.25].map(speed => ({
                                     id: `speed-${speed}`,
                                     title: `${speed}x`,
                                     state: settings.playbackSpeed === speed ? 'on' : 'off'
                                 }))}
                                 themeVariant="dark"
+                                onOpenMenu={() => uiState.setPreventAutoHide(true)}
+                                onCloseMenu={() => {
+                                    uiState.setPreventAutoHide(false);
+                                    showControlsTemporarily();
+                                }}
                             >
                                 <View style={styles.controlButton}>
                                     <MaterialIcons
                                         name="speed"
                                         size={24}
-                                        color={settings.playbackSpeed !== 1.0 ? "#007AFF" : "white"}
+                                        color={"white"}
                                     />
                                 </View>
                             </MenuView>
@@ -1187,4 +1229,4 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
 };
 
 
-export const MediaPlayer = React.memo(NativeMediaPlayerComponent);
+export const MediaPlayer = React.memo(VlcMediaPlayerComponent);

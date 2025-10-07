@@ -19,6 +19,7 @@ import { parseSubtitleFile } from "./subtitle";
 // Constants
 const CONTENT_FIT_LABEL_DELAY = 1000;
 const SUBTITLE_UPDATE_INTERVAL = 100;
+const CONTROLS_AUTO_HIDE_DELAY = 3000;
 const PLAYBACK_SPEEDS = [0.75, 0.8, 0.85, 0.9, 0.95, 1.0, 1.1, 1.15, 1.20, 1.25];
 const CONTENT_FIT_OPTIONS: Array<'contain' | 'cover' | 'fill'> = ['contain', 'cover', 'fill'];
 
@@ -32,11 +33,12 @@ const useSubtitles = () => {
 };
 
 export const MediaPlayer: React.FC<MediaPlayerProps> = ({
-    videoUrl, title, onBack, artwork, subtitles = [], openSubtitlesClient, onSwitchMediaPlayer
+    videoUrl, title, back: onBack, artwork, subtitles = [], openSubtitlesClient, switchMediaPlayer, updateProgress
 }) => {
     const videoRef = useRef<VideoView>(null);
     const hideControlsTimer = useRef<any>(null);
     const contentFitLabelTimer = useRef<any>(null);
+    const shouldAutoHideControls = useRef(true);
 
     // Animation refs
     const controlsOpacity = useRef(new Animated.Value(1)).current;
@@ -78,6 +80,20 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         player.muted = isMuted;
         player.playbackRate = playbackSpeed;
     });
+
+    const showControlsTemporarily = useCallback(() => {
+        setShowControls(true);
+        Animated.timing(controlsOpacity, { toValue: 1, duration: 200, useNativeDriver: true }).start();
+
+        clearTimeout(hideControlsTimer.current);
+
+        if (isPlaying && shouldAutoHideControls.current) {
+            hideControlsTimer.current = setTimeout(() => {
+                Animated.timing(controlsOpacity, { toValue: 0, duration: 300, useNativeDriver: true })
+                    .start(() => setShowControls(false));
+            }, CONTROLS_AUTO_HIDE_DELAY);
+        }
+    }, [isPlaying, controlsOpacity]);
 
     // Orientation and cleanup
     useEffect(() => {
@@ -233,13 +249,13 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         }
     }, [statusChange, isReady]);
 
-    // Control helpers
-    const showControlsTemporarily = useCallback(() => {
-        setShowControls(true);
-        Animated.timing(controlsOpacity, { toValue: 1, duration: 200, useNativeDriver: true }).start();
+    // Auto-hide controls when playback starts
+    useEffect(() => {
+        if (isPlaying && showControls && shouldAutoHideControls.current) {
+            showControlsTemporarily();
+        }
+    }, [isPlaying, showControlsTemporarily]);
 
-        clearTimeout(hideControlsTimer.current);
-    }, [isPlaying]);
 
     const showContentFitLabelTemporarily = useCallback(() => {
         setShowContentFitLabel(true);
@@ -413,7 +429,12 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
             {!isReady && (
                 <View style={styles.persistentBackButton} pointerEvents="box-none">
-                    <TouchableOpacity style={styles.backButtonPersistent} onPress={async () => { await playHaptic(); onBack(); }}>
+                    <TouchableOpacity style={styles.backButtonPersistent} onPress={async () => {
+                        await playHaptic();
+                        const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+                        updateProgress({ progress });
+                        onBack({ message: '', player: "native" });
+                    }}>
                         <View style={styles.backButtonGradient}>
                             <Ionicons name="chevron-back" size={28} color="white" />
                         </View>
@@ -424,7 +445,12 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
             {showControls && (
                 <Animated.View style={[styles.controlsOverlay, { opacity: controlsOpacity }]} pointerEvents="box-none">
                     <LinearGradient colors={['rgba(0,0,0,0.8)', 'transparent']} style={styles.topControls}>
-                        <TouchableOpacity style={styles.backButton} onPress={async () => { await playHaptic(); onBack(); }}>
+                        <TouchableOpacity style={styles.backButton} onPress={async () => {
+                            await playHaptic();
+                            const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+                            updateProgress({ progress });
+                            onBack({ message: '', player: "native" });
+                        }}>
                             <Ionicons name="chevron-back" size={28} color="white" />
                         </TouchableOpacity>
 
@@ -433,8 +459,12 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                         </View>
 
                         <View style={styles.topRightControls}>
-                            {onSwitchMediaPlayer && (
-                                <TouchableOpacity style={styles.controlButton} onPress={async () => { await playHaptic(); onSwitchMediaPlayer({ message: '', player: "native" }); }}>
+                            {switchMediaPlayer && (
+                                <TouchableOpacity style={styles.controlButton} onPress={async () => {
+                                    await playHaptic();
+                                    const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+                                    switchMediaPlayer({ message: '', player: "native", progress: progress });
+                                }}>
                                     <MaterialCommunityIcons name="vlc" size={24} color="white" />
                                 </TouchableOpacity>
                             )}
@@ -456,7 +486,14 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                     actions={audioActions}
                                     shouldOpenOnLongPress={false}
                                     themeVariant="dark"
-                                    onCloseMenu={showControlsTemporarily}
+                                    onOpenMenu={() => {
+                                        shouldAutoHideControls.current = false;
+                                        clearTimeout(hideControlsTimer.current);
+                                    }}
+                                    onCloseMenu={() => {
+                                        shouldAutoHideControls.current = true;
+                                        showControlsTemporarily();
+                                    }}
                                 >
                                     <View style={styles.controlButton}>
                                         <MaterialIcons name="audiotrack" size={24} color="white" />
@@ -479,7 +516,14 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                     actions={subtitleActions}
                                     shouldOpenOnLongPress={false}
                                     themeVariant="dark"
-                                    onCloseMenu={showControlsTemporarily}
+                                    onOpenMenu={() => {
+                                        shouldAutoHideControls.current = false;
+                                        clearTimeout(hideControlsTimer.current);
+                                    }}
+                                    onCloseMenu={() => {
+                                        shouldAutoHideControls.current = true;
+                                        showControlsTemporarily();
+                                    }}
                                 >
                                     <View style={styles.controlButton}>
                                         <MaterialIcons name="closed-caption" size={24} color="white" />
@@ -497,10 +541,17 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 actions={speedActions}
                                 shouldOpenOnLongPress={false}
                                 themeVariant="dark"
-                                onCloseMenu={showControlsTemporarily}
+                                onOpenMenu={() => {
+                                    shouldAutoHideControls.current = false;
+                                    clearTimeout(hideControlsTimer.current);
+                                }}
+                                onCloseMenu={() => {
+                                    shouldAutoHideControls.current = true;
+                                    showControlsTemporarily();
+                                }}
                             >
                                 <View style={styles.controlButton}>
-                                    <MaterialIcons name="speed" size={24} color={playbackSpeed !== 1.0 ? "#007AFF" : "white"} />
+                                    <MaterialIcons name="speed" size={24} color={"white"} />
                                 </View>
                             </MenuView>
                         </View>

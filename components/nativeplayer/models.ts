@@ -1,3 +1,4 @@
+
 export interface Subtitle {
     fileId: string | number | null;
     language: string;
@@ -21,20 +22,33 @@ export interface MediaPlayerProps {
     videoUrl: string;
     title: string;
     audioTracks?: AudioTrack[];
-    onBack: () => void;
+    back: (event: OnBackEvent) => void;
+    progress?: number;
     autoPlay?: boolean;
     artwork?: string;
     subtitles?: Subtitle[];
     openSubtitlesClient: OpenSubtitlesClient;
-    onSwitchMediaPlayer?: (error: PlayerSwitch) => void;
+    switchMediaPlayer?: (event: PlayerSwitchEvent) => void;
+    updateProgress: (event: UpdateProgessEvent) => void;
 }
 
-interface PlayerSwitch {
-  message: string;
-  code?: string;
-  player: "native" | "vlc"
+interface PlayerSwitchEvent {
+    message: string;
+    code?: string;
+    player: "native" | "vlc",
+    progress: number
 }
 
+interface OnBackEvent {
+    message: string;
+    code?: string;
+    player: "native" | "vlc",
+    // progress: number
+}
+
+interface UpdateProgessEvent {
+    progress: number
+}
 export interface OpenSubtitlesClient {
     downloadSubtitle(fileId: string): Promise<DownloadResponse | ErrorResponse>;
 }
