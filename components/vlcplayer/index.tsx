@@ -67,9 +67,11 @@ const useSubtitleState = () => {
 
 const useUIState = () => {
     const [showControls, setShowControls] = useState(false);
+    const [preventAutoHide, setPreventAutoHide] = useState(false);
 
     return {
-        showControls, setShowControls
+        showControls, setShowControls,
+        preventAutoHide, setPreventAutoHide
     };
 };
 
@@ -474,7 +476,20 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         controlsOpacity.setValue(1);
 
         timers.clearTimer('hideControls');
-    }, [controlsOpacity, uiState, timers]);
+
+        // Only set auto-hide timer if not prevented
+        if (!uiState.preventAutoHide) {
+            timers.setTimer('hideControls', () => {
+                Animated.timing(controlsOpacity, {
+                    toValue: 0,
+                    duration: 300,
+                    useNativeDriver: true,
+                }).start(() => {
+                    uiState.setShowControls(false);
+                });
+            }, 3000);
+        }
+    }, [controlsOpacity, uiState.preventAutoHide, uiState.setShowControls, timers]);
 
     const vlcHandlers = useMemo(() => ({
         onLoad: (data: any) => {
@@ -1031,13 +1046,17 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                                     const trackId = parseInt(nativeEvent.event.replace('audio-', ''));
                                     selectAudioTrack(trackId);
                                 }}
-                                onCloseMenu={showControlsTemporarily}
                                 actions={settings.availableAudioTracks.map((track) => ({
                                     id: `audio-${track.id}`,
                                     title: track.name,
                                     state: settings.selectedAudioTrack === track.id ? 'on' : 'off'
                                 }))}
                                 themeVariant="dark"
+                                onOpenMenu={() => uiState.setPreventAutoHide(true)}
+                                onCloseMenu={() => {
+                                    uiState.setPreventAutoHide(false);
+                                    showControlsTemporarily();
+                                }}
                             >
                                 <View style={styles.controlButton}>
                                     <MaterialIcons name="audiotrack" size={24} color="white" />
@@ -1055,7 +1074,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                                             selectSubtitle(index);
                                         }
                                     }}
-                                    onCloseMenu={showControlsTemporarily}
                                     actions={[
                                         {
                                             id: 'off',
@@ -1080,6 +1098,11 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                                         })
                                     ]}
                                     themeVariant="dark"
+                                    onOpenMenu={() => uiState.setPreventAutoHide(true)}
+                                    onCloseMenu={() => {
+                                        uiState.setPreventAutoHide(false);
+                                        showControlsTemporarily();
+                                    }}
                                 >
                                     <View style={styles.controlButton}>
                                         <MaterialIcons name="closed-caption" size={24} color="white" />
@@ -1093,19 +1116,23 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                                     const speed = parseFloat(nativeEvent.event.replace('speed-', ''));
                                     changePlaybackSpeed(speed);
                                 }}
-                                onCloseMenu={showControlsTemporarily}
                                 actions={[0.75, 0.8, 0.85, 0.9, 0.95, 1.0, 1.1, 1.15, 1.20, 1.25].map(speed => ({
                                     id: `speed-${speed}`,
                                     title: `${speed}x`,
                                     state: settings.playbackSpeed === speed ? 'on' : 'off'
                                 }))}
                                 themeVariant="dark"
+                                onOpenMenu={() => uiState.setPreventAutoHide(true)}
+                                onCloseMenu={() => {
+                                    uiState.setPreventAutoHide(false);
+                                    showControlsTemporarily();
+                                }}
                             >
                                 <View style={styles.controlButton}>
                                     <MaterialIcons
                                         name="speed"
                                         size={24}
-                                        color={settings.playbackSpeed !== 1.0 ? "#007AFF" : "white"}
+                                        color={"white"}
                                     />
                                 </View>
                             </MenuView>
