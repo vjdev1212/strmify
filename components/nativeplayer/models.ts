@@ -21,16 +21,23 @@ export interface MediaPlayerProps {
     videoUrl: string;
     title: string;
     audioTracks?: AudioTrack[];
-    onBack: () => void;
+    onBack: (event: OnBackEvent) => void;
     progress?: number;
     autoPlay?: boolean;
     artwork?: string;
     subtitles?: Subtitle[];
     openSubtitlesClient: OpenSubtitlesClient;
-    onSwitchMediaPlayer?: (error: PlayerSwitch) => void;
+    onSwitchMediaPlayer?: (event: PlayerSwitch) => void;
 }
 
 interface PlayerSwitch {
+    message: string;
+    code?: string;
+    player: "native" | "vlc",
+    progress: number
+}
+
+interface OnBackEvent {
     message: string;
     code?: string;
     player: "native" | "vlc",

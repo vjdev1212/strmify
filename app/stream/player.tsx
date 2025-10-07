@@ -13,6 +13,13 @@ interface PlayerSwitch {
   progress: number;
 }
 
+interface OnBackEvent {
+    message: string;
+    code?: string;
+    player: "native" | "vlc",
+    progress: number
+}
+
 const MediaPlayerScreen: React.FC = () => {
   const router = useRouter();
   const { videoUrl, title, imdbid, type, season, episode, useVlcKit } = useLocalSearchParams();
@@ -130,7 +137,7 @@ const MediaPlayerScreen: React.FC = () => {
   };
 
 
-  const handleBack = (): void => {
+  const handleBack = (event: OnBackEvent): void => {
     router.back();
   };
 

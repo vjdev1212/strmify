@@ -429,7 +429,11 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
             {!isReady && (
                 <View style={styles.persistentBackButton} pointerEvents="box-none">
-                    <TouchableOpacity style={styles.backButtonPersistent} onPress={async () => { await playHaptic(); onBack(); }}>
+                    <TouchableOpacity style={styles.backButtonPersistent} onPress={async () => {
+                        await playHaptic();
+                        const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+                        onBack({ message: '', player: "native", progress: progress });
+                    }}>
                         <View style={styles.backButtonGradient}>
                             <Ionicons name="chevron-back" size={28} color="white" />
                         </View>
@@ -440,7 +444,11 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
             {showControls && (
                 <Animated.View style={[styles.controlsOverlay, { opacity: controlsOpacity }]} pointerEvents="box-none">
                     <LinearGradient colors={['rgba(0,0,0,0.8)', 'transparent']} style={styles.topControls}>
-                        <TouchableOpacity style={styles.backButton} onPress={async () => { await playHaptic(); onBack(); }}>
+                        <TouchableOpacity style={styles.backButton} onPress={async () => {
+                            await playHaptic();
+                            const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+                            onBack({ message: '', player: "native", progress: progress });
+                        }}>
                             <Ionicons name="chevron-back" size={28} color="white" />
                         </TouchableOpacity>
 
@@ -453,7 +461,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 <TouchableOpacity style={styles.controlButton} onPress={async () => {
                                     await playHaptic();
                                     const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
-                                    onSwitchMediaPlayer({ message: '', player: "native", progress: progress  });
+                                    onSwitchMediaPlayer({ message: '', player: "native", progress: progress });
                                 }}>
                                     <MaterialCommunityIcons name="vlc" size={24} color="white" />
                                 </TouchableOpacity>
