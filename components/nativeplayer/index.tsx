@@ -33,7 +33,7 @@ const useSubtitles = () => {
 };
 
 export const MediaPlayer: React.FC<MediaPlayerProps> = ({
-    videoUrl, title, onBack, artwork, subtitles = [], openSubtitlesClient, onSwitchMediaPlayer
+    videoUrl, title, back: onBack, artwork, subtitles = [], openSubtitlesClient, switchMediaPlayer, updateProgress
 }) => {
     const videoRef = useRef<VideoView>(null);
     const hideControlsTimer = useRef<any>(null);
@@ -432,7 +432,8 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                     <TouchableOpacity style={styles.backButtonPersistent} onPress={async () => {
                         await playHaptic();
                         const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
-                        onBack({ message: '', player: "native", progress: progress });
+                        updateProgress({ progress });
+                        onBack({ message: '', player: "native" });
                     }}>
                         <View style={styles.backButtonGradient}>
                             <Ionicons name="chevron-back" size={28} color="white" />
@@ -447,7 +448,8 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                         <TouchableOpacity style={styles.backButton} onPress={async () => {
                             await playHaptic();
                             const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
-                            onBack({ message: '', player: "native", progress: progress });
+                            updateProgress({ progress });
+                            onBack({ message: '', player: "native" });
                         }}>
                             <Ionicons name="chevron-back" size={28} color="white" />
                         </TouchableOpacity>
@@ -457,11 +459,11 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                         </View>
 
                         <View style={styles.topRightControls}>
-                            {onSwitchMediaPlayer && (
+                            {switchMediaPlayer && (
                                 <TouchableOpacity style={styles.controlButton} onPress={async () => {
                                     await playHaptic();
                                     const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
-                                    onSwitchMediaPlayer({ message: '', player: "native", progress: progress });
+                                    switchMediaPlayer({ message: '', player: "native", progress: progress });
                                 }}>
                                     <MaterialCommunityIcons name="vlc" size={24} color="white" />
                                 </TouchableOpacity>

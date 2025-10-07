@@ -6,18 +6,21 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Platform } from "react-native";
 
-interface PlayerSwitch {
+interface PlayerSwitchEvent {
   message: string;
   code?: string;
   player: "native" | "vlc",
   progress: number;
 }
 
-interface OnBackEvent {
-    message: string;
-    code?: string;
-    player: "native" | "vlc",
-    progress: number
+interface BackEvent {
+  message: string;
+  code?: string;
+  player: "native" | "vlc",
+}
+
+interface UpdateProgessEvent {
+  progress: number
 }
 
 const MediaPlayerScreen: React.FC = () => {
@@ -137,11 +140,16 @@ const MediaPlayerScreen: React.FC = () => {
   };
 
 
-  const handleBack = (event: OnBackEvent): void => {
+  const handleBack = (event: BackEvent): void => {
+    console.log('BackEvent', event);
     router.back();
   };
 
-  const handleSwitchMediaPlayer = (event: PlayerSwitch): void => {
+  const handleUpdateProgress = (event: UpdateProgessEvent): void => {
+    console.log('UpdateProgress', event);
+  };
+
+  const handleSwitchMediaPlayer = (event: PlayerSwitchEvent): void => {
     console.log(`Video playback failed (${event.player}):`, event.message);
 
     // Only switch players if not on web
@@ -172,13 +180,14 @@ const MediaPlayerScreen: React.FC = () => {
     <Player
       videoUrl={videoUrl as string}
       title={title as string}
-      onBack={handleBack}
+      back={handleBack}
       progress={progress}
       artwork={artwork as string}
       subtitles={subtitles}
       openSubtitlesClient={openSubtitlesClient}
       isLoadingSubtitles={isLoadingSubtitles}
-      onSwitchMediaPlayer={handleSwitchMediaPlayer}
+      switchMediaPlayer={handleSwitchMediaPlayer}
+      updateProgress={handleUpdateProgress}
     />
   );
 };

@@ -250,10 +250,11 @@ const SeekFeedback: React.FC<{
 const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
     videoUrl,
     title,
-    onBack,
+    back,
     artwork,
     subtitles = [],
-    openSubtitlesClient
+    openSubtitlesClient,
+    updateProgress
 }) => {
     const playerRef = useRef<VLCPlayer>(null);
     const playerState = usePlayerState();
@@ -825,7 +826,8 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                     onPress={async () => {
                         await playHaptic();
                         const progress = playerState.duration > 0 ? (playerState.currentTime / playerState.duration) * 100 : 0;
-                        onBack({ message: '', player: "vlc", progress });
+                        updateProgress({ progress });
+                        back({ message: '', player: "vlc" });
                     }}
                 >
                     <Ionicons name="chevron-back" size={28} color="white" />
@@ -845,7 +847,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                 </TouchableOpacity>
             </View>
         );
-    }, [playerState.error, playHaptic, onBack, playerState]);
+    }, [playerState.error, playHaptic, back, playerState]);
 
     const ArtworkComponent = useMemo(() => {
         if (!artwork || playerState.hasStartedPlaying || playerState.error) return null;
@@ -965,7 +967,8 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                         onPress={async () => {
                             await playHaptic();
                             const progress = playerState.duration > 0 ? (playerState.currentTime / playerState.duration) * 100 : 0;
-                            onBack({ message: '', player: "vlc", progress });
+                            updateProgress({ progress });
+                            back({ message: '', player: "vlc" });
                         }}
                     >
                         <Ionicons name="chevron-back" size={28} color="white" />
@@ -1003,7 +1006,8 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                         <TouchableOpacity style={styles.backButton} onPress={async () => {
                             await playHaptic();
                             const progress = playerState.duration > 0 ? (playerState.currentTime / playerState.duration) * 100 : 0;
-                            onBack({ message: '', player: "vlc", progress });
+                            updateProgress({ progress });
+                            back({ message: '', player: "vlc" });
                         }}>
                             <Ionicons name="chevron-back" size={28} color="white" />
                         </TouchableOpacity>
