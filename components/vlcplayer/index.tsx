@@ -603,6 +603,13 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
             playerState.setIsSeeking(false);
         },
 
+        onEnd: () => {
+            console.log('On End');
+            playerState.setIsPlaying(false);
+            playerState.setIsPaused(false);
+            playerState.setIsSeeking(false);
+        },
+
         onError: (error: any) => {
             console.log('VLC Player error:', error);
             let errorMessage = "Failed to load video.";
@@ -942,6 +949,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                     onBuffering={vlcHandlers.onBuffering}
                     onPaused={vlcHandlers.onPaused}
                     onStopped={vlcHandlers.onStopped}
+                    onEnd={vlcHandlers.onEnd}
                     onError={vlcHandlers.onError}
                 />
             )}
