@@ -456,7 +456,7 @@ const NativeMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
     const handleBack = useCallback(async () => {
         await playHaptic();
         const progress = playerState.duration > 0 ? (playerState.currentTime / playerState.duration) * 100 : 0;
-        onBack({ message: '', player: "native", progress });
+        onBack({ message: '', player: "vlc", progress });
     }, [playerState.duration, playerState.currentTime, onBack]);
 
     const controlActions = useMemo(() => ({
