@@ -20,18 +20,14 @@ import { MediaPlayerProps, DownloadResponse } from "./models";
 import { formatTime, playHaptic } from "./utils";
 import { parseSubtitleFile } from "./subtitle";
 import { styles } from "./styles";
-
-// ============================================================================
-// TYPES
-// ============================================================================
-type TimerName =
-    | 'hideControls'
-    | 'resizeModeLabel'
-    | 'buffering'
+type TimerName = 
+    | 'hideControls' 
+    | 'resizeModeLabel' 
+    | 'buffering' 
     | 'controlsDebounce'
-    | 'progressDebounce'
-    | 'seekDebounce'
-    | 'bufferingTimeout'
+    | 'progressDebounce' 
+    | 'seekDebounce' 
+    | 'bufferingTimeout' 
     | 'doubleTap';
 
 interface PlayerState {
@@ -70,10 +66,6 @@ interface SeekFeedbackState {
     direction: 'forward' | 'backward';
     seconds: number;
 }
-
-// ============================================================================
-// CUSTOM HOOKS
-// ============================================================================
 
 const usePlayerState = () => {
     const [state, setState] = useState<PlayerState>({
@@ -161,10 +153,6 @@ const useTimers = () => {
     return { clearTimer, setTimer, clearAllTimers };
 };
 
-// ============================================================================
-// GESTURE HANDLING
-// ============================================================================
-
 const useGestureHandling = (
     onSeekForward: (seconds: number) => void,
     onSeekBackward: (seconds: number) => void,
@@ -185,8 +173,8 @@ const useGestureHandling = (
         const currentTime = Date.now();
         const tapSide = locationX < screenWidth / 2 ? 'left' : 'right';
 
-        const isDoubleTap =
-            currentTime - lastTap.current.timestamp < 300 &&
+        const isDoubleTap = 
+            currentTime - lastTap.current.timestamp < 300 && 
             lastTap.current.side === tapSide;
 
         if (isDoubleTap) {
@@ -205,10 +193,6 @@ const useGestureHandling = (
 
     return { handleTouchablePress };
 };
-
-// ============================================================================
-// UI COMPONENTS
-// ============================================================================
 
 const SeekFeedback: React.FC<SeekFeedbackState> = React.memo(({ show, direction, seconds }) => {
     const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -266,9 +250,6 @@ const SeekFeedback: React.FC<SeekFeedbackState> = React.memo(({ show, direction,
     );
 });
 
-// ============================================================================
-// MAIN COMPONENT
-// ============================================================================
 
 const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
     videoUrl,
@@ -278,7 +259,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
     subtitles = [],
     openSubtitlesClient
 }) => {
-    // Refs
     const playerRef = useRef<VLCPlayer>(null);
     const stateRefs = useRef<PlayerState>({
         isPlaying: false,
@@ -295,13 +275,11 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         isSeeking: false,
     });
 
-    // State hooks
     const { state: playerState, updateState: updatePlayerState } = usePlayerState();
     const { state: subtitleState, updateState: updateSubtitleState } = useSubtitleState();
     const { settings, updateSettings } = usePlayerSettings();
     const timers = useTimers();
 
-    // UI state
     const [showControls, setShowControls] = useState(false);
     const [videoScale, setVideoScale] = useState({ x: 1.0, y: 1.0 });
     const [seekFeedback, setSeekFeedback] = useState<SeekFeedbackState>({
@@ -310,19 +288,13 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         seconds: 10
     });
 
-    // Animated values
     const controlsOpacity = useRef(new Animated.Value(1)).current;
     const progressBarValue = useRef(new Animated.Value(0)).current;
     const bufferOpacity = useRef(new Animated.Value(1)).current;
 
-    // Sync state to refs for callbacks
     useEffect(() => {
         stateRefs.current = playerState;
     }, [playerState]);
-
-    // ========================================================================
-    // LIFECYCLE & SETUP
-    // ========================================================================
 
     useEffect(() => {
         const setupOrientation = async () => {
@@ -357,10 +329,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
             }
         };
     }, []);
-
-    // ========================================================================
-    // SUBTITLE LOADING
-    // ========================================================================
 
     useEffect(() => {
         const loadSubtitle = async () => {
@@ -424,7 +392,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         loadSubtitle();
     }, [settings.selectedSubtitle, subtitles, openSubtitlesClient, updateSubtitleState]);
 
-    // Update current subtitle based on playback time
     useEffect(() => {
         if (subtitleState.parsedSubtitles.length === 0) {
             if (subtitleState.currentSubtitle !== '') {
@@ -443,10 +410,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         }
     }, [playerState.currentTime, subtitleState.parsedSubtitles, subtitleState.currentSubtitle, updateSubtitleState]);
 
-    // ========================================================================
-    // CONTROL FUNCTIONS
-    // ========================================================================
-
     const showControlsTemporarily = useCallback(() => {
         setShowControls(true);
         controlsOpacity.setValue(1);
@@ -456,7 +419,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
     const handleBack = useCallback(async () => {
         await playHaptic();
         const progress = playerState.duration > 0 ? (playerState.currentTime / playerState.duration) * 100 : 0;
-        onBack({ message: '', player: "vlc", progress });
+        onBack({ message: '', player: "native", progress });
     }, [playerState.duration, playerState.currentTime, onBack]);
 
     const controlActions = useMemo(() => ({
@@ -501,10 +464,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         },
     }), [updatePlayerState, updateSettings, settings.isMuted, showControlsTemporarily, timers, progressBarValue]);
 
-    // ========================================================================
-    // VLC EVENT HANDLERS
-    // ========================================================================
-
     const vlcHandlers = useMemo(() => ({
         onLoad: (data: any) => {
             console.log('VLC Player loaded:', data);
@@ -518,7 +477,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                 isSeeking: false,
                 duration: data?.duration ? data.duration / 1000 : 0
             });
-
+            
             controlsOpacity.setValue(1);
             timers.clearTimer('hideControls');
 
@@ -567,10 +526,10 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                     }
                 }, 200);
             } else {
-                updatePlayerState({
-                    isBuffering: false,
-                    showBufferingLoader: false,
-                    isSeeking: false
+                updatePlayerState({ 
+                    isBuffering: false, 
+                    showBufferingLoader: false, 
+                    isSeeking: false 
                 });
                 Animated.timing(bufferOpacity, {
                     toValue: 0,
@@ -624,18 +583,14 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         }
     }), [updatePlayerState, updateSettings, bufferOpacity, timers, progressBarValue, controlsOpacity, playerState.duration]);
 
-    // ========================================================================
-    // SLIDER HANDLERS
-    // ========================================================================
-
     const sliderHandlers = useMemo(() => ({
         handleSliderValueChange: (value: number) => {
             if (!stateRefs.current.isReady || stateRefs.current.duration <= 0) return;
             const newTime = value * stateRefs.current.duration;
-            updatePlayerState({
-                isDragging: true,
+            updatePlayerState({ 
+                isDragging: true, 
                 dragPosition: value,
-                currentTime: newTime
+                currentTime: newTime 
             });
             progressBarValue.setValue(value);
         },
@@ -656,10 +611,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         }
     }), [updatePlayerState, showControlsTemporarily, controlActions, progressBarValue]);
 
-    // ========================================================================
-    // MENU HANDLERS
-    // ========================================================================
-
     const selectSubtitle = useCallback(async (index: number) => {
         await playHaptic();
         updateSettings({ selectedSubtitle: index });
@@ -677,10 +628,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         updateSettings({ playbackSpeed: speed });
         showControlsTemporarily();
     }, [updateSettings, showControlsTemporarily]);
-
-    // ========================================================================
-    // GESTURE & OVERLAY HANDLERS
-    // ========================================================================
 
     const handleOverlayPress = useCallback(() => {
         if (showControls) {
@@ -718,10 +665,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         playerState.isReady
     );
 
-    // ========================================================================
-    // ZOOM CONTROLS
-    // ========================================================================
-
     const zoomIn = useCallback(() => {
         setVideoScale(prev => ({
             x: Math.min(prev.x + 0.025, 2.0),
@@ -736,13 +679,9 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         }));
     }, []);
 
-    // ========================================================================
-    // COMPUTED VALUES
-    // ========================================================================
-
     const displayValues = useMemo(() => {
-        const displayTime = playerState.isDragging
-            ? playerState.dragPosition * playerState.duration
+        const displayTime = playerState.isDragging 
+            ? playerState.dragPosition * playerState.duration 
             : playerState.currentTime;
 
         const sliderValue = playerState.isDragging
@@ -751,10 +690,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
 
         return { displayTime, sliderValue };
     }, [playerState.isDragging, playerState.dragPosition, playerState.currentTime, playerState.duration]);
-
-    // ========================================================================
-    // MEMOIZED COMPONENTS
-    // ========================================================================
 
     const ErrorComponent = useMemo(() => {
         if (!playerState.error) return null;
@@ -767,8 +702,8 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                 <MaterialIcons name="error-outline" size={64} color="#ff6b6b" />
                 <Text style={styles.errorTitle}>Playback Error</Text>
                 <Text style={styles.errorText}>{playerState.error}</Text>
-                <TouchableOpacity
-                    style={styles.retryButton}
+                <TouchableOpacity 
+                    style={styles.retryButton} 
                     onPress={() => updatePlayerState({
                         error: null,
                         isReady: false,
@@ -824,13 +759,8 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         );
     }, [subtitleState.currentSubtitle, playerState.error]);
 
-    // ========================================================================
-    // RENDER
-    // ========================================================================
-
     return (
         <View style={styles.container}>
-            {/* VLC Player */}
             {!playerState.error && (
                 <VLCPlayer
                     ref={playerRef}
@@ -873,12 +803,10 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                 />
             )}
 
-            {/* Error, Artwork, and Buffering overlays */}
             {ErrorComponent}
             {ArtworkComponent}
             {BufferingComponent}
 
-            {/* Loading back button */}
             {!playerState.hasStartedPlaying && !playerState.error && (
                 <View style={styles.loadingBackButtonContainer} pointerEvents="box-none">
                     <TouchableOpacity style={styles.backButton} onPress={handleBack}>
@@ -887,7 +815,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                 </View>
             )}
 
-            {/* Touch area for gesture controls */}
             {!playerState.error && (
                 <TouchableOpacity
                     style={styles.touchArea}
@@ -896,19 +823,15 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                 />
             )}
 
-            {/* Subtitles */}
             {SubtitleComponent}
 
-            {/* Seek feedback */}
             <SeekFeedback {...seekFeedback} />
 
-            {/* Controls overlay */}
             {showControls && !playerState.error && (
                 <Animated.View
                     style={[styles.controlsOverlay, { opacity: controlsOpacity }]}
                     pointerEvents="box-none"
                 >
-                    {/* Top controls */}
                     <View style={styles.topControls}>
                         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
                             <Ionicons name="chevron-back" size={28} color="white" />
@@ -1024,7 +947,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                         </View>
                     </View>
 
-                    {/* Center controls */}
                     {!playerState.isBuffering && (
                         <View style={styles.centerControls}>
                             <TouchableOpacity
@@ -1065,7 +987,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                         </View>
                     )}
 
-                    {/* Bottom controls */}
                     <View style={styles.bottomControls}>
                         <View style={styles.timeContainer}>
                             <Text style={styles.timeText}>
