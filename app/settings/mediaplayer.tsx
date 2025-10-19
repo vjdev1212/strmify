@@ -44,10 +44,7 @@ const MediaPlayerConfigScreen = () => {
                 baseConfig(Players.Default, 'STREAMURL', false),
                 baseConfig(Players.VLCKit, 'STREAMURL', false),
                 baseConfig(Players.Browser, 'STREAMURL', false),
-                baseConfig(Players.VLC, 'vlc://STREAMURL', false),
-                baseConfig(Players.MXPlayer, 'intent:STREAMURL?sign=Yva5dQp8cFQpVAMUh1QxNWbZAZ2h05lYQ4qAxqf717w=:0#Intent;package=com.mxtech.videoplayer.ad;S.title=STREAMTITLE;end', false),
-                baseConfig(Players.MXPlayerPro, 'intent:STREAMURL?sign=Yva5dQp8cFQpVAMUh1QxNWbZAZ2h05lYQ4qAxqf717w=:0#Intent;package=com.mxtech.videoplayer.pro;S.title=STREAMTITLE;end', false),
-                baseConfig(Players.VidHub, 'open-vidhub://x-callback-url/open?url=STREAMURL', true),
+                baseConfig(Players.VLC, 'vlc://STREAMURL', false)
             ];
         } else if (getOriginalPlatform() === 'ios') {
             return [

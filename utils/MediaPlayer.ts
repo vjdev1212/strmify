@@ -8,8 +8,6 @@ export enum Players {
     VLC = 'VLC',
     Infuse = 'Infuse',
     VidHub = 'VidHub',
-    MXPlayer = "MX Player",
-    MXPlayerPro = "MX PRO",
     Outplayer = 'Outplayer'
 }
 
@@ -19,10 +17,7 @@ export const getPlatformSpecificPlayers = () => {
             { name: Players.Default, scheme: 'STREAMURL', encodeUrl: false },
             { name: Players.VLCKit, scheme: 'STREAMURL', encodeUrl: false },
             { name: Players.Browser, scheme: 'STREAMURL', encodeUrl: false },
-            { name: Players.VLC, scheme: 'vlc://STREAMURL', encodeUrl: false },
-            { name: Players.MXPlayer, scheme: 'intent:STREAMURL?sign=Yva5dQp8cFQpVAMUh1QxNWbZAZ2h05lYQ4qAxqf717w=:0#Intent;package=com.mxtech.videoplayer.ad;S.title=STREAMTITLE;end', encodeUrl: false },
-            { name: Players.MXPlayerPro, scheme: 'intent:STREAMURL?sign=Yva5dQp8cFQpVAMUh1QxNWbZAZ2h05lYQ4qAxqf717w=:0#Intent;package=com.mxtech.videoplayer.pro;S.title=STREAMTITLE;end', encodeUrl: false },
-            { name: Players.VidHub, scheme: 'open-vidhub://x-callback-url/open?url=STREAMURL', encodeUrl: true },
+            { name: Players.VLC, scheme: 'vlc://STREAMURL', encodeUrl: false }
         ];
     } else if (getOriginalPlatform() === 'ios') {
         return [
