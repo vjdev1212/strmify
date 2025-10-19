@@ -5,6 +5,7 @@ export enum Players {
     Default = 'Default (Lite)',
     VLCKit = 'VLCKit',
     Browser = 'Browser',
+    External = 'External',
     VLC = 'VLC',
     Infuse = 'Infuse',
     VidHub = 'VidHub',
@@ -16,8 +17,9 @@ export const getPlatformSpecificPlayers = () => {
         return [
             { name: Players.Default, scheme: 'STREAMURL', encodeUrl: false },
             { name: Players.VLCKit, scheme: 'STREAMURL', encodeUrl: false },
+            { name: Players.VLC, scheme: 'vlc://STREAMURL', encodeUrl: false },
+            { name: Players.External, scheme: 'STREAMURL', encodeUrl: false },
             { name: Players.Browser, scheme: 'STREAMURL', encodeUrl: false },
-            { name: Players.VLC, scheme: 'vlc://STREAMURL', encodeUrl: false }
         ];
     } else if (getOriginalPlatform() === 'ios') {
         return [

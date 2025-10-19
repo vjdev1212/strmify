@@ -43,8 +43,9 @@ const MediaPlayerConfigScreen = () => {
             return [
                 baseConfig(Players.Default, 'STREAMURL', false),
                 baseConfig(Players.VLCKit, 'STREAMURL', false),
+                baseConfig(Players.VLC, 'vlc://STREAMURL', false),
+                baseConfig(Players.External, 'STREAMURL', false),
                 baseConfig(Players.Browser, 'STREAMURL', false),
-                baseConfig(Players.VLC, 'vlc://STREAMURL', false)
             ];
         } else if (getOriginalPlatform() === 'ios') {
             return [
@@ -391,7 +392,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         flexDirection: 'row',
         justifyContent: 'center',
-        borderWidth: 1,       
+        borderWidth: 1,
         overflow: 'hidden',
     },
     primaryButton: {
