@@ -65,6 +65,14 @@ export const styles = StyleSheet.create({
         paddingTop: 20,
         paddingBottom: 20,
     },
+        topControlsContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        pointerEvents: 'box-none',
+    },
     loadingBackButtonContainer: {
         position: "absolute",
         top: 0,

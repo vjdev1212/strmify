@@ -31,6 +31,14 @@ export const styles = StyleSheet.create({
         paddingTop: 20,
         paddingBottom: 20,
     },
+    topControlsContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        pointerEvents: 'box-none',
+    },
     backButton: {
         padding: 8,
         marginRight: 16,
@@ -125,7 +133,7 @@ export const styles = StyleSheet.create({
         color: 'white',
         fontSize: 16,
         marginTop: 8,
-    },   
+    },
     contentFitLabelContainer: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -159,7 +167,7 @@ export const styles = StyleSheet.create({
         right: 0,
         bottom: 0,
         backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    },    
+    },
     persistentBackButton: {
         position: 'absolute',
         top: 20,
@@ -189,5 +197,5 @@ export const styles = StyleSheet.create({
         maxWidth: '90%',
         margin: 'auto',
         backgroundColor: 'rgba(16, 16, 16, 0.6)',
-    }    
+    }
 });
