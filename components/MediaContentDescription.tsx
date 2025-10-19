@@ -12,13 +12,6 @@ interface MediaContentDescriptionProps {
   description: string;
 }
 
-if (
-  Platform.OS === 'android' &&
-  UIManager.setLayoutAnimationEnabledExperimental
-) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
-
 const animationConfig = {
   duration: 5000, // 0.5 seconds
   update: {
