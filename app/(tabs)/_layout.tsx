@@ -55,17 +55,6 @@ export const useTraktEnabled = () => {
 export default function TabLayout() {
   const { isTraktEnabled, isLoaded } = useTraktEnabled();
 
-  const getTabBarHeight = () => {
-    switch (Platform.OS) {
-      case 'web':
-        return 70;
-      case 'ios':
-        return 85;
-      default:
-        return 85;
-    }
-  };
-
   // Memoize background to avoid re-render crashes
   const tabBarBackground = useMemo(() => (
     <View
@@ -110,7 +99,7 @@ export default function TabLayout() {
         },
         tabBarStyle: {
           position: 'absolute',
-          height: getTabBarHeight(),
+          height: Platform.OS === 'web' ? 70 : undefined,
           backgroundColor: 'transparent',
           borderTopWidth: 0,
           elevation: 0,
@@ -133,7 +122,7 @@ export default function TabLayout() {
           tabBarIconStyle: { marginVertical: 5 },
         }}
       />
-            
+
       <Tabs.Screen
         name="search"
         listeners={{
@@ -166,8 +155,8 @@ export default function TabLayout() {
           tabBarItemStyle: isTraktEnabled ? {} : { display: 'none' },
           tabBarButton: isTraktEnabled ? undefined : () => null,
         }}
-      />      
-      
+      />
+
       <Tabs.Screen
         name="settings"
         listeners={{
