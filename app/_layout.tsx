@@ -97,6 +97,12 @@ function RootLayoutNav() {
               name="(tabs)"
               options={{
                 headerShown: false,
+                headerTransparent: true,
+                headerBackground: InvisibleHeaderBackground,
+                headerShadowVisible: false,
+                headerTitle: '',
+                headerTintColor: '#ffffff',
+                headerBackTitle: '',
                 title: 'Home',
                 contentStyle: { backgroundColor: 'transparent' } // Only tabs can be transparent
               }}
