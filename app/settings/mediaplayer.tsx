@@ -218,7 +218,6 @@ const MediaPlayerConfigScreen = () => {
                                         index === players.length - 1 && styles.lastRow
                                     ]}
                                     onPress={() => handlePlayerSelect(player.name)}
-                                    android_ripple={{ color: 'rgba(255, 255, 255, 0.1)', borderless: false }}
                                 >
                                     <View style={styles.playerContent}>
                                         <View style={styles.playerInfo}>
@@ -245,7 +244,6 @@ const MediaPlayerConfigScreen = () => {
                         <Pressable
                             style={[styles.button, styles.secondaryButton]}
                             onPress={resetToDefault}
-                            android_ripple={{ color: 'rgba(255, 255, 255, 0.1)' }}
                         >
                             <MaterialIcons name="refresh" size={18} color="#ffffff" style={styles.buttonIcon} />
                             <Text style={styles.secondaryButtonText}>Reset</Text>
@@ -259,7 +257,6 @@ const MediaPlayerConfigScreen = () => {
                             ]}
                             onPress={savePlayerConfig}
                             disabled={saving}
-                            android_ripple={{ color: 'rgba(255, 255, 255, 0.2)' }}
                         >
                             {saving ? (
                                 <>
@@ -397,12 +394,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         flexDirection: 'row',
         justifyContent: 'center',
-        borderWidth: 1,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.3,
-        shadowRadius: 20,
-        elevation: 8,
+        borderWidth: 1,       
         overflow: 'hidden',
     },
     primaryButton: {

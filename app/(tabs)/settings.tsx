@@ -66,7 +66,6 @@ const SettingsScreen = () => {
           }
         ]}
         onPress={onPress}
-        android_ripple={{ color: '#2C2C2E' }}
       >
         <View style={styles.leftContent}>
           <Ionicons

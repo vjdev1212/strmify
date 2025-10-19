@@ -266,7 +266,7 @@ const AddonsScreen = () => {
             </Text>
             <Pressable style={styles.emptyActionButton} onPress={onAddNewPress}>
               <Ionicons name="add-circle-outline" size={20} color="#535aff" />
-              <Text style={styles.emptyActionText}>Add Your First Addon</Text>
+              <Text style={styles.emptyActionText}>Add Addon</Text>
             </Pressable>
           </View>
         )}

@@ -32,11 +32,11 @@ interface MediaCastAndCrewsProps {
 
 const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
   const { width, height } = useWindowDimensions();
-  
+
   // Device orientation and size logic
   const isPortrait = height > width;
   const shortSide = Math.min(width, height);
-  
+
   // Device category based on shortSide
   const getCastPerScreen = () => {
     if (shortSide < 580) return isPortrait ? 4 : 6;       // mobile - more avatars fit
@@ -48,13 +48,13 @@ const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
   const castPerScreen = getCastPerScreen();
   const spacing = 16;
   const containerMargin = 15;
-  
+
   const avatarSize = useMemo(() => {
     const totalSpacing = spacing * (castPerScreen - 1);
     const totalMargins = containerMargin * 2; // left + right
     const availableWidth = width - totalSpacing - totalMargins;
     const calculatedSize = availableWidth / castPerScreen;
-    
+
     // Increase minimum size for smaller screens, keep reasonable maximum
     const minSize = shortSide < 1024 ? 80 : 60; // Larger minimum for mobile devices
     return Math.max(minSize, Math.min(120, calculatedSize));
@@ -118,11 +118,6 @@ const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
                 marginRight: index === castItems.length - 1 ? 0 : spacing,
               }
             ]}
-            android_ripple={{ 
-              color: COLORS.accent, 
-              borderless: true,
-              radius: avatarSize / 2 + 10
-            }}
           >
             <View style={styles.avatarWrapper}>
               {item.hasImage ? (
@@ -148,7 +143,7 @@ const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
                   }]}>{item.initials}</Text>
                 </View>
               )}
-              
+
               {/* Optional: Add online indicator or badge */}
               <View style={[styles.avatarBorder, {
                 width: avatarSize + 4,
@@ -159,7 +154,7 @@ const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
 
             <View style={styles.textContainer}>
               <Text
-                style={[styles.name, { 
+                style={[styles.name, {
                   color: COLORS.primary,
                   fontSize: Math.max(13, avatarSize * 0.12), // Scale text with avatar
                 }]}
@@ -169,7 +164,7 @@ const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
                 {item.name}
               </Text>
               <Text
-                style={[styles.character, { 
+                style={[styles.character, {
                   color: COLORS.secondary,
                   fontSize: Math.max(11, avatarSize * 0.1), // Scale text with avatar
                 }]}
