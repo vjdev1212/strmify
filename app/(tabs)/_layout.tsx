@@ -62,7 +62,7 @@ export default function TabLayout() {
       case 'ios':
         return 85;
       default:
-        return 65;
+        return 85;
     }
   };
 
