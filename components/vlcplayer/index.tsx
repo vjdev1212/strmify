@@ -1052,7 +1052,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                             </TouchableOpacity>
 
                             <MenuView
-                                style={{ zIndex: 200 }}
+                                style={{ zIndex: 1000 }}
                                 title="Audio Track"
                                 onPressAction={({ nativeEvent }) => {
                                     const trackId = parseInt(nativeEvent.event.replace('audio-', ''));
@@ -1077,7 +1077,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
 
                             {subtitles.length > 0 && (
                                 <MenuView
-                                    style={{ zIndex: 200 }}
+                                    style={{ zIndex: 1000 }}
                                     title="Subtitles"
                                     onPressAction={({ nativeEvent }) => {
                                         if (nativeEvent.event === 'off') {
@@ -1124,7 +1124,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                             )}
 
                             <MenuView
-                                style={{ zIndex: 200 }}
+                                style={{ zIndex: 1000 }}
                                 title="Playback Speed"
                                 onPressAction={({ nativeEvent }) => {
                                     const speed = parseFloat(nativeEvent.event.replace('speed-', ''));
