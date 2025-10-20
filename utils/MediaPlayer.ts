@@ -2,7 +2,7 @@ import { Platform } from "react-native";
 import { getOriginalPlatform } from "./platform";
 
 export enum Players {
-    Default = 'Default (beta)',
+    Default = 'Default (Beta)',
     VLCKit = 'VLCKit',
     External = 'External',
     VLC = 'VLC',
