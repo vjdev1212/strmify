@@ -45,13 +45,12 @@ const MediaPlayerConfigScreen = () => {
                 baseConfig(Players.VLCKit, 'STREAMURL', false),
                 baseConfig(Players.VLC, 'vlc://STREAMURL', false),
                 baseConfig(Players.External, 'STREAMURL', false),
-                baseConfig(Players.Browser, 'STREAMURL', false),
             ];
         } else if (getOriginalPlatform() === 'ios') {
             return [
                 baseConfig(Players.Default, 'STREAMURL', false),
                 baseConfig(Players.VLCKit, 'STREAMURL', false),
-                baseConfig(Players.Browser, 'STREAMURL', false),
+                baseConfig(Players.External, 'STREAMURL', false),
                 baseConfig(Players.VLC, 'vlc://STREAMURL', false),
                 baseConfig(Players.Infuse, 'infuse://x-callback-url/play?url=STREAMURL', true),
                 baseConfig(Players.VidHub, 'open-vidhub://x-callback-url/open?url=STREAMURL', true),
@@ -60,19 +59,19 @@ const MediaPlayerConfigScreen = () => {
         } else if (getOriginalPlatform() === 'web') {
             return [
                 baseConfig(Players.Default, 'STREAMURL', false),
-                baseConfig(Players.Browser, 'STREAMURL', false)
+                baseConfig(Players.External, 'STREAMURL', false)
             ];
         } else if (getOriginalPlatform() === 'windows') {
             return [
                 baseConfig(Players.Default, 'STREAMURL', false),
                 baseConfig(Players.VLCKit, 'STREAMURL', false),
-                baseConfig(Players.Browser, 'STREAMURL', false),
+                baseConfig(Players.External, 'STREAMURL', false),
             ];
         } else if (getOriginalPlatform() === 'macos') {
             return [
                 baseConfig(Players.Default, 'STREAMURL', false),
                 baseConfig(Players.VLCKit, 'STREAMURL', false),
-                baseConfig(Players.Browser, 'STREAMURL', false),
+                baseConfig(Players.External, 'STREAMURL', false),
                 baseConfig(Players.VLC, 'vlc://STREAMURL', false),
                 baseConfig(Players.Infuse, 'infuse://x-callback-url/play?url=STREAMURL', true),
                 baseConfig(Players.VidHub, 'open-vidhub://x-callback-url/open?url=STREAMURL', true),
