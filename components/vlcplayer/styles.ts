@@ -64,6 +64,7 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
         paddingHorizontal: 20,
         paddingTop: 20,
+        marginRight: 20,
         paddingBottom: 20,
     },
     topControlsContent: {
@@ -141,7 +142,7 @@ export const styles = StyleSheet.create({
     },
     progressSlider: {
         width: '100%',
-        height: 40
+        height: 20
     },
     timeText: {
         color: 'white',
