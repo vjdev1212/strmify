@@ -233,13 +233,13 @@ workflows:
           
           if [ "$UNSIGNED_BUILD" = "true" ]; then
             echo "📦 Building unsigned release APK"
-            ./gradlew assembleRelease -x configureCMakeRelease -Pcom.android.build.gradle.overridePathCheck=true
+            ./gradlew assembleRelease -x configureCMakeRelease -Pandroid.overridePathCheck=true
             BUILD_OUTPUT="app/build/outputs/apk/release"
           else
             echo "📦 Building signed release APK"
             ./gradlew assembleRelease \
               -x configureCMakeRelease \
-              -Pcom.android.build.gradle.overridePathCheck=true \
+              -Pandroid.overridePathCheck=true \
               -Pandroid.injected.signing.store.file=$KEYSTORE_FILE \
               -Pandroid.injected.signing.store.password=$KEYSTORE_PASSWORD \
               -Pandroid.injected.signing.key.alias=$KEYSTORE_ALIAS \
@@ -268,7 +268,7 @@ workflows:
           
           if [ "$UNSIGNED_BUILD" = "true" ]; then
             echo "📦 Building unsigned App Bundle"
-            ./gradlew bundleRelease -x configureCMakeRelease -Pcom.android.build.gradle.overridePathCheck=true
+            ./gradlew bundleRelease -x configureCMakeRelease -Pandroid.overridePathCheck=true
           else
             echo "📦 Building signed App Bundle"
             ./gradlew bundleRelease \
@@ -337,7 +337,7 @@ workflows:
           cd android
           
           echo "📦 Building debug APK"
-          ./gradlew assembleDebug -x configureCMakeDebug -Pcom.android.build.gradle.overridePathCheck=true
+          ./gradlew assembleDebug -x configureCMakeDebug -Pandroid.overridePathCheck=true
           
           BUILD_OUTPUT="app/build/outputs/apk/debug"
           
