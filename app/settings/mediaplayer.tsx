@@ -25,7 +25,6 @@ const MediaPlayerConfigScreen = () => {
     const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const router = useRouter();
 
     useEffect(() => {
         loadPlayerConfig();
