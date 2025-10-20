@@ -1,4 +1,3 @@
-import { Platform } from "react-native";
 import { getOriginalPlatform } from "./platform";
 
 export enum Players {
