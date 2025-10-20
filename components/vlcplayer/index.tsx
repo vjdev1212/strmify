@@ -999,142 +999,115 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                     style={[styles.controlsOverlay, { opacity: controlsOpacity }]}
                     pointerEvents="box-none"
                 >
-                    {/* TOP CONTROLS - FIXED FOR ANDROID & iOS */}
-                    <View 
-                        style={styles.topControls}
-                        pointerEvents={Platform.OS === 'android' ? 'none' : 'box-none'}
+                    {/* Top controls */}
+                    <View style={styles.topControls}
                     >
-                        <View style={styles.topControlsContent} pointerEvents="box-none">
-                            <TouchableOpacity style={styles.backButton} onPress={async () => {
-                                await playHaptic();
-                                const progress = playerState.duration > 0 ? (playerState.currentTime / playerState.duration) * 100 : 0;
-                                updateProgress({ progress });
-                                back({ message: '', player: "vlc" });
-                            }}>
-                                <Ionicons name="chevron-back" size={28} color="white" />
+                        <TouchableOpacity style={styles.backButton} onPress={async () => {
+                            await playHaptic();
+                            const progress = playerState.duration > 0 ? (playerState.currentTime / playerState.duration) * 100 : 0;
+                            updateProgress({ progress });
+                            back({ message: '', player: "vlc" });
+                        }}>
+                            <Ionicons name="chevron-back" size={28} color="white" />
+                        </TouchableOpacity>
+
+                        <View style={styles.titleContainer}>
+                            <Text style={styles.titleText} numberOfLines={1}>
+                                {title}
+                            </Text>
+                        </View>
+
+                        <View style={styles.topRightControls}>
+                            <TouchableOpacity
+                                style={styles.controlButton}
+                                onPress={zoomOut}
+                            >
+                                <MaterialIcons
+                                    name="zoom-out"
+                                    size={24}
+                                    color="white"
+                                />
                             </TouchableOpacity>
 
-                            <View style={styles.titleContainer}>
-                                <Text style={styles.titleText} numberOfLines={1}>
-                                    {title}
-                                </Text>
-                            </View>
+                            <TouchableOpacity
+                                style={styles.controlButton}
+                                onPress={zoomIn}
+                            >
+                                <MaterialIcons
+                                    name="zoom-in"
+                                    size={24}
+                                    color="white"
+                                />
+                            </TouchableOpacity>
 
-                            <View style={styles.topRightControls} pointerEvents={Platform.OS === 'android' ? 'auto' : 'box-none'}>
-                                <TouchableOpacity
-                                    style={styles.controlButton}
-                                    onPress={zoomOut}
-                                >
-                                    <MaterialIcons
-                                        name="zoom-out"
-                                        size={24}
-                                        color="white"
-                                    />
-                                </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.controlButton}
+                                onPress={controlActions.toggleMute}
+                            >
+                                <Ionicons
+                                    name={settings.isMuted ? "volume-mute" : "volume-high"}
+                                    size={24}
+                                    color="white"
+                                />
+                            </TouchableOpacity>
 
-                                <TouchableOpacity
-                                    style={styles.controlButton}
-                                    onPress={zoomIn}
-                                >
-                                    <MaterialIcons
-                                        name="zoom-in"
-                                        size={24}
-                                        color="white"
-                                    />
-                                </TouchableOpacity>
+                            <MenuView
+                                title="Audio Track"
+                                onPressAction={({ nativeEvent }) => {
+                                    const trackId = parseInt(nativeEvent.event.replace('audio-', ''));
+                                    selectAudioTrack(trackId);
+                                }}
+                                actions={settings.availableAudioTracks.map((track) => ({
+                                    id: `audio-${track.id}`,
+                                    title: track.name,
+                                    state: settings.selectedAudioTrack === track.id ? 'on' : 'off'
+                                }))}
+                                themeVariant="dark"
+                                onOpenMenu={() => uiState.setPreventAutoHide(true)}
+                                onCloseMenu={() => {
+                                    uiState.setPreventAutoHide(false);
+                                    showControlsTemporarily();
+                                }}
+                            >
+                                <View style={styles.controlButton}>
+                                    <MaterialIcons name="audiotrack" size={24} color="white" />
+                                </View>
+                            </MenuView>
 
-                                <TouchableOpacity
-                                    style={styles.controlButton}
-                                    onPress={controlActions.toggleMute}
-                                >
-                                    <Ionicons
-                                        name={settings.isMuted ? "volume-mute" : "volume-high"}
-                                        size={24}
-                                        color="white"
-                                    />
-                                </TouchableOpacity>
-
+                            {subtitles.length > 0 && (
                                 <MenuView
-                                    title="Audio Track"
+                                    title="Subtitles"
                                     onPressAction={({ nativeEvent }) => {
-                                        const trackId = parseInt(nativeEvent.event.replace('audio-', ''));
-                                        selectAudioTrack(trackId);
+                                        if (nativeEvent.event === 'off') {
+                                            selectSubtitle(-1);
+                                        } else {
+                                            const index = parseInt(nativeEvent.event.replace('sub-', ''));
+                                            selectSubtitle(index);
+                                        }
                                     }}
-                                    actions={settings.availableAudioTracks.map((track) => ({
-                                        id: `audio-${track.id}`,
-                                        title: track.name,
-                                        state: settings.selectedAudioTrack === track.id ? 'on' : 'off'
-                                    }))}
-                                    themeVariant="dark"
-                                    onOpenMenu={() => uiState.setPreventAutoHide(true)}
-                                    onCloseMenu={() => {
-                                        uiState.setPreventAutoHide(false);
-                                        showControlsTemporarily();
-                                    }}
-                                >
-                                    <View style={styles.controlButton} pointerEvents={Platform.OS === 'android' ? 'auto' : 'box-none'}>
-                                        <MaterialIcons name="audiotrack" size={24} color="white" />
-                                    </View>
-                                </MenuView>
+                                    actions={[
+                                        {
+                                            id: 'off',
+                                            title: 'Off',
+                                            state: settings.selectedSubtitle === -1 ? 'on' : undefined
+                                        },
+                                        ...subtitles.map((sub, index) => {
+                                            let subtitle: string | undefined = undefined;
 
-                                {subtitles.length > 0 && (
-                                    <MenuView
-                                        title="Subtitles"
-                                        onPressAction={({ nativeEvent }) => {
-                                            if (nativeEvent.event === 'off') {
-                                                selectSubtitle(-1);
-                                            } else {
-                                                const index = parseInt(nativeEvent.event.replace('sub-', ''));
-                                                selectSubtitle(index);
+                                            if (sub.fileId) {
+                                                subtitle = 'OpenSubtitles';
+                                            } else if (sub.url && !sub.url.includes('opensubtitles.org')) {
+                                                subtitle = 'Direct URL';
                                             }
-                                        }}
-                                        actions={[
-                                            {
-                                                id: 'off',
-                                                title: 'Off',
-                                                state: settings.selectedSubtitle === -1 ? 'on' : undefined
-                                            },
-                                            ...subtitles.map((sub, index) => {
-                                                let subtitle: string | undefined = undefined;
 
-                                                if (sub.fileId) {
-                                                    subtitle = 'OpenSubtitles';
-                                                } else if (sub.url && !sub.url.includes('opensubtitles.org')) {
-                                                    subtitle = 'Direct URL';
-                                                }
-
-                                                return {
-                                                    id: `sub-${index}`,
-                                                    title: sub.label,
-                                                    subtitle: subtitle,
-                                                    state: settings.selectedSubtitle === index ? 'on' as const : undefined
-                                                };
-                                            })
-                                        ]}
-                                        themeVariant="dark"
-                                        onOpenMenu={() => uiState.setPreventAutoHide(true)}
-                                        onCloseMenu={() => {
-                                            uiState.setPreventAutoHide(false);
-                                            showControlsTemporarily();
-                                        }}
-                                    >
-                                        <View style={styles.controlButton} pointerEvents={Platform.OS === 'android' ? 'auto' : 'box-none'}>
-                                            <MaterialIcons name="closed-caption" size={24} color="white" />
-                                        </View>
-                                    </MenuView>
-                                )}
-
-                                <MenuView
-                                    title="Playback Speed"
-                                    onPressAction={({ nativeEvent }) => {
-                                        const speed = parseFloat(nativeEvent.event.replace('speed-', ''));
-                                        changePlaybackSpeed(speed);
-                                    }}
-                                    actions={[0.75, 0.8, 0.85, 0.9, 0.95, 1.0, 1.1, 1.15, 1.20, 1.25].map(speed => ({
-                                        id: `speed-${speed}`,
-                                        title: `${speed}x`,
-                                        state: settings.playbackSpeed === speed ? 'on' : 'off'
-                                    }))}
+                                            return {
+                                                id: `sub-${index}`,
+                                                title: sub.label,
+                                                subtitle: subtitle,
+                                                state: settings.selectedSubtitle === index ? 'on' as const : undefined
+                                            };
+                                        })
+                                    ]}
                                     themeVariant="dark"
                                     onOpenMenu={() => uiState.setPreventAutoHide(true)}
                                     onCloseMenu={() => {
@@ -1142,15 +1115,38 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                                         showControlsTemporarily();
                                     }}
                                 >
-                                    <View style={styles.controlButton} pointerEvents={Platform.OS === 'android' ? 'auto' : 'box-none'}>
-                                        <MaterialIcons
-                                            name="speed"
-                                            size={24}
-                                            color={"white"}
-                                        />
+                                    <View style={styles.controlButton}>
+                                        <MaterialIcons name="closed-caption" size={24} color="white" />
                                     </View>
                                 </MenuView>
-                            </View>
+                            )}
+
+                            <MenuView
+                                title="Playback Speed"
+                                onPressAction={({ nativeEvent }) => {
+                                    const speed = parseFloat(nativeEvent.event.replace('speed-', ''));
+                                    changePlaybackSpeed(speed);
+                                }}
+                                actions={[0.75, 0.8, 0.85, 0.9, 0.95, 1.0, 1.1, 1.15, 1.20, 1.25].map(speed => ({
+                                    id: `speed-${speed}`,
+                                    title: `${speed}x`,
+                                    state: settings.playbackSpeed === speed ? 'on' : 'off'
+                                }))}
+                                themeVariant="dark"
+                                onOpenMenu={() => uiState.setPreventAutoHide(true)}
+                                onCloseMenu={() => {
+                                    uiState.setPreventAutoHide(false);
+                                    showControlsTemporarily();
+                                }}
+                            >
+                                <View style={styles.controlButton}>
+                                    <MaterialIcons
+                                        name="speed"
+                                        size={24}
+                                        color={"white"}
+                                    />
+                                </View>
+                            </MenuView>
                         </View>
                     </View>
 
@@ -1196,7 +1192,8 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                     )}
 
                     {/* Bottom controls */}
-                    <View style={styles.bottomControls}>
+                    <View style={styles.bottomControls}
+                    >
                         <View style={styles.timeContainer}>
                             <Text style={styles.timeText}>
                                 {formatTime(displayValues.displayTime)}

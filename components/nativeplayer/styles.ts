@@ -23,13 +23,14 @@ export const styles = StyleSheet.create({
         right: 0,
         bottom: 0,
         justifyContent: 'space-between',
+        zIndex: 100
     },
     topControls: {
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 20,
         paddingTop: 20,
-        paddingBottom: 20,
+        paddingBottom: 20
     },
     topControlsContent: {
         flexDirection: 'row',
@@ -59,6 +60,7 @@ export const styles = StyleSheet.create({
     topRightControls: {
         flexDirection: 'row',
         alignItems: 'center',
+        marginRight: 20,
     },
     controlButton: {
         padding: 8,
