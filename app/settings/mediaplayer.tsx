@@ -201,7 +201,7 @@ const MediaPlayerConfigScreen = () => {
                     <View style={styles.headerSection}>
                         <Text style={styles.title}>Default Media Player</Text>
                         <Text style={styles.subtitle}>
-                            Choose your preferred media player for streaming content
+                            Choose your preferred media player for streaming content.
                         </Text>
                     </View>
 
