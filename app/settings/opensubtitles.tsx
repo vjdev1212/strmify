@@ -44,7 +44,7 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
         if (isHapticsSupported()) {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
-        
+
         if (!apiKey.trim()) {
             showAlert('Error', 'Please enter an API key');
             return;
@@ -142,6 +142,14 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
 
                         <View style={styles.buttonGroup}>
                             <TouchableOpacity
+                                style={[styles.button, styles.clearButton]}
+                                onPress={clearConfiguration}
+                                disabled={isSaving}
+                            >
+                                <Ionicons name="trash-outline" size={16} color="#FFF" />
+                                <Text style={styles.clearButtonText}>Clear</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
                                 style={[
                                     styles.button,
                                     styles.saveButton,
@@ -158,15 +166,6 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
                                         <Text style={styles.buttonText}>Save</Text>
                                     </>
                                 )}
-                            </TouchableOpacity>
-
-                            <TouchableOpacity 
-                                style={[styles.button, styles.clearButton]} 
-                                onPress={clearConfiguration}
-                                disabled={isSaving}
-                            >
-                                <Ionicons name="trash-outline" size={16} color="#FFF" />
-                                <Text style={styles.clearButtonText}>Clear</Text>
                             </TouchableOpacity>
                         </View>
                     </View>

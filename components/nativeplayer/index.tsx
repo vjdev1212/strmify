@@ -10,6 +10,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import Slider from '@react-native-assets/slider';
 import { MenuView } from '@react-native-menu/menu';
+import { WebMenu } from "@/components/WebMenuView";
 import { showAlert } from "@/utils/platform";
 import { styles } from "./styles";
 import { MediaPlayerProps, DownloadResponse } from "./models";
@@ -30,6 +31,14 @@ const useSubtitles = () => {
     const [isLoading, setIsLoading] = useState(false);
 
     return { currentSubtitle, setCurrentSubtitle, parsedSubtitles, setParsedSubtitles, isLoading, setIsLoading };
+};
+
+// Menu wrapper component - uses CustomMenu on web, MenuView on native
+const MenuWrapper: React.FC<any> = (props) => {
+    if (Platform.OS === 'web') {
+        return <WebMenu {...props} />;
+    }
+    return <MenuView {...props} />;
 };
 
 export const MediaPlayer: React.FC<MediaPlayerProps> = ({
@@ -256,7 +265,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         }
     }, [isPlaying, showControlsTemporarily]);
 
-
     const showContentFitLabelTemporarily = useCallback(() => {
         setShowContentFitLabel(true);
         Animated.timing(contentFitLabelOpacity, { toValue: 1, duration: 200, useNativeDriver: true }).start();
@@ -296,7 +304,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         setContentFit(CONTENT_FIT_OPTIONS[(currentIndex + 1) % CONTENT_FIT_OPTIONS.length]);
         showContentFitLabelTemporarily();
         showControlsTemporarily();
-    }, [contentFit, showControlsTemporarily]);
+    }, [contentFit, showControlsTemporarily, showContentFitLabelTemporarily]);
 
     const handleOverlayPress = useCallback(() => {
         if (showControls) {
@@ -459,7 +467,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                         </View>
 
                         <View style={styles.topRightControls}>
-                            {switchMediaPlayer && (
+                            {switchMediaPlayer && Platform.OS !== 'web' && (
                                 <TouchableOpacity style={styles.controlButton} onPress={async () => {
                                     await playHaptic();
                                     const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
@@ -477,10 +485,13 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
                             {/* Audio Track Menu */}
                             {player.availableAudioTracks.length > 0 && (
-                                <MenuView
+                                <MenuWrapper
                                     style={{ zIndex: 1000 }}
                                     title="Audio Track"
-                                    onPressAction={({ nativeEvent }) => {
+                                    onPressAction={Platform.OS === 'web' ? (id: string) => {
+                                        const index = audioActions.findIndex(a => a.id === id);
+                                        if (index !== -1) handleAudioSelect(index);
+                                    } : ({ nativeEvent }: any) => {
                                         const index = audioActions.findIndex(a => a.id === nativeEvent.event);
                                         if (index !== -1) handleAudioSelect(index);
                                     }}
@@ -499,15 +510,22 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                     <View style={styles.controlButton}>
                                         <MaterialIcons name="audiotrack" size={24} color="white" />
                                     </View>
-                                </MenuView>
+                                </MenuWrapper>
                             )}
 
                             {/* Subtitle Menu */}
                             {(useCustomSubtitles || player.availableSubtitleTracks.length > 0) && (
-                                <MenuView
+                                <MenuWrapper
                                     style={{ zIndex: 1000 }}
                                     title="Subtitles"
-                                    onPressAction={({ nativeEvent }) => {
+                                    onPressAction={Platform.OS === 'web' ? (id: string) => {
+                                        if (id === 'subtitle-off') {
+                                            handleSubtitleSelect(-1);
+                                        } else {
+                                            const index = parseInt(id.split('-')[1]);
+                                            if (!isNaN(index)) handleSubtitleSelect(index);
+                                        }
+                                    } : ({ nativeEvent }: any) => {
                                         if (nativeEvent.event === 'subtitle-off') {
                                             handleSubtitleSelect(-1);
                                         } else {
@@ -530,14 +548,17 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                     <View style={styles.controlButton}>
                                         <MaterialIcons name="closed-caption" size={24} color="white" />
                                     </View>
-                                </MenuView>
+                                </MenuWrapper>
                             )}
 
                             {/* Speed Menu */}
-                            <MenuView
+                            <MenuWrapper
                                 style={{ zIndex: 1000 }}
                                 title="Playback Speed"
-                                onPressAction={({ nativeEvent }) => {
+                                onPressAction={Platform.OS === 'web' ? (id: string) => {
+                                    const speed = parseFloat(id.split('-')[1]);
+                                    if (!isNaN(speed)) handleSpeedSelect(speed);
+                                } : ({ nativeEvent }: any) => {
                                     const speed = parseFloat(nativeEvent.event.split('-')[1]);
                                     if (!isNaN(speed)) handleSpeedSelect(speed);
                                 }}
@@ -556,7 +577,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 <View style={styles.controlButton}>
                                     <MaterialIcons name="speed" size={24} color={"white"} />
                                 </View>
-                            </MenuView>
+                            </MenuWrapper>
                         </View>
                     </LinearGradient>
 
