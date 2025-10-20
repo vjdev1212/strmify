@@ -478,6 +478,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                             {/* Audio Track Menu */}
                             {player.availableAudioTracks.length > 0 && (
                                 <MenuView
+                                    style={{ zIndex: 200 }}
                                     title="Audio Track"
                                     onPressAction={({ nativeEvent }) => {
                                         const index = audioActions.findIndex(a => a.id === nativeEvent.event);
@@ -504,6 +505,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                             {/* Subtitle Menu */}
                             {(useCustomSubtitles || player.availableSubtitleTracks.length > 0) && (
                                 <MenuView
+                                    style={{ zIndex: 200 }}
                                     title="Subtitles"
                                     onPressAction={({ nativeEvent }) => {
                                         if (nativeEvent.event === 'subtitle-off') {
@@ -533,6 +535,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
                             {/* Speed Menu */}
                             <MenuView
+                                style={{ zIndex: 200 }}
                                 title="Playback Speed"
                                 onPressAction={({ nativeEvent }) => {
                                     const speed = parseFloat(nativeEvent.event.split('-')[1]);
