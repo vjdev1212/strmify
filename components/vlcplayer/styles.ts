@@ -57,6 +57,7 @@ export const styles = StyleSheet.create({
         right: 0,
         bottom: 0,
         justifyContent: 'space-between',
+        zIndex: 100,
     },
     topControls: {
         flexDirection: 'row',
@@ -65,7 +66,7 @@ export const styles = StyleSheet.create({
         paddingTop: 20,
         paddingBottom: 20,
     },
-        topControlsContent: {
+    topControlsContent: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
