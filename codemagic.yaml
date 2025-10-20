@@ -195,9 +195,6 @@ workflows:
       - name: Install dependencies
         script: npm install --force
 
-      - name: Install Expo CLI
-        script: npm install -g @expo/cli@latest --force
-
       - name: Extract app version from app.json
         script: |
           if [ -f "app.json" ]; then
@@ -217,6 +214,7 @@ workflows:
       - name: Clean and generate Android project
         script: |
           rm -rf ios android
+          npm install -g @expo/cli@latest --force
           npx expo prebuild --platform android
 
       - name: Setup Android keystore
@@ -235,11 +233,13 @@ workflows:
           
           if [ "$UNSIGNED_BUILD" = "true" ]; then
             echo "📦 Building unsigned release APK"
-            ./gradlew assembleRelease
+            ./gradlew assembleRelease -x configureCMakeRelease -Pcom.android.build.gradle.overridePathCheck=true
             BUILD_OUTPUT="app/build/outputs/apk/release"
           else
             echo "📦 Building signed release APK"
             ./gradlew assembleRelease \
+              -x configureCMakeRelease \
+              -Pcom.android.build.gradle.overridePathCheck=true \
               -Pandroid.injected.signing.store.file=$KEYSTORE_FILE \
               -Pandroid.injected.signing.store.password=$KEYSTORE_PASSWORD \
               -Pandroid.injected.signing.key.alias=$KEYSTORE_ALIAS \
@@ -268,10 +268,12 @@ workflows:
           
           if [ "$UNSIGNED_BUILD" = "true" ]; then
             echo "📦 Building unsigned App Bundle"
-            ./gradlew bundleRelease
+            ./gradlew bundleRelease -x configureCMakeRelease -Pcom.android.build.gradle.overridePathCheck=true
           else
             echo "📦 Building signed App Bundle"
             ./gradlew bundleRelease \
+              -x configureCMakeRelease \
+              -Pcom.android.build.gradle.overridePathCheck=true \
               -Pandroid.injected.signing.store.file=$KEYSTORE_FILE \
               -Pandroid.injected.signing.store.password=$KEYSTORE_PASSWORD \
               -Pandroid.injected.signing.key.alias=$KEYSTORE_ALIAS \
@@ -308,9 +310,6 @@ workflows:
       - name: Install dependencies
         script: npm install --force
 
-      - name: Install Expo CLI
-        script: npm install -g @expo/cli@latest --force
-
       - name: Extract app version from app.json
         script: |
           if [ -f "app.json" ]; then
@@ -330,6 +329,7 @@ workflows:
       - name: Clean and generate Android project
         script: |
           rm -rf ios android
+          npm install -g @expo/cli@latest --force
           npx expo prebuild --platform android
 
       - name: Build Android debug APK
@@ -337,7 +337,7 @@ workflows:
           cd android
           
           echo "📦 Building debug APK"
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug -x configureCMakeDebug -Pcom.android.build.gradle.overridePathCheck=true
           
           BUILD_OUTPUT="app/build/outputs/apk/debug"
           
