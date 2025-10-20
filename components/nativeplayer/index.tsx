@@ -444,116 +444,46 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
             {showControls && (
                 <Animated.View style={[styles.controlsOverlay, { opacity: controlsOpacity }]} pointerEvents="box-none">
-                    {/* TOP CONTROLS - FIXED FOR ANDROID & iOS */}
-                    <LinearGradient 
-                        colors={['rgba(0,0,0,0.8)', 'transparent']} 
-                        style={styles.topControls}
-                        pointerEvents={Platform.OS === 'android' ? 'none' : 'box-none'}
-                    >
-                        <View style={styles.topControlsContent} pointerEvents="box-none">
-                            <TouchableOpacity style={styles.backButton} onPress={async () => {
-                                await playHaptic();
-                                const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
-                                updateProgress({ progress });
-                                onBack({ message: '', player: "native" });
-                            }}>
-                                <Ionicons name="chevron-back" size={28} color="white" />
+                    <LinearGradient colors={['rgba(0,0,0,0.8)', 'transparent']} style={styles.topControls}>
+                        <TouchableOpacity style={styles.backButton} onPress={async () => {
+                            await playHaptic();
+                            const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+                            updateProgress({ progress });
+                            onBack({ message: '', player: "native" });
+                        }}>
+                            <Ionicons name="chevron-back" size={28} color="white" />
+                        </TouchableOpacity>
+
+                        <View style={styles.titleContainer}>
+                            <Text style={styles.titleText} numberOfLines={1}>{title}</Text>
+                        </View>
+
+                        <View style={styles.topRightControls}>
+                            {switchMediaPlayer && (
+                                <TouchableOpacity style={styles.controlButton} onPress={async () => {
+                                    await playHaptic();
+                                    const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+                                    switchMediaPlayer({ message: '', player: "native", progress: progress });
+                                }}>
+                                    <MaterialCommunityIcons name="vlc" size={24} color="white" />
+                                </TouchableOpacity>
+                            )}
+                            <TouchableOpacity style={styles.controlButton} onPress={async () => { await playHaptic(); setIsMuted(!isMuted); showControlsTemporarily(); }}>
+                                <Ionicons name={isMuted ? "volume-mute" : "volume-high"} size={24} color="white" />
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.controlButton} onPress={cycleContentFit}>
+                                <MaterialIcons name={getContentFitIcon()} size={24} color="white" />
                             </TouchableOpacity>
 
-                            <View style={styles.titleContainer}>
-                                <Text style={styles.titleText} numberOfLines={1}>{title}</Text>
-                            </View>
-
-                            <View style={styles.topRightControls} pointerEvents={Platform.OS === 'android' ? 'auto' : 'box-none'}>
-                                {switchMediaPlayer && (
-                                    <TouchableOpacity style={styles.controlButton} onPress={async () => {
-                                        await playHaptic();
-                                        const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
-                                        switchMediaPlayer({ message: '', player: "native", progress: progress });
-                                    }}>
-                                        <MaterialCommunityIcons name="vlc" size={24} color="white" />
-                                    </TouchableOpacity>
-                                )}
-
-                                <TouchableOpacity 
-                                    style={styles.controlButton} 
-                                    onPress={async () => { 
-                                        await playHaptic(); 
-                                        setIsMuted(!isMuted); 
-                                        showControlsTemporarily(); 
-                                    }}
-                                >
-                                    <Ionicons name={isMuted ? "volume-mute" : "volume-high"} size={24} color="white" />
-                                </TouchableOpacity>
-
-                                <TouchableOpacity style={styles.controlButton} onPress={cycleContentFit}>
-                                    <MaterialIcons name={getContentFitIcon()} size={24} color="white" />
-                                </TouchableOpacity>
-
-                                {/* Audio Track Menu */}
-                                {player.availableAudioTracks.length > 0 && (
-                                    <MenuView
-                                        title="Audio Track"
-                                        onPressAction={({ nativeEvent }) => {
-                                            const index = audioActions.findIndex(a => a.id === nativeEvent.event);
-                                            if (index !== -1) handleAudioSelect(index);
-                                        }}
-                                        actions={audioActions}
-                                        shouldOpenOnLongPress={false}
-                                        themeVariant="dark"
-                                        onOpenMenu={() => {
-                                            shouldAutoHideControls.current = false;
-                                            clearTimeout(hideControlsTimer.current);
-                                        }}
-                                        onCloseMenu={() => {
-                                            shouldAutoHideControls.current = true;
-                                            showControlsTemporarily();
-                                        }}
-                                    >
-                                        <View style={styles.controlButton} pointerEvents="auto">
-                                            <MaterialIcons name="audiotrack" size={24} color="white" />
-                                        </View>
-                                    </MenuView>
-                                )}
-
-                                {/* Subtitle Menu */}
-                                {(useCustomSubtitles || player.availableSubtitleTracks.length > 0) && (
-                                    <MenuView
-                                        title="Subtitles"
-                                        onPressAction={({ nativeEvent }) => {
-                                            if (nativeEvent.event === 'subtitle-off') {
-                                                handleSubtitleSelect(-1);
-                                            } else {
-                                                const index = parseInt(nativeEvent.event.split('-')[1]);
-                                                if (!isNaN(index)) handleSubtitleSelect(index);
-                                            }
-                                        }}
-                                        actions={subtitleActions}
-                                        shouldOpenOnLongPress={false}
-                                        themeVariant="dark"
-                                        onOpenMenu={() => {
-                                            shouldAutoHideControls.current = false;
-                                            clearTimeout(hideControlsTimer.current);
-                                        }}
-                                        onCloseMenu={() => {
-                                            shouldAutoHideControls.current = true;
-                                            showControlsTemporarily();
-                                        }}
-                                    >
-                                        <View style={styles.controlButton} pointerEvents={Platform.OS === 'android' ? 'auto' : 'box-none'}>
-                                            <MaterialIcons name="closed-caption" size={24} color="white" />
-                                        </View>
-                                    </MenuView>
-                                )}
-
-                                {/* Speed Menu */}
+                            {/* Audio Track Menu */}
+                            {player.availableAudioTracks.length > 0 && (
                                 <MenuView
-                                    title="Playback Speed"
+                                    title="Audio Track"
                                     onPressAction={({ nativeEvent }) => {
-                                        const speed = parseFloat(nativeEvent.event.split('-')[1]);
-                                        if (!isNaN(speed)) handleSpeedSelect(speed);
+                                        const index = audioActions.findIndex(a => a.id === nativeEvent.event);
+                                        if (index !== -1) handleAudioSelect(index);
                                     }}
-                                    actions={speedActions}
+                                    actions={audioActions}
                                     shouldOpenOnLongPress={false}
                                     themeVariant="dark"
                                     onOpenMenu={() => {
@@ -565,11 +495,65 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                         showControlsTemporarily();
                                     }}
                                 >
-                                    <View style={styles.controlButton} pointerEvents="auto">
-                                        <MaterialIcons name="speed" size={24} color="white" />
+                                    <View style={styles.controlButton}>
+                                        <MaterialIcons name="audiotrack" size={24} color="white" />
                                     </View>
                                 </MenuView>
-                            </View>
+                            )}
+
+                            {/* Subtitle Menu */}
+                            {(useCustomSubtitles || player.availableSubtitleTracks.length > 0) && (
+                                <MenuView
+                                    title="Subtitles"
+                                    onPressAction={({ nativeEvent }) => {
+                                        if (nativeEvent.event === 'subtitle-off') {
+                                            handleSubtitleSelect(-1);
+                                        } else {
+                                            const index = parseInt(nativeEvent.event.split('-')[1]);
+                                            if (!isNaN(index)) handleSubtitleSelect(index);
+                                        }
+                                    }}
+                                    actions={subtitleActions}
+                                    shouldOpenOnLongPress={false}
+                                    themeVariant="dark"
+                                    onOpenMenu={() => {
+                                        shouldAutoHideControls.current = false;
+                                        clearTimeout(hideControlsTimer.current);
+                                    }}
+                                    onCloseMenu={() => {
+                                        shouldAutoHideControls.current = true;
+                                        showControlsTemporarily();
+                                    }}
+                                >
+                                    <View style={styles.controlButton}>
+                                        <MaterialIcons name="closed-caption" size={24} color="white" />
+                                    </View>
+                                </MenuView>
+                            )}
+
+                            {/* Speed Menu */}
+                            <MenuView
+                                title="Playback Speed"
+                                onPressAction={({ nativeEvent }) => {
+                                    const speed = parseFloat(nativeEvent.event.split('-')[1]);
+                                    if (!isNaN(speed)) handleSpeedSelect(speed);
+                                }}
+                                actions={speedActions}
+                                shouldOpenOnLongPress={false}
+                                themeVariant="dark"
+                                onOpenMenu={() => {
+                                    shouldAutoHideControls.current = false;
+                                    clearTimeout(hideControlsTimer.current);
+                                }}
+                                onCloseMenu={() => {
+                                    shouldAutoHideControls.current = true;
+                                    showControlsTemporarily();
+                                }}
+                            >
+                                <View style={styles.controlButton}>
+                                    <MaterialIcons name="speed" size={24} color={"white"} />
+                                </View>
+                            </MenuView>
                         </View>
                     </LinearGradient>
 
