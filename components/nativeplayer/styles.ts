@@ -30,7 +30,6 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
         paddingHorizontal: 20,
         paddingTop: 20,
-        marginRight: 20,
         paddingBottom: 20
     },
     topControlsContent: {
@@ -61,6 +60,7 @@ export const styles = StyleSheet.create({
     topRightControls: {
         flexDirection: 'row',
         alignItems: 'center',
+        marginRight: 20,
     },
     controlButton: {
         padding: 8,
