@@ -1,4 +1,4 @@
-import { router } from 'expo-router'; import React, { useState, useMemo } from 'react';
+import { router, useFocusEffect } from 'expo-router'; import React, { useState, useMemo } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -14,10 +14,18 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { isHapticsSupported } from '@/utils/platform';
 import { CatalogUrl, MovieGneres, TvGneres } from '@/constants/Tmdb';
+import WatchHistory from '@/components/WatchHistory';
 
 export default function HomeScreen() {
   const [filter, setFilter] = useState<'all' | 'movies' | 'series'>('all');
+  const [refreshKey, setRefreshKey] = useState(0);
 
+  useFocusEffect(
+    React.useCallback(() => {
+      setRefreshKey(prev => prev + 1);
+    }, [])
+  );
+  
   const filters = [
     { key: 'all', label: 'All', icon: 'apps' },
     { key: 'movies', label: 'Movies', icon: 'film-outline' },
@@ -91,6 +99,23 @@ export default function HomeScreen() {
     });
   };
 
+  const handleWatchHistoryItemPress = (item: any) => {
+    router.push({
+      pathname: '/stream/player',
+      params: {
+        videoUrl: item.videoUrl,
+        title: item.title,
+        imdbid: item.imdbid,
+        type: item.type,
+        season: item.season,
+        episode: item.episode,
+        useVlcKit: item.useVlcKit,
+      },
+    });
+  };
+
+
+
   return (
     <View style={[styles.container]}>
       <StatusBar />
@@ -142,6 +167,7 @@ export default function HomeScreen() {
             />
           </View>
 
+          <WatchHistory onItemSelect={(item) => handleWatchHistoryItemPress(item)} />
           {activeLists.map((list, i) => (
             <PosterList
               key={`${filter}-${i}`}
