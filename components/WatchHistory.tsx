@@ -29,8 +29,8 @@ interface WatchHistoryProps {
 
 const WATCH_HISTORY_KEY = StorageKeys.WATCH_HISTORY_KEY;
 const { width } = Dimensions.get('window');
-const CARD_WIDTH = width * 0.4;
-const CARD_HEIGHT = CARD_WIDTH * 0.6;
+const CARD_WIDTH = width * 0.2;
+const CARD_HEIGHT = CARD_WIDTH * 0.56;
 
 const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect }) => {
   const [history, setHistory] = useState<WatchHistoryItem[]>([]);
@@ -75,7 +75,7 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect }) => {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
         decelerationRate="fast"
-        snapToInterval={CARD_WIDTH + 16}
+        snapToInterval={CARD_WIDTH + 12}
       >
         {history.map((item, index) => (
           <TouchableOpacity
@@ -95,7 +95,6 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect }) => {
                 style={styles.gradient}
               />
               
-              {/* Progress Bar */}
               <View style={styles.progressContainer}>
                 <View style={styles.progressBackground}>
                   <View
@@ -107,7 +106,6 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect }) => {
                 </View>
               </View>
 
-              {/* Progress Percentage Badge */}
               <View style={styles.progressBadge}>
                 <Text style={styles.progressText}>
                   {formatProgress(item.progress)}
@@ -129,13 +127,12 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect }) => {
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: 20,
+    marginVertical: 16,
   },
   sectionTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginBottom: 16,
+    fontSize: 20,
+    fontWeight: '500',
+    marginBottom: 12,
     marginLeft: 16,
     letterSpacing: 0.5,
   },
@@ -144,15 +141,15 @@ const styles = StyleSheet.create({
   },
   card: {
     width: CARD_WIDTH,
-    marginRight: 16,
+    marginRight: 12,
     backgroundColor: '#1a1a1a',
-    borderRadius: 12,
+    borderRadius: 10,
     overflow: 'hidden',
-    elevation: 5,
+    elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.3,
-    shadowRadius: 8,
+    shadowRadius: 6,
   },
   imageContainer: {
     width: '100%',
@@ -176,44 +173,44 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 8,
+    padding: 6,
   },
   progressBackground: {
     width: '100%',
-    height: 4,
+    height: 3,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 2,
     overflow: 'hidden',
   },
   progressBar: {
     height: '100%',
-    backgroundColor: '#E50914',
+    backgroundColor: '#535aff',
     borderRadius: 2,
   },
   progressBadge: {
     position: 'absolute',
-    top: 8,
-    right: 8,
+    top: 6,
+    right: 6,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 4,
     backdropFilter: 'blur(10px)',
   },
   progressText: {
     color: '#FFFFFF',
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '600',
   },
   titleContainer: {
-    padding: 12,
+    padding: 10,
     backdropFilter: 'blur(10px)',
   },
   title: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '500',
     color: '#FFFFFF',
-    lineHeight: 18,
+    lineHeight: 16,
   },
 });
 
