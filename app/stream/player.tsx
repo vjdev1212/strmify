@@ -37,7 +37,7 @@ interface WatchHistoryItem {
 }
 
 const WATCH_HISTORY_KEY = StorageKeys.WATCH_HISTORY_KEY;
-const MAX_HISTORY_ITEMS = 100;
+const MAX_HISTORY_ITEMS = 30;
 
 const MediaPlayerScreen: React.FC = () => {
   const router = useRouter();

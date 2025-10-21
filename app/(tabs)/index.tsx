@@ -1,4 +1,4 @@
-import { router } from 'expo-router'; import React, { useState, useMemo } from 'react';
+import { router, useFocusEffect } from 'expo-router'; import React, { useState, useMemo } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -18,7 +18,14 @@ import WatchHistory from '@/components/WatchHistory';
 
 export default function HomeScreen() {
   const [filter, setFilter] = useState<'all' | 'movies' | 'series'>('all');
+  const [refreshKey, setRefreshKey] = useState(0);
 
+  useFocusEffect(
+    React.useCallback(() => {
+      setRefreshKey(prev => prev + 1);
+    }, [])
+  );
+  
   const filters = [
     { key: 'all', label: 'All', icon: 'apps' },
     { key: 'movies', label: 'Movies', icon: 'film-outline' },
