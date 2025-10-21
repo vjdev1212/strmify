@@ -23,6 +23,17 @@ interface UpdateProgessEvent {
   progress: number
 }
 
+interface WatchHistoryItem {
+  title: string;
+  videoUrl: string;
+  progress: number;
+  artwork: string;
+  timestamp: number;
+}
+
+const WATCH_HISTORY_KEY = StorageKeys.WATCH_HISTORY_KEY;
+const MAX_HISTORY_ITEMS = 100;
+
 const MediaPlayerScreen: React.FC = () => {
   const router = useRouter();
   const { videoUrl, title, imdbid, type, season, episode, useVlcKit } = useLocalSearchParams();
@@ -139,14 +150,48 @@ const MediaPlayerScreen: React.FC = () => {
     }
   };
 
+  const saveToWatchHistory = async () => {
+    try {
+      const historyItem: WatchHistoryItem = {
+        title: title as string,
+        videoUrl: videoUrl as string,
+        progress: progress,
+        artwork: artwork,
+        timestamp: Date.now()
+      };
 
-  const handleBack = (event: BackEvent): void => {
+      // Get existing history
+      const existingHistoryJson = await storageService.getItem(WATCH_HISTORY_KEY);
+      let history: WatchHistoryItem[] = existingHistoryJson ? JSON.parse(existingHistoryJson) : [];
+
+      // Remove any existing entry with the same videoUrl to avoid duplicates
+      history = history.filter(item => item.videoUrl !== videoUrl);
+
+      // Add new item at the beginning (most recent first)
+      history.unshift(historyItem);
+
+      // Keep only the last 100 items
+      if (history.length > MAX_HISTORY_ITEMS) {
+        history = history.slice(0, MAX_HISTORY_ITEMS);
+      }
+
+      // Save back to AsyncStorage
+      await storageService.setItem(WATCH_HISTORY_KEY, JSON.stringify(history));
+      console.log('Watch history saved successfully');
+    } catch (error) {
+      console.error('Failed to save watch history:', error);
+    }
+  };
+
+  const handleBack = async (event: BackEvent): Promise<void> => {
     console.log('BackEvent', event);
+    await saveToWatchHistory();
     router.back();
   };
 
   const handleUpdateProgress = (event: UpdateProgessEvent): void => {
     console.log('UpdateProgress', event);
+    setProgress(event.progress);
   };
 
   const handleSwitchMediaPlayer = (event: PlayerSwitchEvent): void => {
@@ -164,6 +209,7 @@ const MediaPlayerScreen: React.FC = () => {
       setForceVlc(false);
     }
   };
+  
   function getPlayer() {
     if (Platform.OS === "web") {
       return require("../../components/nativeplayer").MediaPlayer;
