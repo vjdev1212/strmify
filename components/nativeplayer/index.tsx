@@ -48,6 +48,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const hideControlsTimer = useRef<any>(null);
     const contentFitLabelTimer = useRef<any>(null);
     const shouldAutoHideControls = useRef(true);
+    const isSeeking = useRef(false);
 
     // Animation refs
     const controlsOpacity = useRef(new Animated.Value(1)).current;
@@ -215,30 +216,29 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
     const timeUpdate = useEvent(player, "timeUpdate");
     useEffect(() => {
-        if (!timeUpdate) return;
+        if (!timeUpdate || isDragging) return;
 
-        if (!isDragging) {
-            setCurrentTime(timeUpdate.currentTime);
+        setCurrentTime(timeUpdate.currentTime);
+        const videoDuration = player.duration || 0;
+
+        if (videoDuration > 0) {
+            setDuration(videoDuration);
         }
+    }, [timeUpdate, isDragging]);
 
-        // Update duration if available
-        if (player.duration > 0) {
-            setDuration(player.duration);
-        }
-    }, [timeUpdate, isDragging, player]);
-
+    // Additional polling effect to ensure time updates
     useEffect(() => {
-        if (!player || !isPlaying) return;
-
+        if (!player || !isPlaying || isDragging || isSeeking.current) return;
+        
         const pollInterval = setInterval(() => {
-            if (!isDragging && player.currentTime !== undefined) {
+            if (!isSeeking.current && player.currentTime !== undefined) {
                 setCurrentTime(player.currentTime);
             }
             if (player.duration > 0 && duration === 0) {
                 setDuration(player.duration);
             }
         }, 100);
-
+        
         return () => clearInterval(pollInterval);
     }, [player, isPlaying, isDragging, duration]);
 
@@ -304,8 +304,12 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const seekTo = useCallback((seconds: number) => {
         if (!isReady || duration <= 0) return;
         const clampedTime = Math.max(0, Math.min(duration, seconds));
+        isSeeking.current = true;
         player.currentTime = clampedTime;
         setCurrentTime(clampedTime);
+        setTimeout(() => {
+            isSeeking.current = false;
+        }, 500);
         showControlsTemporarily();
     }, [duration, player, isReady, showControlsTemporarily]);
 
@@ -334,15 +338,24 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
     // Slider handlers
     const handleSliderChange = useCallback((value: number) => {
-        if (!isReady) return;
+        if (!isReady || duration <= 0) return;
         setIsDragging(true);
         setDragPosition(value);
-    }, [isReady]);
+    }, [duration, isReady]);
 
     const handleSliderComplete = useCallback((value: number) => {
+        if (isReady && duration > 0) {
+            const newTime = value * duration;
+            isSeeking.current = true;
+            player.currentTime = newTime;
+            setCurrentTime(newTime);
+            // Wait longer for seek to complete
+            setTimeout(() => {
+                isSeeking.current = false;
+            }, 500);
+        }
         setIsDragging(false);
-        if (isReady && duration > 0) seekTo(value * duration);
-    }, [duration, seekTo, isReady]);
+    }, [duration, player, isReady]);
 
     // Menu handlers
     const handleSpeedSelect = useCallback(async (speed: number) => {
@@ -413,7 +426,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     }));
 
     const displayTime = isDragging ? dragPosition * duration : currentTime;
-    const sliderValue = duration > 0 ? (isDragging ? dragPosition : currentTime / duration) : 0;
+    const sliderValue = isDragging ? dragPosition : (duration > 0 ? currentTime / duration : 0);
 
     return (
         <View style={styles.container}>
