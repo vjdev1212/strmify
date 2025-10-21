@@ -216,20 +216,20 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const timeUpdate = useEvent(player, "timeUpdate");
     useEffect(() => {
         if (!timeUpdate) return;
-        
+
         if (!isDragging) {
             setCurrentTime(timeUpdate.currentTime);
         }
-        
+
         // Update duration if available
         if (player.duration > 0) {
             setDuration(player.duration);
         }
     }, [timeUpdate, isDragging, player]);
-    
+
     useEffect(() => {
         if (!player || !isPlaying) return;
-        
+
         const pollInterval = setInterval(() => {
             if (!isDragging && player.currentTime !== undefined) {
                 setCurrentTime(player.currentTime);
@@ -238,7 +238,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 setDuration(player.duration);
             }
         }, 100);
-        
+
         return () => clearInterval(pollInterval);
     }, [player, isPlaying, isDragging, duration]);
 
