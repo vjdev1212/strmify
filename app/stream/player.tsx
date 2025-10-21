@@ -156,11 +156,26 @@ const MediaPlayerScreen: React.FC = () => {
   };
 
   const saveToWatchHistory = async () => {
-    const minProgressAsWatched = 90;
-    if (progress > minProgressAsWatched) {
-      return;
-    }
+    const minProgressAsWatched = 95;
+
     try {
+      const existingHistoryJson = await storageService.getItem(WATCH_HISTORY_KEY);
+      let history: WatchHistoryItem[] = existingHistoryJson ? JSON.parse(existingHistoryJson) : [];
+
+      // Remove if progress >= minProgressAsWatched%
+      if (progress >= minProgressAsWatched) {
+        history = history.filter(item =>
+          !(item.imdbid === imdbid &&
+            item.type === type &&
+            item.season === season &&
+            item.episode === episode)
+        );
+        await storageService.setItem(WATCH_HISTORY_KEY, JSON.stringify(history));
+        console.log('Removed from watch history (watched ≥ 90%)');
+        return;
+      }
+
+      // Otherwise, add/update as usual
       const historyItem: WatchHistoryItem = {
         title: title as string,
         videoUrl: videoUrl as string,
@@ -175,9 +190,6 @@ const MediaPlayerScreen: React.FC = () => {
       };
 
       console.log('Saving to watch history:', historyItem);
-
-      const existingHistoryJson = await storageService.getItem(WATCH_HISTORY_KEY);
-      let history: WatchHistoryItem[] = existingHistoryJson ? JSON.parse(existingHistoryJson) : [];
 
       const existingIndex = history.findIndex(item =>
         item.imdbid === imdbid &&
@@ -211,14 +223,16 @@ const MediaPlayerScreen: React.FC = () => {
     }
   };
 
+
   const handleBack = async (event: BackEvent): Promise<void> => {
     console.log('BackEvent', event);
     await saveToWatchHistory();
     router.back();
   };
 
-  const handleUpdateProgress = (event: UpdateProgessEvent): void => {
+  const handleUpdateProgress = async (event: UpdateProgessEvent): Promise<void> => {
     console.log('UpdateProgress', event);
+    await saveToWatchHistory();
     setProgress(event.progress);
   };
 
