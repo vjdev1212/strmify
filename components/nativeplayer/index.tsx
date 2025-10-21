@@ -215,15 +215,32 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
     const timeUpdate = useEvent(player, "timeUpdate");
     useEffect(() => {
-        if (!timeUpdate || isDragging) return;
-
-        setCurrentTime(timeUpdate.currentTime);
-        const videoDuration = player.duration || 0;
-
-        if (videoDuration > 0) {
-            setDuration(videoDuration);
+        if (!timeUpdate) return;
+        
+        if (!isDragging) {
+            setCurrentTime(timeUpdate.currentTime);
         }
-    }, [timeUpdate, isDragging]);
+        
+        // Update duration if available
+        if (player.duration > 0) {
+            setDuration(player.duration);
+        }
+    }, [timeUpdate, isDragging, player]);
+    
+    useEffect(() => {
+        if (!player || !isPlaying) return;
+        
+        const pollInterval = setInterval(() => {
+            if (!isDragging && player.currentTime !== undefined) {
+                setCurrentTime(player.currentTime);
+            }
+            if (player.duration > 0 && duration === 0) {
+                setDuration(player.duration);
+            }
+        }, 100);
+        
+        return () => clearInterval(pollInterval);
+    }, [player, isPlaying, isDragging, duration]);
 
     const statusChange = useEvent(player, "statusChange");
     useEffect(() => {
@@ -317,11 +334,10 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
     // Slider handlers
     const handleSliderChange = useCallback((value: number) => {
-        if (!isReady || duration <= 0) return;
+        if (!isReady) return;
         setIsDragging(true);
         setDragPosition(value);
-        setCurrentTime(value * duration);
-    }, [duration, isReady]);
+    }, [isReady]);
 
     const handleSliderComplete = useCallback((value: number) => {
         setIsDragging(false);
@@ -397,7 +413,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     }));
 
     const displayTime = isDragging ? dragPosition * duration : currentTime;
-    const sliderValue = isDragging ? dragPosition : (duration > 0 ? currentTime / duration : 0);
+    const sliderValue = duration > 0 ? (isDragging ? dragPosition : currentTime / duration) : 0;
 
     return (
         <View style={styles.container}>
