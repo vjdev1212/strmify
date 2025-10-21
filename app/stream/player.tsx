@@ -160,6 +160,7 @@ const MediaPlayerScreen: React.FC = () => {
         timestamp: Date.now()
       };
 
+      console.log('Saving to watch history:', historyItem);
       // Get existing history
       const existingHistoryJson = await storageService.getItem(WATCH_HISTORY_KEY);
       let history: WatchHistoryItem[] = existingHistoryJson ? JSON.parse(existingHistoryJson) : [];

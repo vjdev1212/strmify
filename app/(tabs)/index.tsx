@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { isHapticsSupported } from '@/utils/platform';
 import { CatalogUrl, MovieGneres, TvGneres } from '@/constants/Tmdb';
+import WatchHistory from '@/components/WatchHistory';
 
 export default function HomeScreen() {
   const [filter, setFilter] = useState<'all' | 'movies' | 'series'>('all');
@@ -142,6 +143,7 @@ export default function HomeScreen() {
             />
           </View>
 
+          <WatchHistory onItemSelect={(item) => console.log('Selected item:', item)} />
           {activeLists.map((list, i) => (
             <PosterList
               key={`${filter}-${i}`}
