@@ -4,7 +4,6 @@ import {
   TouchableOpacity,
   Image,
   StyleSheet,
-  Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StorageKeys, storageService } from '@/utils/StorageService';
@@ -28,9 +27,8 @@ interface WatchHistoryProps {
 }
 
 const WATCH_HISTORY_KEY = StorageKeys.WATCH_HISTORY_KEY;
-const { width } = Dimensions.get('window');
-const CARD_WIDTH = width * 0.2;
-const CARD_HEIGHT = CARD_WIDTH * 0.56;
+const CARD_WIDTH = 200;
+const CARD_HEIGHT = (CARD_WIDTH * 9) / 16;
 
 const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect }) => {
   const [history, setHistory] = useState<WatchHistoryItem[]>([]);
@@ -78,47 +76,44 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect }) => {
         snapToInterval={CARD_WIDTH + 12}
       >
         {history.map((item, index) => (
-          <TouchableOpacity
-            key={`${item.videoUrl}-${index}`}
-            style={styles.card}
-            onPress={() => onItemSelect(item)}
-            activeOpacity={0.8}
-          >
-            <View style={styles.imageContainer}>
-              <Image
-                source={{ uri: item.artwork }}
-                style={styles.artwork}
-                resizeMode="cover"
-              />
-              <LinearGradient
-                colors={['transparent', 'rgba(0,0,0,0.8)']}
-                style={styles.gradient}
-              />
-              
-              <View style={styles.progressContainer}>
-                <View style={styles.progressBackground}>
-                  <View
-                    style={[
-                      styles.progressBar,
-                      { width: `${item.progress * 100}%` },
-                    ]}
-                  />
+          <View key={`${item.videoUrl}-${index}`}>
+            <TouchableOpacity
+              style={styles.card}
+              onPress={() => onItemSelect(item)}
+              activeOpacity={0.8}
+            >
+              <View style={styles.imageContainer}>
+                <Image
+                  source={{ uri: item.artwork }}
+                  style={styles.artwork}
+                  resizeMode="cover" />
+                <LinearGradient
+                  colors={['transparent', 'rgba(0,0,0,0.8)']}
+                  style={styles.gradient} />
+
+                <View style={styles.progressContainer}>
+                  <View style={styles.progressBackground}>
+                    <View
+                      style={[
+                        styles.progressBar,
+                        { width: `${item.progress * 100}%` },
+                      ]} />
+                  </View>
+                </View>
+
+                <View style={styles.progressBadge}>
+                  <Text style={styles.progressText}>
+                    {formatProgress(item.progress)}
+                  </Text>
                 </View>
               </View>
-
-              <View style={styles.progressBadge}>
-                <Text style={styles.progressText}>
-                  {formatProgress(item.progress)}
-                </Text>
-              </View>
-            </View>
-
+            </TouchableOpacity>
             <View style={styles.titleContainer}>
-              <Text style={styles.title} numberOfLines={2}>
+              <Text style={styles.title} numberOfLines={1}>
                 {item.title}
               </Text>
             </View>
-          </TouchableOpacity>
+          </View>
         ))}
       </ScrollView>
     </View>
@@ -203,13 +198,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   titleContainer: {
-    padding: 10,
-    backdropFilter: 'blur(10px)',
+    paddingVertical: 5,
+    paddingHorizontal: 5,
+    overflow: 'hidden',
+    width: CARD_WIDTH,
   },
   title: {
-    fontSize: 12,
-    fontWeight: '500',
+    fontSize: 13,
     color: '#FFFFFF',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
     lineHeight: 16,
   },
 });

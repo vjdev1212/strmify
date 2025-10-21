@@ -92,6 +92,23 @@ export default function HomeScreen() {
     });
   };
 
+  const handleWatchHistoryItemPress = (item: any) => {
+    router.push({
+      pathname: '/stream/player',
+      params: {
+        videoUrl: item.videoUrl,
+        title: item.title,
+        imdbid: item.imdbid,
+        type: item.type,
+        season: item.season,
+        episode: item.episode,
+        useVlcKit: item.useVlcKit,
+      },
+    });
+  };
+
+
+
   return (
     <View style={[styles.container]}>
       <StatusBar />
@@ -143,7 +160,7 @@ export default function HomeScreen() {
             />
           </View>
 
-          <WatchHistory onItemSelect={(item) => console.log('Selected item:', item)} />
+          <WatchHistory onItemSelect={(item) => handleWatchHistoryItemPress(item)} />
           {activeLists.map((list, i) => (
             <PosterList
               key={`${filter}-${i}`}

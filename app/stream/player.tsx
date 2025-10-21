@@ -156,6 +156,10 @@ const MediaPlayerScreen: React.FC = () => {
   };
 
   const saveToWatchHistory = async () => {
+    const minProgressAsWatched = 90;
+    if (progress > minProgressAsWatched) {
+      return;
+    }
     try {
       const historyItem: WatchHistoryItem = {
         title: title as string,
@@ -166,27 +170,40 @@ const MediaPlayerScreen: React.FC = () => {
         type: type as string,
         season: season as string,
         episode: episode as string,
-        useVlcKit: useVlcKit as string,
+        useVlcKit: forceVlc ? 'true' : (useVlcKit as string || 'false'),
         timestamp: Date.now()
       };
 
       console.log('Saving to watch history:', historyItem);
-      // Get existing history
+
       const existingHistoryJson = await storageService.getItem(WATCH_HISTORY_KEY);
       let history: WatchHistoryItem[] = existingHistoryJson ? JSON.parse(existingHistoryJson) : [];
 
-      // Remove any existing entry with the same videoUrl to avoid duplicates
-      history = history.filter(item => item.videoUrl !== videoUrl);
+      const existingIndex = history.findIndex(item =>
+        item.imdbid === imdbid &&
+        item.type === type &&
+        item.season === season &&
+        item.episode === episode
+      );
 
-      // Add new item at the beginning (most recent first)
-      history.unshift(historyItem);
+      if (existingIndex !== -1) {
+        history[existingIndex] = {
+          ...history[existingIndex],
+          videoUrl: videoUrl as string,
+          progress: progress,
+          timestamp: Date.now()
+        };
 
-      // Keep only the last 100 items
+        const [updatedItem] = history.splice(existingIndex, 1);
+        history.unshift(updatedItem);
+      } else {
+        history.unshift(historyItem);
+      }
+
       if (history.length > MAX_HISTORY_ITEMS) {
         history = history.slice(0, MAX_HISTORY_ITEMS);
       }
 
-      // Save back to AsyncStorage
       await storageService.setItem(WATCH_HISTORY_KEY, JSON.stringify(history));
       console.log('Watch history saved successfully');
     } catch (error) {
@@ -220,7 +237,7 @@ const MediaPlayerScreen: React.FC = () => {
       setForceVlc(false);
     }
   };
-  
+
   function getPlayer() {
     if (Platform.OS === "web") {
       return require("../../components/nativeplayer").MediaPlayer;
