@@ -26,6 +26,11 @@ interface UpdateProgessEvent {
 interface WatchHistoryItem {
   title: string;
   videoUrl: string;
+  imdbid: string;
+  type: string;
+  season: string;
+  episode: string;
+  useVlcKit: string;
   progress: number;
   artwork: string;
   timestamp: number;
@@ -157,6 +162,11 @@ const MediaPlayerScreen: React.FC = () => {
         videoUrl: videoUrl as string,
         progress: progress,
         artwork: artwork,
+        imdbid: imdbid as string,
+        type: type as string,
+        season: season as string,
+        episode: episode as string,
+        useVlcKit: useVlcKit as string,
         timestamp: Date.now()
       };
 

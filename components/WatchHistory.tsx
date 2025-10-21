@@ -13,6 +13,11 @@ import { View, Text } from './Themed';
 interface WatchHistoryItem {
   title: string;
   videoUrl: string;
+  imdbid: string;
+  type: string;
+  season: string;
+  episode: string;
+  useVlcKit: string;
   progress: number;
   artwork: string;
   timestamp: number;
