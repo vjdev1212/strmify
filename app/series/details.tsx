@@ -176,7 +176,7 @@ const SeriesDetails = () => {
   const handleEpisodeSelect = (season: number, episode: number) => {
     router.push({
       pathname: '/stream/list',
-      params: { imdbid: imdbid, tmdbid: moviedbid, type: 'series', name: data.name, season: season, episode: episode },
+      params: { imdbid: imdbid, tmdbid: moviedbid, type: 'series', name: getFormattedName(data, season, episode), season: season, episode: episode },
     });
   };
 
@@ -190,16 +190,10 @@ const SeriesDetails = () => {
     });
   };
 
-  const Divider = () => {
-    const dividerColor = {
-      color: '#ffffff',
-    };
-    return (
-      <View>
-        <Text style={[styles.divider, dividerColor]}>...</Text>
-      </View>
-    )
-  };
+
+  const getFormattedName = (data: any, season: number, episode: number): string | number | (string | number)[] | null | undefined => {
+    return `${data.name} S${String(season).padStart(2, '0')}E${String(episode).padStart(2, '0')}`;
+  }
 
   return (
     <ScrollView showsVerticalScrollIndicator={false} style={styles.container} ref={ref}>
