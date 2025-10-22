@@ -24,13 +24,14 @@ interface WatchHistoryItem {
 
 interface WatchHistoryProps {
   onItemSelect: (item: WatchHistoryItem) => void;
+  type: 'all' | 'movie' | 'series';
 }
 
 const WATCH_HISTORY_KEY = StorageKeys.WATCH_HISTORY_KEY;
 const CARD_WIDTH = 200;
 const CARD_HEIGHT = (CARD_WIDTH * 9) / 16;
 
-const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect }) => {
+const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
   const [history, setHistory] = useState<WatchHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -44,7 +45,14 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect }) => {
       console.log('Loaded watch history JSON:', historyJson);
       if (historyJson) {
         const parsedHistory: WatchHistoryItem[] = JSON.parse(historyJson);
-        setHistory(parsedHistory);
+        if(type === 'all') {
+          setHistory(parsedHistory);
+          return;
+        }
+        const filteredHistory = type
+          ? parsedHistory.filter(item => item.type === type)
+          : parsedHistory;
+        setHistory(filteredHistory);
       }
     } catch (error) {
       console.error('Failed to load watch history:', error);

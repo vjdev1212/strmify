@@ -18,14 +18,7 @@ import WatchHistory from '@/components/WatchHistory';
 
 export default function HomeScreen() {
   const [filter, setFilter] = useState<'all' | 'movies' | 'series'>('all');
-  const [refreshKey, setRefreshKey] = useState(0);
 
-  useFocusEffect(
-    React.useCallback(() => {
-      setRefreshKey(prev => prev + 1);
-    }, [])
-  );
-  
   const filters = [
     { key: 'all', label: 'All', icon: 'apps' },
     { key: 'movies', label: 'Movies', icon: 'film-outline' },
@@ -116,6 +109,12 @@ export default function HomeScreen() {
 
 
 
+  function getWatchHistoryType(filter: string): "all" | "series" | "movie" {
+    if (filter === 'movies') return 'movie';
+    if (filter === 'series') return 'series';
+    return 'all';
+  }
+
   return (
     <View style={[styles.container]}>
       <StatusBar />
@@ -167,7 +166,7 @@ export default function HomeScreen() {
             />
           </View>
 
-          <WatchHistory onItemSelect={(item) => handleWatchHistoryItemPress(item)} />
+          <WatchHistory type={getWatchHistoryType(filter)} onItemSelect={(item) => handleWatchHistoryItemPress(item)} />
           {activeLists.map((list, i) => (
             <PosterList
               key={`${filter}-${i}`}
