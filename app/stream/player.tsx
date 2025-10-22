@@ -162,7 +162,6 @@ const MediaPlayerScreen: React.FC = () => {
       const existingHistoryJson = await storageService.getItem(WATCH_HISTORY_KEY);
       let history: WatchHistoryItem[] = existingHistoryJson ? JSON.parse(existingHistoryJson) : [];
 
-      // Remove if progress >= minProgressAsWatched%
       if (progress >= minProgressAsWatched) {
         history = history.filter(item =>
           !(item.imdbid === imdbid &&
@@ -171,7 +170,6 @@ const MediaPlayerScreen: React.FC = () => {
             item.episode === episode)
         );
         await storageService.setItem(WATCH_HISTORY_KEY, JSON.stringify(history));
-        console.log('Removed from watch history (watched ≥ 90%)');
         return;
       }
 
