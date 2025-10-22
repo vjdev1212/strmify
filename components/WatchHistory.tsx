@@ -53,10 +53,6 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect }) => {
     }
   };
 
-  const formatProgress = (progress: number): string => {
-    return `${Math.round(progress * 100)}%`;
-  };
-
   if (isLoading) {
     return null;
   }
@@ -96,14 +92,14 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect }) => {
                     <View
                       style={[
                         styles.progressBar,
-                        { width: `${item.progress * 100}%` },
+                        { width: `${item.progress}%` },
                       ]} />
                   </View>
                 </View>
 
                 <View style={styles.progressBadge}>
                   <Text style={styles.progressText}>
-                    {formatProgress(item.progress)}
+                    {item.progress}%
                   </Text>
                 </View>
               </View>
