@@ -477,7 +477,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
 
         timers.clearTimer('hideControls');
 
-        // Only set auto-hide timer if not prevented
         if (!uiState.preventAutoHide) {
             timers.setTimer('hideControls', () => {
                 Animated.timing(controlsOpacity, {
@@ -628,6 +627,19 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         }
     }), [playerState, settings, bufferOpacity, timers, progressBarValue, controlsOpacity, uiState]);
 
+    useEffect(() => {
+        if (!updateProgress || !playerState.isReady || playerState.duration <= 0) return;
+
+        const progressInterval = setInterval(() => {
+            if (playerState.currentTime !== undefined && playerState.duration > 0) {
+                const progress = Math.min((playerState.currentTime / playerState.duration) * 100, 100);
+                updateProgress({ progress });
+            }
+        }, 60 * 1000);
+
+        return () => clearInterval(progressInterval);
+    }, [playerState.isReady, playerState.duration, playerState.currentTime, updateProgress]);
+
     const controlActions = useMemo(() => ({
         togglePlayPause: async () => {
             if (!stateRefs.current.isReady) return;
@@ -712,27 +724,26 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         }
     }), [playerState, showControlsTemporarily, controlActions, progressBarValue]);
 
-    // Selection handlers
     const selectSubtitle = useCallback(async (index: number) => {
         console.log('On Select Subtitle:', index);
         await playHaptic();
         settings.setSelectedSubtitle(index);
         showControlsTemporarily();
-    }, [settings, showControlsTemporarily, playHaptic]);
+    }, [settings, showControlsTemporarily]);
 
     const selectAudioTrack = useCallback(async (index: number) => {
         console.log('On Select Audio Track:', index);
         await playHaptic();
         settings.setSelectedAudioTrack(index);
         showControlsTemporarily();
-    }, [settings, showControlsTemporarily, playHaptic]);
+    }, [settings, showControlsTemporarily]);
 
     const changePlaybackSpeed = useCallback(async (speed: number) => {
         console.log('On Change Playback speed');
         await playHaptic();
         settings.setPlaybackSpeed(speed);
         showControlsTemporarily();
-    }, [settings, showControlsTemporarily, playHaptic]);
+    }, [settings, showControlsTemporarily]);
 
     const handleOverlayPress = useCallback(() => {
         if (uiState.showControls) {
@@ -748,25 +759,22 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         }
     }, [uiState, controlsOpacity, showControlsTemporarily]);
 
-    // Gesture-based seeking functions
     const handleSeekForward = useCallback(async (seconds: number) => {
         if (!stateRefs.current.isReady || stateRefs.current.duration <= 0) return;
 
         await playHaptic();
         controlActions.skipTime(seconds);
 
-        // Show feedback
         setSeekFeedback({
             show: true,
             direction: 'forward',
             seconds
         });
 
-        // Hide feedback after animation
         setTimeout(() => {
             setSeekFeedback(prev => ({ ...prev, show: false }));
         }, 50);
-    }, [controlActions, playHaptic]);
+    }, [controlActions]);
 
     const handleSeekBackward = useCallback(async (seconds: number) => {
         if (!stateRefs.current.isReady || stateRefs.current.duration <= 0) return;
@@ -774,20 +782,17 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         await playHaptic();
         controlActions.skipTime(-seconds);
 
-        // Show feedback
         setSeekFeedback({
             show: true,
             direction: 'backward',
             seconds
         });
 
-        // Hide feedback after animation
         setTimeout(() => {
             setSeekFeedback(prev => ({ ...prev, show: false }));
         }, 50);
-    }, [controlActions, playHaptic]);
+    }, [controlActions]);
 
-    // Gesture handling
     const gestureHandling = useGestureHandling(
         handleSeekForward,
         handleSeekBackward,
@@ -796,7 +801,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         playerState.isReady
     );
 
-    // Optimized display calculations
     const displayValues = useMemo(() => {
         const displayTime = playerState.isDragging ?
             playerState.dragPosition * playerState.duration :
@@ -814,7 +818,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         playerState.duration
     ]);
 
-    // Memoized components to prevent unnecessary re-renders
     const ErrorComponent = useMemo(() => {
         if (!playerState.error) return null;
 
@@ -824,8 +827,8 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                     style={styles.errorBackButton}
                     onPress={async () => {
                         await playHaptic();
-                        const progress = playerState.duration > 0 ? (playerState.currentTime / playerState.duration) * 100 : 0;
-                        updateProgress({ progress });
+                        const progress = playerState.duration > 0 ? Math.min((playerState.currentTime / playerState.duration) * 100, 100) : 0;
+                        if (updateProgress) updateProgress({ progress });
                         back({ message: '', player: "vlc" });
                     }}
                 >
@@ -846,7 +849,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                 </TouchableOpacity>
             </View>
         );
-    }, [playerState.error, playHaptic, back, playerState]);
+    }, [playerState.error, playerState, updateProgress, back]);
 
     const ArtworkComponent = useMemo(() => {
         if (!artwork || playerState.hasStartedPlaying || playerState.error) return null;
@@ -965,8 +968,8 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                         style={styles.backButton}
                         onPress={async () => {
                             await playHaptic();
-                            const progress = playerState.duration > 0 ? (playerState.currentTime / playerState.duration) * 100 : 0;
-                            updateProgress({ progress });
+                            const progress = playerState.duration > 0 ? Math.min((playerState.currentTime / playerState.duration) * 100, 100) : 0;
+                            if (updateProgress) updateProgress({ progress });
                             back({ message: '', player: "vlc" });
                         }}
                     >
@@ -975,7 +978,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                 </View>
             )}
 
-            {/* Touch area for gesture controls */}
             {!playerState.error && (
                 <TouchableOpacity
                     style={styles.touchArea}
@@ -986,26 +988,22 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
 
             {SubtitleComponent}
 
-            {/* Seek feedback indicators */}
             <SeekFeedback
                 show={seekFeedback.show}
                 direction={seekFeedback.direction}
                 seconds={seekFeedback.seconds}
             />
 
-            {/* Controls overlay */}
             {uiState.showControls && !playerState.error && (
                 <Animated.View
                     style={[styles.controlsOverlay, { opacity: controlsOpacity }]}
                     pointerEvents="box-none"
                 >
-                    {/* Top controls */}
-                    <View style={styles.topControls}
-                    >
+                    <View style={styles.topControls}>
                         <TouchableOpacity style={styles.backButton} onPress={async () => {
                             await playHaptic();
-                            const progress = playerState.duration > 0 ? (playerState.currentTime / playerState.duration) * 100 : 0;
-                            updateProgress({ progress });
+                            const progress = playerState.duration > 0 ? Math.min((playerState.currentTime / playerState.duration) * 100, 100) : 0;
+                            if (updateProgress) updateProgress({ progress });
                             back({ message: '', player: "vlc" });
                         }}>
                             <Ionicons name="chevron-back" size={28} color="white" />
@@ -1153,7 +1151,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                         </View>
                     </View>
 
-                    {/* Center controls - Hidden during buffering */}
                     {!playerState.isBuffering && (
                         <View style={styles.centerControls}>
                             <TouchableOpacity
@@ -1194,9 +1191,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                         </View>
                     )}
 
-                    {/* Bottom controls */}
-                    <View style={styles.bottomControls}
-                    >
+                    <View style={styles.bottomControls}>
                         <View style={styles.timeContainer}>
                             <Text style={styles.timeText}>
                                 {formatTime(displayValues.displayTime)}
@@ -1229,6 +1224,5 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         </View>
     );
 };
-
 
 export const MediaPlayer = React.memo(VlcMediaPlayerComponent);
