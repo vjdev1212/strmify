@@ -229,7 +229,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     // Additional polling effect to ensure time updates
     useEffect(() => {
         if (!player || !isPlaying || isDragging || isSeeking.current) return;
-        
+
         const pollInterval = setInterval(() => {
             if (!isSeeking.current && player.currentTime !== undefined) {
                 setCurrentTime(player.currentTime);
@@ -238,9 +238,22 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 setDuration(player.duration);
             }
         }, 100);
-        
+
         return () => clearInterval(pollInterval);
     }, [player, isPlaying, isDragging, duration]);
+
+    useEffect(() => {
+        if (!updateProgress || !isReady || duration <= 0) return;
+
+        const progressInterval = setInterval(() => {
+            if (player.currentTime !== undefined && duration > 0) {
+                const progress = (player.currentTime / duration) * 100;
+                updateProgress({ progress: Math.min(progress, 100) });
+            }
+        }, 60 * 1000);
+
+        return () => clearInterval(progressInterval);
+    }, [player, isReady, duration, updateProgress]);
 
     const statusChange = useEvent(player, "statusChange");
     useEffect(() => {
