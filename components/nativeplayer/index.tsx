@@ -20,7 +20,7 @@ const MenuWrapper: React.FC<any> = (props) => {
 };
 
 export const MediaPlayer: React.FC<MediaPlayerProps> = ({
-    videoUrl, title, back: onBack, artwork, subtitles = [], openSubtitlesClient, switchMediaPlayer, updateProgress
+    videoUrl, title, back: onBack, progress, artwork, subtitles = [], openSubtitlesClient, switchMediaPlayer, updateProgress
 }) => {
     const videoRef = useRef<VideoView>(null);
     const shouldAutoHideControls = useRef(true);
@@ -50,6 +50,14 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         player.muted = settings.isMuted;
         player.playbackRate = settings.playbackSpeed;
     });
+
+    useEffect(() => {
+        if (playerState.isReady && progress && progress > 0 && progress < 1 && player.duration > 0) {
+            const seekTime = progress * player.duration;
+            player.currentTime = seekTime;
+            playerState.setCurrentTime(seekTime);
+        }
+    }, [playerState.isReady, player.duration]);
 
     const showControlsTemporarily = useCallback(() => {
         uiState.setShowControls(true);
