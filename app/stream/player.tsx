@@ -1,5 +1,5 @@
 import OpenSubtitlesClient, { SubtitleResult } from "@/clients/opensubtitles";
-import { Subtitle } from "@/components/nativeplayer/models";
+import { Subtitle } from "@/components/coreplayer/models";
 import { getLanguageName } from "@/utils/Helpers";
 import { StorageKeys, storageService } from "@/utils/StorageService";
 import { useLocalSearchParams, useRouter } from "expo-router";

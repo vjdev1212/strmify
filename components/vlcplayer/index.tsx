@@ -1,134 +1,33 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
-import {
-    View,
-    Text,
-    TouchableOpacity,
-    Animated,
-    StatusBar,
-    ActivityIndicator,
-    Platform,
-    Image,
-} from "react-native";
-import { PlayerResizeMode, VLCPlayer } from 'react-native-vlc-media-player';
-import * as ScreenOrientation from "expo-screen-orientation";
+import { TouchableOpacity, Animated, Platform } from "react-native";
+import { VLCPlayer } from 'react-native-vlc-media-player';
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import Slider from '@react-native-assets/slider';
 import { MenuView } from '@react-native-menu/menu';
 import ImmersiveMode from "react-native-immersive-mode";
-import { showAlert } from "@/utils/platform";
-import { MediaPlayerProps, DownloadResponse } from "./models";
-import { formatTime, playHaptic } from "./utils";
-import { parseSubtitleFile } from "./subtitle";
-import { styles } from "./styles";
+import { View, Text } from "../Themed";
+import { playHaptic } from "../coreplayer/utils";
+import { styles } from "../coreplayer/styles";
+import { ArtworkBackground, BackButton, BufferingIndicator, buildAudioActions, buildSpeedActions, buildSubtitleActions, calculateProgress, calculateSliderValues, CenterControls, cleanupOrientation, CONSTANTS, ErrorDisplay, findActiveSubtitle, handleSubtitleError, hideControls, loadSubtitle, performSeek, ProgressBar, SeekFeedback, setupOrientation, SubtitleDisplay, SubtitleSource, usePlayerAnimations, usePlayerSettings, usePlayerState, useSubtitleState, useTimers, useUIState } from "../coreplayer";
+import { MediaPlayerProps } from "../coreplayer/models";
 
-// Optimized state management with reduced re-renders
-const usePlayerState = () => {
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [currentTime, setCurrentTime] = useState(0);
-    const [duration, setDuration] = useState(0);
-    const [isBuffering, setIsBuffering] = useState(true);
+// Extended player state for VLC
+const useVLCPlayerState = () => {
+    const baseState = usePlayerState();
     const [isPaused, setIsPaused] = useState(false);
-    const [isReady, setIsReady] = useState(false);
-    const [isDragging, setIsDragging] = useState(false);
-    const [dragPosition, setDragPosition] = useState(0);
     const [error, setError] = useState<string | null>(null);
     const [showBufferingLoader, setShowBufferingLoader] = useState(false);
     const [hasStartedPlaying, setHasStartedPlaying] = useState(false);
     const [isSeeking, setIsSeeking] = useState(false);
-
-    return {
-        isPlaying, setIsPlaying,
-        currentTime, setCurrentTime,
-        duration, setDuration,
-        isBuffering, setIsBuffering,
-        isPaused, setIsPaused,
-        isReady, setIsReady,
-        isDragging, setIsDragging,
-        dragPosition, setDragPosition,
-        error, setError,
-        showBufferingLoader, setShowBufferingLoader,
-        hasStartedPlaying, setHasStartedPlaying,
-        isSeeking, setIsSeeking
-    };
-};
-
-const useSubtitleState = () => {
-    const [currentSubtitle, setCurrentSubtitle] = useState<string>('');
-    const [parsedSubtitles, setParsedSubtitles] = useState<any[]>([]);
-    const [isLoadingSubtitles, setIsLoadingSubtitles] = useState(false);
-
-    return {
-        currentSubtitle, setCurrentSubtitle,
-        parsedSubtitles, setParsedSubtitles,
-        isLoadingSubtitles, setIsLoadingSubtitles
-    };
-};
-
-const useUIState = () => {
-    const [showControls, setShowControls] = useState(false);
-    const [preventAutoHide, setPreventAutoHide] = useState(false);
-
-    return {
-        showControls, setShowControls,
-        preventAutoHide, setPreventAutoHide
-    };
-};
-
-const usePlayerSettings = () => {
-    const [isMuted, setIsMuted] = useState(false);
-    const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
-    const [resizeMode, setResizeMode] = useState<PlayerResizeMode>('fill');
-    const [brightness, setBrightness] = useState<number>(1);
-    const [selectedSubtitle, setSelectedSubtitle] = useState<number>(-1);
-    const [selectedAudioTrack, setSelectedAudioTrack] = useState<number>(1);
     const [availableAudioTracks, setAvailableAudioTracks] = useState<any[]>([]);
 
     return {
-        isMuted, setIsMuted,
-        playbackSpeed, setPlaybackSpeed,
-        resizeMode, setResizeMode,
-        brightness, setBrightness,
-        selectedSubtitle, setSelectedSubtitle,
-        selectedAudioTrack, setSelectedAudioTrack,
+        ...baseState,
+        isPaused, setIsPaused,
+        error, setError,
+        showBufferingLoader, setShowBufferingLoader,
+        hasStartedPlaying, setHasStartedPlaying,
+        isSeeking, setIsSeeking,
         availableAudioTracks, setAvailableAudioTracks
-    };
-};
-
-// Optimized timer management
-const useTimers = () => {
-    const timersRef = useRef({
-        hideControls: null as ReturnType<typeof setTimeout> | null,
-        resizeModeLabel: null as ReturnType<typeof setTimeout> | null,
-        buffering: null as ReturnType<typeof setTimeout> | null,
-        controlsDebounce: null as ReturnType<typeof setTimeout> | null,
-        progressDebounce: null as ReturnType<typeof setTimeout> | null,
-        seekDebounce: null as ReturnType<typeof setTimeout> | null,
-        bufferingTimeout: null as ReturnType<typeof setTimeout> | null,
-        doubleTap: null as ReturnType<typeof setTimeout> | null
-    });
-
-    const clearTimer = useCallback((timerName: keyof typeof timersRef.current) => {
-        if (timersRef.current[timerName]) {
-            clearTimeout(timersRef.current[timerName]!);
-            timersRef.current[timerName] = null;
-        }
-    }, []);
-
-    const setTimer = useCallback((timerName: keyof typeof timersRef.current, callback: () => void, delay: number) => {
-        clearTimer(timerName);
-        timersRef.current[timerName] = setTimeout(callback, delay);
-    }, [clearTimer]);
-
-    const clearAllTimers = useCallback(() => {
-        Object.keys(timersRef.current).forEach(key => {
-            clearTimer(key as keyof typeof timersRef.current);
-        });
-    }, [clearTimer]);
-
-    return {
-        clearTimer,
-        setTimer,
-        clearAllTimers
     };
 };
 
@@ -177,75 +76,6 @@ const useGestureHandling = (
     return { handleTouchablePress };
 };
 
-// Seek feedback component
-const SeekFeedback: React.FC<{
-    show: boolean;
-    direction: 'forward' | 'backward';
-    seconds: number;
-}> = React.memo(({ show, direction, seconds }) => {
-    const fadeAnim = useRef(new Animated.Value(0)).current;
-    const scaleAnim = useRef(new Animated.Value(0.8)).current;
-
-    useEffect(() => {
-        if (show) {
-            Animated.parallel([
-                Animated.timing(fadeAnim, {
-                    toValue: 1,
-                    duration: 200,
-                    useNativeDriver: true,
-                }),
-                Animated.spring(scaleAnim, {
-                    toValue: 1,
-                    tension: 100,
-                    friction: 8,
-                    useNativeDriver: true,
-                })
-            ]).start(() => {
-                setTimeout(() => {
-                    Animated.parallel([
-                        Animated.timing(fadeAnim, {
-                            toValue: 0,
-                            duration: 300,
-                            useNativeDriver: true,
-                        }),
-                        Animated.timing(scaleAnim, {
-                            toValue: 0.8,
-                            duration: 300,
-                            useNativeDriver: true,
-                        })
-                    ]).start();
-                }, 800);
-            });
-        }
-    }, [show, fadeAnim, scaleAnim]);
-
-    if (!show) return null;
-
-    return (
-        <Animated.View
-            style={[
-                styles.seekFeedback,
-                {
-                    opacity: fadeAnim,
-                    transform: [{ scale: scaleAnim }],
-                    left: direction === 'backward' ? '20%' : undefined,
-                    right: direction === 'forward' ? '20%' : undefined,
-                }
-            ]}
-            pointerEvents="none"
-        >
-            <View style={styles.seekFeedbackContent}>
-                <Ionicons
-                    name={direction === 'forward' ? 'play-forward' : 'play-back'}
-                    size={32}
-                    color="white"
-                />
-                <Text style={styles.seekFeedbackText}>{seconds}s</Text>
-            </View>
-        </Animated.View>
-    );
-});
-
 const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
     videoUrl,
     title,
@@ -256,13 +86,14 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
     updateProgress
 }) => {
     const playerRef = useRef<VLCPlayer>(null);
-    const playerState = usePlayerState();
+    const playerState = useVLCPlayerState();
     const uiState = useUIState();
     const subtitleState = useSubtitleState();
     const settings = usePlayerSettings();
     const timers = useTimers();
+    const animations = usePlayerAnimations();
+    
     const [videoScale, setVideoScale] = useState({ x: 1.0, y: 1.0 });
-
     const [seekFeedback, setSeekFeedback] = useState<{
         show: boolean;
         direction: 'forward' | 'backward';
@@ -282,54 +113,20 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         duration: 0
     });
 
-    useEffect(() => {
-        stateRefs.current.isPlaying = playerState.isPlaying;
-    }, [playerState.isPlaying]);
+    // Update refs
+    useEffect(() => { stateRefs.current.isPlaying = playerState.isPlaying; }, [playerState.isPlaying]);
+    useEffect(() => { stateRefs.current.isReady = playerState.isReady; }, [playerState.isReady]);
+    useEffect(() => { stateRefs.current.isDragging = playerState.isDragging; }, [playerState.isDragging]);
+    useEffect(() => { stateRefs.current.isSeeking = playerState.isSeeking; }, [playerState.isSeeking]);
+    useEffect(() => { stateRefs.current.currentTime = playerState.currentTime; }, [playerState.currentTime]);
+    useEffect(() => { stateRefs.current.duration = playerState.duration; }, [playerState.duration]);
 
-    useEffect(() => {
-        stateRefs.current.isReady = playerState.isReady;
-    }, [playerState.isReady]);
-
-    useEffect(() => {
-        stateRefs.current.isDragging = playerState.isDragging;
-    }, [playerState.isDragging]);
-
-    useEffect(() => {
-        stateRefs.current.isSeeking = playerState.isSeeking;
-    }, [playerState.isSeeking]);
-
-    useEffect(() => {
-        stateRefs.current.currentTime = playerState.currentTime;
-    }, [playerState.currentTime]);
-
-    useEffect(() => {
-        stateRefs.current.duration = playerState.duration;
-    }, [playerState.duration]);
-
-    const controlsOpacity = useRef(new Animated.Value(1)).current;
     const progressBarValue = useRef(new Animated.Value(0)).current;
-    const bufferOpacity = useRef(new Animated.Value(1)).current;
-    const resizeModeLabelOpacity = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
-        const setupOrientation = async () => {
-            try {
-                if (Platform.OS !== 'web') {
-                    await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
-                    StatusBar.setHidden(true);
-                }
-            } catch (error) {
-                console.warn("Failed to set orientation:", error);
-            }
-        };
-
         setupOrientation();
-
         return () => {
-            if (Platform.OS !== 'web') {
-                ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
-                StatusBar.setHidden(false);
-            }
+            cleanupOrientation();
             timers.clearAllTimers();
         };
     }, []);
@@ -345,150 +142,48 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         };
     }, []);
 
+    // Load subtitles
     useEffect(() => {
         if (subtitles.length > 0 && settings.selectedSubtitle >= 0 && settings.selectedSubtitle < subtitles.length) {
-            const selectedSub = subtitles[settings.selectedSubtitle];
-
-            if (selectedSub.fileId && openSubtitlesClient) {
+            const loadSub = async () => {
                 subtitleState.setIsLoadingSubtitles(true);
-                console.log('Downloading subtitle from OpenSubtitles, fileId:', selectedSub.fileId);
-
-                openSubtitlesClient.downloadSubtitle(String(selectedSub.fileId))
-                    .then(async (response) => {
-                        if (('status' in response && response.status !== 200) ||
-                            ('success' in response && response.success === false) ||
-                            ('error' in response && response.error)) {
-
-                            let errorMessage: string = 'Unknown error occurred';
-                            if ('error' in response && response.error) {
-                                errorMessage = response.error as string;
-                            } else if ('message' in response && response.message) {
-                                errorMessage = response.message as string;
-                            }
-
-                            console.error('OpenSubtitles API error:', errorMessage);
-                            subtitleState.setIsLoadingSubtitles(false);
-                            subtitleState.setParsedSubtitles([]);
-                            showAlert("Subtitle Error", `Failed to download subtitle: ${errorMessage}`);
-                            return;
-                        }
-
-                        const downloadResponse = response as DownloadResponse;
-                        console.log('Subtitle download response:', downloadResponse);
-
-                        if (!downloadResponse.link) {
-                            throw new Error('No download link provided');
-                        }
-
-                        const subtitleResponse = await fetch(downloadResponse.link);
-                        if (!subtitleResponse.ok) {
-                            throw new Error(`HTTP error! status: ${subtitleResponse.status}`);
-                        }
-
-                        const subtitleContent = await subtitleResponse.text();
-                        const parsed = parseSubtitleFile(subtitleContent);
-
-                        subtitleState.setParsedSubtitles(parsed);
-                        subtitleState.setIsLoadingSubtitles(false);
-                    })
-                    .catch(error => {
-                        console.error('Failed to download/parse subtitle:', error);
-                        subtitleState.setIsLoadingSubtitles(false);
-                        subtitleState.setParsedSubtitles([]);
-                        showAlert("Subtitle Error", `Failed to load subtitle: ${error.message}`);
-                    });
-            }
-            else if (selectedSub.url && selectedSub.url !== '' && !selectedSub.url.includes('opensubtitles.org')) {
-                subtitleState.setIsLoadingSubtitles(true);
-                console.log('Loading subtitle from direct URL:', selectedSub.url);
-
-                fetch(selectedSub.url)
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
-                        return response.text();
-                    })
-                    .then(subtitleContent => {
-                        console.log('Subtitle content loaded, length:', subtitleContent.length);
-                        console.log('First 200 chars:', subtitleContent.substring(0, 200));
-
-                        const parsed = parseSubtitleFile(subtitleContent);
-                        console.log('Parsed subtitles count:', parsed.length);
-
-                        subtitleState.setParsedSubtitles(parsed);
-                        subtitleState.setIsLoadingSubtitles(false);
-                    })
-                    .catch(error => {
-                        console.error('Failed to load subtitles from URL:', error);
-                        subtitleState.setIsLoadingSubtitles(false);
-                        subtitleState.setParsedSubtitles([]);
-                        showAlert("Subtitle Error", `Failed to load subtitle: ${error.message}`);
-                    });
-            } else {
-                console.warn('No valid fileId or direct URL for subtitle:', selectedSub);
-                subtitleState.setParsedSubtitles([]);
-                subtitleState.setCurrentSubtitle('');
-            }
+                try {
+                    const parsed = await loadSubtitle(subtitles[settings.selectedSubtitle] as SubtitleSource, openSubtitlesClient);
+                    subtitleState.setParsedSubtitles(parsed);
+                } catch (error: any) {
+                    handleSubtitleError(error);
+                    subtitleState.setParsedSubtitles([]);
+                } finally {
+                    subtitleState.setIsLoadingSubtitles(false);
+                }
+            };
+            loadSub();
         } else {
             subtitleState.setParsedSubtitles([]);
             subtitleState.setCurrentSubtitle('');
         }
     }, [settings.selectedSubtitle, subtitles, openSubtitlesClient]);
 
-    const updateSubtitle = useMemo(() => {
-        return (currentTime: number, parsedSubtitles: any[], currentSubtitle: string) => {
-            if (parsedSubtitles.length === 0) {
-                if (currentSubtitle !== '') {
-                    return '';
-                }
-                return currentSubtitle;
-            }
-
-            const activeSubtitle = parsedSubtitles.find(
-                sub => currentTime >= sub.start && currentTime <= sub.end
-            );
-
-            const newSubtitleText = activeSubtitle ? activeSubtitle.text : '';
-
-            if (newSubtitleText !== currentSubtitle) {
-                return newSubtitleText;
-            }
-
-            return currentSubtitle;
-        };
-    }, []);
-
+    // Update subtitle display
     useEffect(() => {
-        const newSubtitle = updateSubtitle(
-            playerState.currentTime,
-            subtitleState.parsedSubtitles,
-            subtitleState.currentSubtitle
-        );
-
+        const newSubtitle = findActiveSubtitle(playerState.currentTime, subtitleState.parsedSubtitles);
         if (newSubtitle !== subtitleState.currentSubtitle) {
             subtitleState.setCurrentSubtitle(newSubtitle);
         }
-    }, [playerState.currentTime, subtitleState.parsedSubtitles, updateSubtitle]);
+    }, [playerState.currentTime, subtitleState.parsedSubtitles]);
 
     const showControlsTemporarily = useCallback(() => {
         uiState.setShowControls(true);
-        controlsOpacity.setValue(1);
+        animations.controlsOpacity.setValue(1);
 
         timers.clearTimer('hideControls');
 
         if (!uiState.preventAutoHide) {
             timers.setTimer('hideControls', () => {
-                Animated.timing(controlsOpacity, {
-                    toValue: 0,
-                    duration: 300,
-                    useNativeDriver: true,
-                }).start(() => {
-                    uiState.setShowControls(false);
-                });
-            }, 3000);
+                hideControls(uiState.setShowControls, animations.controlsOpacity);
+            }, CONSTANTS.CONTROLS_AUTO_HIDE_DELAY);
         }
-    }, [controlsOpacity, uiState.preventAutoHide, uiState.setShowControls, timers]);
+    }, [animations.controlsOpacity, uiState.preventAutoHide, uiState.setShowControls, timers]);
 
     const vlcHandlers = useMemo(() => ({
         onLoad: (data: any) => {
@@ -500,18 +195,18 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
             playerState.setIsPlaying(true);
             playerState.setShowBufferingLoader(false);
             playerState.setIsSeeking(false);
-            controlsOpacity.setValue(1);
+            animations.controlsOpacity.setValue(1);
 
             timers.clearTimer('hideControls');
 
             if (data?.audioTracks) {
-                settings.setAvailableAudioTracks(data.audioTracks);
+                playerState.setAvailableAudioTracks(data.audioTracks);
             }
             if (data?.duration) {
                 playerState.setDuration(data.duration / 1000);
             }
 
-            Animated.timing(bufferOpacity, {
+            Animated.timing(animations.bufferOpacity, {
                 toValue: 0,
                 duration: 300,
                 useNativeDriver: true,
@@ -549,7 +244,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                     if (stateRefs.current.isReady) {
                         playerState.setIsBuffering(true);
                         playerState.setShowBufferingLoader(true);
-                        Animated.timing(bufferOpacity, {
+                        Animated.timing(animations.bufferOpacity, {
                             toValue: 1,
                             duration: 150,
                             useNativeDriver: true,
@@ -561,7 +256,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                 playerState.setShowBufferingLoader(false);
                 playerState.setIsSeeking(false);
 
-                Animated.timing(bufferOpacity, {
+                Animated.timing(animations.bufferOpacity, {
                     toValue: 0,
                     duration: 300,
                     useNativeDriver: true,
@@ -581,7 +276,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
 
             timers.clearTimer('bufferingTimeout');
 
-            Animated.timing(bufferOpacity, {
+            Animated.timing(animations.bufferOpacity, {
                 toValue: 0,
                 duration: 300,
                 useNativeDriver: true,
@@ -623,16 +318,15 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
             playerState.setIsSeeking(false);
 
             timers.clearTimer('bufferingTimeout');
-            showAlert("Video Error", errorMessage);
         }
-    }), [playerState, settings, bufferOpacity, timers, progressBarValue, controlsOpacity, uiState]);
+    }), [playerState, animations.bufferOpacity, timers, progressBarValue, animations.controlsOpacity, uiState]);
 
     useEffect(() => {
         if (!updateProgress || !playerState.isReady || playerState.duration <= 0) return;
 
         const progressInterval = setInterval(() => {
             if (playerState.currentTime !== undefined && playerState.duration > 0) {
-                const progress = Math.min((playerState.currentTime / playerState.duration) * 100, 100);
+                const progress = calculateProgress(playerState.currentTime, playerState.duration);
                 updateProgress({ progress });
             }
         }, 60 * 1000);
@@ -658,7 +352,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         seekTo: (absoluteSeconds: number) => {
             if (!playerRef.current || stateRefs.current.duration <= 0) return;
 
-            const clampedTime = Math.max(0, Math.min(stateRefs.current.duration, absoluteSeconds));
+            const clampedTime = performSeek(absoluteSeconds, stateRefs.current.duration);
             const position = clampedTime / stateRefs.current.duration;
 
             console.log(`Seeking to: ${clampedTime}s (${(position * 100).toFixed(1)}%)`);
@@ -687,8 +381,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
 
         toggleMute: async () => {
             await playHaptic();
-            const newState = !settings.isMuted;
-            settings.setIsMuted(newState);
+            settings.setIsMuted(!settings.isMuted);
             console.log('On Toggle Mute');
             showControlsTemporarily();
         },
@@ -747,17 +440,11 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
 
     const handleOverlayPress = useCallback(() => {
         if (uiState.showControls) {
-            Animated.timing(controlsOpacity, {
-                toValue: 0,
-                duration: 300,
-                useNativeDriver: true,
-            }).start(() => {
-                uiState.setShowControls(false);
-            });
+            hideControls(uiState.setShowControls, animations.controlsOpacity);
         } else {
             showControlsTemporarily();
         }
-    }, [uiState, controlsOpacity, showControlsTemporarily]);
+    }, [uiState, animations.controlsOpacity, showControlsTemporarily]);
 
     const handleSeekForward = useCallback(async (seconds: number) => {
         if (!stateRefs.current.isReady || stateRefs.current.duration <= 0) return;
@@ -801,93 +488,20 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         playerState.isReady
     );
 
-    const displayValues = useMemo(() => {
-        const displayTime = playerState.isDragging ?
-            playerState.dragPosition * playerState.duration :
-            playerState.currentTime;
-
-        const sliderValue = playerState.isDragging ?
-            playerState.dragPosition :
-            (playerState.duration > 0 ? playerState.currentTime / playerState.duration : 0);
-
-        return { displayTime, sliderValue };
-    }, [
-        playerState.isDragging,
-        playerState.dragPosition,
-        playerState.currentTime,
-        playerState.duration
-    ]);
-
-    const ErrorComponent = useMemo(() => {
-        if (!playerState.error) return null;
-
-        return (
-            <View style={styles.errorContainer}>
-                <TouchableOpacity
-                    style={styles.errorBackButton}
-                    onPress={async () => {
-                        await playHaptic();
-                        const progress = playerState.duration > 0 ? Math.min((playerState.currentTime / playerState.duration) * 100, 100) : 0;
-                        if (updateProgress) updateProgress({ progress });
-                        back({ message: '', player: "vlc" });
-                    }}
-                >
-                    <Ionicons name="chevron-back" size={28} color="white" />
-                </TouchableOpacity>
-
-                <MaterialIcons name="error-outline" size={64} color="#ff6b6b" />
-                <Text style={styles.errorTitle}>Playback Error</Text>
-                <Text style={styles.errorText}>{playerState.error}</Text>
-                <TouchableOpacity style={styles.retryButton} onPress={() => {
-                    playerState.setError(null);
-                    playerState.setIsReady(false);
-                    playerState.setIsBuffering(true);
-                    playerState.setHasStartedPlaying(false);
-                    playerState.setIsSeeking(false);
-                }}>
-                    <Text style={styles.retryButtonText}>Retry</Text>
-                </TouchableOpacity>
-            </View>
-        );
-    }, [playerState.error, playerState, updateProgress, back]);
-
-    const ArtworkComponent = useMemo(() => {
-        if (!artwork || playerState.hasStartedPlaying || playerState.error) return null;
-
-        return (
-            <View style={styles.artworkContainer}>
-                <Image
-                    source={{ uri: artwork }}
-                    style={styles.artworkImage}
-                    resizeMode="cover"
-                />
-                <View style={styles.artworkOverlay} />
-                <View style={styles.artworkLoadingOverlay}>
-                    <ActivityIndicator size="large" color="#535aff" />
-                    <Text style={styles.bufferingText}>Loading...</Text>
-                </View>
-            </View>
-        );
-    }, [artwork, playerState.hasStartedPlaying, playerState.error]);
-
-    const BufferingComponent = useMemo(() => {
-        if (!(playerState.showBufferingLoader || playerState.isBuffering) || playerState.error) return null;
-
-        return (
-            <Animated.View
-                style={[
-                    styles.bufferingContainer,
-                    { opacity: bufferOpacity }
-                ]}
-                pointerEvents="none"
-            >
-                <ActivityIndicator size="large" color="#535aff" />
-                <Text style={styles.bufferingText}>
-                    {playerState.hasStartedPlaying ? "Buffering..." : "Loading..."}
-                </Text>
-            </Animated.View>
-        );
-    }, [playerState.showBufferingLoader, playerState.isBuffering, playerState.error, playerState.hasStartedPlaying, bufferOpacity]);
+    const displayValues = useMemo(() => 
+        calculateSliderValues(
+            playerState.isDragging,
+            playerState.dragPosition,
+            playerState.currentTime,
+            playerState.duration
+        ),
+        [
+            playerState.isDragging,
+            playerState.dragPosition,
+            playerState.currentTime,
+            playerState.duration
+        ]
+    );
 
     const zoomIn = () => {
         setVideoScale(prev => ({
@@ -903,23 +517,23 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         }));
     };
 
-    const SubtitleComponent = useMemo(() => {
-        if (!subtitleState.currentSubtitle || playerState.error) return null;
+    const handleBack = useCallback(async () => {
+        await playHaptic();
+        const progress = calculateProgress(playerState.currentTime, playerState.duration);
+        if (updateProgress) updateProgress({ progress });
+        back({ message: '', player: "vlc" });
+    }, [playerState.currentTime, playerState.duration, updateProgress, back]);
 
-        return (
-            <View style={styles.subtitleContainer} pointerEvents="none">
-                <Text style={styles.subtitleText}>{subtitleState.currentSubtitle}</Text>
-            </View>
-        );
-    }, [subtitleState.currentSubtitle, playerState.error]);
+    const speedActions = buildSpeedActions(settings.playbackSpeed);
+    const subtitleActions = buildSubtitleActions(subtitles as SubtitleSource[], settings.selectedSubtitle, true);
+    const audioActions = buildAudioActions(playerState.availableAudioTracks, settings.selectedAudioTrack);
 
     return (
         <View style={styles.container}>
             {!playerState.error && (
                 <VLCPlayer
                     ref={playerRef}
-                    style={[styles.video,
-                    {
+                    style={[styles.video, {
                         transform: [{ scaleX: videoScale.x }, { scaleY: videoScale.y }]
                     }]}
                     source={{
@@ -958,24 +572,34 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                 />
             )}
 
-            {ErrorComponent}
-            {ArtworkComponent}
-            {BufferingComponent}
+            <ErrorDisplay
+                error={playerState.error}
+                onBack={handleBack}
+                onRetry={() => {
+                    playerState.setError(null);
+                    playerState.setIsReady(false);
+                    playerState.setIsBuffering(true);
+                    playerState.setHasStartedPlaying(false);
+                    playerState.setIsSeeking(false);
+                }}
+            />
+
+            <ArtworkBackground
+                artwork={artwork}
+                isBuffering={playerState.isBuffering}
+                hasStartedPlaying={playerState.hasStartedPlaying}
+                error={!!playerState.error}
+            />
+
+            <BufferingIndicator
+                isBuffering={playerState.showBufferingLoader || playerState.isBuffering}
+                hasStartedPlaying={playerState.hasStartedPlaying}
+                opacity={animations.bufferOpacity}
+                error={!!playerState.error}
+            />
 
             {!playerState.hasStartedPlaying && !playerState.error && (
-                <View style={styles.loadingBackButtonContainer} pointerEvents="box-none">
-                    <TouchableOpacity
-                        style={styles.backButton}
-                        onPress={async () => {
-                            await playHaptic();
-                            const progress = playerState.duration > 0 ? Math.min((playerState.currentTime / playerState.duration) * 100, 100) : 0;
-                            if (updateProgress) updateProgress({ progress });
-                            back({ message: '', player: "vlc" });
-                        }}
-                    >
-                        <Ionicons name="chevron-back" size={28} color="white" />
-                    </TouchableOpacity>
-                </View>
+                <BackButton onPress={handleBack} />
             )}
 
             {!playerState.error && (
@@ -986,7 +610,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                 />
             )}
 
-            {SubtitleComponent}
+            <SubtitleDisplay subtitle={subtitleState.currentSubtitle} error={!!playerState.error} />
 
             <SeekFeedback
                 show={seekFeedback.show}
@@ -996,16 +620,11 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
 
             {uiState.showControls && !playerState.error && (
                 <Animated.View
-                    style={[styles.controlsOverlay, { opacity: controlsOpacity }]}
+                    style={[styles.controlsOverlay, { opacity: animations.controlsOpacity }]}
                     pointerEvents="box-none"
                 >
                     <View style={styles.topControls}>
-                        <TouchableOpacity style={styles.backButton} onPress={async () => {
-                            await playHaptic();
-                            const progress = playerState.duration > 0 ? Math.min((playerState.currentTime / playerState.duration) * 100, 100) : 0;
-                            if (updateProgress) updateProgress({ progress });
-                            back({ message: '', player: "vlc" });
-                        }}>
+                        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
                             <Ionicons name="chevron-back" size={28} color="white" />
                         </TouchableOpacity>
 
@@ -1056,11 +675,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                                     const trackId = parseInt(nativeEvent.event.replace('audio-', ''));
                                     selectAudioTrack(trackId);
                                 }}
-                                actions={settings.availableAudioTracks.map((track) => ({
-                                    id: `audio-${track.id}`,
-                                    title: track.name,
-                                    state: settings.selectedAudioTrack === track.id ? 'on' : 'off'
-                                }))}
+                                actions={audioActions}
                                 themeVariant="dark"
                                 onOpenMenu={() => uiState.setPreventAutoHide(true)}
                                 onCloseMenu={() => {
@@ -1078,36 +693,14 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                                     style={{ zIndex: 1000 }}
                                     title="Subtitles"
                                     onPressAction={({ nativeEvent }) => {
-                                        if (nativeEvent.event === 'off') {
+                                        if (nativeEvent.event === 'subtitle-off') {
                                             selectSubtitle(-1);
                                         } else {
-                                            const index = parseInt(nativeEvent.event.replace('sub-', ''));
+                                            const index = parseInt(nativeEvent.event.replace('subtitle-', ''));
                                             selectSubtitle(index);
                                         }
                                     }}
-                                    actions={[
-                                        {
-                                            id: 'off',
-                                            title: 'Off',
-                                            state: settings.selectedSubtitle === -1 ? 'on' : undefined
-                                        },
-                                        ...subtitles.map((sub, index) => {
-                                            let subtitle: string | undefined = undefined;
-
-                                            if (sub.fileId) {
-                                                subtitle = 'OpenSubtitles';
-                                            } else if (sub.url && !sub.url.includes('opensubtitles.org')) {
-                                                subtitle = 'Direct URL';
-                                            }
-
-                                            return {
-                                                id: `sub-${index}`,
-                                                title: sub.label,
-                                                subtitle: subtitle,
-                                                state: settings.selectedSubtitle === index ? 'on' as const : undefined
-                                            };
-                                        })
-                                    ]}
+                                    actions={subtitleActions}
                                     themeVariant="dark"
                                     onOpenMenu={() => uiState.setPreventAutoHide(true)}
                                     onCloseMenu={() => {
@@ -1128,11 +721,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                                     const speed = parseFloat(nativeEvent.event.replace('speed-', ''));
                                     changePlaybackSpeed(speed);
                                 }}
-                                actions={[0.75, 0.8, 0.85, 0.9, 0.95, 1.0, 1.1, 1.15, 1.20, 1.25].map(speed => ({
-                                    id: `speed-${speed}`,
-                                    title: `${speed}x`,
-                                    state: settings.playbackSpeed === speed ? 'on' : 'off'
-                                }))}
+                                actions={speedActions}
                                 themeVariant="dark"
                                 onOpenMenu={() => uiState.setPreventAutoHide(true)}
                                 onCloseMenu={() => {
@@ -1151,74 +740,24 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                         </View>
                     </View>
 
-                    {!playerState.isBuffering && (
-                        <View style={styles.centerControls}>
-                            <TouchableOpacity
-                                style={[styles.skipButton, !playerState.isReady && styles.disabledButton]}
-                                onPress={() => controlActions.skipTime(-10)}
-                                disabled={!playerState.isReady}
-                            >
-                                <MaterialIcons
-                                    name="replay-10"
-                                    size={36}
-                                    color={playerState.isReady ? "white" : "rgba(255,255,255,0.5)"}
-                                />
-                            </TouchableOpacity>
+                    <CenterControls
+                        isPlaying={playerState.isPlaying}
+                        isReady={playerState.isReady}
+                        isBuffering={playerState.isBuffering}
+                        onPlayPause={controlActions.togglePlayPause}
+                        onSkipBackward={() => controlActions.skipTime(-10)}
+                        onSkipForward={() => controlActions.skipTime(30)}
+                    />
 
-                            <TouchableOpacity
-                                style={[styles.playButton, !playerState.isReady && styles.disabledButton]}
-                                onPress={controlActions.togglePlayPause}
-                                disabled={!playerState.isReady}
-                            >
-                                <Ionicons
-                                    name={playerState.isPlaying ? "pause" : "play"}
-                                    size={60}
-                                    color={playerState.isReady ? "white" : "rgba(255,255,255,0.5)"}
-                                />
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={[styles.skipButton, !playerState.isReady && styles.disabledButton]}
-                                onPress={() => controlActions.skipTime(30)}
-                                disabled={!playerState.isReady}
-                            >
-                                <MaterialIcons
-                                    name="forward-30"
-                                    size={36}
-                                    color={playerState.isReady ? "white" : "rgba(255,255,255,0.5)"}
-                                />
-                            </TouchableOpacity>
-                        </View>
-                    )}
-
-                    <View style={styles.bottomControls}>
-                        <View style={styles.timeContainer}>
-                            <Text style={styles.timeText}>
-                                {formatTime(displayValues.displayTime)}
-                            </Text>
-                            <Text style={styles.timeText}>
-                                {formatTime(playerState.duration)}
-                            </Text>
-                        </View>
-
-                        <View style={styles.progressContainerWithMargin}>
-                            <Slider
-                                style={styles.progressSlider}
-                                minimumValue={0}
-                                maximumValue={1}
-                                value={displayValues.sliderValue}
-                                onValueChange={sliderHandlers.handleSliderValueChange}
-                                onSlidingStart={sliderHandlers.handleSliderSlidingStart}
-                                onSlidingComplete={sliderHandlers.handleSliderSlidingComplete}
-                                minimumTrackTintColor="#007AFF"
-                                maximumTrackTintColor="rgba(255,255,255,0.4)"
-                                thumbTintColor={'#fff'}
-                                thumbSize={25}
-                                trackHeight={6}
-                                enabled={playerState.isReady || playerState.duration >= 0}
-                            />
-                        </View>
-                    </View>
+                    <ProgressBar
+                        currentTime={displayValues.displayTime}
+                        duration={playerState.duration}
+                        sliderValue={displayValues.sliderValue}
+                        isReady={playerState.isReady}
+                        onValueChange={sliderHandlers.handleSliderValueChange}
+                        onSlidingStart={sliderHandlers.handleSliderSlidingStart}
+                        onSlidingComplete={sliderHandlers.handleSliderSlidingComplete}
+                    />
                 </Animated.View>
             )}
         </View>

@@ -1,10 +1,9 @@
-import {
-    StyleSheet,
-} from "react-native";
+import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
     container: {
-        flex: 1
+        flex: 1,
+        backgroundColor: 'black',
     },
     video: {
         minWidth: '100%',
@@ -16,39 +15,6 @@ export const styles = StyleSheet.create({
         left: 0,
         right: 0,
         bottom: 0,
-    },
-    errorContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'black',
-        padding: 40,
-    },
-    errorTitle: {
-        color: '#ff6b6b',
-        fontSize: 24,
-        fontWeight: '600',
-        marginTop: 16,
-        marginBottom: 12,
-        textAlign: 'center',
-    },
-    errorText: {
-        color: 'rgba(255, 255, 255, 0.8)',
-        fontSize: 16,
-        textAlign: 'center',
-        lineHeight: 24,
-        marginBottom: 24,
-    },
-    retryButton: {
-        backgroundColor: '#007AFF',
-        paddingHorizontal: 24,
-        paddingVertical: 12,
-        borderRadius: 8,
-    },
-    retryButtonText: {
-        color: 'white',
-        fontSize: 16,
-        fontWeight: '600',
     },
     controlsOverlay: {
         position: 'absolute',
@@ -74,17 +40,6 @@ export const styles = StyleSheet.create({
         paddingVertical: 8,
         pointerEvents: 'box-none',
     },
-    loadingBackButtonContainer: {
-        position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
-        paddingTop: 20,
-        paddingHorizontal: 20,
-        zIndex: 1000,
-        flexDirection: "row",
-        alignItems: "center",
-    },
     backButton: {
         padding: 8,
         marginRight: 16,
@@ -97,6 +52,17 @@ export const styles = StyleSheet.create({
         color: 'white',
         fontSize: 18,
         fontWeight: '600',
+    },
+    subtitleText: {
+        color: '#fff',
+        fontWeight: 500,
+        textAlign: 'center',
+        backgroundColor: 'rgba(16, 16, 16, 0.6)',
+        paddingHorizontal: 16,
+        paddingVertical: 6,
+        borderRadius: 8,
+        maxWidth: '90%',
+        margin: 'auto'
     },
     topRightControls: {
         flexDirection: 'row',
@@ -142,12 +108,23 @@ export const styles = StyleSheet.create({
     },
     progressSlider: {
         width: '100%',
-        height: 20
+        height: 20,
+    },
+    bottomRightControls: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        alignItems: 'center',
     },
     timeText: {
         color: 'white',
         fontSize: 14,
         fontWeight: '500',
+    },
+    speedText: {
+        color: '#007AFF',
+        fontSize: 14,
+        fontWeight: '500',
+        marginLeft: 12,
     },
     bufferingContainer: {
         position: 'absolute',
@@ -165,6 +142,20 @@ export const styles = StyleSheet.create({
         fontSize: 16,
         marginTop: 8,
         fontWeight: '500'
+    },
+    contentFitLabelContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+        borderRadius: 25,
+    },
+    contentFitLabelText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: '600',
+        marginLeft: 8,
     },
     artworkContainer: {
         position: 'absolute',
@@ -195,6 +186,87 @@ export const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: 2,
+    },
+    persistentBackButton: {
+        position: 'absolute',
+        top: 20,
+        left: 15,
+        zIndex: 1000,
+    },
+    backButtonPersistent: {
+        borderRadius: 8,
+        overflow: 'hidden',
+    },
+    backButtonGradient: {
+        padding: 8,
+        borderRadius: 8,
+    },
+    subtitleContainer: {
+        position: 'absolute',
+        bottom: 20,
+        left: 20,
+        right: 20,
+        alignItems: 'center',
+        zIndex: 5,
+    },
+    subtitleBackground: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 8,
+        maxWidth: '90%',
+        margin: 'auto',
+        backgroundColor: 'rgba(16, 16, 16, 0.6)',
+    },
+    errorContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'black',
+        padding: 40,
+    },
+    errorTitle: {
+        color: '#ff6b6b',
+        fontSize: 24,
+        fontWeight: '600',
+        marginTop: 16,
+        marginBottom: 12,
+        textAlign: 'center',
+    },
+    errorText: {
+        color: 'rgba(255, 255, 255, 0.8)',
+        fontSize: 16,
+        textAlign: 'center',
+        lineHeight: 24,
+        marginBottom: 24,
+    },
+    retryButton: {
+        backgroundColor: '#007AFF',
+        paddingHorizontal: 24,
+        paddingVertical: 12,
+        borderRadius: 8,
+    },
+    retryButtonText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    errorBackButton: {
+        position: 'absolute',
+        top: 40,
+        left: 20,
+        padding: 8,
+        zIndex: 1,
+    },
+    loadingBackButtonContainer: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        paddingTop: 20,
+        paddingHorizontal: 20,
+        zIndex: 1000,
+        flexDirection: "row",
+        alignItems: "center",
     },
     glassOverlay: {
         position: 'absolute',
@@ -283,32 +355,6 @@ export const styles = StyleSheet.create({
     speedOptionTextSelected: {
         fontWeight: '700',
         color: '#007AFF',
-    },
-    errorBackButton: {
-        position: 'absolute',
-        top: 40,
-        left: 20,
-        padding: 8,
-        zIndex: 1,
-    },
-    subtitleContainer: {
-        position: 'absolute',
-        bottom: 20,
-        left: 20,
-        right: 20,
-        alignItems: 'center',
-        zIndex: 5,
-    },
-    subtitleText: {
-        color: '#fff',
-        fontWeight: 500,
-        textAlign: 'center',
-        backgroundColor: 'rgba(16, 16, 16, 0.6)',
-        paddingHorizontal: 16,
-        paddingVertical: 6,
-        borderRadius: 8,
-        maxWidth: '90%',
-        margin: 'auto'
     },
     loadingContainer: {
         flexDirection: 'row',

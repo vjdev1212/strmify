@@ -37,29 +37,30 @@ export interface ErrorResponse {
 export interface MediaPlayerProps {
     videoUrl: string;
     title: string;
+    audioTracks?: AudioTrack[];
     back: (event: BackEvent) => void;
     progress?: number;
+    autoPlay?: boolean;
     artwork?: string;
     subtitles?: Subtitle[];
     openSubtitlesClient: OpenSubtitlesClient;
-    // switchMediaPlayer?: (error: PlayerSwitchEvent) => void;
+    switchMediaPlayer?: (event: PlayerSwitchEvent) => void;
     updateProgress: (event: UpdateProgessEvent) => void;
 }
 
 interface PlayerSwitchEvent {
     message: string;
     code?: string;
-    player: "native" | "vlc",
+    player: "native" | "vlc";
     progress: number;
 }
 
 interface UpdateProgessEvent {
-    progress: number
+    progress: number;
 }
 
 interface BackEvent {
     message: string;
     code?: string;
-    player: "native" | "vlc",
-    // progress: number
+    player: "native" | "vlc";
 }
