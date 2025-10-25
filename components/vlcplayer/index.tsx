@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { TouchableOpacity, Animated, Platform } from "react-native";
-import { VLCPlayer } from 'react-native-vlc-media-player';
+import { PlayerResizeMode, VLCPlayer } from 'react-native-vlc-media-player';
 import { Ionicons, MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { MenuView } from '@react-native-menu/menu';
 import { LinearGradient } from "expo-linear-gradient";
@@ -8,33 +8,32 @@ import ImmersiveMode from "react-native-immersive-mode";
 import { View, Text } from "../Themed";
 import { playHaptic, formatTime } from "../coreplayer/utils";
 import { styles } from "../coreplayer/styles";
-import { 
-    ArtworkBackground, 
-    BackButton, 
-    BufferingIndicator, 
-    buildAudioActions, 
-    buildSpeedActions, 
-    buildSubtitleActions, 
-    calculateProgress, 
-    calculateSliderValues, 
-    CenterControls, 
-    cleanupOrientation, 
-    CONSTANTS, 
-    ErrorDisplay, 
-    findActiveSubtitle, 
-    handleSubtitleError, 
-    hideControls, 
-    loadSubtitle, 
-    performSeek, 
-    ProgressBar, 
-    setupOrientation, 
-    SubtitleDisplay, 
-    SubtitleSource, 
-    usePlayerAnimations, 
-    usePlayerSettings, 
-    usePlayerState, 
-    useSubtitleState, 
-    useTimers, 
+import {
+    ArtworkBackground,
+    BufferingIndicator,
+    buildAudioActions,
+    buildSpeedActions,
+    buildSubtitleActions,
+    calculateProgress,
+    calculateSliderValues,
+    CenterControls,
+    cleanupOrientation,
+    CONSTANTS,
+    ErrorDisplay,
+    findActiveSubtitle,
+    handleSubtitleError,
+    hideControls,
+    loadSubtitle,
+    performSeek,
+    ProgressBar,
+    setupOrientation,
+    SubtitleDisplay,
+    SubtitleSource,
+    usePlayerAnimations,
+    usePlayerSettings,
+    usePlayerState,
+    useSubtitleState,
+    useTimers,
     useUIState,
     ContentFitLabel
 } from "../coreplayer";
@@ -73,14 +72,14 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
     const playerRef = useRef<VLCPlayer>(null);
     const shouldAutoHideControls = useRef(true);
     const isSeeking = useRef(false);
-    
+
     const playerState = useVLCPlayerState();
     const subtitleState = useSubtitleState();
     const uiState = useUIState();
     const settings = usePlayerSettings();
     const timers = useTimers();
     const animations = usePlayerAnimations();
-    
+
     const [contentFit, setContentFit] = useState<'contain' | 'cover' | 'fill'>('cover');
     const [showContentFitLabel, setShowContentFitLabel] = useState(false);
 
@@ -89,7 +88,8 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         isReady: false,
         isDragging: false,
         currentTime: 0,
-        duration: 0
+        duration: 0,
+        isPaused: false
     });
 
     const progressBarValue = useRef(new Animated.Value(0)).current;
@@ -99,6 +99,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
     useEffect(() => { stateRefs.current.isDragging = playerState.isDragging; }, [playerState.isDragging]);
     useEffect(() => { stateRefs.current.currentTime = playerState.currentTime; }, [playerState.currentTime]);
     useEffect(() => { stateRefs.current.duration = playerState.duration; }, [playerState.duration]);
+    useEffect(() => { stateRefs.current.isPaused = playerState.isPaused; }, [playerState.isPaused]);
 
     const showControlsTemporarily = useCallback(() => {
         uiState.setShowControls(true);
@@ -166,11 +167,13 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
 
     const vlcHandlers = useMemo(() => ({
         onLoad: (data: any) => {
+            console.log('VLC onLoad');
             playerState.setIsBuffering(false);
             playerState.setIsReady(true);
             playerState.setError(null);
             playerState.setHasStartedPlaying(true);
             playerState.setIsPlaying(true);
+            playerState.setIsPaused(false);
             playerState.setShowBufferingLoader(false);
             playerState.setIsSeeking(false);
 
@@ -220,6 +223,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         },
 
         onPlaying: () => {
+            console.log('VLC onPlaying event');
             playerState.setIsPlaying(true);
             playerState.setIsPaused(false);
             playerState.setIsBuffering(false);
@@ -234,21 +238,25 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         },
 
         onPaused: () => {
+            console.log('VLC onPaused event');
             playerState.setIsPlaying(false);
             playerState.setIsPaused(true);
         },
 
         onStopped: () => {
+            console.log('VLC onStopped event');
             playerState.setIsPlaying(false);
             playerState.setIsPaused(false);
         },
 
         onEnd: () => {
+            console.log('VLC onEnd event');
             playerState.setIsPlaying(false);
             playerState.setIsPaused(false);
         },
 
         onError: (error: any) => {
+            console.error('VLC error:', error);
             let errorMessage = "Unable to load the video.";
             if (error?.error) {
                 errorMessage = `Unable to load the video. ${error.error}`;
@@ -293,26 +301,33 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
 
     const togglePlayPause = useCallback(async () => {
         if (!playerState.isReady) return;
+
         await playHaptic();
-        playerState.setIsPaused(!playerState.isPlaying);
+
+        const newPausedState = !playerState.isPaused;
+        console.log('togglePlayPause: isPaused', playerState.isPaused, '-> new isPaused:', newPausedState);
+
+        playerState.setIsPaused(newPausedState);
+        playerState.setIsPlaying(!newPausedState);
+
         showControlsTemporarily();
-    }, [playerState.isPlaying, playerState.isReady, showControlsTemporarily]);
+    }, [playerState.isReady, playerState.isPaused, playerState, showControlsTemporarily]);
 
     const seekTo = useCallback((seconds: number) => {
         if (!playerRef.current || playerState.duration <= 0) return;
         const clampedTime = performSeek(seconds, playerState.duration);
         const position = clampedTime / playerState.duration;
-        
+
         isSeeking.current = true;
         playerState.setCurrentTime(clampedTime);
         progressBarValue.setValue(position);
-        
+
         playerRef.current?.seek(position);
-        
+
         setTimeout(() => {
             isSeeking.current = false;
         }, 500);
-        
+
         showControlsTemporarily();
     }, [playerState.duration, playerState, showControlsTemporarily, progressBarValue]);
 
@@ -343,7 +358,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         playerState.setIsDragging(true);
         playerState.setDragPosition(value);
         progressBarValue.setValue(value);
-    }, [playerState.duration, playerState.isReady, progressBarValue]);
+    }, [playerState.duration, playerState.isReady, progressBarValue, playerState]);
 
     const handleSliderComplete = useCallback((value: number) => {
         if (playerState.isReady && playerState.duration > 0) {
@@ -351,7 +366,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
             seekTo(newTime);
         }
         playerState.setIsDragging(false);
-    }, [playerState.duration, playerState.isReady, seekTo]);
+    }, [playerState.duration, playerState.isReady, seekTo, playerState]);
 
     const handleSpeedSelect = useCallback(async (speed: number) => {
         await playHaptic();
@@ -477,8 +492,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
 
             <SubtitleDisplay subtitle={subtitleState.currentSubtitle} error={!!playerState.error} />
 
-            {!playerState.isReady && !playerState.error && <BackButton onPress={handleBack} persistent />}
-
             {uiState.showControls && !playerState.error && (
                 <Animated.View style={[styles.controlsOverlay, { opacity: animations.controlsOpacity }]} pointerEvents="box-none">
                     <View style={styles.topControls}>
@@ -490,7 +503,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                             <Text style={styles.titleText} numberOfLines={1}>{title}</Text>
                         </View>
 
-                        <View style={styles.topRightControls}>                            
+                        <View style={styles.topRightControls}>
                             <TouchableOpacity style={styles.controlButton} onPress={async () => {
                                 await playHaptic();
                                 settings.setIsMuted(!settings.isMuted);

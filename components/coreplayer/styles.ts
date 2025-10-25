@@ -200,19 +200,6 @@ export const styles = StyleSheet.create({
         zIndex: 2,
     },
 
-    // Persistent Back Button
-    persistentBackButton: {
-        position: 'absolute',
-        top: 20,
-        left: 15,
-        zIndex: 1000,
-    },
-
-    backButtonPersistent: {
-        borderRadius: 8,
-        overflow: 'hidden',
-    },
-
     backButtonGradient: {
         padding: 8,
         borderRadius: 8,

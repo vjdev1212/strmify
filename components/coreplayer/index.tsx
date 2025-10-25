@@ -401,29 +401,6 @@ export const SubtitleDisplay: React.FC<{
     );
 };
 
-// Back Button Component
-export const BackButton: React.FC<{
-    onPress: () => void;
-    persistent?: boolean;
-}> = ({ onPress, persistent = false }) => {
-    const containerStyle = persistent ? styles.persistentBackButton : styles.loadingBackButtonContainer;
-    const buttonStyle = persistent ? styles.backButtonPersistent : styles.backButton;
-
-    return (
-        <View style={containerStyle} pointerEvents="box-none">
-            <TouchableOpacity style={buttonStyle} onPress={onPress}>
-                {persistent ? (
-                    <View style={styles.backButtonGradient}>
-                        <Ionicons name="chevron-back" size={28} color="white" />
-                    </View>
-                ) : (
-                    <Ionicons name="chevron-back" size={28} color="white" />
-                )}
-            </TouchableOpacity>
-        </View>
-    );
-};
-
 // Center Playback Controls Component
 export const CenterControls: React.FC<{
     isPlaying: boolean;
