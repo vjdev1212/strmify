@@ -360,9 +360,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
             <TouchableOpacity style={styles.touchArea} activeOpacity={1} onPress={handleOverlayPress} />
 
             <SubtitleDisplay subtitle={useCustomSubtitles ? subtitleState.currentSubtitle : ''} />
-
-            {!playerState.isReady && <BackButton onPress={handleBack} persistent />}
-
+            
             {uiState.showControls && (
                 <Animated.View style={[styles.controlsOverlay, { opacity: animations.controlsOpacity }]} pointerEvents="box-none">
                     <View style={styles.topControls}>
