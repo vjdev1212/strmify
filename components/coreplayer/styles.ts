@@ -91,7 +91,6 @@ export const styles = StyleSheet.create({
         opacity: 0.5,
     },
     bottomControls: {
-        paddingHorizontal: 40,
         paddingBottom: 40,
         paddingTop: 20,
         height: 120,
