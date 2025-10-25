@@ -862,10 +862,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                     resizeMode="cover"
                 />
                 <View style={styles.artworkOverlay} />
-                <View style={styles.artworkLoadingOverlay}>
-                    <ActivityIndicator size="large" color="#535aff" />
-                    <Text style={styles.bufferingText}>Loading...</Text>
-                </View>
             </View>
         );
     }, [artwork, playerState.hasStartedPlaying, playerState.error]);
