@@ -52,10 +52,13 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     });
 
     useEffect(() => {
-        if (playerState.isReady && progress && progress > 0 && progress < 1 && player.duration > 0) {
-            const seekTime = progress * player.duration;
-            player.currentTime = seekTime;
-            playerState.setCurrentTime(seekTime);
+        if (playerState.isReady && progress && progress > 0 && player.duration > 0) {
+            const currentTime = (progress / 100) * player.duration;
+            player.currentTime = currentTime;
+            playerState.setCurrentTime(currentTime);
+            setTimeout(() => {
+                isSeeking.current = false;
+            }, 500);
         }
     }, [playerState.isReady, player.duration]);
 
