@@ -40,7 +40,6 @@ import {
 } from "../coreplayer";
 import { MediaPlayerProps } from "../coreplayer/models";
 
-// Extended player state for VLC
 const useVLCPlayerState = () => {
     const baseState = usePlayerState();
     const [isPaused, setIsPaused] = useState(false);
@@ -75,7 +74,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
     const shouldAutoHideControls = useRef(true);
     const isSeeking = useRef(false);
     
-    // Use common hooks (same as native player)
     const playerState = useVLCPlayerState();
     const subtitleState = useSubtitleState();
     const uiState = useUIState();
@@ -83,8 +81,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
     const timers = useTimers();
     const animations = usePlayerAnimations();
     
-    // Local state
-    const [loadingText, setLoadingText] = useState('Loading...');
     const [contentFit, setContentFit] = useState<'contain' | 'cover' | 'fill'>('cover');
     const [showContentFitLabel, setShowContentFitLabel] = useState(false);
 
@@ -98,7 +94,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
 
     const progressBarValue = useRef(new Animated.Value(0)).current;
 
-    // Update refs
     useEffect(() => { stateRefs.current.isPlaying = playerState.isPlaying; }, [playerState.isPlaying]);
     useEffect(() => { stateRefs.current.isReady = playerState.isReady; }, [playerState.isReady]);
     useEffect(() => { stateRefs.current.isDragging = playerState.isDragging; }, [playerState.isDragging]);
@@ -118,7 +113,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         }
     }, [playerState.isPlaying, animations.controlsOpacity, timers, uiState]);
 
-    // Orientation and cleanup
     useEffect(() => {
         setupOrientation();
         if (Platform.OS === "android") {
@@ -128,12 +122,11 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
             cleanupOrientation();
             timers.clearAllTimers();
             if (Platform.OS === "android") {
-                ImmersiveMode.fullLayout(true);
+                ImmersiveMode.fullLayout(false);
             }
         };
     }, []);
 
-    // Load subtitles (same as native player)
     useEffect(() => {
         if (subtitles.length === 0 || settings.selectedSubtitle < 0 || settings.selectedSubtitle >= subtitles.length) {
             subtitleState.setParsedSubtitles([]);
@@ -158,7 +151,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         loadSub();
     }, [settings.selectedSubtitle, subtitles, openSubtitlesClient]);
 
-    // Update subtitle display (same as native player)
     useEffect(() => {
         if (subtitleState.parsedSubtitles.length === 0) return;
 
@@ -172,10 +164,8 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         return () => clearInterval(interval);
     }, [subtitleState.parsedSubtitles, playerState.currentTime]);
 
-    // VLC Player event handlers
     const vlcHandlers = useMemo(() => ({
         onLoad: (data: any) => {
-            console.log('VLC Player loaded:', data);
             playerState.setIsBuffering(false);
             playerState.setIsReady(true);
             playerState.setError(null);
@@ -191,7 +181,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                 playerState.setDuration(data.duration / 1000);
             }
 
-            // Match native player animation timing
             Animated.timing(animations.bufferOpacity, {
                 toValue: 0,
                 duration: 200,
@@ -237,7 +226,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
             playerState.setShowBufferingLoader(false);
             isSeeking.current = false;
 
-            // Match native player animation timing
             Animated.timing(animations.bufferOpacity, {
                 toValue: 0,
                 duration: 200,
@@ -261,7 +249,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         },
 
         onError: (error: any) => {
-            console.log('VLC Player error:', error);
             let errorMessage = "Unable to load the video.";
             if (error?.error) {
                 errorMessage = `Unable to load the video. ${error.error}`;
@@ -274,7 +261,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         }
     }), [playerState, animations.bufferOpacity, progressBarValue]);
 
-    // Progress tracking (same as native player)
     useEffect(() => {
         if (!updateProgress || !playerState.isReady || playerState.duration <= 0) return;
 
@@ -288,7 +274,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         return () => clearInterval(progressInterval);
     }, [playerState.isReady, playerState.duration, playerState.currentTime, updateProgress]);
 
-    // Auto-hide controls when playback starts (same as native player)
     useEffect(() => {
         if (playerState.isPlaying && uiState.showControls && shouldAutoHideControls.current) {
             showControlsTemporarily();
@@ -306,7 +291,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         }, CONSTANTS.CONTENT_FIT_LABEL_DELAY);
     }, [animations.contentFitLabelOpacity, timers]);
 
-    // Control actions (similar to native player)
     const togglePlayPause = useCallback(async () => {
         if (!playerState.isReady) return;
         await playHaptic();
@@ -354,7 +338,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         }
     }, [uiState.showControls, showControlsTemporarily, animations.controlsOpacity, uiState]);
 
-    // Slider handlers (same as native player)
     const handleSliderChange = useCallback((value: number) => {
         if (!playerState.isReady || playerState.duration <= 0) return;
         playerState.setIsDragging(true);
@@ -370,7 +353,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         playerState.setIsDragging(false);
     }, [playerState.duration, playerState.isReady, seekTo]);
 
-    // Menu handlers (same as native player)
     const handleSpeedSelect = useCallback(async (speed: number) => {
         await playHaptic();
         settings.setPlaybackSpeed(speed);
@@ -388,14 +370,12 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         showControlsTemporarily();
     }, [settings, showControlsTemporarily]);
 
-    // Render helpers (same as native player)
     const getContentFitIcon = (): "fit-screen" | "crop" | "fullscreen" => {
         const icons = { contain: 'fit-screen', cover: 'crop', fill: 'fullscreen' } as const;
         return icons[contentFit];
     };
 
     const getVideoScale = () => {
-        // Simple scaling for content fit modes to match native player behavior
         switch (contentFit) {
             case 'contain': return { x: 0.85, y: 0.85 };
             case 'cover': return { x: 1.0, y: 1.0 };
@@ -404,7 +384,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         }
     };
 
-    // Build menu actions
     const speedActions = buildSpeedActions(settings.playbackSpeed);
     const subtitleActions = buildSubtitleActions(subtitles as SubtitleSource[], settings.selectedSubtitle, true);
     const audioActions = buildAudioActions(playerState.availableAudioTracks, settings.selectedAudioTrack);
@@ -534,7 +513,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                                 <MaterialIcons name={getContentFitIcon()} size={24} color="white" />
                             </TouchableOpacity>
 
-                            {/* Audio Track Menu */}
                             {playerState.availableAudioTracks.length > 0 && (
                                 <MenuView
                                     style={{ zIndex: 1000 }}
@@ -561,7 +539,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                                 </MenuView>
                             )}
 
-                            {/* Subtitle Menu */}
                             {subtitles.length > 0 && (
                                 <MenuView
                                     style={{ zIndex: 1000 }}
@@ -592,7 +569,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                                 </MenuView>
                             )}
 
-                            {/* Speed Menu */}
                             <MenuView
                                 style={{ zIndex: 1000 }}
                                 title="Playback Speed"
