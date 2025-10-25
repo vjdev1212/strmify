@@ -524,7 +524,7 @@ export const ProgressBar: React.FC<{
             </View>
 
             {showSpeed && playbackSpeed !== 1.0 && (
-                <View style={styles.bottomRightControls}>
+                <View>
                     <Text style={styles.speedText}>{playbackSpeed}x</Text>
                 </View>
             )}

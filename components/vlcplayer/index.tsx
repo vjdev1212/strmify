@@ -481,7 +481,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
 
             {uiState.showControls && !playerState.error && (
                 <Animated.View style={[styles.controlsOverlay, { opacity: animations.controlsOpacity }]} pointerEvents="box-none">
-                    <LinearGradient colors={['rgba(0,0,0,0.8)', 'transparent']} style={styles.topControls}>
+                    <View style={styles.topControls}>
                         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
                             <Ionicons name="chevron-back" size={28} color="white" />
                         </TouchableOpacity>
@@ -490,17 +490,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                             <Text style={styles.titleText} numberOfLines={1}>{title}</Text>
                         </View>
 
-                        <View style={styles.topRightControls}>
-                            {switchMediaPlayer && (
-                                <TouchableOpacity style={styles.controlButton} onPress={async () => {
-                                    await playHaptic();
-                                    const progress = calculateProgress(playerState.currentTime, playerState.duration);
-                                    switchMediaPlayer({ message: '', player: "vlc", progress });
-                                }}>
-                                    <MaterialCommunityIcons name="vlc" size={24} color="white" />
-                                </TouchableOpacity>
-                            )}
-                            
+                        <View style={styles.topRightControls}>                            
                             <TouchableOpacity style={styles.controlButton} onPress={async () => {
                                 await playHaptic();
                                 settings.setIsMuted(!settings.isMuted);
@@ -593,7 +583,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                                 </View>
                             </MenuView>
                         </View>
-                    </LinearGradient>
+                    </View>
 
                     <CenterControls
                         isPlaying={playerState.isPlaying}
@@ -604,7 +594,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                         onSkipForward={() => skipTime(30)}
                     />
 
-                    <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={styles.bottomControls}>
+                    <View style={styles.bottomControls}>
                         <ProgressBar
                             currentTime={displayTime}
                             duration={playerState.duration}
@@ -619,7 +609,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                             showSpeed={settings.playbackSpeed !== 1.0}
                             playbackSpeed={settings.playbackSpeed}
                         />
-                    </LinearGradient>
+                    </View>
                 </Animated.View>
             )}
 

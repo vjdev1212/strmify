@@ -61,6 +61,7 @@ export const styles = StyleSheet.create({
     topRightControls: {
         flexDirection: 'row',
         alignItems: 'center',
+        marginRight: 10
     },
     
     controlButton: {
@@ -113,14 +114,7 @@ export const styles = StyleSheet.create({
     progressSlider: {
         width: '100%',
         height: 20,
-    },
-    
-    bottomRightControls: {
-        flexDirection: 'row',
-        justifyContent: 'flex-end',
-        alignItems: 'center',
-    },
-    
+    },    
     timeText: {
         color: 'white',
         fontSize: 14,
@@ -191,8 +185,7 @@ export const styles = StyleSheet.create({
         top: 0,
         left: 0,
         right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.3)',
+        bottom: 0
     },
     
     artworkLoadingOverlay: {

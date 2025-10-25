@@ -365,7 +365,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
             {uiState.showControls && (
                 <Animated.View style={[styles.controlsOverlay, { opacity: animations.controlsOpacity }]} pointerEvents="box-none">
-                    <LinearGradient colors={['rgba(0,0,0,0.8)', 'transparent']} style={styles.topControls}>
+                    <View style={styles.topControls}>
                         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
                             <Ionicons name="chevron-back" size={28} color="white" />
                         </TouchableOpacity>
@@ -491,7 +491,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                                 </View>
                             </MenuWrapper>
                         </View>
-                    </LinearGradient>
+                    </View>
 
                     <CenterControls
                         isPlaying={playerState.isPlaying}
@@ -502,7 +502,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                         onSkipForward={() => skipTime(30)}
                     />
 
-                    <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={styles.bottomControls}>
+                    <View style={styles.bottomControls}>
                         <ProgressBar
                             currentTime={displayTime}
                             duration={playerState.duration}
@@ -517,7 +517,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                             showSpeed={settings.playbackSpeed !== 1.0}
                             playbackSpeed={settings.playbackSpeed}
                         />
-                    </LinearGradient>
+                    </View>
                 </Animated.View>
             )}
 
