@@ -1,921 +1,541 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
-import {
-    View,
-    Text,
-    TouchableOpacity,
-    Animated,
-    StatusBar,
-    ActivityIndicator,
-    Platform,
-    Image,
-} from "react-native";
-import { PlayerResizeMode, VLCPlayer } from 'react-native-vlc-media-player';
-import * as ScreenOrientation from "expo-screen-orientation";
+import { TouchableOpacity, Animated, Platform } from "react-native";
+import { VLCPlayer } from 'react-native-vlc-media-player';
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import Slider from '@react-native-assets/slider';
 import { MenuView } from '@react-native-menu/menu';
 import ImmersiveMode from "react-native-immersive-mode";
-import { showAlert } from "@/utils/platform";
-import { MediaPlayerProps, DownloadResponse } from "./models";
-import { formatTime, playHaptic } from "./utils";
-import { parseSubtitleFile } from "./subtitle";
-import { styles } from "./styles";
+import { View, Text } from "../Themed";
+import { playHaptic } from "../coreplayer/utils";
+import { styles } from "../coreplayer/styles";
+import {
+    ArtworkBackground,
+    BufferingIndicator,
+    buildAudioActions,
+    buildSpeedActions,
+    buildSubtitleActions,
+    calculateProgress,
+    calculateSliderValues,
+    CenterControls,
+    cleanupOrientation,
+    CONSTANTS,
+    ErrorDisplay,
+    findActiveSubtitle,
+    handleSubtitleError,
+    hideControls,
+    loadSubtitle,
+    performSeek,
+    ProgressBar,
+    setupOrientation,
+    SubtitleDisplay,
+    SubtitleSource,
+    usePlayerAnimations,
+    usePlayerSettings,
+    usePlayerState,
+    useSubtitleState,
+    useTimers,
+    useUIState,
+    ContentFitLabel
+} from "../coreplayer";
+import { MediaPlayerProps } from "../coreplayer/models";
 
-// Optimized state management with reduced re-renders
-const usePlayerState = () => {
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [currentTime, setCurrentTime] = useState(0);
-    const [duration, setDuration] = useState(0);
-    const [isBuffering, setIsBuffering] = useState(true);
+const useVLCPlayerState = () => {
+    const baseState = usePlayerState();
     const [isPaused, setIsPaused] = useState(false);
-    const [isReady, setIsReady] = useState(false);
-    const [isDragging, setIsDragging] = useState(false);
-    const [dragPosition, setDragPosition] = useState(0);
     const [error, setError] = useState<string | null>(null);
     const [showBufferingLoader, setShowBufferingLoader] = useState(false);
     const [hasStartedPlaying, setHasStartedPlaying] = useState(false);
     const [isSeeking, setIsSeeking] = useState(false);
-
-    return {
-        isPlaying, setIsPlaying,
-        currentTime, setCurrentTime,
-        duration, setDuration,
-        isBuffering, setIsBuffering,
-        isPaused, setIsPaused,
-        isReady, setIsReady,
-        isDragging, setIsDragging,
-        dragPosition, setDragPosition,
-        error, setError,
-        showBufferingLoader, setShowBufferingLoader,
-        hasStartedPlaying, setHasStartedPlaying,
-        isSeeking, setIsSeeking
-    };
-};
-
-const useSubtitleState = () => {
-    const [currentSubtitle, setCurrentSubtitle] = useState<string>('');
-    const [parsedSubtitles, setParsedSubtitles] = useState<any[]>([]);
-    const [isLoadingSubtitles, setIsLoadingSubtitles] = useState(false);
-
-    return {
-        currentSubtitle, setCurrentSubtitle,
-        parsedSubtitles, setParsedSubtitles,
-        isLoadingSubtitles, setIsLoadingSubtitles
-    };
-};
-
-const useUIState = () => {
-    const [showControls, setShowControls] = useState(false);
-    const [preventAutoHide, setPreventAutoHide] = useState(false);
-
-    return {
-        showControls, setShowControls,
-        preventAutoHide, setPreventAutoHide
-    };
-};
-
-const usePlayerSettings = () => {
-    const [isMuted, setIsMuted] = useState(false);
-    const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
-    const [resizeMode, setResizeMode] = useState<PlayerResizeMode>('fill');
-    const [brightness, setBrightness] = useState<number>(1);
-    const [selectedSubtitle, setSelectedSubtitle] = useState<number>(-1);
-    const [selectedAudioTrack, setSelectedAudioTrack] = useState<number>(1);
     const [availableAudioTracks, setAvailableAudioTracks] = useState<any[]>([]);
 
     return {
-        isMuted, setIsMuted,
-        playbackSpeed, setPlaybackSpeed,
-        resizeMode, setResizeMode,
-        brightness, setBrightness,
-        selectedSubtitle, setSelectedSubtitle,
-        selectedAudioTrack, setSelectedAudioTrack,
+        ...baseState,
+        isPaused, setIsPaused,
+        error, setError,
+        showBufferingLoader, setShowBufferingLoader,
+        hasStartedPlaying, setHasStartedPlaying,
+        isSeeking, setIsSeeking,
         availableAudioTracks, setAvailableAudioTracks
     };
 };
 
-// Optimized timer management
-const useTimers = () => {
-    const timersRef = useRef({
-        hideControls: null as ReturnType<typeof setTimeout> | null,
-        resizeModeLabel: null as ReturnType<typeof setTimeout> | null,
-        buffering: null as ReturnType<typeof setTimeout> | null,
-        controlsDebounce: null as ReturnType<typeof setTimeout> | null,
-        progressDebounce: null as ReturnType<typeof setTimeout> | null,
-        seekDebounce: null as ReturnType<typeof setTimeout> | null,
-        bufferingTimeout: null as ReturnType<typeof setTimeout> | null,
-        doubleTap: null as ReturnType<typeof setTimeout> | null
-    });
-
-    const clearTimer = useCallback((timerName: keyof typeof timersRef.current) => {
-        if (timersRef.current[timerName]) {
-            clearTimeout(timersRef.current[timerName]!);
-            timersRef.current[timerName] = null;
-        }
-    }, []);
-
-    const setTimer = useCallback((timerName: keyof typeof timersRef.current, callback: () => void, delay: number) => {
-        clearTimer(timerName);
-        timersRef.current[timerName] = setTimeout(callback, delay);
-    }, [clearTimer]);
-
-    const clearAllTimers = useCallback(() => {
-        Object.keys(timersRef.current).forEach(key => {
-            clearTimer(key as keyof typeof timersRef.current);
-        });
-    }, [clearTimer]);
-
-    return {
-        clearTimer,
-        setTimer,
-        clearAllTimers
-    };
-};
-
-// Gesture handling hook for double-tap seek
-const useGestureHandling = (
-    onSeekForward: (seconds: number) => void,
-    onSeekBackward: (seconds: number) => void,
-    onToggleControls: () => void,
-    timers: any,
-    isReady: boolean
-) => {
-    const lastTap = useRef<{ timestamp: number; side: 'left' | 'right' | null }>({
-        timestamp: 0,
-        side: null
-    });
-
-    const handleTouchablePress = useCallback((event: any) => {
-        if (!isReady) return;
-
-        const { locationX } = event.nativeEvent;
-        const screenWidth = event.nativeEvent.target?.offsetWidth || 400;
-        const currentTime = Date.now();
-        const tapSide = locationX < screenWidth / 2 ? 'left' : 'right';
-
-        if (currentTime - lastTap.current.timestamp < 300 && lastTap.current.side === tapSide) {
-            timers.clearTimer('doubleTap');
-
-            if (tapSide === 'left') {
-                onSeekBackward(10);
-            } else {
-                onSeekForward(10);
-            }
-
-            lastTap.current = { timestamp: 0, side: null };
-        } else {
-            lastTap.current = { timestamp: currentTime, side: tapSide };
-
-            timers.clearTimer('doubleTap');
-            timers.setTimer('doubleTap', () => {
-                onToggleControls();
-                lastTap.current = { timestamp: 0, side: null };
-            }, 300);
-        }
-    }, [isReady, onSeekForward, onSeekBackward, onToggleControls, timers]);
-
-    return { handleTouchablePress };
-};
-
-// Seek feedback component
-const SeekFeedback: React.FC<{
-    show: boolean;
-    direction: 'forward' | 'backward';
-    seconds: number;
-}> = React.memo(({ show, direction, seconds }) => {
-    const fadeAnim = useRef(new Animated.Value(0)).current;
-    const scaleAnim = useRef(new Animated.Value(0.8)).current;
-
-    useEffect(() => {
-        if (show) {
-            Animated.parallel([
-                Animated.timing(fadeAnim, {
-                    toValue: 1,
-                    duration: 200,
-                    useNativeDriver: true,
-                }),
-                Animated.spring(scaleAnim, {
-                    toValue: 1,
-                    tension: 100,
-                    friction: 8,
-                    useNativeDriver: true,
-                })
-            ]).start(() => {
-                setTimeout(() => {
-                    Animated.parallel([
-                        Animated.timing(fadeAnim, {
-                            toValue: 0,
-                            duration: 300,
-                            useNativeDriver: true,
-                        }),
-                        Animated.timing(scaleAnim, {
-                            toValue: 0.8,
-                            duration: 300,
-                            useNativeDriver: true,
-                        })
-                    ]).start();
-                }, 800);
-            });
-        }
-    }, [show, fadeAnim, scaleAnim]);
-
-    if (!show) return null;
-
-    return (
-        <Animated.View
-            style={[
-                styles.seekFeedback,
-                {
-                    opacity: fadeAnim,
-                    transform: [{ scale: scaleAnim }],
-                    left: direction === 'backward' ? '20%' : undefined,
-                    right: direction === 'forward' ? '20%' : undefined,
-                }
-            ]}
-            pointerEvents="none"
-        >
-            <View style={styles.seekFeedbackContent}>
-                <Ionicons
-                    name={direction === 'forward' ? 'play-forward' : 'play-back'}
-                    size={32}
-                    color="white"
-                />
-                <Text style={styles.seekFeedbackText}>{seconds}s</Text>
-            </View>
-        </Animated.View>
-    );
-});
-
 const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
     videoUrl,
     title,
-    back,
+    back: onBack,
     artwork,
     subtitles = [],
     openSubtitlesClient,
+    switchMediaPlayer,
     updateProgress
 }) => {
     const playerRef = useRef<VLCPlayer>(null);
-    const playerState = usePlayerState();
-    const uiState = useUIState();
+    const shouldAutoHideControls = useRef(true);
+    const isSeeking = useRef(false);
+    const progressUpdateTimerRef = useRef<NodeJS.Timeout | null | any>(null);
+    const subtitleIntervalRef = useRef<NodeJS.Timeout | null | any>(null);
+    const lastProgressUpdateRef = useRef(0);
+
+    const playerState = useVLCPlayerState();
     const subtitleState = useSubtitleState();
+    const uiState = useUIState();
     const settings = usePlayerSettings();
     const timers = useTimers();
-    const [videoScale, setVideoScale] = useState({ x: 1.0, y: 1.0 });
+    const animations = usePlayerAnimations();
 
-    const [seekFeedback, setSeekFeedback] = useState<{
-        show: boolean;
-        direction: 'forward' | 'backward';
-        seconds: number;
-    }>({
-        show: false,
-        direction: 'forward',
-        seconds: 10
-    });
+    const [contentFit, setContentFit] = useState<'contain' | 'cover' | 'fill'>('cover');
+    const [showContentFitLabel, setShowContentFitLabel] = useState(false);
 
     const stateRefs = useRef({
         isPlaying: false,
         isReady: false,
         isDragging: false,
-        isSeeking: false,
         currentTime: 0,
-        duration: 0
+        duration: 0,
+        isPaused: false
     });
 
-    useEffect(() => {
-        stateRefs.current.isPlaying = playerState.isPlaying;
-    }, [playerState.isPlaying]);
-
-    useEffect(() => {
-        stateRefs.current.isReady = playerState.isReady;
-    }, [playerState.isReady]);
-
-    useEffect(() => {
-        stateRefs.current.isDragging = playerState.isDragging;
-    }, [playerState.isDragging]);
-
-    useEffect(() => {
-        stateRefs.current.isSeeking = playerState.isSeeking;
-    }, [playerState.isSeeking]);
-
-    useEffect(() => {
-        stateRefs.current.currentTime = playerState.currentTime;
-    }, [playerState.currentTime]);
-
-    useEffect(() => {
-        stateRefs.current.duration = playerState.duration;
-    }, [playerState.duration]);
-
-    const controlsOpacity = useRef(new Animated.Value(1)).current;
     const progressBarValue = useRef(new Animated.Value(0)).current;
-    const bufferOpacity = useRef(new Animated.Value(1)).current;
-    const resizeModeLabelOpacity = useRef(new Animated.Value(0)).current;
 
+    // Batch state ref updates
     useEffect(() => {
-        const setupOrientation = async () => {
-            try {
-                if (Platform.OS !== 'web') {
-                    await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
-                    StatusBar.setHidden(true);
-                }
-            } catch (error) {
-                console.warn("Failed to set orientation:", error);
-            }
+        stateRefs.current = {
+            isPlaying: playerState.isPlaying,
+            isReady: playerState.isReady,
+            isDragging: playerState.isDragging,
+            currentTime: playerState.currentTime,
+            duration: playerState.duration,
+            isPaused: playerState.isPaused
         };
+    }, [
+        playerState.isPlaying,
+        playerState.isReady,
+        playerState.isDragging,
+        playerState.currentTime,
+        playerState.duration,
+        playerState.isPaused
+    ]);
 
+    const showControlsTemporarily = useCallback(() => {
+        uiState.setShowControls(true);
+        Animated.timing(animations.controlsOpacity, { 
+            toValue: 1, 
+            duration: 200, 
+            useNativeDriver: true 
+        }).start();
+
+        timers.clearTimer('hideControls');
+
+        if (playerState.isPlaying && shouldAutoHideControls.current) {
+            timers.setTimer('hideControls', () => {
+                hideControls(uiState.setShowControls, animations.controlsOpacity);
+            }, CONSTANTS.CONTROLS_AUTO_HIDE_DELAY);
+        }
+    }, [playerState.isPlaying, animations.controlsOpacity, timers, uiState]);
+
+    // Cleanup on unmount
+    useEffect(() => {
         setupOrientation();
-
-        return () => {
-            if (Platform.OS !== 'web') {
-                ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
-                StatusBar.setHidden(false);
-            }
-            timers.clearAllTimers();
-        };
-    }, []);
-
-    useEffect(() => {
         if (Platform.OS === "android") {
             ImmersiveMode.fullLayout(true);
         }
         return () => {
+            cleanupOrientation();
+            timers.clearAllTimers();
+            
+            // Clear all intervals
+            if (progressUpdateTimerRef.current) {
+                clearInterval(progressUpdateTimerRef.current);
+                progressUpdateTimerRef.current = null;
+            }
+            if (subtitleIntervalRef.current) {
+                clearInterval(subtitleIntervalRef.current);
+                subtitleIntervalRef.current = null;
+            }
+            
             if (Platform.OS === "android") {
-                ImmersiveMode.fullLayout(true);
+                ImmersiveMode.fullLayout(false);
             }
         };
     }, []);
 
+    // Optimized subtitle loading
     useEffect(() => {
-        if (subtitles.length > 0 && settings.selectedSubtitle >= 0 && settings.selectedSubtitle < subtitles.length) {
-            const selectedSub = subtitles[settings.selectedSubtitle];
-
-            if (selectedSub.fileId && openSubtitlesClient) {
-                subtitleState.setIsLoadingSubtitles(true);
-                console.log('Downloading subtitle from OpenSubtitles, fileId:', selectedSub.fileId);
-
-                openSubtitlesClient.downloadSubtitle(String(selectedSub.fileId))
-                    .then(async (response) => {
-                        if (('status' in response && response.status !== 200) ||
-                            ('success' in response && response.success === false) ||
-                            ('error' in response && response.error)) {
-
-                            let errorMessage: string = 'Unknown error occurred';
-                            if ('error' in response && response.error) {
-                                errorMessage = response.error as string;
-                            } else if ('message' in response && response.message) {
-                                errorMessage = response.message as string;
-                            }
-
-                            console.error('OpenSubtitles API error:', errorMessage);
-                            subtitleState.setIsLoadingSubtitles(false);
-                            subtitleState.setParsedSubtitles([]);
-                            showAlert("Subtitle Error", `Failed to download subtitle: ${errorMessage}`);
-                            return;
-                        }
-
-                        const downloadResponse = response as DownloadResponse;
-                        console.log('Subtitle download response:', downloadResponse);
-
-                        if (!downloadResponse.link) {
-                            throw new Error('No download link provided');
-                        }
-
-                        const subtitleResponse = await fetch(downloadResponse.link);
-                        if (!subtitleResponse.ok) {
-                            throw new Error(`HTTP error! status: ${subtitleResponse.status}`);
-                        }
-
-                        const subtitleContent = await subtitleResponse.text();
-                        const parsed = parseSubtitleFile(subtitleContent);
-
-                        subtitleState.setParsedSubtitles(parsed);
-                        subtitleState.setIsLoadingSubtitles(false);
-                    })
-                    .catch(error => {
-                        console.error('Failed to download/parse subtitle:', error);
-                        subtitleState.setIsLoadingSubtitles(false);
-                        subtitleState.setParsedSubtitles([]);
-                        showAlert("Subtitle Error", `Failed to load subtitle: ${error.message}`);
-                    });
-            }
-            else if (selectedSub.url && selectedSub.url !== '' && !selectedSub.url.includes('opensubtitles.org')) {
-                subtitleState.setIsLoadingSubtitles(true);
-                console.log('Loading subtitle from direct URL:', selectedSub.url);
-
-                fetch(selectedSub.url)
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
-                        return response.text();
-                    })
-                    .then(subtitleContent => {
-                        console.log('Subtitle content loaded, length:', subtitleContent.length);
-                        console.log('First 200 chars:', subtitleContent.substring(0, 200));
-
-                        const parsed = parseSubtitleFile(subtitleContent);
-                        console.log('Parsed subtitles count:', parsed.length);
-
-                        subtitleState.setParsedSubtitles(parsed);
-                        subtitleState.setIsLoadingSubtitles(false);
-                    })
-                    .catch(error => {
-                        console.error('Failed to load subtitles from URL:', error);
-                        subtitleState.setIsLoadingSubtitles(false);
-                        subtitleState.setParsedSubtitles([]);
-                        showAlert("Subtitle Error", `Failed to load subtitle: ${error.message}`);
-                    });
-            } else {
-                console.warn('No valid fileId or direct URL for subtitle:', selectedSub);
-                subtitleState.setParsedSubtitles([]);
-                subtitleState.setCurrentSubtitle('');
-            }
-        } else {
+        if (subtitles.length === 0 || settings.selectedSubtitle < 0 || settings.selectedSubtitle >= subtitles.length) {
             subtitleState.setParsedSubtitles([]);
             subtitleState.setCurrentSubtitle('');
+            return;
         }
-    }, [settings.selectedSubtitle, subtitles, openSubtitlesClient]);
 
-    const updateSubtitle = useMemo(() => {
-        return (currentTime: number, parsedSubtitles: any[], currentSubtitle: string) => {
-            if (parsedSubtitles.length === 0) {
-                if (currentSubtitle !== '') {
-                    return '';
-                }
-                return currentSubtitle;
+        const loadSub = async () => {
+            subtitleState.setIsLoadingSubtitles(true);
+            try {
+                const parsed = await loadSubtitle(subtitles[settings.selectedSubtitle] as SubtitleSource, openSubtitlesClient);
+                subtitleState.setParsedSubtitles(parsed);
+            } catch (error: any) {
+                handleSubtitleError(error);
+                subtitleState.setParsedSubtitles([]);
+            } finally {
+                subtitleState.setIsLoadingSubtitles(false);
+                subtitleState.setCurrentSubtitle('');
             }
-
-            const activeSubtitle = parsedSubtitles.find(
-                sub => currentTime >= sub.start && currentTime <= sub.end
-            );
-
-            const newSubtitleText = activeSubtitle ? activeSubtitle.text : '';
-
-            if (newSubtitleText !== currentSubtitle) {
-                return newSubtitleText;
-            }
-
-            return currentSubtitle;
         };
-    }, []);
 
+        loadSub();
+    }, [settings.selectedSubtitle, subtitles]);
+
+    // Optimized subtitle updates - only when playing and subtitles exist
     useEffect(() => {
-        const newSubtitle = updateSubtitle(
-            playerState.currentTime,
-            subtitleState.parsedSubtitles,
-            subtitleState.currentSubtitle
-        );
-
-        if (newSubtitle !== subtitleState.currentSubtitle) {
-            subtitleState.setCurrentSubtitle(newSubtitle);
+        if (subtitleState.parsedSubtitles.length === 0 || !playerState.isPlaying) {
+            // Clear interval if player is paused
+            if (subtitleIntervalRef.current) {
+                clearInterval(subtitleIntervalRef.current);
+                subtitleIntervalRef.current = null;
+            }
+            return;
         }
-    }, [playerState.currentTime, subtitleState.parsedSubtitles, updateSubtitle]);
 
-    const showControlsTemporarily = useCallback(() => {
-        uiState.setShowControls(true);
-        controlsOpacity.setValue(1);
+        const updateSubtitle = () => {
+            const text = findActiveSubtitle(playerState.currentTime, subtitleState.parsedSubtitles);
+            if (subtitleState.currentSubtitle !== text) {
+                subtitleState.setCurrentSubtitle(text);
+            }
+        };
 
-        timers.clearTimer('hideControls');
+        updateSubtitle();
+        subtitleIntervalRef.current = setInterval(updateSubtitle, CONSTANTS.SUBTITLE_UPDATE_INTERVAL);
+        
+        return () => {
+            if (subtitleIntervalRef.current) {
+                clearInterval(subtitleIntervalRef.current);
+                subtitleIntervalRef.current = null;
+            }
+        };
+    }, [subtitleState.parsedSubtitles, playerState.isPlaying, playerState.currentTime]);
 
-        if (!uiState.preventAutoHide) {
-            timers.setTimer('hideControls', () => {
-                Animated.timing(controlsOpacity, {
-                    toValue: 0,
-                    duration: 300,
-                    useNativeDriver: true,
-                }).start(() => {
-                    uiState.setShowControls(false);
-                });
-            }, 3000);
-        }
-    }, [controlsOpacity, uiState.preventAutoHide, uiState.setShowControls, timers]);
-
+    // Memoize VLC handlers to prevent recreation
     const vlcHandlers = useMemo(() => ({
         onLoad: (data: any) => {
-            console.log('VLC Player loaded:', data);
-            playerState.setIsBuffering(false);
-            playerState.setIsReady(true);
-            playerState.setError(null);
-            playerState.setHasStartedPlaying(true);
-            playerState.setIsPlaying(true);
-            playerState.setShowBufferingLoader(false);
-            playerState.setIsSeeking(false);
-            controlsOpacity.setValue(1);
+            console.log('VLC onLoad');
+            
+            // Batch state updates
+            requestAnimationFrame(() => {
+                playerState.setIsBuffering(false);
+                playerState.setIsReady(true);
+                playerState.setError(null);
+                playerState.setHasStartedPlaying(true);
+                playerState.setIsPlaying(true);
+                playerState.setIsPaused(false);
+                playerState.setShowBufferingLoader(false);
+                playerState.setIsSeeking(false);
 
-            timers.clearTimer('hideControls');
+                if (data?.audioTracks) {
+                    playerState.setAvailableAudioTracks(data.audioTracks);
+                }
+                if (data?.duration) {
+                    playerState.setDuration(data.duration / 1000);
+                }
+            });
 
-            if (data?.audioTracks) {
-                settings.setAvailableAudioTracks(data.audioTracks);
-            }
-            if (data?.duration) {
-                playerState.setDuration(data.duration / 1000);
-            }
-
-            Animated.timing(bufferOpacity, {
+            Animated.timing(animations.bufferOpacity, {
                 toValue: 0,
-                duration: 300,
+                duration: 200,
                 useNativeDriver: true,
             }).start();
         },
 
         onProgress: (data: any) => {
-            if (stateRefs.current.isDragging || stateRefs.current.isSeeking) return;
+            if (stateRefs.current.isDragging || isSeeking.current) return;
 
-            timers.clearTimer('progressDebounce');
-            timers.setTimer('progressDebounce', () => {
-                const { currentTime: current, duration: dur } = data;
-                const newCurrentTime = current / 1000;
+            const { currentTime: current, duration: dur } = data;
+            const newCurrentTime = current / 1000;
 
-                playerState.setCurrentTime(newCurrentTime);
-
-                if (playerState.duration === 0 && dur > 0) {
-                    playerState.setDuration(dur / 1000);
-                }
-
+            // Throttle state updates
+            const now = Date.now();
+            if (now - lastProgressUpdateRef.current < 250) {
+                // Update progress bar but skip state update
                 if (stateRefs.current.duration > 0) {
                     const progress = newCurrentTime / stateRefs.current.duration;
                     progressBarValue.setValue(Math.max(0, Math.min(1, progress)));
                 }
-            }, 50);
+                return;
+            }
+            
+            lastProgressUpdateRef.current = now;
+            playerState.setCurrentTime(newCurrentTime);
+
+            if (playerState.duration === 0 && dur > 0) {
+                playerState.setDuration(dur / 1000);
+            }
+
+            if (stateRefs.current.duration > 0) {
+                const progress = newCurrentTime / stateRefs.current.duration;
+                progressBarValue.setValue(Math.max(0, Math.min(1, progress)));
+            }
         },
 
         onBuffering: (data: any) => {
             const { isBuffering: buffering } = data;
 
-            timers.clearTimer('bufferingTimeout');
-
-            if (buffering) {
-                timers.setTimer('bufferingTimeout', () => {
-                    if (stateRefs.current.isReady) {
-                        playerState.setIsBuffering(true);
-                        playerState.setShowBufferingLoader(true);
-                        Animated.timing(bufferOpacity, {
-                            toValue: 1,
-                            duration: 150,
-                            useNativeDriver: true,
-                        }).start();
-                    }
-                }, 200);
-            } else {
-                playerState.setIsBuffering(false);
-                playerState.setShowBufferingLoader(false);
-                playerState.setIsSeeking(false);
-
-                Animated.timing(bufferOpacity, {
-                    toValue: 0,
-                    duration: 300,
-                    useNativeDriver: true,
-                }).start();
+            if (buffering && stateRefs.current.isReady) {
+                requestAnimationFrame(() => {
+                    playerState.setIsBuffering(true);
+                    Animated.timing(animations.bufferOpacity, {
+                        toValue: 1,
+                        duration: 200,
+                        useNativeDriver: true,
+                    }).start();
+                });
             }
         },
 
         onPlaying: () => {
-            console.log('On Playing');
-            playerState.setIsReady(true);
-            playerState.setIsPlaying(true);
-            playerState.setHasStartedPlaying(true);
-            playerState.setIsPaused(false);
-            playerState.setIsBuffering(false);
-            playerState.setShowBufferingLoader(false);
-            playerState.setIsSeeking(false);
+            console.log('VLC onPlaying event');
+            requestAnimationFrame(() => {
+                playerState.setIsPlaying(true);
+                playerState.setIsPaused(false);
+                playerState.setIsBuffering(false);
+                playerState.setShowBufferingLoader(false);
+                isSeeking.current = false;
+            });
 
-            timers.clearTimer('bufferingTimeout');
-
-            Animated.timing(bufferOpacity, {
+            Animated.timing(animations.bufferOpacity, {
                 toValue: 0,
-                duration: 300,
+                duration: 200,
                 useNativeDriver: true,
             }).start();
         },
 
         onPaused: () => {
-            console.log('On Paused');
-            playerState.setIsPlaying(false);
-            playerState.setIsPaused(true);
-            playerState.setIsSeeking(false);
+            console.log('VLC onPaused event');
+            requestAnimationFrame(() => {
+                playerState.setIsPlaying(false);
+                playerState.setIsPaused(true);
+            });
         },
 
         onStopped: () => {
-            console.log('On Stopped');
-            playerState.setIsPlaying(false);
-            playerState.setIsPaused(false);
-            playerState.setIsSeeking(false);
+            console.log('VLC onStopped event');
+            requestAnimationFrame(() => {
+                playerState.setIsPlaying(false);
+                playerState.setIsPaused(false);
+            });
         },
 
         onEnd: () => {
-            console.log('On End');
-            playerState.setIsPlaying(false);
-            playerState.setIsPaused(false);
-            playerState.setIsSeeking(false);
+            console.log('VLC onEnd event');
+            requestAnimationFrame(() => {
+                playerState.setIsPlaying(false);
+                playerState.setIsPaused(false);
+            });
         },
 
         onError: (error: any) => {
-            console.log('VLC Player error:', error);
-            let errorMessage = "Failed to load video.";
+            console.error('VLC error:', error);
+            let errorMessage = "Unable to load the video.";
             if (error?.error) {
-                errorMessage += ` ${error.error}`;
+                errorMessage = `Unable to load the video. ${error.error}`;
             }
 
-            playerState.setError(errorMessage);
-            playerState.setIsBuffering(false);
-            playerState.setIsReady(false);
-            playerState.setShowBufferingLoader(false);
-            playerState.setIsSeeking(false);
-
-            timers.clearTimer('bufferingTimeout');
-            showAlert("Video Error", errorMessage);
+            requestAnimationFrame(() => {
+                playerState.setError(errorMessage);
+                playerState.setIsBuffering(false);
+                playerState.setIsReady(false);
+                playerState.setShowBufferingLoader(false);
+            });
         }
-    }), [playerState, settings, bufferOpacity, timers, progressBarValue, controlsOpacity, uiState]);
+    }), [playerState, animations.bufferOpacity, progressBarValue]);
 
+    // Optimized progress update - only every 60 seconds
     useEffect(() => {
-        if (!updateProgress || !playerState.isReady || playerState.duration <= 0) return;
+        if (!updateProgress || !playerState.isReady || playerState.duration <= 0) {
+            if (progressUpdateTimerRef.current) {
+                clearInterval(progressUpdateTimerRef.current);
+                progressUpdateTimerRef.current = null;
+            }
+            return;
+        }
 
-        const progressInterval = setInterval(() => {
+        progressUpdateTimerRef.current = setInterval(() => {
             if (playerState.currentTime !== undefined && playerState.duration > 0) {
-                const progress = Math.min((playerState.currentTime / playerState.duration) * 100, 100);
+                const progress = calculateProgress(playerState.currentTime, playerState.duration);
                 updateProgress({ progress });
             }
         }, 60 * 1000);
 
-        return () => clearInterval(progressInterval);
-    }, [playerState.isReady, playerState.duration, playerState.currentTime, updateProgress]);
-
-    const controlActions = useMemo(() => ({
-        togglePlayPause: async () => {
-            if (!stateRefs.current.isReady) return;
-            await playHaptic();
-
-            if (stateRefs.current.isPlaying) {
-                console.log('Pause');
-                playerState.setIsPaused(true);
-            } else {
-                console.log('Resume');
-                playerState.setIsPaused(false);
+        return () => {
+            if (progressUpdateTimerRef.current) {
+                clearInterval(progressUpdateTimerRef.current);
+                progressUpdateTimerRef.current = null;
             }
+        };
+    }, [playerState.isReady, playerState.duration]);
+
+    // Optimized control auto-hide
+    useEffect(() => {
+        if (playerState.isPlaying && uiState.showControls && shouldAutoHideControls.current) {
             showControlsTemporarily();
-        },
-
-        seekTo: (absoluteSeconds: number) => {
-            if (!playerRef.current || stateRefs.current.duration <= 0) return;
-
-            const clampedTime = Math.max(0, Math.min(stateRefs.current.duration, absoluteSeconds));
-            const position = clampedTime / stateRefs.current.duration;
-
-            console.log(`Seeking to: ${clampedTime}s (${(position * 100).toFixed(1)}%)`);
-
-            playerState.setIsSeeking(true);
-            playerState.setCurrentTime(clampedTime);
-            progressBarValue.setValue(position);
-
-            playerState.setShowBufferingLoader(true);
-
-            timers.clearTimer('seekDebounce');
-            timers.setTimer('seekDebounce', () => {
-                playerRef.current?.seek(position);
-            }, 100);
-
-            showControlsTemporarily();
-        },
-
-        skipTime: async (offsetSeconds: number) => {
-            if (!stateRefs.current.isReady || stateRefs.current.duration <= 0) return;
-
-            await playHaptic();
-            const newTime = stateRefs.current.currentTime + offsetSeconds;
-            controlActions.seekTo(newTime);
-        },
-
-        toggleMute: async () => {
-            await playHaptic();
-            const newState = !settings.isMuted;
-            settings.setIsMuted(newState);
-            console.log('On Toggle Mute');
-            showControlsTemporarily();
-        },
-
-    }), [playerState, settings, showControlsTemporarily, timers, progressBarValue]);
-
-    const sliderHandlers = useMemo(() => ({
-        handleSliderValueChange: (value: number) => {
-            if (!stateRefs.current.isReady || stateRefs.current.duration <= 0) return;
-
-            playerState.setIsDragging(true);
-            playerState.setDragPosition(value);
-            progressBarValue.setValue(value);
-
-            const newTime = value * stateRefs.current.duration;
-            playerState.setCurrentTime(newTime);
-        },
-
-        handleSliderSlidingStart: () => {
-            playerState.setIsDragging(true);
-            showControlsTemporarily();
-        },
-
-        handleSliderSlidingComplete: (value: number) => {
-            if (!stateRefs.current.isReady || stateRefs.current.duration <= 0) {
-                playerState.setIsDragging(false);
-                return;
-            }
-
-            playerState.setIsDragging(false);
-            const newTime = value * stateRefs.current.duration;
-            controlActions.seekTo(newTime);
         }
-    }), [playerState, showControlsTemporarily, controlActions, progressBarValue]);
+    }, [playerState.isPlaying]);
 
-    const selectSubtitle = useCallback(async (index: number) => {
-        console.log('On Select Subtitle:', index);
+    const showContentFitLabelTemporarily = useCallback(() => {
+        setShowContentFitLabel(true);
+        Animated.timing(animations.contentFitLabelOpacity, { 
+            toValue: 1, 
+            duration: 200, 
+            useNativeDriver: true 
+        }).start();
+
+        timers.clearTimer('contentFitLabel');
+        timers.setTimer('contentFitLabel', () => {
+            Animated.timing(animations.contentFitLabelOpacity, { 
+                toValue: 0, 
+                duration: 300, 
+                useNativeDriver: true 
+            }).start(() => setShowContentFitLabel(false));
+        }, CONSTANTS.CONTENT_FIT_LABEL_DELAY);
+    }, [animations.contentFitLabelOpacity, timers]);
+
+    const togglePlayPause = useCallback(async () => {
+        if (!playerState.isReady) return;
+
         await playHaptic();
-        settings.setSelectedSubtitle(index);
-        showControlsTemporarily();
-    }, [settings, showControlsTemporarily]);
 
-    const selectAudioTrack = useCallback(async (index: number) => {
-        console.log('On Select Audio Track:', index);
+        const newPausedState = !playerState.isPaused;
+        console.log('togglePlayPause: isPaused', playerState.isPaused, '-> new isPaused:', newPausedState);
+
+        playerState.setIsPaused(newPausedState);
+        playerState.setIsPlaying(!newPausedState);
+
+        showControlsTemporarily();
+    }, [playerState.isReady, playerState.isPaused, playerState, showControlsTemporarily]);
+
+    const seekTo = useCallback((seconds: number) => {
+        if (!playerRef.current || playerState.duration <= 0) return;
+        const clampedTime = performSeek(seconds, playerState.duration);
+        const position = clampedTime / playerState.duration;
+
+        isSeeking.current = true;
+        playerState.setCurrentTime(clampedTime);
+        progressBarValue.setValue(position);
+
+        playerRef.current?.seek(position);
+
+        setTimeout(() => {
+            isSeeking.current = false;
+        }, 500);
+
+        showControlsTemporarily();
+    }, [playerState.duration, playerState, showControlsTemporarily, progressBarValue]);
+
+    const skipTime = useCallback(async (seconds: number) => {
+        if (!playerState.isReady) return;
         await playHaptic();
-        settings.setSelectedAudioTrack(index);
-        showControlsTemporarily();
-    }, [settings, showControlsTemporarily]);
+        seekTo(playerState.currentTime + seconds);
+    }, [playerState.currentTime, seekTo, playerState.isReady]);
 
-    const changePlaybackSpeed = useCallback(async (speed: number) => {
-        console.log('On Change Playback speed');
+    const cycleContentFit = useCallback(async () => {
+        await playHaptic();
+        const currentIndex = CONSTANTS.CONTENT_FIT_OPTIONS.indexOf(contentFit);
+        setContentFit(CONSTANTS.CONTENT_FIT_OPTIONS[(currentIndex + 1) % CONSTANTS.CONTENT_FIT_OPTIONS.length]);
+        showContentFitLabelTemporarily();
+        showControlsTemporarily();
+    }, [contentFit, showControlsTemporarily, showContentFitLabelTemporarily]);
+
+    const handleOverlayPress = useCallback(() => {
+        if (uiState.showControls) {
+            hideControls(uiState.setShowControls, animations.controlsOpacity);
+        } else {
+            showControlsTemporarily();
+        }
+    }, [uiState.showControls, showControlsTemporarily, animations.controlsOpacity, uiState]);
+
+    const handleSliderChange = useCallback((value: number) => {
+        if (!playerState.isReady || playerState.duration <= 0) return;
+        playerState.setIsDragging(true);
+        playerState.setDragPosition(value);
+        progressBarValue.setValue(value);
+    }, [playerState.duration, playerState.isReady, progressBarValue, playerState]);
+
+    const handleSliderComplete = useCallback((value: number) => {
+        if (playerState.isReady && playerState.duration > 0) {
+            const newTime = value * playerState.duration;
+            seekTo(newTime);
+        }
+        playerState.setIsDragging(false);
+    }, [playerState.duration, playerState.isReady, seekTo, playerState]);
+
+    const handleSpeedSelect = useCallback(async (speed: number) => {
         await playHaptic();
         settings.setPlaybackSpeed(speed);
         showControlsTemporarily();
     }, [settings, showControlsTemporarily]);
 
-    const handleOverlayPress = useCallback(() => {
-        if (uiState.showControls) {
-            Animated.timing(controlsOpacity, {
-                toValue: 0,
-                duration: 300,
-                useNativeDriver: true,
-            }).start(() => {
-                uiState.setShowControls(false);
-            });
-        } else {
-            showControlsTemporarily();
+    const handleSubtitleSelect = useCallback(async (index: number) => {
+        await playHaptic();
+        settings.setSelectedSubtitle(index);
+    }, [settings]);
+
+    const handleAudioSelect = useCallback(async (index: number) => {
+        await playHaptic();
+        settings.setSelectedAudioTrack(index);
+        showControlsTemporarily();
+    }, [settings, showControlsTemporarily]);
+
+    const getContentFitIcon = useCallback((): "fit-screen" | "crop" | "fullscreen" => {
+        const icons = { contain: 'fit-screen', cover: 'crop', fill: 'fullscreen' } as const;
+        return icons[contentFit];
+    }, [contentFit]);
+
+    const getVideoScale = useCallback(() => {
+        switch (contentFit) {
+            case 'contain': return { x: 1.1, y: 1.0 };
+            case 'cover': return { x: 1.2, y: 1.2 };
+            case 'fill': return { x: 1.0, y: 1.1};
+            default: return { x: 1.0, y: 1.0 };
         }
-    }, [uiState, controlsOpacity, showControlsTemporarily]);
+    }, [contentFit]);
 
-    const handleSeekForward = useCallback(async (seconds: number) => {
-        if (!stateRefs.current.isReady || stateRefs.current.duration <= 0) return;
-
-        await playHaptic();
-        controlActions.skipTime(seconds);
-
-        setSeekFeedback({
-            show: true,
-            direction: 'forward',
-            seconds
-        });
-
-        setTimeout(() => {
-            setSeekFeedback(prev => ({ ...prev, show: false }));
-        }, 50);
-    }, [controlActions]);
-
-    const handleSeekBackward = useCallback(async (seconds: number) => {
-        if (!stateRefs.current.isReady || stateRefs.current.duration <= 0) return;
-
-        await playHaptic();
-        controlActions.skipTime(-seconds);
-
-        setSeekFeedback({
-            show: true,
-            direction: 'backward',
-            seconds
-        });
-
-        setTimeout(() => {
-            setSeekFeedback(prev => ({ ...prev, show: false }));
-        }, 50);
-    }, [controlActions]);
-
-    const gestureHandling = useGestureHandling(
-        handleSeekForward,
-        handleSeekBackward,
-        handleOverlayPress,
-        timers,
-        playerState.isReady
+    // Memoize action builders
+    const speedActions = useMemo(() => 
+        buildSpeedActions(settings.playbackSpeed), 
+        [settings.playbackSpeed]
+    );
+    
+    const subtitleActions = useMemo(() => 
+        buildSubtitleActions(subtitles as SubtitleSource[], settings.selectedSubtitle, true),
+        [subtitles, settings.selectedSubtitle]
+    );
+    
+    const audioActions = useMemo(() => 
+        buildAudioActions(playerState.availableAudioTracks, settings.selectedAudioTrack),
+        [playerState.availableAudioTracks, settings.selectedAudioTrack]
     );
 
-    const displayValues = useMemo(() => {
-        const displayTime = playerState.isDragging ?
-            playerState.dragPosition * playerState.duration :
-            playerState.currentTime;
+    const { displayTime, sliderValue } = useMemo(() => 
+        calculateSliderValues(
+            playerState.isDragging,
+            playerState.dragPosition,
+            playerState.currentTime,
+            playerState.duration
+        ),
+        [playerState.isDragging, playerState.dragPosition, playerState.currentTime, playerState.duration]
+    );
 
-        const sliderValue = playerState.isDragging ?
-            playerState.dragPosition :
-            (playerState.duration > 0 ? playerState.currentTime / playerState.duration : 0);
+    const handleBack = useCallback(async () => {
+        await playHaptic();
+        const progress = calculateProgress(playerState.currentTime, playerState.duration);
+        if (updateProgress) updateProgress({ progress });
+        onBack({ message: '', player: "vlc" });
+    }, [playerState.currentTime, playerState.duration, updateProgress, onBack]);
 
-        return { displayTime, sliderValue };
-    }, [
-        playerState.isDragging,
-        playerState.dragPosition,
-        playerState.currentTime,
-        playerState.duration
-    ]);
-
-    const ErrorComponent = useMemo(() => {
-        if (!playerState.error) return null;
-
-        return (
-            <View style={styles.errorContainer}>
-                <TouchableOpacity
-                    style={styles.errorBackButton}
-                    onPress={async () => {
-                        await playHaptic();
-                        const progress = playerState.duration > 0 ? Math.min((playerState.currentTime / playerState.duration) * 100, 100) : 0;
-                        if (updateProgress) updateProgress({ progress });
-                        back({ message: '', player: "vlc" });
-                    }}
-                >
-                    <Ionicons name="chevron-back" size={28} color="white" />
-                </TouchableOpacity>
-
-                <MaterialIcons name="error-outline" size={64} color="#ff6b6b" />
-                <Text style={styles.errorTitle}>Playback Error</Text>
-                <Text style={styles.errorText}>{playerState.error}</Text>
-                <TouchableOpacity style={styles.retryButton} onPress={() => {
-                    playerState.setError(null);
-                    playerState.setIsReady(false);
-                    playerState.setIsBuffering(true);
-                    playerState.setHasStartedPlaying(false);
-                    playerState.setIsSeeking(false);
-                }}>
-                    <Text style={styles.retryButtonText}>Retry</Text>
-                </TouchableOpacity>
-            </View>
-        );
-    }, [playerState.error, playerState, updateProgress, back]);
-
-    const ArtworkComponent = useMemo(() => {
-        if (!artwork || playerState.hasStartedPlaying || playerState.error) return null;
-
-        return (
-            <View style={styles.artworkContainer}>
-                <Image
-                    source={{ uri: artwork }}
-                    style={styles.artworkImage}
-                    resizeMode="cover"
-                />
-                <View style={styles.artworkOverlay} />
-            </View>
-        );
-    }, [artwork, playerState.hasStartedPlaying, playerState.error]);
-
-    const BufferingComponent = useMemo(() => {
-        if (!(playerState.showBufferingLoader || playerState.isBuffering) || playerState.error) return null;
-
-        return (
-            <Animated.View
-                style={[
-                    styles.bufferingContainer,
-                    { opacity: bufferOpacity }
-                ]}
-                pointerEvents="none"
-            >
-                <ActivityIndicator size="large" color="#535aff" />
-                <Text style={styles.bufferingText}>
-                    {playerState.hasStartedPlaying ? "Buffering..." : "Loading..."}
-                </Text>
-            </Animated.View>
-        );
-    }, [playerState.showBufferingLoader, playerState.isBuffering, playerState.error, playerState.hasStartedPlaying, bufferOpacity]);
-
-    const zoomIn = () => {
-        setVideoScale(prev => ({
-            x: Math.min(prev.x + 0.025, 2.0),
-            y: Math.min(prev.y + 0.025, 2.0)
-        }));
-    };
-
-    const zoomOut = () => {
-        setVideoScale(prev => ({
-            x: Math.max(prev.x - 0.025, 1.0),
-            y: Math.max(prev.y - 0.025, 1.0)
-        }));
-    };
-
-    const SubtitleComponent = useMemo(() => {
-        if (!subtitleState.currentSubtitle || playerState.error) return null;
-
-        return (
-            <View style={styles.subtitleContainer} pointerEvents="none">
-                <Text style={styles.subtitleText}>{subtitleState.currentSubtitle}</Text>
-            </View>
-        );
-    }, [subtitleState.currentSubtitle, playerState.error]);
+    const videoScale = useMemo(() => getVideoScale(), [getVideoScale]);
 
     return (
         <View style={styles.container}>
             {!playerState.error && (
                 <VLCPlayer
                     ref={playerRef}
-                    style={[styles.video,
-                    {
+                    style={[styles.video, {
                         transform: [{ scaleX: videoScale.x }, { scaleY: videoScale.y }]
                     }]}
                     source={{
@@ -954,160 +574,106 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                 />
             )}
 
-            {ErrorComponent}
-            {ArtworkComponent}
-            {BufferingComponent}
-
-            {!playerState.hasStartedPlaying && !playerState.error && (
-                <View style={styles.loadingBackButtonContainer} pointerEvents="box-none">
-                    <TouchableOpacity
-                        style={styles.backButton}
-                        onPress={async () => {
-                            await playHaptic();
-                            const progress = playerState.duration > 0 ? Math.min((playerState.currentTime / playerState.duration) * 100, 100) : 0;
-                            if (updateProgress) updateProgress({ progress });
-                            back({ message: '', player: "vlc" });
-                        }}
-                    >
-                        <Ionicons name="chevron-back" size={28} color="white" />
-                    </TouchableOpacity>
-                </View>
-            )}
-
-            {!playerState.error && (
-                <TouchableOpacity
-                    style={styles.touchArea}
-                    activeOpacity={1}
-                    onPress={gestureHandling.handleTouchablePress}
-                />
-            )}
-
-            {SubtitleComponent}
-
-            <SeekFeedback
-                show={seekFeedback.show}
-                direction={seekFeedback.direction}
-                seconds={seekFeedback.seconds}
+            <ErrorDisplay
+                error={playerState.error}
+                onBack={handleBack}
+                onRetry={() => {
+                    playerState.setError(null);
+                    playerState.setIsReady(false);
+                    playerState.setIsBuffering(true);
+                    playerState.setHasStartedPlaying(false);
+                }}
             />
 
+            <ArtworkBackground
+                artwork={artwork}
+                isBuffering={playerState.isBuffering}
+                hasStartedPlaying={playerState.hasStartedPlaying}
+                error={!!playerState.error}
+            />
+
+            <BufferingIndicator
+                isBuffering={playerState.isBuffering || playerState.showBufferingLoader}
+                hasStartedPlaying={playerState.hasStartedPlaying}
+                opacity={animations.bufferOpacity}
+                error={!!playerState.error}
+            />
+
+            <TouchableOpacity style={styles.touchArea} activeOpacity={1} onPress={handleOverlayPress} />
+
+            <SubtitleDisplay subtitle={subtitleState.currentSubtitle} error={!!playerState.error} />
+
             {uiState.showControls && !playerState.error && (
-                <Animated.View
-                    style={[styles.controlsOverlay, { opacity: controlsOpacity }]}
-                    pointerEvents="box-none"
-                >
+                <Animated.View style={[styles.controlsOverlay, { opacity: animations.controlsOpacity }]} pointerEvents="box-none">
                     <View style={styles.topControls}>
-                        <TouchableOpacity style={styles.backButton} onPress={async () => {
-                            await playHaptic();
-                            const progress = playerState.duration > 0 ? Math.min((playerState.currentTime / playerState.duration) * 100, 100) : 0;
-                            if (updateProgress) updateProgress({ progress });
-                            back({ message: '', player: "vlc" });
-                        }}>
+                        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
                             <Ionicons name="chevron-back" size={28} color="white" />
                         </TouchableOpacity>
 
                         <View style={styles.titleContainer}>
-                            <Text style={styles.titleText} numberOfLines={1}>
-                                {title}
-                            </Text>
+                            <Text style={styles.titleText} numberOfLines={1}>{title}</Text>
                         </View>
 
                         <View style={styles.topRightControls}>
-                            <TouchableOpacity
-                                style={styles.controlButton}
-                                onPress={zoomOut}
-                            >
-                                <MaterialIcons
-                                    name="zoom-out"
-                                    size={24}
-                                    color="white"
-                                />
+                            <TouchableOpacity style={styles.controlButton} onPress={async () => {
+                                await playHaptic();
+                                settings.setIsMuted(!settings.isMuted);
+                                showControlsTemporarily();
+                            }}>
+                                <Ionicons name={settings.isMuted ? "volume-mute" : "volume-high"} size={24} color="white" />
                             </TouchableOpacity>
 
-                            <TouchableOpacity
-                                style={styles.controlButton}
-                                onPress={zoomIn}
-                            >
-                                <MaterialIcons
-                                    name="zoom-in"
-                                    size={24}
-                                    color="white"
-                                />
+                            <TouchableOpacity style={styles.controlButton} onPress={cycleContentFit}>
+                                <MaterialIcons name={getContentFitIcon()} size={24} color="white" />
                             </TouchableOpacity>
 
-                            <TouchableOpacity
-                                style={styles.controlButton}
-                                onPress={controlActions.toggleMute}
-                            >
-                                <Ionicons
-                                    name={settings.isMuted ? "volume-mute" : "volume-high"}
-                                    size={24}
-                                    color="white"
-                                />
-                            </TouchableOpacity>
-
-                            <MenuView
-                                style={{ zIndex: 1000 }}
-                                title="Audio Track"
-                                onPressAction={({ nativeEvent }) => {
-                                    const trackId = parseInt(nativeEvent.event.replace('audio-', ''));
-                                    selectAudioTrack(trackId);
-                                }}
-                                actions={settings.availableAudioTracks.map((track) => ({
-                                    id: `audio-${track.id}`,
-                                    title: track.name,
-                                    state: settings.selectedAudioTrack === track.id ? 'on' : 'off'
-                                }))}
-                                themeVariant="dark"
-                                onOpenMenu={() => uiState.setPreventAutoHide(true)}
-                                onCloseMenu={() => {
-                                    uiState.setPreventAutoHide(false);
-                                    showControlsTemporarily();
-                                }}
-                            >
-                                <View style={styles.controlButton}>
-                                    <MaterialIcons name="audiotrack" size={24} color="white" />
-                                </View>
-                            </MenuView>
+                            {playerState.availableAudioTracks.length > 0 && (
+                                <MenuView
+                                    style={{ zIndex: 1000 }}
+                                    title="Audio Track"
+                                    onPressAction={({ nativeEvent }) => {
+                                        const index = audioActions.findIndex(a => a.id === nativeEvent.event);
+                                        if (index !== -1) handleAudioSelect(index);
+                                    }}
+                                    actions={audioActions}
+                                    shouldOpenOnLongPress={false}
+                                    themeVariant="dark"
+                                    onOpenMenu={() => {
+                                        shouldAutoHideControls.current = false;
+                                        timers.clearTimer('hideControls');
+                                    }}
+                                    onCloseMenu={() => {
+                                        shouldAutoHideControls.current = true;
+                                        showControlsTemporarily();
+                                    }}
+                                >
+                                    <View style={styles.controlButton}>
+                                        <MaterialIcons name="audiotrack" size={24} color="white" />
+                                    </View>
+                                </MenuView>
+                            )}
 
                             {subtitles.length > 0 && (
                                 <MenuView
                                     style={{ zIndex: 1000 }}
                                     title="Subtitles"
                                     onPressAction={({ nativeEvent }) => {
-                                        if (nativeEvent.event === 'off') {
-                                            selectSubtitle(-1);
+                                        if (nativeEvent.event === 'subtitle-off') {
+                                            handleSubtitleSelect(-1);
                                         } else {
-                                            const index = parseInt(nativeEvent.event.replace('sub-', ''));
-                                            selectSubtitle(index);
+                                            const index = parseInt(nativeEvent.event.split('-')[1]);
+                                            if (!isNaN(index)) handleSubtitleSelect(index);
                                         }
                                     }}
-                                    actions={[
-                                        {
-                                            id: 'off',
-                                            title: 'Off',
-                                            state: settings.selectedSubtitle === -1 ? 'on' : undefined
-                                        },
-                                        ...subtitles.map((sub, index) => {
-                                            let subtitle: string | undefined = undefined;
-
-                                            if (sub.fileId) {
-                                                subtitle = 'OpenSubtitles';
-                                            } else if (sub.url && !sub.url.includes('opensubtitles.org')) {
-                                                subtitle = 'Direct URL';
-                                            }
-
-                                            return {
-                                                id: `sub-${index}`,
-                                                title: sub.label,
-                                                subtitle: subtitle,
-                                                state: settings.selectedSubtitle === index ? 'on' as const : undefined
-                                            };
-                                        })
-                                    ]}
+                                    actions={subtitleActions}
+                                    shouldOpenOnLongPress={false}
                                     themeVariant="dark"
-                                    onOpenMenu={() => uiState.setPreventAutoHide(true)}
+                                    onOpenMenu={() => {
+                                        shouldAutoHideControls.current = false;
+                                        timers.clearTimer('hideControls');
+                                    }}
                                     onCloseMenu={() => {
-                                        uiState.setPreventAutoHide(false);
+                                        shouldAutoHideControls.current = true;
                                         showControlsTemporarily();
                                     }}
                                 >
@@ -1121,102 +687,61 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                                 style={{ zIndex: 1000 }}
                                 title="Playback Speed"
                                 onPressAction={({ nativeEvent }) => {
-                                    const speed = parseFloat(nativeEvent.event.replace('speed-', ''));
-                                    changePlaybackSpeed(speed);
+                                    const speed = parseFloat(nativeEvent.event.split('-')[1]);
+                                    if (!isNaN(speed)) handleSpeedSelect(speed);
                                 }}
-                                actions={[0.75, 0.8, 0.85, 0.9, 0.95, 1.0, 1.1, 1.15, 1.20, 1.25].map(speed => ({
-                                    id: `speed-${speed}`,
-                                    title: `${speed}x`,
-                                    state: settings.playbackSpeed === speed ? 'on' : 'off'
-                                }))}
+                                actions={speedActions}
+                                shouldOpenOnLongPress={false}
                                 themeVariant="dark"
-                                onOpenMenu={() => uiState.setPreventAutoHide(true)}
+                                onOpenMenu={() => {
+                                    shouldAutoHideControls.current = false;
+                                    timers.clearTimer('hideControls');
+                                }}
                                 onCloseMenu={() => {
-                                    uiState.setPreventAutoHide(false);
+                                    shouldAutoHideControls.current = true;
                                     showControlsTemporarily();
                                 }}
                             >
                                 <View style={styles.controlButton}>
-                                    <MaterialIcons
-                                        name="speed"
-                                        size={24}
-                                        color={"white"}
-                                    />
+                                    <MaterialIcons name="speed" size={24} color="white" />
                                 </View>
                             </MenuView>
                         </View>
                     </View>
 
-                    {!playerState.isBuffering && (
-                        <View style={styles.centerControls}>
-                            <TouchableOpacity
-                                style={[styles.skipButton, !playerState.isReady && styles.disabledButton]}
-                                onPress={() => controlActions.skipTime(-10)}
-                                disabled={!playerState.isReady}
-                            >
-                                <MaterialIcons
-                                    name="replay-10"
-                                    size={36}
-                                    color={playerState.isReady ? "white" : "rgba(255,255,255,0.5)"}
-                                />
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={[styles.playButton, !playerState.isReady && styles.disabledButton]}
-                                onPress={controlActions.togglePlayPause}
-                                disabled={!playerState.isReady}
-                            >
-                                <Ionicons
-                                    name={playerState.isPlaying ? "pause" : "play"}
-                                    size={60}
-                                    color={playerState.isReady ? "white" : "rgba(255,255,255,0.5)"}
-                                />
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={[styles.skipButton, !playerState.isReady && styles.disabledButton]}
-                                onPress={() => controlActions.skipTime(30)}
-                                disabled={!playerState.isReady}
-                            >
-                                <MaterialIcons
-                                    name="forward-30"
-                                    size={36}
-                                    color={playerState.isReady ? "white" : "rgba(255,255,255,0.5)"}
-                                />
-                            </TouchableOpacity>
-                        </View>
-                    )}
+                    <CenterControls
+                        isPlaying={playerState.isPlaying}
+                        isReady={playerState.isReady}
+                        isBuffering={playerState.isBuffering}
+                        onPlayPause={togglePlayPause}
+                        onSkipBackward={() => skipTime(-10)}
+                        onSkipForward={() => skipTime(30)}
+                    />
 
                     <View style={styles.bottomControls}>
-                        <View style={styles.timeContainer}>
-                            <Text style={styles.timeText}>
-                                {formatTime(displayValues.displayTime)}
-                            </Text>
-                            <Text style={styles.timeText}>
-                                {formatTime(playerState.duration)}
-                            </Text>
-                        </View>
-
-                        <View style={styles.progressContainerWithMargin}>
-                            <Slider
-                                style={styles.progressSlider}
-                                minimumValue={0}
-                                maximumValue={1}
-                                value={displayValues.sliderValue}
-                                onValueChange={sliderHandlers.handleSliderValueChange}
-                                onSlidingStart={sliderHandlers.handleSliderSlidingStart}
-                                onSlidingComplete={sliderHandlers.handleSliderSlidingComplete}
-                                minimumTrackTintColor="#007AFF"
-                                maximumTrackTintColor="rgba(255,255,255,0.4)"
-                                thumbTintColor={'#fff'}
-                                thumbSize={25}
-                                trackHeight={6}
-                                enabled={playerState.isReady || playerState.duration >= 0}
-                            />
-                        </View>
+                        <ProgressBar
+                            currentTime={displayTime}
+                            duration={playerState.duration}
+                            sliderValue={sliderValue}
+                            isReady={playerState.isReady}
+                            onValueChange={handleSliderChange}
+                            onSlidingStart={() => {
+                                playerState.setIsDragging(true);
+                                showControlsTemporarily();
+                            }}
+                            onSlidingComplete={handleSliderComplete}
+                            showSpeed={settings.playbackSpeed !== 1.0}
+                            playbackSpeed={settings.playbackSpeed}
+                        />
                     </View>
                 </Animated.View>
             )}
+
+            <ContentFitLabel
+                show={showContentFitLabel}
+                contentFit={contentFit}
+                opacity={animations.contentFitLabelOpacity}
+            />
         </View>
     );
 };
