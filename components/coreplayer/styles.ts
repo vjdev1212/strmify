@@ -220,7 +220,7 @@ export const styles = StyleSheet.create({
     // Subtitle Display
     subtitleContainer: {
         position: 'absolute',
-        bottom: 20,
+        bottom: 10,
         left: 20,
         right: 20,
         alignItems: 'center',
@@ -239,7 +239,7 @@ export const styles = StyleSheet.create({
         color: '#fff',
         fontWeight: '500',
         textAlign: 'center',
-        backgroundColor: 'rgba(16, 16, 16, 0.6)',
+        backgroundColor: 'rgba(26, 26, 26, 0.5)',
         paddingHorizontal: 16,
         paddingVertical: 6,
         borderRadius: 8,
