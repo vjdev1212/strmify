@@ -1,12 +1,11 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { TouchableOpacity, Animated, Platform } from "react-native";
-import { PlayerResizeMode, VLCPlayer } from 'react-native-vlc-media-player';
-import { Ionicons, MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { VLCPlayer } from 'react-native-vlc-media-player';
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { MenuView } from '@react-native-menu/menu';
-import { LinearGradient } from "expo-linear-gradient";
 import ImmersiveMode from "react-native-immersive-mode";
 import { View, Text } from "../Themed";
-import { playHaptic, formatTime } from "../coreplayer/utils";
+import { playHaptic } from "../coreplayer/utils";
 import { styles } from "../coreplayer/styles";
 import {
     ArtworkBackground,
