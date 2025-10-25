@@ -1,4 +1,5 @@
-import { router, useFocusEffect } from 'expo-router'; import React, { useState, useMemo } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -9,7 +10,7 @@ import {
 import { StatusBar, Text } from '@/components/Themed';
 import PosterList from '@/components/PosterList';
 import BottomSpacing from '@/components/BottomSpacing';
-import AppleTVCarousel from '@/components/PosterCarousel'; // Import the new carousel
+import AppleTVCarousel from '@/components/PosterCarousel';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { isHapticsSupported } from '@/utils/platform';
@@ -18,6 +19,14 @@ import WatchHistory from '@/components/WatchHistory';
 
 export default function HomeScreen() {
   const [filter, setFilter] = useState<'all' | 'movies' | 'series'>('all');
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  // Refresh watch history when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      setRefreshKey(prev => prev + 1);
+    }, [])
+  );
 
   const filters = [
     { key: 'all', label: 'All', icon: 'apps' },
@@ -103,11 +112,10 @@ export default function HomeScreen() {
         season: item.season,
         episode: item.episode,
         useVlcKit: item.useVlcKit,
+        progress: item.progress.toString(),
       },
     });
   };
-
-
 
   function getWatchHistoryType(filter: string): "all" | "series" | "movie" {
     if (filter === 'movies') return 'movie';
@@ -128,7 +136,6 @@ export default function HomeScreen() {
           autoPlay={true}
           autoPlayInterval={6000}
         />
-
 
         <View style={styles.contentContainer}>
           {/* Filter buttons - moved to overlay on carousel */}
@@ -166,7 +173,11 @@ export default function HomeScreen() {
             />
           </View>
 
-          <WatchHistory type={getWatchHistoryType(filter)} onItemSelect={(item) => handleWatchHistoryItemPress(item)} />
+          <WatchHistory 
+            key={refreshKey}
+            type={getWatchHistoryType(filter)} 
+            onItemSelect={(item) => handleWatchHistoryItemPress(item)} 
+          />
           {activeLists.map((list, i) => (
             <PosterList
               key={`${filter}-${i}`}
@@ -187,7 +198,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   filtersContainer: {
-    paddingVertical: 12,
+    paddingVertical: 8,
     paddingHorizontal: 5,
   },
   filterRow: {
@@ -204,7 +215,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   filterButtonActive: {
-    backgroundColor: 'rgba(83, 90, 255, 0.5)',
+    backgroundColor: '#535aff',
   },
   filterButtonText: {
     fontSize: 15,

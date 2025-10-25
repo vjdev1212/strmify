@@ -41,12 +41,12 @@ const MAX_HISTORY_ITEMS = 30;
 
 const MediaPlayerScreen: React.FC = () => {
   const router = useRouter();
-  const { videoUrl, title, imdbid, type, season, episode, useVlcKit } = useLocalSearchParams();
+  const { videoUrl, title, imdbid, type, season, episode, useVlcKit, progress: watchHistoryProgress } = useLocalSearchParams();
   const [subtitles, setSubtitles] = useState<Subtitle[]>([]);
   const [isLoadingSubtitles, setIsLoadingSubtitles] = useState(true);
   const [openSubtitlesClient, setOpenSubtitlesClient] = useState<OpenSubtitlesClient | null>(null);
   const [forceVlc, setForceVlc] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [progress, setProgress] = useState(watchHistoryProgress || 0);
   const artwork = `https://images.metahub.space/background/medium/${imdbid}/img`;
 
   useEffect(() => {
@@ -226,7 +226,9 @@ const MediaPlayerScreen: React.FC = () => {
     router.back();
   };
 
-  const handleUpdateProgress = async (event: UpdateProgessEvent): Promise<void> => {    
+  const handleUpdateProgress = async (event: UpdateProgessEvent): Promise<void> => {
+    if (event.progress <= 1)
+      return;
     setProgress(Math.floor(event.progress));
     console.log('UpdateProgress', event);
     await saveToWatchHistory(Math.floor(event.progress));

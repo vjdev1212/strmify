@@ -62,6 +62,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
     videoUrl,
     title,
     back: onBack,
+    progress,
     artwork,
     subtitles = [],
     openSubtitlesClient,
@@ -117,10 +118,10 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
 
     const showControlsTemporarily = useCallback(() => {
         uiState.setShowControls(true);
-        Animated.timing(animations.controlsOpacity, { 
-            toValue: 1, 
-            duration: 200, 
-            useNativeDriver: true 
+        Animated.timing(animations.controlsOpacity, {
+            toValue: 1,
+            duration: 200,
+            useNativeDriver: true
         }).start();
 
         timers.clearTimer('hideControls');
@@ -141,7 +142,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         return () => {
             cleanupOrientation();
             timers.clearAllTimers();
-            
+
             // Clear all intervals
             if (progressUpdateTimerRef.current) {
                 clearInterval(progressUpdateTimerRef.current);
@@ -151,7 +152,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                 clearInterval(subtitleIntervalRef.current);
                 subtitleIntervalRef.current = null;
             }
-            
+
             if (Platform.OS === "android") {
                 ImmersiveMode.fullLayout(false);
             }
@@ -203,7 +204,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
 
         updateSubtitle();
         subtitleIntervalRef.current = setInterval(updateSubtitle, CONSTANTS.SUBTITLE_UPDATE_INTERVAL);
-        
+
         return () => {
             if (subtitleIntervalRef.current) {
                 clearInterval(subtitleIntervalRef.current);
@@ -216,7 +217,8 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
     const vlcHandlers = useMemo(() => ({
         onLoad: (data: any) => {
             console.log('VLC onLoad');
-            
+            console.log('progress', progress);
+
             // Batch state updates
             requestAnimationFrame(() => {
                 playerState.setIsBuffering(false);
@@ -232,7 +234,11 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                     playerState.setAvailableAudioTracks(data.audioTracks);
                 }
                 if (data?.duration) {
-                    playerState.setDuration(data.duration / 1000);
+                    const durationInSeconds = data.duration / 1000;
+                    playerState.setDuration(durationInSeconds);
+                }
+                if (progress && progress > 0) {
+                    playerRef.current?.seek(progress / 100);
                 }
             });
 
@@ -259,7 +265,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                 }
                 return;
             }
-            
+
             lastProgressUpdateRef.current = now;
             playerState.setCurrentTime(newCurrentTime);
 
@@ -379,18 +385,18 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
 
     const showContentFitLabelTemporarily = useCallback(() => {
         setShowContentFitLabel(true);
-        Animated.timing(animations.contentFitLabelOpacity, { 
-            toValue: 1, 
-            duration: 200, 
-            useNativeDriver: true 
+        Animated.timing(animations.contentFitLabelOpacity, {
+            toValue: 1,
+            duration: 200,
+            useNativeDriver: true
         }).start();
 
         timers.clearTimer('contentFitLabel');
         timers.setTimer('contentFitLabel', () => {
-            Animated.timing(animations.contentFitLabelOpacity, { 
-                toValue: 0, 
-                duration: 300, 
-                useNativeDriver: true 
+            Animated.timing(animations.contentFitLabelOpacity, {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: true
             }).start(() => setShowContentFitLabel(false));
         }, CONSTANTS.CONTENT_FIT_LABEL_DELAY);
     }, [animations.contentFitLabelOpacity, timers]);
@@ -401,7 +407,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         await playHaptic();
 
         const newPausedState = !playerState.isPaused;
-        console.log('togglePlayPause: isPaused', playerState.isPaused, '-> new isPaused:', newPausedState);
 
         playerState.setIsPaused(newPausedState);
         playerState.setIsPlaying(!newPausedState);
@@ -490,28 +495,28 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         switch (contentFit) {
             case 'contain': return { x: 1.1, y: 1.0 };
             case 'cover': return { x: 1.2, y: 1.2 };
-            case 'fill': return { x: 1.0, y: 1.1};
+            case 'fill': return { x: 1.0, y: 1.1 };
             default: return { x: 1.0, y: 1.0 };
         }
     }, [contentFit]);
 
     // Memoize action builders
-    const speedActions = useMemo(() => 
-        buildSpeedActions(settings.playbackSpeed), 
+    const speedActions = useMemo(() =>
+        buildSpeedActions(settings.playbackSpeed),
         [settings.playbackSpeed]
     );
-    
-    const subtitleActions = useMemo(() => 
+
+    const subtitleActions = useMemo(() =>
         buildSubtitleActions(subtitles as SubtitleSource[], settings.selectedSubtitle, true),
         [subtitles, settings.selectedSubtitle]
     );
-    
-    const audioActions = useMemo(() => 
+
+    const audioActions = useMemo(() =>
         buildAudioActions(playerState.availableAudioTracks, settings.selectedAudioTrack),
         [playerState.availableAudioTracks, settings.selectedAudioTrack]
     );
 
-    const { displayTime, sliderValue } = useMemo(() => 
+    const { displayTime, sliderValue } = useMemo(() =>
         calculateSliderValues(
             playerState.isDragging,
             playerState.dragPosition,
@@ -542,13 +547,12 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                         uri: videoUrl,
                         initType: 2,
                         initOptions: [
-                            "--network-caching=5000",
-                            "--file-caching=1000",
-                            "--live-caching=500",
-                            "--drop-late-frames",
-                            "--skip-frames",
+                            "--network-caching=3000",
+                            "--file-caching=2000",
+                            "--live-caching=1000",
+                            "--http-reconnect",
+                            "--adaptive-logic=highest",
                             "--avcodec-threads=0",
-                            "--intf=dummy",
                             "--no-video-title-show",
                             "--quiet"
                         ]

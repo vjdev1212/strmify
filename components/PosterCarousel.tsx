@@ -75,7 +75,7 @@ export default function AppleTVCarousel({
             itemWidth: width,
             posterWidth: isLandscape ? 180 : 120,
             posterHeight: isLandscape ? 270 : 120,
-            titleSize: isLandscape ? 28 : 28,
+            titleSize: isLandscape ? 28 : 26,
             subtitleSize: isLandscape ? 14 : 14,
             contentPadding: isLandscape ? 40 : 20,
             bottomPadding: isLandscape ? 40 : 40,
