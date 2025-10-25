@@ -7,8 +7,8 @@ export const styles = StyleSheet.create({
         flex: 1
     },
     video: {
-        minWidth: '100%',
-        minHeight: '100%',
+        width: '100%',
+        height: '100%',
     },
     touchArea: {
         position: 'absolute',
@@ -128,7 +128,7 @@ export const styles = StyleSheet.create({
         paddingHorizontal: 40,
         paddingBottom: 40,
         paddingTop: 20,
-        height: 120,
+        height: 100,
         marginHorizontal: 20
     },
     timeContainer: {
