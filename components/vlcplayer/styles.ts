@@ -125,7 +125,7 @@ export const styles = StyleSheet.create({
         opacity: 0.5,
     },
     bottomControls: {
-        paddingHorizontal: 40,
+        paddingHorizontal: 20,
         paddingBottom: 40,
         paddingTop: 20,
         height: 100,
@@ -139,7 +139,6 @@ export const styles = StyleSheet.create({
     progressContainerWithMargin: {
         marginBottom: 16,
         paddingVertical: 10,
-        marginHorizontal: 20,
     },
     progressSlider: {
         width: '100%',
