@@ -1,11 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   ScrollView,
   TouchableOpacity,
   Image,
   StyleSheet,
+  Animated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { StorageKeys, storageService } from '@/utils/StorageService';
 import { View, Text } from './Themed';
 
@@ -34,10 +36,18 @@ const CARD_HEIGHT = (CARD_WIDTH * 9) / 16;
 const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
   const [history, setHistory] = useState<WatchHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const animatedValues = useRef<Map<string, Animated.Value>>(new Map()).current;
 
   useEffect(() => {
     loadWatchHistory();
   }, []);
+
+  const getAnimatedValue = (key: string) => {
+    if (!animatedValues.has(key)) {
+      animatedValues.set(key, new Animated.Value(1));
+    }
+    return animatedValues.get(key)!;
+  };
 
   const loadWatchHistory = async () => {
     try {
@@ -60,6 +70,49 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
     }
   };
 
+  const removeHistoryItem = async (itemToRemove: WatchHistoryItem, itemKey: string) => {
+    try {
+      const animValue = getAnimatedValue(itemKey);
+      
+      // Animate out
+      Animated.timing(animValue, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(async () => {
+        // Remove from storage after animation
+        const historyJson = await storageService.getItem(WATCH_HISTORY_KEY);
+        if (historyJson) {
+          const parsedHistory: WatchHistoryItem[] = JSON.parse(historyJson);
+          const updatedHistory = parsedHistory.filter(
+            item => !(item.videoUrl === itemToRemove.videoUrl && 
+                     item.timestamp === itemToRemove.timestamp)
+          );
+          
+          await storageService.setItem(
+            WATCH_HISTORY_KEY,
+            JSON.stringify(updatedHistory)
+          );
+          
+          // Update local state
+          if(type === 'all') {
+            setHistory(updatedHistory);
+          } else {
+            const filteredHistory = updatedHistory.filter(
+              item => item.type === type
+            );
+            setHistory(filteredHistory);
+          }
+          
+          // Clean up animated value
+          animatedValues.delete(itemKey);
+        }
+      });
+    } catch (error) {
+      console.error('Failed to remove history item:', error);
+    }
+  };
+
   if (isLoading) {
     return null;
   }
@@ -78,8 +131,28 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
         decelerationRate="fast"
         snapToInterval={CARD_WIDTH + 12}
       >
-        {history.map((item, index) => (
-          <View key={`${item.videoUrl}-${index}`}>
+        {history.map((item, index) => {
+          const itemKey = `${item.videoUrl}-${index}`;
+          const animValue = getAnimatedValue(itemKey);
+          
+          return (
+          <Animated.View 
+            key={itemKey}
+            style={{
+              opacity: animValue,
+              transform: [
+                {
+                  scale: animValue,
+                },
+                {
+                  translateX: animValue.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [-50, 0],
+                  }),
+                },
+              ],
+            }}
+          >
             <TouchableOpacity
               style={styles.card}
               onPress={() => onItemSelect(item)}
@@ -109,6 +182,17 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
                     {item.progress}%
                   </Text>
                 </View>
+
+                <TouchableOpacity
+                  style={styles.removeButton}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    removeHistoryItem(item, itemKey);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="close-outline" size={16} color="rgba(255, 255, 255, 0.9)" />
+                </TouchableOpacity>
               </View>
             </TouchableOpacity>
             <View style={styles.titleContainer}>
@@ -116,8 +200,9 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
                 {item.title}
               </Text>
             </View>
-          </View>
-        ))}
+          </Animated.View>
+        )})}
+
       </ScrollView>
     </View>
   );
@@ -199,6 +284,15 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 10,
     fontWeight: '600',
+  },
+  removeButton: {
+    position: 'absolute',
+    top: 4,
+    left: 4,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 25,
+    padding: 4,
+    backdropFilter: 'blur(10px)',
   },
   titleContainer: {
     paddingVertical: 5,
