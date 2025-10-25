@@ -391,9 +391,9 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
 
     const getVideoScale = () => {
         switch (contentFit) {
-            case 'contain': return { x: 0.85, y: 0.85 };
-            case 'cover': return { x: 1.0, y: 1.0 };
-            case 'fill': return { x: 1.2, y: 1.2 };
+            case 'contain': return { x: 1.1, y: 1.0 };
+            case 'cover': return { x: 1.1, y: 1.1 };
+            case 'fill': return { x: 1.0, y: 1.1};
             default: return { x: 1.0, y: 1.0 };
         }
     };
