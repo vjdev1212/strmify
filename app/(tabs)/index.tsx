@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   filtersContainer: {
-    paddingVertical: 12,
+    paddingVertical: 8,
     paddingHorizontal: 5,
   },
   filterRow: {
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   filterButtonActive: {
-    backgroundColor: 'rgba(83, 90, 255, 0.5)',
+    backgroundColor: '#535aff',
   },
   filterButtonText: {
     fontSize: 15,

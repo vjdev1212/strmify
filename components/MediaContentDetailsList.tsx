@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   tableContainer: {
-    borderRadius: 16,
+    borderRadius: 10,
     overflow: 'hidden',
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(255, 255, 255, 0.05)',
