@@ -42,7 +42,6 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
   const loadWatchHistory = async () => {
     try {
       const historyJson = await storageService.getItem(WATCH_HISTORY_KEY);
-      console.log('Loaded watch history JSON:', historyJson);
       if (historyJson) {
         const parsedHistory: WatchHistoryItem[] = JSON.parse(historyJson);
         if(type === 'all') {
