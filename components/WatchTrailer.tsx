@@ -32,12 +32,12 @@ const WatchTrailerButton: React.FC<WatchTrailerButtonProps> = ({ trailerKey }) =
 
     return (
         <TouchableOpacity
-            style={[styles.button, !trailerKey && styles.buttonDisabled]}
+            style={[styles.button]}
             onPress={handleTrailerPress}
             disabled={!trailerKey}
         >
             <Ionicons name="film-outline" size={24} color="#fff" style={styles.icon} />
-            <Text style={styles.buttonText}>Trailer</Text>
+            <Text style={styles.buttonText}> {trailerKey ? 'Watch Trailer' : 'NA'}</Text>
         </TouchableOpacity>
     );
 };
@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#1f1f1f',
     },
     buttonDisabled: {
-        backgroundColor: 'rgba(119, 119, 119, 1)',
+        backgroundColor: '#101010ff',
         borderColor: 'rgba(255, 255, 255, 0.1)',
         opacity: 1,
     },

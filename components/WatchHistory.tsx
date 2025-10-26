@@ -164,7 +164,7 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
                   style={styles.artwork}
                   resizeMode="cover" />
                 <LinearGradient
-                  colors={['transparent', 'rgba(0,0,0,0.8)']}
+                  colors={['transparent', 'rgba(0,0,0,0.95)']}
                   style={styles.gradient} />
 
                 <View style={styles.progressContainer}>
