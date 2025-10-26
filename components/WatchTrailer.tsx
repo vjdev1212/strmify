@@ -37,7 +37,7 @@ const WatchTrailerButton: React.FC<WatchTrailerButtonProps> = ({ trailerKey }) =
             disabled={!trailerKey}
         >
             <Ionicons name="film-outline" size={24} color="#fff" style={styles.icon} />
-            <Text style={styles.buttonText}> {trailerKey ? 'Watch Trailer' : 'NA'}</Text>
+            <Text style={styles.buttonText}> {trailerKey ? 'Trailer' : 'NA'}</Text>
         </TouchableOpacity>
     );
 };

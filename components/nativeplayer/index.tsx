@@ -38,6 +38,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const [loadingText, setLoadingText] = useState('Loading...');
     const [contentFit, setContentFit] = useState<'contain' | 'cover' | 'fill'>('cover');
     const [showContentFitLabel, setShowContentFitLabel] = useState(false);
+    const [isPiPActive, setIsPiPActive] = useState(false);
 
     const useCustomSubtitles = subtitles.length > 0;
 
@@ -267,6 +268,18 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         showControlsTemporarily();
     }, [contentFit, showControlsTemporarily, showContentFitLabelTemporarily]);
 
+    const togglePiP = useCallback(async () => {
+        await playHaptic();
+        if (videoRef.current) {
+            if (isPiPActive) {
+                videoRef.current.stopPictureInPicture();
+            } else {
+                videoRef.current.startPictureInPicture();
+            }
+        }
+        showControlsTemporarily();
+    }, [isPiPActive, showControlsTemporarily]);
+
     const handleOverlayPress = useCallback(() => {
         if (uiState.showControls) {
             hideControls(uiState.setShowControls, animations.controlsOpacity);
@@ -401,6 +414,10 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                             </TouchableOpacity>
                             <TouchableOpacity style={styles.controlButton} onPress={cycleContentFit}>
                                 <MaterialIcons name={getContentFitIcon()} size={24} color="white" />
+                            </TouchableOpacity>
+
+                            <TouchableOpacity style={styles.controlButton} onPress={togglePiP}>
+                                <MaterialIcons name={isPiPActive ? "picture-in-picture-alt" : "picture-in-picture"} size={24} color="white" />
                             </TouchableOpacity>
 
                             {/* Audio Track Menu */}
