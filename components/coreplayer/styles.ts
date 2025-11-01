@@ -220,7 +220,7 @@ export const styles = StyleSheet.create({
     // Subtitle Display
     subtitleContainer: {
         position: 'absolute',
-        bottom: 10,
+        bottom: 12,
         left: 20,
         right: 20,
         alignItems: 'center',
