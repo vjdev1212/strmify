@@ -545,7 +545,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                     }]}
                     source={{
                         uri: videoUrl,
-                        initType: 2,
+                        initType: 1,
                         initOptions: [
                             "--network-caching=3000",
                             "--file-caching=2000",
