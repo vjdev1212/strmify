@@ -621,14 +621,18 @@ const TraktAuthScreen = () => {
                     presentationStyle="pageSheet"
                     onRequestClose={closeWebView}
                 >
-                    <SafeAreaView style={styles.webViewContainer}>                        
+                    <SafeAreaView style={styles.webViewContainer}>
                         {webViewUrl ? (
                             <WebView
                                 showsVerticalScrollIndicator={false}
                                 forceDarkOn={true}
                                 source={{ uri: webViewUrl }}
                                 onNavigationStateChange={handleWebViewNavigationStateChange}
-                                startInLoadingState={true}                                
+                                startInLoadingState={true}
+                                sharedCookiesEnabled={true}
+                                thirdPartyCookiesEnabled={true}
+                                domStorageEnabled={true}
+                                javaScriptEnabled={true}
                             />
                         ) : null}
                     </SafeAreaView>
@@ -896,7 +900,7 @@ const styles = StyleSheet.create({
         flex: 1,
         marginTop: Constants.statusBarHeight,
         backgroundColor: '#1a1a1a'
-    },    
+    },
 });
 
 export default TraktAuthScreen;
