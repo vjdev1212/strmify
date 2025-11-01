@@ -381,16 +381,26 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         }
     }, [playerState.isPlaying]);
 
+    useEffect(() => {
+        console.log('Current zoom:', zoom);
+    }, [zoom]);
+
 
     const handleZoomIn = useCallback(async () => {
         await playHaptic();
-        setZoom(prev => Math.min(prev + 0.05, 1.25));
+        setZoom(prev => {
+            const newZoom = Math.min(prev + 0.05, 1.25);
+            return Math.round(newZoom * 100) / 100;
+        });
         showControlsTemporarily();
     }, [showControlsTemporarily]);
 
     const handleZoomOut = useCallback(async () => {
         await playHaptic();
-        setZoom(prev => Math.max(prev - 0.05, 1.0));
+        setZoom(prev => {
+            const newZoom = Math.max(prev - 0.05, 1.0);
+            return Math.round(newZoom * 100) / 100;
+        });
         showControlsTemporarily();
     }, [showControlsTemporarily]);
 
@@ -514,7 +524,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                     }]}
                     source={{
                         uri: videoUrl,
-                        initType: 1                       
+                        initType: 1
                     }}
                     autoplay={true}
                     playInBackground={true}
