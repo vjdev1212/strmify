@@ -164,7 +164,7 @@ export const setupOrientation = async () => {
 
 export const cleanupOrientation = async () => {
     if (Platform.OS !== 'web') {
-        await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+        await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.DEFAULT);
         StatusBar.setHidden(false);
     }
 };
@@ -417,7 +417,7 @@ export const CenterControls: React.FC<{
             <TouchableOpacity
                 style={[styles.skipButton, !isReady && styles.disabledButton]}
                 onPress={onSkipBackward}
-                disabled={!isReady}
+                disabled={!isReady || !isPlaying}
             >
                 <MaterialIcons
                     name="replay-10"
@@ -441,7 +441,7 @@ export const CenterControls: React.FC<{
             <TouchableOpacity
                 style={[styles.skipButton, !isReady && styles.disabledButton]}
                 onPress={onSkipForward}
-                disabled={!isReady}
+                disabled={!isReady || !isPlaying}
             >
                 <MaterialIcons
                     name="forward-30"

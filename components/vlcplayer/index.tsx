@@ -248,10 +248,25 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         },
 
         onProgress: (data: any) => {
-            if (stateRefs.current.isDragging || isSeeking.current) return;
-
             const { currentTime: current, duration: dur } = data;
             const newCurrentTime = current / 1000;
+
+            // Clear seeking state and hide loader when progress updates after seek
+            if (isSeeking.current) {
+                console.log('onProgress: Clearing seeking state');
+                isSeeking.current = false;
+                playerState.setIsSeeking(false);
+                playerState.setIsBuffering(false);
+
+                // Hide buffer indicator
+                Animated.timing(animations.bufferOpacity, {
+                    toValue: 0,
+                    duration: 100,
+                    useNativeDriver: true,
+                }).start();
+            }
+
+            if (stateRefs.current.isDragging) return;
 
             // Throttle state updates
             const now = Date.now();
@@ -422,18 +437,23 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         const clampedTime = performSeek(seconds, playerState.duration);
         const position = clampedTime / playerState.duration;
 
+        // Set seeking state and show buffering immediately
         isSeeking.current = true;
+        playerState.setIsSeeking(true);
+        playerState.setIsBuffering(true);
         playerState.setCurrentTime(clampedTime);
         progressBarValue.setValue(position);
 
-        playerRef.current?.seek(position);
+        // Show buffer indicator immediately
+        Animated.timing(animations.bufferOpacity, {
+            toValue: 1,
+            duration: 150,
+            useNativeDriver: true,
+        }).start();
 
-        setTimeout(() => {
-            isSeeking.current = false;
-        }, 500);
-
+        playerRef.current?.seek(position); 
         showControlsTemporarily();
-    }, [playerState.duration, playerState, showControlsTemporarily, progressBarValue]);
+    }, [playerState, showControlsTemporarily, progressBarValue, animations.bufferOpacity]);
 
     const skipTime = useCallback(async (seconds: number) => {
         if (!playerState.isReady) return;

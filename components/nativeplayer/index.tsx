@@ -379,7 +379,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 hasStartedPlaying={playerState.isReady}
                 opacity={animations.bufferOpacity}
             />
-
+    
             <TouchableOpacity style={styles.touchArea} activeOpacity={1} onPress={handleOverlayPress} />
 
             <SubtitleDisplay subtitle={useCustomSubtitles ? subtitleState.currentSubtitle : ''} />
