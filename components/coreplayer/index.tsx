@@ -216,11 +216,11 @@ export const findActiveSubtitle = (
     parsedSubtitles: any[]
 ): string => {
     if (parsedSubtitles.length === 0) return '';
-    
+
     const active = parsedSubtitles.find(
         sub => currentTime >= sub.start && currentTime <= sub.end
     );
-    
+
     return active?.text || '';
 };
 
@@ -245,7 +245,7 @@ export const calculateSliderValues = (
 ) => {
     const displayTime = isDragging ? dragPosition * duration : currentTime;
     const sliderValue = isDragging ? dragPosition : (duration > 0 ? currentTime / duration : 0);
-    
+
     return { displayTime, sliderValue };
 };
 
@@ -352,7 +352,7 @@ export const BufferingIndicator: React.FC<{
         >
             <ActivityIndicator size="large" color="#535aff" />
             <Text style={styles.bufferingText}>
-                {hasStartedPlaying ? "Buffering..." : "Loading..."}
+                {hasStartedPlaying ? "" : "Loading..."}
             </Text>
         </Animated.View>
     );
@@ -475,39 +475,39 @@ export const ProgressBar: React.FC<{
     showSpeed = false,
     playbackSpeed = 1.0
 }) => {
-    return (
-        <View style={styles.bottomControls}>
-            <View style={styles.timeContainer}>
-                <Text style={styles.timeText}>{formatTime(currentTime)}</Text>
-                <Text style={styles.timeText}>{formatTime(duration)}</Text>
-            </View>
-
-            <View style={styles.progressContainerWithMargin}>
-                <Slider
-                    style={styles.progressSlider}
-                    minimumValue={0}
-                    maximumValue={1}
-                    value={sliderValue}
-                    onValueChange={onValueChange}
-                    onSlidingStart={onSlidingStart}
-                    onSlidingComplete={onSlidingComplete}
-                    minimumTrackTintColor="#535aff"
-                    maximumTrackTintColor="rgba(255,255,255,0.3)"
-                    thumbTintColor="#fff"
-                    thumbSize={20}
-                    trackHeight={5}
-                    enabled={isReady}
-                />
-            </View>
-
-            {showSpeed && playbackSpeed !== 1.0 && (
-                <View>
-                    <Text style={styles.speedText}>{playbackSpeed}x</Text>
+        return (
+            <View style={styles.bottomControls}>
+                <View style={styles.timeContainer}>
+                    <Text style={styles.timeText}>{formatTime(currentTime)}</Text>
+                    <Text style={styles.timeText}>{formatTime(duration)}</Text>
                 </View>
-            )}
-        </View>
-    );
-};
+
+                <View style={styles.progressContainerWithMargin}>
+                    <Slider
+                        style={styles.progressSlider}
+                        minimumValue={0}
+                        maximumValue={1}
+                        value={sliderValue}
+                        onValueChange={onValueChange}
+                        onSlidingStart={onSlidingStart}
+                        onSlidingComplete={onSlidingComplete}
+                        minimumTrackTintColor="#535aff"
+                        maximumTrackTintColor="rgba(255,255,255,0.3)"
+                        thumbTintColor="#fff"
+                        thumbSize={20}
+                        trackHeight={5}
+                        enabled={isReady}
+                    />
+                </View>
+
+                {showSpeed && playbackSpeed !== 1.0 && (
+                    <View>
+                        <Text style={styles.speedText}>{playbackSpeed}x</Text>
+                    </View>
+                )}
+            </View>
+        );
+    };
 
 // Seek Feedback Component
 export const SeekFeedback: React.FC<{
@@ -613,7 +613,7 @@ export const ErrorDisplay: React.FC<{
             <MaterialIcons name="error-outline" size={64} color="#ff6b6b" />
             <Text style={styles.errorTitle}>Playback Error</Text>
             <Text style={styles.errorText}>{error}</Text>
-            
+
             {onRetry && (
                 <TouchableOpacity style={styles.retryButton} onPress={onRetry}>
                     <Text style={styles.retryButtonText}>Retry</Text>
