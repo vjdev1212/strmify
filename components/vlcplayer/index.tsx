@@ -66,7 +66,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
     artwork,
     subtitles = [],
     openSubtitlesClient,
-    switchMediaPlayer,
     updateProgress
 }) => {
     const playerRef = useRef<VLCPlayer>(null);
@@ -83,8 +82,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
     const timers = useTimers();
     const animations = usePlayerAnimations();
 
-    const [contentFit, setContentFit] = useState<'contain' | 'cover' | 'fill'>('cover');
-    const [showContentFitLabel, setShowContentFitLabel] = useState(false);
+    const [zoom, setZoom] = useState(1.0);
 
     const stateRefs = useRef({
         isPlaying: false,
@@ -383,23 +381,18 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         }
     }, [playerState.isPlaying]);
 
-    const showContentFitLabelTemporarily = useCallback(() => {
-        setShowContentFitLabel(true);
-        Animated.timing(animations.contentFitLabelOpacity, {
-            toValue: 1,
-            duration: 200,
-            useNativeDriver: true
-        }).start();
 
-        timers.clearTimer('contentFitLabel');
-        timers.setTimer('contentFitLabel', () => {
-            Animated.timing(animations.contentFitLabelOpacity, {
-                toValue: 0,
-                duration: 300,
-                useNativeDriver: true
-            }).start(() => setShowContentFitLabel(false));
-        }, CONSTANTS.CONTENT_FIT_LABEL_DELAY);
-    }, [animations.contentFitLabelOpacity, timers]);
+    const handleZoomIn = useCallback(async () => {
+        await playHaptic();
+        setZoom(prev => Math.min(prev + 0.05, 1.25));
+        showControlsTemporarily();
+    }, [showControlsTemporarily]);
+
+    const handleZoomOut = useCallback(async () => {
+        await playHaptic();
+        setZoom(prev => Math.max(prev - 0.05, 1.0));
+        showControlsTemporarily();
+    }, [showControlsTemporarily]);
 
     const togglePlayPause = useCallback(async () => {
         if (!playerState.isReady) return;
@@ -437,14 +430,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         await playHaptic();
         seekTo(playerState.currentTime + seconds);
     }, [playerState.currentTime, seekTo, playerState.isReady]);
-
-    const cycleContentFit = useCallback(async () => {
-        await playHaptic();
-        const currentIndex = CONSTANTS.CONTENT_FIT_OPTIONS.indexOf(contentFit);
-        setContentFit(CONSTANTS.CONTENT_FIT_OPTIONS[(currentIndex + 1) % CONSTANTS.CONTENT_FIT_OPTIONS.length]);
-        showContentFitLabelTemporarily();
-        showControlsTemporarily();
-    }, [contentFit, showControlsTemporarily, showContentFitLabelTemporarily]);
 
     const handleOverlayPress = useCallback(() => {
         if (uiState.showControls) {
@@ -486,20 +471,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         showControlsTemporarily();
     }, [settings, showControlsTemporarily]);
 
-    const getContentFitIcon = useCallback((): "fit-screen" | "crop" | "fullscreen" => {
-        const icons = { contain: 'fit-screen', cover: 'crop', fill: 'fullscreen' } as const;
-        return icons[contentFit];
-    }, [contentFit]);
-
-    const getVideoScale = useCallback(() => {
-        switch (contentFit) {
-            case 'contain': return { x: 1.1, y: 1.0 };
-            case 'cover': return { x: 1.2, y: 1.2 };
-            case 'fill': return { x: 1.0, y: 1.1 };
-            default: return { x: 1.0, y: 1.0 };
-        }
-    }, [contentFit]);
-
     // Memoize action builders
     const speedActions = useMemo(() =>
         buildSpeedActions(settings.playbackSpeed),
@@ -533,29 +504,17 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         onBack({ message: '', player: "vlc" });
     }, [playerState.currentTime, playerState.duration, updateProgress, onBack]);
 
-    const videoScale = useMemo(() => getVideoScale(), [getVideoScale]);
-
     return (
         <View style={styles.container}>
             {!playerState.error && (
                 <VLCPlayer
                     ref={playerRef}
                     style={[styles.video, {
-                        transform: [{ scaleX: videoScale.x }, { scaleY: videoScale.y }]
+                        transform: [{ scale: zoom }]
                     }]}
                     source={{
                         uri: videoUrl,
-                        initType: 1,
-                        initOptions: [
-                            "--network-caching=3000",
-                            "--file-caching=2000",
-                            "--live-caching=1000",
-                            "--http-reconnect",
-                            "--adaptive-logic=highest",
-                            "--avcodec-threads=0",
-                            "--no-video-title-show",
-                            "--quiet"
-                        ]
+                        initType: 1                       
                     }}
                     autoplay={true}
                     playInBackground={true}
@@ -619,16 +578,21 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                         </View>
 
                         <View style={styles.topRightControls}>
+
+                            <TouchableOpacity style={styles.controlButton} onPress={handleZoomOut}>
+                                <MaterialIcons name="zoom-out" size={24} color="white" />
+                            </TouchableOpacity>
+
+                            <TouchableOpacity style={styles.controlButton} onPress={handleZoomIn}>
+                                <MaterialIcons name="zoom-in" size={24} color="white" />
+                            </TouchableOpacity>
+
                             <TouchableOpacity style={styles.controlButton} onPress={async () => {
                                 await playHaptic();
                                 settings.setIsMuted(!settings.isMuted);
                                 showControlsTemporarily();
                             }}>
                                 <Ionicons name={settings.isMuted ? "volume-mute" : "volume-high"} size={24} color="white" />
-                            </TouchableOpacity>
-
-                            <TouchableOpacity style={styles.controlButton} onPress={cycleContentFit}>
-                                <MaterialIcons name={getContentFitIcon()} size={24} color="white" />
                             </TouchableOpacity>
 
                             {playerState.availableAudioTracks.length > 0 && (
@@ -740,12 +704,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                     </View>
                 </Animated.View>
             )}
-
-            <ContentFitLabel
-                show={showContentFitLabel}
-                contentFit={contentFit}
-                opacity={animations.contentFitLabelOpacity}
-            />
         </View>
     );
 };

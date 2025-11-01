@@ -44,7 +44,6 @@ export interface MediaPlayerProps {
     artwork?: string;
     subtitles?: Subtitle[];
     openSubtitlesClient: OpenSubtitlesClient;
-    switchMediaPlayer?: (event: PlayerSwitchEvent) => void;
     updateProgress: (event: UpdateProgessEvent) => void;
 }
 

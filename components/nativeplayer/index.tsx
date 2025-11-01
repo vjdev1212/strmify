@@ -20,7 +20,7 @@ const MenuWrapper: React.FC<any> = (props) => {
 };
 
 export const MediaPlayer: React.FC<MediaPlayerProps> = ({
-    videoUrl, title, back: onBack, progress, artwork, subtitles = [], openSubtitlesClient, switchMediaPlayer, updateProgress
+    videoUrl, title, back: onBack, progress, artwork, subtitles = [], openSubtitlesClient, updateProgress
 }) => {
     const videoRef = useRef<VideoView>(null);
     const shouldAutoHideControls = useRef(true);
@@ -395,16 +395,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                             <Text style={styles.titleText} numberOfLines={1}>{title}</Text>
                         </View>
 
-                        <View style={styles.topRightControls}>
-                            {switchMediaPlayer && Platform.OS !== 'web' && (
-                                <TouchableOpacity style={styles.controlButton} onPress={async () => {
-                                    await playHaptic();
-                                    const progress = calculateProgress(playerState.currentTime, playerState.duration);
-                                    switchMediaPlayer({ message: '', player: "native", progress });
-                                }}>
-                                    <MaterialCommunityIcons name="vlc" size={24} color="white" />
-                                </TouchableOpacity>
-                            )}
+                        <View style={styles.topRightControls}>                            
                             <TouchableOpacity style={styles.controlButton} onPress={async () => {
                                 await playHaptic();
                                 settings.setIsMuted(!settings.isMuted);

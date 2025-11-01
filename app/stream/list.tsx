@@ -232,7 +232,7 @@ const StreamListScreen = () => {
         }
 
         if (!player) {
-            const errorMsg = 'Invalid media player selection.';
+            const errorMsg = 'Invalid Media Player selection. Select Media Player from settings to proceed.';
             setStatusText(`Error: ${errorMsg}`);
             showAlert('Error', errorMsg);
             handleCloseBottomSheet();
@@ -261,7 +261,7 @@ const StreamListScreen = () => {
             const streamUrl = player.encodeUrl ? encodeURIComponent(videoUrl) : videoUrl;
             const playerUrl = player.scheme.replace('STREAMURL', streamUrl).replace('STREAMTITLE', filename);
 
-            if (playerToUse === Players.Default || playerToUse === Players.VLCKit) {
+            if (playerToUse === Players.Default) {
                 router.push({
                     pathname: '/stream/player',
                     params: {
@@ -270,8 +270,7 @@ const StreamListScreen = () => {
                         imdbid,
                         type,
                         season,
-                        episode,
-                        useVlcKit: playerToUse === Players.VLCKit ? 'true' : 'false'
+                        episode
                     },
                 });
                 handleCloseBottomSheet();

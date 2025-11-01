@@ -111,7 +111,6 @@ export default function HomeScreen() {
         type: item.type,
         season: item.season,
         episode: item.episode,
-        useVlcKit: item.useVlcKit,
         progress: item.progress.toString(),
       },
     });

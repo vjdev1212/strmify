@@ -30,7 +30,6 @@ interface WatchHistoryItem {
   type: string;
   season: string;
   episode: string;
-  useVlcKit: string;
   progress: number;
   artwork: string;
   timestamp: number;
@@ -41,11 +40,10 @@ const MAX_HISTORY_ITEMS = 30;
 
 const MediaPlayerScreen: React.FC = () => {
   const router = useRouter();
-  const { videoUrl, title, imdbid, type, season, episode, useVlcKit, progress: watchHistoryProgress } = useLocalSearchParams();
+  const { videoUrl, title, imdbid, type, season, episode, progress: watchHistoryProgress } = useLocalSearchParams();
   const [subtitles, setSubtitles] = useState<Subtitle[]>([]);
   const [isLoadingSubtitles, setIsLoadingSubtitles] = useState(true);
   const [openSubtitlesClient, setOpenSubtitlesClient] = useState<OpenSubtitlesClient | null>(null);
-  const [forceVlc, setForceVlc] = useState(false);
   const [progress, setProgress] = useState(watchHistoryProgress || 0);
   const artwork = `https://images.metahub.space/background/medium/${imdbid}/img`;
 
@@ -183,7 +181,6 @@ const MediaPlayerScreen: React.FC = () => {
         type: type as string,
         season: season as string,
         episode: episode as string,
-        useVlcKit: forceVlc ? 'true' : (useVlcKit as string || 'false'),
         timestamp: Date.now()
       };
 
@@ -232,32 +229,13 @@ const MediaPlayerScreen: React.FC = () => {
     setProgress(Math.floor(event.progress));
     console.log('UpdateProgress', event);
     await saveToWatchHistory(Math.floor(event.progress));
-  };
-
-  const handleSwitchMediaPlayer = (event: PlayerSwitchEvent): void => {
-    console.log(`Video playback failed (${event.player}):`, event.message);
-
-    // Only switch players if not on web
-    if (Platform.OS === "web") return;
-
-    setProgress(Math.floor(event.progress));
-    if (event.player === "native" && !forceVlc && useVlcKit !== 'true') {
-      console.log("Switching to VLC player...");
-      setForceVlc(true);
-    } else if (event.player === "vlc") {
-      console.log("VLC player failed. Switching back to native player...");
-      setForceVlc(false);
-    }
-  };
+  };  
 
   function getPlayer() {
     if (Platform.OS === "web") {
       return require("../../components/nativeplayer").MediaPlayer;
     }
-    if (useVlcKit === 'true' || forceVlc) {
-      return require("../../components/vlcplayer").MediaPlayer;
-    }
-    return require("../../components/nativeplayer").MediaPlayer;
+    return require("../../components/vlcplayer").MediaPlayer;
   }
 
   const Player = getPlayer();
@@ -272,7 +250,6 @@ const MediaPlayerScreen: React.FC = () => {
       subtitles={subtitles}
       openSubtitlesClient={openSubtitlesClient}
       isLoadingSubtitles={isLoadingSubtitles}
-      switchMediaPlayer={handleSwitchMediaPlayer}
       updateProgress={handleUpdateProgress}
     />
   );
