@@ -1,4 +1,3 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Type definitions
 export interface SubtitleSearchParams {
