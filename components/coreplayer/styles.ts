@@ -44,12 +44,12 @@ export const styles = StyleSheet.create({
 
     backButton: {
         padding: 8,
-        marginRight: 16,
+        marginRight: 8,
     },
 
     titleContainer: {
         flex: 1,
-        marginRight: 16,
+        marginRight: 8,
     },
 
     titleText: {
