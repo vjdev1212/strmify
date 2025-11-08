@@ -404,7 +404,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
     const handleZoomIn = useCallback(async () => {
         await playHaptic();
         setZoom(prev => {
-            const newZoom = Math.min(prev + 0.05, 1.25);
+            const newZoom = Math.min(prev + 0.05, 1.5);
             return Math.round(newZoom * 100) / 100;
         });
         showControlsTemporarily();
