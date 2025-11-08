@@ -55,7 +55,7 @@ export const styles = StyleSheet.create({
     titleText: {
         color: 'white',
         fontSize: 18,
-        fontWeight: '500',
+        fontWeight: 500,
     },
 
     topRightControls: {
@@ -75,6 +75,7 @@ export const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 60,
+        zIndex: 11
     },
 
     skipButton: {
@@ -118,13 +119,13 @@ export const styles = StyleSheet.create({
     timeText: {
         color: 'white',
         fontSize: 14,
-        fontWeight: '500',
+        fontWeight: 500,
     },
 
     speedText: {
         color: '#535aff',
         fontSize: 14,
-        fontWeight: '500',
+        fontWeight: 500,
         marginLeft: 12,
     },
 
@@ -145,7 +146,7 @@ export const styles = StyleSheet.create({
         color: 'white',
         fontSize: 16,
         marginTop: 8,
-        fontWeight: '500',
+        fontWeight: 500,
     },
 
     // Content Fit Label
@@ -237,9 +238,9 @@ export const styles = StyleSheet.create({
 
     subtitleText: {
         color: '#fff',
-        fontWeight: '500',
+        fontWeight: 500,
         textAlign: 'center',
-        backgroundColor: 'rgba(26, 26, 26, 0.6)',
+        backgroundColor: 'rgba(26, 26, 26, 0.5)',
         paddingHorizontal: 16,
         paddingVertical: 6,
         borderRadius: 8,
@@ -380,7 +381,7 @@ export const styles = StyleSheet.create({
     settingOptionText: {
         color: 'white',
         fontSize: 16,
-        fontWeight: '500',
+        fontWeight: 500,
     },
 
     speedOptionsGrid: {
@@ -409,7 +410,7 @@ export const styles = StyleSheet.create({
     speedOptionText: {
         color: 'white',
         fontSize: 14,
-        fontWeight: '500',
+        fontWeight: 500,
     },
 
     speedOptionTextSelected: {
