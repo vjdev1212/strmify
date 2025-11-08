@@ -254,7 +254,7 @@ export const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: 'black',
-        padding: 40,
+        padding: 20,
     },
 
     errorTitle: {
