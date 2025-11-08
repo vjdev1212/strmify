@@ -40,7 +40,7 @@ interface StreamResponse {
     streams?: Stream[];
 }
 
-const DEFAULT_STREMIO_URL = 'http://127.0.0.1:11470';
+const DEFAULT_STREMIO_URL = 'http://192.168.1.10:11470';
 const DEFAULT_MEDIA_PLAYER_KEY = StorageKeys.DEFAULT_MEDIA_PLAYER_KEY;
 const SERVERS_KEY = StorageKeys.SERVERS_KEY;
 const ADDONS_KEY = StorageKeys.ADDONS_KEY;

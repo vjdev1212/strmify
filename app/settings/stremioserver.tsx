@@ -10,7 +10,7 @@ const StremioServerScreen = () => {
             <ServerConfiguration
                 serverName="Stremio"
                 serverType="stremio"
-                defaultUrl="http://127.0.0.1:11470"
+                defaultUrl="http://192.168.1.10:11470"
             />
         </SafeAreaView>
     );
