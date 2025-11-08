@@ -72,7 +72,7 @@ const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
 
   // Memoized cast items to prevent unnecessary re-renders
   const castItems = useMemo(() => {
-    return cast.map((member) => {
+    return cast.map((member, index) => {
       const hasImage = !!member.profile_path;
       const imageUri = hasImage ? `${IMAGE_BASE_URL}${member.profile_path}` : null;
       const initials = hasImage ? null : getInitials(member.name);
@@ -80,6 +80,7 @@ const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
 
       return {
         id: member.id,
+        uniqueKey: `${member.id}-${index}`, // Combine id with index for uniqueness
         name: member.name,
         hasImage,
         imageUri,
@@ -110,7 +111,7 @@ const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
       >
         {castItems.map((item, index) => (
           <Pressable
-            key={item.id}
+            key={item.uniqueKey}
             style={[
               styles.avatarContainer,
               {
