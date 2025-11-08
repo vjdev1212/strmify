@@ -8,7 +8,7 @@ import { WebMenu } from "@/components/WebMenuView";
 import { styles } from "../coreplayer/styles";
 import { MediaPlayerProps } from "../coreplayer/models";
 import { playHaptic } from "../coreplayer/utils";
-import { usePlayerState, useSubtitleState, useUIState, usePlayerSettings, useTimers, usePlayerAnimations, hideControls, CONSTANTS, setupOrientation, cleanupOrientation, loadSubtitle, handleSubtitleError, findActiveSubtitle, calculateProgress, performSeek, buildSpeedActions, buildSubtitleActions, buildAudioActions, calculateSliderValues, ArtworkBackground, WaitingLobby, SubtitleDisplay, CenterControls, ProgressBar, ContentFitLabel, SubtitleSource } from "../coreplayer";
+import { usePlayerState, useSubtitleState, useUIState, usePlayerSettings, useTimers, usePlayerAnimations, hideControls, CONSTANTS, setupOrientation, cleanupOrientation, loadSubtitle, handleSubtitleError, findActiveSubtitle, calculateProgress, performSeek, buildSpeedActions, buildSubtitleActions, buildAudioActions, calculateSliderValues, ArtworkBackground, WaitingLobby, SubtitleDisplay, CenterControls, ProgressBar, ContentFitLabel, SubtitleSource, ErrorDisplay } from "../coreplayer";
 import { View, Text } from "../Themed";
 
 // Menu wrapper component - uses CustomMenu on web, MenuView on native
@@ -39,6 +39,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const [contentFit, setContentFit] = useState<'contain' | 'cover' | 'fill'>('cover');
     const [showContentFitLabel, setShowContentFitLabel] = useState(false);
     const [isPiPActive, setIsPiPActive] = useState(false);
+    const [videoError, setVideoError] = useState<string | null>(null);
 
     const useCustomSubtitles = subtitles.length > 0;
 
@@ -126,7 +127,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         };
 
         loadSub();
-        
+
         return () => {
             isMounted = false;
         };
@@ -204,7 +205,6 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         if (!statusChange) return;
 
         const { status, error } = statusChange;
-        if (error) console.log('Video error:', error.message);
 
         switch (status) {
             case "loading":
@@ -212,6 +212,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                     playerState.setIsBuffering(true);
                     Animated.timing(animations.bufferOpacity, { toValue: 1, duration: 200, useNativeDriver: true }).start();
                 }
+                setVideoError(null);
                 break;
 
             case "readyToPlay":
@@ -219,14 +220,21 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 playerState.setIsReady(true);
                 playerState.setDuration(player.duration || 0);
                 Animated.timing(animations.bufferOpacity, { toValue: 0, duration: 200, useNativeDriver: true }).start();
+                setVideoError(null);
                 player.play();
                 break;
 
             case "error":
-                if (!playerState.isReady) {
-                    setLoadingText("Unable to load the video. Retrying with VLC...");
-                }
+                console.error('Video playback error:', error?.message || 'Unknown error');
                 playerState.setIsBuffering(false);
+                playerState.setIsReady(false);
+
+                // Set user-friendly error message
+                const errorMessage = error?.message || 'Unable to load video. The file may be corrupted or in an unsupported format.';
+                setVideoError(errorMessage);
+
+                // Stop any playback attempts
+                player.pause();
                 break;
         }
     }, [statusChange, playerState, animations.bufferOpacity, player]);
@@ -377,13 +385,13 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     // Memoize menu actions to prevent rebuilding on every render
     const speedActions = useMemo(() => buildSpeedActions(settings.playbackSpeed), [settings.playbackSpeed]);
     const subtitleActions = useMemo(() => buildSubtitleActions(
-        subtitles as SubtitleSource[], 
-        settings.selectedSubtitle, 
-        useCustomSubtitles, 
+        subtitles as SubtitleSource[],
+        settings.selectedSubtitle,
+        useCustomSubtitles,
         player.availableSubtitleTracks
     ), [subtitles, settings.selectedSubtitle, useCustomSubtitles, player.availableSubtitleTracks]);
     const audioActions = useMemo(() => buildAudioActions(
-        player.availableAudioTracks, 
+        player.availableAudioTracks,
         settings.selectedAudioTrack
     ), [player.availableAudioTracks, settings.selectedAudioTrack]);
 
@@ -401,6 +409,15 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         updateProgress({ progress: progressValue });
         onBack({ message: '', player: "native" });
     }, [playerState.currentTime, playerState.duration, updateProgress, onBack]);
+
+    const handleRetry = useCallback(() => {
+        setVideoError(null);
+        playerState.setIsReady(false);
+        playerState.setIsBuffering(true);
+        // Force player reload by setting current time to 0
+        player.currentTime = 0;
+        player.play();
+    }, [playerState, player]);
 
     // Memoize menu handlers to prevent recreating on every render
     const handleWebSpeedAction = useCallback((id: string) => {
@@ -464,6 +481,17 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
     const handleSkipBackward = useCallback(() => skipTime(-10), [skipTime]);
     const handleSkipForward = useCallback(() => skipTime(30), [skipTime]);
+
+    // If there's an error, show error display
+    if (videoError) {
+        return (
+            <ErrorDisplay
+                error={videoError}
+                onBack={handleBack}
+                onRetry={handleRetry}
+            />
+        );
+    }
 
     return (
         <View style={styles.container}>
