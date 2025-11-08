@@ -9,7 +9,7 @@ import { playHaptic } from "../coreplayer/utils";
 import { styles } from "../coreplayer/styles";
 import {
     ArtworkBackground,
-    BufferingIndicator,
+    WaitingLobby,
     buildAudioActions,
     buildSpeedActions,
     buildSubtitleActions,
@@ -585,8 +585,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                 error={!!playerState.error}
             />
 
-            <BufferingIndicator
-                isBuffering={playerState.isBuffering || playerState.showBufferingLoader}
+            <WaitingLobby
                 hasStartedPlaying={playerState.hasStartedPlaying}
                 opacity={animations.bufferOpacity}
                 error={!!playerState.error}

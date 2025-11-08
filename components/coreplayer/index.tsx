@@ -336,14 +336,13 @@ export const handlePlaybackError = (error: any, message: string = "Unable to loa
 
 // ==================== COMPONENTS ====================
 
-// Buffering Indicator Component
-export const BufferingIndicator: React.FC<{
-    isBuffering: boolean;
+// Waiting Lobby Component
+export const WaitingLobby: React.FC<{
     hasStartedPlaying: boolean;
     opacity: Animated.Value;
     error?: boolean;
-}> = ({ isBuffering, hasStartedPlaying, opacity, error }) => {
-    if (!isBuffering || error) return null;
+}> = ({ hasStartedPlaying, opacity, error }) => {
+    if (hasStartedPlaying || error) return null;
 
     return (
         <Animated.View
@@ -352,7 +351,7 @@ export const BufferingIndicator: React.FC<{
         >
             <ActivityIndicator size="large" color="#535aff" />
             <Text style={styles.bufferingText}>
-                {hasStartedPlaying ? "" : "Loading..."}
+                {"Loading..."}
             </Text>
         </Animated.View>
     );
@@ -410,48 +409,55 @@ export const CenterControls: React.FC<{
     onSkipBackward: () => void;
     onSkipForward: () => void;
 }> = ({ isPlaying, isReady, isBuffering, onPlayPause, onSkipBackward, onSkipForward }) => {
-    if (isBuffering) return null;
+    // Don't render anything if not ready at all
+    if (!isReady) {
+        return null;
+    }
 
     return (
         <View style={styles.centerControls}>
             <TouchableOpacity
-                style={[styles.skipButton, !isReady && styles.disabledButton]}
+                style={[styles.skipButton]}
                 onPress={onSkipBackward}
-                disabled={!isReady || !isPlaying}
             >
                 <MaterialIcons
                     name="replay-10"
                     size={36}
-                    color={isReady ? "white" : "rgba(255,255,255,0.5)"}
+                    color={"#ffffff"}
                 />
             </TouchableOpacity>
 
-            <TouchableOpacity
-                style={[styles.playButton, !isReady && styles.disabledButton]}
-                onPress={onPlayPause}
-                disabled={!isReady}
-            >
-                <Ionicons
-                    name={isPlaying ? "pause" : "play"}
-                    size={60}
-                    color={isReady ? "white" : "rgba(255,255,255,0.5)"}
-                />
-            </TouchableOpacity>
+            {isBuffering ? (
+                <View style={styles.playButton}>
+                    <ActivityIndicator style={{ paddingHorizontal: 12 }} size="large" color="#ffffff" />
+                </View>
+            ) : (
+                <TouchableOpacity
+                    style={styles.playButton}
+                    onPress={onPlayPause}
+                >
+                    <Ionicons
+                        name={isPlaying ? "pause" : "play"}
+                        size={60}
+                        color="#ffffff"
+                    />
+                </TouchableOpacity>
+            )}
 
             <TouchableOpacity
-                style={[styles.skipButton, !isReady && styles.disabledButton]}
+                style={[styles.skipButton]}
                 onPress={onSkipForward}
-                disabled={!isReady || !isPlaying}
             >
                 <MaterialIcons
                     name="forward-30"
                     size={36}
-                    color={isReady ? "white" : "rgba(255,255,255,0.5)"}
+                    color={"#ffffff"}
                 />
             </TouchableOpacity>
         </View>
     );
 };
+
 
 // Progress Bar Component
 export const ProgressBar: React.FC<{

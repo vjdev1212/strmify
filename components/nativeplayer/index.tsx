@@ -8,7 +8,7 @@ import { WebMenu } from "@/components/WebMenuView";
 import { styles } from "../coreplayer/styles";
 import { MediaPlayerProps } from "../coreplayer/models";
 import { playHaptic } from "../coreplayer/utils";
-import { usePlayerState, useSubtitleState, useUIState, usePlayerSettings, useTimers, usePlayerAnimations, hideControls, CONSTANTS, setupOrientation, cleanupOrientation, loadSubtitle, handleSubtitleError, findActiveSubtitle, calculateProgress, performSeek, buildSpeedActions, buildSubtitleActions, buildAudioActions, calculateSliderValues, ArtworkBackground, BufferingIndicator, SubtitleDisplay, CenterControls, ProgressBar, ContentFitLabel, SubtitleSource } from "../coreplayer";
+import { usePlayerState, useSubtitleState, useUIState, usePlayerSettings, useTimers, usePlayerAnimations, hideControls, CONSTANTS, setupOrientation, cleanupOrientation, loadSubtitle, handleSubtitleError, findActiveSubtitle, calculateProgress, performSeek, buildSpeedActions, buildSubtitleActions, buildAudioActions, calculateSliderValues, ArtworkBackground, WaitingLobby, SubtitleDisplay, CenterControls, ProgressBar, ContentFitLabel, SubtitleSource } from "../coreplayer";
 import { View, Text } from "../Themed";
 
 // Menu wrapper component - uses CustomMenu on web, MenuView on native
@@ -245,14 +245,30 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const seekTo = useCallback((seconds: number) => {
         if (!playerState.isReady || playerState.duration <= 0) return;
         const clampedTime = performSeek(seconds, playerState.duration);
+
+        // Store current playing state
+        const wasPlaying = playerState.isPlaying;
+
+        // Show buffering indicator
+        playerState.setIsBuffering(true);
         isSeeking.current = true;
+
         player.currentTime = clampedTime;
         playerState.setCurrentTime(clampedTime);
+
+        // Resume playback if it was playing
+        if (wasPlaying) {
+            player.play();
+        }
+
+        // Hide buffering after delay
         setTimeout(() => {
+            playerState.setIsBuffering(false);
             isSeeking.current = false;
         }, 500);
+
         showControlsTemporarily();
-    }, [playerState.duration, player, playerState.isReady, showControlsTemporarily]);
+    }, [playerState, player, showControlsTemporarily]);
 
     const skipTime = useCallback(async (seconds: number) => {
         if (!playerState.isReady) return;
@@ -298,15 +314,30 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const handleSliderComplete = useCallback((value: number) => {
         if (playerState.isReady && playerState.duration > 0) {
             const newTime = value * playerState.duration;
+
+            // Store current playing state
+            const wasPlaying = playerState.isPlaying;
+
+            // Show buffering indicator
+            playerState.setIsBuffering(true);
             isSeeking.current = true;
+
             player.currentTime = newTime;
             playerState.setCurrentTime(newTime);
+
+            // Resume playback if it was playing
+            if (wasPlaying) {
+                player.play();
+            }
+
+            // Hide buffering after delay
             setTimeout(() => {
+                playerState.setIsBuffering(false);
                 isSeeking.current = false;
             }, 500);
         }
         playerState.setIsDragging(false);
-    }, [playerState.duration, player, playerState.isReady]);
+    }, [playerState, player]);
 
     // Menu handlers
     const handleSpeedSelect = useCallback(async (speed: number) => {
@@ -374,12 +405,11 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 hasStartedPlaying={playerState.isReady}
             />
 
-            <BufferingIndicator
-                isBuffering={playerState.isBuffering}
+            <WaitingLobby
                 hasStartedPlaying={playerState.isReady}
                 opacity={animations.bufferOpacity}
             />
-    
+
             <TouchableOpacity style={styles.touchArea} activeOpacity={1} onPress={handleOverlayPress} />
 
             <SubtitleDisplay subtitle={useCustomSubtitles ? subtitleState.currentSubtitle : ''} />
@@ -395,7 +425,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                             <Text style={styles.titleText} numberOfLines={1}>{title}</Text>
                         </View>
 
-                        <View style={styles.topRightControls}>                            
+                        <View style={styles.topRightControls}>
                             <TouchableOpacity style={styles.controlButton} onPress={async () => {
                                 await playHaptic();
                                 settings.setIsMuted(!settings.isMuted);
