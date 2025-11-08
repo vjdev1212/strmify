@@ -38,23 +38,6 @@ interface WatchHistoryItem {
 const WATCH_HISTORY_KEY = StorageKeys.WATCH_HISTORY_KEY;
 const MAX_HISTORY_ITEMS = 30;
 
-// Native player supported MIME types and extensions
-const NATIVE_SUPPORTED_FORMATS = {
-  mimeTypes: [
-    'video/mp4',
-    'video/x-m4v',
-    'video/quicktime',
-    'video/3gpp',
-    'video/3gpp2',
-    'audio/x-m4a',
-    'video/webm',
-    'video/mp2t', // MPEG-TS
-  ],
-  extensions: [
-    '.mp4', '.m4v', '.mov', '.m4a', '.3gp', '.3g2', '.webm', '.ts'
-  ]
-};
-
 const MediaPlayerScreen: React.FC = () => {
   const router = useRouter();
   const { videoUrl, title, imdbid, type, season, episode, progress: watchHistoryProgress } = useLocalSearchParams();
@@ -62,13 +45,10 @@ const MediaPlayerScreen: React.FC = () => {
   const [isLoadingSubtitles, setIsLoadingSubtitles] = useState(true);
   const [openSubtitlesClient, setOpenSubtitlesClient] = useState<OpenSubtitlesClient | null>(null);
   const [progress, setProgress] = useState(watchHistoryProgress || 0);
-  const [useVlc, setUseVlc] = useState(false);
-  const [isDetectingFormat, setIsDetectingFormat] = useState(true);
   const artwork = `https://images.metahub.space/background/medium/${imdbid}/img`;
 
   useEffect(() => {
     initializeClient();
-    detectVideoFormat();
   }, []);
 
   useEffect(() => {
@@ -76,88 +56,6 @@ const MediaPlayerScreen: React.FC = () => {
       fetchSubtitles();
     }
   }, [imdbid, type, season, episode, openSubtitlesClient]);
-
-  const detectVideoFormat = async () => {
-    if (Platform.OS === "web") {
-      setUseVlc(false);
-      setIsDetectingFormat(false);
-      return;
-    }
-
-    const url = videoUrl as string;
-    
-    try {
-      // First, check file extension from URL
-      const extensionMatch = url.match(/\.([a-zA-Z0-9]+)(?:[?#]|$)/);
-      if (extensionMatch) {
-        const extension = `.${extensionMatch[1].toLowerCase()}`;
-        const isSupported = NATIVE_SUPPORTED_FORMATS.extensions.includes(extension);
-        console.log(`Detected extension: ${extension}, Native supported: ${isSupported}`);
-        
-        if (isSupported) {
-          setUseVlc(false);
-          setIsDetectingFormat(false);
-          return;
-        }
-        
-        // If we found an extension and it's not supported, use VLC
-        if (!['.m3u8', '.mpd'].includes(extension)) { // Skip HEAD for streaming formats
-          setUseVlc(true);
-          setIsDetectingFormat(false);
-          return;
-        }
-      }
-
-      // No extension or streaming format detected, try HEAD request
-      console.log('Performing HEAD request to detect content type...');
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-
-      try {
-        const response = await fetch(url, {
-          method: 'HEAD',
-          signal: controller.signal,
-        });
-        
-        clearTimeout(timeoutId);
-
-        const contentType = response.headers.get('content-type')?.toLowerCase() || '';
-        console.log(`Content-Type detected: ${contentType}`);
-
-        // Check if content type is supported by native player
-        const isSupported = NATIVE_SUPPORTED_FORMATS.mimeTypes.some(mime => 
-          contentType.includes(mime)
-        );
-
-        // Special handling for streaming formats
-        if (contentType.includes('application/vnd.apple.mpegurl') || // HLS
-            contentType.includes('application/dash+xml') ||           // DASH
-            contentType.includes('application/x-mpegurl')) {          // HLS alternative
-          console.log('Streaming format detected, using native player');
-          setUseVlc(false);
-          setIsDetectingFormat(false);
-          return;
-        }
-
-        console.log(`Native player support: ${isSupported}`);
-        setUseVlc(!isSupported);
-        setIsDetectingFormat(false);
-
-      } catch (headError) {
-        clearTimeout(timeoutId);
-        console.warn('HEAD request failed, defaulting to native player:', headError);
-        // If HEAD request fails, default to native player and let it fail gracefully
-        setUseVlc(false);
-        setIsDetectingFormat(false);
-      }
-
-    } catch (error) {
-      console.error('Error detecting video format:', error);
-      // On error, default to native player
-      setUseVlc(false);
-      setIsDetectingFormat(false);
-    }
-  };
 
   const initializeClient = async () => {
     try {
@@ -320,6 +218,7 @@ const MediaPlayerScreen: React.FC = () => {
     }
   };
 
+
   const handleBack = async (event: BackEvent): Promise<void> => {
     router.back();
   };
@@ -330,40 +229,16 @@ const MediaPlayerScreen: React.FC = () => {
     setProgress(Math.floor(event.progress));
     console.log('UpdateProgress', event);
     await saveToWatchHistory(Math.floor(event.progress));
-  };
-
-  const handlePlayerSwitch = (event: PlayerSwitchEvent): void => {
-    console.log('Manual player switch requested:', event);
-    setUseVlc(event.player === 'vlc');
-    setProgress(event.progress);
-  };
+  };  
 
   function getPlayer() {
     if (Platform.OS === "web") {
       return require("../../components/nativeplayer").MediaPlayer;
     }
-    
-    // Wait for format detection to complete
-    if (isDetectingFormat) {
-      return null; // Or return a loading component
-    }
-    
-    // On mobile, use player based on detected format
-    if (useVlc) {
-      console.log('Loading VLC player');
-      return require("../../components/vlcplayer").MediaPlayer;
-    }
-    
-    console.log('Loading Native player');
-    return require("../../components/nativeplayer").MediaPlayer;
+    return require("../../components/vlcplayer").MediaPlayer;
   }
 
   const Player = getPlayer();
-
-  // Show loading state while detecting format
-  if (isDetectingFormat && Platform.OS !== "web") {
-    return null; // You can return a loading component here
-  }
 
   return (
     <Player
@@ -376,7 +251,6 @@ const MediaPlayerScreen: React.FC = () => {
       openSubtitlesClient={openSubtitlesClient}
       isLoadingSubtitles={isLoadingSubtitles}
       updateProgress={handleUpdateProgress}
-      onPlayerSwitch={handlePlayerSwitch}
     />
   );
 };
