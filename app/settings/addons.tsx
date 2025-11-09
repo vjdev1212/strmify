@@ -74,7 +74,7 @@ const AddonsScreen = () => {
       const updatedAddonsObject = Object.fromEntries(
         updatedAddons.map(addon => [addon.id, addon])
       );
-      
+
       if (updatedAddons.length === 0) {
         // If no addons left, delete the key entirely
         await storageService.removeItem(ADDONS_KEY);
@@ -82,7 +82,7 @@ const AddonsScreen = () => {
         // Otherwise, update with remaining addons
         await storageService.setItem(ADDONS_KEY, JSON.stringify(updatedAddonsObject));
       }
-      
+
       showAlert('Success', 'Addon removed successfully!');
     } catch (error) {
       console.error('Error removing addon:', error);
@@ -108,11 +108,7 @@ const AddonsScreen = () => {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     try {
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(url);
-      } else {
-        showAlert('Error', 'Sharing is not available on this device.');
-      }
+      await Sharing.shareAsync(url);
     } catch {
       showAlert('Error', 'Failed to share the URL.');
     }
