@@ -47,7 +47,7 @@ const MediaPlayerScreen: React.FC = () => {
   const [openSubtitlesClient, setOpenSubtitlesClient] = useState<OpenSubtitlesClient | null>(null);
   const [progress, setProgress] = useState(watchHistoryProgress || 0);
   const artwork = `https://images.metahub.space/background/medium/${imdbid}/img`;
-  
+
   // Trakt scrobbling state
   const [isTraktAuthenticated, setIsTraktAuthenticated] = useState(false);
   const [hasStartedScrobble, setHasStartedScrobble] = useState(false);
@@ -71,18 +71,8 @@ const MediaPlayerScreen: React.FC = () => {
 
   const initializeClient = async () => {
     try {
-      const userAgent = await storageService.getItem(StorageKeys.OPENSUBTITLES_USER_AGENT) || 'Strmify';
-      const apiKey = await storageService.getItem(StorageKeys.OPENSUBTITLES_API_KEY) || '';
-
-      if (apiKey && apiKey.trim() !== '') {
-        const client = new OpenSubtitlesClient(userAgent, apiKey);
-        setOpenSubtitlesClient(client);
-      } else {
-        console.log('No API key provided, subtitles will not be loaded');
-        setOpenSubtitlesClient(null);
-        setSubtitles([]);
-        setIsLoadingSubtitles(false);
-      }
+      const client = new OpenSubtitlesClient();
+      setOpenSubtitlesClient(client);
     } catch (error) {
       console.error('Failed to initialize OpenSubtitles client:', error);
       setOpenSubtitlesClient(null);
@@ -269,11 +259,11 @@ const MediaPlayerScreen: React.FC = () => {
       // This balances accuracy with API efficiency
       else if (hasStartedScrobble) {
         const progressDiff = progressPercentage - lastScrobbleProgressRef.current;
-        
+
         // Update at 15% intervals (15, 30, 45, 60, 75) OR when near completion (80%+)
-        const shouldUpdate = progressDiff >= 15 || 
-                           (progressPercentage >= 80 && progressDiff >= 5);
-        
+        const shouldUpdate = progressDiff >= 15 ||
+          (progressPercentage >= 80 && progressDiff >= 5);
+
         if (shouldUpdate) {
           const scrobbleData: any = {
             progress: progressPercentage,
@@ -356,17 +346,17 @@ const MediaPlayerScreen: React.FC = () => {
   const handleUpdateProgress = async (event: UpdateProgressEvent): Promise<void> => {
     if (event.progress <= 1)
       return;
-    
+
     const progressPercentage = Math.floor(event.progress);
     setProgress(progressPercentage);
     console.log('UpdateProgress', event);
-    
+
     // Save to local watch history
     await saveToWatchHistory(progressPercentage);
-    
+
     // Sync to Trakt
     await syncProgressToTrakt(progressPercentage);
-  };  
+  };
 
   function getPlayer() {
     if (Platform.OS === "web") {

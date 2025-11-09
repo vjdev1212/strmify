@@ -70,12 +70,10 @@ export interface SearchOptions {
 
 class OpenSubtitlesClient {
   private baseURL = 'https://api.opensubtitles.com/api/v1';
-  private userAgent: string;
-  private apiKey?: string;
+  private userAgent: string = process.env.EXPO_PUBLIC_OPENSUBTITLES_USER_AGENT || 'Strmify';
+  private apiKey: string = process.env.EXPO_PUBLIC_OPENSUBTITLES_API_KEY || '';
 
-  constructor(userAgent = 'Strmify', apiKey?: string) {
-    this.userAgent = userAgent;
-    this.apiKey = apiKey;
+  constructor() {
   }
 
   // Set API key
