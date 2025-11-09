@@ -368,7 +368,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         }
     }), [playerState, animations.bufferOpacity, progressBarValue]);
 
-    // Optimized progress update - only every 60 seconds
+    // Progress update
     useEffect(() => {
         if (!updateProgress || !playerState.isReady || playerState.duration <= 0) {
             if (progressUpdateTimerRef.current) {
@@ -383,7 +383,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                 const progress = calculateProgress(playerState.currentTime, playerState.duration);
                 updateProgress({ progress });
             }
-        }, 60 * 1000);
+        }, 10 * 60 * 1000);
 
         return () => {
             if (progressUpdateTimerRef.current) {
@@ -534,9 +534,8 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
     const handleBack = useCallback(async () => {
         await playHaptic();
         const progress = calculateProgress(playerState.currentTime, playerState.duration);
-        if (updateProgress) updateProgress({ progress });
-        onBack({ message: '', player: "vlc" });
-    }, [playerState.currentTime, playerState.duration, updateProgress, onBack]);
+        onBack({ message: '', progress, player: "vlc" });
+    }, [playerState.currentTime, playerState.duration, onBack]);
 
     return (
         <View style={styles.container}>

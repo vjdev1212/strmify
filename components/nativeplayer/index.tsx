@@ -212,7 +212,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 const progressValue = calculateProgress(player.currentTime, playerState.duration);
                 updateProgress({ progress: progressValue });
             }
-        }, 60 * 1000);
+        }, 10 * 60 * 1000);
 
         return () => clearInterval(progressInterval);
     }, [player, playerState.isReady, playerState.duration, updateProgress]);
@@ -423,8 +423,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const handleBack = useCallback(async () => {
         await playHaptic();
         const progressValue = calculateProgress(playerState.currentTime, playerState.duration);
-        updateProgress({ progress: progressValue });
-        onBack({ message: '', player: "native" });
+        onBack({ message: '', progress: progressValue, player: "native" });
     }, [playerState.currentTime, playerState.duration, updateProgress, onBack]);
 
     const handleRetry = useCallback(() => {

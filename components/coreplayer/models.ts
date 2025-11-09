@@ -60,6 +60,7 @@ interface UpdateProgessEvent {
 
 interface BackEvent {
     message: string;
+    progress: number;
     code?: string;
     player: "native" | "vlc";
 }

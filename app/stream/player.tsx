@@ -1,11 +1,11 @@
 import OpenSubtitlesClient, { SubtitleResult } from "@/clients/opensubtitles";
+import { isUserAuthenticated, scrobbleStart, scrobbleStop } from "@/clients/trakt";
 import { Subtitle } from "@/components/coreplayer/models";
 import { getLanguageName } from "@/utils/Helpers";
 import { StorageKeys, storageService } from "@/utils/StorageService";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Platform } from "react-native";
-
 interface PlayerSwitchEvent {
   message: string;
   code?: string;
@@ -16,10 +16,11 @@ interface PlayerSwitchEvent {
 interface BackEvent {
   message: string;
   code?: string;
+  progress: number;
   player: "native" | "vlc",
 }
 
-interface UpdateProgessEvent {
+interface UpdateProgressEvent {
   progress: number
 }
 
@@ -46,9 +47,15 @@ const MediaPlayerScreen: React.FC = () => {
   const [openSubtitlesClient, setOpenSubtitlesClient] = useState<OpenSubtitlesClient | null>(null);
   const [progress, setProgress] = useState(watchHistoryProgress || 0);
   const artwork = `https://images.metahub.space/background/medium/${imdbid}/img`;
+  
+  // Trakt scrobbling state
+  const [isTraktAuthenticated, setIsTraktAuthenticated] = useState(false);
+  const [hasStartedScrobble, setHasStartedScrobble] = useState(false);
+  const lastScrobbleProgressRef = useRef<number>(0);
 
   useEffect(() => {
     initializeClient();
+    checkTraktAuth();
   }, []);
 
   useEffect(() => {
@@ -56,6 +63,11 @@ const MediaPlayerScreen: React.FC = () => {
       fetchSubtitles();
     }
   }, [imdbid, type, season, episode, openSubtitlesClient]);
+
+  const checkTraktAuth = async () => {
+    const isAuth = await isUserAuthenticated();
+    setIsTraktAuthenticated(isAuth);
+  };
 
   const initializeClient = async () => {
     try {
@@ -218,17 +230,142 @@ const MediaPlayerScreen: React.FC = () => {
     }
   };
 
+  const syncProgressToTrakt = async (progressPercentage: number) => {
+    if (!isTraktAuthenticated || !imdbid) {
+      return;
+    }
+
+    try {
+      // Start scrobble when playback begins (at ~3% progress to avoid false starts)
+      if (!hasStartedScrobble && progressPercentage >= 3) {
+        const scrobbleData: any = {
+          progress: progressPercentage,
+        };
+
+        if (type === 'series' && season && episode) {
+          scrobbleData.episode = {
+            ids: {
+              imdb: imdbid
+            }
+          };
+          // Add season and episode numbers if available
+          if (season) scrobbleData.show = { ids: { imdb: imdbid } };
+        } else {
+          scrobbleData.movie = {
+            ids: {
+              imdb: imdbid
+            }
+          };
+        }
+
+        const success = await scrobbleStart(scrobbleData);
+        if (success) {
+          console.log('Trakt scrobble started at', progressPercentage, '%');
+          setHasStartedScrobble(true);
+          lastScrobbleProgressRef.current = progressPercentage;
+        }
+      }
+      // Update progress at key milestones: every 15% OR when reaching 80%+
+      // This balances accuracy with API efficiency
+      else if (hasStartedScrobble) {
+        const progressDiff = progressPercentage - lastScrobbleProgressRef.current;
+        
+        // Update at 15% intervals (15, 30, 45, 60, 75) OR when near completion (80%+)
+        const shouldUpdate = progressDiff >= 15 || 
+                           (progressPercentage >= 80 && progressDiff >= 5);
+        
+        if (shouldUpdate) {
+          const scrobbleData: any = {
+            progress: progressPercentage,
+          };
+
+          if (type === 'series' && season && episode) {
+            scrobbleData.episode = {
+              ids: {
+                imdb: imdbid
+              }
+            };
+          } else {
+            scrobbleData.movie = {
+              ids: {
+                imdb: imdbid
+              }
+            };
+          }
+
+          const success = await scrobbleStart(scrobbleData);
+          if (success) {
+            console.log('Trakt progress updated to', progressPercentage, '%');
+            lastScrobbleProgressRef.current = progressPercentage;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to sync progress to Trakt:', error);
+    }
+  };
+
+  const stopTraktScrobble = async (finalProgress: number) => {
+    // Only stop if authenticated, has valid imdbid, and progress > 3%
+    // We check progress instead of hasStartedScrobble to handle race conditions
+    if (!isTraktAuthenticated || !imdbid || finalProgress < 1) {
+      console.log('Skipping Trakt stop - conditions not met:', {
+        isTraktAuthenticated,
+        hasImdbid: !!imdbid,
+        finalProgress
+      });
+      return;
+    }
+
+    try {
+      const scrobbleData: any = {
+        progress: finalProgress,
+      };
+
+      if (type === 'series' && season && episode) {
+        scrobbleData.episode = {
+          ids: {
+            imdb: imdbid
+          }
+        };
+      } else {
+        scrobbleData.movie = {
+          ids: {
+            imdb: imdbid
+          }
+        };
+      }
+
+      console.log('Stopping Trakt scrobble with data:', scrobbleData);
+      const success = await scrobbleStop(scrobbleData);
+      if (success) {
+        console.log('Trakt scrobble stopped at', finalProgress, '%');
+        setHasStartedScrobble(false); // Reset the flag
+      }
+    } catch (error) {
+      console.error('Failed to stop Trakt scrobble:', error);
+    }
+  };
 
   const handleBack = async (event: BackEvent): Promise<void> => {
+    // Stop scrobble when user exits
+    await stopTraktScrobble(Math.floor(event.progress));
     router.back();
   };
 
-  const handleUpdateProgress = async (event: UpdateProgessEvent): Promise<void> => {
+  const handleUpdateProgress = async (event: UpdateProgressEvent): Promise<void> => {
     if (event.progress <= 1)
       return;
-    setProgress(Math.floor(event.progress));
+    
+    const progressPercentage = Math.floor(event.progress);
+    setProgress(progressPercentage);
     console.log('UpdateProgress', event);
-    await saveToWatchHistory(Math.floor(event.progress));
+    
+    // Save to local watch history
+    await saveToWatchHistory(progressPercentage);
+    
+    // Sync to Trakt
+    await syncProgressToTrakt(progressPercentage);
   };  
 
   function getPlayer() {
