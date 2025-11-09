@@ -96,6 +96,10 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     useEffect(() => {
         setupOrientation();
         return () => {
+            if (updateProgress) {
+                const progressValue = calculateProgress(player.currentTime, playerState.duration);
+                updateProgress({ progress: progressValue });
+            }
             cleanupOrientation();
             clearAllTimers();
         };

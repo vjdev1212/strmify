@@ -138,6 +138,10 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
             ImmersiveMode.fullLayout(true);
         }
         return () => {
+            if (updateProgress) {
+                const progress = calculateProgress(playerState.currentTime, playerState.duration);
+                updateProgress({ progress });
+            }
             cleanupOrientation();
             timers.clearAllTimers();
 
@@ -451,7 +455,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
             useNativeDriver: true,
         }).start();
 
-        playerRef.current?.seek(position); 
+        playerRef.current?.seek(position);
         showControlsTemporarily();
     }, [playerState, showControlsTemporarily, progressBarValue, animations.bufferOpacity]);
 
