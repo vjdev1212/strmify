@@ -8,12 +8,10 @@ import {
   TextInput as DefaultTextInput,
   Text as DefaultText,
   View as DefaultView,
-  StyleSheet,
   Platform
 } from 'react-native';
 import { StatusBar as DefaultStatusBar } from 'expo-status-bar';
 import Colors from '@/constants/Colors';
-import { useColorScheme } from './useColorScheme';
 
 type ThemeProps = {
   lightColor?: string;
