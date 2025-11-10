@@ -110,9 +110,9 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         listeners={{
-          tabPress: () => {
+          tabPress: async () => {
             if (isHapticsSupported()) {
-              Haptics.selectionAsync();
+              await Haptics.selectionAsync();
             }
           },
         }}
@@ -126,9 +126,9 @@ export default function TabLayout() {
       <Tabs.Screen
         name="search"
         listeners={{
-          tabPress: () => {
+          tabPress: async () => {
             if (isHapticsSupported()) {
-              Haptics.selectionAsync();
+              await Haptics.selectionAsync();
             }
           },
         }}
@@ -142,9 +142,9 @@ export default function TabLayout() {
       <Tabs.Screen
         name="trakt"
         listeners={{
-          tabPress: () => {
+          tabPress: async () => {
             if (isHapticsSupported()) {
-              Haptics.selectionAsync();
+              await Haptics.selectionAsync();
             }
           },
         }}
@@ -160,9 +160,9 @@ export default function TabLayout() {
       <Tabs.Screen
         name="settings"
         listeners={{
-          tabPress: () => {
+          tabPress: async () => {
             if (isHapticsSupported()) {
-              Haptics.selectionAsync();
+              await Haptics.selectionAsync();
             }
           },
         }}

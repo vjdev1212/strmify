@@ -8,12 +8,13 @@ import {
   View,
   Platform,
   RefreshControl,
-  Dimensions
+  Dimensions,
+  ActivityIndicator,
+  Share
 } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { StatusBar, Text } from '@/components/Themed';
 import { router } from 'expo-router';
-import * as Sharing from 'expo-sharing';
 import * as Haptics from 'expo-haptics';
 import { isHapticsSupported, showAlert } from '@/utils/platform';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,11 +22,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StorageKeys, storageService } from '@/utils/StorageService';
 
 const ADDONS_KEY = StorageKeys.ADDONS_KEY;
+const defaultAddonLogo = 'https://i.ibb.co/fSJ42PJ/addon.png';
 
 const AddonsScreen = () => {
   const [addons, setAddons] = useState<any[]>([]);
   const [screenData, setScreenData] = useState(Dimensions.get('window'));
   const [refreshing, setRefreshing] = useState(false);
+  const [updatingAddonId, setUpdatingAddonId] = useState<string | null>(null);
 
   useEffect(() => {
     const onChange = (result: any) => {
@@ -66,6 +69,64 @@ const AddonsScreen = () => {
   useEffect(() => {
     fetchAddons();
   }, []);
+
+  const getBaseUrl = (url: string) => {
+    try {
+      const parsedUrl = new URL(url);
+      return `${parsedUrl.protocol}//${parsedUrl.host}`;
+    } catch (error) {
+      return '';
+    }
+  };
+
+  const updateAddonManifest = async (addonId: string, manifestUrl: string) => {
+    if (isHapticsSupported()) {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+
+    setUpdatingAddonId(addonId);
+
+    try {
+      const response = await fetch(manifestUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch: ${response.status}`);
+      }
+
+      const manifestData = await response.json();
+
+      // Prepare updated addon data
+      const updatedAddon = {
+        ...manifestData,
+        id: addonId,
+        manifestUrl: manifestUrl,
+        baseUrl: getBaseUrl(manifestUrl),
+        streamBaseUrl: manifestUrl.replace('/manifest.json', ''),
+        logo: manifestData?.logo?.match(/\.(png|jpg|jpeg)$/i)
+          ? manifestData.logo
+          : defaultAddonLogo,
+      };
+
+      // Get current addons
+      const storedAddons = await storageService.getItem(ADDONS_KEY);
+      const addonsObject = storedAddons ? JSON.parse(storedAddons) : {};
+
+      // Update the specific addon
+      addonsObject[addonId] = updatedAddon;
+
+      // Save back to storage
+      await storageService.setItem(ADDONS_KEY, JSON.stringify(addonsObject));
+
+      // Update local state
+      await fetchAddons();
+
+      showAlert('Success', `${manifestData.name || 'Addon'} updated successfully!`);
+    } catch (error: any) {
+      console.error('Error updating addon:', error);
+      showAlert('Error', error.message || 'Failed to update addon manifest');
+    } finally {
+      setUpdatingAddonId(null);
+    }
+  };
 
   const removeAddon = async (addonId: string) => {
     const updatedAddons = addons.filter(addon => addon.id !== addonId);
@@ -108,8 +169,12 @@ const AddonsScreen = () => {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     try {
-      await Sharing.shareAsync(url);
-    } catch {
+      await Share.share({
+        message: url,
+        url: url,
+      });
+    } catch (error: any) {
+      console.error('Failed to share url', error)
       showAlert('Error', 'Failed to share the URL.');
     }
   };
@@ -120,6 +185,8 @@ const AddonsScreen = () => {
 
   const renderAddonCard = (item: any, index: number) => {
     const configurable = item.behaviorHints?.configurable;
+    const hasManifestUrl = !!item.manifestUrl;
+    const isUpdating = updatingAddonId === item.id;
 
     return (
       <View style={styles.addonCard} key={item.id}>
@@ -128,9 +195,16 @@ const AddonsScreen = () => {
           <AddonLogo uri={item.logo} style={styles.addonLogo} />
           <View style={styles.headerInfo}>
             <Text style={styles.addonName} numberOfLines={2}>{item.name}</Text>
-            <Text style={styles.addonTypes} numberOfLines={1}>
-              {item.types?.join(', ') || 'Unknown'}
-            </Text>
+            <View style={styles.metaRow}>
+              <Text style={styles.addonTypes} numberOfLines={1}>
+                {item.types?.join(', ') || 'Unknown'}
+              </Text>
+              {item.version && (
+                <View style={styles.versionBadge}>
+                  <Text style={styles.versionText}>v{item.version}</Text>
+                </View>
+              )}
+            </View>
           </View>
         </View>
 
@@ -143,12 +217,25 @@ const AddonsScreen = () => {
 
         {/* Actions Section */}
         <View style={styles.cardActions}>
+          {hasManifestUrl && (
+            <Pressable
+              style={[styles.actionButton, styles.updateButton]}
+              onPress={() => updateAddonManifest(item.id, item.manifestUrl)}
+              disabled={isUpdating}
+            >
+              {isUpdating ? (
+                <ActivityIndicator size="small" color="#ffffff" />
+              ) : (
+                <Ionicons name="refresh-outline" size={20} color="#ffffff" />
+              )}
+            </Pressable>
+          )}
+
           <Pressable
             style={[styles.actionButton, styles.shareButton]}
             onPress={() => shareManifestUrl(item.manifestUrl)}
           >
-            <Ionicons name="share-outline" size={18} color="#ffffff" />
-            <Text style={styles.actionButtonText}>Share</Text>
+            <Ionicons name="share-outline" size={20} color="#ffffff" />
           </Pressable>
 
           <Pressable
@@ -161,16 +248,10 @@ const AddonsScreen = () => {
             disabled={!configurable}
           >
             <Ionicons
-              name="settings-outline"
-              size={18}
+              name="cog-outline"
+              size={22}
               color={configurable ? "#ffffff" : '#666666'}
             />
-            <Text style={[
-              styles.actionButtonText,
-              !configurable && styles.disabledButtonText
-            ]}>
-              Config
-            </Text>
           </Pressable>
 
           <Pressable
@@ -201,10 +282,7 @@ const AddonsScreen = () => {
               }
             }}
           >
-            <Ionicons name="trash-outline" size={18} color="#ff4757" />
-            <Text style={[styles.actionButtonText, { color: '#ff4757' }]}>
-              Remove
-            </Text>
+            <Ionicons name="trash-outline" size={20} color="#ff4757" />
           </Pressable>
         </View>
       </View>
@@ -355,11 +433,27 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     marginBottom: 4,
   },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   addonTypes: {
     fontSize: 12,
     color: '#999999',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+  },
+  versionBadge: {
+    backgroundColor: '#2a2a2a',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  versionText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#888888',
   },
   cardBody: {
     marginBottom: 16,
@@ -382,8 +476,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#202020',
     paddingVertical: 10,
-    paddingHorizontal: 8,
-    borderRadius: 8
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  updateButton: {
+    backgroundColor: '#2a2a2a',
   },
   shareButton: {
     backgroundColor: '#2a2a2a',
@@ -402,7 +499,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#ffffff',
     fontWeight: '500',
-    marginLeft: 4,
   },
   disabledButtonText: {
     color: '#666666',
