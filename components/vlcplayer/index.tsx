@@ -647,9 +647,9 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                                         showControlsTemporarily();
                                     }}
                                 >
-                                    <View style={styles.controlButton}>
+                                    <TouchableOpacity style={styles.controlButton}>
                                         <MaterialIcons name="audiotrack" size={24} color="white" />
-                                    </View>
+                                    </TouchableOpacity>
                                 </MenuView>
                             )}
 
@@ -677,9 +677,9 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                                         showControlsTemporarily();
                                     }}
                                 >
-                                    <View style={styles.controlButton}>
+                                    <TouchableOpacity style={styles.controlButton}>
                                         <MaterialIcons name="closed-caption" size={24} color="white" />
-                                    </View>
+                                    </TouchableOpacity>
                                 </MenuView>
                             )}
 
@@ -702,9 +702,9 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                                     showControlsTemporarily();
                                 }}
                             >
-                                <View style={styles.controlButton}>
+                                <TouchableOpacity style={styles.controlButton}>
                                     <MaterialIcons name="speed" size={24} color="white" />
-                                </View>
+                                </TouchableOpacity>
                             </MenuView>
                         </View>
                     </View>
