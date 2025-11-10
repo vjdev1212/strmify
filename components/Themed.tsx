@@ -13,16 +13,12 @@ import {
 import { StatusBar as DefaultStatusBar } from 'expo-status-bar';
 import Colors from '@/constants/Colors';
 
-type ThemeProps = {
-  lightColor?: string;
-  darkColor?: string;
-};
 
-export type TextProps = ThemeProps & DefaultText['props'];
-export type TextInputProps = ThemeProps & DefaultTextInput['props'];
-export type ViewProps = ThemeProps & DefaultView['props'];
-export type StatusBarProps = ThemeProps & React.ComponentProps<typeof DefaultStatusBar>;
-export type ActivityIndicatorProps = ThemeProps & DefaultActivityIndicator['props'];
+export type TextProps = DefaultText['props'];
+export type TextInputProps = DefaultTextInput['props'];
+export type ViewProps = DefaultView['props'];
+export type StatusBarProps = React.ComponentProps<typeof DefaultStatusBar>;
+export type ActivityIndicatorProps = DefaultActivityIndicator['props'];
 
 export function useThemeColor(
   props: { light?: string; dark?: string },
@@ -39,14 +35,14 @@ export function useThemeColor(
 }
 
 export function Text(props: TextProps) {
-  const { style, lightColor, darkColor, ...otherProps } = props;
+  const { style, ...otherProps } = props;
   const color = '#ffffff';
   const webFontStyle = Platform.OS === 'web' ? { fontFamily: 'SF Pro Display, -apple-system, BlinkMacSystemFont, sans-serif' } : {};
   return <DefaultText style={[webFontStyle, { color }, style]} {...otherProps} />;
 }
 
 export function TextInput(props: TextInputProps) {
-  const { style, lightColor, darkColor, ...otherProps } = props;
+  const { style, ...otherProps } = props;
   const color = '#ffffff';
 
   return <DefaultTextInput style={[{ color }, style]} {...otherProps} />;
@@ -71,7 +67,7 @@ export function StatusBar(props: StatusBarProps) {
 }
 
 export function Card(props: ViewProps) {
-  const { style, lightColor, darkColor, ...otherProps } = props;
+  const { style, ...otherProps } = props;
 
   return (
     <DefaultView
