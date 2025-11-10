@@ -208,7 +208,7 @@ const StreamListScreen = () => {
         const serverIdToUse = forceServerId || selectedServerId;
 
         setIsPlaying(true);
-        setPlayBtnDisabled(true);        
+        setPlayBtnDisabled(true);
         if (!url || infoHash) {
             handleOpenBottomSheet();
         }
@@ -273,7 +273,9 @@ const StreamListScreen = () => {
                         episode
                     },
                 });
-                handleCloseBottomSheet();
+                setTimeout(() => {
+                    handleCloseBottomSheet();
+                }, 1000);
             } else {
                 setStatusText('Opening Stream in Media Player...');
                 await Linking.openURL(playerUrl);
