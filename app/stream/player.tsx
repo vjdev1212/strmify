@@ -308,6 +308,9 @@ const MediaPlayerScreen: React.FC = () => {
     }
 
     try {
+
+      await saveToWatchHistory(finalProgress);
+
       const scrobbleData: any = {
         progress: finalProgress,
       };
