@@ -41,7 +41,7 @@ const AddonsScreen = () => {
 
   const fetchAddons = async () => {
     try {
-      const storedAddons = await storageService.getItem(ADDONS_KEY);
+      const storedAddons = storageService.getItem(ADDONS_KEY);
       if (storedAddons) {
         const parsedAddons = JSON.parse(storedAddons);
         setAddons(
@@ -107,14 +107,14 @@ const AddonsScreen = () => {
       };
 
       // Get current addons
-      const storedAddons = await storageService.getItem(ADDONS_KEY);
+      const storedAddons = storageService.getItem(ADDONS_KEY);
       const addonsObject = storedAddons ? JSON.parse(storedAddons) : {};
 
       // Update the specific addon
       addonsObject[addonId] = updatedAddon;
 
       // Save back to storage
-      await storageService.setItem(ADDONS_KEY, JSON.stringify(addonsObject));
+      storageService.setItem(ADDONS_KEY, JSON.stringify(addonsObject));
 
       // Update local state
       await fetchAddons();
@@ -138,10 +138,10 @@ const AddonsScreen = () => {
 
       if (updatedAddons.length === 0) {
         // If no addons left, delete the key entirely
-        await storageService.removeItem(ADDONS_KEY);
+        storageService.removeItem(ADDONS_KEY);
       } else {
         // Otherwise, update with remaining addons
-        await storageService.setItem(ADDONS_KEY, JSON.stringify(updatedAddonsObject));
+        storageService.setItem(ADDONS_KEY, JSON.stringify(updatedAddonsObject));
       }
 
       showAlert('Success', 'Addon removed successfully!');

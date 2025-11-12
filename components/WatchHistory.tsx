@@ -51,7 +51,7 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
 
   const loadWatchHistory = async () => {
     try {
-      const historyJson = await storageService.getItem(WATCH_HISTORY_KEY);
+      const historyJson = storageService.getItem(WATCH_HISTORY_KEY);
       if (historyJson) {
         const parsedHistory: WatchHistoryItem[] = JSON.parse(historyJson);
         if(type === 'all') {
@@ -81,7 +81,7 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
         useNativeDriver: true,
       }).start(async () => {
         // Remove from storage after animation
-        const historyJson = await storageService.getItem(WATCH_HISTORY_KEY);
+        const historyJson = storageService.getItem(WATCH_HISTORY_KEY);
         if (historyJson) {
           const parsedHistory: WatchHistoryItem[] = JSON.parse(historyJson);
           const updatedHistory = parsedHistory.filter(
@@ -89,7 +89,7 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
                      item.timestamp === itemToRemove.timestamp)
           );
           
-          await storageService.setItem(
+          storageService.setItem(
             WATCH_HISTORY_KEY,
             JSON.stringify(updatedHistory)
           );

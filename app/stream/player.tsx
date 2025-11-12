@@ -159,7 +159,7 @@ const MediaPlayerScreen: React.FC = () => {
     const minProgressAsWatched = 95;
 
     try {
-      const existingHistoryJson = await storageService.getItem(WATCH_HISTORY_KEY);
+      const existingHistoryJson = storageService.getItem(WATCH_HISTORY_KEY);
       let history: WatchHistoryItem[] = existingHistoryJson ? JSON.parse(existingHistoryJson) : [];
 
       if (progress >= minProgressAsWatched) {
@@ -169,7 +169,7 @@ const MediaPlayerScreen: React.FC = () => {
             item.season === season &&
             item.episode === episode)
         );
-        await storageService.setItem(WATCH_HISTORY_KEY, JSON.stringify(history));
+        storageService.setItem(WATCH_HISTORY_KEY, JSON.stringify(history));
         return;
       }
 
@@ -213,7 +213,7 @@ const MediaPlayerScreen: React.FC = () => {
         history = history.slice(0, MAX_HISTORY_ITEMS);
       }
 
-      await storageService.setItem(WATCH_HISTORY_KEY, JSON.stringify(history));
+      storageService.setItem(WATCH_HISTORY_KEY, JSON.stringify(history));
       console.log('Watch history saved successfully');
     } catch (error) {
       console.error('Failed to save watch history:', error);

@@ -61,7 +61,7 @@ export default function AddAddonScreen() {
             manifestData.baseUrl = getBaseUrl(url);
             manifestData.streamBaseUrl = url.replace('/manifest.json', '');
             manifestData.logo = manifestData?.logo?.match(/\.(png|jpg|jpeg)$/i) ? manifestData.logo : defaultAddonLogo;
-            const storedAddons = await storageService.getItem(ADDONS_KEY);
+            const storedAddons = storageService.getItem(ADDONS_KEY);
             const addons = storedAddons ? JSON.parse(storedAddons) : {};
             const newKey = `${manifestData.id}`;
 
@@ -70,7 +70,7 @@ export default function AddAddonScreen() {
                 [newKey]: manifestData,
             };
 
-            await storageService.setItem(ADDONS_KEY, JSON.stringify(updatedAddons));
+            storageService.setItem(ADDONS_KEY, JSON.stringify(updatedAddons));
             showAlert('Success', 'Addon added successfully!');
             setManifestData(null);
             setUrl('');

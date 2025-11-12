@@ -83,7 +83,7 @@ const StreamListScreen = () => {
     // Memoized server configuration fetcher
     const fetchServerConfigs = useCallback(async () => {
         try {
-            const storedServers = await storageService.getItem(SERVERS_KEY);
+            const storedServers = storageService.getItem(SERVERS_KEY);
             const defaultStremio: ServerConfig = {
                 serverId: 'stremio-default',
                 serverType: 'stremio',
@@ -116,7 +116,7 @@ const StreamListScreen = () => {
     // Optimized player loading
     const loadDefaultPlayer = useCallback(async () => {
         try {
-            const savedDefault = await storageService.getItem(DEFAULT_MEDIA_PLAYER_KEY);
+            const savedDefault = storageService.getItem(DEFAULT_MEDIA_PLAYER_KEY);
             return savedDefault ? JSON.parse(savedDefault) : null;
         } catch (error) {
             console.error('Error loading default player:', error);
@@ -194,7 +194,6 @@ const StreamListScreen = () => {
         []
     );
 
-    // Optimized play handler
     const handlePlay = useCallback(async (stream: Stream, playerName?: string, forceServerId?: string) => {
         if (isHapticsSupported()) {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -209,12 +208,14 @@ const StreamListScreen = () => {
 
         setIsPlaying(true);
         setPlayBtnDisabled(true);
+
         if (!url || infoHash) {
             handleOpenBottomSheet();
         }
+
         if (!playerToUse || (!url && !serverIdToUse)) {
             const errorMsg = 'Please select a media player and server.';
-            setStatusText(`Error: ${errorMsg}`);
+            setStatusText('Error: ' + errorMsg);
             showAlert('Error', errorMsg);
             handleCloseBottomSheet();
             return;
@@ -225,7 +226,7 @@ const StreamListScreen = () => {
 
         if (!selectedServer && !url && infoHash) {
             const errorMsg = 'Stremio server configuration not found. Please try again.';
-            setStatusText(`Error: ${errorMsg}`);
+            setStatusText('Error: ' + errorMsg);
             showAlert('Error', errorMsg);
             handleCloseBottomSheet();
             return;
@@ -233,7 +234,7 @@ const StreamListScreen = () => {
 
         if (!player) {
             const errorMsg = 'Invalid Media Player selection. Select Media Player from settings to proceed.';
-            setStatusText(`Error: ${errorMsg}`);
+            setStatusText('Error: ' + errorMsg);
             showAlert('Error', errorMsg);
             handleCloseBottomSheet();
             return;
@@ -250,7 +251,7 @@ const StreamListScreen = () => {
 
             if (!videoUrl) {
                 const errorMsg = 'Unable to generate a valid video URL.';
-                setStatusText(`Error: ${errorMsg}`);
+                setStatusText('Error: ' + errorMsg);
                 showAlert('Error', errorMsg);
                 handleCloseBottomSheet();
                 return;
@@ -277,20 +278,48 @@ const StreamListScreen = () => {
                     handleCloseBottomSheet();
                 }, 1000);
             } else {
+                // For external media players
                 setStatusText('Opening Stream in Media Player...');
-                await Linking.openURL(playerUrl);
-                setStatusText('Stream Opened in Media Player...');
-                setTimeout(() => {
+
+                try {
+                    await Linking.openURL(playerUrl);
+                    setStatusText('Stream Opened in Media Player...');
+
+                    // Close bottom sheet after successful opening
+                    setTimeout(() => {
+                        handleCloseBottomSheet();
+                    }, 1000);
+                } catch (error) {
+                    console.error('Error opening URL:', error);
+                    setStatusText('Error: Unable to open the stream in Media Player');
+                    showAlert('Error', 'Unable to open the stream in Media Player. Please check if you have installed the selected Media Player');
                     handleCloseBottomSheet();
-                }, 1000);
+                }
             }
         } catch (error) {
             console.error('Error during playback process:', error);
-            const errorMsg = 'An error occurred while trying to play the stream. Please check the server and try again.';
-            setStatusText(`Error: ${errorMsg}`);
+
+            let errorMsg = 'An error occurred while trying to play the stream.';
+
+            if (error instanceof Error) {
+                if (error.message.includes('Invalid URL')) {
+                    errorMsg = 'Invalid video URL format. Please try a different source.';
+                } else if (error.message.includes('Network')) {
+                    errorMsg = 'Network error. Please check your internet connection and verify that the Stremio Service is up and running.';
+                } else if (error.message.includes('openURL')) {
+                    errorMsg = 'Failed to open media player. Please ensure the player app is installed.';
+                } else {
+                    errorMsg = 'Unknown playback error: ' + error.message;
+                }
+            } else if (typeof error === 'string') {
+                errorMsg = error;
+            }
+
+            setStatusText('Error: ' + errorMsg);
             showAlert('Error', errorMsg);
-        } finally {
             handleCloseBottomSheet();
+        } finally {
+            setIsPlaying(false);
         }
     }, [isPlaying, getInfoHashFromStream, selectedPlayer, selectedServerId, stremioServers, players, generatePlayerUrlWithInfoHash, handleCloseBottomSheet, handleOpenBottomSheet, router, contentTitle, imdbid, type, season, episode]);
 
@@ -299,7 +328,7 @@ const StreamListScreen = () => {
         try {
             setLoading(true);
 
-            const storedAddons = await storageService.getItem(ADDONS_KEY);
+            const storedAddons = storageService.getItem(ADDONS_KEY);
             if (!storedAddons) {
                 setAddons([]);
                 return;
