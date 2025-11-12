@@ -25,7 +25,7 @@ export const getTraktTokens = async (): Promise<TraktTokens | null> => {
     if (cachedTokens) return cachedTokens;
     
     try {
-        const tokens = await storageService.getItem(TRAKT_TOKENS_KEY);
+        const tokens = storageService.getItem(TRAKT_TOKENS_KEY);
         if (tokens) {
             cachedTokens = JSON.parse(tokens);
             return cachedTokens;
@@ -40,7 +40,7 @@ export const getTraktTokens = async (): Promise<TraktTokens | null> => {
 export const saveTraktTokens = async (tokens: TraktTokens): Promise<void> => {
     try {
         cachedTokens = tokens;
-        await storageService.setItem(TRAKT_TOKENS_KEY, JSON.stringify(tokens));
+        storageService.setItem(TRAKT_TOKENS_KEY, JSON.stringify(tokens));
     } catch (error) {
         console.error('Failed to save Trakt tokens:', error);
         throw error;
@@ -51,7 +51,7 @@ export const clearTraktTokens = async (): Promise<void> => {
     try {
         cachedTokens = null;
         isRefreshing = false;
-        await storageService.removeItem(TRAKT_TOKENS_KEY);
+        storageService.removeItem(TRAKT_TOKENS_KEY);
     } catch (error) {
         console.error('Failed to clear Trakt tokens:', error);
     }

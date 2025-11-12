@@ -62,7 +62,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
 
   const loadServers = async () => {
     try {
-      const savedConfigs = await storageService.getItem(SERVERS_KEY);
+      const savedConfigs = storageService.getItem(SERVERS_KEY);
       const servers: ServerConfig[] = savedConfigs ? JSON.parse(savedConfigs) : [];
       const filteredServers = servers.filter(server => server.serverType === serverType);
 
@@ -208,7 +208,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
     }
 
     try {
-      const savedConfigs = await storageService.getItem(SERVERS_KEY);
+      const savedConfigs = storageService.getItem(SERVERS_KEY);
       const allServers: ServerConfig[] = savedConfigs ? JSON.parse(savedConfigs) : [];
 
       let updatedAllServers: ServerConfig[];
@@ -244,7 +244,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
         updatedAllServers = [...otherServersOfSameType, configToSave];
       }
 
-      await storageService.setItem(SERVERS_KEY, JSON.stringify(updatedAllServers));
+      storageService.setItem(SERVERS_KEY, JSON.stringify(updatedAllServers));
 
       setEditingId(null);
       setIsAddingNew(false);
@@ -341,14 +341,14 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
     }
 
     try {
-      const savedConfigs = await storageService.getItem(SERVERS_KEY);
+      const savedConfigs = storageService.getItem(SERVERS_KEY);
       const allServers: ServerConfig[] = savedConfigs ? JSON.parse(savedConfigs) : [];
 
       const updatedAllServers = allServers.map(server =>
         server.serverId === inlineEditingId ? { ...server, serverUrl: inlineEditValue.trim() } : server
       );
 
-      await storageService.setItem(SERVERS_KEY, JSON.stringify(updatedAllServers));
+      storageService.setItem(SERVERS_KEY, JSON.stringify(updatedAllServers));
 
       setInlineEditingId(null);
       setInlineEditValue('');
@@ -376,10 +376,10 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
     if (!confirmed) return;
 
     try {
-      const savedConfigs = await storageService.getItem(SERVERS_KEY);
+      const savedConfigs = storageService.getItem(SERVERS_KEY);
       const allServers: ServerConfig[] = savedConfigs ? JSON.parse(savedConfigs) : [];
       const updatedAllServers = allServers.filter(server => server.serverId !== serverId);
-      await storageService.setItem(SERVERS_KEY, JSON.stringify(updatedAllServers));
+      storageService.setItem(SERVERS_KEY, JSON.stringify(updatedAllServers));
       setSelectedServerId(null);
       await loadServers();
       showAlert('Success', 'Server configuration deleted.');
@@ -390,7 +390,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
 
   const handleSetAsCurrent = async (serverId: string) => {
     try {
-      const savedConfigs = await storageService.getItem(SERVERS_KEY);
+      const savedConfigs = storageService.getItem(SERVERS_KEY);
       const allServers: ServerConfig[] = savedConfigs ? JSON.parse(savedConfigs) : [];
 
       const updatedServers = allServers.map(server => {
@@ -403,7 +403,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
         return server;
       });
 
-      await storageService.setItem(SERVERS_KEY, JSON.stringify(updatedServers));
+      storageService.setItem(SERVERS_KEY, JSON.stringify(updatedServers));
       await loadServers();
 
       // Close the expanded row after setting as current

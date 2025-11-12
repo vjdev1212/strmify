@@ -29,8 +29,8 @@ export const useTraktEnabled = () => {
 
   const loadTraktEnabledState = async () => {
     try {
-      const stored = await storageService.getItem(TRAKT_ENABLED_KEY);
-      if (stored !== null) {
+      const stored = storageService.getItem(TRAKT_ENABLED_KEY);
+      if (stored !== undefined) {
         setIsTraktEnabled(JSON.parse(stored));
       }
     } catch (error) {
@@ -42,7 +42,7 @@ export const useTraktEnabled = () => {
 
   const setTraktEnabled = async (enabled: boolean) => {
     try {
-      await storageService.setItem(TRAKT_ENABLED_KEY, JSON.stringify(enabled));
+      storageService.setItem(TRAKT_ENABLED_KEY, JSON.stringify(enabled));
       setIsTraktEnabled(enabled);
     } catch (error) {
       console.error('Failed to save Trakt enabled state:', error);

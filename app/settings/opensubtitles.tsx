@@ -29,7 +29,7 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
     const loadSavedConfig = async () => {
         setIsLoading(true);
         try {
-            const savedApiKey = await storageService.getItem(StorageKeys.OPENSUBTITLES_API_KEY);
+            const savedApiKey = storageService.getItem(StorageKeys.OPENSUBTITLES_API_KEY);
             if (savedApiKey) {
                 setApiKey(savedApiKey);
             }
@@ -53,7 +53,7 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
         setIsSaving(true);
 
         try {
-            await storageService.setItem(StorageKeys.OPENSUBTITLES_API_KEY, apiKey.trim());
+            storageService.setItem(StorageKeys.OPENSUBTITLES_API_KEY, apiKey.trim());
             showAlert('Configuration Saved', 'Your OpenSubtitles configuration has been saved successfully.');
         } catch (error) {
             showAlert('Save Failed', `Failed to save configuration:\n${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -73,7 +73,7 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
                 style: 'destructive',
                 onPress: async () => {
                     try {
-                        await storageService.removeItem(StorageKeys.OPENSUBTITLES_API_KEY);
+                        storageService.removeItem(StorageKeys.OPENSUBTITLES_API_KEY);
                         setApiKey('');
                         showAlert('Success', 'Configuration cleared successfully');
                     } catch (error) {

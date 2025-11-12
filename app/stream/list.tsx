@@ -83,7 +83,7 @@ const StreamListScreen = () => {
     // Memoized server configuration fetcher
     const fetchServerConfigs = useCallback(async () => {
         try {
-            const storedServers = await storageService.getItem(SERVERS_KEY);
+            const storedServers = storageService.getItem(SERVERS_KEY);
             const defaultStremio: ServerConfig = {
                 serverId: 'stremio-default',
                 serverType: 'stremio',
@@ -116,7 +116,7 @@ const StreamListScreen = () => {
     // Optimized player loading
     const loadDefaultPlayer = useCallback(async () => {
         try {
-            const savedDefault = await storageService.getItem(DEFAULT_MEDIA_PLAYER_KEY);
+            const savedDefault = storageService.getItem(DEFAULT_MEDIA_PLAYER_KEY);
             return savedDefault ? JSON.parse(savedDefault) : null;
         } catch (error) {
             console.error('Error loading default player:', error);
@@ -299,7 +299,7 @@ const StreamListScreen = () => {
         try {
             setLoading(true);
 
-            const storedAddons = await storageService.getItem(ADDONS_KEY);
+            const storedAddons = storageService.getItem(ADDONS_KEY);
             if (!storedAddons) {
                 setAddons([]);
                 return;
