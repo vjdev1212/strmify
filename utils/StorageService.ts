@@ -1,7 +1,9 @@
 import { createMMKV } from 'react-native-mmkv';
 
 // Initialize MMKV storage
-const storage = createMMKV();
+const storage = createMMKV({
+    id: 'strmify'
+});
 
 export const StorageKeys = {
     TRAKT_ENABLED_KEY: 'STRMIFY_TRAKT_ENABLED',

@@ -286,7 +286,14 @@ const StreamListScreen = () => {
             }
         } catch (error) {
             console.error('Error during playback process:', error);
-            const errorMsg = 'An error occurred while trying to play the stream. Please check the server and try again.';
+
+            let errorMsg = 'An error occurred while trying to play the stream.';
+
+            if (error instanceof Error) {
+                errorMsg = `Playback error: ${error.message}`;
+            } else if (typeof error === 'string') {
+                errorMsg = error;
+            }
             setStatusText(`Error: ${errorMsg}`);
             showAlert('Error', errorMsg);
         } finally {
