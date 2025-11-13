@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
     left: 50, // Start separator from where the title begins (icon width + margin + padding)
     right: 0,
     height: StyleSheet.hairlineWidth,
-    backgroundColor: 'rgba(42, 42, 42, 0.5)',
+    backgroundColor: '#3a3a3a80',
   },
   versionContainer: {
     paddingVertical: 5,
