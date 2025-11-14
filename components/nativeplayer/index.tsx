@@ -6,9 +6,8 @@ import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { MenuView } from '@react-native-menu/menu';
 import { WebMenu } from "@/components/WebMenuView";
 import { styles } from "../coreplayer/styles";
-import { MediaPlayerProps } from "../coreplayer/models";
-import { playHaptic } from "../coreplayer/utils";
-import { usePlayerState, useSubtitleState, useUIState, usePlayerSettings, useTimers, usePlayerAnimations, hideControls, CONSTANTS, setupOrientation, cleanupOrientation, loadSubtitle, handleSubtitleError, findActiveSubtitle, calculateProgress, performSeek, buildSpeedActions, buildSubtitleActions, buildAudioActions, calculateSliderValues, ArtworkBackground, WaitingLobby, SubtitleDisplay, CenterControls, ProgressBar, ContentFitLabel, SubtitleSource, ErrorDisplay } from "../coreplayer";
+import { playHaptic, shouldFallbackToVLC } from "../coreplayer/utils";
+import { usePlayerState, useSubtitleState, useUIState, usePlayerSettings, useTimers, usePlayerAnimations, hideControls, CONSTANTS, setupOrientation, cleanupOrientation, loadSubtitle, handleSubtitleError, findActiveSubtitle, calculateProgress, performSeek, buildSpeedActions, buildSubtitleActions, buildAudioActions, buildStreamActions, calculateSliderValues, ArtworkBackground, WaitingLobby, SubtitleDisplay, CenterControls, ProgressBar, ContentFitLabel, SubtitleSource, ErrorDisplay, ExtendedMediaPlayerProps } from "../coreplayer";
 import { View, Text } from "../Themed";
 
 // Menu wrapper component - uses CustomMenu on web, MenuView on native
@@ -19,14 +18,28 @@ const MenuWrapper: React.FC<any> = (props) => {
     return <MenuView {...props} />;
 };
 
-export const MediaPlayer: React.FC<MediaPlayerProps> = ({
-    videoUrl, title, back: onBack, progress, artwork, subtitles = [], openSubtitlesClient, updateProgress
+
+export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
+    videoUrl, 
+    title, 
+    back: onBack, 
+    progress, 
+    artwork, 
+    subtitles = [], 
+    openSubtitlesClient, 
+    updateProgress, 
+    onPlaybackError,
+    streams = [], 
+    currentStreamIndex = 0, 
+    onStreamChange
 }) => {
     const videoRef = useRef<VideoView>(null);
     const shouldAutoHideControls = useRef(true);
     const isSeeking = useRef(false);
     const isHideControlsScheduled = useRef(false);
     const wasPlayingBeforeSeek = useRef(false);
+    const lastKnownTimeRef = useRef<number>(0);
+    const hasReportedErrorRef = useRef(false);
 
     // Use common hooks
     const playerState = usePlayerState();
@@ -53,6 +66,21 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
     const useCustomSubtitles = subtitles.length > 0;
 
+    // Check if we should use VLC from the start
+    useEffect(() => {
+        if (Platform.OS !== 'web' && shouldFallbackToVLC(videoUrl)) {
+            console.log('[Player Selection] Using VLC player for:', videoUrl);
+            if (onPlaybackError && !hasReportedErrorRef.current) {
+                hasReportedErrorRef.current = true;
+                onPlaybackError({
+                    error: 'Unsupported format/codec for native player',
+                    code: 'FORMAT_UNSUPPORTED',
+                    isFormatError: true
+                });
+            }
+        }
+    }, [videoUrl, onPlaybackError]);
+
     // Initialize player (memoized to prevent recreation)
     const player = useVideoPlayer({
         uri: videoUrl,
@@ -71,7 +99,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
             wasPlayingBeforeSeek.current = false; // Don't auto-play when restoring
             player.currentTime = currentTime;
             playerState.setCurrentTime(currentTime);
-            
+
             const timeoutId = setTimeout(() => {
                 isSeeking.current = false;
             }, 300);
@@ -95,18 +123,22 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         }
     }, [controlsOpacity, clearTimer, setTimer, setShowControls]);
 
+    useEffect(() => {
+        lastKnownTimeRef.current = playerState.currentTime;
+    }, [playerState.currentTime]);
+
     // Orientation and cleanup
     useEffect(() => {
         setupOrientation();
         return () => {
             if (updateProgress) {
-                const progressValue = calculateProgress(player.currentTime, playerState.duration);
+                const progressValue = calculateProgress(lastKnownTimeRef.current, playerState.duration);
                 updateProgress({ progress: progressValue });
             }
             cleanupOrientation();
             clearAllTimers();
         };
-    }, [clearAllTimers]);
+    }, [clearAllTimers, updateProgress, playerState.duration]);
 
     // Update player settings - memoized dependencies
     useEffect(() => {
@@ -174,7 +206,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
     useEffect(() => {
         if (!playingChange) return;
         playerState.setIsPlaying(playingChange.isPlaying);
-        
+
         // Only hide buffering if actually playing (not just paused)
         if (playingChange.isPlaying) {
             playerState.setIsBuffering(false);
@@ -248,7 +280,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 playerState.setDuration(player.duration || 0);
                 Animated.timing(bufferOpacity, { toValue: 0, duration: 200, useNativeDriver: true }).start();
                 setVideoError(null);
-                
+
                 // Only auto-play if not restoring from progress
                 if (!isSeeking.current) {
                     player.play();
@@ -260,15 +292,25 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 playerState.setIsBuffering(false);
                 playerState.setIsReady(false);
 
-                // Set user-friendly error message
-                const errorMessage = error?.message || 'Unable to load video. The file may be corrupted or in an unsupported format.';
-                setVideoError(errorMessage);
+                // Report error to parent for fallback
+                if (onPlaybackError && !hasReportedErrorRef.current) {
+                    hasReportedErrorRef.current = true;
+                    const errorMessage = error?.message || 'Unable to load video';
+                    onPlaybackError({
+                        error: errorMessage,
+                        isFormatError: true
+                    });
+                } else {
+                    // Set user-friendly error message
+                    const errorMessage = error?.message || 'Unable to load video. The file may be corrupted or in an unsupported format.';
+                    setVideoError(errorMessage);
+                }
 
                 // Stop any playback attempts
                 player.pause();
                 break;
         }
-    }, [statusChange, bufferOpacity, player]);
+    }, [statusChange, bufferOpacity, player, onPlaybackError]);
 
     // Auto-hide controls when playback starts - with guard to prevent loops
     useEffect(() => {
@@ -306,7 +348,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         // Show buffering indicator
         playerState.setIsBuffering(true);
         Animated.timing(bufferOpacity, { toValue: 1, duration: 150, useNativeDriver: true }).start();
-        
+
         isSeeking.current = true;
 
         // Perform seek without pausing
@@ -372,7 +414,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
             // Show buffering indicator
             playerState.setIsBuffering(true);
             Animated.timing(bufferOpacity, { toValue: 1, duration: 150, useNativeDriver: true }).start();
-            
+
             isSeeking.current = true;
 
             // Perform seek without pausing
@@ -412,6 +454,14 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         player.audioTrack = player.availableAudioTracks[index];
     }, [player, settings]);
 
+    const handleStreamSelect = useCallback(async (index: number) => {
+        await playHaptic();
+        if (onStreamChange) {
+            onStreamChange(index);
+        }
+        showControlsTemporarily();
+    }, [onStreamChange, showControlsTemporarily]);
+
     // Memoized helper
     const getContentFitIcon = useCallback((): "fit-screen" | "crop" | "fullscreen" => {
         const icons = { contain: 'fit-screen', cover: 'crop', fill: 'fullscreen' } as const;
@@ -430,6 +480,7 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         player.availableAudioTracks,
         settings.selectedAudioTrack
     ), [player.availableAudioTracks, settings.selectedAudioTrack]);
+    const streamActions = useMemo(() => buildStreamActions(streams, currentStreamIndex), [streams, currentStreamIndex]);
 
     // Memoize slider values
     const { displayTime, sliderValue } = useMemo(() => calculateSliderValues(
@@ -441,12 +492,13 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
     const handleBack = useCallback(async () => {
         await playHaptic();
-        const progressValue = calculateProgress(playerState.currentTime, playerState.duration);
+        const progressValue = calculateProgress(lastKnownTimeRef.current, playerState.duration);
         onBack({ message: '', progress: progressValue, player: "native" });
-    }, [playerState.currentTime, playerState.duration, onBack]);
+    }, [playerState.duration, onBack]);
 
     const handleRetry = useCallback(() => {
         setVideoError(null);
+        hasReportedErrorRef.current = false;
         playerState.setIsReady(false);
         playerState.setIsBuffering(true);
         // Force player reload by setting current time to 0
@@ -492,6 +544,16 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
         const index = audioActions.findIndex(a => a.id === nativeEvent.event);
         if (index !== -1) handleAudioSelect(index);
     }, [audioActions, handleAudioSelect]);
+
+    const handleWebStreamAction = useCallback((id: string) => {
+        const index = parseInt(id.split('-')[1]);
+        if (!isNaN(index)) handleStreamSelect(index);
+    }, [handleStreamSelect]);
+
+    const handleNativeStreamAction = useCallback(({ nativeEvent }: any) => {
+        const index = parseInt(nativeEvent.event.split('-')[1]);
+        if (!isNaN(index)) handleStreamSelect(index);
+    }, [handleStreamSelect]);
 
     const handleMenuOpen = useCallback(() => {
         shouldAutoHideControls.current = false;
@@ -567,6 +629,24 @@ export const MediaPlayer: React.FC<MediaPlayerProps> = ({
                         </View>
 
                         <View style={styles.topRightControls}>
+                            {/* Stream Selector - Only show if streams are available */}
+                            {streams.length > 1 && (
+                                <MenuWrapper
+                                    style={{ zIndex: 1000 }}
+                                    title="Select Stream"
+                                    onPressAction={Platform.OS === 'web' ? handleWebStreamAction : handleNativeStreamAction}
+                                    actions={streamActions}
+                                    shouldOpenOnLongPress={false}
+                                    themeVariant="dark"
+                                    onOpenMenu={handleMenuOpen}
+                                    onCloseMenu={handleMenuClose}
+                                >
+                                    <View style={styles.controlButton}>
+                                        <MaterialIcons name="ondemand-video" size={24} color="white" />
+                                    </View>
+                                </MenuWrapper>
+                            )}
+
                             <TouchableOpacity style={styles.controlButton} onPress={handleMuteToggle}>
                                 <Ionicons name={settings.isMuted ? "volume-mute" : "volume-high"} size={24} color="white" />
                             </TouchableOpacity>

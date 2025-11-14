@@ -45,6 +45,7 @@ export interface MediaPlayerProps {
     subtitles?: Subtitle[];
     openSubtitlesClient: OpenSubtitlesClient;
     updateProgress: (event: UpdateProgessEvent) => void;
+    onPlaybackError: (event: PlaybackErrorEvent) => void;
 }
 
 interface PlayerSwitchEvent {
@@ -56,6 +57,12 @@ interface PlayerSwitchEvent {
 
 interface UpdateProgessEvent {
     progress: number;
+}
+
+interface PlaybackErrorEvent {
+    error: string;
+    code?: string;
+    isFormatError?: boolean;
 }
 
 interface BackEvent {
