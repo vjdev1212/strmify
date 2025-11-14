@@ -3,7 +3,7 @@ import { TouchableOpacity, Animated, Platform } from "react-native";
 import { useVideoPlayer, VideoPlayer, VideoView } from "expo-video";
 import { useEvent } from "expo";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import { MenuView } from '@react-native-menu/menu';
+import { MenuComponentRef, MenuView } from '@react-native-menu/menu';
 import { WebMenu } from "@/components/WebMenuView";
 import { styles } from "../coreplayer/styles";
 import { playHaptic, shouldFallbackToVLC } from "../coreplayer/utils";
@@ -20,17 +20,17 @@ const MenuWrapper: React.FC<any> = (props) => {
 
 
 export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
-    videoUrl, 
-    title, 
-    back: onBack, 
-    progress, 
-    artwork, 
-    subtitles = [], 
-    openSubtitlesClient, 
-    updateProgress, 
+    videoUrl,
+    title,
+    back: onBack,
+    progress,
+    artwork,
+    subtitles = [],
+    openSubtitlesClient,
+    updateProgress,
     onPlaybackError,
-    streams = [], 
-    currentStreamIndex = 0, 
+    streams = [],
+    currentStreamIndex = 0,
     onStreamChange
 }) => {
     const videoRef = useRef<VideoView>(null);
@@ -57,6 +57,11 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     const clearTimer = timers.clearTimer;
     const setTimer = timers.setTimer;
     const clearAllTimers = timers.clearAllTimers;
+
+    const audioMenuRef = useRef<MenuComponentRef>(null);
+    const subtitleMenuRef = useRef<MenuComponentRef>(null);
+    const speedMenuRef = useRef<MenuComponentRef>(null);
+    const streamMenuRef = useRef<MenuComponentRef>(null);
 
     // Local state
     const [contentFit, setContentFit] = useState<'contain' | 'cover' | 'fill'>('cover');
@@ -633,6 +638,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                             {streams.length > 1 && (
                                 <MenuWrapper
                                     style={{ zIndex: 1000 }}
+                                    ref={streamMenuRef}
                                     title="Select Stream"
                                     onPressAction={Platform.OS === 'web' ? handleWebStreamAction : handleNativeStreamAction}
                                     actions={streamActions}
@@ -641,9 +647,13 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                                     onOpenMenu={handleMenuOpen}
                                     onCloseMenu={handleMenuClose}
                                 >
-                                    <View style={styles.controlButton}>
+                                    <TouchableOpacity style={styles.controlButton} onPress={() => {
+                                        if (Platform.OS === 'android') {
+                                            streamMenuRef.current?.show();
+                                        }
+                                    }}>
                                         <MaterialIcons name="ondemand-video" size={24} color="white" />
-                                    </View>
+                                    </TouchableOpacity>
                                 </MenuWrapper>
                             )}
 
@@ -663,6 +673,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                                 <MenuWrapper
                                     style={{ zIndex: 1000 }}
                                     title="Audio Track"
+                                    ref={audioMenuRef}
                                     onPressAction={Platform.OS === 'web' ? handleWebAudioAction : handleNativeAudioAction}
                                     actions={audioActions}
                                     shouldOpenOnLongPress={false}
@@ -670,9 +681,13 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                                     onOpenMenu={handleMenuOpen}
                                     onCloseMenu={handleMenuClose}
                                 >
-                                    <View style={styles.controlButton}>
+                                    <TouchableOpacity style={styles.controlButton} onPress={() => {
+                                        if (Platform.OS === 'android') {
+                                            audioMenuRef.current?.show();
+                                        }
+                                    }}>
                                         <MaterialIcons name="audiotrack" size={24} color="white" />
-                                    </View>
+                                    </TouchableOpacity>
                                 </MenuWrapper>
                             )}
 
@@ -681,6 +696,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                                 <MenuWrapper
                                     style={{ zIndex: 1000 }}
                                     title="Subtitles"
+                                    ref={subtitleMenuRef}
                                     onPressAction={Platform.OS === 'web' ? handleWebSubtitleAction : handleNativeSubtitleAction}
                                     actions={subtitleActions}
                                     shouldOpenOnLongPress={false}
@@ -688,9 +704,13 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                                     onOpenMenu={handleMenuOpen}
                                     onCloseMenu={handleMenuClose}
                                 >
-                                    <View style={styles.controlButton}>
+                                    <TouchableOpacity style={styles.controlButton} onPress={() => {
+                                        if (Platform.OS === 'android') {
+                                            subtitleMenuRef.current?.show();
+                                        }
+                                    }}>
                                         <MaterialIcons name="closed-caption" size={24} color="white" />
-                                    </View>
+                                    </TouchableOpacity>
                                 </MenuWrapper>
                             )}
 
@@ -698,6 +718,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                             <MenuWrapper
                                 style={{ zIndex: 1000 }}
                                 title="Playback Speed"
+                                ref={speedMenuRef}
                                 onPressAction={Platform.OS === 'web' ? handleWebSpeedAction : handleNativeSpeedAction}
                                 actions={speedActions}
                                 shouldOpenOnLongPress={false}
@@ -705,9 +726,13 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                                 onOpenMenu={handleMenuOpen}
                                 onCloseMenu={handleMenuClose}
                             >
-                                <View style={styles.controlButton}>
+                                <TouchableOpacity style={styles.controlButton} onPress={() => {
+                                    if (Platform.OS === 'android') {
+                                        speedMenuRef.current?.show();
+                                    }
+                                }}>
                                     <MaterialIcons name="speed" size={24} color={"white"} />
-                                </View>
+                                </TouchableOpacity>
                             </MenuWrapper>
                         </View>
                     </View>
