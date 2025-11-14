@@ -8,7 +8,7 @@ import { parseSubtitleFile } from './subtitle';
 import { styles } from './styles';
 import { formatTime } from './utils';
 import { MediaPlayerProps } from './models';
-import { extractQuality, extractSize } from '@/utils/StreamItem';
+import { extractAudioCodec, extractQuality, extractSize, extractVideoCodec } from '@/utils/StreamItem';
 import { MenuAction } from '@react-native-menu/menu';
 
 // ==================== CONSTANTS ====================
@@ -327,9 +327,25 @@ export const buildSubtitleActions = (
 
 export const buildStreamActions = (streams: Stream[], currentIndex: number): MenuAction[] => {
     return streams.map((stream, index) => {
-        const quality = extractQuality(stream.name, stream.title);
-        const size = extractSize(stream.title as string);
-        const displayName = quality ? `${stream.name} (${quality}) (${size})` : stream.name;
+        const name = stream.name || "";
+        const title = stream.title || stream.description || "";
+
+        const quality = extractQuality(name, title);
+        const size = extractSize(title);
+        const videoCodec = extractVideoCodec(title);
+        const audioCodec = extractAudioCodec(title);
+
+        // Build parts dynamically
+        const parts: string[] = [];
+
+        if (quality) parts.push(quality);
+        if (videoCodec) parts.push(videoCodec);
+        if (audioCodec) parts.push(audioCodec);
+        if (size) parts.push(size);
+
+        const suffix = parts.length > 0 ? ` (${parts.join(" | ")})` : "";
+
+        const displayName = `${name}${suffix}`;
 
         return {
             id: `stream-${index}`,
@@ -347,6 +363,7 @@ export const buildStreamActions = (streams: Stream[], currentIndex: number): Men
         };
     });
 };
+
 
 
 export const buildAudioActions = (

@@ -18,6 +18,48 @@ export const extractQuality = (name: string, title: string | undefined): string 
     return '';
 };
 
+export const extractVideoCodec = (text: string): string => {
+    const codecs = [
+        'AV1',
+        'HEVC', 'H.265', 'X265',
+        'AVC', 'H.264', 'X264',
+        'VP9'
+    ];
+
+    const lower = text.toLowerCase();
+
+    for (const codec of codecs) {
+        if (lower.includes(codec.toLowerCase())) {
+            return codec; // Return normalized codec name
+        }
+    }
+
+    return '';
+};
+
+export const extractAudioCodec = (text: string): string => {
+    const codecs = [
+        'Dolby Atmos',
+        'TrueHD',
+        'DTS-HD', 'DTSHD', 'DTS',
+        'EAC3', 'DD+', 'DDP',
+        'AC3', 'DD',
+        'AAC',
+        'FLAC',
+        'Opus'
+    ];
+
+    const lower = text.toLowerCase();
+
+    for (const codec of codecs) {
+        if (lower.includes(codec.toLowerCase())) {
+            return codec; // Return normalized codec name
+        }
+    }
+
+    return '';
+};
+
 
 // Helper function to extract size from description or title
 export const extractSize = (text: string): string => {
