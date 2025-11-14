@@ -60,6 +60,7 @@ const MediaPlayerScreen: React.FC = () => {
   const {
     streams: streamsParam,
     selectedStreamIndex,
+    videoUrl: directVideoUrl,
     title,
     imdbid,
     type,
@@ -95,7 +96,16 @@ const MediaPlayerScreen: React.FC = () => {
   const lastScrobbleProgressRef = useRef<number>(0);
 
   useEffect(() => {
-    // Parse streams from params
+    // Check if we have a direct video URL (continue watching scenario)
+    if (directVideoUrl) {
+      setVideoUrl(directVideoUrl as string);
+      setIsLoadingStream(false);
+      initializeClient();
+      checkTraktAuth();
+      return;
+    }
+
+    // Parse streams from params (new playback scenario)
     if (streamsParam) {
       try {
         const parsedStreams = JSON.parse(streamsParam as string);
@@ -121,7 +131,8 @@ const MediaPlayerScreen: React.FC = () => {
   }, [imdbid, type, season, episode, openSubtitlesClient]);
 
   useEffect(() => {
-    if (streams.length > 0 && stremioServers.length > 0) {
+    // Only load stream if we're in streams mode (not direct URL mode)
+    if (streams.length > 0 && stremioServers.length > 0 && !directVideoUrl) {
       loadStream(currentStreamIndex);
     }
   }, [streams, currentStreamIndex, stremioServers, selectedServerId]);

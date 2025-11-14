@@ -338,14 +338,12 @@ export const buildStreamActions = (streams: Stream[], currentIndex: number): Men
         // Build parts dynamically
         const parts: string[] = [];
 
-        if (quality) parts.push(quality);
-        if (videoCodec) parts.push(videoCodec);
-        if (audioCodec) parts.push(audioCodec);
         if (size) parts.push(size);
+        if (videoCodec) parts.push(videoCodec);
 
-        const suffix = parts.length > 0 ? ` (${parts.join(" | ")})` : "";
+        const suffix = `${parts.join(" - ")}`;
 
-        const displayName = `${name}${suffix}`;
+        const displayName = parts.length > 0 ? `${name.substring(0, 20)} | ${suffix}` : name;
 
         return {
             id: `stream-${index}`,
