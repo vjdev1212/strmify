@@ -3,20 +3,12 @@ import { StyleSheet, Pressable, View as RNView, ScrollView } from 'react-native'
 import { ActivityIndicator, Card, StatusBar, Text, View } from '@/components/Themed';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import * as Clipboard from 'expo-clipboard';
 import { isHapticsSupported, showAlert } from '@/utils/platform';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
-import { useActionSheet } from '@expo/react-native-action-sheet';
-import { generateStremioPlayerUrl } from '@/clients/stremio';
-import { ServerConfig } from '@/components/ServerConfig';
-import { Linking } from 'react-native';
 import BottomSpacing from '@/components/BottomSpacing';
-import { getPlatformSpecificPlayers, Players } from '@/utils/MediaPlayer';
 import { extractQuality, extractSize, getStreamType } from '@/utils/StreamItem';
 import { StorageKeys, storageService } from '@/utils/StorageService';
-import BottomSheet, { BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 interface Stream {
     name: string;
@@ -40,9 +32,6 @@ interface StreamResponse {
     streams?: Stream[];
 }
 
-const DEFAULT_STREMIO_URL = 'http://192.168.1.10:11470';
-const DEFAULT_MEDIA_PLAYER_KEY = StorageKeys.DEFAULT_MEDIA_PLAYER_KEY;
-const SERVERS_KEY = StorageKeys.SERVERS_KEY;
 const ADDONS_KEY = StorageKeys.ADDONS_KEY;
 
 const StreamListScreen = () => {
@@ -60,268 +49,12 @@ const StreamListScreen = () => {
     const [selectedAddon, setSelectedAddon] = useState<Addon | null>(null);
     const [streams, setStreams] = useState<Stream[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
-    const [stremioServers, setStremioServers] = useState<ServerConfig[]>([]);
-    const [selectedServerId, setSelectedServerId] = useState<string | null>(null);
-    const [players, setPlayers] = useState<{ name: string; scheme: string; encodeUrl: boolean }[]>([]);
-    const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
-    const [playBtnDisabled, setPlayBtnDisabled] = useState<boolean>(false);
-    const [statusText, setStatusText] = useState('');
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [selectedStream, setSelectedStream] = useState<Stream | null>(null);
-
-    // Bottom Sheet refs
-    const bottomSheetRef = useRef<BottomSheet>(null);
-    const snapPoints = useMemo(() => ['40%', '60%'], []);
 
     // Refs for race condition prevention
     const abortControllerRef = useRef<AbortController | null>(null);
     const currentAddonRef = useRef<string>('');
 
     const router = useRouter();
-    const { showActionSheetWithOptions } = useActionSheet();
-
-    // Memoized server configuration fetcher
-    const fetchServerConfigs = useCallback(async () => {
-        try {
-            const storedServers = storageService.getItem(SERVERS_KEY);
-            const defaultStremio: ServerConfig = {
-                serverId: 'stremio-default',
-                serverType: 'stremio',
-                serverName: 'Stremio',
-                serverUrl: DEFAULT_STREMIO_URL,
-                current: true
-            };
-
-            let stremioServerList: ServerConfig[];
-
-            if (!storedServers) {
-                stremioServerList = [defaultStremio];
-            } else {
-                const allServers: ServerConfig[] = JSON.parse(storedServers);
-                const filteredStremioServers = allServers.filter(server => server.serverType === 'stremio');
-                stremioServerList = filteredStremioServers.length > 0 ? filteredStremioServers : [defaultStremio];
-            }
-
-            setStremioServers(stremioServerList);
-
-            const currentServer = stremioServerList.find(server => server.current) || stremioServerList[0];
-            setSelectedServerId(currentServer.serverId);
-
-        } catch (error) {
-            console.error('Error loading server configurations:', error);
-            showAlert('Error', 'Failed to load server configurations');
-        }
-    }, []);
-
-    // Optimized player loading
-    const loadDefaultPlayer = useCallback(async () => {
-        try {
-            const savedDefault = storageService.getItem(DEFAULT_MEDIA_PLAYER_KEY);
-            return savedDefault ? JSON.parse(savedDefault) : null;
-        } catch (error) {
-            console.error('Error loading default player:', error);
-            return null;
-        }
-    }, []);
-
-    // Combined initialization effect
-    useEffect(() => {
-        const initializeApp = async () => {
-            // Load platform players
-            const platformPlayers = getPlatformSpecificPlayers();
-            setPlayers(platformPlayers);
-
-            // Load saved default player or use first available
-            const savedPlayer = await loadDefaultPlayer();
-            setSelectedPlayer(savedPlayer || (platformPlayers.length > 0 ? platformPlayers[0].name : null));
-
-            // Fetch server configs and addons
-            await fetchServerConfigs();
-            await fetchAddons();
-        };
-
-        initializeApp();
-    }, [fetchServerConfigs, loadDefaultPlayer]);
-
-    // Stream utility functions
-    const getMagnetFromStream = useCallback((stream: Stream): string | null => {
-        const { magnet, magnetLink, infoHash } = stream;
-        return magnet || magnetLink || (infoHash ? `magnet:?xt=urn:btih:${infoHash}` : null);
-    }, []);
-
-    const getInfoHashFromStream = useCallback((stream: Stream): string | null => {
-        const { infoHash, magnet, magnetLink } = stream;
-        if (infoHash) return infoHash;
-
-        const magnetToUse = magnet || magnetLink;
-        if (magnetToUse) {
-            const match = magnetToUse.match(/xt=urn:btih:([a-fA-F0-9]{40}|[a-fA-F0-9]{32})/i);
-            return match?.[1] || null;
-        }
-        return null;
-    }, []);
-
-    // Optimized stream URL generation
-    const generatePlayerUrlWithInfoHash = useCallback(async (infoHash: string, serverUrl: string) => {
-        setStatusText('Torrent details sent to the server. This may take a moment. Please wait...');
-        return await generateStremioPlayerUrl(infoHash, serverUrl, type, season as string, episode as string);
-    }, [type, season, episode]);
-
-    // Bottom Sheet handlers
-    const handleOpenBottomSheet = useCallback(() => {
-        bottomSheetRef.current?.snapToIndex(1); // Snap to second snap point (35%)
-    }, []);
-
-    const handleCloseBottomSheet = useCallback(() => {
-        bottomSheetRef.current?.close();
-        setTimeout(() => {
-            setPlayBtnDisabled(false);
-            setStatusText('');
-            setIsPlaying(false);
-        }, 300);
-    }, []);
-
-    // Render backdrop for bottom sheet
-    const renderBackdrop = useCallback(
-        (props: any) => (
-            <BottomSheetBackdrop
-                {...props}
-                disappearsOnIndex={-1}
-                appearsOnIndex={0}
-                opacity={0.5}
-            />
-        ),
-        []
-    );
-
-    const handlePlay = useCallback(async (stream: Stream, playerName?: string, forceServerId?: string) => {
-        if (isHapticsSupported()) {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }
-
-        if (isPlaying) return;
-
-        const { url } = stream;
-        const infoHash = getInfoHashFromStream(stream);
-        const playerToUse = playerName || selectedPlayer;
-        const serverIdToUse = forceServerId || selectedServerId;
-
-        setIsPlaying(true);
-        setPlayBtnDisabled(true);
-
-        if (!url || infoHash) {
-            handleOpenBottomSheet();
-        }
-
-        if (!playerToUse || (!url && !serverIdToUse)) {
-            const errorMsg = 'Please select a media player and server.';
-            setStatusText('Error: ' + errorMsg);
-            showAlert('Error', errorMsg);
-            handleCloseBottomSheet();
-            return;
-        }
-
-        const selectedServer = stremioServers.find(s => s.serverId === serverIdToUse);
-        const player = players.find(p => p.name === playerToUse);
-
-        if (!selectedServer && !url && infoHash) {
-            const errorMsg = 'Stremio server configuration not found. Please try again.';
-            setStatusText('Error: ' + errorMsg);
-            showAlert('Error', errorMsg);
-            handleCloseBottomSheet();
-            return;
-        }
-
-        if (!player) {
-            const errorMsg = 'Invalid Media Player selection. Select Media Player from settings to proceed.';
-            setStatusText('Error: ' + errorMsg);
-            showAlert('Error', errorMsg);
-            handleCloseBottomSheet();
-            return;
-        }
-
-        try {
-            let videoUrl = url || '';
-
-            if (!url && infoHash && selectedServer) {
-                setStatusText('Processing the InfoHash...');
-                videoUrl = await generatePlayerUrlWithInfoHash(infoHash, selectedServer.serverUrl);
-                setStatusText('URL Generated...');
-            }
-
-            if (!videoUrl) {
-                const errorMsg = 'Unable to generate a valid video URL.';
-                setStatusText('Error: ' + errorMsg);
-                showAlert('Error', errorMsg);
-                handleCloseBottomSheet();
-                return;
-            }
-
-            const urlJs = new URL(videoUrl);
-            const filename = urlJs.pathname.split('/').pop() || '';
-            const streamUrl = player.encodeUrl ? encodeURIComponent(videoUrl) : videoUrl;
-            const playerUrl = player.scheme.replace('STREAMURL', streamUrl).replace('STREAMTITLE', filename);
-
-            if (playerToUse === Players.Default) {
-                router.push({
-                    pathname: '/stream/player',
-                    params: {
-                        videoUrl: playerUrl,
-                        title: contentTitle,
-                        imdbid,
-                        type,
-                        season,
-                        episode
-                    },
-                });
-                setTimeout(() => {
-                    handleCloseBottomSheet();
-                }, 1000);
-            } else {
-                // For external media players
-                setStatusText('Opening Stream in Media Player...');
-
-                try {
-                    await Linking.openURL(playerUrl);
-                    setStatusText('Stream Opened in Media Player...');
-
-                    // Close bottom sheet after successful opening
-                    setTimeout(() => {
-                        handleCloseBottomSheet();
-                    }, 1000);
-                } catch (error) {
-                    console.error('Error opening URL:', error);
-                    setStatusText('Error: Unable to open the stream in Media Player');
-                    showAlert('Error', 'Unable to open the stream in Media Player. Please check if you have installed the selected Media Player');
-                    handleCloseBottomSheet();
-                }
-            }
-        } catch (error) {
-            console.error('Error during playback process:', error);
-
-            let errorMsg = 'An error occurred while trying to play the stream.';
-
-            if (error instanceof Error) {
-                if (error.message.includes('Invalid URL')) {
-                    errorMsg = 'Invalid video URL format. Please try a different source.';
-                } else if (error.message.includes('Network')) {
-                    errorMsg = 'Network error. Please check your internet connection and verify that the Stremio Service is up and running.';
-                } else if (error.message.includes('openURL')) {
-                    errorMsg = 'Failed to open media player. Please ensure the player app is installed.';
-                } else {
-                    errorMsg = 'Unknown playback error: ' + error.message;
-                }
-            } else if (typeof error === 'string') {
-                errorMsg = error;
-            }
-
-            setStatusText('Error: ' + errorMsg);
-            showAlert('Error', errorMsg);
-            handleCloseBottomSheet();
-        } finally {
-            setIsPlaying(false);
-        }
-    }, [isPlaying, getInfoHashFromStream, selectedPlayer, selectedServerId, stremioServers, players, generatePlayerUrlWithInfoHash, handleCloseBottomSheet, handleOpenBottomSheet, router, contentTitle, imdbid, type, season, episode]);
 
     // Fixed addon fetching with race condition prevention
     const fetchAddons = useCallback(async (): Promise<void> => {
@@ -412,6 +145,10 @@ const StreamListScreen = () => {
         }
     }, [imdbid, type, season, episode]);
 
+    useEffect(() => {
+        fetchAddons();
+    }, [fetchAddons]);
+
     // Optimized addon selection handler
     const handleAddonPress = useCallback(async (item: Addon): Promise<void> => {
         if (isHapticsSupported()) {
@@ -426,128 +163,26 @@ const StreamListScreen = () => {
         await fetchStreams(item);
     }, [fetchStreams]);
 
-    // Stream selection handler
-    const handleStreamSelected = useCallback(async (stream: Stream): Promise<void> => {
+    // Stream selection handler - now navigates to player with all streams
+    const handleStreamSelected = useCallback(async (stream: Stream, index: number): Promise<void> => {
         if (isHapticsSupported()) {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
 
-        const { url } = stream;
-        const infoHash = getInfoHashFromStream(stream);
-
-        setSelectedStream(stream);
-
-        if (!url && infoHash) {
-            showTorrentActions(stream);
-        } else {
-            selectedPlayer ? handlePlay(stream, selectedPlayer) : showPlayerSelection(undefined, stream);
-        }
-    }, [getInfoHashFromStream, selectedPlayer, handlePlay]);
-
-    // Utility functions
-    const copyToClipboard = useCallback(async (text: string) => {
-        try {
-            await Clipboard.setStringAsync(text);
-            showAlert('Success', 'Copied to clipboard');
-        } catch (error) {
-            console.error('Failed to copy:', error);
-            showAlert('Error', 'Failed to copy to clipboard');
-        }
-    }, []);
-
-    const openInBrowser = useCallback(async (url: string) => {
-        try {
-            await Linking.openURL(url);
-            handleCloseBottomSheet();
-        } catch (error) {
-            console.error('Failed to open URL:', error);
-            showAlert('Error', 'Failed to open in browser');
-        }
-    }, []);
-
-    // Action sheet handlers
-    const showTorrentActions = useCallback((stream: Stream) => {
-        if (stremioServers.length === 0) {
-            showAlert('Error', 'No Stremio servers are configured');
-            return;
-        }
-
-        const currentServer = stremioServers.find(server => server.serverId === selectedServerId);
-        const serverId = currentServer?.serverId || stremioServers[0].serverId;
-        const { url } = stream;
-        let linkToUse = url || getMagnetFromStream(stream) || '';
-
-        const options = ['Play', 'Copy', 'Open with App', 'Cancel'];
-        const icons = [
-            <Feather name="play" size={20} color="#ffffff" />,
-            <Feather name="copy" size={20} color="#ffffff" />,
-            <Feather name="external-link" size={20} color="#ffffff" />,
-            <Feather name="x" size={20} color="#ff6b6b" />
-        ];
-
-        showActionSheetWithOptions(
-            {
-                options,
-                cancelButtonIndex: 3,
-                title: 'Select action',
-                messageTextStyle: { color: '#ffffff', fontSize: 12 },
-                textStyle: { color: '#ffffff' },
-                titleTextStyle: { color: '#535aff', fontWeight: '500' },
-                cancelButtonTintColor: '#ff6b6b',
-                containerStyle: { backgroundColor: '#101010' },
-                userInterfaceStyle: 'dark',
-                icons
+        // Navigate to player with all streams and selected index
+        router.push({
+            pathname: '/stream/player',
+            params: {
+                streams: JSON.stringify(streams),
+                selectedStreamIndex: index.toString(),
+                title: contentTitle,
+                imdbid,
+                type,
+                season,
+                episode
             },
-            (selectedIndex?: number) => {
-                if (selectedIndex === undefined || selectedIndex === 3) return;
-
-                switch (selectedIndex) {
-                    case 0:
-                        setSelectedServerId(serverId);
-                        setTimeout(() => {
-                            selectedPlayer
-                                ? handlePlay(stream, selectedPlayer, serverId)
-                                : showPlayerSelection(serverId, stream);
-                        }, 100);
-                        break;
-                    case 1:
-                        copyToClipboard(linkToUse);
-                        break;
-                    case 2:
-                        openInBrowser(linkToUse);
-                        break;
-                }
-            }
-        );
-    }, [stremioServers, selectedServerId, getMagnetFromStream, selectedPlayer, handlePlay, copyToClipboard, openInBrowser, showActionSheetWithOptions]);
-
-    const showPlayerSelection = useCallback((selectedServerIdParam?: string, stream?: Stream) => {
-        const playerOptions = [...players.map(player => player.name), 'Cancel'];
-
-        showActionSheetWithOptions(
-            {
-                options: playerOptions,
-                cancelButtonIndex: playerOptions.length - 1,
-                title: 'Media Player',
-                message: 'Select the Media Player for Streaming',
-                messageTextStyle: { color: '#ffffff', fontSize: 12 },
-                textStyle: { color: '#ffffff' },
-                titleTextStyle: { color: '#535aff', fontWeight: '500' },
-                containerStyle: { backgroundColor: '#101010' },
-                userInterfaceStyle: 'dark'
-            },
-            (selectedIndex?: number) => {
-                if (selectedIndex === undefined || selectedIndex === playerOptions.length - 1) return;
-
-                const selectedPlayerName = players[selectedIndex].name;
-                setSelectedPlayer(selectedPlayerName);
-
-                if (stream) {
-                    handlePlay(stream, selectedPlayerName, selectedServerIdParam);
-                }
-            }
-        );
-    }, [players, handlePlay, showActionSheetWithOptions]);
+        });
+    }, [streams, router, contentTitle, imdbid, type, season, episode]);
 
     // Cleanup effect
     useEffect(() => {
@@ -575,14 +210,14 @@ const StreamListScreen = () => {
         );
     });
 
-    const StreamItem = React.memo<{ item: Stream }>(({ item }) => {
+    const StreamItem = React.memo<{ item: Stream; index: number }>(({ item, index }) => {
         const { name, title, description } = item;
         const quality = extractQuality(name, title);
         const size = extractSize(description || title || '');
         const streamType = getStreamType(item);
 
         return (
-            <Pressable onPress={() => handleStreamSelected(item)} style={styles.streamContainer}>
+            <Pressable onPress={() => handleStreamSelected(item, index)} style={styles.streamContainer}>
                 <Card style={styles.streamItem}>
                     <RNView style={styles.streamHeader}>
                         <RNView style={styles.streamTitleContainer}>
@@ -639,76 +274,45 @@ const StreamListScreen = () => {
     );
 
     return (
-        <GestureHandlerRootView style={{ flex: 1 }}>
-            <SafeAreaView style={styles.container}>
-                <StatusBar />
+        <SafeAreaView style={styles.container}>
+            <StatusBar />
 
-                {loading && addons.length === 0 ? (
-                    renderLoadingState('Loading addons...')
-                ) : addons.length > 0 ? (
-                    <View style={styles.addonBorderContainer}>
-                        <ScrollView
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                            contentContainerStyle={styles.addonListContainer}
-                        >
-                            {addons.map((item, index) => (
-                                <AddonItem key={`${item.name}-${index}`} item={item} />
-                            ))}
-                        </ScrollView>
-                    </View>
-                ) : (
-                    renderEmptyState('alert-circle', 'No addons have been found. Please ensure that you have configured the addons before searching.', 100)
-                )}
-
-                {loading && addons.length > 0 ? (
-                    renderLoadingState('Loading streams...')
-                ) : (
-                    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer}>
-                        <View style={styles.streamsContainer}>
-                            {streams.length > 0 ? (
-                                streams.map((item, index) => (
-                                    <StreamItem key={`${item.name}-${index}`} item={item} />
-                                ))
-                            ) : (
-                                addons.length > 0 && renderEmptyState('alert-circle', 'No streams found!', -50)
-                            )}
-                        </View>
+            {loading && addons.length === 0 ? (
+                renderLoadingState('Loading addons...')
+            ) : addons.length > 0 ? (
+                <View style={styles.addonBorderContainer}>
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.addonListContainer}
+                    >
+                        {addons.map((item, index) => (
+                            <AddonItem key={`${item.name}-${index}`} item={item} />
+                        ))}
                     </ScrollView>
-                )}
+                </View>
+            ) : (
+                renderEmptyState('alert-circle', 'No addons have been found. Please ensure that you have configured the addons before searching.', 100)
+            )}
 
-                <BottomSpacing space={30} />
+            {loading && addons.length > 0 ? (
+                renderLoadingState('Loading streams...')
+            ) : (
+                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer}>
+                    <View style={styles.streamsContainer}>
+                        {streams.length > 0 ? (
+                            streams.map((item, index) => (
+                                <StreamItem key={`${item.name}-${index}`} item={item} index={index} />
+                            ))
+                        ) : (
+                            addons.length > 0 && renderEmptyState('alert-circle', 'No streams found!', -50)
+                        )}
+                    </View>
+                </ScrollView>
+            )}
 
-                <BottomSheet
-                    ref={bottomSheetRef}
-                    index={-1}
-                    snapPoints={snapPoints}
-                    enablePanDownToClose={true}
-                    backdropComponent={renderBackdrop}
-                    backgroundStyle={styles.bottomSheetBackground}
-                    handleIndicatorStyle={styles.bottomSheetIndicator}
-                    onChange={(index) => {
-                        if (index === -1) {
-                            setPlayBtnDisabled(false);
-                            setStatusText('');
-                            setIsPlaying(false);
-                        }
-                    }}
-                >
-                    <BottomSheetView style={styles.bottomSheetContent}>
-                        <RNView style={styles.statusContainer}>
-                            <ActivityIndicator size="large" color="#535aff" style={styles.bottomSheetLoader} />
-                            <Text style={styles.statusText}>{statusText}</Text>
-                            <Pressable
-                                style={styles.cancelButton}
-                                onPress={handleCloseBottomSheet}>
-                                <Text style={styles.cancelButtonText}>Cancel</Text>
-                            </Pressable>
-                        </RNView>
-                    </BottomSheetView>
-                </BottomSheet>
-            </SafeAreaView>
-        </GestureHandlerRootView>
+            <BottomSpacing space={30} />
+        </SafeAreaView>
     );
 };
 
@@ -724,8 +328,8 @@ const styles = StyleSheet.create({
         width: '100%'
     },
     addonBorderContainer: {
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderColor: 'rgba(255,255,255, 0.05)'
+        borderBottomWidth: 1,
+        borderColor: 'rgba(83, 90, 255, 0.1)'
     },
     addonListContainer: {
         marginVertical: 15,
@@ -734,48 +338,46 @@ const styles = StyleSheet.create({
         justifyContent: 'center'
     },
     addonItem: {
-        borderRadius: 25,
-        paddingVertical: 12,
-        paddingHorizontal: 24,
-        marginHorizontal: 10,
+        borderRadius: 20,
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        marginHorizontal: 6,
         backgroundColor: '#202020',
+        borderWidth: 1,
+        borderColor: 'transparent',
     },
     selectedAddonItem: {
-        backgroundColor: 'rgba(83, 90, 255, 0.75)',
+        backgroundColor: '#535aff',
         borderColor: '#535aff',
     },
     addonName: {
-        fontSize: 15,
-        color: '#ffffff',
+        fontSize: 14,
+        color: '#999',
+        fontWeight: '500',
     },
     selectedaddonName: {
         color: '#fff',
-        fontWeight: '500',
+        fontWeight: '600',
     },
     streamsContainer: {
         paddingHorizontal: 16,
-        paddingVertical: 40,
+        paddingVertical: 24,
     },
     streamContainer: {
         marginBottom: 12,
     },
     streamItem: {
         backgroundColor: '#101010',
-        borderRadius: 12,
-        padding: 16,
+        borderRadius: 16,
+        padding: 18,
         borderWidth: 1,
         borderColor: '#1a1a1a',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-        elevation: 3,
     },
     streamHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'flex-start',
-        marginBottom: 8,
+        marginBottom: 10,
     },
     streamTitleContainer: {
         flex: 1,
@@ -793,10 +395,12 @@ const styles = StyleSheet.create({
     qualityBadge: {
         backgroundColor: 'rgba(83, 90, 255, 0.25)',
         paddingHorizontal: 10,
-        paddingVertical: 6,
-        borderRadius: 6,
+        paddingVertical: 5,
+        borderRadius: 8,
         marginLeft: 8,
         marginTop: 2,
+        borderWidth: 1,
+        borderColor: 'rgba(83, 90, 255, 0.3)',
     },
     qualityText: {
         color: '#ffffff',
@@ -804,8 +408,8 @@ const styles = StyleSheet.create({
         fontWeight: '500'
     },
     streamDescription: {
-        fontSize: 14,
-        color: '#cccccc',
+        fontSize: 13,
+        color: '#999',
         lineHeight: 20,
         marginBottom: 12,
     },
@@ -817,21 +421,24 @@ const styles = StyleSheet.create({
     streamMetadata: {
         flexDirection: 'row',
         alignItems: 'center',
+        flex: 1,
     },
     streamSize: {
-        fontSize: 12,
-        color: '#888',
+        fontSize: 11,
+        color: '#666',
         marginRight: 12,
         backgroundColor: '#2a2a2a',
-        paddingHorizontal: 6,
+        paddingHorizontal: 8,
         paddingVertical: 4,
-        borderRadius: 4,
+        borderRadius: 6,
+        fontWeight: '500',
     },
     streamType: {
-        fontSize: 12,
+        fontSize: 11,
         color: '#666',
         textTransform: 'uppercase',
-        fontWeight: '500',
+        fontWeight: '600',
+        letterSpacing: 0.5,
     },
     loadingContainer: {
         flex: 1,
@@ -843,9 +450,10 @@ const styles = StyleSheet.create({
         color: '#535aff',
     },
     loadingText: {
-        fontSize: 16,
+        fontSize: 15,
         marginTop: 10,
-        color: '#ffffff',
+        color: '#999',
+        fontWeight: '500',
     },
     centeredContainer: {
         flex: 1,
@@ -854,55 +462,11 @@ const styles = StyleSheet.create({
         padding: 20,
     },
     noAddonsText: {
-        fontSize: 16,
+        fontSize: 15,
         textAlign: 'center',
         marginHorizontal: '10%',
-        color: '#fff'
-    },
-    bottomSheetBackground: {
-        backgroundColor: '#101010',
-        borderTopLeftRadius: 10,
-        borderTopRightRadius: 10,
-    },
-    bottomSheetIndicator: {
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-        width: 40,
-    },
-    bottomSheetContent: {
-        flex: 1,
-        paddingHorizontal: 20,
-        paddingBottom: 20,
-        marginBottom: 20
-    },
-    statusContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingVertical: 20,
-    },
-    bottomSheetLoader: {
-        marginBottom: 20,
-    },
-    statusText: {
-        fontSize: 16,
-        color: '#ffffff',
-        textAlign: 'center',
-        marginBottom: 30,
-        paddingHorizontal: 20,
+        color: '#999',
         lineHeight: 22,
-    },
-    cancelButton: {
-        backgroundColor: '#535aff',
-        paddingVertical: 12,
-        paddingHorizontal: 40,
-        borderRadius: 8,
-        minWidth: 120,
-        alignItems: 'center',
-    },
-    cancelButtonText: {
-        color: '#ffffff',
-        fontSize: 16,
-        fontWeight: '600',
     },
 });
 
