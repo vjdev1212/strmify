@@ -5,7 +5,7 @@ import { Subtitle } from "@/components/coreplayer/models";
 import { getLanguageName } from "@/utils/Helpers";
 import { StorageKeys, storageService } from "@/utils/StorageService";
 import { getPlatformSpecificPlayers } from "@/utils/MediaPlayer";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import React, { useEffect, useState, useRef } from "react";
 import { Platform, ActivityIndicator, View, Text, StyleSheet, Pressable } from "react-native";
 import { ServerConfig } from "@/components/ServerConfig";
@@ -57,6 +57,7 @@ const SERVERS_KEY = StorageKeys.SERVERS_KEY;
 
 const MediaPlayerScreen: React.FC = () => {
   const router = useRouter();
+  const navigation = useNavigation();
   const {
     streams: streamsParam,
     selectedStreamIndex,
@@ -94,6 +95,14 @@ const MediaPlayerScreen: React.FC = () => {
   const [isTraktAuthenticated, setIsTraktAuthenticated] = useState(false);
   const [hasStartedScrobble, setHasStartedScrobble] = useState(false);
   const lastScrobbleProgressRef = useRef<number>(0);
+
+  useEffect(() => {
+    if (!isLoadingStream && !streamError) {
+      navigation.setOptions({ headerShown: false });
+    } else {
+      navigation.setOptions({ headerShown: true });
+    }
+  }, [isLoadingStream, streamError, navigation]);
 
   useEffect(() => {
     // Check if we have a direct video URL (continue watching scenario)
@@ -253,7 +262,7 @@ const MediaPlayerScreen: React.FC = () => {
 
   const handlePlaybackError = (event: PlaybackErrorEvent) => {
     console.log('Playback error:', event);
-    
+
     // If native player fails and we haven't tried VLC yet
     if (currentPlayerType === "native" && !hasTriedNative && Platform.OS !== "web") {
       console.log('Native player failed, falling back to VLC');
@@ -537,12 +546,12 @@ const MediaPlayerScreen: React.FC = () => {
     if (Platform.OS === "web") {
       return require("../../components/nativeplayer").MediaPlayer;
     }
-    
+
     // Use VLC player if explicitly set or if native player failed
     if (currentPlayerType === "vlc") {
       return require("../../components/vlcplayer").MediaPlayer;
     }
-    
+
     // Default to native player
     return require("../../components/nativeplayer").MediaPlayer;
   }
