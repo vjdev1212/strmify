@@ -500,7 +500,7 @@ const MediaPlayerScreen: React.FC = () => {
     if (Platform.OS === "web") {
       return require("../../components/nativeplayer").MediaPlayer;
     }
-    return require("../../components/nativeplayer").MediaPlayer;
+    return require("../../components/vlcplayer").MediaPlayer;
   }
 
   const Player = getPlayer();
