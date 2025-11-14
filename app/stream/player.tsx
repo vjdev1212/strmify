@@ -52,15 +52,15 @@ const SERVERS_KEY = StorageKeys.SERVERS_KEY;
 
 const MediaPlayerScreen: React.FC = () => {
   const router = useRouter();
-  const { 
-    streams: streamsParam, 
-    selectedStreamIndex, 
-    title, 
-    imdbid, 
-    type, 
-    season, 
-    episode, 
-    progress: watchHistoryProgress 
+  const {
+    streams: streamsParam,
+    selectedStreamIndex,
+    title,
+    imdbid,
+    type,
+    season,
+    episode,
+    progress: watchHistoryProgress
   } = useLocalSearchParams();
 
   const [subtitles, setSubtitles] = useState<Subtitle[]>([]);
@@ -91,7 +91,7 @@ const MediaPlayerScreen: React.FC = () => {
       try {
         const parsedStreams = JSON.parse(streamsParam as string);
         setStreams(parsedStreams);
-        
+
         const initialIndex = selectedStreamIndex ? parseInt(selectedStreamIndex as string) : 0;
         setCurrentStreamIndex(initialIndex);
       } catch (error) {
@@ -201,7 +201,7 @@ const MediaPlayerScreen: React.FC = () => {
       // If no direct URL, generate from infoHash
       if (!url && infoHash) {
         const selectedServer = stremioServers.find(s => s.serverId === selectedServerId);
-        
+
         if (!selectedServer) {
           throw new Error('No Stremio server configured');
         }
@@ -479,11 +479,13 @@ const MediaPlayerScreen: React.FC = () => {
   };
 
   const handleBack = async (event: BackEvent): Promise<void> => {
+    console.log('BackEvent', event)
     await stopTraktScrobble(Math.floor(event.progress));
     router.back();
   };
 
   const handleUpdateProgress = async (event: UpdateProgressEvent): Promise<void> => {
+    console.log('UpdateEvent', event)
     if (event.progress <= 1)
       return;
 
@@ -498,7 +500,7 @@ const MediaPlayerScreen: React.FC = () => {
     if (Platform.OS === "web") {
       return require("../../components/nativeplayer").MediaPlayer;
     }
-    return require("../../components/vlcplayer").MediaPlayer;
+    return require("../../components/nativeplayer").MediaPlayer;
   }
 
   const Player = getPlayer();
