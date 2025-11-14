@@ -7,6 +7,9 @@ import { showAlert } from '@/utils/platform';
 import { parseSubtitleFile } from './subtitle';
 import { styles } from './styles';
 import { formatTime } from './utils';
+import { MediaPlayerProps } from './models';
+import { extractQuality } from '@/utils/StreamItem';
+import { MenuAction } from '@react-native-menu/menu';
 
 // ==================== CONSTANTS ====================
 export const CONSTANTS = {
@@ -18,6 +21,23 @@ export const CONSTANTS = {
 };
 
 // ==================== TYPES ====================
+
+interface Stream {
+    name: string;
+    title?: string;
+    url?: string;
+    embed?: string;
+    infoHash?: string;
+    magnet?: string;
+    magnetLink?: string;
+    description?: string;
+}
+export interface ExtendedMediaPlayerProps extends MediaPlayerProps {
+    streams?: Stream[];
+    currentStreamIndex?: number;
+    onStreamChange?: (index: number) => void;
+}
+
 export interface SubtitleSource {
     fileId?: string;
     url?: string;
@@ -304,6 +324,29 @@ export const buildSubtitleActions = (
         }))
     ];
 };
+
+export const buildStreamActions = (streams: Stream[], currentIndex: number): MenuAction[] => {
+    return streams.map((stream, index) => {
+        const quality = extractQuality(stream.name, stream.title);
+        const displayName = quality ? `${stream.name} (${quality})` : stream.name;
+
+        return {
+            id: `stream-${index}`,
+            title: displayName.length > 100 ? displayName.substring(0, 100) + '...' : displayName,
+            titleColor: '#ffffff',
+            image: Platform.select({
+                ios: 'play.circle',
+                default: undefined,
+            }),
+            imageColor: '#ffffff',
+            state: index === currentIndex ? ('on' as const) : 'off',
+            attributes: {
+                disabled: false,
+            },
+        };
+    });
+};
+
 
 export const buildAudioActions = (
     audioTracks: any[],

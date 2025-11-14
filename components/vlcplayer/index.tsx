@@ -34,9 +34,9 @@ import {
     useSubtitleState,
     useTimers,
     useUIState,
-    ContentFitLabel
+    ExtendedMediaPlayerProps,
+    buildStreamActions
 } from "../coreplayer";
-import { MediaPlayerProps } from "../coreplayer/models";
 
 const useVLCPlayerState = () => {
     const baseState = usePlayerState();
@@ -58,7 +58,9 @@ const useVLCPlayerState = () => {
     };
 };
 
-const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
+// Helper function to build stream actions for MenuView
+
+const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
     videoUrl,
     title,
     back: onBack,
@@ -66,7 +68,10 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
     artwork,
     subtitles = [],
     openSubtitlesClient,
-    updateProgress
+    updateProgress,
+    streams = [],
+    currentStreamIndex = 0,
+    onStreamChange
 }) => {
     const playerRef = useRef<VLCPlayer>(null);
     const shouldAutoHideControls = useRef(true);
@@ -87,6 +92,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
     const audioMenuRef = useRef<MenuComponentRef>(null);
     const subtitleMenuRef = useRef<MenuComponentRef>(null);
     const speedMenuRef = useRef<MenuComponentRef>(null);
+    const streamMenuRef = useRef<MenuComponentRef>(null);
 
     const stateRefs = useRef({
         isPlaying: false,
@@ -404,11 +410,6 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         }
     }, [playerState.isPlaying]);
 
-    useEffect(() => {
-        console.log('Current zoom:', zoom);
-    }, [zoom]);
-
-
     const handleZoomIn = useCallback(async () => {
         await playHaptic();
         setZoom(prev => {
@@ -509,6 +510,14 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
         showControlsTemporarily();
     }, [settings, showControlsTemporarily]);
 
+    const handleStreamSelect = useCallback(async (index: number) => {
+        await playHaptic();
+        if (onStreamChange) {
+            onStreamChange(index);
+        }
+        showControlsTemporarily();
+    }, [onStreamChange, showControlsTemporarily]);
+
     // Memoize action builders
     const speedActions = useMemo(() =>
         buildSpeedActions(settings.playbackSpeed),
@@ -523,6 +532,11 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
     const audioActions = useMemo(() =>
         buildAudioActions(playerState.availableAudioTracks, settings.selectedAudioTrack),
         [playerState.availableAudioTracks, settings.selectedAudioTrack]
+    );
+
+    const streamActions = useMemo(() =>
+        buildStreamActions(streams, currentStreamIndex),
+        [streams, currentStreamIndex]
     );
 
     const { displayTime, sliderValue } = useMemo(() =>
@@ -614,6 +628,39 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                         </View>
 
                         <View style={styles.topRightControls}>
+                            {/* Stream Selector - Only show if streams are available */}
+                            {streams.length > 1 && (
+                                <MenuView
+                                    ref={streamMenuRef}
+                                    title="Select Source"
+                                    onPressAction={({ nativeEvent }) => {
+                                        const index = parseInt(nativeEvent.event.split('-')[1]);
+                                        if (!isNaN(index)) handleStreamSelect(index);
+                                    }}
+                                    actions={streamActions}
+                                    shouldOpenOnLongPress={false}
+                                    themeVariant="dark"
+                                    onOpenMenu={() => {
+                                        shouldAutoHideControls.current = false;
+                                        timers.clearTimer('hideControls');
+                                    }}
+                                    onCloseMenu={() => {
+                                        shouldAutoHideControls.current = true;
+                                        showControlsTemporarily();
+                                    }}
+                                >
+                                    <TouchableOpacity
+                                        style={styles.controlButton}
+                                        onPress={() => {
+                                            if (Platform.OS === 'android') {
+                                                streamMenuRef.current?.show();
+                                            }
+                                        }}
+                                    >
+                                        <MaterialIcons name="source" size={24} color="#ffffff" />
+                                    </TouchableOpacity>
+                                </MenuView>
+                            )}
 
                             <TouchableOpacity style={styles.controlButton} onPress={handleZoomOut}>
                                 <MaterialIcons name="zoom-out" size={24} color="white" />
@@ -719,18 +766,18 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                                     shouldAutoHideControls.current = true;
                                     showControlsTemporarily();
                                 }}
-                            >
-                                <TouchableOpacity
-                                    style={styles.controlButton}
-                                    onPress={() => {
-                                        if (Platform.OS === 'android') {
-                                            speedMenuRef.current?.show();
-                                        }
-                                    }}
-                                >
-                                    <MaterialIcons name="speed" size={24} color="white" />
-                                </TouchableOpacity>
-                            </MenuView>
+                            >                                
+                                    <TouchableOpacity
+                                        style={styles.controlButton}
+                                        onPress={() => {
+                                            if (Platform.OS === 'android') {
+                                                speedMenuRef.current?.show();
+                                            }
+                                        }}
+                                    >
+                                        <MaterialIcons name="speed" size={24} color="white" />
+                                    </TouchableOpacity>
+                                </MenuView>
                         </View>
                     </View>
 
