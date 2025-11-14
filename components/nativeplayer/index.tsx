@@ -6,7 +6,7 @@ import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { MenuView } from '@react-native-menu/menu';
 import { WebMenu } from "@/components/WebMenuView";
 import { styles } from "../coreplayer/styles";
-import { playHaptic } from "../coreplayer/utils";
+import { playHaptic, shouldFallbackToVLC } from "../coreplayer/utils";
 import { usePlayerState, useSubtitleState, useUIState, usePlayerSettings, useTimers, usePlayerAnimations, hideControls, CONSTANTS, setupOrientation, cleanupOrientation, loadSubtitle, handleSubtitleError, findActiveSubtitle, calculateProgress, performSeek, buildSpeedActions, buildSubtitleActions, buildAudioActions, buildStreamActions, calculateSliderValues, ArtworkBackground, WaitingLobby, SubtitleDisplay, CenterControls, ProgressBar, ContentFitLabel, SubtitleSource, ErrorDisplay, ExtendedMediaPlayerProps } from "../coreplayer";
 import { View, Text } from "../Themed";
 
@@ -18,8 +18,20 @@ const MenuWrapper: React.FC<any> = (props) => {
     return <MenuView {...props} />;
 };
 
+
 export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
-    videoUrl, title, back: onBack, progress, artwork, subtitles = [], openSubtitlesClient, updateProgress, streams = [], currentStreamIndex = 0, onStreamChange
+    videoUrl, 
+    title, 
+    back: onBack, 
+    progress, 
+    artwork, 
+    subtitles = [], 
+    openSubtitlesClient, 
+    updateProgress, 
+    onPlaybackError,
+    streams = [], 
+    currentStreamIndex = 0, 
+    onStreamChange
 }) => {
     const videoRef = useRef<VideoView>(null);
     const shouldAutoHideControls = useRef(true);
@@ -27,6 +39,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     const isHideControlsScheduled = useRef(false);
     const wasPlayingBeforeSeek = useRef(false);
     const lastKnownTimeRef = useRef<number>(0);
+    const hasReportedErrorRef = useRef(false);
 
     // Use common hooks
     const playerState = usePlayerState();
@@ -52,6 +65,21 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     const [videoError, setVideoError] = useState<string | null>(null);
 
     const useCustomSubtitles = subtitles.length > 0;
+
+    // Check if we should use VLC from the start
+    useEffect(() => {
+        if (Platform.OS !== 'web' && shouldFallbackToVLC(videoUrl)) {
+            console.log('[Player Selection] Using VLC player for:', videoUrl);
+            if (onPlaybackError && !hasReportedErrorRef.current) {
+                hasReportedErrorRef.current = true;
+                onPlaybackError({
+                    error: 'Unsupported format/codec for native player',
+                    code: 'FORMAT_UNSUPPORTED',
+                    isFormatError: true
+                });
+            }
+        }
+    }, [videoUrl, onPlaybackError]);
 
     // Initialize player (memoized to prevent recreation)
     const player = useVideoPlayer({
@@ -264,15 +292,25 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                 playerState.setIsBuffering(false);
                 playerState.setIsReady(false);
 
-                // Set user-friendly error message
-                const errorMessage = error?.message || 'Unable to load video. The file may be corrupted or in an unsupported format.';
-                setVideoError(errorMessage);
+                // Report error to parent for fallback
+                if (onPlaybackError && !hasReportedErrorRef.current) {
+                    hasReportedErrorRef.current = true;
+                    const errorMessage = error?.message || 'Unable to load video';
+                    onPlaybackError({
+                        error: errorMessage,
+                        isFormatError: true
+                    });
+                } else {
+                    // Set user-friendly error message
+                    const errorMessage = error?.message || 'Unable to load video. The file may be corrupted or in an unsupported format.';
+                    setVideoError(errorMessage);
+                }
 
                 // Stop any playback attempts
                 player.pause();
                 break;
         }
-    }, [statusChange, bufferOpacity, player]);
+    }, [statusChange, bufferOpacity, player, onPlaybackError]);
 
     // Auto-hide controls when playback starts - with guard to prevent loops
     useEffect(() => {
@@ -460,6 +498,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
     const handleRetry = useCallback(() => {
         setVideoError(null);
+        hasReportedErrorRef.current = false;
         playerState.setIsReady(false);
         playerState.setIsBuffering(true);
         // Force player reload by setting current time to 0

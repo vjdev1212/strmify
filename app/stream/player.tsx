@@ -21,6 +21,11 @@ interface UpdateProgressEvent {
   progress: number
 }
 
+interface PlaybackErrorEvent {
+  error: string;
+  isFormatError?: boolean;
+}
+
 interface WatchHistoryItem {
   title: string;
   videoUrl: string;
@@ -79,6 +84,10 @@ const MediaPlayerScreen: React.FC = () => {
   const [selectedServerId, setSelectedServerId] = useState<string | null>(null);
   const [players, setPlayers] = useState<{ name: string; scheme: string; encodeUrl: boolean }[]>([]);
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
+
+  // Player fallback state
+  const [currentPlayerType, setCurrentPlayerType] = useState<"native" | "vlc">("native");
+  const [hasTriedNative, setHasTriedNative] = useState(false);
 
   // Trakt scrobbling state
   const [isTraktAuthenticated, setIsTraktAuthenticated] = useState(false);
@@ -190,6 +199,9 @@ const MediaPlayerScreen: React.FC = () => {
 
     setIsLoadingStream(true);
     setStreamError('');
+    // Reset to native player when loading new stream
+    setCurrentPlayerType("native");
+    setHasTriedNative(false);
 
     const stream = streams[streamIndex];
     const { url } = stream;
@@ -225,6 +237,20 @@ const MediaPlayerScreen: React.FC = () => {
   const handleStreamChange = (newIndex: number) => {
     if (newIndex >= 0 && newIndex < streams.length) {
       setCurrentStreamIndex(newIndex);
+    }
+  };
+
+  const handlePlaybackError = (event: PlaybackErrorEvent) => {
+    console.log('Playback error:', event);
+    
+    // If native player fails and we haven't tried VLC yet
+    if (currentPlayerType === "native" && !hasTriedNative && Platform.OS !== "web") {
+      console.log('Native player failed, falling back to VLC');
+      setHasTriedNative(true);
+      setCurrentPlayerType("vlc");
+    } else {
+      // Show error if VLC also fails or on web
+      setStreamError(event.error || 'Playback failed');
     }
   };
 
@@ -500,7 +526,14 @@ const MediaPlayerScreen: React.FC = () => {
     if (Platform.OS === "web") {
       return require("../../components/nativeplayer").MediaPlayer;
     }
-    return require("../../components/vlcplayer").MediaPlayer;
+    
+    // Use VLC player if explicitly set or if native player failed
+    if (currentPlayerType === "vlc") {
+      return require("../../components/vlcplayer").MediaPlayer;
+    }
+    
+    // Default to native player
+    return require("../../components/nativeplayer").MediaPlayer;
   }
 
   const Player = getPlayer();
@@ -518,6 +551,9 @@ const MediaPlayerScreen: React.FC = () => {
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>{streamError}</Text>
+        {currentPlayerType === "vlc" && (
+          <Text style={styles.infoText}>VLC player was unable to play this format</Text>
+        )}
         <Pressable style={styles.retryButton} onPress={() => loadStream(currentStreamIndex)}>
           <Text style={styles.retryButtonText}>Retry</Text>
         </Pressable>
@@ -539,6 +575,7 @@ const MediaPlayerScreen: React.FC = () => {
       openSubtitlesClient={openSubtitlesClient}
       isLoadingSubtitles={isLoadingSubtitles}
       updateProgress={handleUpdateProgress}
+      onPlaybackError={handlePlaybackError}
       streams={streams}
       currentStreamIndex={currentStreamIndex}
       onStreamChange={handleStreamChange}
@@ -568,6 +605,12 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#ff6b6b',
     fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  infoText: {
+    color: '#999',
+    fontSize: 14,
     textAlign: 'center',
     marginBottom: 24,
   },
