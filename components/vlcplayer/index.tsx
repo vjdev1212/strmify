@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useCallback, useMemo } from "react"
 import { TouchableOpacity, Animated, Platform } from "react-native";
 import { VLCPlayer } from 'react-native-vlc-media-player';
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import { MenuView } from '@react-native-menu/menu';
+import { MenuComponentRef, MenuView } from '@react-native-menu/menu';
 import ImmersiveMode from "react-native-immersive-mode";
 import { View, Text } from "../Themed";
 import { playHaptic } from "../coreplayer/utils";
@@ -83,6 +83,10 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
     const animations = usePlayerAnimations();
 
     const [zoom, setZoom] = useState(1.0);
+
+    const audioMenuRef = useRef<MenuComponentRef>(null);
+    const subtitleMenuRef = useRef<MenuComponentRef>(null);
+    const speedMenuRef = useRef<MenuComponentRef>(null);
 
     const stateRefs = useRef({
         isPlaying: false,
@@ -629,7 +633,7 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
 
                             {playerState.availableAudioTracks.length > 0 && (
                                 <MenuView
-                                    style={{ zIndex: 1000 }}
+                                    ref={audioMenuRef}
                                     title="Audio Track"
                                     onPressAction={({ nativeEvent }) => {
                                         const index = audioActions.findIndex(a => a.id === nativeEvent.event);
@@ -647,7 +651,14 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                                         showControlsTemporarily();
                                     }}
                                 >
-                                    <TouchableOpacity style={styles.controlButton}>
+                                    <TouchableOpacity
+                                        style={styles.controlButton}
+                                        onPress={() => {
+                                            if (Platform.OS === 'android') {
+                                                audioMenuRef.current?.show();
+                                            }
+                                        }}
+                                    >
                                         <MaterialIcons name="audiotrack" size={24} color="white" />
                                     </TouchableOpacity>
                                 </MenuView>
@@ -677,14 +688,21 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                                         showControlsTemporarily();
                                     }}
                                 >
-                                    <TouchableOpacity style={styles.controlButton}>
+                                    <TouchableOpacity
+                                        style={styles.controlButton}
+                                        onPress={() => {
+                                            if (Platform.OS === 'android') {
+                                                subtitleMenuRef.current?.show();
+                                            }
+                                        }}
+                                    >
                                         <MaterialIcons name="closed-caption" size={24} color="white" />
                                     </TouchableOpacity>
                                 </MenuView>
                             )}
 
                             <MenuView
-                                style={{ zIndex: 1000 }}
+                                ref={speedMenuRef}
                                 title="Playback Speed"
                                 onPressAction={({ nativeEvent }) => {
                                     const speed = parseFloat(nativeEvent.event.split('-')[1]);
@@ -702,7 +720,14 @@ const VlcMediaPlayerComponent: React.FC<MediaPlayerProps> = ({
                                     showControlsTemporarily();
                                 }}
                             >
-                                <TouchableOpacity style={styles.controlButton}>
+                                <TouchableOpacity
+                                    style={styles.controlButton}
+                                    onPress={() => {
+                                        if (Platform.OS === 'android') {
+                                            speedMenuRef.current?.show();
+                                        }
+                                    }}
+                                >
                                     <MaterialIcons name="speed" size={24} color="white" />
                                 </TouchableOpacity>
                             </MenuView>
