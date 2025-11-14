@@ -8,7 +8,7 @@ import { parseSubtitleFile } from './subtitle';
 import { styles } from './styles';
 import { formatTime } from './utils';
 import { MediaPlayerProps } from './models';
-import { extractQuality } from '@/utils/StreamItem';
+import { extractQuality, extractSize } from '@/utils/StreamItem';
 import { MenuAction } from '@react-native-menu/menu';
 
 // ==================== CONSTANTS ====================
@@ -328,11 +328,12 @@ export const buildSubtitleActions = (
 export const buildStreamActions = (streams: Stream[], currentIndex: number): MenuAction[] => {
     return streams.map((stream, index) => {
         const quality = extractQuality(stream.name, stream.title);
-        const displayName = quality ? `${stream.name} (${quality})` : stream.name;
+        const size = extractSize(stream.title as string);
+        const displayName = quality ? `${stream.name} (${quality}) (${size})` : stream.name;
 
         return {
             id: `stream-${index}`,
-            title: displayName.length > 100 ? displayName.substring(0, 100) + '...' : displayName,
+            title: displayName,
             titleColor: '#ffffff',
             image: Platform.select({
                 ios: 'play.circle',

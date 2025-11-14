@@ -240,7 +240,7 @@ export const styles = StyleSheet.create({
         color: '#fff',
         fontWeight: 500,
         textAlign: 'center',
-        backgroundColor: 'rgba(26, 26, 26, 0.6)',
+        backgroundColor: 'rgba(26, 26, 26, 0.5)',
         paddingHorizontal: 16,
         paddingVertical: 8,
         borderRadius: 8,

@@ -632,7 +632,7 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
                             {streams.length > 1 && (
                                 <MenuView
                                     ref={streamMenuRef}
-                                    title="Select Source"
+                                    title="Select Stream"
                                     onPressAction={({ nativeEvent }) => {
                                         const index = parseInt(nativeEvent.event.split('-')[1]);
                                         if (!isNaN(index)) handleStreamSelect(index);
@@ -657,7 +657,7 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
                                             }
                                         }}
                                     >
-                                        <MaterialIcons name="source" size={24} color="#ffffff" />
+                                        <MaterialIcons name="ondemand-video" size={24} color="#ffffff" />
                                     </TouchableOpacity>
                                 </MenuView>
                             )}
