@@ -76,8 +76,6 @@ const EXOPLAYER_SUPPORTED_CONTAINERS = [
 const isNativePlayerSupported = (codecInfo: CodecInfo): boolean => {
     const { videoCodec, audioCodec, container } = codecInfo;
 
-    console.log('CodecInfo', codecInfo)
-
     if (Platform.OS === 'ios') {
         // Check container
         if (container && !AVF_SUPPORTED_CONTAINERS.some(c => container.toLowerCase().includes(c))) {
