@@ -194,7 +194,6 @@ const MediaPlayerScreen: React.FC = () => {
   const fetchServerConfigs = (): { servers: ServerConfig[], selectedId: string } => {
     try {
       const storedServers = storageService.getItem(SERVERS_KEY);
-      console.log('servers', storedServers)
       const defaultStremio: ServerConfig = {
         serverId: 'stremio-default',
         serverType: 'stremio',
@@ -218,9 +217,6 @@ const MediaPlayerScreen: React.FC = () => {
       // Set state for UI updates
       setStremioServers(stremioServerList);
       setSelectedServerId(currentServer.serverId);
-
-      console.log('server list', stremioServerList)
-      console.log('current server', currentServer)
 
       // Return the values for immediate use
       return {
@@ -343,12 +339,8 @@ const MediaPlayerScreen: React.FC = () => {
     const serversToUse = serverList || stremioServers;
     const serverIdToUse = serverId || selectedServerId;
 
-    console.log('servers', serversToUse);
-    console.log('serveridhere', serverIdToUse);
-
     const selectedServer = serversToUse.find(s => s.serverId === serverIdToUse);
 
-    console.log('selected server', selectedServer)
     if (!selectedServer && !url && infoHash) {
       setStatusText('Error: Stremio server not configured');
       showAlert('Error', 'Stremio server configuration not found');
