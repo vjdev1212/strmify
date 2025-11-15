@@ -173,7 +173,7 @@ const MediaPlayerScreen: React.FC = () => {
 
       // If default player, load stream for built-in player
       if (savedPlayer === Players.Default) {
-        await loadStream(streamIndex, parsedStreams);
+        await loadStream(streamIndex, parsedStreams, serverList, selectedId);
       } else {
         // For external players, handle opening with the loaded server config
         handleExternalPlayer(parsedStreams[streamIndex], savedPlayer, platformPlayers, serverList, selectedId);
@@ -281,7 +281,7 @@ const MediaPlayerScreen: React.FC = () => {
     />
   );
 
-  const loadStream = async (streamIndex: number, streamList?: Stream[]) => {
+  const loadStream = async (streamIndex: number, streamList?: Stream[], serverList?: ServerConfig[], serverId?: string) => {
     const streamsToUse = streamList || streams;
     if (!streamsToUse[streamIndex]) return;
 
@@ -298,7 +298,11 @@ const MediaPlayerScreen: React.FC = () => {
       let finalVideoUrl = url || '';
 
       if (!url && infoHash) {
-        const selectedServer = stremioServers.find(s => s.serverId === selectedServerId);
+        // Use passed parameters or fall back to state
+        const serversToUse = serverList || stremioServers;
+        const serverIdToUse = serverId || selectedServerId;
+
+        const selectedServer = serversToUse.find(s => s.serverId === serverIdToUse);
 
         if (!selectedServer) {
           throw new Error('No Stremio server configured');
@@ -430,7 +434,7 @@ const MediaPlayerScreen: React.FC = () => {
         setSelectedPlayer(selectedPlayerName);
 
         if (selectedPlayerName === Players.Default) {
-          loadStream(index);
+          loadStream(index, undefined, serverList, serverId);
         } else {
           handleExternalPlayer(stream, selectedPlayerName, playersToUse, serverList, serverId);
         }
@@ -444,10 +448,15 @@ const MediaPlayerScreen: React.FC = () => {
       const newStream = streams[newIndex];
 
       // If using default player, load new stream
-      if (selectedPlayer === Players.Default && newStream.url) {
-        setVideoUrl(newStream.url);
-        setCurrentPlayerType("native");
-        setHasTriedNative(false);
+      if (selectedPlayer === Players.Default) {
+        if (newStream.url) {
+          setVideoUrl(newStream.url);
+          setCurrentPlayerType("native");
+          setHasTriedNative(false);
+        } else {
+          // If no direct URL, load stream with server config (for torrents)
+          loadStream(newIndex);
+        }
       }
     }
   };
