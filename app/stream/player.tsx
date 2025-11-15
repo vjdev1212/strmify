@@ -4,11 +4,15 @@ import { generateStremioPlayerUrl } from "@/clients/stremio";
 import { Subtitle } from "@/components/coreplayer/models";
 import { getLanguageName } from "@/utils/Helpers";
 import { StorageKeys, storageService } from "@/utils/StorageService";
-import { getPlatformSpecificPlayers } from "@/utils/MediaPlayer";
+import { getPlatformSpecificPlayers, Players } from "@/utils/MediaPlayer";
+import { showAlert } from "@/utils/platform";
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
-import React, { useEffect, useState, useRef } from "react";
-import { Platform, ActivityIndicator, View, Text, StyleSheet, Pressable } from "react-native";
+import React, { useEffect, useState, useRef, useMemo } from "react";
+import { Platform, Linking, ActivityIndicator, View, Text, StyleSheet, Pressable } from "react-native";
 import { ServerConfig } from "@/components/ServerConfig";
+import { useActionSheet } from '@expo/react-native-action-sheet';
+import BottomSheet, { BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 interface BackEvent {
   message: string;
@@ -58,6 +62,8 @@ const SERVERS_KEY = StorageKeys.SERVERS_KEY;
 const MediaPlayerScreen: React.FC = () => {
   const router = useRouter();
   const navigation = useNavigation();
+  const { showActionSheetWithOptions } = useActionSheet();
+
   const {
     streams: streamsParam,
     selectedStreamIndex,
@@ -91,6 +97,12 @@ const MediaPlayerScreen: React.FC = () => {
   const [currentPlayerType, setCurrentPlayerType] = useState<"native" | "vlc">("native");
   const [hasTriedNative, setHasTriedNative] = useState(false);
 
+  // Bottom sheet state
+  const [statusText, setStatusText] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const bottomSheetRef = useRef<BottomSheet>(null);
+  const snapPoints = useMemo(() => ['40%', '60%'], []);
+
   // Trakt scrobbling state
   const [isTraktAuthenticated, setIsTraktAuthenticated] = useState(false);
   const [hasStartedScrobble, setHasStartedScrobble] = useState(false);
@@ -122,15 +134,18 @@ const MediaPlayerScreen: React.FC = () => {
 
         const initialIndex = selectedStreamIndex ? parseInt(selectedStreamIndex as string) : 0;
         setCurrentStreamIndex(initialIndex);
+
+        // Initialize and show player selection
+        initializePlayerAndSelect(parsedStreams, initialIndex);
       } catch (error) {
         console.error('Failed to parse streams:', error);
         setStreamError('Failed to load streams');
+        setIsLoadingStream(false);
       }
     }
 
     initializeClient();
     checkTraktAuth();
-    initializePlayer();
   }, []);
 
   useEffect(() => {
@@ -139,24 +154,31 @@ const MediaPlayerScreen: React.FC = () => {
     }
   }, [imdbid, type, season, episode, openSubtitlesClient]);
 
-  useEffect(() => {
-    // Only load stream if we're in streams mode (not direct URL mode)
-    if (streams.length > 0 && stremioServers.length > 0 && !directVideoUrl) {
-      loadStream(currentStreamIndex);
-    }
-  }, [streams, currentStreamIndex, stremioServers, selectedServerId]);
-
-  const initializePlayer = async () => {
+  const initializePlayerAndSelect = async (parsedStreams: Stream[], streamIndex: number) => {
     // Load platform players
     const platformPlayers = getPlatformSpecificPlayers();
     setPlayers(platformPlayers);
 
-    // Load saved default player or use first available
+    // Load saved default player
     const savedPlayer = await loadDefaultPlayer();
-    setSelectedPlayer(savedPlayer || (platformPlayers.length > 0 ? platformPlayers[0].name : null));
 
-    // Fetch server configs
-    await fetchServerConfigs();
+    // Fetch server configs and get the values immediately
+    const { servers: serverList, selectedId } = await fetchServerConfigs();
+
+    // If no default player, show selection
+    if (!savedPlayer) {
+      showPlayerSelection(parsedStreams[streamIndex], streamIndex, platformPlayers, serverList, selectedId);
+    } else {
+      setSelectedPlayer(savedPlayer);
+
+      // If default player, load stream for built-in player
+      if (savedPlayer === Players.Default) {
+        await loadStream(streamIndex, parsedStreams);
+      } else {
+        // For external players, handle opening with the loaded server config
+        handleExternalPlayer(parsedStreams[streamIndex], savedPlayer, platformPlayers, serverList, selectedId);
+      }
+    }
   };
 
   const loadDefaultPlayer = async () => {
@@ -169,9 +191,10 @@ const MediaPlayerScreen: React.FC = () => {
     }
   };
 
-  const fetchServerConfigs = async () => {
+  const fetchServerConfigs = async (): Promise<{ servers: ServerConfig[], selectedId: string }> => {
     try {
       const storedServers = storageService.getItem(SERVERS_KEY);
+      console.log('servers', storedServers)
       const defaultStremio: ServerConfig = {
         serverId: 'stremio-default',
         serverType: 'stremio',
@@ -190,11 +213,33 @@ const MediaPlayerScreen: React.FC = () => {
         stremioServerList = filteredStremioServers.length > 0 ? filteredStremioServers : [defaultStremio];
       }
 
-      setStremioServers(stremioServerList);
       const currentServer = stremioServerList.find(server => server.current) || stremioServerList[0];
+
+      // Set state for UI updates
+      setStremioServers(stremioServerList);
       setSelectedServerId(currentServer.serverId);
+
+      console.log('server list', stremioServerList)
+      console.log('current server', currentServer)
+
+      // Return the values for immediate use
+      return {
+        servers: stremioServerList,
+        selectedId: currentServer.serverId
+      };
     } catch (error) {
       console.error('Error loading server configurations:', error);
+      const defaultStremio: ServerConfig = {
+        serverId: 'stremio-default',
+        serverType: 'stremio',
+        serverName: 'Stremio',
+        serverUrl: DEFAULT_STREMIO_URL,
+        current: true
+      };
+      return {
+        servers: [defaultStremio],
+        selectedId: 'stremio-default'
+      };
     }
   };
 
@@ -211,26 +256,47 @@ const MediaPlayerScreen: React.FC = () => {
   };
 
   const generatePlayerUrlWithInfoHash = async (infoHash: string, serverUrl: string) => {
+    setStatusText('Generating stream URL...');
     return await generateStremioPlayerUrl(infoHash, serverUrl, type as string, season as string, episode as string);
   };
 
-  const loadStream = async (streamIndex: number) => {
-    if (!streams[streamIndex]) return;
+  const handleOpenBottomSheet = () => {
+    bottomSheetRef.current?.snapToIndex(1);
+  };
+
+  const handleCloseBottomSheet = () => {
+    bottomSheetRef.current?.close();
+    setTimeout(() => {
+      setStatusText('');
+      setIsProcessing(false);
+    }, 300);
+  };
+
+  const renderBackdrop = (props: any) => (
+    <BottomSheetBackdrop
+      {...props}
+      disappearsOnIndex={-1}
+      appearsOnIndex={0}
+      opacity={0.5}
+    />
+  );
+
+  const loadStream = async (streamIndex: number, streamList?: Stream[]) => {
+    const streamsToUse = streamList || streams;
+    if (!streamsToUse[streamIndex]) return;
 
     setIsLoadingStream(true);
     setStreamError('');
-    // Reset to native player when loading new stream
     setCurrentPlayerType("native");
     setHasTriedNative(false);
 
-    const stream = streams[streamIndex];
+    const stream = streamsToUse[streamIndex];
     const { url } = stream;
     const infoHash = getInfoHashFromStream(stream);
 
     try {
       let finalVideoUrl = url || '';
 
-      // If no direct URL, generate from infoHash
       if (!url && infoHash) {
         const selectedServer = stremioServers.find(s => s.serverId === selectedServerId);
 
@@ -254,22 +320,146 @@ const MediaPlayerScreen: React.FC = () => {
     }
   };
 
+  const handleExternalPlayer = async (
+    stream: Stream,
+    playerName: string,
+    playersList?: any[],
+    serverList?: ServerConfig[],
+    serverId?: string
+  ) => {
+    if (isProcessing) return;
+
+    setIsProcessing(true);
+    handleOpenBottomSheet();
+
+    const { url } = stream;
+    const infoHash = getInfoHashFromStream(stream);
+
+    // Use passed parameters or fall back to state
+    const serversToUse = serverList || stremioServers;
+    const serverIdToUse = serverId || selectedServerId;
+
+    console.log('servers', serversToUse);
+    console.log('serveridhere', serverIdToUse);
+
+    const selectedServer = serversToUse.find(s => s.serverId === serverIdToUse);
+
+    console.log('selected server', selectedServer)
+    if (!selectedServer && !url && infoHash) {
+      setStatusText('Error: Stremio server not configured');
+      showAlert('Error', 'Stremio server configuration not found');
+      handleCloseBottomSheet();
+      return;
+    }
+
+    const playersToUse = playersList || players;
+    const player = playersToUse.find((p: any) => p.name === playerName);
+    if (!player) {
+      setStatusText('Error: Invalid Media Player selection');
+      showAlert('Error', 'Invalid Media Player selection');
+      handleCloseBottomSheet();
+      return;
+    }
+
+    try {
+      let videoUrl = url || '';
+
+      if (!url && infoHash && selectedServer) {
+        setStatusText('Processing stream...');
+        videoUrl = await generatePlayerUrlWithInfoHash(infoHash, selectedServer.serverUrl);
+      }
+
+      if (!videoUrl) {
+        setStatusText('Error: Unable to generate video URL');
+        showAlert('Error', 'Unable to generate a valid video URL');
+        handleCloseBottomSheet();
+        return;
+      }
+
+      const urlJs = new URL(videoUrl);
+      const filename = urlJs.pathname.split('/').pop() || '';
+      const streamUrl = player.encodeUrl ? encodeURIComponent(videoUrl) : videoUrl;
+      const playerUrl = player.scheme.replace('STREAMURL', streamUrl).replace('STREAMTITLE', filename);
+
+      setStatusText('Opening in external player...');
+      await Linking.openURL(playerUrl);
+
+      setTimeout(() => {
+        handleCloseBottomSheet();
+        router.back();
+      }, 1000);
+    } catch (error) {
+      console.error('Error opening external player:', error);
+      setStatusText('Error: Failed to open external player');
+      showAlert('Error', 'Failed to open the external player');
+      handleCloseBottomSheet();
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const showPlayerSelection = (
+    stream: Stream,
+    index: number,
+    playersList?: any[],
+    serverList?: ServerConfig[],
+    serverId?: string
+  ) => {
+    const playersToUse = playersList || players;
+    const playerOptions = [...playersToUse.map((player: any) => player.name), 'Cancel'];
+
+    showActionSheetWithOptions(
+      {
+        options: playerOptions,
+        cancelButtonIndex: playerOptions.length - 1,
+        title: 'Media Player',
+        message: 'Select the Media Player for Streaming',
+        messageTextStyle: { color: '#ffffff', fontSize: 12 },
+        textStyle: { color: '#ffffff' },
+        titleTextStyle: { color: '#535aff', fontWeight: '500' },
+        containerStyle: { backgroundColor: '#101010' },
+        userInterfaceStyle: 'dark'
+      },
+      (selectedIndex?: number) => {
+        if (selectedIndex === undefined || selectedIndex === playerOptions.length - 1) {
+          router.back();
+          return;
+        }
+
+        const selectedPlayerName = playersToUse[selectedIndex].name;
+        setSelectedPlayer(selectedPlayerName);
+
+        if (selectedPlayerName === Players.Default) {
+          loadStream(index);
+        } else {
+          handleExternalPlayer(stream, selectedPlayerName, playersToUse, serverList, serverId);
+        }
+      }
+    );
+  };
+
   const handleStreamChange = (newIndex: number) => {
     if (newIndex >= 0 && newIndex < streams.length) {
       setCurrentStreamIndex(newIndex);
+      const newStream = streams[newIndex];
+
+      // If using default player, load new stream
+      if (selectedPlayer === Players.Default && newStream.url) {
+        setVideoUrl(newStream.url);
+        setCurrentPlayerType("native");
+        setHasTriedNative(false);
+      }
     }
   };
 
   const handlePlaybackError = (event: PlaybackErrorEvent) => {
     console.log('Playback error:', event);
 
-    // If native player fails and we haven't tried VLC yet
     if (currentPlayerType === "native" && !hasTriedNative && Platform.OS !== "web") {
       console.log('Native player failed, falling back to VLC');
       setHasTriedNative(true);
       setCurrentPlayerType("vlc");
     } else {
-      // Show error if VLC also fails or on web
       setStreamError(event.error || 'Playback failed');
     }
   };
@@ -525,13 +715,11 @@ const MediaPlayerScreen: React.FC = () => {
   };
 
   const handleBack = async (event: BackEvent): Promise<void> => {
-    console.log('BackEvent', event)
     await stopTraktScrobble(Math.floor(event.progress));
     router.back();
   };
 
   const handleUpdateProgress = async (event: UpdateProgressEvent): Promise<void> => {
-    console.log('UpdateEvent', event)
     if (event.progress <= 1)
       return;
 
@@ -547,12 +735,10 @@ const MediaPlayerScreen: React.FC = () => {
       return require("../../components/nativeplayer").MediaPlayer;
     }
 
-    // Use VLC player if explicitly set or if native player failed
     if (currentPlayerType === "vlc") {
       return require("../../components/vlcplayer").MediaPlayer;
     }
 
-    // Default to native player
     return require("../../components/nativeplayer").MediaPlayer;
   }
 
@@ -560,46 +746,85 @@ const MediaPlayerScreen: React.FC = () => {
 
   if (isLoadingStream) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#535aff" />
-        <Text style={styles.loadingText}>Loading stream...</Text>
-      </View>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#535aff" />
+          <Text style={styles.loadingText}>Loading stream...</Text>
+        </View>
+      </GestureHandlerRootView>
     );
   }
 
   if (streamError) {
     return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>{streamError}</Text>
-        {currentPlayerType === "vlc" && (
-          <Text style={styles.infoText}>VLC player was unable to play this format</Text>
-        )}
-        <Pressable style={styles.retryButton} onPress={() => loadStream(currentStreamIndex)}>
-          <Text style={styles.retryButtonText}>Retry</Text>
-        </Pressable>
-        <Pressable style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.backButtonText}>Go Back</Text>
-        </Pressable>
-      </View>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{streamError}</Text>
+          {currentPlayerType === "vlc" && (
+            <Text style={styles.infoText}>VLC player was unable to play this format</Text>
+          )}
+          <Pressable style={styles.retryButton} onPress={() => {
+            setStreamError('');
+            setCurrentPlayerType("native");
+            setHasTriedNative(false);
+            loadStream(currentStreamIndex);
+          }}>
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </Pressable>
+          <Pressable style={styles.backButton} onPress={() => router.back()}>
+            <Text style={styles.backButtonText}>Go Back</Text>
+          </Pressable>
+        </View>
+      </GestureHandlerRootView>
     );
   }
 
   return (
-    <Player
-      videoUrl={videoUrl}
-      title={title as string}
-      back={handleBack}
-      progress={progress}
-      artwork={artwork as string}
-      subtitles={subtitles}
-      openSubtitlesClient={openSubtitlesClient}
-      isLoadingSubtitles={isLoadingSubtitles}
-      updateProgress={handleUpdateProgress}
-      onPlaybackError={handlePlaybackError}
-      streams={streams}
-      currentStreamIndex={currentStreamIndex}
-      onStreamChange={handleStreamChange}
-    />
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <Player
+        videoUrl={videoUrl}
+        title={title as string}
+        back={handleBack}
+        progress={progress}
+        artwork={artwork as string}
+        subtitles={subtitles}
+        openSubtitlesClient={openSubtitlesClient}
+        isLoadingSubtitles={isLoadingSubtitles}
+        updateProgress={handleUpdateProgress}
+        onPlaybackError={handlePlaybackError}
+        streams={streams}
+        currentStreamIndex={currentStreamIndex}
+        onStreamChange={handleStreamChange}
+      />
+
+      <BottomSheet
+        ref={bottomSheetRef}
+        index={-1}
+        snapPoints={snapPoints}
+        enablePanDownToClose={true}
+        backdropComponent={renderBackdrop}
+        backgroundStyle={styles.bottomSheetBackground}
+        handleIndicatorStyle={styles.bottomSheetIndicator}
+        onChange={(index) => {
+          if (index === -1) {
+            setStatusText('');
+            setIsProcessing(false);
+          }
+        }}
+      >
+        <BottomSheetView style={styles.bottomSheetContent}>
+          <View style={styles.statusContainer}>
+            <ActivityIndicator size="large" color="#535aff" style={styles.bottomSheetLoader} />
+            <Text style={styles.statusText}>{statusText}</Text>
+            <Pressable
+              style={styles.cancelButton}
+              onPress={handleCloseBottomSheet}>
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </Pressable>
+          </View>
+        </BottomSheetView>
+      </BottomSheet>
+    </GestureHandlerRootView>
   );
 };
 
@@ -654,6 +879,52 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     color: '#999',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  bottomSheetBackground: {
+    backgroundColor: '#101010',
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
+  },
+  bottomSheetIndicator: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    width: 40,
+  },
+  bottomSheetContent: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    marginBottom: 20
+  },
+  statusContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 20,
+    backgroundColor: 'transparent',
+  },
+  bottomSheetLoader: {
+    marginBottom: 20,
+  },
+  statusText: {
+    fontSize: 16,
+    color: '#ffffff',
+    textAlign: 'center',
+    marginBottom: 30,
+    paddingHorizontal: 20,
+    lineHeight: 22,
+  },
+  cancelButton: {
+    backgroundColor: '#535aff',
+    paddingVertical: 12,
+    paddingHorizontal: 40,
+    borderRadius: 8,
+    minWidth: 120,
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    color: '#ffffff',
     fontSize: 16,
     fontWeight: '600',
   },
