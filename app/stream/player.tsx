@@ -160,10 +160,10 @@ const MediaPlayerScreen: React.FC = () => {
     setPlayers(platformPlayers);
 
     // Load saved default player
-    const savedPlayer = await loadDefaultPlayer();
+    const savedPlayer = loadDefaultPlayer();
 
     // Fetch server configs and get the values immediately
-    const { servers: serverList, selectedId } = await fetchServerConfigs();
+    const { servers: serverList, selectedId } = fetchServerConfigs();
 
     // If no default player, show selection
     if (!savedPlayer) {
@@ -181,7 +181,7 @@ const MediaPlayerScreen: React.FC = () => {
     }
   };
 
-  const loadDefaultPlayer = async () => {
+  const loadDefaultPlayer = () => {
     try {
       const savedDefault = storageService.getItem(DEFAULT_MEDIA_PLAYER_KEY);
       return savedDefault ? JSON.parse(savedDefault) : null;
@@ -191,7 +191,7 @@ const MediaPlayerScreen: React.FC = () => {
     }
   };
 
-  const fetchServerConfigs = async (): Promise<{ servers: ServerConfig[], selectedId: string }> => {
+  const fetchServerConfigs = (): { servers: ServerConfig[], selectedId: string } => {
     try {
       const storedServers = storageService.getItem(SERVERS_KEY);
       console.log('servers', storedServers)
@@ -549,7 +549,7 @@ const MediaPlayerScreen: React.FC = () => {
     }
   };
 
-  const saveToWatchHistory = async (progress: number) => {
+  const saveToWatchHistory = (progress: number) => {
     const minProgressAsWatched = 95;
 
     try {
@@ -684,7 +684,7 @@ const MediaPlayerScreen: React.FC = () => {
     }
 
     try {
-      await saveToWatchHistory(finalProgress);
+      saveToWatchHistory(finalProgress);
 
       const scrobbleData: any = {
         progress: finalProgress,
@@ -726,7 +726,7 @@ const MediaPlayerScreen: React.FC = () => {
     const progressPercentage = Math.floor(event.progress);
     setProgress(progressPercentage);
 
-    await saveToWatchHistory(progressPercentage);
+    saveToWatchHistory(progressPercentage);
     await syncProgressToTrakt(progressPercentage);
   };
 
