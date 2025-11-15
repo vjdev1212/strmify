@@ -556,8 +556,8 @@ export const ProgressBar: React.FC<{
                         onValueChange={onValueChange}
                         onSlidingStart={onSlidingStart}
                         onSlidingComplete={onSlidingComplete}
-                        minimumTrackTintColor="#535aff"
-                        maximumTrackTintColor="rgba(255,255,255,0.3)"
+                        minimumTrackTintColor="rgba(83, 90, 255, 0.9)"
+                        maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
                         thumbTintColor="#fff"
                         thumbSize={20}
                         trackHeight={5}

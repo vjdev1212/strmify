@@ -212,8 +212,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         if (!playingChange) return;
         playerState.setIsPlaying(playingChange.isPlaying);
 
-        // Only hide buffering if actually playing (not just paused)
-        if (playingChange.isPlaying) {
+        if (playingChange.isPlaying && !isSeeking.current) {
             playerState.setIsBuffering(false);
             Animated.timing(bufferOpacity, { toValue: 0, duration: 200, useNativeDriver: true }).start();
         }
@@ -350,25 +349,34 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         // Store playing state before seek
         wasPlayingBeforeSeek.current = playerState.isPlaying;
 
+        if (playerState.isPlaying) {
+            player.pause();
+        }
+
         // Show buffering indicator
         playerState.setIsBuffering(true);
         Animated.timing(bufferOpacity, { toValue: 1, duration: 150, useNativeDriver: true }).start();
 
         isSeeking.current = true;
 
-        // Perform seek without pausing
+        // Perform seek
         player.currentTime = clampedTime;
         playerState.setCurrentTime(clampedTime);
 
-        // Hide buffering after seek completes
+        // Hide buffering and resume playback after seek completes
         setTimeout(() => {
             playerState.setIsBuffering(false);
             Animated.timing(bufferOpacity, { toValue: 0, duration: 200, useNativeDriver: true }).start();
             isSeeking.current = false;
+
+            if (wasPlayingBeforeSeek.current) {
+                player.play();
+            }
         }, 300);
 
         showControlsTemporarily();
     }, [playerState.isReady, playerState.duration, playerState.isPlaying, player, showControlsTemporarily, bufferOpacity]);
+
 
     const skipTime = useCallback(async (seconds: number) => {
         if (!playerState.isReady) return;
@@ -416,25 +424,36 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
             const newTime = value * playerState.duration;
             wasPlayingBeforeSeek.current = playerState.isPlaying;
 
+            // FIXED: Pause during seek to prevent play/pause icon flicker
+            if (playerState.isPlaying) {
+                player.pause();
+            }
+
             // Show buffering indicator
             playerState.setIsBuffering(true);
             Animated.timing(bufferOpacity, { toValue: 1, duration: 150, useNativeDriver: true }).start();
 
             isSeeking.current = true;
 
-            // Perform seek without pausing
+            // Perform seek
             player.currentTime = newTime;
             playerState.setCurrentTime(newTime);
 
-            // Hide buffering after seek completes
+            // Hide buffering and resume playback after seek completes
             setTimeout(() => {
                 playerState.setIsBuffering(false);
                 Animated.timing(bufferOpacity, { toValue: 0, duration: 200, useNativeDriver: true }).start();
                 isSeeking.current = false;
+
+                // FIXED: Resume playback if it was playing before seek
+                if (wasPlayingBeforeSeek.current) {
+                    player.play();
+                }
             }, 300);
         }
         playerState.setIsDragging(false);
     }, [playerState.isReady, playerState.duration, playerState.isPlaying, player, bufferOpacity]);
+
 
     // Menu handlers - stable callbacks
     const handleSpeedSelect = useCallback(async (speed: number) => {
