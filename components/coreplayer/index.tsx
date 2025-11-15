@@ -508,7 +508,7 @@ export const CenterControls: React.FC<{
                 onPress={onSkipForward}
             >
                 <MaterialIcons
-                    name="forward-30"
+                    name="forward-10"
                     size={36}
                     color={"#ffffff"}
                 />

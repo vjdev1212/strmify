@@ -390,7 +390,7 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
     },
     primaryButton: {
-        backgroundColor: 'rgba(83, 90, 255, 0.2)',
+        backgroundColor: 'hsla(238, 100%, 66%, 0.20)',
         borderColor: 'rgba(83, 90, 255, 0.3)',
         shadowColor: '#535aff',
     },

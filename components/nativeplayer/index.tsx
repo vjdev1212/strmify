@@ -582,7 +582,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     }, [showControlsTemporarily, playerState]);
 
     const handleSkipBackward = useCallback(() => skipTime(-10), [skipTime]);
-    const handleSkipForward = useCallback(() => skipTime(30), [skipTime]);
+    const handleSkipForward = useCallback(() => skipTime(10), [skipTime]);
 
     // If there's an error, show error display
     if (videoError) {

@@ -267,7 +267,6 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
 
             // Clear seeking state and hide loader when progress updates after seek
             if (isSeeking.current) {
-                console.log('onProgress: Clearing seeking state');
                 isSeeking.current = false;
                 playerState.setIsSeeking(false);
                 playerState.setIsBuffering(false);
@@ -565,7 +564,8 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
                     }]}
                     source={{
                         uri: videoUrl,
-                        initType: 1
+                        initType: 1,
+                        initOptions: []
                     }}
                     autoplay={true}
                     playInBackground={true}
@@ -766,18 +766,18 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
                                     shouldAutoHideControls.current = true;
                                     showControlsTemporarily();
                                 }}
-                            >                                
-                                    <TouchableOpacity
-                                        style={styles.controlButton}
-                                        onPress={() => {
-                                            if (Platform.OS === 'android') {
-                                                speedMenuRef.current?.show();
-                                            }
-                                        }}
-                                    >
-                                        <MaterialIcons name="speed" size={24} color="white" />
-                                    </TouchableOpacity>
-                                </MenuView>
+                            >
+                                <TouchableOpacity
+                                    style={styles.controlButton}
+                                    onPress={() => {
+                                        if (Platform.OS === 'android') {
+                                            speedMenuRef.current?.show();
+                                        }
+                                    }}
+                                >
+                                    <MaterialIcons name="speed" size={24} color="white" />
+                                </TouchableOpacity>
+                            </MenuView>
                         </View>
                     </View>
 
@@ -787,7 +787,7 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
                         isBuffering={playerState.isBuffering}
                         onPlayPause={togglePlayPause}
                         onSkipBackward={() => skipTime(-10)}
-                        onSkipForward={() => skipTime(30)}
+                        onSkipForward={() => skipTime(10)}
                     />
 
                     <View style={styles.bottomControls}>
