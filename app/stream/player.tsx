@@ -1,6 +1,5 @@
 import OpenSubtitlesClient, { SubtitleResult } from "@/clients/opensubtitles";
 import { isUserAuthenticated, scrobbleStart, scrobbleStop } from "@/clients/trakt";
-import { generateStremioPlayerUrl } from "@/clients/stremio";
 import { Subtitle } from "@/components/coreplayer/models";
 import { getLanguageName } from "@/utils/Helpers";
 import { StorageKeys, storageService } from "@/utils/StorageService";
@@ -13,6 +12,7 @@ import { ServerConfig } from "@/components/ServerConfig";
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import BottomSheet, { BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { StreamingServerClient } from "@/clients/stremio";
 
 interface BackEvent {
   message: string;
@@ -92,6 +92,9 @@ const MediaPlayerScreen: React.FC = () => {
   const [selectedServerId, setSelectedServerId] = useState<string | null>(null);
   const [players, setPlayers] = useState<{ name: string; scheme: string; encodeUrl: boolean }[]>([]);
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
+
+  // Stremio client instance
+  const [stremioClient, setStremioClient] = useState<StreamingServerClient | null>(null);
 
   // Player fallback state
   const [currentPlayerType, setCurrentPlayerType] = useState<"native" | "vlc">("native");
@@ -218,6 +221,10 @@ const MediaPlayerScreen: React.FC = () => {
       setStremioServers(stremioServerList);
       setSelectedServerId(currentServer.serverId);
 
+      // Initialize Stremio client with current server
+      const client = new StreamingServerClient(currentServer.serverUrl);
+      setStremioClient(client);
+
       // Return the values for immediate use
       return {
         servers: stremioServerList,
@@ -232,6 +239,11 @@ const MediaPlayerScreen: React.FC = () => {
         serverUrl: DEFAULT_STREMIO_URL,
         current: true
       };
+
+      // Initialize Stremio client with default server
+      const client = new StreamingServerClient(DEFAULT_STREMIO_URL);
+      setStremioClient(client);
+
       return {
         servers: [defaultStremio],
         selectedId: 'stremio-default'
@@ -251,9 +263,28 @@ const MediaPlayerScreen: React.FC = () => {
     return null;
   };
 
-  const generatePlayerUrlWithInfoHash = async (infoHash: string, serverUrl: string) => {
+  const generatePlayerUrlWithInfoHash = async (
+    infoHash: string,
+    serverUrl: string,
+    client?: StreamingServerClient
+  ): Promise<string> => {
     setStatusText('Generating stream URL...');
-    return await generateStremioPlayerUrl(infoHash, serverUrl, type as string, season as string, episode as string);
+
+    // Use provided client or create new one
+    const clientToUse = client || new StreamingServerClient(serverUrl);
+
+    try {
+      // Get stream URL from infohash using the client
+      const streamUrl = await clientToUse.getStreamingURL(
+        infoHash,
+        type === 'series' ? parseInt(episode as string) : 0
+      );
+
+      return streamUrl;
+    } catch (error) {
+      console.error('Error generating stream URL:', error);
+      throw new Error(`Failed to generate stream URL: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   };
 
   const handleOpenBottomSheet = () => {
@@ -277,7 +308,12 @@ const MediaPlayerScreen: React.FC = () => {
     />
   );
 
-  const loadStream = async (streamIndex: number, streamList?: Stream[], serverList?: ServerConfig[], serverId?: string) => {
+  const loadStream = async (
+    streamIndex: number,
+    streamList?: Stream[],
+    serverList?: ServerConfig[],
+    serverId?: string
+  ) => {
     const streamsToUse = streamList || streams;
     if (!streamsToUse[streamIndex]) return;
 
@@ -304,7 +340,12 @@ const MediaPlayerScreen: React.FC = () => {
           throw new Error('No Stremio server configured');
         }
 
-        finalVideoUrl = await generatePlayerUrlWithInfoHash(infoHash, selectedServer.serverUrl);
+        // Use the stremio client
+        finalVideoUrl = await generatePlayerUrlWithInfoHash(
+          infoHash,
+          selectedServer.serverUrl,
+          stremioClient || undefined
+        );
       }
 
       if (!finalVideoUrl) {
@@ -362,7 +403,11 @@ const MediaPlayerScreen: React.FC = () => {
 
       if (!url && infoHash && selectedServer) {
         setStatusText('Processing stream...');
-        videoUrl = await generatePlayerUrlWithInfoHash(infoHash, selectedServer.serverUrl);
+        videoUrl = await generatePlayerUrlWithInfoHash(
+          infoHash,
+          selectedServer.serverUrl,
+          stremioClient || undefined
+        );
       }
 
       if (!videoUrl) {

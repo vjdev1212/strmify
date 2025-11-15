@@ -1,80 +1,286 @@
-export const processInfoHashWithStremio = async (infoHash: string, serverUrl: string) => {
-    try {
-        const response = await fetch(`${serverUrl}/${infoHash}/create`, {
-            method: 'POST',
-            body: JSON.stringify({ torrent: { infoHash }, guessFileIdx: {} }),
-        });
+import { Platform } from 'react-native';
 
-        if (!response.ok) {
-            throw new Error('Failed to call the Stremio server endpoint.');
-        }
-
-        return response.json();
-    } catch (error) {
-        console.error('Error calling Stremio server:', error);
-        throw error;
-    }
-};
-
-export const generateStremioPlayerUrl = async (
-    infoHash: string,
-    serverUrl: string,
-    type: string,
-    season: string,
-    episode: string
-) => {
-    const data = await processInfoHashWithStremio(infoHash, serverUrl);
-    let fileName = '';
-
-    if (data) {
-        if (data.files.length === 1) {
-            fileName = data.files[0].name;
-        } else {
-            if (type === 'movie') {
-                if (typeof data.guessedFileIdx === 'number' && data.files[data.guessedFileIdx]) {
-                    fileName = data.files[data.guessedFileIdx].name;
-                } else {
-                    const largestFile = data.files.reduce((prev: any, curr: any) =>
-                        curr.length > prev.length ? curr : prev
-                    );
-                    fileName = largestFile.name;
-                }
-            } else if (type === 'series') {
-                const file = getStremioEpisodeFile(data.files, season, episode);
-                if (file) {
-                    fileName = file.name;
-                } else {
-                    const fallbackIdx = (typeof data.guessedFileIdx === 'number' && data.files[data.guessedFileIdx])
-                        ? data.guessedFileIdx
-                        : 0;
-                    fileName = data.files[fallbackIdx].name;
-                }
-            }
-        }
-    }
-
-    return `${serverUrl}/${infoHash}/${fileName}`;
-};
-
-
-function getStremioEpisodeFile(files: any[], season: string, episode: string) {
-    const seasonEpisodePattern = new RegExp(`S${season.padStart(2, '0')}E${episode.padStart(2, '0')}`, 'i');
-    const altSeasonEpisodePattern = new RegExp(`S${season}E${episode}`, 'i');
-
-    let matchingFile = files.find(file => seasonEpisodePattern.test(file.name));
-    if (matchingFile) {
-        return matchingFile;
-    }
-
-    matchingFile = files.find(file => altSeasonEpisodePattern.test(file.name));
-    if (matchingFile) {
-        return matchingFile;
-    }
-
-    const episodeIndex = +episode - 1;
-    if (episodeIndex >= 0 && episodeIndex < files.length) {
-        return files[episodeIndex];
-    }
-
-    return null;
+export interface MediaCapabilities {
+  videoCodecs: string[];
+  audioCodecs: string[];
+  maxAudioChannels: number;
+  formats: string[];
 }
+
+export interface ProbeResult {
+  format: {
+    name: string;
+    duration: number;
+  };
+  streams: Array<{
+    track: 'video' | 'audio' | 'subtitle';
+    codec: string;
+    channels?: number;
+  }>;
+}
+
+export interface StreamResult {
+  url: string;
+  needsTranscoding: boolean;
+  reason?: string;
+}
+
+const IOS_CAPABILITIES: MediaCapabilities = {
+  videoCodecs: ['h264', 'avc', 'avc1'],
+  audioCodecs: ['aac', 'mp4a', 'mp3', 'ac3', 'eac3', 'ec-3'],
+  maxAudioChannels: 8,
+  formats: ['mp4', 'mov', 'm4v'],
+};
+
+const ANDROID_CAPABILITIES: MediaCapabilities = {
+  videoCodecs: ['h264', 'avc', 'avc1', 'h265', 'hevc', 'hev1', 'vp8', 'vp9'],
+  audioCodecs: ['aac', 'mp4a', 'mp3', 'opus', 'vorbis', 'ac3', 'eac3', 'ec-3'],
+  maxAudioChannels: 8,
+  formats: ['mp4', 'mkv', 'webm'],
+};
+
+const WEB_CAPABILITIES: MediaCapabilities = {
+  videoCodecs: ['h264', 'avc', 'avc1', 'vp8', 'vp9'],
+  audioCodecs: ['aac', 'mp4a', 'mp3', 'opus', 'vorbis'],
+  maxAudioChannels: 2,
+  formats: ['mp4', 'webm'],
+};
+
+const CODEC_ALIASES: Record<string, string[]> = {
+  h264: ['avc', 'avc1'],
+  h265: ['hevc', 'hev1', 'hvc1'],
+  aac: ['mp4a'],
+  eac3: ['ec-3'],
+};
+
+export class StreamingServerClient {
+  private baseURL: string;
+  private capabilities: MediaCapabilities;
+  private platform: string;
+
+  constructor(
+    streamingServerURL: string,
+    customCapabilities?: MediaCapabilities
+  ) {
+    this.baseURL = streamingServerURL.replace(/\/$/, '');
+    this.platform = Platform.OS;
+    
+    if (customCapabilities) {
+      this.capabilities = customCapabilities;
+    } else {
+      this.capabilities = this.getPlatformCapabilities();
+    }
+    
+    console.log('[StreamingServerClient] Initialized:', {
+      baseURL: this.baseURL,
+      platform: this.platform,
+      capabilities: this.capabilities,
+    });
+  }
+
+  private getPlatformCapabilities(): MediaCapabilities {
+    switch (Platform.OS) {
+      case 'ios':
+        console.log('[StreamingServerClient] Using iOS/AVFoundation capabilities');
+        return IOS_CAPABILITIES;
+      case 'android':
+        console.log('[StreamingServerClient] Using Android/ExoPlayer capabilities');
+        return ANDROID_CAPABILITIES;
+      case 'web':
+        console.log('[StreamingServerClient] Using Web/HTML5 capabilities');
+        return WEB_CAPABILITIES;
+      default:
+        console.log('[StreamingServerClient] Unknown platform, using web capabilities');
+        return WEB_CAPABILITIES;
+    }
+  }
+
+  async getStreamingURL(infoHash: string, fileIdx: number = 0): Promise<string> {
+    console.log('[StreamingServerClient] Getting streaming URL:', { infoHash, fileIdx });
+
+    const directURL = `${this.baseURL}/${encodeURIComponent(infoHash)}/${encodeURIComponent(fileIdx)}`;
+    console.log('[StreamingServerClient] Direct URL:', directURL);
+
+    const canPlayDirectly = await this.canPlayDirectly(directURL);
+
+    if (canPlayDirectly) {
+      console.log('[StreamingServerClient] ✓ Can play directly');
+      return directURL;
+    }
+
+    console.log('[StreamingServerClient] ✗ Needs transcoding, generating HLS URL');
+    const hlsURL = this.generateHLSURL(directURL);
+    console.log('[StreamingServerClient] HLS URL:', hlsURL);
+
+    return hlsURL;
+  }
+
+  async getStream(infoHash: string, fileIdx: number = 0): Promise<StreamResult> {
+    const directURL = `${this.baseURL}/${encodeURIComponent(infoHash)}/${encodeURIComponent(fileIdx)}`;
+    const result = await this.checkCompatibility(directURL);
+
+    if (result.compatible) {
+      return {
+        url: directURL,
+        needsTranscoding: false,
+      };
+    }
+
+    return {
+      url: this.generateHLSURL(directURL),
+      needsTranscoding: true,
+      reason: result.reason,
+    };
+  }
+
+  private async checkCompatibility(mediaURL: string): Promise<{ compatible: boolean; reason?: string }> {
+    try {
+      console.log('[StreamingServerClient] Probing media...');
+      
+      const probeURL = `${this.baseURL}/hlsv2/probe?${new URLSearchParams({
+        mediaURL: mediaURL,
+      })}`;
+
+      const response = await fetch(probeURL);
+
+      if (!response.ok) {
+        console.warn('[StreamingServerClient] Probe failed, assuming transcoding needed');
+        return { compatible: false, reason: 'Probe failed' };
+      }
+
+      const probe: ProbeResult = await response.json();
+      console.log('[StreamingServerClient] Probe result:', {
+        format: probe.format.name,
+        duration: probe.format.duration,
+        streams: probe.streams.length,
+      });
+
+      const formatSupported = this.capabilities.formats.some(fmt => 
+        probe.format.name.includes(fmt)
+      );
+      
+      if (!formatSupported) {
+        return { 
+          compatible: false, 
+          reason: `Format ${probe.format.name} not supported on ${this.platform}` 
+        };
+      }
+
+      for (const stream of probe.streams) {
+        if (stream.track === 'video') {
+          const isSupported = this.isCodecSupported(stream.codec, this.capabilities.videoCodecs);
+          console.log('[StreamingServerClient] Video codec check:', {
+            codec: stream.codec,
+            supported: isSupported,
+            availableCodecs: this.capabilities.videoCodecs,
+          });
+          
+          if (!isSupported) {
+            return { 
+              compatible: false, 
+              reason: `Video codec ${stream.codec} not supported on ${this.platform}` 
+            };
+          }
+        } else if (stream.track === 'audio') {
+          const channels = stream.channels || 0;
+          const isSupported = this.isCodecSupported(stream.codec, this.capabilities.audioCodecs);
+          
+          console.log('[StreamingServerClient] Audio codec check:', {
+            codec: stream.codec,
+            channels,
+            supported: isSupported,
+            availableCodecs: this.capabilities.audioCodecs,
+          });
+          
+          if (!isSupported) {
+            return { 
+              compatible: false, 
+              reason: `Audio codec ${stream.codec} not supported on ${this.platform}` 
+            };
+          }
+          
+          if (channels > this.capabilities.maxAudioChannels) {
+            return { 
+              compatible: false, 
+              reason: `${channels} audio channels exceeds max ${this.capabilities.maxAudioChannels} on ${this.platform}` 
+            };
+          }
+        }
+      }
+
+      console.log('[StreamingServerClient] All streams compatible');
+      return { compatible: true };
+
+    } catch (error) {
+      console.warn('[StreamingServerClient] Probe error:', error);
+      return { compatible: false, reason: `Probe error: ${error}` };
+    }
+  }
+
+  private async canPlayDirectly(mediaURL: string): Promise<boolean> {
+    const result = await this.checkCompatibility(mediaURL);
+    return result.compatible;
+  }
+
+  private isCodecSupported(codec: string, supportedCodecs: string[]): boolean {
+    const normalizedCodec = codec.toLowerCase();
+    const normalizedSupported = supportedCodecs.map(c => c.toLowerCase());
+
+    if (normalizedSupported.includes(normalizedCodec)) {
+      return true;
+    }
+
+    for (const [baseCodec, aliases] of Object.entries(CODEC_ALIASES)) {
+      if (normalizedCodec === baseCodec || aliases.includes(normalizedCodec)) {
+        if (normalizedSupported.includes(baseCodec)) {
+          return true;
+        }
+        for (const alias of aliases) {
+          if (normalizedSupported.includes(alias)) {
+            return true;
+          }
+        }
+        return false;
+      }
+    }
+
+    return false;
+  }
+
+  private generateHLSURL(mediaURL: string): string {
+    const id = this.generateRandomId();
+    const params = new URLSearchParams({ mediaURL });
+
+    this.capabilities.videoCodecs.forEach(codec => {
+      params.append('videoCodecs', codec);
+    });
+
+    this.capabilities.audioCodecs.forEach(codec => {
+      params.append('audioCodecs', codec);
+    });
+
+    params.set('maxAudioChannels', this.capabilities.maxAudioChannels.toString());
+
+    return `${this.baseURL}/hlsv2/${id}/master.m3u8?${params.toString()}`;
+  }
+
+  private generateRandomId(): string {
+    return Math.random().toString(36).substring(2, 15) + 
+           Math.random().toString(36).substring(2, 15);
+  }
+
+  setCapabilities(capabilities: MediaCapabilities): void {
+    this.capabilities = capabilities;
+    console.log('[StreamingServerClient] Capabilities updated:', capabilities);
+  }
+
+  getPlatform(): string {
+    return this.platform;
+  }
+
+  getCapabilities(): MediaCapabilities {
+    return { ...this.capabilities };
+  }
+}
+
+export { IOS_CAPABILITIES, ANDROID_CAPABILITIES, WEB_CAPABILITIES };
