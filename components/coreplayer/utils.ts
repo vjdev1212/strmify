@@ -72,63 +72,6 @@ const EXOPLAYER_SUPPORTED_CONTAINERS = [
     'avi',
 ];
 
-// Check if codec/format is supported by native player
-const isNativePlayerSupported = (codecInfo: CodecInfo): boolean => {
-    const { videoCodec, audioCodec, container } = codecInfo;
-
-    if (Platform.OS === 'ios') {
-        // Check container
-        if (container && !AVF_SUPPORTED_CONTAINERS.some(c => container.toLowerCase().includes(c))) {
-            console.log(`[Native Player Check] Unsupported container on iOS: ${container}`);
-            return false;
-        }
-
-        // Check video codec
-        if (videoCodec && !AVF_SUPPORTED_VIDEO_CODECS.some(c => videoCodec.toLowerCase().includes(c))) {
-            console.log(`[Native Player Check] Unsupported video codec on iOS: ${videoCodec}`);
-            return false;
-        }
-
-        // Check audio codec
-        if (audioCodec && !AVF_SUPPORTED_AUDIO_CODECS.some(c => audioCodec.toLowerCase().includes(c))) {
-            console.log(`[Native Player Check] Unsupported audio codec on iOS: ${audioCodec}`);
-            return false;
-        }
-
-        // Special case: HEVC on iOS might play audio only on some devices
-        if (videoCodec && (videoCodec.toLowerCase().includes('hevc') || videoCodec.toLowerCase().includes('h265'))) {
-            console.log(`[Native Player Check] HEVC detected on iOS - may have playback issues, using VLC`);
-            return false;
-        }
-
-        return true;
-    }
-    else if (Platform.OS === 'android') {
-        // Check container
-        if (container && !EXOPLAYER_SUPPORTED_CONTAINERS.some(c => container.toLowerCase().includes(c))) {
-            console.log(`[Native Player Check] Unsupported container on Android: ${container}`);
-            return false;
-        }
-
-        // Check video codec
-        if (videoCodec && !EXOPLAYER_SUPPORTED_VIDEO_CODECS.some(c => videoCodec.toLowerCase().includes(c))) {
-            console.log(`[Native Player Check] Unsupported video codec on Android: ${videoCodec}`);
-            return false;
-        }
-
-        // Check audio codec
-        if (audioCodec && !EXOPLAYER_SUPPORTED_AUDIO_CODECS.some(c => audioCodec.toLowerCase().includes(c))) {
-            console.log(`[Native Player Check] Unsupported audio codec on Android: ${audioCodec}`);
-            return false;
-        }
-
-        return true;
-    }
-
-    // Web always uses native
-    return true;
-};
-
 // Extract codec information from URL or metadata
 const extractCodecInfo = (url: string): CodecInfo => {
     const codecInfo: CodecInfo = {};
@@ -168,21 +111,3 @@ const extractCodecInfo = (url: string): CodecInfo => {
 
     return codecInfo;
 };
-
-// Check if we should fallback to VLC based on codec info
-export const shouldFallbackToVLC = (url: string): boolean => {
-    if (Platform.OS === 'web') {
-        return false; // Web always uses native player
-    }
-
-    const codecInfo = extractCodecInfo(url);
-    const supported = isNativePlayerSupported(codecInfo);
-
-    if (!supported) {
-        console.log('[Player Selection] Falling back to VLC due to unsupported format/codec');
-        console.log('[Player Selection] Codec Info:', codecInfo);
-    }
-
-    return !supported;
-};
-

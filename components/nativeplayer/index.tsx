@@ -6,7 +6,7 @@ import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { MenuComponentRef, MenuView } from '@react-native-menu/menu';
 import { WebMenu } from "@/components/WebMenuView";
 import { styles } from "../coreplayer/styles";
-import { playHaptic, shouldFallbackToVLC } from "../coreplayer/utils";
+import { playHaptic } from "../coreplayer/utils";
 import { usePlayerState, useSubtitleState, useUIState, usePlayerSettings, useTimers, usePlayerAnimations, hideControls, CONSTANTS, setupOrientation, cleanupOrientation, loadSubtitle, handleSubtitleError, findActiveSubtitle, calculateProgress, performSeek, buildSpeedActions, buildSubtitleActions, buildAudioActions, buildStreamActions, calculateSliderValues, ArtworkBackground, WaitingLobby, SubtitleDisplay, CenterControls, ProgressBar, ContentFitLabel, SubtitleSource, ErrorDisplay, ExtendedMediaPlayerProps } from "../coreplayer";
 import { View, Text } from "../Themed";
 
@@ -22,7 +22,6 @@ const MenuWrapper: React.FC<any> = (props) => {
 export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     videoUrl,
     title,
-    isTorrent,
     back: onBack,
     progress,
     artwork,
@@ -74,7 +73,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
     // Check if we should use VLC from the start
     useEffect(() => {
-        if (Platform.OS !== 'web' && (!isTorrent && shouldFallbackToVLC(videoUrl))) {
+        if (Platform.OS !== 'web') {
             console.log('[Player Selection] Using VLC player for:', videoUrl);
             if (onPlaybackError && !hasReportedErrorRef.current) {
                 hasReportedErrorRef.current = true;
@@ -293,7 +292,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                 break;
 
             case "error":
-                console.error('Video playback error:', error?.message || 'Unknown error');
+                console.log('Video playback error:', error?.message || 'Unknown error');
                 playerState.setIsBuffering(false);
                 playerState.setIsReady(false);
 
