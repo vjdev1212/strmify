@@ -200,6 +200,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     useEffect(() => {
         if (!playingChange) return;
 
+        console.log('PlayingChange:', playingChange.isPlaying, 'isSeeking:', isSeeking.current);
         playerState.setIsPlaying(playingChange.isPlaying);
 
         // Only hide buffering when video actually starts playing AND we're not in the middle of a seek
@@ -207,7 +208,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
             playerState.setIsBuffering(false);
             Animated.timing(bufferOpacity, { toValue: 0, duration: 200, useNativeDriver: true }).start();
         }
-    }, [playingChange, bufferOpacity, playerState]);
+    }, [playingChange, bufferOpacity]);
 
     const timeUpdate = useEvent(player, "timeUpdate");
     useEffect(() => {
@@ -259,6 +260,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         if (!statusChange) return;
 
         const { status, error } = statusChange;
+        console.log('StatusChange:', status, 'isSeeking:', isSeeking.current);
 
         switch (status) {
             case "loading":
@@ -310,7 +312,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                 player.pause();
                 break;
         }
-    }, [statusChange, bufferOpacity, player, onPlaybackError, playerState]);
+    }, [statusChange, bufferOpacity, player, onPlaybackError]);
 
     // Auto-hide controls when playback starts - with guard to prevent loops
     useEffect(() => {
