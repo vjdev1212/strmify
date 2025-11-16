@@ -61,8 +61,6 @@ interface UpdateProgessEvent {
 
 interface PlaybackErrorEvent {
     error: string;
-    code?: string;
-    isFormatError?: boolean;
 }
 
 interface BackEvent {

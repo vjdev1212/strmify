@@ -264,16 +264,16 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
         switch (status) {
             case "loading":
-                // Only show loading indicator for initial load, not during seeks
                 if (!isSeeking.current && !playerState.isReady) {
                     playerState.setIsBuffering(true);
                     Animated.timing(bufferOpacity, { toValue: 1, duration: 200, useNativeDriver: true }).start();
                 }
                 setVideoError(null);
+                // Reset error report flag on new load attempt
+                hasReportedErrorRef.current = false;
                 break;
 
             case "readyToPlay":
-                // Don't change buffering state during seek - let playingChange handle it
                 if (!isSeeking.current) {
                     playerState.setIsBuffering(false);
                     Animated.timing(bufferOpacity, { toValue: 0, duration: 200, useNativeDriver: true }).start();
@@ -282,8 +282,9 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                 playerState.setIsReady(true);
                 playerState.setDuration(player.duration || 0);
                 setVideoError(null);
+                // Reset error flag on successful load
+                hasReportedErrorRef.current = false;
 
-                // Only auto-play if not restoring from progress and not seeking
                 if (!isSeeking.current && !wasPlayingBeforeSeek.current) {
                     player.play();
                 }
@@ -294,22 +295,23 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                 playerState.setIsBuffering(false);
                 playerState.setIsReady(false);
 
-                // Report error to parent for fallback
+                // Only report error once per video URL
                 if (onPlaybackError && !hasReportedErrorRef.current) {
                     hasReportedErrorRef.current = true;
                     const errorMessage = error?.message || 'Unable to load video';
+
                     onPlaybackError({
-                        error: errorMessage,
-                        isFormatError: true
+                        error: errorMessage
                     });
-                } else {
-                    // Set user-friendly error message
+
+                    // Stop player to prevent repeated error callbacks
+                    player.pause();
+                } else if (!onPlaybackError) {
+                    // If no error handler, show local error
                     const errorMessage = error?.message || 'Unable to load video. The file may be corrupted or in an unsupported format.';
                     setVideoError(errorMessage);
+                    player.pause();
                 }
-
-                // Stop any playback attempts
-                player.pause();
                 break;
         }
     }, [statusChange, bufferOpacity, player, onPlaybackError]);

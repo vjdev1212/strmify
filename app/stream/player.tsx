@@ -27,7 +27,6 @@ interface UpdateProgressEvent {
 
 interface PlaybackErrorEvent {
   error: string;
-  isFormatError?: boolean;
 }
 
 interface WatchHistoryItem {
@@ -156,6 +155,14 @@ const MediaPlayerScreen: React.FC = () => {
       fetchSubtitles();
     }
   }, [imdbid, type, season, episode, openSubtitlesClient]);
+
+  useEffect(() => {
+    if (currentPlayerType === "vlc" && hasTriedNative) {
+      console.log('Switching to VLC player');
+      setStreamError('');
+      setIsLoadingStream(false);
+    }
+  }, [currentPlayerType, hasTriedNative]);
 
   const initializePlayerAndSelect = async (parsedStreams: Stream[], streamIndex: number) => {
     const platformPlayers = getPlatformSpecificPlayers();
@@ -333,49 +340,11 @@ const MediaPlayerScreen: React.FC = () => {
           stremioClient || undefined
         );
       } else {
-        // Direct stream
         if (!url) {
           return;
         }
-        const serversToUse = serverList || stremioServers;
-        const serverIdToUse = serverId !== undefined ? serverId : selectedServerId;
-
-        if (serverIdToUse && serversToUse.length > 0) {
-          // Direct Stream + Stremio Server + Default Player = Check transcoding
-          const selectedServer = serversToUse.find(s => s.serverId === serverIdToUse);
-
-          if (selectedServer && stremioClient) {
-            console.log('Checking if transcoding is needed for direct stream...');
-
-            try {
-              // Check if the direct URL can be played without transcoding
-              const compatibility = await stremioClient.checkCompatibility(finalVideoUrl);
-
-              if (compatibility.compatible) {
-                // Can play directly
-                console.log('Direct stream is compatible, no transcoding needed');
-                finalVideoUrl = url;
-                setIsTorrent(false);
-              } else {
-                // Needs transcoding
-                console.log('Direct stream needs transcoding:', compatibility.reason);
-                finalVideoUrl = stremioClient.generateTranscodedURL(url);
-                setIsTorrent(true); // Set to true to use HLS player
-              }
-            } catch (error) {
-              console.log('Could not check transcoding compatibility, using direct URL:', error);
-              finalVideoUrl = url;
-              setIsTorrent(false);
-            }
-          } else {
-            finalVideoUrl = url;
-            setIsTorrent(false);
-          }
-        } else {
-          // Direct Stream + No Stremio Server + Default Player = Play directly, fallback to VLC if needed
-          finalVideoUrl = url;
-          setIsTorrent(false);
-        }
+        finalVideoUrl = url;
+        setIsTorrent(false);
       }
 
       if (!finalVideoUrl) {
@@ -539,12 +508,32 @@ const MediaPlayerScreen: React.FC = () => {
   const handlePlaybackError = (event: PlaybackErrorEvent) => {
     console.log('Playback error:', event);
 
-    if (currentPlayerType === "native" && !hasTriedNative && Platform.OS !== "web") {
+    // Only attempt VLC fallback for format errors on non-web platforms
+    if (
+      currentPlayerType === "native" &&
+      !hasTriedNative &&
+      Platform.OS !== "web"
+    ) {
       console.log('Native player failed, falling back to VLC');
+
       setHasTriedNative(true);
+      setStreamError('');
       setCurrentPlayerType("vlc");
+      setTimeout(() => {
+        // Trigger re-load with current video URL
+        // The player will re-render as VLC due to currentPlayerType change
+        console.log('VLC player ready, video URL:', videoUrl);
+      }, 100);
+
     } else {
-      setStreamError(event.error || 'Playback failed');
+      // Show error - either VLC also failed or no fallback available
+      const errorMessage = currentPlayerType === "vlc"
+        ? 'VLC player was unable to play this format. The video codec may not be supported.'
+        : (event.error || 'Playback failed');
+
+      console.log('Final playback error:', errorMessage);
+      setStreamError(errorMessage);
+      setIsLoadingStream(false);
     }
   };
 
