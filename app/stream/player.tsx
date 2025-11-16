@@ -7,7 +7,7 @@ import { getPlatformSpecificPlayers, Players } from "@/utils/MediaPlayer";
 import { showAlert } from "@/utils/platform";
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import React, { useEffect, useState, useRef, useMemo } from "react";
-import { Platform, Linking, ActivityIndicator, View, Text, StyleSheet, Pressable } from "react-native";
+import { Platform, Linking, ActivityIndicator, View, Text, StyleSheet, Pressable, Image } from "react-native";
 import { ServerConfig } from "@/components/ServerConfig";
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import BottomSheet, { BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
@@ -821,32 +821,16 @@ const MediaPlayerScreen: React.FC = () => {
     return (
       <GestureHandlerRootView style={{ flex: 1 }}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#535aff" />
-          <Text style={styles.loadingText}>Loading stream. Plase wait...</Text>
-        </View>
-      </GestureHandlerRootView>
-    );
-  }
-
-  if (streamError) {
-    return (
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{streamError}</Text>
-          {currentPlayerType === "vlc" && (
-            <Text style={styles.infoText}>VLC player was unable to play this format</Text>
+          {artwork && (
+            <Image
+              source={{ uri: artwork }}
+              style={styles.backdropImage}
+            />
           )}
-          <Pressable style={styles.retryButton} onPress={() => {
-            setStreamError('');
-            setCurrentPlayerType("native");
-            setHasTriedNative(false);
-            loadStream(currentStreamIndex);
-          }}>
-            <Text style={styles.retryButtonText}>Retry</Text>
-          </Pressable>
-          <Pressable style={styles.backButton} onPress={() => router.back()}>
-            <Text style={styles.backButtonText}>Go Back</Text>
-          </Pressable>
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color="#535aff" />
+            <Text style={styles.loadingText}>Loading stream. Please wait...</Text>
+          </View>
         </View>
       </GestureHandlerRootView>
     );
@@ -906,12 +890,23 @@ const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
+    alignItems: 'center'
+  },
+  backdropImage: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+    opacity: 0.2
+  },
+  loadingOverlay: {
+    justifyContent: 'center',
     alignItems: 'center',
   },
   loadingText: {
-    color: '#999',
-    marginTop: 16,
-    fontSize: 15,
+    color: '#fff',
+    marginTop: 20,
+    fontSize: 16,
     fontWeight: '500',
   },
   errorContainer: {
@@ -919,40 +914,88 @@ const styles = StyleSheet.create({
     backgroundColor: '#1a1a1a',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  errorOverlay: {
+    flex: 1,
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 20,
   },
-  errorText: {
-    color: '#ff6b6b',
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 12,
+  errorCard: {
+    borderRadius: 24,
+    padding: 32,
+    width: '90%',
+    maxWidth: 400,
+    alignItems: 'center'
   },
-  infoText: {
-    color: '#999',
-    fontSize: 14,
+  errorIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  errorIcon: {
+    fontSize: 48,
+  },
+  errorTitle: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: '700',
+    marginBottom: 12,
     textAlign: 'center',
-    marginBottom: 24,
+  },
+  errorMessage: {
+    color: '#ff6b6b',
+    fontSize: 15,
+    textAlign: 'center',
+    marginBottom: 8,
+    lineHeight: 22,
+  },
+  errorSubMessage: {
+    color: '#999',
+    fontSize: 13,
+    textAlign: 'center',
+    marginBottom: 28,
+    lineHeight: 20,
+  },
+  errorButtonsContainer: {
+    width: '100%',
+    gap: 12,
   },
   retryButton: {
     backgroundColor: '#535aff',
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 32,
-    borderRadius: 12,
-    marginBottom: 12,
+    borderRadius: 14,
+    width: '100%',
+    alignItems: 'center',
+    shadowColor: '#535aff',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   retryButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   backButton: {
-    backgroundColor: '#252525',
-    paddingVertical: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    paddingVertical: 14,
     paddingHorizontal: 32,
-    borderRadius: 12,
+    borderRadius: 14,
+    width: '100%',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   backButtonText: {
-    color: '#999',
+    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },
