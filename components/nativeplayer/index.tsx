@@ -253,6 +253,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         if (!statusChange) return;
 
         const { status, error } = statusChange;
+        console.log('StatusChange', status)
 
         switch (status) {
             case "loading":

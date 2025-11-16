@@ -255,7 +255,7 @@ const MediaPlayerScreen: React.FC = () => {
 
     const clientToUse = client || new StreamingServerClient(serverUrl);
 
-    try {      
+    try {
       const streamUrl = await clientToUse.getStreamingURL(infoHash, fileIdx);
       return streamUrl;
     } catch (error) {
@@ -318,7 +318,7 @@ const MediaPlayerScreen: React.FC = () => {
 
         const selectedServer = serversToUse.find(s => s.serverId === serverIdToUse);
 
-        if (!selectedServer) {          
+        if (!selectedServer) {
           throw new Error('Stremio server is required for torrent streams. Please configure a Stremio server in settings.');
         }
 
@@ -833,7 +833,7 @@ const MediaPlayerScreen: React.FC = () => {
       <GestureHandlerRootView style={{ flex: 1 }}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#535aff" />
-          <Text style={styles.loadingText}>Loading stream...</Text>
+          <Text style={styles.loadingText}>Loading stream. Plase wait...</Text>
         </View>
       </GestureHandlerRootView>
     );
