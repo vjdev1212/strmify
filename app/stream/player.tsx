@@ -466,7 +466,7 @@ const MediaPlayerScreen: React.FC = () => {
         message: 'Select the Media Player for Streaming',
         messageTextStyle: { color: '#ffffff', fontSize: 12 },
         textStyle: { color: '#ffffff' },
-        titleTextStyle: { color: '#535aff', fontWeight: '500' },
+        titleTextStyle: { color: '#535aff', fontWeight: 500 },
         containerStyle: { backgroundColor: '#101010' },
         userInterfaceStyle: 'dark'
       },
@@ -907,7 +907,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     marginTop: 20,
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: 500,
   },
   errorContainer: {
     flex: 1,
@@ -943,7 +943,7 @@ const styles = StyleSheet.create({
   errorTitle: {
     color: '#fff',
     fontSize: 24,
-    fontWeight: '700',
+    fontWeight: 600,
     marginBottom: 12,
     textAlign: 'center',
   },
@@ -981,7 +981,7 @@ const styles = StyleSheet.create({
   retryButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: 600,
     letterSpacing: 0.5,
   },
   backButton: {
@@ -997,7 +997,7 @@ const styles = StyleSheet.create({
   backButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 600,
   },
   bottomSheetBackground: {
     backgroundColor: '#101010',
@@ -1043,7 +1043,7 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     color: '#ffffff',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 600,
   },
 });
 
