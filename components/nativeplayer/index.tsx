@@ -40,6 +40,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     const wasPlayingBeforeSeek = useRef(false);
     const lastKnownTimeRef = useRef<number>(0);
     const hasReportedErrorRef = useRef(false);
+    const seekTimeoutRef = useRef<NodeJS.Timeout | any | null>(null);
 
     // Use common hooks
     const playerState = usePlayerState();
@@ -127,6 +128,9 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
             }
             cleanupOrientation();
             clearAllTimers();
+            if (seekTimeoutRef.current) {
+                clearTimeout(seekTimeoutRef.current);
+            }
         };
     }, [clearAllTimers, updateProgress, playerState.duration]);
 
@@ -195,13 +199,15 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     const playingChange = useEvent(player, "playingChange");
     useEffect(() => {
         if (!playingChange) return;
+
         playerState.setIsPlaying(playingChange.isPlaying);
 
+        // Only hide buffering when video actually starts playing AND we're not in the middle of a seek
         if (playingChange.isPlaying && !isSeeking.current) {
             playerState.setIsBuffering(false);
             Animated.timing(bufferOpacity, { toValue: 0, duration: 200, useNativeDriver: true }).start();
         }
-    }, [playingChange, bufferOpacity]);
+    }, [playingChange, bufferOpacity, playerState]);
 
     const timeUpdate = useEvent(player, "timeUpdate");
     useEffect(() => {
@@ -253,11 +259,11 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         if (!statusChange) return;
 
         const { status, error } = statusChange;
-        console.log('StatusChange', status)
 
         switch (status) {
             case "loading":
-                if (!playerState.isReady) {
+                // Only show loading indicator for initial load, not during seeks
+                if (!isSeeking.current && !playerState.isReady) {
                     playerState.setIsBuffering(true);
                     Animated.timing(bufferOpacity, { toValue: 1, duration: 200, useNativeDriver: true }).start();
                 }
@@ -265,14 +271,18 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                 break;
 
             case "readyToPlay":
-                playerState.setIsBuffering(false);
+                // Don't change buffering state during seek - let playingChange handle it
+                if (!isSeeking.current) {
+                    playerState.setIsBuffering(false);
+                    Animated.timing(bufferOpacity, { toValue: 0, duration: 200, useNativeDriver: true }).start();
+                }
+
                 playerState.setIsReady(true);
                 playerState.setDuration(player.duration || 0);
-                Animated.timing(bufferOpacity, { toValue: 0, duration: 200, useNativeDriver: true }).start();
                 setVideoError(null);
 
-                // Only auto-play if not restoring from progress
-                if (!isSeeking.current) {
+                // Only auto-play if not restoring from progress and not seeking
+                if (!isSeeking.current && !wasPlayingBeforeSeek.current) {
                     player.play();
                 }
                 break;
@@ -300,7 +310,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                 player.pause();
                 break;
         }
-    }, [statusChange, bufferOpacity, player, onPlaybackError]);
+    }, [statusChange, bufferOpacity, player, onPlaybackError, playerState]);
 
     // Auto-hide controls when playback starts - with guard to prevent loops
     useEffect(() => {
@@ -330,11 +340,18 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
     const seekTo = useCallback((seconds: number) => {
         if (!playerState.isReady || playerState.duration <= 0) return;
+
+        // Clear any existing seek timeout
+        if (seekTimeoutRef.current) {
+            clearTimeout(seekTimeoutRef.current);
+        }
+
         const clampedTime = performSeek(seconds, playerState.duration);
 
         // Store playing state before seek
         wasPlayingBeforeSeek.current = playerState.isPlaying;
 
+        // Pause if playing
         if (playerState.isPlaying) {
             player.pause();
         }
@@ -343,26 +360,30 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         playerState.setIsBuffering(true);
         Animated.timing(bufferOpacity, { toValue: 1, duration: 150, useNativeDriver: true }).start();
 
+        // Mark that we're seeking
         isSeeking.current = true;
 
         // Perform seek
         player.currentTime = clampedTime;
         playerState.setCurrentTime(clampedTime);
 
-        // Hide buffering and resume playback after seek completes
-        setTimeout(() => {
-            playerState.setIsBuffering(false);
-            Animated.timing(bufferOpacity, { toValue: 0, duration: 200, useNativeDriver: true }).start();
+        // Wait a bit, then resume playback if it was playing
+        // The buffering indicator will be hidden when playingChange event fires
+        seekTimeoutRef.current = setTimeout(() => {
+            console.log('Seek complete, resuming playback:', wasPlayingBeforeSeek.current);
             isSeeking.current = false;
 
             if (wasPlayingBeforeSeek.current) {
                 player.play();
+            } else {
+                // If we weren't playing, hide buffer indicator manually
+                playerState.setIsBuffering(false);
+                Animated.timing(bufferOpacity, { toValue: 0, duration: 200, useNativeDriver: true }).start();
             }
-        }, 300);
+        }, 150);
 
         showControlsTemporarily();
-    }, [playerState.isReady, playerState.duration, playerState.isPlaying, player, showControlsTemporarily, bufferOpacity]);
-
+    }, [playerState, player, showControlsTemporarily, bufferOpacity]);
 
     const skipTime = useCallback(async (seconds: number) => {
         if (!playerState.isReady) return;
@@ -403,14 +424,19 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         if (!playerState.isReady || playerState.duration <= 0) return;
         playerState.setIsDragging(true);
         playerState.setDragPosition(value);
-    }, [playerState.isReady, playerState.duration]);
+    }, [playerState]);
 
     const handleSliderComplete = useCallback((value: number) => {
         if (playerState.isReady && playerState.duration > 0) {
+            // Clear any existing seek timeout
+            if (seekTimeoutRef.current) {
+                clearTimeout(seekTimeoutRef.current);
+            }
+
             const newTime = value * playerState.duration;
             wasPlayingBeforeSeek.current = playerState.isPlaying;
 
-            // FIXED: Pause during seek to prevent play/pause icon flicker
+            // Pause during seek
             if (playerState.isPlaying) {
                 player.pause();
             }
@@ -419,27 +445,29 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
             playerState.setIsBuffering(true);
             Animated.timing(bufferOpacity, { toValue: 1, duration: 150, useNativeDriver: true }).start();
 
+            // Mark that we're seeking
             isSeeking.current = true;
 
             // Perform seek
             player.currentTime = newTime;
             playerState.setCurrentTime(newTime);
 
-            // Hide buffering and resume playback after seek completes
-            setTimeout(() => {
-                playerState.setIsBuffering(false);
-                Animated.timing(bufferOpacity, { toValue: 0, duration: 200, useNativeDriver: true }).start();
+            // Wait a bit, then resume playback if it was playing
+            seekTimeoutRef.current = setTimeout(() => {
+                console.log('Slider seek complete, resuming playback:', wasPlayingBeforeSeek.current);
                 isSeeking.current = false;
 
-                // FIXED: Resume playback if it was playing before seek
                 if (wasPlayingBeforeSeek.current) {
                     player.play();
+                } else {
+                    // If we weren't playing, hide buffer indicator manually
+                    playerState.setIsBuffering(false);
+                    Animated.timing(bufferOpacity, { toValue: 0, duration: 200, useNativeDriver: true }).start();
                 }
-            }, 300);
+            }, 150);
         }
         playerState.setIsDragging(false);
-    }, [playerState.isReady, playerState.duration, playerState.isPlaying, player, bufferOpacity]);
-
+    }, [playerState, player, bufferOpacity]);
 
     // Menu handlers - stable callbacks
     const handleSpeedSelect = useCallback(async (speed: number) => {
@@ -511,7 +539,6 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         hasReportedErrorRef.current = false;
         playerState.setIsReady(false);
         playerState.setIsBuffering(true);
-        // Force player reload by setting current time to 0
         player.currentTime = 0;
         player.play();
     }, [player, playerState]);
@@ -639,7 +666,6 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                         </View>
 
                         <View style={styles.topRightControls}>
-                            {/* Stream Selector - Only show if streams are available */}
                             {streams.length > 1 && (
                                 <MenuWrapper
                                     style={{ zIndex: 1000 }}
@@ -673,7 +699,6 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                                 <MaterialIcons name={isPiPActive ? "picture-in-picture-alt" : "picture-in-picture"} size={24} color="white" />
                             </TouchableOpacity>
 
-                            {/* Audio Track Menu */}
                             {player.availableAudioTracks.length > 0 && (
                                 <MenuWrapper
                                     style={{ zIndex: 1000 }}
@@ -696,7 +721,6 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                                 </MenuWrapper>
                             )}
 
-                            {/* Subtitle Menu */}
                             {(useCustomSubtitles || player.availableSubtitleTracks.length > 0) && (
                                 <MenuWrapper
                                     style={{ zIndex: 1000 }}
@@ -719,7 +743,6 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                                 </MenuWrapper>
                             )}
 
-                            {/* Speed Menu */}
                             <MenuWrapper
                                 style={{ zIndex: 1000 }}
                                 title="Playback Speed"
