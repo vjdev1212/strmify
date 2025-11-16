@@ -25,16 +25,21 @@ export interface StreamResult {
   reason?: string;
 }
 
+export interface CompatibilityResult {
+  compatible: boolean;
+  reason?: string;
+}
+
 const IOS_CAPABILITIES: MediaCapabilities = {
   videoCodecs: ['h264', 'avc', 'avc1'],
-  audioCodecs: ['aac', 'mp4a', 'mp3', 'ac3', 'eac3', 'ec-3'],
+  audioCodecs: ['aac', 'mp4a', 'mp3', 'ac3', 'eac3'],
   maxAudioChannels: 8,
   formats: ['mp4', 'mov', 'm4v'],
 };
 
 const ANDROID_CAPABILITIES: MediaCapabilities = {
   videoCodecs: ['h264', 'avc', 'avc1', 'h265', 'hevc', 'hev1', 'vp8', 'vp9'],
-  audioCodecs: ['aac', 'mp4a', 'mp3', 'opus', 'vorbis', 'ac3', 'eac3', 'ec-3'],
+  audioCodecs: ['aac', 'mp4a', 'mp3', 'opus', 'vorbis', 'ac3', 'eac3'],
   maxAudioChannels: 8,
   formats: ['mp4', 'mkv', 'webm'],
 };
@@ -44,6 +49,13 @@ const WEB_CAPABILITIES: MediaCapabilities = {
   audioCodecs: ['aac', 'mp4a', 'mp3', 'opus', 'vorbis'],
   maxAudioChannels: 2,
   formats: ['mp4', 'webm'],
+};
+
+const SERVER_TRANSCODE_CAPABILITIES: MediaCapabilities = {
+  videoCodecs: ['h264'],
+  audioCodecs: ['aac', 'mp3', 'ac3', 'eac3', 'opus'],
+  maxAudioChannels: Platform.OS === 'web' ? 2 : 8,
+  formats: ['mp4'],
 };
 
 const CODEC_ALIASES: Record<string, string[]> = {
@@ -109,7 +121,7 @@ export class StreamingServerClient {
     }
 
     console.log('✗ Needs transcoding:', result.reason);
-    console.log('Generating HLS URL');
+    console.log('Generating HLS URL with server transcode capabilities');
     const hlsURL = this.generateHLSURL(directURL);
     console.log('HLS URL:', hlsURL);
 
@@ -134,7 +146,12 @@ export class StreamingServerClient {
     };
   }
 
-  private async checkCompatibility(mediaURL: string): Promise<{ compatible: boolean; reason?: string }> {
+  /**
+   * Public method to check if a media URL is compatible with current platform capabilities
+   * @param mediaURL - The URL of the media to check
+   * @returns Promise with compatibility result
+   */
+  async checkCompatibility(mediaURL: string): Promise<CompatibilityResult> {
     try {
       console.log('Probing media...');
 
@@ -152,7 +169,7 @@ export class StreamingServerClient {
       const probe: ProbeResult = await response.json();
       console.log('Probe result:', probe);
 
-      // Check format compatibility with improved detection
+      // Check format compatibility
       const formatSupported = this.isFormatSupported(probe.format.name);
 
       if (!formatSupported) {
@@ -222,9 +239,40 @@ export class StreamingServerClient {
     }
   }
 
-  private async canPlayDirectly(mediaURL: string): Promise<boolean> {
+  /**
+   * Public method to check if a media URL can be played directly without transcoding
+   * @param mediaURL - The URL of the media to check
+   * @returns Promise<boolean> - true if can play directly, false if transcoding needed
+   */
+  async canPlayDirectly(mediaURL: string): Promise<boolean> {
     const result = await this.checkCompatibility(mediaURL);
     return result.compatible;
+  }
+
+  /**
+   * Public method to probe media and get detailed information
+   * @param mediaURL - The URL of the media to probe
+   * @returns Promise with probe result or null if probe fails
+   */
+  async probeMedia(mediaURL: string): Promise<ProbeResult | null> {
+    try {
+      const probeURL = `${this.baseURL}/hlsv2/probe?${new URLSearchParams({
+        mediaURL: mediaURL,
+      })}`;
+
+      const response = await fetch(probeURL);
+
+      if (!response.ok) {
+        console.warn('Probe request failed');
+        return null;
+      }
+
+      const probe: ProbeResult = await response.json();
+      return probe;
+    } catch (error) {
+      console.error('Probe error:', error);
+      return null;
+    }
   }
 
   private isFormatSupported(formatName: string): boolean {
@@ -267,15 +315,23 @@ export class StreamingServerClient {
     const id = this.generateRandomId();
     const params = new URLSearchParams({ mediaURL });
 
-    this.capabilities.videoCodecs.forEach(codec => {
+    // Use SERVER_TRANSCODE_CAPABILITIES - all codecs the server can transcode to
+    // Not the client's playback capabilities
+    SERVER_TRANSCODE_CAPABILITIES.videoCodecs.forEach(codec => {
       params.append('videoCodecs', codec);
     });
 
-    this.capabilities.audioCodecs.forEach(codec => {
+    SERVER_TRANSCODE_CAPABILITIES.audioCodecs.forEach(codec => {
       params.append('audioCodecs', codec);
     });
 
-    params.set('maxAudioChannels', this.capabilities.maxAudioChannels.toString());
+    params.set('maxAudioChannels', SERVER_TRANSCODE_CAPABILITIES.maxAudioChannels.toString());
+
+    console.log('Using server transcode capabilities:', {
+      videoCodecs: SERVER_TRANSCODE_CAPABILITIES.videoCodecs,
+      audioCodecs: SERVER_TRANSCODE_CAPABILITIES.audioCodecs,
+      maxAudioChannels: SERVER_TRANSCODE_CAPABILITIES.maxAudioChannels,
+    });
 
     return `${this.baseURL}/hlsv2/${id}/master.m3u8?${params.toString()}`;
   }
@@ -283,6 +339,15 @@ export class StreamingServerClient {
   private generateRandomId(): string {
     return Math.random().toString(36).substring(2, 15) +
       Math.random().toString(36).substring(2, 15);
+  }
+
+  /**
+   * Generate HLS URL for transcoding (public method)
+   * @param mediaURL - The URL of the media to transcode
+   * @returns The HLS master playlist URL
+   */
+  public generateTranscodedURL(mediaURL: string): string {
+    return this.generateHLSURL(mediaURL);
   }
 
   setCapabilities(capabilities: MediaCapabilities): void {
@@ -297,6 +362,10 @@ export class StreamingServerClient {
   getCapabilities(): MediaCapabilities {
     return { ...this.capabilities };
   }
+
+  getServerTranscodeCapabilities(): MediaCapabilities {
+    return { ...SERVER_TRANSCODE_CAPABILITIES };
+  }
 }
 
-export { IOS_CAPABILITIES, ANDROID_CAPABILITIES, WEB_CAPABILITIES };
+export { IOS_CAPABILITIES, ANDROID_CAPABILITIES, WEB_CAPABILITIES, SERVER_TRANSCODE_CAPABILITIES };

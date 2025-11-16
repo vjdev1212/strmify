@@ -55,7 +55,6 @@ interface Stream {
 
 const WATCH_HISTORY_KEY = StorageKeys.WATCH_HISTORY_KEY;
 const MAX_HISTORY_ITEMS = 30;
-const DEFAULT_STREMIO_URL = 'http://192.168.1.10:11470';
 const DEFAULT_MEDIA_PLAYER_KEY = StorageKeys.DEFAULT_MEDIA_PLAYER_KEY;
 const SERVERS_KEY = StorageKeys.SERVERS_KEY;
 
@@ -159,27 +158,20 @@ const MediaPlayerScreen: React.FC = () => {
   }, [imdbid, type, season, episode, openSubtitlesClient]);
 
   const initializePlayerAndSelect = async (parsedStreams: Stream[], streamIndex: number) => {
-    // Load platform players
     const platformPlayers = getPlatformSpecificPlayers();
     setPlayers(platformPlayers);
 
-    // Load saved default player
     const savedPlayer = loadDefaultPlayer();
-
-    // Fetch server configs and get the values immediately
     const { servers: serverList, selectedId } = fetchServerConfigs();
 
-    // If no default player, show selection
     if (!savedPlayer) {
       showPlayerSelection(parsedStreams[streamIndex], streamIndex, platformPlayers, serverList, selectedId);
     } else {
       setSelectedPlayer(savedPlayer);
 
-      // If default player, load stream for built-in player
       if (savedPlayer === Players.Default) {
         await loadStream(streamIndex, parsedStreams, serverList, selectedId);
       } else {
-        // For external players, handle opening with the loaded server config
         handleExternalPlayer(parsedStreams[streamIndex], savedPlayer, platformPlayers, serverList, selectedId);
       }
     }
@@ -195,60 +187,49 @@ const MediaPlayerScreen: React.FC = () => {
     }
   };
 
-  const fetchServerConfigs = (): { servers: ServerConfig[], selectedId: string } => {
+  const fetchServerConfigs = (): { servers: ServerConfig[], selectedId: string | null } => {
     try {
       const storedServers = storageService.getItem(SERVERS_KEY);
-      const defaultStremio: ServerConfig = {
-        serverId: 'stremio-default',
-        serverType: 'stremio',
-        serverName: 'Stremio',
-        serverUrl: DEFAULT_STREMIO_URL,
-        current: true
-      };
-
-      let stremioServerList: ServerConfig[];
 
       if (!storedServers) {
-        stremioServerList = [defaultStremio];
-      } else {
-        const allServers: ServerConfig[] = JSON.parse(storedServers);
-        const filteredStremioServers = allServers.filter(server => server.serverType === 'stremio');
-        stremioServerList = filteredStremioServers.length > 0 ? filteredStremioServers : [defaultStremio];
+        setStremioServers([]);
+        setSelectedServerId(null);
+        setStremioClient(null);
+
+        return { servers: [], selectedId: null };
       }
 
-      const currentServer = stremioServerList.find(server => server.current) || stremioServerList[0];
+      const allServers: ServerConfig[] = JSON.parse(storedServers);
+      const filteredStremioServers = allServers.filter(server => server.serverType === 'stremio');
 
-      // Set state for UI updates
-      setStremioServers(stremioServerList);
+      if (filteredStremioServers.length === 0) {
+        setStremioServers([]);
+        setSelectedServerId(null);
+        setStremioClient(null);
+
+        return { servers: [], selectedId: null };
+      }
+
+      const currentServer = filteredStremioServers.find(server => server.current) || filteredStremioServers[0];
+
+      setStremioServers(filteredStremioServers);
       setSelectedServerId(currentServer.serverId);
 
-      // Initialize Stremio client with current server
       const client = new StreamingServerClient(currentServer.serverUrl);
       setStremioClient(client);
 
-      // Return the values for immediate use
       return {
-        servers: stremioServerList,
+        servers: filteredStremioServers,
         selectedId: currentServer.serverId
       };
     } catch (error) {
       console.error('Error loading server configurations:', error);
-      const defaultStremio: ServerConfig = {
-        serverId: 'stremio-default',
-        serverType: 'stremio',
-        serverName: 'Stremio',
-        serverUrl: DEFAULT_STREMIO_URL,
-        current: true
-      };
 
-      // Initialize Stremio client with default server
-      const client = new StreamingServerClient(DEFAULT_STREMIO_URL);
-      setStremioClient(client);
+      setStremioServers([]);
+      setSelectedServerId(null);
+      setStremioClient(null);
 
-      return {
-        servers: [defaultStremio],
-        selectedId: 'stremio-default'
-      };
+      return { servers: [], selectedId: null };
     }
   };
 
@@ -267,20 +248,30 @@ const MediaPlayerScreen: React.FC = () => {
   const generatePlayerUrlWithInfoHash = async (
     infoHash: string,
     serverUrl: string,
-    client?: StreamingServerClient
+    fileIdx: number,
+    client?: StreamingServerClient,
+    forceTranscode: boolean = false
   ): Promise<string> => {
     setStatusText('Generating stream URL...');
 
-    // Use provided client or create new one
     const clientToUse = client || new StreamingServerClient(serverUrl);
 
     try {
-      // Get stream URL from infohash using the client
-      const streamUrl = await clientToUse.getStreamingURL(
-        infoHash,
-        type === 'series' ? parseInt(episode as string) : 0
-      );
+      if (forceTranscode) {
+        const directURL = `${serverUrl}/${encodeURIComponent(infoHash)}/${encodeURIComponent(fileIdx)}`;
 
+        const id = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        const params = new URLSearchParams({ mediaURL: directURL });
+
+        const transcodeCapabilities = clientToUse.getServerTranscodeCapabilities();
+        transcodeCapabilities.videoCodecs.forEach(codec => params.append('videoCodecs', codec));
+        transcodeCapabilities.audioCodecs.forEach(codec => params.append('audioCodecs', codec));
+        params.set('maxAudioChannels', transcodeCapabilities.maxAudioChannels.toString());
+
+        return `${serverUrl}/hlsv2/${id}/master.m3u8?${params.toString()}`;
+      }
+
+      const streamUrl = await clientToUse.getStreamingURL(infoHash, fileIdx);
       return streamUrl;
     } catch (error) {
       console.error('Error generating stream URL:', error);
@@ -313,7 +304,7 @@ const MediaPlayerScreen: React.FC = () => {
     streamIndex: number,
     streamList?: Stream[],
     serverList?: ServerConfig[],
-    serverId?: string
+    serverId?: string | null
   ) => {
     const streamsToUse = streamList || streams;
     if (!streamsToUse[streamIndex]) return;
@@ -326,29 +317,82 @@ const MediaPlayerScreen: React.FC = () => {
     const stream = streamsToUse[streamIndex];
     const { url } = stream;
     const infoHash = getInfoHashFromStream(stream);
+    const isTorrentStream = !url && !!infoHash;
 
     try {
-      let finalVideoUrl = url || '';
+      let finalVideoUrl: string = url || '';
 
-      if (!url && infoHash) {
-        // Use passed parameters or fall back to state
+      if (isTorrentStream) {
+        // Torrent stream - requires Stremio server
         const serversToUse = serverList || stremioServers;
-        const serverIdToUse = serverId || selectedServerId;
+        const serverIdToUse = serverId !== undefined ? serverId : selectedServerId;
+
+        if (!serverIdToUse || serversToUse.length === 0) {
+          throw new Error('Stremio server is required for torrent streams. Please configure a Stremio server in settings.');
+        }
 
         const selectedServer = serversToUse.find(s => s.serverId === serverIdToUse);
 
         if (!selectedServer) {
-          throw new Error('No Stremio server configured');
+          throw new Error('Stremio server is required for torrent streams. Please configure a Stremio server in settings.');
         }
 
         setIsTorrent(true);
 
-        // Use the stremio client
+        // Torrent + Stremio Server + Default Player = Always transcode (force HLS)
+        const fileIdx = type === 'series' ? parseInt(episode as string) : 0;
         finalVideoUrl = await generatePlayerUrlWithInfoHash(
-          infoHash,
+          infoHash!,
           selectedServer.serverUrl,
-          stremioClient || undefined
+          fileIdx,
+          stremioClient || undefined,
+          true
         );
+      } else {
+        // Direct stream
+
+        if (!url) {
+          return;
+        }
+        const serversToUse = serverList || stremioServers;
+        const serverIdToUse = serverId !== undefined ? serverId : selectedServerId;
+
+        if (serverIdToUse && serversToUse.length > 0) {
+          // Direct Stream + Stremio Server + Default Player = Check transcoding
+          const selectedServer = serversToUse.find(s => s.serverId === serverIdToUse);
+
+          if (selectedServer && stremioClient) {
+            console.log('Checking if transcoding is needed for direct stream...');
+
+            try {
+              // Check if the direct URL can be played without transcoding
+              const compatibility = await stremioClient.checkCompatibility(finalVideoUrl);
+
+              if (compatibility.compatible) {
+                // Can play directly
+                console.log('Direct stream is compatible, no transcoding needed');
+                finalVideoUrl = url;
+                setIsTorrent(false);
+              } else {
+                // Needs transcoding
+                console.log('Direct stream needs transcoding:', compatibility.reason);
+                finalVideoUrl = stremioClient.generateTranscodedURL(url);
+                setIsTorrent(true); // Set to true to use HLS player
+              }
+            } catch (error) {
+              console.log('Could not check transcoding compatibility, using direct URL:', error);
+              finalVideoUrl = url;
+              setIsTorrent(false);
+            }
+          } else {
+            finalVideoUrl = url;
+            setIsTorrent(false);
+          }
+        } else {
+          // Direct Stream + No Stremio Server + Default Player = Play directly, fallback to VLC if needed
+          finalVideoUrl = url;
+          setIsTorrent(false);
+        }
       }
 
       if (!finalVideoUrl) {
@@ -369,7 +413,7 @@ const MediaPlayerScreen: React.FC = () => {
     playerName: string,
     playersList?: any[],
     serverList?: ServerConfig[],
-    serverId?: string
+    serverId?: string | null
   ) => {
     if (isProcessing) return;
 
@@ -378,44 +422,54 @@ const MediaPlayerScreen: React.FC = () => {
 
     const { url } = stream;
     const infoHash = getInfoHashFromStream(stream);
-
-    // Use passed parameters or fall back to state
-    const serversToUse = serverList || stremioServers;
-    const serverIdToUse = serverId || selectedServerId;
-
-    const selectedServer = serversToUse.find(s => s.serverId === serverIdToUse);
-
-    if (!selectedServer && !url && infoHash) {
-      setStatusText('Error: Stremio server not configured');
-      showAlert('Error', 'Stremio server configuration not found');
-      handleCloseBottomSheet();
-      return;
-    }
-
-    const playersToUse = playersList || players;
-    const player = playersToUse.find((p: any) => p.name === playerName);
-    if (!player) {
-      setStatusText('Error: Invalid Media Player selection');
-      showAlert('Error', 'Invalid Media Player selection');
-      handleCloseBottomSheet();
-      return;
-    }
+    const isTorrentStream = !url && !!infoHash;
 
     try {
-      let videoUrl = url || '';
+      let videoUrl: string = url || '';
 
-      if (!url && infoHash && selectedServer) {
-        setStatusText('Processing stream...');
-        videoUrl = await generatePlayerUrlWithInfoHash(
-          infoHash,
-          selectedServer.serverUrl,
-          stremioClient || undefined
-        );
+      if (isTorrentStream) {
+        // Torrent + External Player - requires Stremio server, NO transcoding
+        const serversToUse = serverList || stremioServers;
+        const serverIdToUse = serverId !== undefined ? serverId : selectedServerId;
+
+        if (!serverIdToUse || serversToUse.length === 0) {
+          setStatusText('Error: Stremio server required for torrent streams');
+          showAlert('Error', 'Stremio server is required for torrent streams. Please configure a Stremio server in settings.');
+          handleCloseBottomSheet();
+          return;
+        }
+
+        const selectedServer = serversToUse.find(s => s.serverId === serverIdToUse);
+
+        if (!selectedServer) {
+          setStatusText('Error: Stremio server not found');
+          showAlert('Error', 'Stremio server configuration not found');
+          handleCloseBottomSheet();
+          return;
+        }
+
+        setStatusText('Generating direct stream URL...');
+
+        // Torrent + Stremio Server + External Player = NO transcoding, direct URL
+        const fileIdx = type === 'series' ? parseInt(episode as string) : 0;
+        const directURL = `${selectedServer.serverUrl}/${encodeURIComponent(infoHash!)}/${encodeURIComponent(fileIdx)}`;
+        videoUrl = directURL;
       }
+      // else: Direct Stream + External Player = Use direct URL (no Stremio server check needed)
 
       if (!videoUrl) {
         setStatusText('Error: Unable to generate video URL');
         showAlert('Error', 'Unable to generate a valid video URL');
+        handleCloseBottomSheet();
+        return;
+      }
+
+      const playersToUse = playersList || players;
+      const player = playersToUse.find((p: any) => p.name === playerName);
+
+      if (!player) {
+        setStatusText('Error: Invalid Media Player selection');
+        showAlert('Error', 'Invalid Media Player selection');
         handleCloseBottomSheet();
         return;
       }
@@ -447,7 +501,7 @@ const MediaPlayerScreen: React.FC = () => {
     index: number,
     playersList?: any[],
     serverList?: ServerConfig[],
-    serverId?: string
+    serverId?: string | null
   ) => {
     const playersToUse = playersList || players;
     const playerOptions = [...playersToUse.map((player: any) => player.name), 'Cancel'];
@@ -487,14 +541,12 @@ const MediaPlayerScreen: React.FC = () => {
       setCurrentStreamIndex(newIndex);
       const newStream = streams[newIndex];
 
-      // If using default player, load new stream
       if (selectedPlayer === Players.Default) {
         if (newStream.url) {
           setVideoUrl(newStream.url);
           setCurrentPlayerType("native");
           setHasTriedNative(false);
         } else {
-          // If no direct URL, load stream with server config (for torrents)
           loadStream(newIndex);
         }
       }
