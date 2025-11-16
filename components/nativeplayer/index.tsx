@@ -71,21 +71,6 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
     const useCustomSubtitles = subtitles.length > 0;
 
-    // Check if we should use VLC from the start
-    useEffect(() => {
-        if (Platform.OS !== 'web') {
-            console.log('[Player Selection] Using VLC player for:', videoUrl);
-            if (onPlaybackError && !hasReportedErrorRef.current) {
-                hasReportedErrorRef.current = true;
-                onPlaybackError({
-                    error: 'Unsupported format/codec for native player',
-                    code: 'FORMAT_UNSUPPORTED',
-                    isFormatError: true
-                });
-            }
-        }
-    }, [videoUrl, onPlaybackError]);
-
     // Initialize player (memoized to prevent recreation)
     const player = useVideoPlayer({
         uri: videoUrl,

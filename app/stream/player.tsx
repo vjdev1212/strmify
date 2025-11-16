@@ -249,28 +249,13 @@ const MediaPlayerScreen: React.FC = () => {
     infoHash: string,
     serverUrl: string,
     fileIdx: number,
-    client?: StreamingServerClient,
-    forceTranscode: boolean = false
+    client?: StreamingServerClient
   ): Promise<string> => {
     setStatusText('Generating stream URL...');
 
     const clientToUse = client || new StreamingServerClient(serverUrl);
 
-    try {
-      if (forceTranscode) {
-        const directURL = `${serverUrl}/${encodeURIComponent(infoHash)}/${encodeURIComponent(fileIdx)}`;
-
-        const id = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-        const params = new URLSearchParams({ mediaURL: directURL });
-
-        const transcodeCapabilities = clientToUse.getServerTranscodeCapabilities();
-        transcodeCapabilities.videoCodecs.forEach(codec => params.append('videoCodecs', codec));
-        transcodeCapabilities.audioCodecs.forEach(codec => params.append('audioCodecs', codec));
-        params.set('maxAudioChannels', transcodeCapabilities.maxAudioChannels.toString());
-
-        return `${serverUrl}/hlsv2/${id}/master.m3u8?${params.toString()}`;
-      }
-
+    try {      
       const streamUrl = await clientToUse.getStreamingURL(infoHash, fileIdx);
       return streamUrl;
     } catch (error) {
@@ -333,7 +318,7 @@ const MediaPlayerScreen: React.FC = () => {
 
         const selectedServer = serversToUse.find(s => s.serverId === serverIdToUse);
 
-        if (!selectedServer) {
+        if (!selectedServer) {          
           throw new Error('Stremio server is required for torrent streams. Please configure a Stremio server in settings.');
         }
 
@@ -345,12 +330,10 @@ const MediaPlayerScreen: React.FC = () => {
           infoHash!,
           selectedServer.serverUrl,
           fileIdx,
-          stremioClient || undefined,
-          true
+          stremioClient || undefined
         );
       } else {
         // Direct stream
-
         if (!url) {
           return;
         }
