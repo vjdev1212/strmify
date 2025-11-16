@@ -181,7 +181,10 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
     // Update subtitle display - optimized interval
     useEffect(() => {
-        if (subtitleState.parsedSubtitles.length === 0) return;
+        if (subtitleState.parsedSubtitles.length === 0) {
+            subtitleState.setCurrentSubtitle('');
+            return;
+        }
 
         const updateSubtitle = () => {
             const text = findActiveSubtitle(player.currentTime, subtitleState.parsedSubtitles);
@@ -193,7 +196,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         updateSubtitle();
         const interval = setInterval(updateSubtitle, CONSTANTS.SUBTITLE_UPDATE_INTERVAL);
         return () => clearInterval(interval);
-    }, [subtitleState.parsedSubtitles, player]);
+    }, [subtitleState.parsedSubtitles, player.currentTime, subtitleState.currentSubtitle]);
 
     // Player event handlers
     const playingChange = useEvent(player, "playingChange");
