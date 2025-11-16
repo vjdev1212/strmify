@@ -1,6 +1,5 @@
 import OpenSubtitlesClient, { SubtitleResult } from "@/clients/opensubtitles";
 import { isUserAuthenticated, scrobbleStart, scrobbleStop } from "@/clients/trakt";
-import { generateStremioPlayerUrl } from "@/clients/stremio";
 import { Subtitle } from "@/components/coreplayer/models";
 import { getLanguageName } from "@/utils/Helpers";
 import { StorageKeys, storageService } from "@/utils/StorageService";
@@ -8,11 +7,12 @@ import { getPlatformSpecificPlayers, Players } from "@/utils/MediaPlayer";
 import { showAlert } from "@/utils/platform";
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import React, { useEffect, useState, useRef, useMemo } from "react";
-import { Platform, Linking, ActivityIndicator, View, Text, StyleSheet, Pressable } from "react-native";
+import { Platform, Linking, ActivityIndicator, View, Text, StyleSheet, Pressable, Image } from "react-native";
 import { ServerConfig } from "@/components/ServerConfig";
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import BottomSheet, { BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { StreamingServerClient } from "@/clients/stremio";
 
 interface BackEvent {
   message: string;
@@ -27,7 +27,6 @@ interface UpdateProgressEvent {
 
 interface PlaybackErrorEvent {
   error: string;
-  isFormatError?: boolean;
 }
 
 interface WatchHistoryItem {
@@ -55,7 +54,6 @@ interface Stream {
 
 const WATCH_HISTORY_KEY = StorageKeys.WATCH_HISTORY_KEY;
 const MAX_HISTORY_ITEMS = 30;
-const DEFAULT_STREMIO_URL = 'http://192.168.1.10:11470';
 const DEFAULT_MEDIA_PLAYER_KEY = StorageKeys.DEFAULT_MEDIA_PLAYER_KEY;
 const SERVERS_KEY = StorageKeys.SERVERS_KEY;
 
@@ -92,6 +90,10 @@ const MediaPlayerScreen: React.FC = () => {
   const [selectedServerId, setSelectedServerId] = useState<string | null>(null);
   const [players, setPlayers] = useState<{ name: string; scheme: string; encodeUrl: boolean }[]>([]);
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
+  const [isTorrent, setIsTorrent] = useState<boolean>(false);
+
+  // Stremio client instance
+  const [stremioClient, setStremioClient] = useState<StreamingServerClient | null>(null);
 
   // Player fallback state
   const [currentPlayerType, setCurrentPlayerType] = useState<"native" | "vlc">("native");
@@ -154,28 +156,29 @@ const MediaPlayerScreen: React.FC = () => {
     }
   }, [imdbid, type, season, episode, openSubtitlesClient]);
 
+  useEffect(() => {
+    if (currentPlayerType === "vlc" && hasTriedNative) {
+      console.log('Switching to VLC player');
+      setStreamError('');
+      setIsLoadingStream(false);
+    }
+  }, [currentPlayerType, hasTriedNative]);
+
   const initializePlayerAndSelect = async (parsedStreams: Stream[], streamIndex: number) => {
-    // Load platform players
     const platformPlayers = getPlatformSpecificPlayers();
     setPlayers(platformPlayers);
 
-    // Load saved default player
     const savedPlayer = loadDefaultPlayer();
-
-    // Fetch server configs and get the values immediately
     const { servers: serverList, selectedId } = fetchServerConfigs();
 
-    // If no default player, show selection
     if (!savedPlayer) {
       showPlayerSelection(parsedStreams[streamIndex], streamIndex, platformPlayers, serverList, selectedId);
     } else {
       setSelectedPlayer(savedPlayer);
 
-      // If default player, load stream for built-in player
       if (savedPlayer === Players.Default) {
         await loadStream(streamIndex, parsedStreams, serverList, selectedId);
       } else {
-        // For external players, handle opening with the loaded server config
         handleExternalPlayer(parsedStreams[streamIndex], savedPlayer, platformPlayers, serverList, selectedId);
       }
     }
@@ -191,51 +194,49 @@ const MediaPlayerScreen: React.FC = () => {
     }
   };
 
-  const fetchServerConfigs = (): { servers: ServerConfig[], selectedId: string } => {
+  const fetchServerConfigs = (): { servers: ServerConfig[], selectedId: string | null } => {
     try {
       const storedServers = storageService.getItem(SERVERS_KEY);
-      const defaultStremio: ServerConfig = {
-        serverId: 'stremio-default',
-        serverType: 'stremio',
-        serverName: 'Stremio',
-        serverUrl: DEFAULT_STREMIO_URL,
-        current: true
-      };
-
-      let stremioServerList: ServerConfig[];
 
       if (!storedServers) {
-        stremioServerList = [defaultStremio];
-      } else {
-        const allServers: ServerConfig[] = JSON.parse(storedServers);
-        const filteredStremioServers = allServers.filter(server => server.serverType === 'stremio');
-        stremioServerList = filteredStremioServers.length > 0 ? filteredStremioServers : [defaultStremio];
+        setStremioServers([]);
+        setSelectedServerId(null);
+        setStremioClient(null);
+
+        return { servers: [], selectedId: null };
       }
 
-      const currentServer = stremioServerList.find(server => server.current) || stremioServerList[0];
+      const allServers: ServerConfig[] = JSON.parse(storedServers);
+      const filteredStremioServers = allServers.filter(server => server.serverType === 'stremio');
 
-      // Set state for UI updates
-      setStremioServers(stremioServerList);
+      if (filteredStremioServers.length === 0) {
+        setStremioServers([]);
+        setSelectedServerId(null);
+        setStremioClient(null);
+
+        return { servers: [], selectedId: null };
+      }
+
+      const currentServer = filteredStremioServers.find(server => server.current) || filteredStremioServers[0];
+
+      setStremioServers(filteredStremioServers);
       setSelectedServerId(currentServer.serverId);
 
-      // Return the values for immediate use
+      const client = new StreamingServerClient(currentServer.serverUrl);
+      setStremioClient(client);
+
       return {
-        servers: stremioServerList,
+        servers: filteredStremioServers,
         selectedId: currentServer.serverId
       };
     } catch (error) {
       console.error('Error loading server configurations:', error);
-      const defaultStremio: ServerConfig = {
-        serverId: 'stremio-default',
-        serverType: 'stremio',
-        serverName: 'Stremio',
-        serverUrl: DEFAULT_STREMIO_URL,
-        current: true
-      };
-      return {
-        servers: [defaultStremio],
-        selectedId: 'stremio-default'
-      };
+
+      setStremioServers([]);
+      setSelectedServerId(null);
+      setStremioClient(null);
+
+      return { servers: [], selectedId: null };
     }
   };
 
@@ -251,9 +252,23 @@ const MediaPlayerScreen: React.FC = () => {
     return null;
   };
 
-  const generatePlayerUrlWithInfoHash = async (infoHash: string, serverUrl: string) => {
+  const generatePlayerUrlWithInfoHash = async (
+    infoHash: string,
+    serverUrl: string,
+    fileIdx: number,
+    client?: StreamingServerClient
+  ): Promise<string> => {
     setStatusText('Generating stream URL...');
-    return await generateStremioPlayerUrl(infoHash, serverUrl, type as string, season as string, episode as string);
+
+    const clientToUse = client || new StreamingServerClient(serverUrl);
+
+    try {
+      const streamUrl = await clientToUse.getStreamingURL(infoHash, fileIdx);
+      return streamUrl;
+    } catch (error) {
+      console.error('Error generating stream URL:', error);
+      throw new Error(`Failed to generate stream URL: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   };
 
   const handleOpenBottomSheet = () => {
@@ -277,7 +292,12 @@ const MediaPlayerScreen: React.FC = () => {
     />
   );
 
-  const loadStream = async (streamIndex: number, streamList?: Stream[], serverList?: ServerConfig[], serverId?: string) => {
+  const loadStream = async (
+    streamIndex: number,
+    streamList?: Stream[],
+    serverList?: ServerConfig[],
+    serverId?: string | null
+  ) => {
     const streamsToUse = streamList || streams;
     if (!streamsToUse[streamIndex]) return;
 
@@ -289,22 +309,42 @@ const MediaPlayerScreen: React.FC = () => {
     const stream = streamsToUse[streamIndex];
     const { url } = stream;
     const infoHash = getInfoHashFromStream(stream);
+    const isTorrentStream = !url && !!infoHash;
 
     try {
-      let finalVideoUrl = url || '';
+      let finalVideoUrl: string = url || '';
 
-      if (!url && infoHash) {
-        // Use passed parameters or fall back to state
+      if (isTorrentStream) {
+        // Torrent stream - requires Stremio server
         const serversToUse = serverList || stremioServers;
-        const serverIdToUse = serverId || selectedServerId;
+        const serverIdToUse = serverId !== undefined ? serverId : selectedServerId;
+
+        if (!serverIdToUse || serversToUse.length === 0) {
+          throw new Error('Stremio server is required for torrent streams. Please configure a Stremio server in settings.');
+        }
 
         const selectedServer = serversToUse.find(s => s.serverId === serverIdToUse);
 
         if (!selectedServer) {
-          throw new Error('No Stremio server configured');
+          throw new Error('Stremio server is required for torrent streams. Please configure a Stremio server in settings.');
         }
 
-        finalVideoUrl = await generatePlayerUrlWithInfoHash(infoHash, selectedServer.serverUrl);
+        setIsTorrent(true);
+
+        // Torrent + Stremio Server + Default Player = Always transcode (force HLS)
+        const fileIdx = type === 'series' ? parseInt(episode as string) : 0;
+        finalVideoUrl = await generatePlayerUrlWithInfoHash(
+          infoHash!,
+          selectedServer.serverUrl,
+          fileIdx,
+          stremioClient || undefined
+        );
+      } else {
+        if (!url) {
+          return;
+        }
+        finalVideoUrl = url;
+        setIsTorrent(false);
       }
 
       if (!finalVideoUrl) {
@@ -325,7 +365,7 @@ const MediaPlayerScreen: React.FC = () => {
     playerName: string,
     playersList?: any[],
     serverList?: ServerConfig[],
-    serverId?: string
+    serverId?: string | null
   ) => {
     if (isProcessing) return;
 
@@ -334,40 +374,54 @@ const MediaPlayerScreen: React.FC = () => {
 
     const { url } = stream;
     const infoHash = getInfoHashFromStream(stream);
-
-    // Use passed parameters or fall back to state
-    const serversToUse = serverList || stremioServers;
-    const serverIdToUse = serverId || selectedServerId;
-
-    const selectedServer = serversToUse.find(s => s.serverId === serverIdToUse);
-
-    if (!selectedServer && !url && infoHash) {
-      setStatusText('Error: Stremio server not configured');
-      showAlert('Error', 'Stremio server configuration not found');
-      handleCloseBottomSheet();
-      return;
-    }
-
-    const playersToUse = playersList || players;
-    const player = playersToUse.find((p: any) => p.name === playerName);
-    if (!player) {
-      setStatusText('Error: Invalid Media Player selection');
-      showAlert('Error', 'Invalid Media Player selection');
-      handleCloseBottomSheet();
-      return;
-    }
+    const isTorrentStream = !url && !!infoHash;
 
     try {
-      let videoUrl = url || '';
+      let videoUrl: string = url || '';
 
-      if (!url && infoHash && selectedServer) {
-        setStatusText('Processing stream...');
-        videoUrl = await generatePlayerUrlWithInfoHash(infoHash, selectedServer.serverUrl);
+      if (isTorrentStream) {
+        // Torrent + External Player - requires Stremio server, NO transcoding
+        const serversToUse = serverList || stremioServers;
+        const serverIdToUse = serverId !== undefined ? serverId : selectedServerId;
+
+        if (!serverIdToUse || serversToUse.length === 0) {
+          setStatusText('Error: Stremio server required for torrent streams');
+          showAlert('Error', 'Stremio server is required for torrent streams. Please configure a Stremio server in settings.');
+          handleCloseBottomSheet();
+          return;
+        }
+
+        const selectedServer = serversToUse.find(s => s.serverId === serverIdToUse);
+
+        if (!selectedServer) {
+          setStatusText('Error: Stremio server not found');
+          showAlert('Error', 'Stremio server configuration not found');
+          handleCloseBottomSheet();
+          return;
+        }
+
+        setStatusText('Generating direct stream URL...');
+
+        // Torrent + Stremio Server + External Player = NO transcoding, direct URL
+        const fileIdx = type === 'series' ? parseInt(episode as string) : 0;
+        const directURL = `${selectedServer.serverUrl}/${encodeURIComponent(infoHash!)}/${encodeURIComponent(fileIdx)}`;
+        videoUrl = directURL;
       }
+      // else: Direct Stream + External Player = Use direct URL (no Stremio server check needed)
 
       if (!videoUrl) {
         setStatusText('Error: Unable to generate video URL');
         showAlert('Error', 'Unable to generate a valid video URL');
+        handleCloseBottomSheet();
+        return;
+      }
+
+      const playersToUse = playersList || players;
+      const player = playersToUse.find((p: any) => p.name === playerName);
+
+      if (!player) {
+        setStatusText('Error: Invalid Media Player selection');
+        showAlert('Error', 'Invalid Media Player selection');
         handleCloseBottomSheet();
         return;
       }
@@ -399,7 +453,7 @@ const MediaPlayerScreen: React.FC = () => {
     index: number,
     playersList?: any[],
     serverList?: ServerConfig[],
-    serverId?: string
+    serverId?: string | null
   ) => {
     const playersToUse = playersList || players;
     const playerOptions = [...playersToUse.map((player: any) => player.name), 'Cancel'];
@@ -412,7 +466,7 @@ const MediaPlayerScreen: React.FC = () => {
         message: 'Select the Media Player for Streaming',
         messageTextStyle: { color: '#ffffff', fontSize: 12 },
         textStyle: { color: '#ffffff' },
-        titleTextStyle: { color: '#535aff', fontWeight: '500' },
+        titleTextStyle: { color: '#535aff', fontWeight: 500 },
         containerStyle: { backgroundColor: '#101010' },
         userInterfaceStyle: 'dark'
       },
@@ -439,14 +493,12 @@ const MediaPlayerScreen: React.FC = () => {
       setCurrentStreamIndex(newIndex);
       const newStream = streams[newIndex];
 
-      // If using default player, load new stream
       if (selectedPlayer === Players.Default) {
         if (newStream.url) {
           setVideoUrl(newStream.url);
           setCurrentPlayerType("native");
           setHasTriedNative(false);
         } else {
-          // If no direct URL, load stream with server config (for torrents)
           loadStream(newIndex);
         }
       }
@@ -456,12 +508,32 @@ const MediaPlayerScreen: React.FC = () => {
   const handlePlaybackError = (event: PlaybackErrorEvent) => {
     console.log('Playback error:', event);
 
-    if (currentPlayerType === "native" && !hasTriedNative && Platform.OS !== "web") {
+    // Only attempt VLC fallback for format errors on non-web platforms
+    if (
+      currentPlayerType === "native" &&
+      !hasTriedNative &&
+      Platform.OS !== "web"
+    ) {
       console.log('Native player failed, falling back to VLC');
+
       setHasTriedNative(true);
+      setStreamError('');
       setCurrentPlayerType("vlc");
+      setTimeout(() => {
+        // Trigger re-load with current video URL
+        // The player will re-render as VLC due to currentPlayerType change
+        console.log('VLC player ready, video URL:', videoUrl);
+      }, 100);
+
     } else {
-      setStreamError(event.error || 'Playback failed');
+      // Show error - either VLC also failed or no fallback available
+      const errorMessage = currentPlayerType === "vlc"
+        ? 'VLC player was unable to play this format. The video codec may not be supported.'
+        : (event.error || 'Playback failed');
+
+      console.log('Final playback error:', errorMessage);
+      setStreamError(errorMessage);
+      setIsLoadingStream(false);
     }
   };
 
@@ -749,32 +821,16 @@ const MediaPlayerScreen: React.FC = () => {
     return (
       <GestureHandlerRootView style={{ flex: 1 }}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#535aff" />
-          <Text style={styles.loadingText}>Loading stream...</Text>
-        </View>
-      </GestureHandlerRootView>
-    );
-  }
-
-  if (streamError) {
-    return (
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{streamError}</Text>
-          {currentPlayerType === "vlc" && (
-            <Text style={styles.infoText}>VLC player was unable to play this format</Text>
+          {artwork && (
+            <Image
+              source={{ uri: artwork }}
+              style={styles.backdropImage}
+            />
           )}
-          <Pressable style={styles.retryButton} onPress={() => {
-            setStreamError('');
-            setCurrentPlayerType("native");
-            setHasTriedNative(false);
-            loadStream(currentStreamIndex);
-          }}>
-            <Text style={styles.retryButtonText}>Retry</Text>
-          </Pressable>
-          <Pressable style={styles.backButton} onPress={() => router.back()}>
-            <Text style={styles.backButtonText}>Go Back</Text>
-          </Pressable>
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color="#535aff" />
+            <Text style={styles.loadingText}>Loading stream. Please wait...</Text>
+          </View>
         </View>
       </GestureHandlerRootView>
     );
@@ -784,6 +840,7 @@ const MediaPlayerScreen: React.FC = () => {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <Player
         videoUrl={videoUrl}
+        isTorrent={isTorrent}
         title={title as string}
         back={handleBack}
         progress={progress}
@@ -833,55 +890,114 @@ const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
+    alignItems: 'center'
+  },
+  backdropImage: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+    opacity: 0.2
+  },
+  loadingOverlay: {
+    justifyContent: 'center',
     alignItems: 'center',
   },
   loadingText: {
-    color: '#999',
-    marginTop: 16,
-    fontSize: 15,
-    fontWeight: '500',
+    color: '#fff',
+    marginTop: 20,
+    fontSize: 16,
+    fontWeight: 500,
   },
   errorContainer: {
     flex: 1,
     backgroundColor: '#1a1a1a',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  errorOverlay: {
+    flex: 1,
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 20,
   },
-  errorText: {
-    color: '#ff6b6b',
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 12,
+  errorCard: {
+    borderRadius: 24,
+    padding: 32,
+    width: '90%',
+    maxWidth: 400,
+    alignItems: 'center'
   },
-  infoText: {
-    color: '#999',
-    fontSize: 14,
+  errorIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  errorIcon: {
+    fontSize: 48,
+  },
+  errorTitle: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: 600,
+    marginBottom: 12,
     textAlign: 'center',
-    marginBottom: 24,
+  },
+  errorMessage: {
+    color: '#ff6b6b',
+    fontSize: 15,
+    textAlign: 'center',
+    marginBottom: 8,
+    lineHeight: 22,
+  },
+  errorSubMessage: {
+    color: '#999',
+    fontSize: 13,
+    textAlign: 'center',
+    marginBottom: 28,
+    lineHeight: 20,
+  },
+  errorButtonsContainer: {
+    width: '100%',
+    gap: 12,
   },
   retryButton: {
     backgroundColor: '#535aff',
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 32,
-    borderRadius: 12,
-    marginBottom: 12,
+    borderRadius: 14,
+    width: '100%',
+    alignItems: 'center',
+    shadowColor: '#535aff',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   retryButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 600,
+    letterSpacing: 0.5,
   },
   backButton: {
-    backgroundColor: '#252525',
-    paddingVertical: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    paddingVertical: 14,
     paddingHorizontal: 32,
-    borderRadius: 12,
+    borderRadius: 14,
+    width: '100%',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   backButtonText: {
-    color: '#999',
+    color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 600,
   },
   bottomSheetBackground: {
     backgroundColor: '#101010',
@@ -927,7 +1043,7 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     color: '#ffffff',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 600,
   },
 });
 
