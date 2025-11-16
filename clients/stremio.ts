@@ -64,14 +64,14 @@ export class StreamingServerClient {
   ) {
     this.baseURL = streamingServerURL.replace(/\/$/, '');
     this.platform = Platform.OS;
-    
+
     if (customCapabilities) {
       this.capabilities = customCapabilities;
     } else {
       this.capabilities = this.getPlatformCapabilities();
     }
-    
-    console.log('[StreamingServerClient] Initialized:', {
+
+    console.log('Initialized:', {
       baseURL: this.baseURL,
       platform: this.platform,
       capabilities: this.capabilities,
@@ -81,36 +81,37 @@ export class StreamingServerClient {
   private getPlatformCapabilities(): MediaCapabilities {
     switch (Platform.OS) {
       case 'ios':
-        console.log('[StreamingServerClient] Using iOS/AVFoundation capabilities');
+        console.log('Using iOS/AVFoundation capabilities');
         return IOS_CAPABILITIES;
       case 'android':
-        console.log('[StreamingServerClient] Using Android/ExoPlayer capabilities');
+        console.log('Using Android/ExoPlayer capabilities');
         return ANDROID_CAPABILITIES;
       case 'web':
-        console.log('[StreamingServerClient] Using Web/HTML5 capabilities');
+        console.log('Using Web/HTML5 capabilities');
         return WEB_CAPABILITIES;
       default:
-        console.log('[StreamingServerClient] Unknown platform, using web capabilities');
+        console.log('Unknown platform, using web capabilities');
         return WEB_CAPABILITIES;
     }
   }
 
   async getStreamingURL(infoHash: string, fileIdx: number = 0): Promise<string> {
-    console.log('[StreamingServerClient] Getting streaming URL:', { infoHash, fileIdx });
+    console.log('Getting streaming URL:', { infoHash, fileIdx });
 
     const directURL = `${this.baseURL}/${encodeURIComponent(infoHash)}/${encodeURIComponent(fileIdx)}`;
-    console.log('[StreamingServerClient] Direct URL:', directURL);
+    console.log('Direct URL:', directURL);
 
-    const canPlayDirectly = await this.canPlayDirectly(directURL);
+    const result = await this.checkCompatibility(directURL);
 
-    if (canPlayDirectly) {
-      console.log('[StreamingServerClient] ✓ Can play directly');
+    if (result.compatible) {
+      console.log('✓ Can play directly');
       return directURL;
     }
 
-    console.log('[StreamingServerClient] ✗ Needs transcoding, generating HLS URL');
+    console.log('✗ Needs transcoding:', result.reason);
+    console.log('Generating HLS URL');
     const hlsURL = this.generateHLSURL(directURL);
-    console.log('[StreamingServerClient] HLS URL:', hlsURL);
+    console.log('HLS URL:', hlsURL);
 
     return hlsURL;
   }
@@ -135,8 +136,8 @@ export class StreamingServerClient {
 
   private async checkCompatibility(mediaURL: string): Promise<{ compatible: boolean; reason?: string }> {
     try {
-      console.log('[StreamingServerClient] Probing media...');
-      
+      console.log('Probing media...');
+
       const probeURL = `${this.baseURL}/hlsv2/probe?${new URLSearchParams({
         mediaURL: mediaURL,
       })}`;
@@ -144,75 +145,79 @@ export class StreamingServerClient {
       const response = await fetch(probeURL);
 
       if (!response.ok) {
-        console.warn('[StreamingServerClient] Probe failed, assuming transcoding needed');
-        return { compatible: false, reason: 'Probe failed' };
+        console.warn('Probe failed, assuming transcoding needed');
+        return { compatible: false, reason: 'Probe request failed' };
       }
 
       const probe: ProbeResult = await response.json();
-      console.log('[StreamingServerClient] Probe result:', {
-        format: probe.format.name,
-        duration: probe.format.duration,
-        streams: probe.streams.length,
-      });
+      console.log('Probe result:', probe);
 
-      const formatSupported = this.capabilities.formats.some(fmt => 
-        probe.format.name.includes(fmt)
-      );
-      
+      // Check format compatibility with improved detection
+      const formatSupported = this.isFormatSupported(probe.format.name);
+
       if (!formatSupported) {
-        return { 
-          compatible: false, 
-          reason: `Format ${probe.format.name} not supported on ${this.platform}` 
+        const reason = `Container format '${probe.format.name}' not supported on ${this.platform} (supports: ${this.capabilities.formats.join(', ')})`;
+        console.log('Format check:', reason);
+        return {
+          compatible: false,
+          reason
         };
       }
 
+      // Check video and audio streams
       for (const stream of probe.streams) {
         if (stream.track === 'video') {
           const isSupported = this.isCodecSupported(stream.codec, this.capabilities.videoCodecs);
-          console.log('[StreamingServerClient] Video codec check:', {
+          console.log('Video codec check:', {
             codec: stream.codec,
             supported: isSupported,
             availableCodecs: this.capabilities.videoCodecs,
           });
-          
+
           if (!isSupported) {
-            return { 
-              compatible: false, 
-              reason: `Video codec ${stream.codec} not supported on ${this.platform}` 
+            const reason = `Video codec '${stream.codec}' not supported on ${this.platform} (supports: ${this.capabilities.videoCodecs.join(', ')})`;
+            console.log('Video codec check:', reason);
+            return {
+              compatible: false,
+              reason
             };
           }
         } else if (stream.track === 'audio') {
           const channels = stream.channels || 0;
           const isSupported = this.isCodecSupported(stream.codec, this.capabilities.audioCodecs);
-          
-          console.log('[StreamingServerClient] Audio codec check:', {
+
+          console.log('Audio codec check:', {
             codec: stream.codec,
             channels,
             supported: isSupported,
             availableCodecs: this.capabilities.audioCodecs,
           });
-          
+
           if (!isSupported) {
-            return { 
-              compatible: false, 
-              reason: `Audio codec ${stream.codec} not supported on ${this.platform}` 
+            const reason = `Audio codec '${stream.codec}' not supported on ${this.platform} (supports: ${this.capabilities.audioCodecs.join(', ')})`;
+            console.log('Audio codec check:', reason);
+            return {
+              compatible: false,
+              reason
             };
           }
-          
+
           if (channels > this.capabilities.maxAudioChannels) {
-            return { 
-              compatible: false, 
-              reason: `${channels} audio channels exceeds max ${this.capabilities.maxAudioChannels} on ${this.platform}` 
+            const reason = `${channels} audio channels exceeds max ${this.capabilities.maxAudioChannels} on ${this.platform}`;
+            console.log('Audio channels check:', reason);
+            return {
+              compatible: false,
+              reason
             };
           }
         }
       }
 
-      console.log('[StreamingServerClient] All streams compatible');
+      console.log('All streams compatible');
       return { compatible: true };
 
     } catch (error) {
-      console.warn('[StreamingServerClient] Probe error:', error);
+      console.warn('Probe error:', error);
       return { compatible: false, reason: `Probe error: ${error}` };
     }
   }
@@ -220,6 +225,17 @@ export class StreamingServerClient {
   private async canPlayDirectly(mediaURL: string): Promise<boolean> {
     const result = await this.checkCompatibility(mediaURL);
     return result.compatible;
+  }
+
+  private isFormatSupported(formatName: string): boolean {
+    const lowerFormatName = formatName.toLowerCase();
+
+    // Direct check
+    if (this.capabilities.formats.some(fmt => lowerFormatName.includes(fmt))) {
+      return true;
+    }
+
+    return false;
   }
 
   private isCodecSupported(codec: string, supportedCodecs: string[]): boolean {
@@ -265,13 +281,13 @@ export class StreamingServerClient {
   }
 
   private generateRandomId(): string {
-    return Math.random().toString(36).substring(2, 15) + 
-           Math.random().toString(36).substring(2, 15);
+    return Math.random().toString(36).substring(2, 15) +
+      Math.random().toString(36).substring(2, 15);
   }
 
   setCapabilities(capabilities: MediaCapabilities): void {
     this.capabilities = capabilities;
-    console.log('[StreamingServerClient] Capabilities updated:', capabilities);
+    console.log('Capabilities updated:', capabilities);
   }
 
   getPlatform(): string {

@@ -63,6 +63,7 @@ const useVLCPlayerState = () => {
 const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
     videoUrl,
     title,
+    isTorrent,
     back: onBack,
     progress,
     artwork,

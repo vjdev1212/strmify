@@ -22,6 +22,7 @@ const MenuWrapper: React.FC<any> = (props) => {
 export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     videoUrl,
     title,
+    isTorrent,
     back: onBack,
     progress,
     artwork,
@@ -73,7 +74,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
     // Check if we should use VLC from the start
     useEffect(() => {
-        if (Platform.OS !== 'web' && shouldFallbackToVLC(videoUrl)) {
+        if (Platform.OS !== 'web' && (!isTorrent && shouldFallbackToVLC(videoUrl))) {
             console.log('[Player Selection] Using VLC player for:', videoUrl);
             if (onPlaybackError && !hasReportedErrorRef.current) {
                 hasReportedErrorRef.current = true;

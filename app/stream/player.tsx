@@ -92,6 +92,7 @@ const MediaPlayerScreen: React.FC = () => {
   const [selectedServerId, setSelectedServerId] = useState<string | null>(null);
   const [players, setPlayers] = useState<{ name: string; scheme: string; encodeUrl: boolean }[]>([]);
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
+  const [isTorrent, setIsTorrent] = useState<boolean>(false);
 
   // Stremio client instance
   const [stremioClient, setStremioClient] = useState<StreamingServerClient | null>(null);
@@ -339,6 +340,8 @@ const MediaPlayerScreen: React.FC = () => {
         if (!selectedServer) {
           throw new Error('No Stremio server configured');
         }
+
+        setIsTorrent(true);
 
         // Use the stremio client
         finalVideoUrl = await generatePlayerUrlWithInfoHash(
@@ -829,6 +832,7 @@ const MediaPlayerScreen: React.FC = () => {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <Player
         videoUrl={videoUrl}
+        isTorrent={isTorrent}
         title={title as string}
         back={handleBack}
         progress={progress}
