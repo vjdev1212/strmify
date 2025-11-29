@@ -221,7 +221,7 @@ export const styles = StyleSheet.create({
     // Subtitle Display
     subtitleContainer: {
         position: 'absolute',
-        bottom: 12,
+        bottom: 16,
         left: 20,
         right: 20,
         alignItems: 'center',
@@ -229,26 +229,27 @@ export const styles = StyleSheet.create({
     },
 
     subtitleBackground: {
+        maxWidth: '90%',
+        borderRadius: 8,
+        overflow: 'hidden',
+    },
+
+    blurView: {
+        borderRadius: 8,
+        overflow: 'hidden',
+    },
+
+    gradientOverlay: {
         paddingHorizontal: 16,
         paddingVertical: 8,
-        borderRadius: 8,
-        maxWidth: '90%',
-        margin: 'auto',
     },
 
     subtitleText: {
         color: '#fff',
-        fontWeight: 500,
-        textAlign: 'center',
-        backgroundColor: 'rgba(26, 26, 26, 0.5)',
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 8,
         fontSize: 15,
-        maxWidth: '90%',
-        margin: 'auto',
+        fontWeight: '400',
+        textAlign: 'center',
     },
-
     // Error Display
     errorContainer: {
         flex: 1,

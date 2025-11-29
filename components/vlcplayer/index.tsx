@@ -134,12 +134,12 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
 
         timers.clearTimer('hideControls');
 
-        if (playerState.isPlaying && shouldAutoHideControls.current) {
+        if (playerState.isPlaying && !playerState.isBuffering && shouldAutoHideControls.current) {
             timers.setTimer('hideControls', () => {
                 hideControls(uiState.setShowControls, animations.controlsOpacity);
             }, CONSTANTS.CONTROLS_AUTO_HIDE_DELAY);
         }
-    }, [playerState.isPlaying, animations.controlsOpacity, timers, uiState]);
+    }, [playerState.isPlaying, playerState.isBuffering, animations.controlsOpacity, timers, uiState]);   
 
     // Cleanup on unmount
     useEffect(() => {
@@ -170,6 +170,12 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
             }
         };
     }, []);
+
+    useEffect(() => {
+        if (playerState.isPlaying && !playerState.isBuffering && uiState.showControls && shouldAutoHideControls.current) {
+            showControlsTemporarily();
+        }
+    }, [playerState.isPlaying, playerState.isBuffering]);
 
     // Optimized subtitle loading
     useEffect(() => {

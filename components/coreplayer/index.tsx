@@ -10,6 +10,8 @@ import { formatTime } from './utils';
 import { MediaPlayerProps } from './models';
 import { extractAudioCodec, extractQuality, extractSize, extractVideoCodec } from '@/utils/StreamItem';
 import { MenuAction } from '@react-native-menu/menu';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 
 // ==================== CONSTANTS ====================
 export const CONSTANTS = {
@@ -453,7 +455,16 @@ export const SubtitleDisplay: React.FC<{
     return (
         <View style={styles.subtitleContainer} pointerEvents="none">
             <View style={styles.subtitleBackground}>
-                <Text style={styles.subtitleText}>{subtitle}</Text>
+                <BlurView intensity={60} tint="light" style={styles.blurView}>
+                    <LinearGradient
+                        colors={['rgba(0,0,0,0.6)', 'rgba(0,0,0,0.3)']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.gradientOverlay}
+                    >
+                        <Text style={styles.subtitleText}>{subtitle}</Text>
+                    </LinearGradient>
+                </BlurView>
             </View>
         </View>
     );
