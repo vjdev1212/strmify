@@ -221,7 +221,7 @@ export const styles = StyleSheet.create({
     // Subtitle Display
     subtitleContainer: {
         position: 'absolute',
-        bottom: 16,
+        bottom: 18,
         left: 20,
         right: 20,
         alignItems: 'center',
@@ -241,13 +241,14 @@ export const styles = StyleSheet.create({
 
     gradientOverlay: {
         paddingHorizontal: 16,
-        paddingVertical: 8,
+        paddingVertical: 7,
     },
 
     subtitleText: {
         color: '#fff',
         fontSize: 15,
-        fontWeight: '400',
+        fontWeight: '500',
+        letterSpacing: 0.05,
         textAlign: 'center',
     },
     // Error Display
