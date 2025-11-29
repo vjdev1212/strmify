@@ -457,7 +457,7 @@ export const SubtitleDisplay: React.FC<{
             <View style={styles.subtitleBackground}>
                 <BlurView intensity={60} tint="light" style={styles.blurView}>
                     <LinearGradient
-                        colors={['rgba(0,0,0,0.6)', 'rgba(0,0,0,0.3)']}
+                        colors={['rgba(0,0,0,0.6)', 'rgba(0,0,0,0.6)']}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 1 }}
                         style={styles.gradientOverlay}
