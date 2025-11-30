@@ -71,16 +71,11 @@ export const styles = StyleSheet.create({
 
     // Center Controls
     centerControls: {
-        position: 'absolute',
-        top: '50%',
-        left: 0,
-        right: 0,
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 60,
-        zIndex: 111,
-        transform: [{ translateY: -50 }]
+        zIndex: 11
     },
 
     skipButton: {
