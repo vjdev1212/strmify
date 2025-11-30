@@ -84,7 +84,6 @@ const SearchScreen = () => {
 
       <View style={styles.headerContainer}>
         <Text style={styles.headerTitle}>Search</Text>
-        <Text style={styles.headerSubtitle}>Discover Movies and TV Shows</Text>
       </View>
 
       <View style={styles.searchSection}>
@@ -177,11 +176,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#ffffff',
     marginBottom: 4,
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: '#888',
-    fontWeight: '400',
   },
   searchSection: {
     paddingHorizontal: 15,

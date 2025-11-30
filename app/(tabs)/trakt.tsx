@@ -1093,6 +1093,9 @@ const TraktScreen = () => {
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar />
+            <View style={styles.headerContainer}>
+                <Text style={styles.headerTitle}>Trakt</Text>
+            </View>
             {!isAuthenticated ? (
                 renderUnauthenticated()
             ) : (
@@ -1109,6 +1112,21 @@ const TraktScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+    },
+    headerContainer: {
+        paddingHorizontal: 15,
+        paddingTop: 10
+    },
+    headerTitle: {
+        fontSize: 30,
+        fontWeight: '700',
+        color: '#ffffff',
+        marginBottom: 4,
+    },
+    headerSubtitle: {
+        fontSize: 14,
+        color: '#888',
+        fontWeight: '400',
     },
     mainContainer: {
         flex: 1,
@@ -1150,8 +1168,6 @@ const styles = StyleSheet.create({
     },
     tabContainer: {
         paddingVertical: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: 'rgba(255, 255, 255, 0.05)',
         backdropFilter: 'blur(15px)',
     },
     tab: {
@@ -1160,7 +1176,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 24,
         borderRadius: 25,
         marginRight: 14,
-        alignItems: 'center',       
+        alignItems: 'center',
         backgroundColor: 'rgba(255, 255, 255, 0.05)',
         shadowColor: 'rgba(0, 0, 0, 0.2)',
         shadowOffset: { width: 0, height: 1 },

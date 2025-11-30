@@ -108,6 +108,10 @@ const SettingsScreen = () => {
         contentContainerStyle={styles.scrollViewContent}
         showsVerticalScrollIndicator={false}
       >
+        <View style={styles.headerContainer}>
+          <Text style={styles.headerTitle}>Settings</Text>
+        </View>
+
         {/* General Section */}
         <View style={styles.section}>
           <Text style={[
@@ -213,14 +217,28 @@ const SettingsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    marginTop: 30,
     width: '100%',
     maxWidth: 780,
     margin: 'auto'
   },
   scrollViewContent: {
-    paddingTop: 20,
     paddingBottom: 40,
+  },
+  headerContainer: {
+    paddingHorizontal: 15,
+    paddingTop: 10,
+    paddingBottom: 16,
+  },
+  headerTitle: {
+    fontSize: 30,
+    fontWeight: '700',
+    color: '#ffffff',
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: '#888',
+    fontWeight: '400',
   },
   section: {
     marginBottom: 35,
