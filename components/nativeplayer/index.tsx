@@ -80,7 +80,8 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     }, useCallback((player: VideoPlayer) => {
         player.loop = false;
         player.muted = settings.isMuted;
-        player.playbackRate = settings.playbackSpeed;        
+        player.playbackRate = settings.playbackSpeed;   
+        player.allowsExternalPlayback = true;     
     }, [settings.isMuted, settings.playbackSpeed]));
 
     // Restore progress - optimized with dependency array
