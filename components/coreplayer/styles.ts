@@ -35,11 +35,16 @@ export const styles = StyleSheet.create({
 
     // Top Controls
     topControls: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
         flexDirection: 'row',
         alignItems: 'center',
         paddingTop: 20,
-        marginHorizontal: '3%',
+        paddingHorizontal: '3%',
         paddingBottom: 20,
+        zIndex: 100
     },
 
     backButton: {
@@ -71,11 +76,15 @@ export const styles = StyleSheet.create({
 
     // Center Controls
     centerControls: {
+        position: 'absolute',
+        top: '50%',
+        left: 0,
+        right: 0,
+        transform: [{ translateY: -40 }],
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        paddingHorizontal: 60,
-        zIndex: 11
+        zIndex: 100
     },
 
     skipButton: {
@@ -84,7 +93,7 @@ export const styles = StyleSheet.create({
     },
 
     playButton: {
-        padding: 16,
+        paddingHorizontal: 16,
         marginHorizontal: 30,
     },
 
@@ -94,10 +103,14 @@ export const styles = StyleSheet.create({
 
     // Bottom Controls
     bottomControls: {
-        paddingBottom: 40,
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,        
         paddingTop: 20,
-        height: 120,
+        height: 100,
         marginHorizontal: '3%',
+        zIndex: 100,
     },
 
     // Progress Bar
