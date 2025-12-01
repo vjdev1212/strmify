@@ -75,11 +75,12 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     // Initialize player (memoized to prevent recreation)
     const player = useVideoPlayer({
         uri: videoUrl,
-        metadata: { title, artwork }
+        metadata: { title, artwork },   
+        useCaching: true,     
     }, useCallback((player: VideoPlayer) => {
         player.loop = false;
         player.muted = settings.isMuted;
-        player.playbackRate = settings.playbackSpeed;
+        player.playbackRate = settings.playbackSpeed;        
     }, [settings.isMuted, settings.playbackSpeed]));
 
     // Restore progress - optimized with dependency array
@@ -643,7 +644,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                 fullscreenOptions={{ enable: true, orientation: 'landscape' }}
                 allowsPictureInPicture
                 nativeControls={false}
-                contentFit={contentFit}
+                contentFit={contentFit}                
             />
 
             <ArtworkBackground
