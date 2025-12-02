@@ -343,7 +343,7 @@ function RootLayoutNav() {
             <Stack.Screen
               name="settings/mediaplayer"
               options={{
-                headerShown: true,
+                headerShown: false,
                 headerTransparent: true,
                 headerBackground: InvisibleHeaderBackground,
                 headerTitle: '',
