@@ -62,8 +62,11 @@ Or download directly from [GitHub Releases](https://github.com/vjdev1212/strmify
 
 ### General Questions
 
-**Q: Will the app continue to be maintained and updated?**  
-A: I will maintain this app as long as time permits. Updates may not be frequent, but the app will continue to receive steady maintenance and improvements over time.
+**Q: Will it replace Stremio?**  
+A: The short answer is NO and it will never be. Stremio provides more features and it's evolving. It has multiple platforms support while strmify is just a simple streaming app powered by stremio addons only for Android and IOS platforms. 
+
+**Q: Why Strmify over Stremio?**  
+A: It started as an hobby project when Stremio was not released for IOS so long. Now they have an official Stremio Lite app published in App Store. I want to keep this project as simple with minimal features. The Goal is to focus on the actual streaming rather than loading more features.
 
 **Q: Will there be a TV version of the app?**  
 A: No, there are no plans to build a TV version. There are already good apps available for TV platforms.
