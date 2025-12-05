@@ -1,0 +1,92 @@
+{
+  "name": "Strmify",
+  "identifier": "com.vijayyuvi.strmify",
+  "subtitle": "Strmify",
+  "description": "Strmify is your streaming companion for discovering and streaming movies and TV shows through various add-on sources and third-party integrations. Find, search, and play content using your preferred media player.",
+  "iconURL": "https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/assets/images/icon.png",
+  "headerURL": "https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/assets/banners/Strmify-feature-graphic.png",
+  "website": "https://github.com/vjdev1212/strmify",
+  "tintColor": "#535aff",
+  "featuredApps": [
+    "com.vijayyuvi.strmify"
+  ],
+  "apps": [
+    {
+      "name": "Strmify",
+      "bundleIdentifier": "com.vijayyuvi.strmify",
+      "developerName": "vjdev1212",
+      "subtitle": "Strmify - Your streaming companion for discovering and watching content from multiple sources.",
+      "localizedDescription": "Strmify is your streaming companion for discovering and streaming movies and TV shows through various add-on sources and third-party integrations. Find, search, and play content using your preferred media player.",
+      "iconURL": "https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/assets/images/icon.png",
+      "downloadURL": "https://github.com/vjdev1212/strmify/releases/download/v1.0.26/Strmify_v1.0.26.ipa",
+      "tintColor": "#535aff",
+      "category": "entertainment",
+      "screenshots": [
+        "https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/Strmify-screenshots/iPhone/5-Carousel.png",
+        "https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/Strmify-screenshots/iPhone/1-Home%20Screen.png",
+        "https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/Strmify-screenshots/iPhone/2-Movie-Details.png",
+        "https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/Strmify-screenshots/iPhone/3-TV-Details.png",
+        "https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/Strmify-screenshots/iPhone/4-Search.png",
+        "https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/Strmify-screenshots/iPhone/6-Trakt-Integration.png"
+      ],
+      "versions": [
+        {
+          "version": "1.0.26",
+          "date": "2025-11-16",
+          "localizedDescription": "• Added support for Transcoding streams.",
+          "downloadURL": "https://github.com/vjdev1212/strmify/releases/download/v1.0.26/Strmify_v1.0.26.ipa",
+          "size": 8680000,
+          "minOSVersion": "18.0"
+        }, 
+        {
+          "version": "1.0.25",
+          "date": "2025-11-14",
+          "localizedDescription": "• Added support for stream selection in the player.\n• Support for automatic player detection based on the format and codec.",
+          "downloadURL": "https://github.com/vjdev1212/strmify/releases/download/v1.0.25/Strmify_v1.0.25.ipa",
+          "size": 8680000,
+          "minOSVersion": "18.0"
+        },
+        {
+          "version": "1.0.24",
+          "date": "2025-11-12",
+          "localizedDescription": "• Replaced AsyncStorage with MMKV for faster storage.\n• Fixed Media Player selection Error Messages.",
+          "downloadURL": "https://github.com/vjdev1212/strmify/releases/download/v1.0.24/Strmify_v1.0.24.ipa",
+          "size": 8680000,
+          "minOSVersion": "18.0"
+        },
+        {
+          "version": "1.0.23",
+          "date": "2025-11-09",
+          "localizedDescription": "• Removed Manual OpenSubtitle configuration.\n• Trakt scrobble changes.",
+          "downloadURL": "https://github.com/vjdev1212/strmify/releases/download/v1.0.23/Strmify_v1.0.23.ipa",
+          "size": 8680000,
+          "minOSVersion": "18.0"
+        },
+        {
+          "version": "1.0.22",
+          "date": "2025-10-25",
+          "localizedDescription": "• Added Watch History support. Media Player Improvements.\n• UI Improvements.",
+          "downloadURL": "https://github.com/vjdev1212/strmify/releases/download/v1.0.22/Strmify_v1.0.22.ipa",
+          "size": 8680000,
+          "minOSVersion": "18.0"
+        }        
+      ],
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": []
+      }
+    }
+  ],
+  "news": [
+    {
+      "title": "Strmify v1.0.26 Released",
+      "identifier": "strmify-v1.0.26-release",
+      "caption": "1. Added support for Transcoding streams.",
+      "date": "2025-11-16",
+      "tintColor": "#535aff",
+      "imageURL": "https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/assets/banners/Strmify-feature-graphic.png",
+      "notify": true,
+      "url": "https://github.com/vjdev1212/strmify/releases"
+    }
+  ]
+}
