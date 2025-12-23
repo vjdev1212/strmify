@@ -7,12 +7,13 @@ import { getPlatformSpecificPlayers, Players } from "@/utils/MediaPlayer";
 import { showAlert } from "@/utils/platform";
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import React, { useEffect, useState, useRef, useMemo } from "react";
-import { Platform, Linking, ActivityIndicator, View, Text, StyleSheet, Pressable, Image } from "react-native";
+import { Platform, Linking, ActivityIndicator, View, Text, StyleSheet, Pressable, Image, StatusBar } from "react-native";
 import { ServerConfig } from "@/components/ServerConfig";
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import BottomSheet, { BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StreamingServerClient } from "@/clients/stremio";
+import * as ScreenOrientation from 'expo-screen-orientation';
 
 interface BackEvent {
   message: string;
@@ -119,6 +120,9 @@ const MediaPlayerScreen: React.FC = () => {
   }, [isLoadingStream, streamError, navigation]);
 
   useEffect(() => {
+    // Always setup orientation first, regardless of scenario
+    setupOrientation();
+
     // Check if we have a direct video URL (continue watching scenario)
     if (directVideoUrl) {
       setVideoUrl(directVideoUrl as string);
@@ -148,6 +152,10 @@ const MediaPlayerScreen: React.FC = () => {
 
     initializeClient();
     checkTraktAuth();
+
+    return () => {
+      cleanupOrientation();
+    }
   }, []);
 
   useEffect(() => {
@@ -183,6 +191,25 @@ const MediaPlayerScreen: React.FC = () => {
       }
     }
   };
+
+  const setupOrientation = async () => {
+    if (Platform.OS !== 'web') {
+      try {
+        await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
+        StatusBar.setHidden(true);
+      } catch (error) {
+        console.warn("Failed to set orientation:", error);
+      }
+    }
+  };
+
+  const cleanupOrientation = async () => {
+    if (Platform.OS !== 'web') {
+      await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.DEFAULT);
+      StatusBar.setHidden(false);
+    }
+  };
+
 
   const loadDefaultPlayer = () => {
     try {
