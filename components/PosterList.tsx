@@ -18,6 +18,11 @@ import { Ionicons } from '@expo/vector-icons';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
+// Simple in-memory cache
+const posterCache = new Map<string, PosterItemData[]>();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const cacheTimestamps = new Map<string, number>();
+
 interface PosterItemData {
   moviedbid: number;
   name: string;
@@ -88,6 +93,32 @@ const PosterItem = ({
   );
 };
 
+// Skeleton loader component
+const SkeletonPoster = ({ 
+  posterWidth, 
+  posterHeight, 
+  spacing 
+}: { 
+  posterWidth: number; 
+  posterHeight: number; 
+  spacing: number;
+}) => (
+  <RNView style={[styles.posterContainer, { width: posterWidth, marginRight: spacing }]}>
+    <RNView
+      style={[
+        styles.posterImage,
+        {
+          width: posterWidth,
+          height: posterHeight,
+          backgroundColor: '#1a1a1a',
+        },
+      ]}
+    />
+    <RNView style={[styles.skeletonText, { width: posterWidth * 0.8, marginTop: 8 }]} />
+    <RNView style={[styles.skeletonText, { width: posterWidth * 0.5, marginTop: 4, height: 12 }]} />
+  </RNView>
+);
+
 const PosterList = ({
   apiUrl,
   title,
@@ -124,8 +155,30 @@ const PosterList = ({
 
   const posterHeight = posterWidth * 1.5;
 
+  // Choose optimal image size based on display width
+  const getImageSize = useCallback(() => {
+    if (posterWidth <= 92) return 'w92';
+    if (posterWidth <= 154) return 'w154';
+    if (posterWidth <= 185) return 'w185';
+    if (posterWidth <= 342) return 'w342';
+    return 'w500'; // Max size instead of w780
+  }, [posterWidth]);
+
+  const imageSize = getImageSize();
+
   useEffect(() => {
     const fetchData = async () => {
+      // Check if cache is valid
+      const cachedData = posterCache.get(apiUrl);
+      const cacheTime = cacheTimestamps.get(apiUrl);
+      const now = Date.now();
+
+      if (cachedData && cacheTime && (now - cacheTime) < CACHE_DURATION) {
+        setData(cachedData);
+        setLoading(false);
+        return;
+      }
+
       try {
         const separator = apiUrl.includes('?') ? '&' : '?';
         const response = await fetch(`${apiUrl}${separator}api_key=${EXPO_PUBLIC_TMDB_API_KEY}`);
@@ -134,14 +187,19 @@ const PosterList = ({
 
         const formatted = collection
           .filter((item: any) => item.poster_path && item.backdrop_path)
+          .slice(0, 20) // Limit to 20 items for faster loading
           .map((item: any) => ({
             moviedbid: item.id,
             name: item.title || item.name,
-            poster: `https://image.tmdb.org/t/p/w780${item.poster_path}`,
-            background: `https://image.tmdb.org/t/p/w1280${item.backdrop_path}`,
+            poster: `https://image.tmdb.org/t/p/${imageSize}${item.poster_path}`,
+            background: `https://image.tmdb.org/t/p/w780${item.backdrop_path}`,
             year: getYear(item.release_date || item.first_air_date),
             imdbRating: item.vote_average?.toFixed(1),
           }));
+
+        // Cache the results
+        posterCache.set(apiUrl, formatted);
+        cacheTimestamps.set(apiUrl, now);
 
         setData(formatted);
       } catch (error) {
@@ -152,7 +210,7 @@ const PosterList = ({
     };
 
     fetchData();
-  }, [apiUrl]);
+  }, [apiUrl, imageSize]);
 
   const handleSeeAllPress = useCallback(async () => {
     if (isHapticsSupported()) {
@@ -163,6 +221,31 @@ const PosterList = ({
       params: { apiUrl },
     });
   }, [apiUrl, type]);
+
+  // Show skeleton loader while loading
+  if (loading) {
+    return (
+      <RNView style={styles.container}>
+        <RNView style={styles.header}>
+          <Text style={styles.title}>{title}</Text>
+        </RNView>
+        <FlatList
+          data={[1, 2, 3, 4, 5]}
+          horizontal
+          renderItem={() => (
+            <SkeletonPoster
+              posterWidth={posterWidth}
+              posterHeight={posterHeight}
+              spacing={spacing}
+            />
+          )}
+          keyExtractor={(item, index) => `skeleton-${index}`}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingRight: 4 }}
+        />
+      </RNView>
+    );
+  }
 
   if (!data || data.length === 0) return null;
 
@@ -192,6 +275,9 @@ const PosterList = ({
         keyExtractor={(item, index) => `${item.moviedbid}-${index}`}
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingRight: 4 }}
+        initialNumToRender={postersPerScreen}
+        maxToRenderPerBatch={postersPerScreen}
+        windowSize={3}
       />
     </RNView>
   );
@@ -233,6 +319,11 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontSize: 12,
     color: '#ccc',
+  },
+  skeletonText: {
+    height: 14,
+    backgroundColor: '#1a1a1a',
+    borderRadius: 4,
   },
 });
 
