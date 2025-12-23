@@ -104,9 +104,12 @@ const StreamListScreen = () => {
         const controller = new AbortController();
         abortControllerRef.current = controller;
 
+        // Store the addon name that this request is for
+        const requestAddonName = addon.name;
+
         // Clear streams immediately to prevent showing old data
         setStreams([]);
-        setLoading(true);
+        setLoading(true); // Always show loader when starting a new request
 
         try {
             const addonUrl = addon?.url || '';
@@ -125,23 +128,21 @@ const StreamListScreen = () => {
             const data = await response.json() as StreamResponse;
 
             // Only update streams if this is still the current addon
-            if (currentAddonRef.current === addon.name && !controller.signal.aborted) {
+            if (currentAddonRef.current === requestAddonName && !controller.signal.aborted) {
                 setStreams(data.streams || []);
+                setLoading(false); // Only stop loading after successfully setting streams
             }
         } catch (error: any) {
             // Only handle error if not aborted
             if (error.name !== 'AbortError') {
                 console.error('Error fetching streams:', error);
-                // Only clear streams if this is still the current addon
-                if (currentAddonRef.current === addon.name) {
+                // Only clear streams and stop loading if this is still the current addon
+                if (currentAddonRef.current === requestAddonName) {
                     setStreams([]);
+                    setLoading(false);
                 }
             }
-        } finally {
-            // Only stop loading if this is still the current addon
-            if (currentAddonRef.current === addon.name && !controller.signal.aborted) {
-                setLoading(false);
-            }
+            // If aborted, keep loading=true so the next request's loader shows
         }
     }, [imdbid, type, season, episode]);
 
