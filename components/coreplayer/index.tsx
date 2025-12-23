@@ -43,6 +43,7 @@ export interface ExtendedMediaPlayerProps extends MediaPlayerProps {
 export interface SubtitleSource {
     fileId?: string;
     url?: string;
+    language?: string;
     label: string;
 }
 
@@ -290,7 +291,7 @@ export const buildSubtitleActions = (
             ...subtitles.map((sub, i) => ({
                 id: `subtitle-${i}`,
                 title: sub.label,
-                subtitle: sub.fileId ? 'OpenSubtitles' : undefined,
+                subtitle: sub.language ? `OpenSubtitles - ${sub.language.toUpperCase()}` : undefined,
                 state: selectedIndex === i ? ('on' as const) : undefined,
                 titleColor: selectedIndex === i ? '#007AFF' : '#FFFFFF',
             }))

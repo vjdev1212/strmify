@@ -144,14 +144,14 @@ const MediaPlayerScreen: React.FC = () => {
 
         // Check if there's a saved default player
         const savedPlayer = loadDefaultPlayer();
-        
+
         if (!savedPlayer) {
           // No saved player - need to show selection
           // Don't initialize clients yet, keep loading state
           const platformPlayers = getPlatformSpecificPlayers();
           setPlayers(platformPlayers);
           const { servers: serverList, selectedId } = fetchServerConfigs();
-          
+
           // Show player selection immediately
           showPlayerSelection(parsedStreams[initialIndex], initialIndex, platformPlayers, serverList, selectedId);
         } else {
@@ -167,11 +167,11 @@ const MediaPlayerScreen: React.FC = () => {
 
     initializeClient();
     checkTraktAuth();
-    
+
     return () => {
       cleanupOrientation();
     }
-  }, []);  
+  }, []);
 
   useEffect(() => {
     if (openSubtitlesClient) {
@@ -606,7 +606,7 @@ const MediaPlayerScreen: React.FC = () => {
   };
 
   const fetchSubtitles = async () => {
-    if (!imdbid || !openSubtitlesClient) {
+    if (!openSubtitlesClient) {
       setIsLoadingSubtitles(false);
       return;
     }
@@ -614,36 +614,17 @@ const MediaPlayerScreen: React.FC = () => {
     try {
       setIsLoadingSubtitles(true);
 
-      let response;
-      if (type === 'series' && season && episode) {
-        response = await openSubtitlesClient.searchTVSubtitles(
-          imdbid as string,
-          parseInt(season as string),
-          parseInt(episode as string),
-          'episode',
-          ['en'],
-          {
-            format: 'srt',
-            ai_translated: 'include',
-            machine_translated: 'include',
-            trusted_sources: 'include',
-            hearing_impaired: 'include'
-          }
-        );
-      } else {
-        response = await openSubtitlesClient.searchMovieSubtitles(
-          imdbid as string,
-          'movie',
-          ['en'],
-          {
-            format: 'srt',
-            ai_translated: 'include',
-            machine_translated: 'include',
-            trusted_sources: 'include',
-            hearing_impaired: 'include'
-          }
-        );
-      }
+      const response = await openSubtitlesClient.searchByFileName(
+        title as string,
+        ['en'],
+        {
+          format: 'srt',
+          ai_translated: 'include',
+          machine_translated: 'include',
+          trusted_sources: 'include',
+          hearing_impaired: 'include'
+        }
+      );
 
       if (response.success) {
         if (response.data.length === 0) {
@@ -651,13 +632,13 @@ const MediaPlayerScreen: React.FC = () => {
           setIsLoadingSubtitles(false);
           return;
         }
-        const sortedData = response.data.sort((a, b) => b.download_count - a.download_count);
+        const sortedData = response.data.sort((a: any, b: any) => b.download_count - a.download_count);
 
         const transformedSubtitles: Subtitle[] = sortedData.map((subtitle: SubtitleResult) => ({
           fileId: subtitle.file_id,
           language: subtitle.language,
           url: subtitle.url,
-          label: `${getLanguageName(subtitle.language)} - ${subtitle.name}`
+          label: `${subtitle.name}`
         }));
 
         setSubtitles(transformedSubtitles);

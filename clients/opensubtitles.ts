@@ -1,4 +1,3 @@
-
 // Type definitions
 export interface SubtitleSearchParams {
   imdb_id?: string;
@@ -152,74 +151,14 @@ class OpenSubtitlesClient {
     }
   }
 
-  // Search subtitles for movies
-  async searchMovieSubtitles(
-    imdbId: string,
-    type: 'movie' | 'episode' = 'movie',
+  // Search subtitles by file name or query
+  async searchByFileName(
+    fileName: string,
     languages: string[] = ['en'],
     options: SearchOptions = {}
   ): Promise<ApiResponse> {
     const params: SubtitleSearchParams = {
-      imdb_id: imdbId,
-      languages: languages.join(','),
-      type: type,
-      format: options.format || 'srt',
-      ...options
-    };
-
-    return this.searchSubtitles(params);
-  }
-
-  // Search subtitles for TV show episodes
-  async searchTVSubtitles(
-    imdbId: string,
-    season: number,
-    episode: number,
-    type: 'movie' | 'episode' = 'episode',
-    languages: string[] = ['en'],
-    options: SearchOptions = {}
-  ): Promise<ApiResponse> {
-    const params: SubtitleSearchParams = {
-      imdb_id: imdbId,
-      season_number: season,
-      episode_number: episode,
-      type: type,
-      languages: languages.join(','),
-      format: options.format || 'srt',
-      ...options
-    };
-
-    return this.searchSubtitles(params);
-  }
-
-  // Search by TMDb ID
-  async searchByTMDbId(
-    tmdbId: string,
-    type: 'movie' | 'episode' = 'movie',
-    languages: string[] = ['en'],
-    options: SearchOptions = {}
-  ): Promise<ApiResponse> {
-    const params: SubtitleSearchParams = {
-      tmdb_id: tmdbId,
-      type: type,
-      languages: languages.join(','),
-      format: options.format || 'srt',
-      ...options
-    };
-
-    return this.searchSubtitles(params);
-  }
-
-  // Search by file hash (for exact matching)
-  async searchByFileHash(
-    moviehash: string,
-    moviebytesize: number,
-    languages: string[] = ['en'],
-    options: SearchOptions = {}
-  ): Promise<ApiResponse> {
-    const params: SubtitleSearchParams = {
-      moviehash,
-      moviebytesize,
+      query: fileName,
       languages: languages.join(','),
       format: options.format || 'srt',
       ...options
@@ -314,7 +253,5 @@ class OpenSubtitlesClient {
     }
   }
 }
-
-
 
 export default OpenSubtitlesClient;
