@@ -27,6 +27,16 @@ const NOT_RATED_TEXT = 'Not Rated';
 const STAR_COLOR = '#E6BD37';
 const STAR_SIZE = 14;
 
+// Helper function for country code conversion
+const countryCodeToName = (code: string) => {
+  try {
+    const regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
+    return regionNames.of(code.toUpperCase()) || code;
+  } catch (error) {
+    return code;
+  }
+};
+
 const MediaContentDetailsList: React.FC<MediaContentDetailsListProps> = ({
   type = 'movie',
   genre = [],
@@ -42,7 +52,9 @@ const MediaContentDetailsList: React.FC<MediaContentDetailsListProps> = ({
     const hasRating = imdbRating !== '0.0' && imdbRating !== UNKNOWN_TEXT;
     const formattedDate = formatDate(released);
     const genreText = genre.length > 0 ? genre.join(', ') : UNKNOWN_TEXT;
-    const countryText = country.length > 0 ? country.join(', ') : UNKNOWN_TEXT;
+    const countryText = country.length > 0 
+      ? country.map(countryCodeToName).join(', ') 
+      : UNKNOWN_TEXT;
     const languagesText =
       languages.length > 0
         ? languages.map(l => l.english_name).join(', ')
