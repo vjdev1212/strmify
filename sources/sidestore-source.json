@@ -37,7 +37,7 @@
           "downloadURL": "https://github.com/vjdev1212/strmify/releases/download/v1.0.27/Strmify_v1.0.27.ipa",
           "size": 8680000,
           "minOSVersion": "18.0"
-        }, 
+        },
         {
           "version": "1.0.26",
           "date": "2025-11-16",
@@ -45,7 +45,7 @@
           "downloadURL": "https://github.com/vjdev1212/strmify/releases/download/v1.0.26/Strmify_v1.0.26.ipa",
           "size": 8680000,
           "minOSVersion": "18.0"
-        }, 
+        },
         {
           "version": "1.0.25",
           "date": "2025-11-14",
@@ -69,7 +69,7 @@
           "downloadURL": "https://github.com/vjdev1212/strmify/releases/download/v1.0.23/Strmify_v1.0.23.ipa",
           "size": 8680000,
           "minOSVersion": "18.0"
-        }               
+        }
       ],
       "appPermissions": {
         "entitlements": [],
