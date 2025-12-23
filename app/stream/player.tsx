@@ -142,8 +142,22 @@ const MediaPlayerScreen: React.FC = () => {
         const initialIndex = selectedStreamIndex ? parseInt(selectedStreamIndex as string) : 0;
         setCurrentStreamIndex(initialIndex);
 
-        // Initialize and show player selection
-        initializePlayerAndSelect(parsedStreams, initialIndex);
+        // Check if there's a saved default player
+        const savedPlayer = loadDefaultPlayer();
+        
+        if (!savedPlayer) {
+          // No saved player - need to show selection
+          // Don't initialize clients yet, keep loading state
+          const platformPlayers = getPlatformSpecificPlayers();
+          setPlayers(platformPlayers);
+          const { servers: serverList, selectedId } = fetchServerConfigs();
+          
+          // Show player selection immediately
+          showPlayerSelection(parsedStreams[initialIndex], initialIndex, platformPlayers, serverList, selectedId);
+        } else {
+          // Has saved player - proceed with initialization
+          initializePlayerAndSelect(parsedStreams, initialIndex);
+        }
       } catch (error) {
         console.error('Failed to parse streams:', error);
         setStreamError('Failed to load streams');
@@ -513,9 +527,12 @@ const MediaPlayerScreen: React.FC = () => {
         if (selectedPlayerName === Players.Default) {
           // Setup orientation for in-app playback
           setupOrientation();
+          // Now that we know it's default player, initialize clients
+          initializeClient();
+          checkTraktAuth();
           loadStream(index, undefined, serverList, serverId);
         } else {
-          // External player - no orientation change
+          // External player - no orientation change, no need for clients
           handleExternalPlayer(stream, selectedPlayerName, playersToUse, serverList, serverId);
         }
       }
