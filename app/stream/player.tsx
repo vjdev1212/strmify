@@ -120,16 +120,17 @@ const MediaPlayerScreen: React.FC = () => {
   }, [isLoadingStream, streamError, navigation]);
 
   useEffect(() => {
-    // Always setup orientation first, regardless of scenario
-    setupOrientation();
-
     // Check if we have a direct video URL (continue watching scenario)
     if (directVideoUrl) {
+      // Setup orientation for in-app playback
+      setupOrientation();
       setVideoUrl(directVideoUrl as string);
       setIsLoadingStream(false);
       initializeClient();
       checkTraktAuth();
-      return;
+      return () => {
+        cleanupOrientation();
+      };
     }
 
     // Parse streams from params (new playback scenario)
@@ -152,11 +153,11 @@ const MediaPlayerScreen: React.FC = () => {
 
     initializeClient();
     checkTraktAuth();
-
+    
     return () => {
       cleanupOrientation();
     }
-  }, []);
+  }, []);  
 
   useEffect(() => {
     if (openSubtitlesClient) {
@@ -185,8 +186,11 @@ const MediaPlayerScreen: React.FC = () => {
       setSelectedPlayer(savedPlayer);
 
       if (savedPlayer === Players.Default) {
+        // Only setup orientation for in-app playback
+        setupOrientation();
         await loadStream(streamIndex, parsedStreams, serverList, selectedId);
       } else {
+        // External player - no orientation change
         handleExternalPlayer(parsedStreams[streamIndex], savedPlayer, platformPlayers, serverList, selectedId);
       }
     }
@@ -507,8 +511,11 @@ const MediaPlayerScreen: React.FC = () => {
         setSelectedPlayer(selectedPlayerName);
 
         if (selectedPlayerName === Players.Default) {
+          // Setup orientation for in-app playback
+          setupOrientation();
           loadStream(index, undefined, serverList, serverId);
         } else {
+          // External player - no orientation change
           handleExternalPlayer(stream, selectedPlayerName, playersToUse, serverList, serverId);
         }
       }
