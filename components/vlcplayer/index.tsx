@@ -566,8 +566,11 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
                     }]}
                     source={{
                         uri: videoUrl,
-                        initType: 1,
-                        initOptions: []
+                        initType: 2,
+                        initOptions: [
+                            '--no-sub-autodetect-file',
+                            '--no-spu'
+                        ]
                     }}
                     autoplay={true}
                     playInBackground={true}
@@ -708,7 +711,7 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
                                             }
                                         }}
                                     >
-                                        <MaterialIcons name="audiotrack" size={24} color="white" />
+                                        <MaterialIcons name="multitrack-audio" size={24} color="white" />
                                     </TouchableOpacity>
                                 </MenuView>
                             )}
