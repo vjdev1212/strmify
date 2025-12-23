@@ -17,6 +17,37 @@ import { isHapticsSupported } from '@/utils/platform';
 import { CatalogUrl, MovieGneres, TvGneres } from '@/constants/Tmdb';
 import WatchHistory from '@/components/WatchHistory';
 
+// Lazy loading wrapper component
+const LazyPosterList = ({ 
+  apiUrl, 
+  title, 
+  type, 
+  index 
+}: { 
+  apiUrl: string; 
+  title: string; 
+  type: 'movie' | 'series'; 
+  index: number;
+}) => {
+  const [shouldLoad, setShouldLoad] = useState(index < 2); // Load first 2 immediately
+  
+  return (
+    <View 
+      onLayout={() => {
+        if (!shouldLoad) {
+          setShouldLoad(true);
+        }
+      }}
+    >
+      {shouldLoad ? (
+        <PosterList apiUrl={apiUrl} title={title} type={type} />
+      ) : (
+        <View style={{ height: 280, marginBottom: 20 }} />
+      )}
+    </View>
+  );
+};
+
 export default function HomeScreen() {
   const [filter, setFilter] = useState<'all' | 'movies' | 'series'>('all');
   const [refreshKey, setRefreshKey] = useState(0);
@@ -178,11 +209,12 @@ export default function HomeScreen() {
             onItemSelect={(item) => handleWatchHistoryItemPress(item)} 
           />
           {activeLists.map((list, i) => (
-            <PosterList
+            <LazyPosterList
               key={`${filter}-${i}`}
               apiUrl={list.apiUrl}
               title={list.title}
               type={list.type as 'movie' | 'series'}
+              index={i}
             />
           ))}
         </View>
@@ -207,7 +239,7 @@ const styles = StyleSheet.create({
   filterButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
+    paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 25,
     backgroundColor: '#1a1a1a',

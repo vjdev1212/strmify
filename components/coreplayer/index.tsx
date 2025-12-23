@@ -172,25 +172,6 @@ export const usePlayerAnimations = () => {
 
 // ==================== UTILITIES ====================
 
-// Orientation setup/cleanup
-export const setupOrientation = async () => {
-    if (Platform.OS !== 'web') {
-        try {
-            await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
-            StatusBar.setHidden(true);
-        } catch (error) {
-            console.warn("Failed to set orientation:", error);
-        }
-    }
-};
-
-export const cleanupOrientation = async () => {
-    if (Platform.OS !== 'web') {
-        await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.DEFAULT);
-        StatusBar.setHidden(false);
-    }
-};
-
 // Subtitle loading logic
 export const loadSubtitle = async (
     subtitle: SubtitleSource,

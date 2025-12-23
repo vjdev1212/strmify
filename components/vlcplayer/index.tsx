@@ -16,7 +16,6 @@ import {
     calculateProgress,
     calculateSliderValues,
     CenterControls,
-    cleanupOrientation,
     CONSTANTS,
     ErrorDisplay,
     findActiveSubtitle,
@@ -25,7 +24,6 @@ import {
     loadSubtitle,
     performSeek,
     ProgressBar,
-    setupOrientation,
     SubtitleDisplay,
     SubtitleSource,
     usePlayerAnimations,
@@ -143,7 +141,6 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
 
     // Cleanup on unmount
     useEffect(() => {
-        setupOrientation();
         if (Platform.OS === "android") {
             ImmersiveMode.fullLayout(true);
         }
@@ -152,7 +149,6 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
                 const progress = calculateProgress(playerState.currentTime, playerState.duration);
                 updateProgress({ progress });
             }
-            cleanupOrientation();
             timers.clearAllTimers();
 
             // Clear all intervals

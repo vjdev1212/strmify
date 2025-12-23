@@ -8,7 +8,6 @@ import 'react-native-reanimated';
 import { View, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import { useColorScheme } from '@/components/useColorScheme';
 import { ActionSheetProvider } from '@expo/react-native-action-sheet';
 
 export {
@@ -192,7 +191,7 @@ function RootLayoutNav() {
             <Stack.Screen
               name="stream/player"
               options={{
-                headerShown: false,
+                headerShown: true,
                 headerTransparent: true,
                 headerBackground: InvisibleHeaderBackground,
                 headerTitle: '',
@@ -343,7 +342,7 @@ function RootLayoutNav() {
             <Stack.Screen
               name="settings/mediaplayer"
               options={{
-                headerShown: false,
+                headerShown: true,
                 headerTransparent: true,
                 headerBackground: InvisibleHeaderBackground,
                 headerTitle: '',

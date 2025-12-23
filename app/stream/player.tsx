@@ -7,12 +7,13 @@ import { getPlatformSpecificPlayers, Players } from "@/utils/MediaPlayer";
 import { showAlert } from "@/utils/platform";
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import React, { useEffect, useState, useRef, useMemo } from "react";
-import { Platform, Linking, ActivityIndicator, View, Text, StyleSheet, Pressable, Image } from "react-native";
+import { Platform, Linking, ActivityIndicator, View, Text, StyleSheet, Pressable, Image, StatusBar } from "react-native";
 import { ServerConfig } from "@/components/ServerConfig";
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import BottomSheet, { BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StreamingServerClient } from "@/clients/stremio";
+import * as ScreenOrientation from 'expo-screen-orientation';
 
 interface BackEvent {
   message: string;
@@ -121,11 +122,15 @@ const MediaPlayerScreen: React.FC = () => {
   useEffect(() => {
     // Check if we have a direct video URL (continue watching scenario)
     if (directVideoUrl) {
+      // Setup orientation for in-app playback
+      setupOrientation();
       setVideoUrl(directVideoUrl as string);
       setIsLoadingStream(false);
       initializeClient();
       checkTraktAuth();
-      return;
+      return () => {
+        cleanupOrientation();
+      };
     }
 
     // Parse streams from params (new playback scenario)
@@ -137,8 +142,22 @@ const MediaPlayerScreen: React.FC = () => {
         const initialIndex = selectedStreamIndex ? parseInt(selectedStreamIndex as string) : 0;
         setCurrentStreamIndex(initialIndex);
 
-        // Initialize and show player selection
-        initializePlayerAndSelect(parsedStreams, initialIndex);
+        // Check if there's a saved default player
+        const savedPlayer = loadDefaultPlayer();
+        
+        if (!savedPlayer) {
+          // No saved player - need to show selection
+          // Don't initialize clients yet, keep loading state
+          const platformPlayers = getPlatformSpecificPlayers();
+          setPlayers(platformPlayers);
+          const { servers: serverList, selectedId } = fetchServerConfigs();
+          
+          // Show player selection immediately
+          showPlayerSelection(parsedStreams[initialIndex], initialIndex, platformPlayers, serverList, selectedId);
+        } else {
+          // Has saved player - proceed with initialization
+          initializePlayerAndSelect(parsedStreams, initialIndex);
+        }
       } catch (error) {
         console.error('Failed to parse streams:', error);
         setStreamError('Failed to load streams');
@@ -148,7 +167,11 @@ const MediaPlayerScreen: React.FC = () => {
 
     initializeClient();
     checkTraktAuth();
-  }, []);
+    
+    return () => {
+      cleanupOrientation();
+    }
+  }, []);  
 
   useEffect(() => {
     if (openSubtitlesClient) {
@@ -177,12 +200,34 @@ const MediaPlayerScreen: React.FC = () => {
       setSelectedPlayer(savedPlayer);
 
       if (savedPlayer === Players.Default) {
+        // Only setup orientation for in-app playback
+        setupOrientation();
         await loadStream(streamIndex, parsedStreams, serverList, selectedId);
       } else {
+        // External player - no orientation change
         handleExternalPlayer(parsedStreams[streamIndex], savedPlayer, platformPlayers, serverList, selectedId);
       }
     }
   };
+
+  const setupOrientation = async () => {
+    if (Platform.OS !== 'web') {
+      try {
+        await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
+        StatusBar.setHidden(true);
+      } catch (error) {
+        console.warn("Failed to set orientation:", error);
+      }
+    }
+  };
+
+  const cleanupOrientation = async () => {
+    if (Platform.OS !== 'web') {
+      await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.DEFAULT);
+      StatusBar.setHidden(false);
+    }
+  };
+
 
   const loadDefaultPlayer = () => {
     try {
@@ -480,8 +525,14 @@ const MediaPlayerScreen: React.FC = () => {
         setSelectedPlayer(selectedPlayerName);
 
         if (selectedPlayerName === Players.Default) {
+          // Setup orientation for in-app playback
+          setupOrientation();
+          // Now that we know it's default player, initialize clients
+          initializeClient();
+          checkTraktAuth();
           loadStream(index, undefined, serverList, serverId);
         } else {
+          // External player - no orientation change, no need for clients
           handleExternalPlayer(stream, selectedPlayerName, playersToUse, serverList, serverId);
         }
       }
