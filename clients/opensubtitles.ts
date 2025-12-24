@@ -84,8 +84,11 @@ class OpenSubtitlesClient {
   private getHeaders(): Record<string, string> {
     const headers: Record<string, string> = {
       'User-Agent': this.userAgent,
+      'X-User-Agent': this.userAgent,
       'Content-Type': 'application/json',
     };
+
+    console.log('Headers', headers);
 
     if (this.apiKey) {
       headers['Api-Key'] = this.apiKey;
