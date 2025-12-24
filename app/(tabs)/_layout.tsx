@@ -20,7 +20,7 @@ function TabBarIcon(props: {
 
 // Custom hook for managing Trakt enable state
 export const useTraktEnabled = () => {
-  const [isTraktEnabled, setIsTraktEnabled] = useState<boolean>(true);
+  const [isTraktEnabled, setIsTraktEnabled] = useState<boolean>(false);
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
 
   useEffect(() => {
