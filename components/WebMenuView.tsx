@@ -115,7 +115,7 @@ export const WebMenu: React.FC<WebMenuProps> = ({
                             transform: [{ scale: scaleAnim }],
                         },
                     ]}
-                    pointerEvents="box-none"
+                    pointerEvents="auto"
                 >
                     <View style={styles.menuContent}>
                         <View style={styles.menuHeader}>
@@ -160,6 +160,7 @@ export const WebMenu: React.FC<WebMenuProps> = ({
 const styles = StyleSheet.create({
     container: {
         position: 'relative',
+        zIndex: 1,
     },
     menu: {
         position: 'absolute',
@@ -176,7 +177,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.35,
         shadowRadius: 12,
         elevation: 10,
-        zIndex: 1000,
+        zIndex: 9999,
     },
     menuContent: {
         backgroundColor: '#1c1c1e',
@@ -203,6 +204,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         backgroundColor: '#1c1c1e',
+        cursor: 'pointer' as any,
     },
     menuItemContent: {
         flex: 1,
