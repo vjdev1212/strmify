@@ -191,7 +191,7 @@ function RootLayoutNav() {
             <Stack.Screen
               name="stream/player"
               options={{
-                headerShown: true,
+                headerShown: false,
                 headerTransparent: true,
                 headerBackground: InvisibleHeaderBackground,
                 headerTitle: '',
