@@ -107,7 +107,7 @@ export class StreamingServerClient {
     }
   }
 
-  async getStreamingURL(infoHash: string, fileIdx: number = 0): Promise<string> {
+  async getStreamingURL(infoHash: string, fileIdx: number = -1): Promise<string> {
     console.log('Getting streaming URL:', { infoHash, fileIdx });
 
     const directURL = `${this.baseURL}/${encodeURIComponent(infoHash)}/${encodeURIComponent(fileIdx)}`;

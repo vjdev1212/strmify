@@ -234,7 +234,7 @@ export const styles = StyleSheet.create({
     // Subtitle Display
     subtitleContainer: {
         position: 'absolute',
-        bottom: 18,
+        bottom: 25,
         left: 20,
         right: 20,
         alignItems: 'center',
@@ -259,9 +259,8 @@ export const styles = StyleSheet.create({
 
     subtitleText: {
         color: '#fff',
-        fontSize: 15,
-        fontWeight: '500',
-        letterSpacing: 0.05,
+        fontSize: 16,
+        letterSpacing: 0.3,
         textAlign: 'center',
     },
     // Error Display

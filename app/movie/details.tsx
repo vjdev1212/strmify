@@ -50,6 +50,7 @@ const MovieDetails = () => {
             logo: logo,
             genre: movie.genres.map((genre: any) => genre.name),
             released: movie.release_date,
+            year: movie.release_date?.split('-')[0],
             country: movie.origin_country,
             languages: movie.spoken_languages,
             status: movie.status,
@@ -148,7 +149,14 @@ const MovieDetails = () => {
     }
     router.push({
       pathname: '/stream/list',
-      params: { imdbid: imdbid, type: 'movie', name: data.name, season: 0, episode: 0 },
+      params: {
+        imdbid: imdbid,
+        type: 'movie',
+        name: data.name,
+        title: data.year != null ? `${data.name} (${data.year})`: data.name,
+        season: 0,
+        episode: 0
+      },
     });
   };
 

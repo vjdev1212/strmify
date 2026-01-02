@@ -664,19 +664,9 @@ export const ErrorDisplay: React.FC<{
 
     return (
         <View style={styles.errorContainer}>
-            <TouchableOpacity style={styles.errorBackButton} onPress={onBack}>
-                <Ionicons name="chevron-back" size={28} color="white" />
-            </TouchableOpacity>
-
             <MaterialIcons name="error-outline" size={64} color="#ff6b6b" />
             <Text style={styles.errorTitle}>Playback Error</Text>
             <Text style={styles.errorText}>{error}</Text>
-
-            {onRetry && (
-                <TouchableOpacity style={styles.retryButton} onPress={onRetry}>
-                    <Text style={styles.retryButtonText}>Retry</Text>
-                </TouchableOpacity>
-            )}
         </View>
     );
 };

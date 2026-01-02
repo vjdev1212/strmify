@@ -137,7 +137,7 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
                 hideControls(uiState.setShowControls, animations.controlsOpacity);
             }, CONSTANTS.CONTROLS_AUTO_HIDE_DELAY);
         }
-    }, [playerState.isPlaying, playerState.isBuffering, animations.controlsOpacity, timers, uiState]);   
+    }, [playerState.isPlaying, playerState.isBuffering, animations.controlsOpacity, timers, uiState]);
 
     // Cleanup on unmount
     useEffect(() => {
@@ -558,41 +558,38 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
 
     return (
         <View style={styles.container}>
-            {!playerState.error && (
-                <VLCPlayer
-                    ref={playerRef}
-                    style={[styles.video, {
-                        transform: [{ scale: zoom }]
-                    }]}
-                    source={{
-                        uri: videoUrl,
-                        initType: 2,
-                        initOptions: [
-                            '--no-sub-autodetect-file',
-                            '--no-spu'
-                        ]
-                    }}
-                    autoplay={true}
-                    playInBackground={true}
-                    autoAspectRatio={true}
-                    resizeMode="cover"
-                    textTrack={-1}
-                    acceptInvalidCertificates={true}
-                    rate={settings.playbackSpeed}
-                    muted={settings.isMuted}
-                    audioTrack={settings.selectedAudioTrack}
-                    paused={playerState.isPaused}
-                    onPlaying={vlcHandlers.onPlaying}
-                    onProgress={vlcHandlers.onProgress}
-                    onLoad={vlcHandlers.onLoad}
-                    onBuffering={vlcHandlers.onBuffering}
-                    onPaused={vlcHandlers.onPaused}
-                    onStopped={vlcHandlers.onStopped}
-                    onEnd={vlcHandlers.onEnd}
-                    onError={vlcHandlers.onError}
-                />
-            )}
-
+            <VLCPlayer
+                ref={playerRef}
+                style={[styles.video, {
+                    transform: [{ scale: zoom }]
+                }]}
+                source={{
+                    uri: videoUrl,
+                    initType: 2,
+                    initOptions: [
+                        '--no-sub-autodetect-file',
+                        '--no-spu'
+                    ]
+                }}
+                autoplay={true}
+                playInBackground={true}
+                autoAspectRatio={true}
+                resizeMode="cover"
+                textTrack={-1}
+                acceptInvalidCertificates={true}
+                rate={settings.playbackSpeed}
+                muted={settings.isMuted}
+                audioTrack={settings.selectedAudioTrack}
+                paused={playerState.isPaused}
+                onPlaying={vlcHandlers.onPlaying}
+                onProgress={vlcHandlers.onProgress}
+                onLoad={vlcHandlers.onLoad}
+                onBuffering={vlcHandlers.onBuffering}
+                onPaused={vlcHandlers.onPaused}
+                onStopped={vlcHandlers.onStopped}
+                onEnd={vlcHandlers.onEnd}
+                onError={vlcHandlers.onError}
+            />
             <ErrorDisplay
                 error={playerState.error}
                 onBack={handleBack}
@@ -621,7 +618,7 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
 
             <SubtitleDisplay subtitle={subtitleState.currentSubtitle} error={!!playerState.error} />
 
-            {uiState.showControls && !playerState.error && (
+            {uiState.showControls && (
                 <Animated.View style={[styles.controlsOverlay, { opacity: animations.controlsOpacity }]} pointerEvents="box-none">
                     <View style={styles.topControls}>
                         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
@@ -792,7 +789,7 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
                         isBuffering={playerState.isBuffering}
                         onPlayPause={togglePlayPause}
                         onSkipBackward={() => skipTime(-10)}
-                        onSkipForward={() => skipTime(10)}
+                        onSkipForward={() => skipTime(30)}
                     />
 
                     <View style={styles.bottomControls}>

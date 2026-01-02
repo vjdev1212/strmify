@@ -10,7 +10,6 @@ import React, { useEffect, useState, useRef, useMemo } from "react";
 import { Platform, Linking, ActivityIndicator, View, Text, StyleSheet, Pressable, Image, StatusBar } from "react-native";
 import { ServerConfig } from "@/components/ServerConfig";
 import { useActionSheet } from '@expo/react-native-action-sheet';
-import BottomSheet, { BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StreamingServerClient } from "@/clients/stremio";
 import * as ScreenOrientation from 'expo-screen-orientation';
@@ -61,7 +60,6 @@ const SERVERS_KEY = StorageKeys.SERVERS_KEY;
 const MediaPlayerScreen: React.FC = () => {
   const router = useRouter();
   const navigation = useNavigation();
-  const { showActionSheetWithOptions } = useActionSheet();
 
   const {
     streams: streamsParam,
@@ -103,8 +101,6 @@ const MediaPlayerScreen: React.FC = () => {
   // Bottom sheet state
   const [statusText, setStatusText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const bottomSheetRef = useRef<BottomSheet>(null);
-  const snapPoints = useMemo(() => ['40%', '60%'], []);
 
   // Trakt scrobbling state
   const [isTraktAuthenticated, setIsTraktAuthenticated] = useState(false);
@@ -152,8 +148,6 @@ const MediaPlayerScreen: React.FC = () => {
           setPlayers(platformPlayers);
           const { servers: serverList, selectedId } = fetchServerConfigs();
 
-          // Show player selection immediately
-          showPlayerSelection(parsedStreams[initialIndex], initialIndex, platformPlayers, serverList, selectedId);
         } else {
           // Has saved player - proceed with initialization
           initializePlayerAndSelect(parsedStreams, initialIndex);
@@ -195,7 +189,7 @@ const MediaPlayerScreen: React.FC = () => {
     const { servers: serverList, selectedId } = fetchServerConfigs();
 
     if (!savedPlayer) {
-      showPlayerSelection(parsedStreams[streamIndex], streamIndex, platformPlayers, serverList, selectedId);
+      setSelectedPlayer('Default');
     } else {
       setSelectedPlayer(savedPlayer);
 
@@ -232,7 +226,7 @@ const MediaPlayerScreen: React.FC = () => {
   const loadDefaultPlayer = () => {
     try {
       const savedDefault = storageService.getItem(DEFAULT_MEDIA_PLAYER_KEY);
-      return savedDefault ? JSON.parse(savedDefault) : null;
+      return savedDefault ? JSON.parse(savedDefault) : 'Default';
     } catch (error) {
       console.error('Error loading default player:', error);
       return null;
@@ -316,26 +310,6 @@ const MediaPlayerScreen: React.FC = () => {
     }
   };
 
-  const handleOpenBottomSheet = () => {
-    bottomSheetRef.current?.snapToIndex(1);
-  };
-
-  const handleCloseBottomSheet = () => {
-    bottomSheetRef.current?.close();
-    setTimeout(() => {
-      setStatusText('');
-      setIsProcessing(false);
-    }, 300);
-  };
-
-  const renderBackdrop = (props: any) => (
-    <BottomSheetBackdrop
-      {...props}
-      disappearsOnIndex={-1}
-      appearsOnIndex={0}
-      opacity={0.5}
-    />
-  );
 
   const loadStream = async (
     streamIndex: number,
@@ -376,12 +350,11 @@ const MediaPlayerScreen: React.FC = () => {
 
         setIsTorrent(true);
 
-        // Torrent + Stremio Server + Default Player = Always transcode (force HLS)
-        const fileIdx = type === 'series' ? parseInt(episode as string) : 0;
+
         finalVideoUrl = await generatePlayerUrlWithInfoHash(
           infoHash!,
           selectedServer.serverUrl,
-          fileIdx,
+          -1,
           stremioClient || undefined
         );
       } else {
@@ -415,8 +388,6 @@ const MediaPlayerScreen: React.FC = () => {
     if (isProcessing) return;
 
     setIsProcessing(true);
-    handleOpenBottomSheet();
-
     const { url } = stream;
     const infoHash = getInfoHashFromStream(stream);
     const isTorrentStream = !url && !!infoHash;
@@ -432,7 +403,6 @@ const MediaPlayerScreen: React.FC = () => {
         if (!serverIdToUse || serversToUse.length === 0) {
           setStatusText('Error: Stremio server required for torrent streams');
           showAlert('Error', 'Stremio server is required for torrent streams. Please configure a Stremio server in settings.');
-          handleCloseBottomSheet();
           return;
         }
 
@@ -441,7 +411,6 @@ const MediaPlayerScreen: React.FC = () => {
         if (!selectedServer) {
           setStatusText('Error: Stremio server not found');
           showAlert('Error', 'Stremio server configuration not found');
-          handleCloseBottomSheet();
           return;
         }
 
@@ -457,7 +426,6 @@ const MediaPlayerScreen: React.FC = () => {
       if (!videoUrl) {
         setStatusText('Error: Unable to generate video URL');
         showAlert('Error', 'Unable to generate a valid video URL');
-        handleCloseBottomSheet();
         return;
       }
 
@@ -467,7 +435,6 @@ const MediaPlayerScreen: React.FC = () => {
       if (!player) {
         setStatusText('Error: Invalid Media Player selection');
         showAlert('Error', 'Invalid Media Player selection');
-        handleCloseBottomSheet();
         return;
       }
 
@@ -480,63 +447,15 @@ const MediaPlayerScreen: React.FC = () => {
       await Linking.openURL(playerUrl);
 
       setTimeout(() => {
-        handleCloseBottomSheet();
         router.back();
       }, 1000);
     } catch (error) {
       console.error('Error opening external player:', error);
       setStatusText('Error: Failed to open external player');
       showAlert('Error', 'Failed to open the external player');
-      handleCloseBottomSheet();
     } finally {
       setIsProcessing(false);
     }
-  };
-
-  const showPlayerSelection = (
-    stream: Stream,
-    index: number,
-    playersList?: any[],
-    serverList?: ServerConfig[],
-    serverId?: string | null
-  ) => {
-    const playersToUse = playersList || players;
-    const playerOptions = [...playersToUse.map((player: any) => player.name), 'Cancel'];
-
-    showActionSheetWithOptions(
-      {
-        options: playerOptions,
-        cancelButtonIndex: playerOptions.length - 1,
-        title: 'Media Player',
-        message: 'Select the Media Player for Streaming',
-        messageTextStyle: { color: '#ffffff', fontSize: 12 },
-        textStyle: { color: '#ffffff' },
-        titleTextStyle: { color: '#535aff', fontWeight: 500 },
-        containerStyle: { backgroundColor: '#101010' },
-        userInterfaceStyle: 'dark'
-      },
-      (selectedIndex?: number) => {
-        if (selectedIndex === undefined || selectedIndex === playerOptions.length - 1) {
-          router.back();
-          return;
-        }
-
-        const selectedPlayerName = playersToUse[selectedIndex].name;
-        setSelectedPlayer(selectedPlayerName);
-
-        if (selectedPlayerName === Players.Default) {
-          // Setup orientation for in-app playback
-          setupOrientation();
-          // Now that we know it's default player, initialize clients
-          initializeClient();
-          checkTraktAuth();
-          loadStream(index, undefined, serverList, serverId);
-        } else {
-          // External player - no orientation change, no need for clients
-          handleExternalPlayer(stream, selectedPlayerName, playersToUse, serverList, serverId);
-        }
-      }
-    );
   };
 
   const handleStreamChange = (newIndex: number) => {
@@ -614,8 +533,12 @@ const MediaPlayerScreen: React.FC = () => {
     try {
       setIsLoadingSubtitles(true);
 
+      const searchQuery = (title as string)
+        .replace(/[:|,;.!?'"\/\\@#$%^&*_+=\[\]{}<>~`-]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
       const response = await openSubtitlesClient.searchByFileName(
-        title as string,
+        searchQuery as string,
         ['en'],
         {
           format: 'srt',
@@ -886,34 +809,6 @@ const MediaPlayerScreen: React.FC = () => {
         currentStreamIndex={currentStreamIndex}
         onStreamChange={handleStreamChange}
       />
-
-      <BottomSheet
-        ref={bottomSheetRef}
-        index={-1}
-        snapPoints={snapPoints}
-        enablePanDownToClose={true}
-        backdropComponent={renderBackdrop}
-        backgroundStyle={styles.bottomSheetBackground}
-        handleIndicatorStyle={styles.bottomSheetIndicator}
-        onChange={(index) => {
-          if (index === -1) {
-            setStatusText('');
-            setIsProcessing(false);
-          }
-        }}
-      >
-        <BottomSheetView style={styles.bottomSheetContent}>
-          <View style={styles.statusContainer}>
-            <ActivityIndicator size="large" color="#535aff" style={styles.bottomSheetLoader} />
-            <Text style={styles.statusText}>{statusText}</Text>
-            <Pressable
-              style={styles.cancelButton}
-              onPress={handleCloseBottomSheet}>
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </Pressable>
-          </View>
-        </BottomSheetView>
-      </BottomSheet>
     </GestureHandlerRootView>
   );
 };
