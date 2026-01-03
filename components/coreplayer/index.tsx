@@ -778,12 +778,6 @@ export const ProgressBar: React.FC<{
                         enabled={isReady}
                     />
                 </View>
-
-                {showSpeed && playbackSpeed !== 1.0 && (
-                    <View>
-                        <Text style={styles.speedText}>{playbackSpeed}x</Text>
-                    </View>
-                )}
             </View>
         );
     };
