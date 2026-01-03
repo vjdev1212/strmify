@@ -32,7 +32,7 @@ interface SeasonEpisodeListProps {
 interface EpisodeItemProps {
   item: Episode;
   onEpisodeSelect: (season: number, episode: number) => void;
-  isPortrait: boolean;
+  cardWidth: number;
 }
 
 // Constants
@@ -42,10 +42,20 @@ const SELECTED_SEASON_COLOR = '#535aff';
 const ANIMATION_DURATION = 100;
 const IMAGE_LOAD_DELAY = 100;
 const THUMBNAIL_ASPECT_RATIO = 16 / 9;
-const CARD_WIDTH = 300;
 const CARD_GAP = 16;
 
-const EpisodeItem: React.FC<EpisodeItemProps> = React.memo(({ item, onEpisodeSelect }) => {
+// Function to calculate card width based on screen dimensions
+const getCardWidth = (screenWidth: number, screenHeight: number) => {
+  const isPortrait = screenHeight > screenWidth;
+
+  if (isPortrait) {
+    return 240;
+  } else {
+    return 320;
+  }
+};
+
+const EpisodeItem: React.FC<EpisodeItemProps> = React.memo(({ item, onEpisodeSelect, cardWidth }) => {
   const [selectedEpisode, setSelectedEpisode] = useState<number>(1);
   const [isLoading, setIsLoading] = useState(true);
   const [fadeAnim] = useState(() => new Animated.Value(0));
@@ -177,6 +187,7 @@ const EpisodeItem: React.FC<EpisodeItemProps> = React.memo(({ item, onEpisodeSel
       style={[
         styles.episodeContainer,
         {
+          width: cardWidth,
           transform: [{ scale: scaleAnim }]
         }
       ]}
@@ -217,6 +228,7 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
   // Memoized computed values
   const computedValues = useMemo(() => {
     const isPortrait = height > width;
+    const cardWidth = getCardWidth(width, height);
 
     // Group episodes by season
     const groupedEpisodes = videos.reduce((acc, video) => {
@@ -254,6 +266,7 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
 
     return {
       isPortrait,
+      cardWidth,
       groupedEpisodes,
       seasonData,
       menuActions,
@@ -301,9 +314,9 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
       key={`episode-${episode.season}-${episode.episode || episode.number}-${index}`}
       item={episode}
       onEpisodeSelect={onEpisodeSelect}
-      isPortrait={computedValues.isPortrait}
+      cardWidth={computedValues.cardWidth}
     />
-  ), [onEpisodeSelect, computedValues.isPortrait]);
+  ), [onEpisodeSelect, computedValues.cardWidth]);
 
   // Handle initial selection when videos load
   useEffect(() => {
@@ -440,7 +453,6 @@ const styles = StyleSheet.create({
     gap: CARD_GAP,
   },
   episodeContainer: {
-    width: CARD_WIDTH,
     marginRight: CARD_GAP,
   },
   episodePressable: {
@@ -449,7 +461,6 @@ const styles = StyleSheet.create({
   },
   episodeCard: {
     backgroundColor: 'transparent',
-    borderRadius: 0,
     padding: 0,
   },
   thumbnailContainer: {
@@ -507,7 +518,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   noEpisodesContainer: {
-    width: CARD_WIDTH,
     paddingVertical: 40,
     alignItems: 'center',
   },
@@ -524,7 +534,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     left: 0,
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    backgroundColor: 'rgba(136, 136, 136, 0.5)',
     backdropFilter: 'blur(20px)',
     borderBottomRightRadius: 8,
     paddingHorizontal: 10,
