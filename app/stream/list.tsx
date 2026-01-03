@@ -35,10 +35,11 @@ interface StreamResponse {
 const ADDONS_KEY = StorageKeys.ADDONS_KEY;
 
 const StreamListScreen = () => {
-    const { imdbid, type, name: contentTitle, season, episode } = useLocalSearchParams<{
+    const { imdbid, type, name, title, season, episode } = useLocalSearchParams<{
         imdbid: string;
         type: string;
         name: string;
+        title: string;
         season?: string;
         episode?: string;
         colors?: string;
@@ -176,14 +177,14 @@ const StreamListScreen = () => {
             params: {
                 streams: JSON.stringify(streams),
                 selectedStreamIndex: index.toString(),
-                title: contentTitle,
+                title,
                 imdbid,
                 type,
                 season,
                 episode
             },
         });
-    }, [streams, router, contentTitle, imdbid, type, season, episode]);
+    }, [streams, router, name, imdbid, type, season, episode]);
 
     // Cleanup effect
     useEffect(() => {
@@ -330,7 +331,7 @@ const styles = StyleSheet.create({
     },
     addonBorderContainer: {
         borderBottomWidth: 1,
-        borderColor: 'rgba(83, 90, 255, 0.1)'
+        borderColor: 'rgba(136, 136, 136, 0.1)'
     },
     addonListContainer: {
         marginVertical: 15,

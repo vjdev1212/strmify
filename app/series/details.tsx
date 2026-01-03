@@ -29,7 +29,8 @@ const SeriesDetails = () => {
   const { width, height } = useWindowDimensions();
   const isPortrait = height > width;
   const ref = useRef<ScrollView | null>(null);
-
+  const [season, setSeason] = useState<number>(1);
+  const [episode, setEpisode] = useState<number>(1);
 
   useEffect(() => {
     const fetchDetails = async () => {
@@ -53,7 +54,7 @@ const SeriesDetails = () => {
               season: season.season_number,
               episode: episode.episode_number,
               number: episode.episode_number,
-              thumbnail: `https://image.tmdb.org/t/p/w300/${episode.still_path}`,
+              thumbnail: `https://image.tmdb.org/t/p/w1280/${episode.still_path}`,
               name: episode.name,
               firstAired: episode.air_date,
               overview: episode.overview,
@@ -174,9 +175,20 @@ const SeriesDetails = () => {
   }
 
   const handleEpisodeSelect = (season: number, episode: number) => {
+    setSeason(season);
+    setEpisode(episode);
     router.push({
       pathname: '/stream/list',
-      params: { imdbid: imdbid, tmdbid: moviedbid, type: 'series', name: getFormattedName(data, season, episode), season: season, episode: episode },
+      params: { imdbid: 
+        imdbid, 
+        tmdbid: 
+        moviedbid, 
+        type: 'series', 
+        name: data.name,
+        title: getFormattedName(data, season, episode), 
+        season: season, 
+        episode: episode
+       },
     });
   };
 
@@ -186,7 +198,15 @@ const SeriesDetails = () => {
     }
     router.push({
       pathname: '/stream/list',
-      params: { imdbid: imdbid, tmdbid: moviedbid, type: 'series', name: data.name, season: 1, episode: 1 },
+      params: {
+        imdbid: imdbid,
+        tmdbid: moviedbid,
+        type: 'series',
+        name: data.name,
+        title: getFormattedName(data, season, episode),
+        season: 1,
+        episode: 1
+      },
     });
   };
 
