@@ -824,7 +824,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
-    opacity: 0.2
+    opacity: 0.5
   },
   loadingOverlay: {
     justifyContent: 'center',
