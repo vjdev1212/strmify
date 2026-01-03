@@ -418,7 +418,8 @@ const MediaPlayerScreen: React.FC = () => {
         setStatusText('Generating direct stream URL...');
 
         // Torrent + Stremio Server + External Player = NO transcoding, direct URL
-        const fileIdx = type === 'series' ? parseInt(episode as string) : 0;
+        // const fileIdx = type === 'series' ? parseInt(episode as string) : 0;
+        const fileIdx = -1;
         const directURL = `${selectedServer.serverUrl}/${encodeURIComponent(infoHash!)}/${encodeURIComponent(fileIdx)}`;
         videoUrl = directURL;
       }
