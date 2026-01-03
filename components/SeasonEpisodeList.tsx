@@ -38,12 +38,11 @@ interface EpisodeItemProps {
 // Constants
 const THUMBNAIL_BACKGROUND_COLOR = '#0f0f0f';
 const EPISODE_AIRED_COLOR = '#afafaf';
-const EPISODE_DESCRIPTION_COLOR = '#efefef';
 const SELECTED_SEASON_COLOR = '#535aff';
 const ANIMATION_DURATION = 100;
 const IMAGE_LOAD_DELAY = 100;
 const THUMBNAIL_ASPECT_RATIO = 16 / 9;
-const CARD_WIDTH = 260;
+const CARD_WIDTH = 300;
 const CARD_GAP = 16;
 
 const EpisodeItem: React.FC<EpisodeItemProps> = React.memo(({ item, onEpisodeSelect }) => {
@@ -57,12 +56,10 @@ const EpisodeItem: React.FC<EpisodeItemProps> = React.memo(({ item, onEpisodeSel
   const computedValues = useMemo(() => {
     const episodeTitle = `${item.episode || item.number}. ${item.name || item.title}`;
     const episodeAired = formatDate(item.firstAired) || formatDate(item.released);
-    const episodeDescription = item.description || item.overview;
 
     return {
       episodeTitle,
       episodeAired,
-      episodeDescription,
     };
   }, [item]);
 
@@ -83,7 +80,6 @@ const EpisodeItem: React.FC<EpisodeItemProps> = React.memo(({ item, onEpisodeSel
     ...styles.episodeAired,
     color: EPISODE_AIRED_COLOR,
   }), []);
-
 
   // Memoized callbacks
   const handleImageError = useCallback(() => {
@@ -196,7 +192,7 @@ const EpisodeItem: React.FC<EpisodeItemProps> = React.memo(({ item, onEpisodeSel
             {renderThumbnail()}
           </View>
           <View style={styles.episodeInfo}>
-            <Text style={styles.episodeTitle} numberOfLines={1}>
+            <Text style={styles.episodeTitle} numberOfLines={2}>
               {computedValues.episodeTitle}
             </Text>
             <Text style={episodeAiredStyle}>
@@ -452,9 +448,15 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   episodeCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.02)',
-    borderRadius: 12,
+    backgroundColor: 'transparent',
+    borderRadius: 0,
     padding: 0,
+  },
+  thumbnailContainer: {
+    width: '100%',
+    position: 'relative',
+    borderRadius: 12,
+    overflow: 'hidden',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
     shadowColor: '#000',
@@ -462,22 +464,17 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 3,
-    overflow: 'hidden',
-  },
-  thumbnailContainer: {
-    width: '100%',
-    position: 'relative',
   },
   episodeInfo: {
-    padding: 12,
+    paddingTop: 10,
+    paddingHorizontal: 4,
     gap: 4,
+    backgroundColor: 'transparent',
   },
   thumbnailPlaceHolder: {
     justifyContent: 'center',
     alignItems: 'center',
     aspectRatio: THUMBNAIL_ASPECT_RATIO,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   thumbnail: {
     width: '100%',
