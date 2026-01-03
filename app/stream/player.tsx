@@ -350,11 +350,11 @@ const MediaPlayerScreen: React.FC = () => {
 
         setIsTorrent(true);
 
-
+        const fileIdx = type === 'series' ? parseInt(episode as string) : -1;
         finalVideoUrl = await generatePlayerUrlWithInfoHash(
           infoHash!,
           selectedServer.serverUrl,
-          -1,
+          fileIdx,
           stremioClient || undefined
         );
       } else {

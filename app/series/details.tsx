@@ -179,7 +179,16 @@ const SeriesDetails = () => {
     setEpisode(episode);
     router.push({
       pathname: '/stream/list',
-      params: { imdbid: imdbid, tmdbid: moviedbid, type: 'series', name: getFormattedName(data, season, episode), season: season, episode: episode },
+      params: { imdbid: 
+        imdbid, 
+        tmdbid: 
+        moviedbid, 
+        type: 'series', 
+        name: data.name,
+        title: getFormattedName(data, season, episode), 
+        season: season, 
+        episode: episode
+       },
     });
   };
 
