@@ -54,7 +54,7 @@ const SeriesDetails = () => {
               season: season.season_number,
               episode: episode.episode_number,
               number: episode.episode_number,
-              thumbnail: `https://image.tmdb.org/t/p/w300/${episode.still_path}`,
+              thumbnail: `https://image.tmdb.org/t/p/w1280/${episode.still_path}`,
               name: episode.name,
               firstAired: episode.air_date,
               overview: episode.overview,

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { StyleSheet, Pressable, useWindowDimensions, Animated, TouchableOpacity, Platform } from 'react-native';
+import { StyleSheet, Pressable, useWindowDimensions, Animated, TouchableOpacity, Platform, ScrollView } from 'react-native';
 import { Text, View } from './Themed';
 import * as Haptics from 'expo-haptics';
 import { formatDate } from '@/utils/Date';
@@ -33,43 +33,20 @@ interface EpisodeItemProps {
   item: Episode;
   onEpisodeSelect: (season: number, episode: number) => void;
   isPortrait: boolean;
-  itemWidth: string;
 }
-
-// Device type detection based on screen width
-const getDeviceType = (width: number) => {
-  if (width < 950) return 'mobile';
-  if (width < 1024) return 'tablet';
-  if (width < 1440) return 'laptop';
-  return 'desktop';
-};
-
-// Get number of columns based on device and orientation
-const getColumnsForDevice = (deviceType: string, isPortrait: boolean) => {
-  const columnConfig: any = {
-    mobile: { portrait: 1, landscape: 2 },
-    tablet: { portrait: 2, landscape: 3 },
-    laptop: { portrait: 2, landscape: 3 },
-    desktop: { portrait: 3, landscape: 4 },
-  };
-
-  return columnConfig[deviceType][isPortrait ? 'portrait' : 'landscape'];
-};
 
 // Constants
 const THUMBNAIL_BACKGROUND_COLOR = '#0f0f0f';
 const EPISODE_AIRED_COLOR = '#afafaf';
 const EPISODE_DESCRIPTION_COLOR = '#efefef';
 const SELECTED_SEASON_COLOR = '#535aff';
-const DARK_SEASON_BUTTON_COLOR = '#101010';
-const LIGHT_SEASON_BUTTON_COLOR = '#f0f0f0';
 const ANIMATION_DURATION = 100;
 const IMAGE_LOAD_DELAY = 100;
 const THUMBNAIL_ASPECT_RATIO = 16 / 9;
-const PORTRAIT_THUMBNAIL_HEIGHT = 80;
-const LANDSCAPE_THUMBNAIL_WIDTH = 160;
+const CARD_WIDTH = 260;
+const CARD_GAP = 16;
 
-const EpisodeItem: React.FC<EpisodeItemProps> = React.memo(({ item, onEpisodeSelect, isPortrait, itemWidth }) => {
+const EpisodeItem: React.FC<EpisodeItemProps> = React.memo(({ item, onEpisodeSelect }) => {
   const [selectedEpisode, setSelectedEpisode] = useState<number>(1);
   const [isLoading, setIsLoading] = useState(true);
   const [fadeAnim] = useState(() => new Animated.Value(0));
@@ -78,47 +55,35 @@ const EpisodeItem: React.FC<EpisodeItemProps> = React.memo(({ item, onEpisodeSel
 
   // Memoized computed values
   const computedValues = useMemo(() => {
-    const thumbnailHeight = isPortrait ? PORTRAIT_THUMBNAIL_HEIGHT : null;
-    const thumbnailWidth = isPortrait ? null : LANDSCAPE_THUMBNAIL_WIDTH;
     const episodeTitle = `${item.episode || item.number}. ${item.name || item.title}`;
     const episodeAired = formatDate(item.firstAired) || formatDate(item.released);
     const episodeDescription = item.description || item.overview;
 
     return {
-      thumbnailHeight,
-      thumbnailWidth,
       episodeTitle,
       episodeAired,
       episodeDescription,
     };
-  }, [item, isPortrait]);
+  }, [item]);
 
   // Memoized styles
   const thumbnailStyle = useMemo(() => ({
     ...styles.thumbnail,
     backgroundColor: THUMBNAIL_BACKGROUND_COLOR,
-    height: computedValues.thumbnailHeight,
-    width: computedValues.thumbnailWidth,
     aspectRatio: THUMBNAIL_ASPECT_RATIO,
-  }), [computedValues.thumbnailHeight, computedValues.thumbnailWidth]);
+  }), []);
 
   const placeholderStyle = useMemo(() => ({
     ...styles.thumbnailPlaceHolder,
     backgroundColor: THUMBNAIL_BACKGROUND_COLOR,
-    height: computedValues.thumbnailHeight,
-    width: computedValues.thumbnailWidth,
     aspectRatio: THUMBNAIL_ASPECT_RATIO,
-  }), [computedValues.thumbnailHeight, computedValues.thumbnailWidth]);
+  }), []);
 
   const episodeAiredStyle = useMemo(() => ({
     ...styles.episodeAired,
     color: EPISODE_AIRED_COLOR,
   }), []);
 
-  const episodeDescriptionStyle = useMemo(() => ({
-    ...styles.episodeDescription,
-    color: EPISODE_DESCRIPTION_COLOR,
-  }), []);
 
   // Memoized callbacks
   const handleImageError = useCallback(() => {
@@ -216,7 +181,6 @@ const EpisodeItem: React.FC<EpisodeItemProps> = React.memo(({ item, onEpisodeSel
       style={[
         styles.episodeContainer,
         {
-          width: itemWidth as any,
           transform: [{ scale: scaleAnim }]
         }
       ]}
@@ -228,22 +192,15 @@ const EpisodeItem: React.FC<EpisodeItemProps> = React.memo(({ item, onEpisodeSel
         style={styles.episodePressable}
       >
         <View style={styles.episodeCard}>
-          <View style={styles.episodeRow}>
-            <View style={styles.thumbnailContainer}>
-              {renderThumbnail()}
-            </View>
-            <View style={styles.episodeInfo}>
-              <Text style={styles.episodeTitle} numberOfLines={3}>
-                {computedValues.episodeTitle}
-              </Text>
-              <Text style={episodeAiredStyle}>
-                {computedValues.episodeAired}
-              </Text>
-            </View>
+          <View style={styles.thumbnailContainer}>
+            {renderThumbnail()}
           </View>
-          <View style={styles.descriptionContainer}>
-            <Text style={episodeDescriptionStyle} numberOfLines={3}>
-              {computedValues.episodeDescription}
+          <View style={styles.episodeInfo}>
+            <Text style={styles.episodeTitle} numberOfLines={1}>
+              {computedValues.episodeTitle}
+            </Text>
+            <Text style={episodeAiredStyle}>
+              {computedValues.episodeAired}
             </Text>
           </View>
         </View>
@@ -264,9 +221,6 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
   // Memoized computed values
   const computedValues = useMemo(() => {
     const isPortrait = height > width;
-    const deviceType = getDeviceType(width);
-    const numColumns = getColumnsForDevice(deviceType, isPortrait);
-    const itemWidth = `${(100 / numColumns) - 1.5}%`;
 
     // Group episodes by season
     const groupedEpisodes = videos.reduce((acc, video) => {
@@ -304,9 +258,6 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
 
     return {
       isPortrait,
-      deviceType,
-      numColumns,
-      itemWidth,
       groupedEpisodes,
       seasonData,
       menuActions,
@@ -351,12 +302,12 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
 
   const renderEpisodeItem = useCallback((episode: Episode, index: number) => (
     <EpisodeItem
+      key={`episode-${episode.season}-${episode.episode || episode.number}-${index}`}
       item={episode}
       onEpisodeSelect={onEpisodeSelect}
       isPortrait={computedValues.isPortrait}
-      itemWidth={computedValues.itemWidth}
     />
-  ), [onEpisodeSelect, computedValues.isPortrait, computedValues.itemWidth]);
+  ), [onEpisodeSelect, computedValues.isPortrait]);
 
   // Handle initial selection when videos load
   useEffect(() => {
@@ -426,13 +377,16 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
         )}
       </View>
 
-      <View style={styles.episodeList}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.episodeScrollContent}
+        style={styles.episodeScrollView}
+      >
         {computedValues.groupedEpisodes[selectedSeason]?.length > 0 ? (
-          computedValues.groupedEpisodes[selectedSeason].map((episode, index) => (
-            <React.Fragment key={`episode-${episode.season}-${episode.episode || episode.number}-${index}`}>
-              {renderEpisodeItem(episode, index)}
-            </React.Fragment>
-          ))
+          computedValues.groupedEpisodes[selectedSeason].map((episode, index) =>
+            renderEpisodeItem(episode, index)
+          )
         ) : (
           <View style={styles.noEpisodesContainer}>
             <Text style={styles.noEpisodesText}>
@@ -440,7 +394,7 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
             </Text>
           </View>
         )}
-      </View>
+      </ScrollView>
     </View>
   );
 };
@@ -481,42 +435,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#cccccc',
   },
-  seasonList: {
+  episodeScrollView: {
+    flex: 1,
+  },
+  episodeScrollContent: {
     paddingHorizontal: 20,
-    gap: 12,
-  },
-  seasonSeparator: {
-    width: 12,
-  },
-  seasonButton: {
     paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 24,
-    minWidth: 100,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: 'rgba(0, 0, 0, 0.3)',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  seasonText: {
-    fontSize: 16,
-    letterSpacing: 0.3,
-  },
-  episodeList: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-    alignItems: 'flex-start',
-    flexWrap: 'wrap',
-    gap: 12,
+    gap: CARD_GAP,
   },
   episodeContainer: {
-    marginVertical: 6,
-    alignSelf: 'flex-start',
+    width: CARD_WIDTH,
+    marginRight: CARD_GAP,
   },
   episodePressable: {
     borderRadius: 12,
@@ -525,7 +454,7 @@ const styles = StyleSheet.create({
   episodeCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.02)',
     borderRadius: 12,
-    padding: 12,
+    padding: 0,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
     shadowColor: '#000',
@@ -533,57 +462,40 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 3,
-  },
-  episodeRow: {
-    flexDirection: 'row',
-    marginBottom: 10,
-    alignItems: 'flex-start',
+    overflow: 'hidden',
   },
   thumbnailContainer: {
-    marginRight: 15,
+    width: '100%',
     position: 'relative',
   },
   episodeInfo: {
-    flex: 1,
-    justifyContent: 'flex-start',
-    paddingTop: 2,
-  },
-  descriptionContainer: {
-    width: '100%',
+    padding: 12,
+    gap: 4,
   },
   thumbnailPlaceHolder: {
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 8,
     aspectRatio: THUMBNAIL_ASPECT_RATIO,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   thumbnail: {
-    borderRadius: 8,
+    width: '100%',
+    aspectRatio: THUMBNAIL_ASPECT_RATIO,
   },
   episodeTitle: {
     fontSize: 14,
     fontWeight: '500',
     lineHeight: 18,
     color: '#ffffff',
-    marginBottom: 4,
   },
   episodeAired: {
     fontSize: 12,
     fontWeight: '400',
     letterSpacing: 0.1,
   },
-  episodeDescription: {
-    fontSize: 13,
-    lineHeight: 18,
-    fontWeight: '400',
-    letterSpacing: 0.1,
-    marginTop: 2,
-  },
   skeletonBackground: {
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 8,
     opacity: 1,
   },
   emptyContainer: {
@@ -598,7 +510,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   noEpisodesContainer: {
-    width: '100%',
+    width: CARD_WIDTH,
     paddingVertical: 40,
     alignItems: 'center',
   },
@@ -609,18 +521,17 @@ const styles = StyleSheet.create({
   },
   thumbnailWrapper: {
     position: 'relative',
-    borderRadius: 8,
     overflow: 'hidden',
   },
   episodeNumberOverlay: {
     position: 'absolute',
+    top: 0,
+    left: 0,
     backgroundColor: 'rgba(255, 255, 255, 0.25)',
     backdropFilter: 'blur(20px)',
-    borderRadius: 8,
-    borderBottomLeftRadius: 0,
-    borderTopRightRadius: 0,
+    borderBottomRightRadius: 8,
     paddingHorizontal: 10,
-    paddingVertical: 2,
+    paddingVertical: 4,
     minWidth: 20,
     alignItems: 'center',
     justifyContent: 'center',
@@ -630,7 +541,7 @@ const styles = StyleSheet.create({
   episodeNumberText: {
     color: '#ffffff',
     fontSize: 11,
-    fontWeight: 500,
+    fontWeight: '500',
     textAlign: 'center',
     letterSpacing: 0.5,
     textShadowColor: 'rgba(0, 0, 0, 0.5)',
