@@ -22,6 +22,8 @@ export const CONSTANTS = {
     CONTENT_FIT_OPTIONS: ['contain', 'cover', 'fill'] as const
 };
 
+export type SubtitlePosition = number;
+
 // ==================== TYPES ====================
 
 interface Stream {
@@ -117,7 +119,7 @@ export const usePlayerSettings = () => {
 export const useEnhancedPlayerSettings = () => {
     const baseSettings = usePlayerSettings();
     const [subtitleDelay, setSubtitleDelay] = useState(0);
-    const [subtitlePosition, setSubtitlePosition] = useState<'top' | 'center' | 'bottom'>('bottom');
+    const [subtitlePosition, setSubtitlePosition] = useState<number>(0);
 
     return {
         ...baseSettings,
@@ -250,12 +252,12 @@ export const findActiveSubtitleWithDelay = (
     delay: number = 0
 ): string => {
     if (parsedSubtitles.length === 0) return '';
-    
+
     const adjustedTime = currentTime + (delay / 1000);
     const active = parsedSubtitles.find(
         sub => adjustedTime >= sub.start && adjustedTime <= sub.end
     );
-    
+
     return active?.text || '';
 };
 
@@ -294,7 +296,7 @@ export const performSeek = (
 };
 
 // Menu action builders
-export const buildPlaybackActions = (currentSpeed: number): MenuAction[] => {
+export const buildSettingsActions = (currentSpeed: number): MenuAction[] => {
     const speedActions = CONSTANTS.PLAYBACK_SPEEDS.map(speed => ({
         id: `speed-${speed}`,
         title: `${speed}x`,
@@ -304,8 +306,8 @@ export const buildPlaybackActions = (currentSpeed: number): MenuAction[] => {
 
     return [
         {
-            id: 'playback-speed',
-            title: 'Speed',
+            id: 'settings-playback-speed',
+            title: 'Playback Speed',
             image: Platform.select({
                 ios: 'speedometer',
                 default: undefined,
@@ -353,66 +355,74 @@ export const buildSubtitleTrackActions = (
 };
 
 export const buildSubtitlePositionActions = (
-    currentPosition: 'top' | 'center' | 'bottom'
+    currentPosition: SubtitlePosition
 ): MenuAction[] => {
-    return [
-        {
-            id: 'position-top',
-            title: 'Top',
-            state: currentPosition === 'top' ? ('on' as const) : undefined,
-            titleColor: currentPosition === 'top' ? '#007AFF' : '#FFFFFF',
-        },
-        {
-            id: 'position-center',
-            title: 'Center',
-            state: currentPosition === 'center' ? ('on' as const) : undefined,
-            titleColor: currentPosition === 'center' ? '#007AFF' : '#FFFFFF',
-        },
-        {
-            id: 'position-bottom',
-            title: 'Bottom',
-            state: currentPosition === 'bottom' ? ('on' as const) : undefined,
-            titleColor: currentPosition === 'bottom' ? '#007AFF' : '#FFFFFF',
-        }
-    ];
+    const positions = [0, 1, 2, 3, 4, 5];
+    return positions.map(pos => ({
+        id: `position-${pos}`,
+        title: pos === 0 ? 'Default' : `+${pos}`,
+        state: currentPosition === pos ? ('on' as const) : undefined,
+        titleColor: currentPosition === pos ? '#007AFF' : '#FFFFFF',
+    }));
 };
 
 export const buildSubtitleDelayActions = (currentDelay: number): MenuAction[] => {
+    const delayInSeconds = currentDelay / 1000;
     return [
         {
-            id: 'delay-minus-1000',
-            title: '-1000ms',
+            id: 'delay-minus-5',
+            title: '-5.0s',
             titleColor: '#FFFFFF',
         },
         {
-            id: 'delay-minus-500',
-            title: '-500ms',
+            id: 'delay-minus-2',
+            title: '-2.0s',
             titleColor: '#FFFFFF',
         },
         {
-            id: 'delay-minus-100',
-            title: '-100ms',
+            id: 'delay-minus-1',
+            title: '-1.0s',
+            titleColor: '#FFFFFF',
+        },
+        {
+            id: 'delay-minus-0.5',
+            title: '-0.5s',
+            titleColor: '#FFFFFF',
+        },
+        {
+            id: 'delay-minus-0.1',
+            title: '-0.1s',
             titleColor: '#FFFFFF',
         },
         {
             id: 'delay-reset',
-            title: `Reset (${currentDelay}ms)`,
+            title: `Reset (${delayInSeconds.toFixed(1)}s)`,
             state: currentDelay === 0 ? ('on' as const) : undefined,
             titleColor: '#007AFF',
         },
         {
-            id: 'delay-plus-100',
-            title: '+100ms',
+            id: 'delay-plus-0.1',
+            title: '+0.1s',
             titleColor: '#FFFFFF',
         },
         {
-            id: 'delay-plus-500',
-            title: '+500ms',
+            id: 'delay-plus-0.5',
+            title: '+0.5s',
             titleColor: '#FFFFFF',
         },
         {
-            id: 'delay-plus-1000',
-            title: '+1000ms',
+            id: 'delay-plus-1',
+            title: '+1.0s',
+            titleColor: '#FFFFFF',
+        },
+        {
+            id: 'delay-plus-2',
+            title: '+2.0s',
+            titleColor: '#FFFFFF',
+        },
+        {
+            id: 'delay-plus-5',
+            title: '+5.0s',
             titleColor: '#FFFFFF',
         }
     ];
@@ -423,7 +433,7 @@ export const buildSubtitleActions = (
     selectedIndex: number,
     useCustomSubtitles: boolean,
     availableSubtitleTracks: any[],
-    subtitlePosition: 'top' | 'center' | 'bottom',
+    subtitlePosition: SubtitlePosition,
     subtitleDelay: number
 ): MenuAction[] => {
     const trackActions = buildSubtitleTrackActions(subtitles, selectedIndex, useCustomSubtitles, availableSubtitleTracks);
@@ -460,7 +470,6 @@ export const buildSubtitleActions = (
         }
     ];
 };
-
 
 export const buildStreamActions = (streams: Stream[], currentIndex: number): MenuAction[] => {
     return streams.map((stream, index) => {
@@ -581,31 +590,20 @@ export const ArtworkBackground: React.FC<{
 // Subtitle Display Component with positioning support
 export const SubtitleDisplay: React.FC<{
     subtitle: string;
-    position?: 'top' | 'center' | 'bottom';
+    position?: SubtitlePosition;
     error?: boolean;
-}> = ({ subtitle, position = 'bottom', error }) => {
+}> = ({ subtitle, position = 0, error }) => {
     if (!subtitle || error) return null;
 
     const getPositionStyle = (): any => {
-        switch (position) {
-            case 'top':
-                return {
-                    top: 100,
-                    bottom: undefined,
-                };
-            case 'center':
-                return {
-                    top: '50%',
-                    bottom: undefined,
-                    transform: [{ translateY: -20 }],
-                };
-            case 'bottom':
-            default:
-                return {
-                    top: undefined,
-                    bottom: 25,
-                };
-        }
+        const baseBottom = 25;
+        const offsetPerLevel = 5;
+        const calculatedBottom = baseBottom + (position * offsetPerLevel);
+
+        return {
+            top: undefined,
+            bottom: calculatedBottom,
+        };
     };
 
     return (

@@ -21,7 +21,7 @@ import {
     findActiveSubtitleWithDelay,
     calculateProgress,
     performSeek,
-    buildPlaybackActions,
+    buildSettingsActions,
     buildSubtitleActions,
     buildAudioActions,
     buildStreamActions,
@@ -33,6 +33,7 @@ import {
     ProgressBar,
     ContentFitLabel,
     SubtitleSource,
+    SubtitlePosition,
     ErrorDisplay,
     ExtendedMediaPlayerProps
 } from "../coreplayer";
@@ -88,7 +89,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
     const audioMenuRef = useRef<MenuComponentRef>(null);
     const subtitleMenuRef = useRef<MenuComponentRef>(null);
-    const playbackMenuRef = useRef<MenuComponentRef>(null);
+    const settingsMenuRef = useRef<MenuComponentRef>(null);
     const streamMenuRef = useRef<MenuComponentRef>(null);
 
     // Local state
@@ -481,7 +482,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     }, [playerState, player, bufferOpacity]);
 
     // Menu handlers - stable callbacks
-    const handlePlaybackSelect = useCallback(async (speed: number) => {
+    const handlePlaybackSpeedSelect = useCallback(async (speed: number) => {
         await playHaptic();
         settings.setPlaybackSpeed(speed);
         showControlsTemporarily();
@@ -497,7 +498,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         }
     }, [useCustomSubtitles, player, settings]);
 
-    const handleSubtitlePositionSelect = useCallback(async (position: 'top' | 'center' | 'bottom') => {
+    const handleSubtitlePositionSelect = useCallback(async (position: SubtitlePosition) => {
         await playHaptic();
         settings.setSubtitlePosition(position);
         showControlsTemporarily();
@@ -534,7 +535,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     }, [contentFit]);
 
     // Memoize menu actions to prevent rebuilding on every render
-    const playbackActions = useMemo(() => buildPlaybackActions(settings.playbackSpeed), [settings.playbackSpeed]);
+    const settingsActions = useMemo(() => buildSettingsActions(settings.playbackSpeed), [settings.playbackSpeed]);
     const subtitleActions = useMemo(() => buildSubtitleActions(
         subtitles as SubtitleSource[],
         settings.selectedSubtitle,
@@ -577,7 +578,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         // Playback speed
         if (id.startsWith('speed-')) {
             const speed = parseFloat(id.split('-')[1]);
-            if (!isNaN(speed)) handlePlaybackSelect(speed);
+            if (!isNaN(speed)) handlePlaybackSpeedSelect(speed);
         }
         // Subtitle track
         else if (id === 'subtitle-track-off') {
@@ -589,18 +590,25 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         }
         // Subtitle position
         else if (id.startsWith('position-')) {
-            const position = id.split('-')[1] as 'top' | 'center' | 'bottom';
-            handleSubtitlePositionSelect(position);
+            const position = parseInt(id.split('-')[1]);
+            if (!isNaN(position)) handleSubtitlePositionSelect(position);
         }
         // Subtitle delay
         else if (id === 'delay-reset') {
             handleSubtitleDelaySelect(0);
         }
-        else if (id.startsWith('delay-')) {
-            const delayPart = id.replace('delay-', '');
-            const delay = parseInt(delayPart);
-            if (!isNaN(delay)) {
-                handleSubtitleDelaySelect(delay);
+        else if (id.startsWith('delay-minus-')) {
+            const delayPart = id.replace('delay-minus-', '');
+            const delaySeconds = parseFloat(delayPart);
+            if (!isNaN(delaySeconds)) {
+                handleSubtitleDelaySelect(-delaySeconds * 1000); // Convert to ms
+            }
+        }
+        else if (id.startsWith('delay-plus-')) {
+            const delayPart = id.replace('delay-plus-', '');
+            const delaySeconds = parseFloat(delayPart);
+            if (!isNaN(delaySeconds)) {
+                handleSubtitleDelaySelect(delaySeconds * 1000); // Convert to ms
             }
         }
         // Audio track
@@ -613,7 +621,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
             const index = parseInt(id.split('-')[1]);
             if (!isNaN(index)) handleStreamSelect(index);
         }
-    }, [handlePlaybackSelect, handleSubtitleTrackSelect, handleSubtitlePositionSelect, handleSubtitleDelaySelect, handleAudioSelect, handleStreamSelect]);
+    }, [handlePlaybackSpeedSelect, handleSubtitleTrackSelect, handleSubtitlePositionSelect, handleSubtitleDelaySelect, handleAudioSelect, handleStreamSelect]);
 
     const handleWebAction = useCallback((id: string) => {
         handleMenuAction(id);
@@ -777,13 +785,13 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                                 </MenuWrapper>
                             )}
 
-                            {/* Playback Menu - Contains Speed as nested item */}
+                            {/* Settings Menu - Contains Playback Speed as nested item */}
                             <MenuWrapper
                                 style={{ zIndex: 1000 }}
-                                title="Playback"
-                                ref={playbackMenuRef}
+                                title="Settings"
+                                ref={settingsMenuRef}
                                 onPressAction={Platform.OS === 'web' ? handleWebAction : handleNativeAction}
-                                actions={playbackActions}
+                                actions={settingsActions}
                                 shouldOpenOnLongPress={false}
                                 themeVariant="dark"
                                 onOpenMenu={handleMenuOpen}
@@ -791,10 +799,10 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                             >
                                 <TouchableOpacity style={styles.controlButton} onPress={() => {
                                     if (Platform.OS === 'android') {
-                                        playbackMenuRef.current?.show();
+                                        settingsMenuRef.current?.show();
                                     }
                                 }}>
-                                    <MaterialIcons name="tune" size={24} color="white" />
+                                    <MaterialIcons name="settings" size={24} color="white" />
                                 </TouchableOpacity>
                             </MenuWrapper>
                         </View>
