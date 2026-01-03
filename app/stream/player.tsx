@@ -350,7 +350,7 @@ const MediaPlayerScreen: React.FC = () => {
 
         setIsTorrent(true);
 
-        const fileIdx = type === 'series' ? parseInt(episode as string) : -1;
+        const fileIdx = type === 'series' ? parseInt(episode as string) - 1 : -1;
         finalVideoUrl = await generatePlayerUrlWithInfoHash(
           infoHash!,
           selectedServer.serverUrl,
