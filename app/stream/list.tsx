@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
     },
     addonBorderContainer: {
         borderBottomWidth: 1,
-        borderColor: 'rgba(83, 90, 255, 0.1)'
+        borderColor: 'rgba(136, 136, 136, 0.1)'
     },
     addonListContainer: {
         marginVertical: 15,

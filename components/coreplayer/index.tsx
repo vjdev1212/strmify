@@ -375,8 +375,23 @@ export const buildSubtitleDelayActions = (currentDelay: number): MenuAction[] =>
             titleColor: '#FFFFFF',
         },
         {
+            id: 'delay-minus-4',
+            title: '-4.0s',
+            titleColor: '#FFFFFF',
+        },
+        {
+            id: 'delay-minus-3',
+            title: '-3.0s',
+            titleColor: '#FFFFFF',
+        },
+        {
             id: 'delay-minus-2',
             title: '-2.0s',
+            titleColor: '#FFFFFF',
+        },
+        {
+            id: 'delay-minus-1.5',
+            title: '-1.5s',
             titleColor: '#FFFFFF',
         },
         {
@@ -385,8 +400,18 @@ export const buildSubtitleDelayActions = (currentDelay: number): MenuAction[] =>
             titleColor: '#FFFFFF',
         },
         {
+            id: 'delay-minus-0.75',
+            title: '-0.75s',
+            titleColor: '#FFFFFF',
+        },
+        {
             id: 'delay-minus-0.5',
             title: '-0.5s',
+            titleColor: '#FFFFFF',
+        },
+        {
+            id: 'delay-minus-0.25',
+            title: '-0.25s',
             titleColor: '#FFFFFF',
         },
         {
@@ -406,8 +431,18 @@ export const buildSubtitleDelayActions = (currentDelay: number): MenuAction[] =>
             titleColor: '#FFFFFF',
         },
         {
+            id: 'delay-plus-0.25',
+            title: '+0.25s',
+            titleColor: '#FFFFFF',
+        },
+        {
             id: 'delay-plus-0.5',
             title: '+0.5s',
+            titleColor: '#FFFFFF',
+        },
+        {
+            id: 'delay-plus-0.75',
+            title: '+0.75s',
             titleColor: '#FFFFFF',
         },
         {
@@ -416,8 +451,23 @@ export const buildSubtitleDelayActions = (currentDelay: number): MenuAction[] =>
             titleColor: '#FFFFFF',
         },
         {
+            id: 'delay-plus-1.5',
+            title: '+1.5s',
+            titleColor: '#FFFFFF',
+        },
+        {
             id: 'delay-plus-2',
             title: '+2.0s',
+            titleColor: '#FFFFFF',
+        },
+        {
+            id: 'delay-plus-3',
+            title: '+3.0s',
+            titleColor: '#FFFFFF',
+        },
+        {
+            id: 'delay-plus-4',
+            title: '+4.0s',
             titleColor: '#FFFFFF',
         },
         {
