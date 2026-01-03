@@ -537,6 +537,9 @@ const MediaPlayerScreen: React.FC = () => {
         .replace(/[:|,;.!?'"\/\\@#$%^&*_+=\[\]{}<>~`-]/g, '')
         .replace(/\s+/g, ' ')
         .trim();
+
+      console.log('Subtitle Query', searchQuery);
+
       const response = await openSubtitlesClient.searchByFileName(
         searchQuery as string,
         ['en'],
