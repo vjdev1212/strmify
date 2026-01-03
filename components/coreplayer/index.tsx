@@ -113,6 +113,21 @@ export const usePlayerSettings = () => {
     };
 };
 
+// Enhanced player settings hook with subtitle positioning and delay
+export const useEnhancedPlayerSettings = () => {
+    const baseSettings = usePlayerSettings();
+    const [subtitleDelay, setSubtitleDelay] = useState(0);
+    const [subtitlePosition, setSubtitlePosition] = useState<'top' | 'center' | 'bottom'>('bottom');
+
+    return {
+        ...baseSettings,
+        subtitleDelay,
+        setSubtitleDelay,
+        subtitlePosition,
+        setSubtitlePosition
+    };
+};
+
 // Common timer management hook
 export const useTimers = () => {
     const timersRef = useRef<{
@@ -228,6 +243,22 @@ export const findActiveSubtitle = (
     return active?.text || '';
 };
 
+// Enhanced subtitle finding with delay support
+export const findActiveSubtitleWithDelay = (
+    currentTime: number,
+    parsedSubtitles: any[],
+    delay: number = 0
+): string => {
+    if (parsedSubtitles.length === 0) return '';
+    
+    const adjustedTime = currentTime + (delay / 1000);
+    const active = parsedSubtitles.find(
+        sub => adjustedTime >= sub.start && adjustedTime <= sub.end
+    );
+    
+    return active?.text || '';
+};
+
 // Controls visibility management
 export const hideControls = (
     setShowControls: (show: boolean) => void,
@@ -263,23 +294,35 @@ export const performSeek = (
 };
 
 // Menu action builders
-export const buildSpeedActions = (currentSpeed: number) => {
-    return CONSTANTS.PLAYBACK_SPEEDS.map(speed => ({
+export const buildPlaybackActions = (currentSpeed: number): MenuAction[] => {
+    const speedActions = CONSTANTS.PLAYBACK_SPEEDS.map(speed => ({
         id: `speed-${speed}`,
         title: `${speed}x`,
         state: currentSpeed === speed ? ('on' as const) : undefined,
         titleColor: currentSpeed === speed ? '#007AFF' : '#FFFFFF',
     }));
+
+    return [
+        {
+            id: 'playback-speed',
+            title: 'Speed',
+            image: Platform.select({
+                ios: 'speedometer',
+                default: undefined,
+            }),
+            subactions: speedActions,
+        }
+    ];
 };
 
-export const buildSubtitleActions = (
+export const buildSubtitleTrackActions = (
     subtitles: SubtitleSource[],
     selectedIndex: number,
     useCustomSubtitles: boolean,
     availableSubtitleTracks?: any[]
-) => {
+): MenuAction[] => {
     const offAction = {
-        id: 'subtitle-off',
+        id: 'subtitle-track-off',
         title: 'Off',
         state: selectedIndex === -1 ? ('on' as const) : undefined,
         titleColor: selectedIndex === -1 ? '#007AFF' : '#FFFFFF',
@@ -289,7 +332,7 @@ export const buildSubtitleActions = (
         return [
             offAction,
             ...subtitles.map((sub, i) => ({
-                id: `subtitle-${i}`,
+                id: `subtitle-track-${i}`,
                 title: sub.label,
                 subtitle: sub.language ? `OpenSubtitles - ${sub.language.toUpperCase()}` : undefined,
                 state: selectedIndex === i ? ('on' as const) : undefined,
@@ -301,13 +344,123 @@ export const buildSubtitleActions = (
     return [
         offAction,
         ...(availableSubtitleTracks || []).map((sub, i) => ({
-            id: `subtitle-${i}`,
+            id: `subtitle-track-${i}`,
             title: sub.label,
             state: selectedIndex === i ? ('on' as const) : undefined,
             titleColor: selectedIndex === i ? '#007AFF' : '#FFFFFF',
         }))
     ];
 };
+
+export const buildSubtitlePositionActions = (
+    currentPosition: 'top' | 'center' | 'bottom'
+): MenuAction[] => {
+    return [
+        {
+            id: 'position-top',
+            title: 'Top',
+            state: currentPosition === 'top' ? ('on' as const) : undefined,
+            titleColor: currentPosition === 'top' ? '#007AFF' : '#FFFFFF',
+        },
+        {
+            id: 'position-center',
+            title: 'Center',
+            state: currentPosition === 'center' ? ('on' as const) : undefined,
+            titleColor: currentPosition === 'center' ? '#007AFF' : '#FFFFFF',
+        },
+        {
+            id: 'position-bottom',
+            title: 'Bottom',
+            state: currentPosition === 'bottom' ? ('on' as const) : undefined,
+            titleColor: currentPosition === 'bottom' ? '#007AFF' : '#FFFFFF',
+        }
+    ];
+};
+
+export const buildSubtitleDelayActions = (currentDelay: number): MenuAction[] => {
+    return [
+        {
+            id: 'delay-minus-1000',
+            title: '-1000ms',
+            titleColor: '#FFFFFF',
+        },
+        {
+            id: 'delay-minus-500',
+            title: '-500ms',
+            titleColor: '#FFFFFF',
+        },
+        {
+            id: 'delay-minus-100',
+            title: '-100ms',
+            titleColor: '#FFFFFF',
+        },
+        {
+            id: 'delay-reset',
+            title: `Reset (${currentDelay}ms)`,
+            state: currentDelay === 0 ? ('on' as const) : undefined,
+            titleColor: '#007AFF',
+        },
+        {
+            id: 'delay-plus-100',
+            title: '+100ms',
+            titleColor: '#FFFFFF',
+        },
+        {
+            id: 'delay-plus-500',
+            title: '+500ms',
+            titleColor: '#FFFFFF',
+        },
+        {
+            id: 'delay-plus-1000',
+            title: '+1000ms',
+            titleColor: '#FFFFFF',
+        }
+    ];
+};
+
+export const buildSubtitleActions = (
+    subtitles: SubtitleSource[],
+    selectedIndex: number,
+    useCustomSubtitles: boolean,
+    availableSubtitleTracks: any[],
+    subtitlePosition: 'top' | 'center' | 'bottom',
+    subtitleDelay: number
+): MenuAction[] => {
+    const trackActions = buildSubtitleTrackActions(subtitles, selectedIndex, useCustomSubtitles, availableSubtitleTracks);
+    const positionActions = buildSubtitlePositionActions(subtitlePosition);
+    const delayActions = buildSubtitleDelayActions(subtitleDelay);
+
+    return [
+        {
+            id: 'subtitle-tracks',
+            title: 'Tracks',
+            image: Platform.select({
+                ios: 'text.bubble',
+                default: undefined,
+            }),
+            subactions: trackActions,
+        },
+        {
+            id: 'subtitle-position',
+            title: 'Position',
+            image: Platform.select({
+                ios: 'arrow.up.and.down',
+                default: undefined,
+            }),
+            subactions: positionActions,
+        },
+        {
+            id: 'subtitle-delay',
+            title: 'Delay',
+            image: Platform.select({
+                ios: 'clock',
+                default: undefined,
+            }),
+            subactions: delayActions,
+        }
+    ];
+};
+
 
 export const buildStreamActions = (streams: Stream[], currentIndex: number): MenuAction[] => {
     return streams.map((stream, index) => {
@@ -345,8 +498,6 @@ export const buildStreamActions = (streams: Stream[], currentIndex: number): Men
         };
     });
 };
-
-
 
 export const buildAudioActions = (
     audioTracks: any[],
@@ -427,15 +578,38 @@ export const ArtworkBackground: React.FC<{
     );
 };
 
-// Subtitle Display Component
+// Subtitle Display Component with positioning support
 export const SubtitleDisplay: React.FC<{
     subtitle: string;
+    position?: 'top' | 'center' | 'bottom';
     error?: boolean;
-}> = ({ subtitle, error }) => {
+}> = ({ subtitle, position = 'bottom', error }) => {
     if (!subtitle || error) return null;
 
+    const getPositionStyle = (): any => {
+        switch (position) {
+            case 'top':
+                return {
+                    top: 100,
+                    bottom: undefined,
+                };
+            case 'center':
+                return {
+                    top: '50%',
+                    bottom: undefined,
+                    transform: [{ translateY: -20 }],
+                };
+            case 'bottom':
+            default:
+                return {
+                    top: undefined,
+                    bottom: 25,
+                };
+        }
+    };
+
     return (
-        <View style={styles.subtitleContainer} pointerEvents="none">
+        <View style={[styles.subtitleContainer, getPositionStyle()]} pointerEvents="none">
             <View style={styles.subtitleBackground}>
                 <BlurView intensity={60} tint="light" style={styles.blurView}>
                     <LinearGradient
@@ -509,7 +683,6 @@ export const CenterControls: React.FC<{
         </View>
     );
 };
-
 
 // Progress Bar Component
 export const ProgressBar: React.FC<{
