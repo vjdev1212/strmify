@@ -312,6 +312,7 @@ export const buildSettingsActions = (currentSpeed: number): MenuAction[] => {
                 ios: 'speedometer',
                 default: undefined,
             }),
+            imageColor: '#ffffff',
             subactions: speedActions,
         }
     ];
@@ -403,6 +404,7 @@ export const buildSubtitleActions = (
                 ios: 'text.bubble',
                 default: undefined,
             }),
+            imageColor: '#ffffff',
             subactions: trackActions,
         },
         {
@@ -412,6 +414,7 @@ export const buildSubtitleActions = (
                 ios: 'arrow.up.and.down',
                 default: undefined,
             }),
+            imageColor: '#ffffff',
             subactions: positionActions,
         },
         {
@@ -421,6 +424,7 @@ export const buildSubtitleActions = (
                 ios: 'clock',
                 default: undefined,
             }),
+            imageColor: '#ffffff',
             subactions: delayActions,
         }
     ];
