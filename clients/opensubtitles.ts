@@ -70,10 +70,14 @@ export interface SearchOptions {
 class OpenSubtitlesClient {
   private baseURL = 'https://api.opensubtitles.com/api/v1';
   private userAgent: string = process.env.EXPO_PUBLIC_OPENSUBTITLES_USER_AGENT || 'Strmify v1.0.0';
-  private apiKey: string = process.env.EXPO_PUBLIC_OPENSUBTITLES_API_KEY || '';
+  private apiKey: string;
 
   constructor(customApiKey: string | undefined) {
-    this.apiKey = customApiKey || this.apiKey;
+    if (customApiKey === undefined) {
+      this.apiKey = process.env.EXPO_PUBLIC_OPENSUBTITLES_API_KEY || '';
+    } else {
+      this.apiKey = customApiKey;
+    }
   }
 
   // Get headers for API requests
@@ -84,12 +88,9 @@ class OpenSubtitlesClient {
       'Content-Type': 'application/json',
     };
 
-    console.log('Headers', headers);
-
-    if (this.apiKey) {
+    if (this.apiKey && this.apiKey.trim() !== '') {
       headers['Api-Key'] = this.apiKey;
     }
-
     return headers;
   }
 
