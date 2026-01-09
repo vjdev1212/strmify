@@ -97,9 +97,6 @@ const EpisodeItem: React.FC<EpisodeItemProps> = React.memo(({ item, onEpisodeSel
   }, []);
 
   const handleEpisodeSelect = useCallback(async (season: number, episode: number) => {
-    if (isHapticsSupported()) {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
     setSelectedEpisode(episode);
     onEpisodeSelect(season, episode);
   }, [onEpisodeSelect]);
@@ -276,17 +273,11 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
 
   // Memoized callbacks
   const handleSeasonSelect = useCallback(async (season: number) => {
-    if (isHapticsSupported()) {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
     setSelectedSeason(season);
     setWebMenuVisible(false);
   }, []);
 
   const handleMenuPress = useCallback(async ({ nativeEvent }: any) => {
-    if (isHapticsSupported()) {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
     const actionId = nativeEvent.event;
     const seasonMatch = actionId.match(/season-(\d+)/);
     if (seasonMatch) {
@@ -298,9 +289,6 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
   // Web dropdown handlers for CustomContextMenu
   const handleWebSeasonDropdownPress = useCallback(async (event: any) => {
     const { pageX, pageY } = event.nativeEvent;
-    if (isHapticsSupported()) {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
     setAnchorPosition({ x: pageX, y: pageY });
     setWebMenuVisible(true);
   }, []);

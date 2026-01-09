@@ -121,9 +121,6 @@ export default function HomeScreen() {
   }, [filter, allLists, movieLists, seriesLists]);
 
   const handleFilterChange = async (newFilter: 'all' | 'movies' | 'series') => {
-    if (isHapticsSupported()) {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
     setFilter(newFilter);
   };
 

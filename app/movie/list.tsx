@@ -76,9 +76,6 @@ const MoviesList = () => {
     const year = item.year?.split('–')[0] || item.year;
 
     const handlePress = async () => {
-      if (isHapticsSupported()) {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      }
       router.push({
         pathname: '/movie/details',
         params: { moviedbid: item.moviedbid || item.id },

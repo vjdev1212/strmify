@@ -93,9 +93,6 @@ const SettingsScreen = () => {
   };
 
   const onSettingsItemPress = async (item: any) => {
-    if (isHapticsSupported()) {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
     router.push({ pathname: item.route });
   }
 

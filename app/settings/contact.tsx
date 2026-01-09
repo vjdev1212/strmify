@@ -27,9 +27,6 @@ const ContactScreen = () => {
             icon: 'form',
             iconLibrary: 'AntDesign',
             action: async () => {
-                if (isHapticsSupported()) {
-                    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }
                 Linking.openURL(feedbackUrl);
             },
         },
@@ -39,9 +36,6 @@ const ContactScreen = () => {
             icon: 'bug-outline',
             iconLibrary: 'Ionicons',
             action: async () => {
-                if (isHapticsSupported()) {
-                    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }
                 Linking.openURL(reportBugUrl);
             },
         }        

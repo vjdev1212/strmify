@@ -59,9 +59,6 @@ const SearchScreen = () => {
   }, [query, urls]);
 
   const clearSearch = useCallback(async () => {
-    if (isHapticsSupported()) {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
     setQuery('');
   }, []);
 

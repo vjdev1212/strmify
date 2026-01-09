@@ -193,9 +193,6 @@ const SeriesDetails = () => {
   };
 
   const handlePlayPress = async () => {
-    if (isHapticsSupported()) {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
     router.push({
       pathname: '/stream/list',
       params: {
