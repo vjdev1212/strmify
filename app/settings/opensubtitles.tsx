@@ -23,6 +23,7 @@ import BottomSpacing from '@/components/BottomSpacing';
 
 const OpenSubtitlesConfigScreen: React.FC = () => {
     const [apiKey, setApiKey] = useState('');
+    const [useDefaultKey, setUseDefaultKey] = useState(true);
     const [selectedLanguages, setSelectedLanguages] = useState<string[]>(['en']);
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -38,9 +39,14 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
             const savedApiKey = storageService.getItem(StorageKeys.OPENSUBTITLES_API_KEY);
             const savedLanguages = storageService.getItem(StorageKeys.SUBTITLE_LANGUAGES_KEY);
 
-            if (savedApiKey) {
+            if (savedApiKey === undefined || savedApiKey === null || savedApiKey === '') {
+                setUseDefaultKey(true);
+                setApiKey('');
+            } else {
+                setUseDefaultKey(false);
                 setApiKey(savedApiKey);
             }
+
             if (savedLanguages) {
                 try {
                     const languages = JSON.parse(savedLanguages);
@@ -90,13 +96,26 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
         setSelectedLanguages(prev => prev.filter(code => code !== languageCode));
     };
 
+    const toggleApiKeyMode = async () => {
+        if (isHapticsSupported()) {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+
+        const newUseDefault = !useDefaultKey;
+        setUseDefaultKey(newUseDefault);
+        
+        if (newUseDefault) {
+            setApiKey('');
+        }
+    };
+
     const saveConfiguration = async () => {
         if (isHapticsSupported()) {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
 
-        if (!apiKey.trim()) {
-            showAlert('Error', 'Please enter an API key');
+        if (!useDefaultKey && !apiKey.trim()) {
+            showAlert('Error', 'Please enter an API key or use the default key');
             return;
         }
 
@@ -108,7 +127,13 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
         setIsSaving(true);
 
         try {
-            storageService.setItem(StorageKeys.OPENSUBTITLES_API_KEY, apiKey.trim());
+            if (useDefaultKey) {
+                // Set to undefined to use default/built-in key
+                storageService.removeItem(StorageKeys.OPENSUBTITLES_API_KEY);
+            } else {
+                storageService.setItem(StorageKeys.OPENSUBTITLES_API_KEY, apiKey.trim());
+            }
+            
             storageService.setItem(StorageKeys.SUBTITLE_LANGUAGES_KEY, JSON.stringify(selectedLanguages));
 
             showAlert('Configuration Saved', 'Your OpenSubtitles configuration has been saved successfully.');
@@ -133,6 +158,7 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
                         storageService.removeItem(StorageKeys.OPENSUBTITLES_API_KEY);
                         storageService.removeItem(StorageKeys.SUBTITLE_LANGUAGES_KEY);
                         setApiKey('');
+                        setUseDefaultKey(true);
                         setSelectedLanguages(['en']);
                         showAlert('Success', 'Configuration cleared successfully');
                     } catch (error) {
@@ -239,33 +265,71 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
 
                     <View style={styles.form}>
                         <View style={styles.inputGroup}>
-                            <Text style={styles.label}>API Key *</Text>
-                            <View style={styles.passwordContainer}>
-                                <TextInput
-                                    style={[styles.input, styles.passwordInput]}
-                                    value={apiKey}
-                                    onChangeText={setApiKey}
-                                    placeholder="Enter your OpenSubtitles API key"
-                                    placeholderTextColor="#aaa"
-                                    secureTextEntry={!showApiKey}
-                                    autoCapitalize="none"
-                                    autoCorrect={false}
-                                    submitBehavior='blurAndSubmit'
-                                />
-                                <TouchableOpacity
-                                    style={styles.eyeButton}
-                                    onPress={() => setShowApiKey(!showApiKey)}
-                                >
-                                    <Ionicons
-                                        name={showApiKey ? 'eye-off-outline' : 'eye-outline'}
-                                        size={20}
-                                        color="#bbb"
-                                    />
-                                </TouchableOpacity>
-                            </View>
-                            <Text style={styles.helpText}>
-                                Get your API key from OpenSubtitles.com account settings
-                            </Text>
+                            <Text style={styles.label}>API Key</Text>
+                            
+                            <TouchableOpacity 
+                                style={styles.toggleContainer}
+                                onPress={toggleApiKeyMode}
+                            >
+                                <View style={styles.toggleOption}>
+                                    <View style={[
+                                        styles.radioButton,
+                                        useDefaultKey && styles.radioButtonSelected
+                                    ]}>
+                                        {useDefaultKey && <View style={styles.radioButtonInner} />}
+                                    </View>
+                                    <Text style={styles.toggleText}>Default</Text>
+                                </View>
+                                <View style={styles.toggleOption}>
+                                    <View style={[
+                                        styles.radioButton,
+                                        !useDefaultKey && styles.radioButtonSelected
+                                    ]}>
+                                        {!useDefaultKey && <View style={styles.radioButtonInner} />}
+                                    </View>
+                                    <Text style={styles.toggleText}>Custom API Key</Text>
+                                </View>
+                            </TouchableOpacity>
+
+                            {!useDefaultKey && (
+                                <>
+                                    <View style={styles.passwordContainer}>
+                                        <TextInput
+                                            style={[styles.input, styles.passwordInput]}
+                                            value={apiKey}
+                                            onChangeText={setApiKey}
+                                            placeholder="Enter your OpenSubtitles API key"
+                                            placeholderTextColor="#aaa"
+                                            secureTextEntry={!showApiKey}
+                                            autoCapitalize="none"
+                                            autoCorrect={false}
+                                            submitBehavior='blurAndSubmit'
+                                        />
+                                        <TouchableOpacity
+                                            style={styles.eyeButton}
+                                            onPress={() => setShowApiKey(!showApiKey)}
+                                        >
+                                            <Ionicons
+                                                name={showApiKey ? 'eye-off-outline' : 'eye-outline'}
+                                                size={20}
+                                                color="#bbb"
+                                            />
+                                        </TouchableOpacity>
+                                    </View>
+                                    <Text style={styles.helpText}>
+                                        Get your API key from OpenSubtitles.com account settings
+                                    </Text>
+                                </>
+                            )}
+                            
+                            {useDefaultKey && (
+                                <View style={styles.infoBox}>
+                                    <Ionicons name="information-circle-outline" size={18} color="#535aff" />
+                                    <Text style={styles.infoText}>
+                                        Using the default API key for OpenSubtitles (Rate-Limited)
+                                    </Text>
+                                </View>
+                            )}
                         </View>
 
                         <View style={styles.inputGroup}>
@@ -313,10 +377,10 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
                                 style={[
                                     styles.button,
                                     styles.saveButton,
-                                    !apiKey.trim() && styles.disabledButton,
+                                    (!useDefaultKey && !apiKey.trim()) && styles.disabledButton,
                                 ]}
                                 onPress={saveConfiguration}
-                                disabled={isSaving || !apiKey.trim()}
+                                disabled={isSaving || (!useDefaultKey && !apiKey.trim())}
                             >
                                 {isSaving ? (
                                     <ActivityIndicator size="small" color="#FFF" />
@@ -391,6 +455,44 @@ const styles = StyleSheet.create({
         color: '#fff',
         marginBottom: 10,
     },
+    toggleContainer: {
+        flexDirection: 'row',
+        gap: 20,
+        marginBottom: 12,
+        padding: 12,
+        backgroundColor: '#202020',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#303030',
+    },
+    toggleOption: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    radioButton: {
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        borderWidth: 2,
+        borderColor: '#777777',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    radioButtonSelected: {
+        borderColor: '#535aff',
+    },
+    radioButtonInner: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+        backgroundColor: '#535aff',
+    },
+    toggleText: {
+        fontSize: 14,
+        color: '#fff',
+        fontWeight: '500',
+    },
     input: {
         borderRadius: 8,
         padding: 12,
@@ -415,6 +517,23 @@ const styles = StyleSheet.create({
         color: '#aaa',
         marginTop: 10,
         lineHeight: 16,
+    },
+    infoBox: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        padding: 12,
+        backgroundColor: 'rgba(83, 90, 255, 0.1)',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: 'rgba(83, 90, 255, 0.3)',
+        marginTop: 12,
+    },
+    infoText: {
+        flex: 1,
+        fontSize: 13,
+        color: '#bbb',
+        lineHeight: 18,
     },
     menuButton: {
         flexDirection: 'row',
@@ -502,4 +621,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default OpenSubtitlesConfigScreen
+export default OpenSubtitlesConfigScreen;
