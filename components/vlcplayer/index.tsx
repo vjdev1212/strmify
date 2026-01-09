@@ -5,7 +5,6 @@ import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { MenuComponentRef, MenuView } from '@react-native-menu/menu';
 import ImmersiveMode from "react-native-immersive-mode";
 import { View, Text } from "../Themed";
-import { playHaptic } from "../coreplayer/utils";
 import { styles } from "../coreplayer/styles";
 import {
     ArtworkBackground,
@@ -455,7 +454,7 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
     }, [playerState.isPlaying]);
 
     const handleZoomIn = useCallback(async () => {
-        await playHaptic();
+        
         setZoom(prev => {
             const newZoom = Math.min(prev + 0.05, 1.5);
             return Math.round(newZoom * 100) / 100;
@@ -464,7 +463,7 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
     }, [showControlsTemporarily]);
 
     const handleZoomOut = useCallback(async () => {
-        await playHaptic();
+        
         setZoom(prev => {
             const newZoom = Math.max(prev - 0.05, 1.0);
             return Math.round(newZoom * 100) / 100;
@@ -475,7 +474,7 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
     const togglePlayPause = useCallback(async () => {
         if (!playerState.isReady) return;
 
-        await playHaptic();
+        
 
         const newPausedState = !playerState.isPaused;
 
@@ -510,7 +509,7 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
 
     const skipTime = useCallback(async (seconds: number) => {
         if (!playerState.isReady) return;
-        await playHaptic();
+        
         seekTo(playerState.currentTime + seconds);
     }, [playerState.currentTime, seekTo, playerState.isReady]);
 
@@ -538,36 +537,36 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
     }, [playerState.duration, playerState.isReady, seekTo, playerState]);
 
     const handlePlaybackSpeedSelect = useCallback(async (speed: number) => {
-        await playHaptic();
+        
         settings.setPlaybackSpeed(speed);
         showControlsTemporarily();
     }, [settings, showControlsTemporarily]);
 
     const handleSubtitleTrackSelect = useCallback(async (index: number) => {
-        await playHaptic();
+        
         settings.setSelectedSubtitle(index);
     }, [settings]);
 
     const handleSubtitlePositionSelect = useCallback(async (position: SubtitlePosition) => {
-        await playHaptic();
+        
         settings.setSubtitlePosition(position);
         showControlsTemporarily();
     }, [settings, showControlsTemporarily]);
 
     const handleSubtitleDelaySelect = useCallback(async (delayMs: number) => {
-        await playHaptic();
+        
         settings.setSubtitleDelay(delayMs);
         showControlsTemporarily();
     }, [settings, showControlsTemporarily]);
 
     const handleAudioSelect = useCallback(async (index: number) => {
-        await playHaptic();
+        
         settings.setSelectedAudioTrack(index);
         showControlsTemporarily();
     }, [settings, showControlsTemporarily]);
 
     const handleStreamSelect = useCallback(async (index: number) => {
-        await playHaptic();
+        
 
         if (onStreamChange && index !== currentStreamIndex) {
             // Immediately show we're changing streams
@@ -623,7 +622,7 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
     );
 
     const handleBack = useCallback(async () => {
-        await playHaptic();
+        
         const progress = calculateProgress(playerState.currentTime, playerState.duration);
         onBack({ message: '', progress, player: "vlc" });
     }, [playerState.currentTime, playerState.duration, onBack]);
@@ -677,7 +676,7 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
     }, [showControlsTemporarily]);
 
     const handleMuteToggle = useCallback(async () => {
-        await playHaptic();
+        
         settings.setIsMuted(!settings.isMuted);
         showControlsTemporarily();
     }, [settings, showControlsTemporarily]);
@@ -799,7 +798,7 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
                             </TouchableOpacity>
 
                             <TouchableOpacity style={styles.controlButton} onPress={async () => {
-                                await playHaptic();
+                                
                                 settings.setIsMuted(!settings.isMuted);
                                 showControlsTemporarily();
                             }}>
