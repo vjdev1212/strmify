@@ -49,6 +49,7 @@ const WATCH_HISTORY_KEY = StorageKeys.WATCH_HISTORY_KEY;
 const MAX_HISTORY_ITEMS = 30;
 const DEFAULT_MEDIA_PLAYER_KEY = StorageKeys.DEFAULT_MEDIA_PLAYER_KEY;
 const SERVERS_KEY = StorageKeys.SERVERS_KEY;
+const SUBTITLE_LANGUAGES_KEY = StorageKeys.SUBTITLE_LANGUAGES_KEY;
 
 const MediaPlayerScreen: React.FC = () => {
   const router = useRouter();
@@ -523,9 +524,19 @@ const MediaPlayerScreen: React.FC = () => {
 
       console.log('Subtitle Query', searchQuery);
 
+      const subtitleLanguagesConfig = storageService.getItem(SUBTITLE_LANGUAGES_KEY);
+
+      console.log('Subtitle languages config', subtitleLanguagesConfig);
+      let subtitleLanguages: string[] = ['en'];
+      if (subtitleLanguagesConfig) {
+        subtitleLanguages = JSON.parse(subtitleLanguagesConfig);
+      }
+      else {
+        console.log('Using default subtitle language: English')
+      }
       const response = await openSubtitlesClient.searchByFileName(
         searchQuery as string,
-        ['en'],
+        subtitleLanguages,
         {
           format: 'srt',
           ai_translated: 'include',
@@ -623,7 +634,7 @@ const MediaPlayerScreen: React.FC = () => {
       console.error('Failed to save watch history:', error);
     }
   };
-  
+
   const handleBack = async (): Promise<void> => {
     router.back();
   };

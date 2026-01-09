@@ -52,7 +52,7 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
         setIsLoading(true);
         try {
             const savedApiKey = storageService.getItem(StorageKeys.OPENSUBTITLES_API_KEY);
-            const savedLanguages = storageService.getItem(StorageKeys.SUBTITLE_LANGUAGES);
+            const savedLanguages = storageService.getItem(StorageKeys.SUBTITLE_LANGUAGES_KEY);
 
             if (savedApiKey) {
                 setApiKey(savedApiKey);
@@ -125,7 +125,7 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
 
         try {
             storageService.setItem(StorageKeys.OPENSUBTITLES_API_KEY, apiKey.trim());
-            storageService.setItem(StorageKeys.SUBTITLE_LANGUAGES, JSON.stringify(selectedLanguages));
+            storageService.setItem(StorageKeys.SUBTITLE_LANGUAGES_KEY, JSON.stringify(selectedLanguages));
 
             showAlert('Configuration Saved', 'Your OpenSubtitles configuration has been saved successfully.');
         } catch (error) {
@@ -147,7 +147,7 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
                 onPress: async () => {
                     try {
                         storageService.removeItem(StorageKeys.OPENSUBTITLES_API_KEY);
-                        storageService.removeItem(StorageKeys.SUBTITLE_LANGUAGES);
+                        storageService.removeItem(StorageKeys.SUBTITLE_LANGUAGES_KEY);
                         setApiKey('');
                         setSelectedLanguages(['en']);
                         showAlert('Success', 'Configuration cleared successfully');
