@@ -53,7 +53,7 @@ function RootLayoutNav() {
     ...DarkTheme,
     colors: {
       ...DarkTheme.colors,
-      background: '#0a0a0a', 
+      background: '#0a0a0a',
       card: 'rgba(18, 18, 18, 0.9)',
       border: 'rgba(255, 255, 255, 0.1)',
     }
@@ -193,6 +193,7 @@ function RootLayoutNav() {
               options={{
                 headerShown: false,
                 headerTransparent: false,
+                headerBackground: InvisibleHeaderBackground,
                 headerTitle: '',
                 headerTintColor: '#ffffff',
                 headerBackTitle: '',
@@ -202,7 +203,7 @@ function RootLayoutNav() {
                   backgroundColor: 'transparent',
                 }
               }}
-            />            
+            />
             <Stack.Screen
               name="settings/addons"
               options={{
@@ -247,7 +248,7 @@ function RootLayoutNav() {
                   backgroundColor: 'transparent',
                 }
               }}
-            />            
+            />
             <Stack.Screen
               name="settings/opensubtitles"
               options={{
@@ -262,7 +263,7 @@ function RootLayoutNav() {
                   backgroundColor: 'transparent',
                 }
               }}
-            />                        
+            />
             <Stack.Screen
               name="settings/contact"
               options={{
