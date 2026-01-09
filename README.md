@@ -40,20 +40,20 @@ Or download directly from [GitHub Releases](https://github.com/vjdev1212/strmify
 ### Mobile
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/strmify-screenshots/iPhone/1-Home%20Screen.png" width="18%" />
-  <img src="https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/strmify-screenshots/iPhone/2-Movie-Details.png" width="18%" />
-  <img src="https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/strmify-screenshots/iPhone/3-TV-Details.png" width="18%" />
-  <img src="https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/strmify-screenshots/iPhone/4-Search.png" width="18%" />
-  <img src="https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/strmify-screenshots/iPhone/5-Carousel.png" width="18%" />  
+  <img src="https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/Strmify-screenshots/iPhone/1-Home%20Screen.png" width="18%" />
+  <img src="https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/Strmify-screenshots/iPhone/2-Movie-Details.png" width="18%" />
+  <img src="https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/Strmify-screenshots/iPhone/3-TV-Details.png" width="18%" />
+  <img src="https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/Strmify-screenshots/iPhone/4-Search.png" width="18%" />
+  <img src="https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/Strmify-screenshots/iPhone/5-Carousel.png" width="18%" />  
 </p>
 
 ### Tablet
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/Strmify-screenshots/iPad%20Air/1-HomeScreen.png" width="18%" />
-  <img src="https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/Strmify-screenshots/iPad%20Air/2-Movie-Details.png" width="18%" />
-  <img src="https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/Strmify-screenshots/iPad%20Air/3-TV-Details.png" width="18%" />
-  <img src="https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/Strmify-screenshots/iPad%20Air/4-Search.png" width="18%" />
+  <img src="https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/Strmify-screenshots/iPad%20Air/1-HomeScreen.png" width="49%" />
+  <img src="https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/Strmify-screenshots/iPad%20Air/2-Movie-Details.png" width="49%" />
+  <img src="https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/Strmify-screenshots/iPad%20Air/3-TV-Details.png" width="49%" />
+  <img src="https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/Strmify-screenshots/iPad%20Air/4-Search.png" width="49%" />
 </p>
 
 ---
