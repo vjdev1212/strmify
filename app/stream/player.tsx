@@ -1,18 +1,15 @@
 import OpenSubtitlesClient, { SubtitleResult } from "@/clients/opensubtitles";
 import { Subtitle } from "@/components/coreplayer/models";
-import { getLanguageName } from "@/utils/Helpers";
 import { StorageKeys, storageService } from "@/utils/StorageService";
 import { getPlatformSpecificPlayers, Players } from "@/utils/MediaPlayer";
 import { showAlert } from "@/utils/platform";
-import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
-import React, { useEffect, useState, useRef, useMemo } from "react";
-import { Platform, Linking, ActivityIndicator, View, Text, StyleSheet, Pressable, Image, StatusBar } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
+import { Platform, Linking, ActivityIndicator, View, Text, StyleSheet, Image, StatusBar } from "react-native";
 import { ServerConfig } from "@/components/ServerConfig";
-import { useActionSheet } from '@expo/react-native-action-sheet';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StreamingServerClient } from "@/clients/stremio";
 import * as ScreenOrientation from 'expo-screen-orientation';
-
 
 interface UpdateProgressEvent {
   progress: number
@@ -53,7 +50,6 @@ const SUBTITLE_LANGUAGES_KEY = StorageKeys.SUBTITLE_LANGUAGES_KEY;
 
 const MediaPlayerScreen: React.FC = () => {
   const router = useRouter();
-  const navigation = useNavigation();
 
   const {
     streams: streamsParam,
@@ -95,14 +91,6 @@ const MediaPlayerScreen: React.FC = () => {
   // Bottom sheet state
   const [statusText, setStatusText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-
-  useEffect(() => {
-    if (!isLoadingStream && !streamError) {
-      navigation.setOptions({ headerShown: false });
-    } else {
-      navigation.setOptions({ headerShown: true });
-    }
-  }, [isLoadingStream, streamError, navigation]);
 
   useEffect(() => {
     // Check if we have a direct video URL (continue watching scenario)

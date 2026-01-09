@@ -94,13 +94,13 @@ const PosterItem = ({
 };
 
 // Skeleton loader component
-const SkeletonPoster = ({ 
-  posterWidth, 
-  posterHeight, 
-  spacing 
-}: { 
-  posterWidth: number; 
-  posterHeight: number; 
+const SkeletonPoster = ({
+  posterWidth,
+  posterHeight,
+  spacing
+}: {
+  posterWidth: number;
+  posterHeight: number;
   spacing: number;
 }) => (
   <RNView style={[styles.posterContainer, { width: posterWidth, marginRight: spacing }]}>
@@ -157,11 +157,7 @@ const PosterList = ({
 
   // Choose optimal image size based on display width
   const getImageSize = useCallback(() => {
-    if (posterWidth <= 92) return 'w92';
-    if (posterWidth <= 154) return 'w154';
-    if (posterWidth <= 185) return 'w185';
-    if (posterWidth <= 342) return 'w342';
-    return 'w500'; // Max size instead of w780
+    return 'w780';
   }, [posterWidth]);
 
   const imageSize = getImageSize();
