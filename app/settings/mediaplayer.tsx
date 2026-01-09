@@ -382,7 +382,7 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingVertical: 16,
         paddingHorizontal: 20,
-        borderRadius: 16,
+        borderRadius: 25,
         alignItems: 'center',
         flexDirection: 'row',
         justifyContent: 'center',
@@ -390,13 +390,10 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
     },
     primaryButton: {
-        backgroundColor: 'hsla(238, 100%, 66%, 0.20)',
-        borderColor: 'rgba(83, 90, 255, 0.3)',
-        shadowColor: '#535aff',
+        backgroundColor: '#535aff',
     },
     secondaryButton: {
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-        borderColor: 'rgba(255, 255, 255, 0.1)',
+        backgroundColor: '#303030',
     },
     buttonIcon: {
         marginRight: 8,

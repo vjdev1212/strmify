@@ -18,6 +18,7 @@ import * as Haptics from 'expo-haptics';
 import { MenuView, MenuAction } from '@react-native-menu/menu';
 import { WebMenu } from '@/components/WebMenuView';
 import { SUBTITLE_LANGUAGES } from '@/utils/Subtitles';
+import BottomSpacing from '@/components/BottomSpacing';
 
 
 const OpenSubtitlesConfigScreen: React.FC = () => {
@@ -328,6 +329,7 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
                             </TouchableOpacity>
                         </View>
                     </View>
+                    <BottomSpacing space={50} />
                 </ScrollView>
             </KeyboardAvoidingView>
         </SafeAreaView>
@@ -474,7 +476,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 14,
+        paddingVertical: 16,
         paddingHorizontal: 16,
         borderRadius: 25,
         gap: 6,
