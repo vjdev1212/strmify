@@ -554,13 +554,9 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
         showControlsTemporarily();
     }, [settings, showControlsTemporarily]);
 
-    const handleSubtitleDelaySelect = useCallback(async (delayChange: number) => {
+    const handleSubtitleDelaySelect = useCallback(async (delayMs: number) => {
         await playHaptic();
-        if (delayChange === 0) {
-            settings.setSubtitleDelay(0);
-        } else {
-            settings.setSubtitleDelay(prev => prev + delayChange);
-        }
+        settings.setSubtitleDelay(delayMs);
         showControlsTemporarily();
     }, [settings, showControlsTemporarily]);
 
@@ -653,22 +649,10 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
             if (!isNaN(position)) handleSubtitlePositionSelect(position);
         }
         // Subtitle delay
-        else if (id === 'delay-reset') {
-            handleSubtitleDelaySelect(0);
-        }
-        else if (id.startsWith('delay-minus-')) {
-            const delayPart = id.replace('delay-minus-', '');
-            const delaySeconds = parseFloat(delayPart);
-            if (!isNaN(delaySeconds)) {
-                handleSubtitleDelaySelect(-delaySeconds * 1000);
-            }
-        }
-        else if (id.startsWith('delay-plus-')) {
-            const delayPart = id.replace('delay-plus-', '');
-            const delaySeconds = parseFloat(delayPart);
-            if (!isNaN(delaySeconds)) {
-                handleSubtitleDelaySelect(delaySeconds * 1000);
-            }
+        // Subtitle delay
+        else if (id.startsWith('delay_')) {
+            const delayMs = parseInt(id.replace('delay_', ''));
+            if (!isNaN(delayMs)) handleSubtitleDelaySelect(delayMs);
         }
         // Audio track
         else if (id.startsWith('audio-')) {

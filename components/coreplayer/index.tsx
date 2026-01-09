@@ -367,115 +367,20 @@ export const buildSubtitlePositionActions = (
 };
 
 export const buildSubtitleDelayActions = (currentDelay: number): MenuAction[] => {
-    const delayInSeconds = currentDelay / 1000;
-    return [
-        {
-            id: 'delay-minus-5',
-            title: '-5.0s',
-            titleColor: '#FFFFFF',
-        },
-        {
-            id: 'delay-minus-4',
-            title: '-4.0s',
-            titleColor: '#FFFFFF',
-        },
-        {
-            id: 'delay-minus-3',
-            title: '-3.0s',
-            titleColor: '#FFFFFF',
-        },
-        {
-            id: 'delay-minus-2',
-            title: '-2.0s',
-            titleColor: '#FFFFFF',
-        },
-        {
-            id: 'delay-minus-1.5',
-            title: '-1.5s',
-            titleColor: '#FFFFFF',
-        },
-        {
-            id: 'delay-minus-1',
-            title: '-1.0s',
-            titleColor: '#FFFFFF',
-        },
-        {
-            id: 'delay-minus-0.75',
-            title: '-0.75s',
-            titleColor: '#FFFFFF',
-        },
-        {
-            id: 'delay-minus-0.5',
-            title: '-0.5s',
-            titleColor: '#FFFFFF',
-        },
-        {
-            id: 'delay-minus-0.25',
-            title: '-0.25s',
-            titleColor: '#FFFFFF',
-        },
-        {
-            id: 'delay-minus-0.1',
-            title: '-0.1s',
-            titleColor: '#FFFFFF',
-        },
-        {
-            id: 'delay-reset',
-            title: `Reset (${delayInSeconds.toFixed(1)}s)`,
-            state: currentDelay === 0 ? ('on' as const) : undefined,
-            titleColor: '#007AFF',
-        },
-        {
-            id: 'delay-plus-0.1',
-            title: '+0.1s',
-            titleColor: '#FFFFFF',
-        },
-        {
-            id: 'delay-plus-0.25',
-            title: '+0.25s',
-            titleColor: '#FFFFFF',
-        },
-        {
-            id: 'delay-plus-0.5',
-            title: '+0.5s',
-            titleColor: '#FFFFFF',
-        },
-        {
-            id: 'delay-plus-0.75',
-            title: '+0.75s',
-            titleColor: '#FFFFFF',
-        },
-        {
-            id: 'delay-plus-1',
-            title: '+1.0s',
-            titleColor: '#FFFFFF',
-        },
-        {
-            id: 'delay-plus-1.5',
-            title: '+1.5s',
-            titleColor: '#FFFFFF',
-        },
-        {
-            id: 'delay-plus-2',
-            title: '+2.0s',
-            titleColor: '#FFFFFF',
-        },
-        {
-            id: 'delay-plus-3',
-            title: '+3.0s',
-            titleColor: '#FFFFFF',
-        },
-        {
-            id: 'delay-plus-4',
-            title: '+4.0s',
-            titleColor: '#FFFFFF',
-        },
-        {
-            id: 'delay-plus-5',
-            title: '+5.0s',
-            titleColor: '#FFFFFF',
-        }
-    ];
+    const delays = [-5000, -4000, -3000, -2000, -1500, -1000, -750, -500, -250, -100, 0, 100, 250, 500, 750, 1000, 1500, 2000, 3000, 4000, 5000];
+    
+    return delays.map(delayMs => {
+        const delaySec = delayMs / 1000;
+        const isDefault = delayMs === 0;
+        const prefix = delayMs > 0 ? '+' : '';
+        
+        return {
+            id: `delay_${delayMs}`, // Use underscore instead of dash to avoid double-dash issue
+            title: isDefault ? 'Default' : `${prefix}${delaySec.toFixed(Math.abs(delaySec) < 1 ? 2 : 1)}s`,
+            state: currentDelay === delayMs ? ('on' as const) : undefined,
+            titleColor: currentDelay === delayMs ? '#007AFF' : '#FFFFFF',
+        };
+    });
 };
 
 export const buildSubtitleActions = (
