@@ -283,7 +283,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                 const progressValue = calculateProgress(player.currentTime, playerState.duration);
                 updateProgress({ progress: progressValue });
             }
-        }, 10 * 60 * 1000);
+        }, 1 * 60 * 1000);
 
         return () => clearInterval(progressInterval);
     }, [player, playerState.isReady, playerState.duration, updateProgress]);
