@@ -110,6 +110,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         player.muted = settings.isMuted;
         player.playbackRate = settings.playbackSpeed;
         player.allowsExternalPlayback = true;
+        player.showNowPlayingNotification = true;
     }, [settings.isMuted, settings.playbackSpeed]));
 
     // Restore progress - optimized with dependency array
@@ -283,7 +284,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                 const progressValue = calculateProgress(player.currentTime, playerState.duration);
                 updateProgress({ progress: progressValue });
             }
-        }, 10 * 60 * 1000);
+        }, 1 * 60 * 1000);
 
         return () => clearInterval(progressInterval);
     }, [player, playerState.isReady, playerState.duration, updateProgress]);

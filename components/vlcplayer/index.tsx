@@ -437,7 +437,7 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
                 const progress = calculateProgress(playerState.currentTime, playerState.duration);
                 updateProgress({ progress });
             }
-        }, 10 * 60 * 1000);
+        }, 1 * 60 * 1000);
 
         return () => {
             if (progressUpdateTimerRef.current) {

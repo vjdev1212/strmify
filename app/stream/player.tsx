@@ -1,18 +1,15 @@
 import OpenSubtitlesClient, { SubtitleResult } from "@/clients/opensubtitles";
 import { Subtitle } from "@/components/coreplayer/models";
-import { getLanguageName } from "@/utils/Helpers";
 import { StorageKeys, storageService } from "@/utils/StorageService";
 import { getPlatformSpecificPlayers, Players } from "@/utils/MediaPlayer";
 import { showAlert } from "@/utils/platform";
-import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
-import React, { useEffect, useState, useRef, useMemo } from "react";
-import { Platform, Linking, ActivityIndicator, View, Text, StyleSheet, Pressable, Image, StatusBar } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
+import { Platform, Linking, ActivityIndicator, View, Text, StyleSheet, Image, StatusBar } from "react-native";
 import { ServerConfig } from "@/components/ServerConfig";
-import { useActionSheet } from '@expo/react-native-action-sheet';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StreamingServerClient } from "@/clients/stremio";
 import * as ScreenOrientation from 'expo-screen-orientation';
-
 
 interface UpdateProgressEvent {
   progress: number
@@ -49,10 +46,10 @@ const WATCH_HISTORY_KEY = StorageKeys.WATCH_HISTORY_KEY;
 const MAX_HISTORY_ITEMS = 30;
 const DEFAULT_MEDIA_PLAYER_KEY = StorageKeys.DEFAULT_MEDIA_PLAYER_KEY;
 const SERVERS_KEY = StorageKeys.SERVERS_KEY;
+const SUBTITLE_LANGUAGES_KEY = StorageKeys.SUBTITLE_LANGUAGES_KEY;
 
 const MediaPlayerScreen: React.FC = () => {
   const router = useRouter();
-  const navigation = useNavigation();
 
   const {
     streams: streamsParam,
@@ -94,14 +91,6 @@ const MediaPlayerScreen: React.FC = () => {
   // Bottom sheet state
   const [statusText, setStatusText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-
-  useEffect(() => {
-    if (!isLoadingStream && !streamError) {
-      navigation.setOptions({ headerShown: false });
-    } else {
-      navigation.setOptions({ headerShown: true });
-    }
-  }, [isLoadingStream, streamError, navigation]);
 
   useEffect(() => {
     // Check if we have a direct video URL (continue watching scenario)
@@ -497,7 +486,8 @@ const MediaPlayerScreen: React.FC = () => {
 
   const initializeClient = async () => {
     try {
-      const client = new OpenSubtitlesClient();
+      const customApiKey = storageService.getItem(StorageKeys.OPENSUBTITLES_API_KEY);
+      const client = new OpenSubtitlesClient(customApiKey);
       setOpenSubtitlesClient(client);
     } catch (error) {
       console.error('Failed to initialize OpenSubtitles client:', error);
@@ -523,9 +513,19 @@ const MediaPlayerScreen: React.FC = () => {
 
       console.log('Subtitle Query', searchQuery);
 
+      const subtitleLanguagesConfig = storageService.getItem(SUBTITLE_LANGUAGES_KEY);
+
+      console.log('Subtitle languages config', subtitleLanguagesConfig);
+      let subtitleLanguages: string[] = ['en'];
+      if (subtitleLanguagesConfig) {
+        subtitleLanguages = JSON.parse(subtitleLanguagesConfig);
+      }
+      else {
+        console.log('Using default subtitle language: English')
+      }
       const response = await openSubtitlesClient.searchByFileName(
         searchQuery as string,
-        ['en'],
+        subtitleLanguages,
         {
           format: 'srt',
           ai_translated: 'include',
@@ -623,7 +623,7 @@ const MediaPlayerScreen: React.FC = () => {
       console.error('Failed to save watch history:', error);
     }
   };
-  
+
   const handleBack = async (): Promise<void> => {
     router.back();
   };
