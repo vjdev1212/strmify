@@ -72,12 +72,8 @@ class OpenSubtitlesClient {
   private userAgent: string = process.env.EXPO_PUBLIC_OPENSUBTITLES_USER_AGENT || 'Strmify v1.0.0';
   private apiKey: string = process.env.EXPO_PUBLIC_OPENSUBTITLES_API_KEY || '';
 
-  constructor() {
-  }
-
-  // Set API key
-  setApiKey(apiKey: string): void {
-    this.apiKey = apiKey;
+  constructor(customApiKey: string | undefined) {
+    this.apiKey = customApiKey || this.apiKey;
   }
 
   // Get headers for API requests

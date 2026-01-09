@@ -498,7 +498,8 @@ const MediaPlayerScreen: React.FC = () => {
 
   const initializeClient = async () => {
     try {
-      const client = new OpenSubtitlesClient();
+      const customApiKey = storageService.getItem(StorageKeys.OPENSUBTITLES_API_KEY);
+      const client = new OpenSubtitlesClient(customApiKey);
       setOpenSubtitlesClient(client);
     } catch (error) {
       console.error('Failed to initialize OpenSubtitles client:', error);
