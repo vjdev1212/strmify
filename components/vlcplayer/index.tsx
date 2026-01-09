@@ -85,6 +85,8 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
     const animations = usePlayerAnimations();
 
     const [zoom, setZoom] = useState(1.0);
+    const [isChangingStream, setIsChangingStream] = useState(false);
+    const [currentVideoUrl, setCurrentVideoUrl] = useState(videoUrl);
 
     const audioMenuRef = useRef<MenuComponentRef>(null);
     const subtitleMenuRef = useRef<MenuComponentRef>(null);
@@ -174,6 +176,41 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
         }
     }, [playerState.isPlaying, playerState.isBuffering]);
 
+    useEffect(() => {
+        if (videoUrl !== currentVideoUrl) {
+            console.log('Stream change detected');
+            setIsChangingStream(true);
+
+            playerState.setIsPaused(true);
+
+            // Reset all player states
+            requestAnimationFrame(() => {
+                playerState.setIsPlaying(false);
+                playerState.setIsPaused(false);
+                playerState.setIsBuffering(true);
+                playerState.setIsReady(false);
+                playerState.setHasStartedPlaying(false);
+                playerState.setShowBufferingLoader(true);
+                playerState.setCurrentTime(0);
+                playerState.setIsSeeking(false);
+                playerState.setError(null);
+            });
+
+            // Show buffer indicator
+            Animated.timing(animations.bufferOpacity, {
+                toValue: 1,
+                duration: 200,
+                useNativeDriver: true,
+            }).start();
+
+            // Small delay to ensure cleanup, then update URL
+            setTimeout(() => {
+                setCurrentVideoUrl(videoUrl);
+                setIsChangingStream(false);
+            }, 300);
+        }
+    }, [videoUrl, currentVideoUrl, playerState, animations.bufferOpacity]);
+
     // Optimized subtitle loading
     useEffect(() => {
         if (subtitles.length === 0 || settings.selectedSubtitle < 0 || settings.selectedSubtitle >= subtitles.length) {
@@ -238,7 +275,6 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
             console.log('VLC onLoad');
             console.log('progress', progress);
 
-            // Batch state updates
             requestAnimationFrame(() => {
                 playerState.setIsBuffering(false);
                 playerState.setIsReady(true);
@@ -248,6 +284,7 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
                 playerState.setIsPaused(false);
                 playerState.setShowBufferingLoader(false);
                 playerState.setIsSeeking(false);
+                setIsChangingStream(false); // ADD THIS LINE
 
                 if (data?.audioTracks) {
                     playerState.setAvailableAudioTracks(data.audioTracks);
@@ -256,7 +293,8 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
                     const durationInSeconds = data.duration / 1000;
                     playerState.setDuration(durationInSeconds);
                 }
-                if (progress && progress > 0) {
+                // MODIFY the progress check to include isChangingStream:
+                if (progress && progress > 0 && !isChangingStream) {
                     playerRef.current?.seek(progress / 100);
                 }
             });
@@ -534,11 +572,21 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
 
     const handleStreamSelect = useCallback(async (index: number) => {
         await playHaptic();
-        if (onStreamChange) {
+
+        if (onStreamChange && index !== currentStreamIndex) {
+            // Immediately show we're changing streams
+            setIsChangingStream(true);
+            playerState.setIsBuffering(true);
+            playerState.setHasStartedPlaying(false);
+
+            playerState.setIsPaused(true);
+
+            // Trigger the stream change
             onStreamChange(index);
         }
+
         showControlsTemporarily();
-    }, [onStreamChange, showControlsTemporarily]);
+    }, [onStreamChange, currentStreamIndex, showControlsTemporarily, playerState]);
 
     // Memoize action builders
     const settingsActions = useMemo(() =>
@@ -661,7 +709,7 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
                     transform: [{ scale: zoom }]
                 }]}
                 source={{
-                    uri: videoUrl,
+                    uri: currentVideoUrl,
                     initType: 2,
                     initOptions: [
                         '--no-sub-autodetect-file',
@@ -700,13 +748,13 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
 
             <ArtworkBackground
                 artwork={artwork}
-                isBuffering={playerState.isBuffering}
-                hasStartedPlaying={playerState.hasStartedPlaying}
+                isBuffering={playerState.isBuffering || isChangingStream}
+                hasStartedPlaying={playerState.hasStartedPlaying && !isChangingStream}
                 error={!!playerState.error}
             />
 
             <WaitingLobby
-                hasStartedPlaying={playerState.hasStartedPlaying}
+                hasStartedPlaying={playerState.hasStartedPlaying && !isChangingStream}
                 opacity={animations.bufferOpacity}
                 error={!!playerState.error}
             />
