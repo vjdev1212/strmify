@@ -9,7 +9,6 @@ Strmify is your streaming companion for discovering and streaming movies and TV 
 1. **TMDB** – Provides comprehensive metadata that powers the application
 2. **Stremio Add-ons** – Essential for streaming content via torrents or direct links
 3. **Stremio Service** – Enables seamless remote torrent streaming capabilities
-4. **Trakt** – Tracks watch progress and delivers personalised catalogues
 5. **Media Players** – Supports a wide variety of playback formats
 
 ---
@@ -23,7 +22,6 @@ Strmify is designed to work within the Stremio addons ecosystem but takes a mini
 Instead of relying on addon catalogues, Strmify provides content discovery through:
 
 - **TMDB API** – Powers popular, trending, and genre-specific catalogues.
-- **Trakt Integration** – Allows users to create custom watchlists and catalogues, eliminating the need for addon developers to maintain their own catalogue systems.
 
 ## Download
 
@@ -75,9 +73,6 @@ A: No, there are no plans to build a TV version. There are already good apps ava
 
 **Q: Does this app collect any data?**  
 A: No, the app does not collect any data. There isn't even a signup page.
-
-**Q: What about Trakt authentication details?**  
-A: Your Trakt authentication details are stored locally on your device and will be cleared during uninstall. This data is not sent to any remote servers or logged by the application.
 
 ### Content
 

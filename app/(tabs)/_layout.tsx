@@ -8,9 +8,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { StorageKeys, storageService } from '@/utils/StorageService';
 
-// Storage key for Trakt enable preference
-const TRAKT_ENABLED_KEY = StorageKeys.TRAKT_ENABLED_KEY;
-
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];
   color: string;
@@ -18,43 +15,7 @@ function TabBarIcon(props: {
   return <FontAwesome size={24} {...props} />;
 }
 
-// Custom hook for managing Trakt enable state
-export const useTraktEnabled = () => {
-  const [isTraktEnabled, setIsTraktEnabled] = useState<boolean>(false);
-  const [isLoaded, setIsLoaded] = useState<boolean>(false);
-
-  useEffect(() => {
-    loadTraktEnabledState();
-  }, []);
-
-  const loadTraktEnabledState = async () => {
-    try {
-      const stored = storageService.getItem(TRAKT_ENABLED_KEY);
-      if (stored !== undefined) {
-        setIsTraktEnabled(JSON.parse(stored));
-      }
-    } catch (error) {
-      console.error('Failed to load Trakt enabled state:', error);
-    } finally {
-      setIsLoaded(true);
-    }
-  };
-
-  const setTraktEnabled = async (enabled: boolean) => {
-    try {
-      storageService.setItem(TRAKT_ENABLED_KEY, JSON.stringify(enabled));
-      setIsTraktEnabled(enabled);
-    } catch (error) {
-      console.error('Failed to save Trakt enabled state:', error);
-    }
-  };
-
-  return { isTraktEnabled, setTraktEnabled, isLoaded };
-};
-
 export default function TabLayout() {
-  const { isTraktEnabled, isLoaded } = useTraktEnabled();
-
   // Memoize background to avoid re-render crashes
   const tabBarBackground = useMemo(() => (
     <View
@@ -78,11 +39,6 @@ export default function TabLayout() {
   const webFontFamily = Platform.OS === 'web'
     ? 'Inter, -apple-system, BlinkMacSystemFont, sans-serif'
     : undefined;
-
-  // Don't render until we've loaded the preference to avoid layout jump
-  if (!isLoaded) {
-    return null;
-  }
 
   return (
     <Tabs
@@ -138,25 +94,7 @@ export default function TabLayout() {
           tabBarIconStyle: { marginVertical: 5 },
         }}
       />
-
-      <Tabs.Screen
-        name="trakt"
-        listeners={{
-          tabPress: async () => {
-            if (isHapticsSupported()) {
-              await Haptics.selectionAsync();
-            }
-          },
-        }}
-        options={{
-          title: 'Trakt',
-          tabBarIcon: ({ color }) => <TabBarIcon name="check-square-o" color={color} />,
-          tabBarIconStyle: { marginVertical: 5 },
-          tabBarItemStyle: isTraktEnabled ? {} : { display: 'none' },
-          tabBarButton: isTraktEnabled ? undefined : () => null,
-        }}
-      />
-
+          
       <Tabs.Screen
         name="settings"
         listeners={{

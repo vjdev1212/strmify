@@ -1,5 +1,4 @@
 import OpenSubtitlesClient, { SubtitleResult } from "@/clients/opensubtitles";
-import { isUserAuthenticated, scrobbleStart, scrobbleStop } from "@/clients/trakt";
 import { Subtitle } from "@/components/coreplayer/models";
 import { getLanguageName } from "@/utils/Helpers";
 import { StorageKeys, storageService } from "@/utils/StorageService";
@@ -14,12 +13,6 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StreamingServerClient } from "@/clients/stremio";
 import * as ScreenOrientation from 'expo-screen-orientation';
 
-interface BackEvent {
-  message: string;
-  code?: string;
-  progress: number;
-  player: "native" | "vlc",
-}
 
 interface UpdateProgressEvent {
   progress: number
@@ -102,11 +95,6 @@ const MediaPlayerScreen: React.FC = () => {
   const [statusText, setStatusText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Trakt scrobbling state
-  const [isTraktAuthenticated, setIsTraktAuthenticated] = useState(false);
-  const [hasStartedScrobble, setHasStartedScrobble] = useState(false);
-  const lastScrobbleProgressRef = useRef<number>(0);
-
   useEffect(() => {
     if (!isLoadingStream && !streamError) {
       navigation.setOptions({ headerShown: false });
@@ -123,7 +111,6 @@ const MediaPlayerScreen: React.FC = () => {
       setVideoUrl(directVideoUrl as string);
       setIsLoadingStream(false);
       initializeClient();
-      checkTraktAuth();
       return () => {
         cleanupOrientation();
       };
@@ -160,7 +147,6 @@ const MediaPlayerScreen: React.FC = () => {
     }
 
     initializeClient();
-    checkTraktAuth();
 
     return () => {
       cleanupOrientation();
@@ -509,11 +495,6 @@ const MediaPlayerScreen: React.FC = () => {
     }
   };
 
-  const checkTraktAuth = async () => {
-    const isAuth = await isUserAuthenticated();
-    setIsTraktAuthenticated(isAuth);
-  };
-
   const initializeClient = async () => {
     try {
       const client = new OpenSubtitlesClient();
@@ -642,113 +623,8 @@ const MediaPlayerScreen: React.FC = () => {
       console.error('Failed to save watch history:', error);
     }
   };
-
-  const syncProgressToTrakt = async (progressPercentage: number) => {
-    if (!isTraktAuthenticated || !imdbid) {
-      return;
-    }
-
-    try {
-      if (!hasStartedScrobble && progressPercentage >= 3) {
-        const scrobbleData: any = {
-          progress: progressPercentage,
-        };
-
-        if (type === 'series' && season && episode) {
-          scrobbleData.episode = {
-            ids: {
-              imdb: imdbid
-            }
-          };
-          if (season) scrobbleData.show = { ids: { imdb: imdbid } };
-        } else {
-          scrobbleData.movie = {
-            ids: {
-              imdb: imdbid
-            }
-          };
-        }
-
-        const success = await scrobbleStart(scrobbleData);
-        if (success) {
-          console.log('Trakt scrobble started at', progressPercentage, '%');
-          setHasStartedScrobble(true);
-          lastScrobbleProgressRef.current = progressPercentage;
-        }
-      }
-      else if (hasStartedScrobble) {
-        const progressDiff = progressPercentage - lastScrobbleProgressRef.current;
-        const shouldUpdate = progressDiff >= 15 || (progressPercentage >= 80 && progressDiff >= 5);
-
-        if (shouldUpdate) {
-          const scrobbleData: any = {
-            progress: progressPercentage,
-          };
-
-          if (type === 'series' && season && episode) {
-            scrobbleData.episode = {
-              ids: {
-                imdb: imdbid
-              }
-            };
-          } else {
-            scrobbleData.movie = {
-              ids: {
-                imdb: imdbid
-              }
-            };
-          }
-
-          const success = await scrobbleStart(scrobbleData);
-          if (success) {
-            console.log('Trakt progress updated to', progressPercentage, '%');
-            lastScrobbleProgressRef.current = progressPercentage;
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Failed to sync progress to Trakt:', error);
-    }
-  };
-
-  const stopTraktScrobble = async (finalProgress: number) => {
-    if (!isTraktAuthenticated || !imdbid || finalProgress < 1) {
-      return;
-    }
-
-    try {
-      saveToWatchHistory(finalProgress);
-
-      const scrobbleData: any = {
-        progress: finalProgress,
-      };
-
-      if (type === 'series' && season && episode) {
-        scrobbleData.episode = {
-          ids: {
-            imdb: imdbid
-          }
-        };
-      } else {
-        scrobbleData.movie = {
-          ids: {
-            imdb: imdbid
-          }
-        };
-      }
-
-      const success = await scrobbleStop(scrobbleData);
-      if (success) {
-        console.log('Trakt scrobble stopped at', finalProgress, '%');
-        setHasStartedScrobble(false);
-      }
-    } catch (error) {
-      console.error('Failed to stop Trakt scrobble:', error);
-    }
-  };
-
-  const handleBack = async (event: BackEvent): Promise<void> => {
-    await stopTraktScrobble(Math.floor(event.progress));
+  
+  const handleBack = async (): Promise<void> => {
     router.back();
   };
 
@@ -760,7 +636,6 @@ const MediaPlayerScreen: React.FC = () => {
     setProgress(progressPercentage);
 
     saveToWatchHistory(progressPercentage);
-    await syncProgressToTrakt(progressPercentage);
   };
 
   function getPlayer() {
