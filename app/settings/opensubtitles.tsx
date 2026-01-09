@@ -15,8 +15,8 @@ import { StorageKeys, storageService } from '@/utils/StorageService';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { isHapticsSupported, showAlert } from '@/utils/platform';
 import * as Haptics from 'expo-haptics';
+import { MenuView, MenuAction } from '@react-native-menu/menu';
 import { WebMenu } from '@/components/WebMenuView';
-import { MenuAction } from '@react-native-menu/menu';
 
 // Common subtitle languages
 const SUBTITLE_LANGUAGES = [
@@ -163,11 +163,70 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
         return SUBTITLE_LANGUAGES.find(lang => lang.code === code)?.name || code;
     };
 
-    const languageMenuActions = SUBTITLE_LANGUAGES.map(lang => ({
+    const buildLanguageMenuActions = (): MenuAction[] => {
+        return SUBTITLE_LANGUAGES.map(lang => ({
+            id: `lang-${lang.code}`,
+            title: lang.name,
+            state: selectedLanguages.includes(lang.code) ? ('on' as const) : undefined,
+            titleColor: selectedLanguages.includes(lang.code) ? '#007AFF' : '#FFFFFF',
+            image: Platform.select({
+                ios: selectedLanguages.includes(lang.code) ? 'checkmark' : undefined,
+                default: undefined,
+            }),
+        }));
+    };
+
+    const handleLanguageMenuAction = (event: { nativeEvent: { event: string } }) => {
+        const actionId = event.nativeEvent.event;
+        const languageCode = actionId.replace('lang-', '');
+        toggleLanguage(languageCode);
+    };
+
+    const languageMenuActions = buildLanguageMenuActions();
+
+    const webMenuActions = SUBTITLE_LANGUAGES.map(lang => ({
         title: lang.name,
         systemIcon: selectedLanguages.includes(lang.code) ? 'checkmark' : undefined,
         state: selectedLanguages.includes(lang.code) ? 'on' : 'off',
     }));
+
+    const renderLanguageMenu = () => {
+        if (Platform.OS === 'web') {
+            return (
+                <WebMenu
+                    title="Select Languages"
+                    actions={webMenuActions as any}
+                    onPressAction={(action: any) => {
+                        const language = SUBTITLE_LANGUAGES.find(lang => lang.name === action.title);
+                        if (language) {
+                            toggleLanguage(language.code);
+                        }
+                    }}
+                >
+                    <TouchableOpacity style={styles.menuButton}>
+                        <Ionicons name="language-outline" size={20} color="#bbb" />
+                        <Text style={styles.menuButtonText}>Add Language</Text>
+                        <Ionicons name="chevron-down-outline" size={20} color="#bbb" />
+                    </TouchableOpacity>
+                </WebMenu>
+            );
+        }
+
+        return (
+            <MenuView
+                actions={languageMenuActions}
+                onPressAction={handleLanguageMenuAction}
+                themeVariant='dark'
+                shouldOpenOnLongPress={false}
+            >
+                <TouchableOpacity style={styles.menuButton}>
+                    <Ionicons name="language-outline" size={20} color="#bbb" />
+                    <Text style={styles.menuButtonText}>Add Language</Text>
+                    <Ionicons name="chevron-down-outline" size={20} color="#bbb" />
+                </TouchableOpacity>
+            </MenuView>
+        );
+    };
 
     if (isLoading) {
         return (
@@ -227,26 +286,11 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
 
                         <View style={styles.inputGroup}>
                             <Text style={styles.label}>Preferred Languages</Text>
-                            <Text style={[styles.helpText, { marginBottom: 12 }]}>
+                            <Text style={[styles.helpText, { marginBottom: 12, marginTop: 0 }]}>
                                 Select languages for subtitle search (in order of preference)
                             </Text>
 
-                            <WebMenu
-                                title="Select Languages"
-                                actions={languageMenuActions as any}
-                                onPressAction={(action: any) => {
-                                    const language = SUBTITLE_LANGUAGES.find(lang => lang.name === action.title);
-                                    if (language) {
-                                        toggleLanguage(language.code);
-                                    }
-                                }}
-                            >
-                                <TouchableOpacity style={styles.menuButton}>
-                                    <Ionicons name="language-outline" size={20} color="#bbb" />
-                                    <Text style={styles.menuButtonText}>Add Language</Text>
-                                    <Ionicons name="chevron-down-outline" size={20} color="#bbb" />
-                                </TouchableOpacity>
-                            </WebMenu>
+                            {renderLanguageMenu()}
 
                             {selectedLanguages.length > 0 && (
                                 <View style={styles.selectedLanguagesContainer}>
@@ -263,7 +307,7 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
                                                     onPress={() => removeLanguage(code)}
                                                     style={styles.removeButton}
                                                 >
-                                                    <Ionicons name="close-circle" size={18} color="#F44336" />
+                                                    <Ionicons name="close-circle" size={18} color="#777777" />
                                                 </TouchableOpacity>
                                             )}
                                         </View>
@@ -413,8 +457,6 @@ const styles = StyleSheet.create({
         padding: 10,
         borderRadius: 8,
         backgroundColor: '#202020',
-        borderWidth: 1,
-        borderColor: '#535aff',
         gap: 8,
     },
     selectedLanguageText: {
@@ -424,7 +466,7 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     languageBadge: {
-        backgroundColor: '#535aff',
+        backgroundColor: '#777777',
         borderRadius: 12,
         width: 24,
         height: 24,
@@ -449,18 +491,16 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 12,
+        paddingVertical: 14,
         paddingHorizontal: 16,
-        borderRadius: 8,
+        borderRadius: 25,
         gap: 6,
     },
     saveButton: {
         backgroundColor: '#535aff',
     },
     clearButton: {
-        backgroundColor: '#F44336',
-        borderWidth: 1,
-        borderColor: '#F44336',
+        backgroundColor: '#303030',
     },
     buttonText: {
         color: '#FFF',
@@ -477,4 +517,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default OpenSubtitlesConfigScreen;
+export default OpenSubtitlesConfigScreen
