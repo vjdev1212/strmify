@@ -49,9 +49,6 @@ const PosterItem = ({
   const year = item.year?.split('–')[0] || item.year;
 
   const handlePress = async () => {
-    if (isHapticsSupported()) {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
     router.push({
       pathname: `/${type}/details`,
       params: { moviedbid: item.moviedbid },
@@ -209,9 +206,6 @@ const PosterList = ({
   }, [apiUrl, imageSize]);
 
   const handleSeeAllPress = useCallback(async () => {
-    if (isHapticsSupported()) {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
     router.push({
       pathname: `/${type}/list`,
       params: { apiUrl },

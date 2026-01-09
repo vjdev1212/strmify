@@ -48,9 +48,6 @@ const AppResourcesScreen = () => {
 
   const handlePress = async (url: string) => {
     try {
-      if (isHapticsSupported()) {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      }
       await Linking.openURL(url);
     } catch (error) {
       console.error("Error opening URL:", error);

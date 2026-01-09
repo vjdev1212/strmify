@@ -153,9 +153,6 @@ const StreamListScreen = () => {
 
     // Optimized addon selection handler
     const handleAddonPress = useCallback(async (item: Addon): Promise<void> => {
-        if (isHapticsSupported()) {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }
 
         // Update current addon reference immediately
         currentAddonRef.current = item.name;
@@ -167,9 +164,6 @@ const StreamListScreen = () => {
 
     // Stream selection handler - now navigates to player with all streams
     const handleStreamSelected = useCallback(async (stream: Stream, index: number): Promise<void> => {
-        if (isHapticsSupported()) {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }
 
         // Navigate to player with all streams and selected index
         router.push({

@@ -8,6 +8,7 @@ import { isHapticsSupported } from '@/utils/platform';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomSpacing from '@/components/BottomSpacing';
 import Constants from 'expo-constants';
+import BlurGradientBackground from '@/components/BlurGradientBackground';
 
 const SettingsScreen = () => {
   const router = useRouter();
@@ -92,9 +93,6 @@ const SettingsScreen = () => {
   };
 
   const onSettingsItemPress = async (item: any) => {
-    if (isHapticsSupported()) {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
     router.push({ pathname: item.route });
   }
 
@@ -103,6 +101,7 @@ const SettingsScreen = () => {
       styles.container,
     ]}>
       <StatusBar />
+      <BlurGradientBackground />
       <ScrollView
         contentContainerStyle={styles.scrollViewContent}
         showsVerticalScrollIndicator={false}
@@ -216,12 +215,13 @@ const SettingsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    width: '100%',
-    maxWidth: 780,
-    margin: 'auto'
   },
   scrollViewContent: {
     paddingBottom: 40,
+    maxWidth: 780,
+    margin: 'auto',
+    width: '100%'
+
   },
   headerContainer: {
     paddingHorizontal: 15,

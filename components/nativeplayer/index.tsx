@@ -6,7 +6,6 @@ import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { MenuComponentRef, MenuView } from '@react-native-menu/menu';
 import { WebMenu } from "@/components/WebMenuView";
 import { styles } from "../coreplayer/styles";
-import { playHaptic } from "../coreplayer/utils";
 import {
     usePlayerState,
     useSubtitleState,
@@ -364,7 +363,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     // Control actions - all optimized with stable dependencies
     const togglePlayPause = useCallback(async () => {
         if (!playerState.isReady) return;
-        await playHaptic();
+        
         playerState.isPlaying ? player.pause() : player.play();
         showControlsTemporarily();
     }, [playerState.isPlaying, player, playerState.isReady, showControlsTemporarily]);
@@ -408,12 +407,12 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
     const skipTime = useCallback(async (seconds: number) => {
         if (!playerState.isReady) return;
-        await playHaptic();
+        
         seekTo(playerState.currentTime + seconds);
     }, [playerState.currentTime, seekTo, playerState.isReady]);
 
     const cycleContentFit = useCallback(async () => {
-        await playHaptic();
+        
         const currentIndex = CONSTANTS.CONTENT_FIT_OPTIONS.indexOf(contentFit);
         setContentFit(CONSTANTS.CONTENT_FIT_OPTIONS[(currentIndex + 1) % CONSTANTS.CONTENT_FIT_OPTIONS.length]);
         showContentFitLabelTemporarily();
@@ -421,7 +420,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     }, [contentFit, showControlsTemporarily, showContentFitLabelTemporarily]);
 
     const togglePiP = useCallback(async () => {
-        await playHaptic();
+        
         if (videoRef.current) {
             if (isPiPActive) {
                 videoRef.current.stopPictureInPicture();
@@ -484,13 +483,13 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
     // Menu handlers - stable callbacks
     const handlePlaybackSpeedSelect = useCallback(async (speed: number) => {
-        await playHaptic();
+        
         settings.setPlaybackSpeed(speed);
         showControlsTemporarily();
     }, [showControlsTemporarily, settings]);
 
     const handleSubtitleTrackSelect = useCallback(async (index: number) => {
-        await playHaptic();
+        
         settings.setSelectedSubtitle(index);
         if (!useCustomSubtitles && index >= 0) {
             player.subtitleTrack = player.availableSubtitleTracks[index];
@@ -500,25 +499,25 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     }, [useCustomSubtitles, player, settings]);
 
     const handleSubtitlePositionSelect = useCallback(async (position: SubtitlePosition) => {
-        await playHaptic();
+        
         settings.setSubtitlePosition(position);
         showControlsTemporarily();
     }, [settings, showControlsTemporarily]);
 
     const handleSubtitleDelaySelect = useCallback(async (delayMs: number) => {
-        await playHaptic();
+        
         settings.setSubtitleDelay(delayMs);
         showControlsTemporarily();
     }, [settings, showControlsTemporarily]);
 
     const handleAudioSelect = useCallback(async (index: number) => {
-        await playHaptic();
+        
         settings.setSelectedAudioTrack(index);
         player.audioTrack = player.availableAudioTracks[index];
     }, [player, settings]);
 
     const handleStreamSelect = useCallback(async (index: number) => {
-        await playHaptic();
+        
         if (onStreamChange) {
             onStreamChange(index);
         }
@@ -556,7 +555,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     ), [playerState.isDragging, playerState.dragPosition, playerState.currentTime, playerState.duration]);
 
     const handleBack = useCallback(async () => {
-        await playHaptic();
+        
         const progressValue = calculateProgress(lastKnownTimeRef.current, playerState.duration);
         onBack({ message: '', progress: progressValue, player: "native" });
     }, [playerState.duration, onBack]);
@@ -626,7 +625,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     }, [showControlsTemporarily]);
 
     const handleMuteToggle = useCallback(async () => {
-        await playHaptic();
+        
         settings.setIsMuted(!settings.isMuted);
         showControlsTemporarily();
     }, [settings, showControlsTemporarily]);

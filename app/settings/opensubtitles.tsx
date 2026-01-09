@@ -65,10 +65,6 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
     };
 
     const toggleLanguage = async (languageCode: string) => {
-        if (isHapticsSupported()) {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }
-
         setSelectedLanguages(prev => {
             if (prev.includes(languageCode)) {
                 // Don't allow removing the last language
@@ -84,9 +80,6 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
     };
 
     const removeLanguage = async (languageCode: string) => {
-        if (isHapticsSupported()) {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }
 
         if (selectedLanguages.length === 1) {
             showAlert('Error', 'You must have at least one language selected');
@@ -97,9 +90,6 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
     };
 
     const toggleApiKeyMode = async () => {
-        if (isHapticsSupported()) {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }
 
         const newUseDefault = !useDefaultKey;
         setUseDefaultKey(newUseDefault);
@@ -110,9 +100,6 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
     };
 
     const saveConfiguration = async () => {
-        if (isHapticsSupported()) {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }
 
         if (!useDefaultKey && !apiKey.trim()) {
             showAlert('Error', 'Please enter an API key or use the default key');
@@ -145,9 +132,6 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
     };
 
     const clearConfiguration = async () => {
-        if (isHapticsSupported()) {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }
         showAlert('Clear Configuration', 'Are you sure you want to clear the saved configuration?', [
             { text: 'Cancel', style: 'cancel' },
             {
@@ -254,7 +238,7 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.keyboardAvoid}>
-                <ScrollView contentContainerStyle={styles.scrollContent}>
+                <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                     <View style={styles.header}>
                         <Ionicons name="settings-outline" size={40} color="#535aff" />
                         <Text style={styles.title}>OpenSubtitles Configuration</Text>

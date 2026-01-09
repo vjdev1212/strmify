@@ -11,10 +11,6 @@ interface WatchTrailerButtonProps {
 
 const WatchTrailerButton: React.FC<WatchTrailerButtonProps> = ({ trailerKey }) => {
     const handleTrailerPress = async () => {
-        if (isHapticsSupported()) {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }
-
         if (!trailerKey) {
             showAlert('No Trailer Available', 'Sorry, no trailer is available for this movie.');
             return;

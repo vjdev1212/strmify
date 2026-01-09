@@ -16,23 +16,26 @@ import * as Haptics from 'expo-haptics';
 import { isHapticsSupported } from '@/utils/platform';
 import { CatalogUrl, MovieGneres, TvGneres } from '@/constants/Tmdb';
 import WatchHistory from '@/components/WatchHistory';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
+import BlurGradientBackground from '@/components/BlurGradientBackground';
 
 // Lazy loading wrapper component
-const LazyPosterList = ({ 
-  apiUrl, 
-  title, 
-  type, 
-  index 
-}: { 
-  apiUrl: string; 
-  title: string; 
-  type: 'movie' | 'series'; 
+const LazyPosterList = ({
+  apiUrl,
+  title,
+  type,
+  index
+}: {
+  apiUrl: string;
+  title: string;
+  type: 'movie' | 'series';
   index: number;
 }) => {
   const [shouldLoad, setShouldLoad] = useState(index < 2); // Load first 2 immediately
-  
+
   return (
-    <View 
+    <View
       onLayout={() => {
         if (!shouldLoad) {
           setShouldLoad(true);
@@ -118,9 +121,6 @@ export default function HomeScreen() {
   }, [filter, allLists, movieLists, seriesLists]);
 
   const handleFilterChange = async (newFilter: 'all' | 'movies' | 'series') => {
-    if (isHapticsSupported()) {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
     setFilter(newFilter);
   };
 
@@ -156,6 +156,7 @@ export default function HomeScreen() {
   return (
     <View style={[styles.container]}>
       <StatusBar />
+      <BlurGradientBackground />
       {/* Scrollable content */}
       <ScrollView showsVerticalScrollIndicator={false} key={filter}>
 
@@ -203,10 +204,10 @@ export default function HomeScreen() {
             />
           </View>
 
-          <WatchHistory 
+          <WatchHistory
             key={refreshKey}
-            type={getWatchHistoryType(filter)} 
-            onItemSelect={(item) => handleWatchHistoryItemPress(item)} 
+            type={getWatchHistoryType(filter)}
+            onItemSelect={(item) => handleWatchHistoryItemPress(item)}
           />
           {activeLists.map((list, i) => (
             <LazyPosterList
