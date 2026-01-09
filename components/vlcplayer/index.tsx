@@ -176,46 +176,33 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
 
     // Optimized subtitle loading
     useEffect(() => {
-        if (!useCustomSubtitles || settings.selectedSubtitle < 0 || settings.selectedSubtitle >= subtitles.length) {
+        if (subtitles.length === 0 || settings.selectedSubtitle < 0 || settings.selectedSubtitle >= subtitles.length) {
             subtitleState.setParsedSubtitles([]);
             subtitleState.setCurrentSubtitle('');
             return;
         }
 
-        let isMounted = true;
-
         const loadSub = async () => {
             subtitleState.setIsLoadingSubtitles(true);
             try {
                 const parsed = await loadSubtitle(subtitles[settings.selectedSubtitle] as SubtitleSource, openSubtitlesClient);
-                if (isMounted) {
-                    subtitleState.setParsedSubtitles(parsed);
-                }
+                subtitleState.setParsedSubtitles(parsed);
             } catch (error: any) {
-                if (isMounted) {
-                    handleSubtitleError(error);
-                    subtitleState.setParsedSubtitles([]);
-                }
+                handleSubtitleError(error);
+                subtitleState.setParsedSubtitles([]);
             } finally {
-                if (isMounted) {
-                    subtitleState.setIsLoadingSubtitles(false);
-                    subtitleState.setCurrentSubtitle('');
-                }
+                subtitleState.setIsLoadingSubtitles(false);
+                subtitleState.setCurrentSubtitle('');
             }
         };
 
         loadSub();
-
-        return () => {
-            isMounted = false;
-        };
-    }, [settings.selectedSubtitle, subtitles, openSubtitlesClient, useCustomSubtitles]);
+    }, [settings.selectedSubtitle, subtitles]);
 
     // Optimized subtitle updates - only when playing and subtitles exist
     useEffect(() => {
-        if (subtitleState.parsedSubtitles.length === 0) {
-            subtitleState.setCurrentSubtitle('');
-            // Clear interval if no subtitles
+        if (subtitleState.parsedSubtitles.length === 0 || !playerState.isPlaying) {
+            // Clear interval if player is paused
             if (subtitleIntervalRef.current) {
                 clearInterval(subtitleIntervalRef.current);
                 subtitleIntervalRef.current = null;
@@ -243,7 +230,7 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
                 subtitleIntervalRef.current = null;
             }
         };
-    }, [subtitleState.parsedSubtitles, playerState.currentTime, settings.subtitleDelay]);
+    }, [subtitleState.parsedSubtitles, playerState.isPlaying, playerState.currentTime]);
 
     // Memoize VLC handlers to prevent recreation
     const vlcHandlers = useMemo(() => ({
@@ -726,10 +713,10 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
 
             <TouchableOpacity style={styles.touchArea} activeOpacity={1} onPress={handleOverlayPress} />
 
-            <SubtitleDisplay 
-                subtitle={useCustomSubtitles ? subtitleState.currentSubtitle : ''} 
+            <SubtitleDisplay
+                subtitle={useCustomSubtitles ? subtitleState.currentSubtitle : ''}
                 position={settings.subtitlePosition}
-                error={!!playerState.error} 
+                error={!!playerState.error}
             />
 
             {uiState.showControls && (
