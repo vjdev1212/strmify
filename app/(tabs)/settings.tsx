@@ -215,12 +215,13 @@ const SettingsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    width: '100%',
-    maxWidth: 780,
-    margin: 'auto'
   },
   scrollViewContent: {
     paddingBottom: 40,
+    maxWidth: 780,
+    margin: 'auto',
+    width: '100%'
+
   },
   headerContainer: {
     paddingHorizontal: 15,

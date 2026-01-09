@@ -238,7 +238,7 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.keyboardAvoid}>
-                <ScrollView contentContainerStyle={styles.scrollContent}>
+                <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                     <View style={styles.header}>
                         <Ionicons name="settings-outline" size={40} color="#535aff" />
                         <Text style={styles.title}>OpenSubtitles Configuration</Text>
