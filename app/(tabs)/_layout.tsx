@@ -4,7 +4,7 @@ import { Platform } from 'react-native';
 
 export default function TabLayout() {
   return (
-    <NativeTabs backgroundColor={'black'}>
+    <NativeTabs>
       <NativeTabs.Trigger name="index">
         <Label>Home</Label>
         <Icon sf="house.fill" drawable="ic_home" />

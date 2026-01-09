@@ -9,13 +9,14 @@ import { getYear } from '@/utils/Date';
 import BottomSpacing from '@/components/BottomSpacing';
 import PosterList from '@/components/PosterList';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import BlurGradientBackground from '@/components/BlurGradientBackground';
 
 const TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
 const SearchScreen = () => {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
-  const debounceTimeoutRef = useRef<any| null>(null);
+  const debounceTimeoutRef = useRef<any | null>(null);
 
   const [moviesUrl, setMoviesUrl] = useState<string | null>(null);
   const [seriesUrl, setSeriesUrl] = useState<string | null>(null);
@@ -81,7 +82,7 @@ const SearchScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar />
-
+      <BlurGradientBackground />
       <View style={styles.headerContainer}>
         <Text style={styles.headerTitle}>Search</Text>
       </View>

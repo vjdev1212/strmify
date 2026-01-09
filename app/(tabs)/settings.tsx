@@ -8,6 +8,7 @@ import { isHapticsSupported } from '@/utils/platform';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomSpacing from '@/components/BottomSpacing';
 import Constants from 'expo-constants';
+import BlurGradientBackground from '@/components/BlurGradientBackground';
 
 const SettingsScreen = () => {
   const router = useRouter();
@@ -103,6 +104,7 @@ const SettingsScreen = () => {
       styles.container,
     ]}>
       <StatusBar />
+      <BlurGradientBackground />
       <ScrollView
         contentContainerStyle={styles.scrollViewContent}
         showsVerticalScrollIndicator={false}
