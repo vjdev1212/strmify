@@ -104,7 +104,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     const player = useVideoPlayer({
         uri: videoUrl,
         metadata: { title, artwork },
-        useCaching: true,    
+        useCaching: true,
     }, useCallback((player: VideoPlayer) => {
         player.loop = false;
         player.muted = settings.isMuted;
@@ -659,7 +659,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                 fullscreenOptions={{ enable: true, orientation: 'landscape' }}
                 allowsPictureInPicture
                 nativeControls={false}
-                contentFit={contentFit}                
+                contentFit={contentFit}
             />
 
             <ArtworkBackground
