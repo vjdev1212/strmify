@@ -49,7 +49,7 @@ const getCardWidth = (screenWidth: number, screenHeight: number) => {
   const isPortrait = screenHeight > screenWidth;
 
   if (isPortrait) {
-    return 240;
+    return 210;
   } else {
     return 320;
   }
@@ -156,11 +156,6 @@ const EpisodeItem: React.FC<EpisodeItemProps> = React.memo(({ item, onEpisodeSel
             onError={handleImageError}
             style={[thumbnailStyle, { opacity: fadeAnim }]}
           />
-          <View style={styles.episodeNumberOverlay}>
-            <Text style={styles.episodeNumberText}>
-              {item.episode || item.number}
-            </Text>
-          </View>
         </View>
       );
     }
@@ -169,11 +164,6 @@ const EpisodeItem: React.FC<EpisodeItemProps> = React.memo(({ item, onEpisodeSel
       <View style={styles.thumbnailWrapper}>
         <View style={placeholderStyle}>
           <SvgXml xml={DefaultEpisodeThumbnailImgXml} width="40%" height="40%" />
-        </View>
-        <View style={styles.episodeNumberOverlay}>
-          <Text style={styles.episodeNumberText}>
-            {item.episode || item.number}
-          </Text>
         </View>
       </View>
     );
@@ -400,6 +390,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'transparent',
+    marginBottom: 20
   },
   seasonListContainer: {
     paddingVertical: 8,
@@ -408,7 +399,7 @@ const styles = StyleSheet.create({
   },
   seasonDropdownButton: {
     backgroundColor: '#202020bf',
-    borderRadius: 10,
+    borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 24,
     flexDirection: 'row',
@@ -517,32 +508,7 @@ const styles = StyleSheet.create({
   thumbnailWrapper: {
     position: 'relative',
     overflow: 'hidden',
-  },
-  episodeNumberOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    backgroundColor: 'rgba(136, 136, 136, 0.5)',
-    backdropFilter: 'blur(20px)',
-    borderBottomRightRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    minWidth: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  episodeNumberText: {
-    color: '#ffffff',
-    fontSize: 11,
-    fontWeight: '500',
-    textAlign: 'center',
-    letterSpacing: 0.5,
-    textShadowColor: 'rgba(0, 0, 0, 0.5)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-  },
+  }
 });
 
 export default SeasonEpisodeList;

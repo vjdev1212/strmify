@@ -95,6 +95,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     const [contentFit, setContentFit] = useState<'contain' | 'cover' | 'fill'>('cover');
     const [showContentFitLabel, setShowContentFitLabel] = useState(false);
     const [isPiPActive, setIsPiPActive] = useState(false);
+    const [isFullscreen, setIsFullscreen] = useState(false);
     const [videoError, setVideoError] = useState<string | null>(null);
 
     const useCustomSubtitles = subtitles.length > 0;
@@ -363,7 +364,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     // Control actions - all optimized with stable dependencies
     const togglePlayPause = useCallback(async () => {
         if (!playerState.isReady) return;
-        
+
         playerState.isPlaying ? player.pause() : player.play();
         showControlsTemporarily();
     }, [playerState.isPlaying, player, playerState.isReady, showControlsTemporarily]);
@@ -407,12 +408,12 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
     const skipTime = useCallback(async (seconds: number) => {
         if (!playerState.isReady) return;
-        
+
         seekTo(playerState.currentTime + seconds);
     }, [playerState.currentTime, seekTo, playerState.isReady]);
 
     const cycleContentFit = useCallback(async () => {
-        
+
         const currentIndex = CONSTANTS.CONTENT_FIT_OPTIONS.indexOf(contentFit);
         setContentFit(CONSTANTS.CONTENT_FIT_OPTIONS[(currentIndex + 1) % CONSTANTS.CONTENT_FIT_OPTIONS.length]);
         showContentFitLabelTemporarily();
@@ -420,7 +421,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     }, [contentFit, showControlsTemporarily, showContentFitLabelTemporarily]);
 
     const togglePiP = useCallback(async () => {
-        
+
         if (videoRef.current) {
             if (isPiPActive) {
                 videoRef.current.stopPictureInPicture();
@@ -430,6 +431,19 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         }
         showControlsTemporarily();
     }, [isPiPActive, showControlsTemporarily]);
+
+    const toggleFullscreen = useCallback(async () => {
+
+        if (videoRef.current) {
+            if (isFullscreen) {
+                videoRef.current.exitFullscreen();
+            } else {
+                videoRef.current.enterFullscreen();
+            }
+            setIsFullscreen(!isFullscreen);
+        }
+        showControlsTemporarily();
+    }, [isFullscreen, showControlsTemporarily]);
 
     const handleOverlayPress = useCallback(() => {
         if (uiState.showControls) {
@@ -483,13 +497,13 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
     // Menu handlers - stable callbacks
     const handlePlaybackSpeedSelect = useCallback(async (speed: number) => {
-        
+
         settings.setPlaybackSpeed(speed);
         showControlsTemporarily();
     }, [showControlsTemporarily, settings]);
 
     const handleSubtitleTrackSelect = useCallback(async (index: number) => {
-        
+
         settings.setSelectedSubtitle(index);
         if (!useCustomSubtitles && index >= 0) {
             player.subtitleTrack = player.availableSubtitleTracks[index];
@@ -499,25 +513,25 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     }, [useCustomSubtitles, player, settings]);
 
     const handleSubtitlePositionSelect = useCallback(async (position: SubtitlePosition) => {
-        
+
         settings.setSubtitlePosition(position);
         showControlsTemporarily();
     }, [settings, showControlsTemporarily]);
 
     const handleSubtitleDelaySelect = useCallback(async (delayMs: number) => {
-        
+
         settings.setSubtitleDelay(delayMs);
         showControlsTemporarily();
     }, [settings, showControlsTemporarily]);
 
     const handleAudioSelect = useCallback(async (index: number) => {
-        
+
         settings.setSelectedAudioTrack(index);
         player.audioTrack = player.availableAudioTracks[index];
     }, [player, settings]);
 
     const handleStreamSelect = useCallback(async (index: number) => {
-        
+
         if (onStreamChange) {
             onStreamChange(index);
         }
@@ -555,7 +569,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     ), [playerState.isDragging, playerState.dragPosition, playerState.currentTime, playerState.duration]);
 
     const handleBack = useCallback(async () => {
-        
+
         const progressValue = calculateProgress(lastKnownTimeRef.current, playerState.duration);
         onBack({ message: '', progress: progressValue, player: "native" });
     }, [playerState.duration, onBack]);
@@ -625,7 +639,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     }, [showControlsTemporarily]);
 
     const handleMuteToggle = useCallback(async () => {
-        
+
         settings.setIsMuted(!settings.isMuted);
         showControlsTemporarily();
     }, [settings, showControlsTemporarily]);
@@ -657,7 +671,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                 player={player}
                 fullscreenOptions={{ enable: true, orientation: 'landscape' }}
                 allowsPictureInPicture
-                nativeControls={false}
+                nativeControls={true}
                 contentFit={contentFit}
             />
 
@@ -723,6 +737,14 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                             <TouchableOpacity style={styles.controlButton} onPress={togglePiP}>
                                 <MaterialIcons name={isPiPActive ? "picture-in-picture-alt" : "picture-in-picture"} size={24} color="white" />
                             </TouchableOpacity>
+
+                            {
+                                playerState.isReady && (
+                                    <TouchableOpacity style={styles.controlButton} onPress={toggleFullscreen}>
+                                        <MaterialIcons name={isFullscreen ? "fullscreen-exit" : "fullscreen"} size={24} color="white" />
+                                    </TouchableOpacity>
+                                )
+                            }
 
                             {player.availableAudioTracks.length > 0 && (
                                 <MenuWrapper
