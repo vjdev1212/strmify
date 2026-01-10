@@ -18,7 +18,7 @@
       "subtitle": "Strmify - Your streaming companion for discovering and watching content from multiple sources.",
       "localizedDescription": "Strmify is your streaming companion for discovering and streaming movies and TV shows through various add-on sources and third-party integrations. Find, search, and play content using your preferred media player.",
       "iconURL": "https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/assets/images/icon.png",
-      "downloadURL": "https://github.com/vjdev1212/strmify/releases/download/v1.1.0/Strmify_v1.1.0.ipa",
+      "downloadURL": "https://github.com/vjdev1212/strmify/releases/download/v1.1.1/Strmify_v1.1.1.ipa",
       "tintColor": "#535aff",
       "category": "entertainment",
       "screenshots": [
@@ -29,6 +29,14 @@
         "https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/Strmify-screenshots/iPhone/4-Search.png"
       ],
       "versions": [
+        {
+          "version": "1.1.1",
+          "date": "2026-01-10",
+          "localizedDescription": "1. VLC (Default) Player buffering issues addressed.",
+          "downloadURL": "https://github.com/vjdev1212/strmify/releases/download/v1.1.1/Strmify_v1.1.1.ipa",
+          "size": 8680000,
+          "minOSVersion": "18.0"
+        },
         {
           "version": "1.1.0",
           "date": "2026-01-09",
@@ -78,10 +86,10 @@
   ],
   "news": [
     {
-      "title": "Strmify v1.1.0 Released",
-      "identifier": "strmify-v1.1.0-release",
-      "caption": "1. Added support for custom opensubtitles API Key.\n2. Media player improvements. \n3. [Breaking] Removed Trakt feature.",
-      "date": "2026-01-09",
+      "title": "Strmify v1.1.1 Released",
+      "identifier": "strmify-v1.1.1-release",
+      "caption": "1. VLC (Default) Player buffering issues addressed.",
+      "date": "2026-01-10",
       "tintColor": "#535aff",
       "imageURL": "https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/assets/banners/Strmify-feature-graphic.png",
       "notify": true,
