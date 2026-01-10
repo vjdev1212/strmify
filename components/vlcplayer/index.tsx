@@ -454,7 +454,7 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
     }, [playerState.isPlaying]);
 
     const handleZoomIn = useCallback(async () => {
-        
+
         setZoom(prev => {
             const newZoom = Math.min(prev + 0.05, 1.5);
             return Math.round(newZoom * 100) / 100;
@@ -463,7 +463,7 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
     }, [showControlsTemporarily]);
 
     const handleZoomOut = useCallback(async () => {
-        
+
         setZoom(prev => {
             const newZoom = Math.max(prev - 0.05, 1.0);
             return Math.round(newZoom * 100) / 100;
@@ -474,7 +474,7 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
     const togglePlayPause = useCallback(async () => {
         if (!playerState.isReady) return;
 
-        
+
 
         const newPausedState = !playerState.isPaused;
 
@@ -489,27 +489,29 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
         const clampedTime = performSeek(seconds, playerState.duration);
         const position = clampedTime / playerState.duration;
 
-        // Set seeking state and show buffering immediately
         isSeeking.current = true;
-        playerState.setIsSeeking(true);
-        playerState.setIsBuffering(true);
-        playerState.setCurrentTime(clampedTime);
-        progressBarValue.setValue(position);
-
-        // Show buffer indicator immediately
-        Animated.timing(animations.bufferOpacity, {
-            toValue: 1,
-            duration: 150,
-            useNativeDriver: true,
-        }).start();
 
         playerRef.current?.seek(position);
+
+        requestAnimationFrame(() => {
+            playerState.setIsSeeking(true);
+            playerState.setIsBuffering(true);
+            playerState.setCurrentTime(clampedTime);
+            progressBarValue.setValue(position);
+
+            Animated.timing(animations.bufferOpacity, {
+                toValue: 1,
+                duration: 150,
+                useNativeDriver: true,
+            }).start();
+        });
+
         showControlsTemporarily();
     }, [playerState, showControlsTemporarily, progressBarValue, animations.bufferOpacity]);
 
     const skipTime = useCallback(async (seconds: number) => {
         if (!playerState.isReady) return;
-        
+
         seekTo(playerState.currentTime + seconds);
     }, [playerState.currentTime, seekTo, playerState.isReady]);
 
@@ -537,36 +539,36 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
     }, [playerState.duration, playerState.isReady, seekTo, playerState]);
 
     const handlePlaybackSpeedSelect = useCallback(async (speed: number) => {
-        
+
         settings.setPlaybackSpeed(speed);
         showControlsTemporarily();
     }, [settings, showControlsTemporarily]);
 
     const handleSubtitleTrackSelect = useCallback(async (index: number) => {
-        
+
         settings.setSelectedSubtitle(index);
     }, [settings]);
 
     const handleSubtitlePositionSelect = useCallback(async (position: SubtitlePosition) => {
-        
+
         settings.setSubtitlePosition(position);
         showControlsTemporarily();
     }, [settings, showControlsTemporarily]);
 
     const handleSubtitleDelaySelect = useCallback(async (delayMs: number) => {
-        
+
         settings.setSubtitleDelay(delayMs);
         showControlsTemporarily();
     }, [settings, showControlsTemporarily]);
 
     const handleAudioSelect = useCallback(async (index: number) => {
-        
+
         settings.setSelectedAudioTrack(index);
         showControlsTemporarily();
     }, [settings, showControlsTemporarily]);
 
     const handleStreamSelect = useCallback(async (index: number) => {
-        
+
 
         if (onStreamChange && index !== currentStreamIndex) {
             // Immediately show we're changing streams
@@ -622,7 +624,7 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
     );
 
     const handleBack = useCallback(async () => {
-        
+
         const progress = calculateProgress(playerState.currentTime, playerState.duration);
         onBack({ message: '', progress, player: "vlc" });
     }, [playerState.currentTime, playerState.duration, onBack]);
@@ -676,7 +678,7 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
     }, [showControlsTemporarily]);
 
     const handleMuteToggle = useCallback(async () => {
-        
+
         settings.setIsMuted(!settings.isMuted);
         showControlsTemporarily();
     }, [settings, showControlsTemporarily]);
@@ -696,7 +698,15 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
                     initType: 2,
                     initOptions: [
                         '--no-sub-autodetect-file',
-                        '--no-spu'
+                        '--no-spu',
+                        '--avcodec-fast',
+                        '--avcodec-skiploopfilter=4',
+                        '--avcodec-skip-frame=0',
+                        '--avcodec-skip-idct=0',
+                        '--network-caching=1000',
+                        '--no-audio-time-stretch',
+                        '--prefetch-buffer-size=2048',
+                        '--prefetch-read-size=1024'
                     ]
                 }}
                 autoplay={true}
@@ -798,7 +808,7 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
                             </TouchableOpacity>
 
                             <TouchableOpacity style={styles.controlButton} onPress={async () => {
-                                
+
                                 settings.setIsMuted(!settings.isMuted);
                                 showControlsTemporarily();
                             }}>
