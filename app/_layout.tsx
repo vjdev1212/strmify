@@ -192,7 +192,13 @@ function RootLayoutNav() {
               name="stream/player"
               options={{
                 headerShown: false,
+                headerTransparent: true,
                 headerBackground: InvisibleHeaderBackground,
+                headerTitle: '',
+                headerTintColor: '#ffffff',
+                headerBackTitle: '',
+                headerShadowVisible: false,
+                headerBackVisible: false,
                 headerStyle: {
                   backgroundColor: 'transparent',
                 }

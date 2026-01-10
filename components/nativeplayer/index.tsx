@@ -671,7 +671,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                 player={player}
                 fullscreenOptions={{ enable: true, orientation: 'landscape' }}
                 allowsPictureInPicture
-                nativeControls={true}
+                nativeControls={Platform.OS !== 'web'}
                 contentFit={contentFit}
             />
 
@@ -739,7 +739,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                             </TouchableOpacity>
 
                             {
-                                playerState.isReady && (
+                                Platform.OS !== 'web' && playerState.isReady && (
                                     <TouchableOpacity style={styles.controlButton} onPress={toggleFullscreen}>
                                         <MaterialIcons name={isFullscreen ? "fullscreen-exit" : "fullscreen"} size={24} color="white" />
                                     </TouchableOpacity>
