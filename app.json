@@ -11,7 +11,7 @@
       "android",
       "web"
     ],
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "splash": {
       "image": "assets/images/splash.png",
