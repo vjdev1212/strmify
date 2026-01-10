@@ -9,9 +9,7 @@
     "web": "expo start --web",
     "test": "jest --watchAll",
     "build:web": "npx expo export -p web",
-    "build:ios": "eas build -p ios --profile preview",
-    "build:android": "eas build -p android --profile preview",
-    "docker-push": "node scripts/docker-build.js"
+    "build:android": "eas build -p android --profile preview"
   },
   "jest": {
     "preset": "jest-expo"
