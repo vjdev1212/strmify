@@ -147,8 +147,8 @@ Strmify addons provide streaming sources for movies and series through a standar
 |-----------|-------------|---------|
 | `<type>` | Content type | `movie` or `series` |
 | `<imdbid>` | IMDb ID | `tt6105098` |
-| `<season>` | Season | `tt6105098` |
-| `<episode>` | Episode | `tt6105098` |
+| `<season>` | Season | `1` |
+| `<episode>` | Episode | `8` |
 
 ---
 
