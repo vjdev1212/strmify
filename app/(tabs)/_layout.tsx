@@ -1,10 +1,9 @@
 import React from 'react';
 import { NativeTabs, Label, Icon } from 'expo-router/unstable-native-tabs';
-import { Platform } from 'react-native';
 
 export default function TabLayout() {
   return (
-    <NativeTabs>
+    <NativeTabs minimizeBehavior="onScrollDown">
       <NativeTabs.Trigger name="index">
         <Label>Home</Label>
         <Icon sf="house.fill" drawable="ic_home" />

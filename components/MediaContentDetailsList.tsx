@@ -26,6 +26,16 @@ const UNKNOWN_TEXT = 'Unknown';
 const NOT_RATED_TEXT = 'Not Rated';
 const STAR_COLOR = '#E6BD37';
 const STAR_SIZE = 14;
+const containerMargin = 15;
+
+const COLORS = {
+  background: '#000000',
+  primary: '#FFFFFF',
+  secondary: '#B0B0B0',
+  accent: '#333333',
+  border: '#444444',
+  placeholderBg: '#1a1a1a',
+};
 
 // Helper function for country code conversion
 const countryCodeToName = (code: string) => {
@@ -52,8 +62,8 @@ const MediaContentDetailsList: React.FC<MediaContentDetailsListProps> = ({
     const hasRating = imdbRating !== '0.0' && imdbRating !== UNKNOWN_TEXT;
     const formattedDate = formatDate(released);
     const genreText = genre.length > 0 ? genre.join(', ') : UNKNOWN_TEXT;
-    const countryText = country.length > 0 
-      ? country.map(countryCodeToName).join(', ') 
+    const countryText = country.length > 0
+      ? country.map(countryCodeToName).join(', ')
       : UNKNOWN_TEXT;
     const languagesText =
       languages.length > 0
@@ -123,30 +133,35 @@ const MediaContentDetailsList: React.FC<MediaContentDetailsListProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Glass background */}
-      <BlurView intensity={50} tint="dark" style={styles.tableContainer}>
-        {/* Subtle gradient overlay for depth */}
-        <LinearGradient
-          colors={['rgba(255,255,255,0)', 'rgba(255,255,255,0.01)']}
-          style={StyleSheet.absoluteFill}
-        />
-        {tableData.map((item, index) =>
-          renderTableRow(
-            item.label,
-            item.value,
-            item.key,
-            index === tableData.length - 1
-          )
-        )}
-      </BlurView>
+      <View style={[styles.headerContainer, { paddingHorizontal: containerMargin }]}>
+        <Text style={[styles.sectionTitle, { color: COLORS.primary }]}>
+          Information
+        </Text>
+      </View>
+      {tableData.map((item, index) =>
+        renderTableRow(
+          item.label,
+          item.value,
+          item.key,
+          index === tableData.length - 1
+        )
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 15,
-    paddingVertical: 16,
+    paddingHorizontal: 5,
+    marginVertical: 20,
+  },
+  headerContainer: {
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '500',
+    letterSpacing: 0.5,
   },
   tableContainer: {
     borderRadius: 10,
@@ -157,13 +172,13 @@ const styles = StyleSheet.create({
   },
   tableRow: {
     flexDirection: 'row',
-    paddingHorizontal: 20,
+    marginHorizontal: 20,
     paddingVertical: 10,
     alignItems: 'center',
   },
   rowBorder: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+    borderBottomColor: 'rgba(119, 119, 119, 0.25)',
   },
   labelCell: {
     width: 120,
@@ -180,9 +195,8 @@ const styles = StyleSheet.create({
     color: '#ddd',
   },
   value: {
-    fontSize: 15,
-    fontWeight: '400',
-    color: '#ffffff',
+    fontSize: 14,
+    color: '#cccccc',
     lineHeight: 20,
   },
   ratingContainer: {

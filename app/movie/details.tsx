@@ -150,7 +150,7 @@ const MovieDetails = () => {
         imdbid: imdbid,
         type: 'movie',
         name: data.name,
-        title: data.year != null ? `${data.name} (${data.year})`: data.name,
+        title: data.year != null ? `${data.name} (${data.year})` : data.name,
         season: 0,
         episode: 0
       },
@@ -193,16 +193,16 @@ const MovieDetails = () => {
             <WatchTrailerButton trailerKey={trailerKey} />
           </View>
           <MediaContentDescription description={data.description} />
-          {
-            isPortrait && (
-              <MediaContentDetailsList type='movie' released={data.released} country={data.country} languages={data.languages} genre={data.genre || data.genres} runtime={data.runtime} imdbRating={data.imdbRating} />
-            )
-          }
         </View>
       </View>
       <View style={styles.castContainer}>
         <MediaCastAndCrews cast={cast}></MediaCastAndCrews>
       </View>
+      {
+        isPortrait && (
+          <MediaContentDetailsList type='movie' released={data.released} country={data.country} languages={data.languages} genre={data.genre || data.genres} runtime={data.runtime} imdbRating={data.imdbRating} />
+        )
+      }
       <View style={styles.recommendationsContainer}>
         <PosterList apiUrl={`https://api.themoviedb.org/3/movie/${moviedbid}/recommendations`} title='Recommended' type='movie' />
       </View>

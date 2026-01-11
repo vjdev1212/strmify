@@ -37,7 +37,7 @@ interface EpisodeItemProps {
 
 // Constants
 const THUMBNAIL_BACKGROUND_COLOR = '#0f0f0f';
-const EPISODE_AIRED_COLOR = '#afafaf';
+const EPISODE_AIRED_COLOR = '#cccccc';
 const SELECTED_SEASON_COLOR = '#535aff';
 const ANIMATION_DURATION = 100;
 const IMAGE_LOAD_DELAY = 100;
@@ -51,7 +51,7 @@ const getCardWidth = (screenWidth: number, screenHeight: number) => {
   if (isPortrait) {
     return 210;
   } else {
-    return 320;
+    return 240;
   }
 };
 
@@ -358,7 +358,7 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
               <Text style={styles.seasonDropdownText}>
                 {getCurrentSeasonText()}
               </Text>
-              <Ionicons name='caret-down-circle-outline' size={24} color='#ffffff' />
+              <Ionicons name='chevron-expand' size={24} color='#ffffff' />
             </TouchableOpacity>
           </MenuView>
         )}
@@ -398,30 +398,25 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   seasonDropdownButton: {
-    backgroundColor: '#202020bf',
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
+    paddingTop: 10,
+    paddingHorizontal: 5,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    width: 160,
-    shadowColor: 'rgba(0, 0, 0, 0.3)',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    justifyContent: 'space-evenly',
+    width: 150,
+    maxWidth: 130,
   },
   seasonDropdownText: {
-    fontSize: 16,
+    fontSize: 20,
     color: '#ffffff',
     fontWeight: '500',
     letterSpacing: 0.3,
     flex: 1,
   },
   seasonDropdownArrow: {
-    fontSize: 14,
-    color: '#cccccc',
+    fontSize: 18,
+    color: '#ffffff',
+    fontWeight: '600'
   },
   episodeScrollView: {
     flex: 1,

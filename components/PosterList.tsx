@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
   posterYear: {
     marginTop: 4,
     fontSize: 12,
-    color: '#ccc',
+    color: '#cccccc',
   },
   skeletonText: {
     height: 14,
