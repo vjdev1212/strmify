@@ -334,26 +334,25 @@ const styles = StyleSheet.create({
         justifyContent: 'center'
     },
     addonItem: {
-        borderRadius: 20,
+        borderRadius: 25,
         paddingVertical: 10,
         paddingHorizontal: 20,
-        marginHorizontal: 6,
+        marginHorizontal: 10,
         backgroundColor: '#202020',
         borderWidth: 1,
         borderColor: 'transparent',
     },
     selectedAddonItem: {
-        backgroundColor: '#535aff',
-        borderColor: '#535aff',
+        backgroundColor: '#535aff'
     },
     addonName: {
-        fontSize: 14,
+        fontSize: 16,
         color: '#ccc',
-        fontWeight: '500',
+        fontWeight: '400',
     },
     selectedaddonName: {
         color: '#fff',
-        fontWeight: '600',
+        fontWeight: '500',
     },
     streamsContainer: {
         paddingHorizontal: 16,
@@ -405,7 +404,7 @@ const styles = StyleSheet.create({
     },
     streamDescription: {
         fontSize: 13,
-        color: '#999',
+        color: '#aaaaaa',
         lineHeight: 20,
         marginBottom: 12,
     },
@@ -421,7 +420,7 @@ const styles = StyleSheet.create({
     },
     streamSize: {
         fontSize: 11,
-        color: '#666',
+        color: '#aaaaaa',
         marginRight: 12,
         backgroundColor: '#2a2a2a',
         paddingHorizontal: 8,
@@ -431,7 +430,7 @@ const styles = StyleSheet.create({
     },
     streamType: {
         fontSize: 11,
-        color: '#666',
+        color: '#aaaaaa',
         textTransform: 'uppercase',
         fontWeight: '600',
         letterSpacing: 0.5,
