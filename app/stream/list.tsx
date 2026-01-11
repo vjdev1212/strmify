@@ -348,7 +348,7 @@ const styles = StyleSheet.create({
     },
     addonName: {
         fontSize: 14,
-        color: '#999',
+        color: '#ccc',
         fontWeight: '500',
     },
     selectedaddonName: {

@@ -179,16 +179,17 @@ const SeriesDetails = () => {
     setEpisode(episode);
     router.push({
       pathname: '/stream/list',
-      params: { imdbid: 
-        imdbid, 
-        tmdbid: 
-        moviedbid, 
-        type: 'series', 
+      params: {
+        imdbid:
+          imdbid,
+        tmdbid:
+          moviedbid,
+        type: 'series',
         name: data.name,
-        title: getFormattedName(data, season, episode), 
-        season: season, 
+        title: getFormattedName(data, season, episode),
+        season: season,
         episode: episode
-       },
+      },
     });
   };
 
@@ -247,11 +248,6 @@ const SeriesDetails = () => {
           </View>
           <MediaContentDescription description={data.description} />
           {
-            isPortrait && (
-              <MediaContentDetailsList type='tv' released={data.released} country={data.country} languages={data.languages} genre={data.genre || data.genres} runtime={data.runtime} imdbRating={data.imdbRating} />
-            )
-          }
-          {
             isPortrait ? (null) : (
               <>
                 <BottomSpacing space={80} />
@@ -260,14 +256,19 @@ const SeriesDetails = () => {
           }
         </View>
       </View>
-      <View style={styles.castContainer}>
-        <MediaCastAndCrews cast={cast}></MediaCastAndCrews>
-      </View>
       <View>
         <View style={{ justifyContent: 'center', marginTop: 5 }}>
           <SeasonEpisodeList videos={data.videos} onEpisodeSelect={handleEpisodeSelect} />
         </View>
       </View>
+      <View style={styles.castContainer}>
+        <MediaCastAndCrews cast={cast}></MediaCastAndCrews>
+      </View>
+      {
+        isPortrait && (
+          <MediaContentDetailsList type='tv' released={data.released} country={data.country} languages={data.languages} genre={data.genre || data.genres} runtime={data.runtime} imdbRating={data.imdbRating} />
+        )
+      }
       <View style={styles.recommendationsContainer}>
         <PosterList apiUrl={`https://api.themoviedb.org/3/tv/${moviedbid}/recommendations`} title='Recommended' type='series' />
       </View>

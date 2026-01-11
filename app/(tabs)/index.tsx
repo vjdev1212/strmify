@@ -188,7 +188,7 @@ export default function HomeScreen() {
                   <Ionicons
                     name={item.icon as any}
                     size={18}
-                    color={filter === item.key ? '#fff' : '#bbb'}
+                    color={filter === item.key ? '#000000' : '#bbbbbb'}
                     style={{ marginRight: 6 }}
                   />
                   <Text
@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   filterButtonActive: {
-    backgroundColor: '#535aff',
+    backgroundColor: '#ffffff',
   },
   filterButtonText: {
     fontSize: 15,
@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   filterButtonTextActive: {
-    color: '#ffffff',
+    color: '#000000',
     fontWeight: '600',
   },
   contentContainer: {
