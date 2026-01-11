@@ -388,11 +388,48 @@ export const buildSubtitleActions = (
     subtitles: SubtitleSource[],
     selectedIndex: number,
     useCustomSubtitles: boolean,
-    availableSubtitleTracks: any[],
+    availableTextTracks: any[],
     subtitlePosition: SubtitlePosition,
-    subtitleDelay: number
+    subtitleDelay: number,
+    selectedVLCTextTrack: number = -1
 ): MenuAction[] => {
-    const trackActions = buildSubtitleTrackActions(subtitles, selectedIndex, useCustomSubtitles, availableSubtitleTracks);
+    // Build custom subtitle actions (OpenSubtitles)
+    const customSubtitleActions: MenuAction[] = useCustomSubtitles
+        ? subtitles.map((sub, i) => ({
+            id: `subtitle-track-${i}`,
+            title: sub.label,
+            subtitle: sub.language ? `OpenSubtitles - ${sub.language.toUpperCase()}` : 'OpenSubtitles',
+            state: selectedIndex === i && selectedVLCTextTrack < 0 ? ('on' as const) : undefined,
+            titleColor: selectedIndex === i && selectedVLCTextTrack < 0 ? '#007AFF' : '#FFFFFF',
+        }))
+        : [];
+
+    // Build VLC embedded text track actions (skip "Disable" track with id -1)
+    const vlcTextTrackActions: MenuAction[] = availableTextTracks
+        .filter(track => track.id !== -1) // Skip the "Disable" track
+        .map((track) => ({
+            id: `vlc-text-track-${track.id}`,
+            title: track.name || track.label || `Track ${track.id}`,
+            subtitle: 'Embedded',
+            state: selectedVLCTextTrack === track.id ? ('on' as const) : undefined,
+            titleColor: selectedVLCTextTrack === track.id ? '#007AFF' : '#FFFFFF',
+        }));
+
+    // Off action
+    const offAction: MenuAction = {
+        id: 'subtitle-track-off',
+        title: 'Off',
+        state: selectedIndex === -1 && selectedVLCTextTrack === -1 ? ('on' as const) : undefined,
+        titleColor: selectedIndex === -1 && selectedVLCTextTrack === -1 ? '#007AFF' : '#FFFFFF',
+    };
+
+    // Combine all track actions
+    const trackActions: MenuAction[] = [
+        offAction,
+        ...vlcTextTrackActions,
+        ...customSubtitleActions
+    ];
+
     const positionActions = buildSubtitlePositionActions(subtitlePosition);
     const delayActions = buildSubtitleDelayActions(subtitleDelay);
 
@@ -632,7 +669,7 @@ export const CenterControls: React.FC<{
                 onPress={onSkipForward}
             >
                 <MaterialIcons
-                    name="forward-10"
+                    name="forward-30"
                     size={36}
                     color={"#ffffff"}
                 />

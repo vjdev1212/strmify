@@ -130,8 +130,16 @@ Strmify addons provide streaming sources for movies and series through a standar
 
 ### Stream Endpoint
 
+### Movies
+
 **URL Pattern:** `{addonurl}/stream/<type>/<imdbid>.json`  
 **Example:** `https://mediafusion.elfhosted.com/stream/movie/tt6105098.json`
+
+### TV Shows
+
+**URL Pattern:** `{addonurl}/stream/<type>/<imdbid>:<season>:<episode>.json` 
+**Encoded URL Pattern:** `{addonurl}/stream/<type>/<imdbid>%3A<season>%3A<episode>.json`  
+**Example:** `https://mediafusion.elfhosted.com/stream/series/tt6105098%3A1%3A1.json`
 
 #### Parameters
 
@@ -139,6 +147,8 @@ Strmify addons provide streaming sources for movies and series through a standar
 |-----------|-------------|---------|
 | `<type>` | Content type | `movie` or `series` |
 | `<imdbid>` | IMDb ID | `tt6105098` |
+| `<season>` | Season | `1` |
+| `<episode>` | Episode | `8` |
 
 ---
 
