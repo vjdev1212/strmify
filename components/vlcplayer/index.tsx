@@ -741,7 +741,7 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
                         '--prefetch-buffer-size=2048',
                         '--prefetch-read-size=1024',
                         '--sub-text-scale=45',
-                        '--sub-margin=60',
+                        '--sub-margin=65',
                     ]
                 }}
                 autoplay={true}
