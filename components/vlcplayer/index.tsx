@@ -44,6 +44,8 @@ const useVLCPlayerState = () => {
     const [hasStartedPlaying, setHasStartedPlaying] = useState(false);
     const [isSeeking, setIsSeeking] = useState(false);
     const [availableAudioTracks, setAvailableAudioTracks] = useState<any[]>([]);
+    const [availableTextTracks, setAvailableTextTracks] = useState<any[]>([]);
+    const [selectedVLCTextTrack, setSelectedVLCTextTrack] = useState<number>(-100);
 
     return {
         ...baseState,
@@ -52,7 +54,9 @@ const useVLCPlayerState = () => {
         showBufferingLoader, setShowBufferingLoader,
         hasStartedPlaying, setHasStartedPlaying,
         isSeeking, setIsSeeking,
-        availableAudioTracks, setAvailableAudioTracks
+        availableAudioTracks, setAvailableAudioTracks,
+        availableTextTracks, setAvailableTextTracks,
+        selectedVLCTextTrack, setSelectedVLCTextTrack
     };
 };
 
@@ -210,7 +214,7 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
         }
     }, [videoUrl, currentVideoUrl, playerState, animations.bufferOpacity]);
 
-    // Optimized subtitle loading
+    // Optimized subtitle loading - only for custom subtitles (OpenSubtitles)
     useEffect(() => {
         if (subtitles.length === 0 || settings.selectedSubtitle < 0 || settings.selectedSubtitle >= subtitles.length) {
             subtitleState.setParsedSubtitles([]);
@@ -235,14 +239,16 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
         loadSub();
     }, [settings.selectedSubtitle, subtitles]);
 
-    // Optimized subtitle updates - only when playing and subtitles exist
+    // Optimized subtitle updates - only when playing and custom subtitles are selected
     useEffect(() => {
-        if (subtitleState.parsedSubtitles.length === 0 || !playerState.isPlaying) {
-            // Clear interval if player is paused
+        // Only show custom subtitles if VLC text track is disabled
+        if (subtitleState.parsedSubtitles.length === 0 || !playerState.isPlaying || playerState.selectedVLCTextTrack >= 0) {
+            // Clear interval if player is paused or VLC subtitles are active
             if (subtitleIntervalRef.current) {
                 clearInterval(subtitleIntervalRef.current);
                 subtitleIntervalRef.current = null;
             }
+            subtitleState.setCurrentSubtitle('');
             return;
         }
 
@@ -266,12 +272,13 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
                 subtitleIntervalRef.current = null;
             }
         };
-    }, [subtitleState.parsedSubtitles, playerState.isPlaying, playerState.currentTime]);
+    }, [subtitleState.parsedSubtitles, playerState.isPlaying, playerState.currentTime, playerState.selectedVLCTextTrack]);
 
     // Memoize VLC handlers to prevent recreation
     const vlcHandlers = useMemo(() => ({
         onLoad: (data: any) => {
             console.log('VLC onLoad');
+            console.log('VLC onLoad data:', data);
             console.log('progress', progress);
 
             requestAnimationFrame(() => {
@@ -283,16 +290,22 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
                 playerState.setIsPaused(false);
                 playerState.setShowBufferingLoader(false);
                 playerState.setIsSeeking(false);
-                setIsChangingStream(false); // ADD THIS LINE
+                setIsChangingStream(false);
 
                 if (data?.audioTracks) {
+                    console.log('Audio tracks:', data.audioTracks);
                     playerState.setAvailableAudioTracks(data.audioTracks);
+                }
+                if (data?.textTracks) {
+                    console.log('Text tracks:', data.textTracks);
+                    // Filter out the "Disable" track (id: -1)
+                    const validTracks = data.textTracks.filter((track: any) => track.id !== -1);
+                    playerState.setAvailableTextTracks(validTracks);
                 }
                 if (data?.duration) {
                     const durationInSeconds = data.duration / 1000;
                     playerState.setDuration(durationInSeconds);
                 }
-                // MODIFY the progress check to include isChangingStream:
                 if (progress && progress > 0 && !isChangingStream) {
                     playerRef.current?.seek(progress / 100);
                 }
@@ -454,7 +467,6 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
     }, [playerState.isPlaying]);
 
     const handleZoomIn = useCallback(async () => {
-
         setZoom(prev => {
             const newZoom = Math.min(prev + 0.05, 1.5);
             return Math.round(newZoom * 100) / 100;
@@ -463,7 +475,6 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
     }, [showControlsTemporarily]);
 
     const handleZoomOut = useCallback(async () => {
-
         setZoom(prev => {
             const newZoom = Math.max(prev - 0.05, 1.0);
             return Math.round(newZoom * 100) / 100;
@@ -473,8 +484,6 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
 
     const togglePlayPause = useCallback(async () => {
         if (!playerState.isReady) return;
-
-
 
         const newPausedState = !playerState.isPaused;
 
@@ -539,37 +548,47 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
     }, [playerState.duration, playerState.isReady, seekTo, playerState]);
 
     const handlePlaybackSpeedSelect = useCallback(async (speed: number) => {
-
         settings.setPlaybackSpeed(speed);
         showControlsTemporarily();
     }, [settings, showControlsTemporarily]);
 
     const handleSubtitleTrackSelect = useCallback(async (index: number) => {
-
+        console.log('Selecting custom subtitle (OpenSubtitles):', index);
         settings.setSelectedSubtitle(index);
-    }, [settings]);
+        // When selecting custom subtitle, disable VLC text track
+        if (index >= 0) {
+            playerState.setSelectedVLCTextTrack(-1);
+        }
+    }, [settings, playerState]);
+
+    const handleVLCTextTrackSelect = useCallback(async (trackId: number) => {
+        console.log('Selecting VLC text track with ID:', trackId);
+        playerState.setSelectedVLCTextTrack(trackId);
+        // When selecting VLC text track, disable custom subtitles
+        if (trackId >= 0) {
+            settings.setSelectedSubtitle(-1);
+            subtitleState.setCurrentSubtitle('');
+            subtitleState.setParsedSubtitles([]);
+        }
+        showControlsTemporarily();
+    }, [playerState, settings, subtitleState, showControlsTemporarily]);
 
     const handleSubtitlePositionSelect = useCallback(async (position: SubtitlePosition) => {
-
         settings.setSubtitlePosition(position);
         showControlsTemporarily();
     }, [settings, showControlsTemporarily]);
 
     const handleSubtitleDelaySelect = useCallback(async (delayMs: number) => {
-
         settings.setSubtitleDelay(delayMs);
         showControlsTemporarily();
     }, [settings, showControlsTemporarily]);
 
     const handleAudioSelect = useCallback(async (index: number) => {
-
         settings.setSelectedAudioTrack(index);
         showControlsTemporarily();
     }, [settings, showControlsTemporarily]);
 
     const handleStreamSelect = useCallback(async (index: number) => {
-
-
         if (onStreamChange && index !== currentStreamIndex) {
             // Immediately show we're changing streams
             setIsChangingStream(true);
@@ -596,11 +615,12 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
             subtitles as SubtitleSource[],
             settings.selectedSubtitle,
             useCustomSubtitles,
-            [],
+            playerState.availableTextTracks,
             settings.subtitlePosition,
-            settings.subtitleDelay
+            settings.subtitleDelay,
+            playerState.selectedVLCTextTrack
         ),
-        [subtitles, settings.selectedSubtitle, useCustomSubtitles, settings.subtitlePosition, settings.subtitleDelay]
+        [subtitles, settings.selectedSubtitle, useCustomSubtitles, playerState.availableTextTracks, settings.subtitlePosition, settings.subtitleDelay, playerState.selectedVLCTextTrack]
     );
 
     const audioActions = useMemo(() =>
@@ -624,32 +644,38 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
     );
 
     const handleBack = useCallback(async () => {
-
         const progress = calculateProgress(playerState.currentTime, playerState.duration);
         onBack({ message: '', progress, player: "vlc" });
     }, [playerState.currentTime, playerState.duration, onBack]);
 
     // Unified menu action handler
     const handleMenuAction = useCallback((id: string) => {
+        console.log('Menu action:', id);
         // Playback speed
         if (id.startsWith('speed-')) {
             const speed = parseFloat(id.split('-')[1]);
             if (!isNaN(speed)) handlePlaybackSpeedSelect(speed);
         }
-        // Subtitle track
+        // Subtitle track - turn off both
         else if (id === 'subtitle-track-off') {
             handleSubtitleTrackSelect(-1);
+            playerState.setSelectedVLCTextTrack(-1);
         }
+        // Custom subtitle track (OpenSubtitles)
         else if (id.startsWith('subtitle-track-')) {
             const index = parseInt(id.split('subtitle-track-')[1]);
             if (!isNaN(index)) handleSubtitleTrackSelect(index);
+        }
+        // VLC embedded text track
+        else if (id.startsWith('vlc-text-track-')) {
+            const trackId = parseInt(id.split('vlc-text-track-')[1]);
+            if (!isNaN(trackId)) handleVLCTextTrackSelect(trackId);
         }
         // Subtitle position
         else if (id.startsWith('position-')) {
             const position = parseInt(id.split('-')[1]);
             if (!isNaN(position)) handleSubtitlePositionSelect(position);
         }
-        // Subtitle delay
         // Subtitle delay
         else if (id.startsWith('delay_')) {
             const delayMs = parseInt(id.replace('delay_', ''));
@@ -665,7 +691,7 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
             const index = parseInt(id.split('-')[1]);
             if (!isNaN(index)) handleStreamSelect(index);
         }
-    }, [handlePlaybackSpeedSelect, handleSubtitleTrackSelect, handleSubtitlePositionSelect, handleSubtitleDelaySelect, handleAudioSelect, handleStreamSelect]);
+    }, [handlePlaybackSpeedSelect, handleSubtitleTrackSelect, handleVLCTextTrackSelect, handleSubtitlePositionSelect, handleSubtitleDelaySelect, handleAudioSelect, handleStreamSelect, playerState]);
 
     const handleMenuOpen = useCallback(() => {
         shouldAutoHideControls.current = false;
@@ -678,13 +704,22 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
     }, [showControlsTemporarily]);
 
     const handleMuteToggle = useCallback(async () => {
-
         settings.setIsMuted(!settings.isMuted);
         showControlsTemporarily();
     }, [settings, showControlsTemporarily]);
 
     const handleSkipBackward = useCallback(() => skipTime(-10), [skipTime]);
     const handleSkipForward = useCallback(() => skipTime(30), [skipTime]);
+
+    // Determine which subtitle to show
+    const displaySubtitle = useMemo(() => {
+        // If VLC text track is selected (>= 0), don't show custom subtitles
+        if (playerState.selectedVLCTextTrack >= 0) {
+            return '';
+        }
+        // Otherwise show custom subtitles if available
+        return useCustomSubtitles ? subtitleState.currentSubtitle : '';
+    }, [playerState.selectedVLCTextTrack, useCustomSubtitles, subtitleState.currentSubtitle]);
 
     return (
         <View style={styles.container}>
@@ -697,8 +732,6 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
                     uri: currentVideoUrl,
                     initType: 2,
                     initOptions: [
-                        '--no-sub-autodetect-file',
-                        '--no-spu',
                         '--avcodec-fast',
                         '--avcodec-skiploopfilter=4',
                         '--avcodec-skip-frame=0',
@@ -706,14 +739,16 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
                         '--network-caching=1000',
                         '--no-audio-time-stretch',
                         '--prefetch-buffer-size=2048',
-                        '--prefetch-read-size=1024'
+                        '--prefetch-read-size=1024',
+                        '--sub-text-scale=45',
+                        '--sub-margin=65',
                     ]
                 }}
                 autoplay={true}
                 playInBackground={true}
                 autoAspectRatio={true}
                 resizeMode="cover"
-                textTrack={-1}
+                textTrack={playerState.selectedVLCTextTrack}
                 acceptInvalidCertificates={true}
                 rate={settings.playbackSpeed}
                 muted={settings.isMuted}
@@ -755,7 +790,7 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
             <TouchableOpacity style={styles.touchArea} activeOpacity={1} onPress={handleOverlayPress} />
 
             <SubtitleDisplay
-                subtitle={useCustomSubtitles ? subtitleState.currentSubtitle : ''}
+                subtitle={displaySubtitle}
                 position={settings.subtitlePosition}
                 error={!!playerState.error}
             />
@@ -807,11 +842,7 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
                                 <MaterialIcons name="zoom-in" size={24} color="white" />
                             </TouchableOpacity>
 
-                            <TouchableOpacity style={styles.controlButton} onPress={async () => {
-
-                                settings.setIsMuted(!settings.isMuted);
-                                showControlsTemporarily();
-                            }}>
+                            <TouchableOpacity style={styles.controlButton} onPress={handleMuteToggle}>
                                 <Ionicons name={settings.isMuted ? "volume-mute" : "volume-high"} size={24} color="white" />
                             </TouchableOpacity>
 
@@ -826,14 +857,8 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
                                     actions={audioActions}
                                     shouldOpenOnLongPress={false}
                                     themeVariant="dark"
-                                    onOpenMenu={() => {
-                                        shouldAutoHideControls.current = false;
-                                        timers.clearTimer('hideControls');
-                                    }}
-                                    onCloseMenu={() => {
-                                        shouldAutoHideControls.current = true;
-                                        showControlsTemporarily();
-                                    }}
+                                    onOpenMenu={handleMenuOpen}
+                                    onCloseMenu={handleMenuClose}
                                 >
                                     <TouchableOpacity
                                         style={styles.controlButton}
@@ -848,7 +873,7 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
                                 </MenuView>
                             )}
 
-                            {subtitles.length > 0 && (
+                            {(subtitles.length > 0 || playerState.availableTextTracks.length > 0) && (
                                 <MenuView
                                     style={{ zIndex: 1000 }}
                                     title="Subtitles"
