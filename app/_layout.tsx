@@ -194,14 +194,6 @@ function RootLayoutNav() {
                 headerShown: false,
                 headerTransparent: true,
                 headerBackground: InvisibleHeaderBackground,
-                headerTitle: '',
-                headerTintColor: '#ffffff',
-                headerBackTitle: '',
-                headerShadowVisible: false,
-                headerBackVisible: false,
-                headerStyle: {
-                  backgroundColor: 'transparent',
-                }
               }}
             />
             <Stack.Screen
