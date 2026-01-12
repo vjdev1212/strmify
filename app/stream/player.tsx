@@ -19,6 +19,13 @@ interface PlaybackErrorEvent {
   error: string;
 }
 
+interface BackEvent {
+  message: string;
+  code?: string;
+  progress: number;
+  player: "native" | "vlc",
+}
+
 interface WatchHistoryItem {
   title: string;
   videoUrl: string;
@@ -624,7 +631,8 @@ const MediaPlayerScreen: React.FC = () => {
     }
   };
 
-  const handleBack = async (): Promise<void> => {
+  const handleBack = async (event: BackEvent): Promise<void> => {
+    saveToWatchHistory(Math.floor(event.progress));
     router.back();
   };
 
