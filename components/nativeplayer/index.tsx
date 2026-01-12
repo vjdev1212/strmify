@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
-import { TouchableOpacity, Animated, Platform } from "react-native";
+import { TouchableOpacity, Animated, Platform, Dimensions } from "react-native";
 import Video, { OnLoadData, OnProgressData, VideoRef, OnBufferData, ResizeMode, SelectedTrack, TextTrackType } from "react-native-video";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { MenuComponentRef, MenuView } from '@react-native-menu/menu';
@@ -101,6 +101,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     const [selectedAudioTrack, setSelectedAudioTrack] = useState<number>(-1);
     const [selectedTextTrack, setSelectedTextTrack] = useState<number>(-1);
     const [useEmbeddedSubtitles, setUseEmbeddedSubtitles] = useState(false);
+    const [isFullscreen, setIsFullscreen] = useState(false);
 
     const useCustomSubtitles = subtitles.length > 0 && !useEmbeddedSubtitles;
 
@@ -243,7 +244,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                 clearInterval(progressUpdateTimerRef.current);
             }
         };
-    }, [playerState.isReady, playerState.duration, updateProgress]);   
+    }, [playerState.isReady, playerState.duration, updateProgress]);
 
     // Auto-hide controls when playback starts
     useEffect(() => {
@@ -278,7 +279,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         // Set available tracks - ensure they're arrays
         if (data.audioTracks && Array.isArray(data.audioTracks) && data.audioTracks.length > 0) {
             setAvailableAudioTracks(data.audioTracks);
-            
+
             // Auto-select first audio track if none selected
             if (selectedAudioTrack === -1) {
                 setSelectedAudioTrack(0);
@@ -391,7 +392,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
         seekTimeoutRef.current = setTimeout(() => {
             isSeeking.current = false;
-            
+
             // Force hide buffering indicator after seek
             playerState.setIsBuffering(false);
             Animated.timing(bufferOpacity, { toValue: 0, duration: 200, useNativeDriver: true }).start();
@@ -558,10 +559,10 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
     // Memoize menu actions to prevent rebuilding on every render
     const settingsActions = useMemo(() => buildSettingsActions(settings.playbackSpeed), [settings.playbackSpeed]);
-    
+
     const subtitleActions = useMemo(() => {
         const adaptedTracks = adaptTextTracks(availableTextTracks);
-        
+
         // Determine current selection
         let currentSelection = -1;
         if (useEmbeddedSubtitles && selectedTextTrack >= 0) {
@@ -569,7 +570,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         } else if (!useEmbeddedSubtitles && settings.selectedSubtitle >= 0) {
             currentSelection = settings.selectedSubtitle;
         }
-        
+
         const actions = buildSubtitleActions(
             subtitles as SubtitleSource[],
             currentSelection,
@@ -697,6 +698,11 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     const handleSkipBackward = useCallback(() => skipTime(-10), [skipTime]);
     const handleSkipForward = useCallback(() => skipTime(30), [skipTime]);
 
+    const goToFullscreen = useCallback(async () => {
+        videoRef.current?.presentFullscreenPlayer();
+        showControlsTemporarily();
+    }, [showControlsTemporarily]);
+
     // Prepare selectedTextTrack for Video component
     const videoSelectedTextTrack: SelectedTrack | undefined = useMemo(() => {
         if (useEmbeddedSubtitles && selectedTextTrack >= 0) {
@@ -741,8 +747,13 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                 selectedAudioTrack={selectedAudioTrack >= 0 ? { type: 'index', value: selectedAudioTrack } as SelectedTrack : undefined}
                 selectedTextTrack={videoSelectedTextTrack}
                 controls={false}
+                fullscreen={isFullscreen}
+                enterPictureInPictureOnLeave={true}
                 playInBackground={false}
                 playWhenInactive={false}
+                showNotificationControls={true}
+                allowsExternalPlayback={true}
+                onFullscreenPlayerDidDismiss={() => { videoRef.current?.dismissFullscreenPlayer() }}
             />
 
             <ArtworkBackground
@@ -806,6 +817,13 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                             <TouchableOpacity style={styles.controlButton} onPress={cycleContentFit}>
                                 <MaterialIcons name={getContentFitIcon()} size={24} color="white" />
                             </TouchableOpacity>
+                            {
+                                Platform.OS !== 'web' && playerState.isReady && (
+                                    <TouchableOpacity style={styles.controlButton} onPress={goToFullscreen}>
+                                        <MaterialIcons name={isFullscreen ? "fullscreen-exit" : "fullscreen"} size={24} color="white" />
+                                    </TouchableOpacity>
+                                )
+                            }
 
                             {/* Always show audio track button if we have tracks */}
                             {availableAudioTracks.length > 0 && (

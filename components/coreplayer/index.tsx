@@ -19,7 +19,7 @@ export const CONSTANTS = {
     CONTROLS_AUTO_HIDE_DELAY: 3000,
     CONTENT_FIT_LABEL_DELAY: 1000,
     SUBTITLE_UPDATE_INTERVAL: 50,
-    PLAYBACK_SPEEDS: [0.75, 0.8, 0.85, 0.9, 0.95, 1.0, 1.1, 1.15, 1.20, 1.25],
+    PLAYBACK_SPEEDS: [0.25, 0.50, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0, 1.1, 1.15, 1.20, 1.25, 1.50, 1.75, 2.0],
     CONTENT_FIT_OPTIONS: ['contain', 'cover', 'fill'] as const,
     RN_VIDEO_CONTENT_FIT_OPTIONS: [ResizeMode.CONTAIN, ResizeMode.COVER, ResizeMode.STRETCH]
 };
