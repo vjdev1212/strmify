@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { TouchableOpacity, Animated, Platform } from "react-native";
-import Video, { OnLoadData, OnProgressData, VideoRef, OnBufferData, ResizeMode, SelectedAudioTrack, SelectedTextTrack, SelectedTrack } from "react-native-video";
+import Video, { OnLoadData, OnProgressData, VideoRef, OnBufferData, ResizeMode, SelectedTrack } from "react-native-video";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { MenuComponentRef, MenuView } from '@react-native-menu/menu';
 import { WebMenu } from "@/components/WebMenuView";
@@ -109,7 +109,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
             const currentTime = (progress / 100) * playerState.duration;
             isSeeking.current = true;
             wasPlayingBeforeSeek.current = false;
-
+            
             if (videoRef.current) {
                 videoRef.current.seek(currentTime);
             }
@@ -262,14 +262,17 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         playerState.setIsBuffering(false);
         setVideoError(null);
         hasReportedErrorRef.current = false;
-
+        
         Animated.timing(bufferOpacity, { toValue: 0, duration: 200, useNativeDriver: true }).start();
 
-        // Set available tracks
-        if (data.audioTracks) {
+        // Set available tracks - ensure they're arrays
+        if (data.audioTracks && Array.isArray(data.audioTracks) && data.audioTracks.length > 0) {
+            console.log('Audio tracks from onLoad:', data.audioTracks);
             setAvailableAudioTracks(data.audioTracks);
         }
-        if (data.textTracks) {
+        
+        if (data.textTracks && Array.isArray(data.textTracks) && data.textTracks.length > 0) {
+            console.log('Text tracks from onLoad:', data.textTracks);
             setAvailableTextTracks(data.textTracks);
         }
     }, [bufferOpacity, playerState]);
@@ -280,13 +283,27 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         }
     }, [playerState]);
 
+    const handleAudioTracks = useCallback((data: { audioTracks: any[] }) => {
+        console.log('onAudioTracks callback:', data.audioTracks);
+        if (data.audioTracks && Array.isArray(data.audioTracks) && data.audioTracks.length > 0) {
+            setAvailableAudioTracks(data.audioTracks);
+        }
+    }, []);
+
+    const handleTextTracks = useCallback((data: { textTracks: any[] }) => {
+        console.log('onTextTracks callback:', data.textTracks);
+        if (data.textTracks && Array.isArray(data.textTracks) && data.textTracks.length > 0) {
+            setAvailableTextTracks(data.textTracks);
+        }
+    }, []);
+
     const handleBuffer = useCallback((data: OnBufferData) => {
         if (!isSeeking.current) {
             playerState.setIsBuffering(data.isBuffering);
-            Animated.timing(bufferOpacity, {
-                toValue: data.isBuffering ? 1 : 0,
-                duration: 200,
-                useNativeDriver: true
+            Animated.timing(bufferOpacity, { 
+                toValue: data.isBuffering ? 1 : 0, 
+                duration: 200, 
+                useNativeDriver: true 
             }).start();
         }
     }, [bufferOpacity, playerState]);
@@ -438,6 +455,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     }, [showControlsTemporarily, settings]);
 
     const handleSubtitleTrackSelect = useCallback((index: number) => {
+        console.log('Selected subtitle track index:', index);
         settings.setSelectedSubtitle(index);
         if (!useCustomSubtitles) {
             setSelectedTextTrack(index);
@@ -455,6 +473,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     }, [settings, showControlsTemporarily]);
 
     const handleAudioSelect = useCallback((index: number) => {
+        console.log('Selected audio track index:', index);
         settings.setSelectedAudioTrack(index);
         setSelectedAudioTrack(index);
     }, [settings]);
@@ -514,7 +533,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         hasReportedErrorRef.current = false;
         playerState.setIsReady(false);
         playerState.setIsBuffering(true);
-
+        
         if (videoRef.current) {
             videoRef.current.seek(0);
         }
@@ -616,6 +635,8 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                 onError={handleError}
                 onLoadStart={handleLoadStart}
                 onEnd={handleEnd}
+                onAudioTracks={handleAudioTracks}
+                onTextTracks={handleTextTracks}
                 progressUpdateInterval={250}
                 selectedAudioTrack={selectedAudioTrack >= 0 ? { type: 'index', value: selectedAudioTrack } as SelectedTrack : undefined}
                 selectedTextTrack={!useCustomSubtitles && selectedTextTrack >= 0 ? { type: 'index', value: selectedTextTrack } as SelectedTrack : undefined}
@@ -683,6 +704,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                                 <MaterialIcons name={getContentFitIcon()} size={24} color="white" />
                             </TouchableOpacity>
 
+                            {/* Always show audio track button if we have tracks */}
                             {availableAudioTracks.length > 0 && (
                                 <MenuWrapper
                                     style={{ zIndex: 1000 }}
@@ -705,6 +727,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                                 </MenuWrapper>
                             )}
 
+                            {/* Show subtitle button if we have custom subtitles or embedded text tracks */}
                             {(useCustomSubtitles || availableTextTracks.length > 0) && (
                                 <MenuWrapper
                                     style={{ zIndex: 1000 }}
