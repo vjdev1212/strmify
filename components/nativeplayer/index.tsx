@@ -753,7 +753,8 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                 playWhenInactive={false}
                 showNotificationControls={true}
                 allowsExternalPlayback={true}
-                onFullscreenPlayerDidDismiss={() => { videoRef.current?.dismissFullscreenPlayer() }}
+                onFullscreenPlayerWillPresent={() => setIsFullscreen(true)}
+                onFullscreenPlayerWillDismiss={() => setIsFullscreen(false)}
             />
 
             <ArtworkBackground
