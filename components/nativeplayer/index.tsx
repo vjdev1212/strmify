@@ -109,7 +109,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
             const currentTime = (progress / 100) * playerState.duration;
             isSeeking.current = true;
             wasPlayingBeforeSeek.current = false;
-            
+
             if (videoRef.current) {
                 videoRef.current.seek(currentTime);
             }
@@ -237,6 +237,14 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         };
     }, [playerState.isReady, playerState.duration, updateProgress]);
 
+    // Debug tracks
+    useEffect(() => {
+        console.log('Available audio tracks:', availableAudioTracks);
+        console.log('Available text tracks:', availableTextTracks);
+        console.log('Selected audio track:', selectedAudioTrack);
+        console.log('Selected text track:', selectedTextTrack);
+    }, [availableAudioTracks, availableTextTracks, selectedAudioTrack, selectedTextTrack]);
+
     // Auto-hide controls when playback starts
     useEffect(() => {
         if (!isPaused && uiState.showControls && shouldAutoHideControls.current && !isHideControlsScheduled.current) {
@@ -262,7 +270,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         playerState.setIsBuffering(false);
         setVideoError(null);
         hasReportedErrorRef.current = false;
-        
+
         Animated.timing(bufferOpacity, { toValue: 0, duration: 200, useNativeDriver: true }).start();
 
         // Set available tracks - ensure they're arrays
@@ -270,25 +278,24 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
             console.log('Audio tracks from onLoad:', data.audioTracks);
             setAvailableAudioTracks(data.audioTracks);
         }
-        
+
         if (data.textTracks && Array.isArray(data.textTracks) && data.textTracks.length > 0) {
             console.log('Text tracks from onLoad:', data.textTracks);
             setAvailableTextTracks(data.textTracks);
         }
     }, [bufferOpacity, playerState]);
 
-    const handleProgress = useCallback((data: OnProgressData) => {
-        if (!playerState.isDragging && !isSeeking.current) {
-            playerState.setCurrentTime(data.currentTime);
-        }
-    }, [playerState]);
-
     const handleAudioTracks = useCallback((data: { audioTracks: any[] }) => {
         console.log('onAudioTracks callback:', data.audioTracks);
         if (data.audioTracks && Array.isArray(data.audioTracks) && data.audioTracks.length > 0) {
             setAvailableAudioTracks(data.audioTracks);
+            // Auto-select first track if none selected
+            if (selectedAudioTrack === -1) {
+                setSelectedAudioTrack(0);
+                settings.setSelectedAudioTrack(0);
+            }
         }
-    }, []);
+    }, [selectedAudioTrack, settings]);
 
     const handleTextTracks = useCallback((data: { textTracks: any[] }) => {
         console.log('onTextTracks callback:', data.textTracks);
@@ -297,13 +304,19 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         }
     }, []);
 
+    const handleProgress = useCallback((data: OnProgressData) => {
+        if (!playerState.isDragging && !isSeeking.current) {
+            playerState.setCurrentTime(data.currentTime);
+        }
+    }, [playerState]);
+
     const handleBuffer = useCallback((data: OnBufferData) => {
         if (!isSeeking.current) {
             playerState.setIsBuffering(data.isBuffering);
-            Animated.timing(bufferOpacity, { 
-                toValue: data.isBuffering ? 1 : 0, 
-                duration: 200, 
-                useNativeDriver: true 
+            Animated.timing(bufferOpacity, {
+                toValue: data.isBuffering ? 1 : 0,
+                duration: 200,
+                useNativeDriver: true
             }).start();
         }
     }, [bufferOpacity, playerState]);
@@ -499,20 +512,57 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         }
     }, [contentFit]);
 
+    // Add these functions to your code
+
+    const adaptTextTracks = useCallback((tracks: any[]): any[] => {
+        if (!tracks || !Array.isArray(tracks)) return [];
+
+        return tracks.map((track, index) => ({
+            id: track.index ?? index,
+            label: track.title || track.language || `Track ${index + 1}`,
+            language: track.language,
+            name: track.title || track.language || `Track ${index + 1}`
+        }));
+    }, []);
+
+    const adaptAudioTracks = useCallback((tracks: any[]): any[] => {
+        if (!tracks || !Array.isArray(tracks)) return [];
+
+        return tracks.map((track, index) => ({
+            id: track.index ?? index,
+            label: track.title || track.language || `Track ${index + 1}`,
+            language: track.language,
+            name: track.title || track.language || `Track ${index + 1}`
+        }));
+    }, []);
+
     // Memoize menu actions to prevent rebuilding on every render
     const settingsActions = useMemo(() => buildSettingsActions(settings.playbackSpeed), [settings.playbackSpeed]);
-    const subtitleActions = useMemo(() => buildSubtitleActions(
-        subtitles as SubtitleSource[],
-        settings.selectedSubtitle,
-        useCustomSubtitles,
-        availableTextTracks,
-        settings.subtitlePosition,
-        settings.subtitleDelay
-    ), [subtitles, settings.selectedSubtitle, useCustomSubtitles, availableTextTracks, settings.subtitlePosition, settings.subtitleDelay]);
-    const audioActions = useMemo(() => buildAudioActions(
-        availableAudioTracks,
-        settings.selectedAudioTrack
-    ), [availableAudioTracks, settings.selectedAudioTrack]);
+    const subtitleActions = useMemo(() => {
+        const adaptedTracks = adaptTextTracks(availableTextTracks);
+        const actions = buildSubtitleActions(
+            subtitles as SubtitleSource[],
+            settings.selectedSubtitle,
+            useCustomSubtitles,
+            adaptedTracks,
+            settings.subtitlePosition,
+            settings.subtitleDelay,
+            selectedTextTrack
+        );
+        console.log('Subtitle actions built:', actions);
+        return actions;
+    }, [subtitles, settings.selectedSubtitle, useCustomSubtitles, availableTextTracks, settings.subtitlePosition, settings.subtitleDelay, selectedTextTrack, adaptTextTracks]);
+
+    const audioActions = useMemo(() => {
+        const adaptedTracks = adaptAudioTracks(availableAudioTracks);
+        const actions = buildAudioActions(
+            adaptedTracks,
+            selectedAudioTrack
+        );
+        console.log('Audio actions built:', actions);
+        return actions;
+    }, [availableAudioTracks, selectedAudioTrack, adaptAudioTracks]);
+
     const streamActions = useMemo(() => buildStreamActions(streams, currentStreamIndex), [streams, currentStreamIndex]);
 
     // Memoize slider values
@@ -533,7 +583,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         hasReportedErrorRef.current = false;
         playerState.setIsReady(false);
         playerState.setIsBuffering(true);
-        
+
         if (videoRef.current) {
             videoRef.current.seek(0);
         }
