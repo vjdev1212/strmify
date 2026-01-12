@@ -12,6 +12,7 @@ import { extractAudioCodec, extractQuality, extractSize, extractVideoCodec } fro
 import { MenuAction } from '@react-native-menu/menu';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
+import { ResizeMode } from 'react-native-video';
 
 // ==================== CONSTANTS ====================
 export const CONSTANTS = {
@@ -19,7 +20,8 @@ export const CONSTANTS = {
     CONTENT_FIT_LABEL_DELAY: 1000,
     SUBTITLE_UPDATE_INTERVAL: 50,
     PLAYBACK_SPEEDS: [0.75, 0.8, 0.85, 0.9, 0.95, 1.0, 1.1, 1.15, 1.20, 1.25],
-    CONTENT_FIT_OPTIONS: ['contain', 'cover', 'fill'] as const
+    CONTENT_FIT_OPTIONS: ['contain', 'cover', 'fill'] as const,
+    RN_VIDEO_CONTENT_FIT_OPTIONS: [ResizeMode.CONTAIN, ResizeMode.COVER, ResizeMode.STRETCH]
 };
 
 export type SubtitlePosition = number;
