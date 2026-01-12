@@ -31,18 +31,20 @@ export interface CompatibilityResult {
 }
 
 const IOS_CAPABILITIES: MediaCapabilities = {
-  videoCodecs: ['h264', 'avc', 'avc1'],
-  audioCodecs: ['aac', 'mp4a', 'mp3', 'ac3', 'eac3'],
-  maxAudioChannels: 8,
-  formats: ['mp4', 'mov', 'm4v'],
+  videoCodecs: ['h264', 'avc', 'avc1', 'hevc', 'hvc1', 'hev1', 'mp4v'],
+  audioCodecs: ['aac', 'mp4a', 'mp3', 'alac', 'flac', 'ac3', 'eac3', 'pcm', 'lpcm', 'amr'],
+  maxAudioChannels: 6,
+  formats: ['mp4', 'm4v', 'mov', 'm4a', 'm3u8', 'ts', '3gp', '3g2', 'wav', 'caf'],
 };
 
+
 const ANDROID_CAPABILITIES: MediaCapabilities = {
-  videoCodecs: ['h264', 'avc', 'avc1', 'h265', 'hevc', 'hev1', 'vp8', 'vp9'],
-  audioCodecs: ['aac', 'mp4a', 'mp3', 'opus', 'vorbis', 'ac3', 'eac3'],
+  videoCodecs: ['h264', 'avc', 'avc1', 'h265', 'hevc', 'hvc1', 'hev1', 'vp8', 'vp9', 'av01', 'mp4v', 'h263'],
+  audioCodecs: ['aac', 'mp4a', 'mp3', 'opus', 'vorbis', 'flac', 'alac', 'ac3', 'eac3', 'dtsc', 'dtsh', 'dtsl', 'pcm', 'lpcm', 'amr'],
   maxAudioChannels: 8,
-  formats: ['mp4', 'mkv', 'webm'],
+  formats: ['mp4', 'm4v', 'm4a', 'mkv', 'webm', 'm3u8', 'ts', 'mp3', 'ogg', 'wav', 'flac', '3gp', '3g2', 'mpg', 'mpeg'],
 };
+
 
 const WEB_CAPABILITIES: MediaCapabilities = {
   videoCodecs: ['h264', 'avc', 'avc1', 'vp8', 'vp9'],
