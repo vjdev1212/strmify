@@ -469,8 +469,14 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
     const handleSubtitleTrackSelect = useCallback((index: number) => {
         console.log('Selected subtitle track index:', index);
-        settings.setSelectedSubtitle(index);
-        if (!useCustomSubtitles) {
+
+        if (useCustomSubtitles) {
+            // Custom subtitles (OpenSubtitles)
+            settings.setSelectedSubtitle(index);
+            setSelectedTextTrack(-1); // Disable embedded tracks
+        } else {
+            // Embedded text tracks
+            settings.setSelectedSubtitle(-1); // Disable custom subtitles
             setSelectedTextTrack(index);
         }
     }, [useCustomSubtitles, settings]);
@@ -597,13 +603,26 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
             const speed = parseFloat(id.split('-')[1]);
             if (!isNaN(speed)) handlePlaybackSpeedSelect(speed);
         }
-        // Subtitle track
+        // Subtitle track - OFF
         else if (id === 'subtitle-track-off') {
-            handleSubtitleTrackSelect(-1);
+            settings.setSelectedSubtitle(-1);
+            setSelectedTextTrack(-1);
         }
+        // Embedded subtitle tracks (VLC)
+        else if (id.startsWith('vlc-text-track-')) {
+            const trackId = parseInt(id.split('vlc-text-track-')[1]);
+            if (!isNaN(trackId)) {
+                settings.setSelectedSubtitle(-1); // Disable custom subtitles
+                setSelectedTextTrack(trackId);
+            }
+        }
+        // Custom subtitle tracks (OpenSubtitles)
         else if (id.startsWith('subtitle-track-')) {
             const index = parseInt(id.split('subtitle-track-')[1]);
-            if (!isNaN(index)) handleSubtitleTrackSelect(index);
+            if (!isNaN(index)) {
+                settings.setSelectedSubtitle(index);
+                setSelectedTextTrack(-1); // Disable embedded tracks
+            }
         }
         // Subtitle position
         else if (id.startsWith('position-')) {
@@ -625,7 +644,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
             const index = parseInt(id.split('-')[1]);
             if (!isNaN(index)) handleStreamSelect(index);
         }
-    }, [handlePlaybackSpeedSelect, handleSubtitleTrackSelect, handleSubtitlePositionSelect, handleSubtitleDelaySelect, handleAudioSelect, handleStreamSelect]);
+    }, [handlePlaybackSpeedSelect, handleSubtitlePositionSelect, handleSubtitleDelaySelect, handleAudioSelect, handleStreamSelect, settings]);
 
     const handleWebAction = useCallback((id: string) => {
         handleMenuAction(id);

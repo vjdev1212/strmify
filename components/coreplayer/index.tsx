@@ -371,12 +371,12 @@ export const buildSubtitlePositionActions = (
 
 export const buildSubtitleDelayActions = (currentDelay: number): MenuAction[] => {
     const delays = [-5000, -4000, -3000, -2000, -1500, -1000, -750, -500, -250, -100, 0, 100, 250, 500, 750, 1000, 1500, 2000, 3000, 4000, 5000];
-    
+
     return delays.map(delayMs => {
         const delaySec = delayMs / 1000;
         const isDefault = delayMs === 0;
         const prefix = delayMs > 0 ? '+' : '';
-        
+
         return {
             id: `delay_${delayMs}`, // Use underscore instead of dash to avoid double-dash issue
             title: isDefault ? 'Default' : `${prefix}${delaySec.toFixed(Math.abs(delaySec) < 1 ? 2 : 1)}s`,
@@ -393,7 +393,7 @@ export const buildSubtitleActions = (
     availableTextTracks: any[],
     subtitlePosition: SubtitlePosition,
     subtitleDelay: number,
-    selectedVLCTextTrack: number = -1
+    selectedTextTrackId: number = -1
 ): MenuAction[] => {
     // Build custom subtitle actions (OpenSubtitles)
     const customSubtitleActions: MenuAction[] = useCustomSubtitles
@@ -401,28 +401,27 @@ export const buildSubtitleActions = (
             id: `subtitle-track-${i}`,
             title: sub.label,
             subtitle: sub.language ? `OpenSubtitles - ${sub.language.toUpperCase()}` : 'OpenSubtitles',
-            state: selectedIndex === i && selectedVLCTextTrack < 0 ? ('on' as const) : undefined,
-            titleColor: selectedIndex === i && selectedVLCTextTrack < 0 ? '#007AFF' : '#FFFFFF',
+            state: selectedIndex === i && selectedTextTrackId === -1 ? ('on' as const) : undefined,
+            titleColor: selectedIndex === i && selectedTextTrackId === -1 ? '#007AFF' : '#FFFFFF',
         }))
         : [];
 
-    // Build VLC embedded text track actions (skip "Disable" track with id -1)
+    // Build embedded text track actions using track.id instead of index
     const vlcTextTrackActions: MenuAction[] = availableTextTracks
-        .filter(track => track.id !== -1) // Skip the "Disable" track
         .map((track) => ({
             id: `vlc-text-track-${track.id}`,
-            title: track.name || track.label || `Track ${track.id}`,
+            title: track.label || track.name || `Track ${track.id}`,
             subtitle: 'Embedded',
-            state: selectedVLCTextTrack === track.id ? ('on' as const) : undefined,
-            titleColor: selectedVLCTextTrack === track.id ? '#007AFF' : '#FFFFFF',
+            state: selectedTextTrackId === track.id ? ('on' as const) : undefined,
+            titleColor: selectedTextTrackId === track.id ? '#007AFF' : '#FFFFFF',
         }));
 
     // Off action
     const offAction: MenuAction = {
         id: 'subtitle-track-off',
         title: 'Off',
-        state: selectedIndex === -1 && selectedVLCTextTrack === -1 ? ('on' as const) : undefined,
-        titleColor: selectedIndex === -1 && selectedVLCTextTrack === -1 ? '#007AFF' : '#FFFFFF',
+        state: selectedIndex === -1 && selectedTextTrackId === -1 ? ('on' as const) : undefined,
+        titleColor: selectedIndex === -1 && selectedTextTrackId === -1 ? '#007AFF' : '#FFFFFF',
     };
 
     // Combine all track actions
@@ -508,13 +507,13 @@ export const buildStreamActions = (streams: Stream[], currentIndex: number): Men
 
 export const buildAudioActions = (
     audioTracks: any[],
-    selectedIndex: number
+    selectedTrackId: number
 ) => {
-    return audioTracks.map((track, i) => ({
-        id: `audio-${i}`,
-        title: track.label || track.name,
-        state: selectedIndex === i ? ('on' as const) : undefined,
-        titleColor: selectedIndex === i ? '#007AFF' : '#FFFFFF',
+    return audioTracks.map((track) => ({
+        id: `audio-${track.id}`,
+        title: track.label || track.name || `Track ${track.id}`,
+        state: selectedTrackId === track.id ? ('on' as const) : undefined,
+        titleColor: selectedTrackId === track.id ? '#007AFF' : '#FFFFFF',
     }));
 };
 
