@@ -243,17 +243,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                 clearInterval(progressUpdateTimerRef.current);
             }
         };
-    }, [playerState.isReady, playerState.duration, updateProgress]);
-
-    // Debug tracks
-    useEffect(() => {
-        console.log('Available audio tracks:', availableAudioTracks);
-        console.log('Available text tracks:', availableTextTracks);
-        console.log('Selected audio track:', selectedAudioTrack);
-        console.log('Selected text track:', selectedTextTrack);
-        console.log('Use embedded subtitles:', useEmbeddedSubtitles);
-        console.log('Use custom subtitles:', useCustomSubtitles);
-    }, [availableAudioTracks, availableTextTracks, selectedAudioTrack, selectedTextTrack, useEmbeddedSubtitles, useCustomSubtitles]);
+    }, [playerState.isReady, playerState.duration, updateProgress]);   
 
     // Auto-hide controls when playback starts
     useEffect(() => {
@@ -281,11 +271,12 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         setVideoError(null);
         hasReportedErrorRef.current = false;
 
+        console.log('OnLoad Data', data);
+
         Animated.timing(bufferOpacity, { toValue: 0, duration: 200, useNativeDriver: true }).start();
 
         // Set available tracks - ensure they're arrays
         if (data.audioTracks && Array.isArray(data.audioTracks) && data.audioTracks.length > 0) {
-            console.log('Audio tracks from onLoad:', data.audioTracks);
             setAvailableAudioTracks(data.audioTracks);
             
             // Auto-select first audio track if none selected
@@ -296,13 +287,11 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         }
 
         if (data.textTracks && Array.isArray(data.textTracks) && data.textTracks.length > 0) {
-            console.log('Text tracks from onLoad:', data.textTracks);
             setAvailableTextTracks(data.textTracks);
         }
     }, [bufferOpacity, playerState, selectedAudioTrack, settings]);
 
     const handleAudioTracks = useCallback((data: { audioTracks: any[] }) => {
-        console.log('onAudioTracks callback:', data.audioTracks);
         if (data.audioTracks && Array.isArray(data.audioTracks) && data.audioTracks.length > 0) {
             setAvailableAudioTracks(data.audioTracks);
             // Auto-select first track if none selected
@@ -314,7 +303,6 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     }, [selectedAudioTrack, settings]);
 
     const handleTextTracks = useCallback((data: { textTracks: any[] }) => {
-        console.log('onTextTracks callback:', data.textTracks);
         if (data.textTracks && Array.isArray(data.textTracks) && data.textTracks.length > 0) {
             setAvailableTextTracks(data.textTracks);
         }
@@ -485,7 +473,6 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     }, [showControlsTemporarily, settings]);
 
     const handleSubtitleTrackSelect = useCallback((index: number) => {
-        console.log('Selected subtitle track index:', index);
 
         if (index === -1) {
             // Turn off all subtitles
@@ -496,14 +483,12 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
             subtitleState.setCurrentSubtitle('');
         } else if (index < subtitles.length) {
             // Custom subtitles (OpenSubtitles)
-            console.log('Selecting custom subtitle:', index);
             settings.setSelectedSubtitle(index);
             setSelectedTextTrack(-1);
             setUseEmbeddedSubtitles(false);
         } else {
             // Embedded text tracks
             const embeddedIndex = index - subtitles.length;
-            console.log('Selecting embedded subtitle:', embeddedIndex);
             settings.setSelectedSubtitle(-1);
             setSelectedTextTrack(embeddedIndex);
             setUseEmbeddedSubtitles(true);
@@ -523,7 +508,6 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     }, [settings, showControlsTemporarily]);
 
     const handleAudioSelect = useCallback((index: number) => {
-        console.log('Selected audio track index:', index);
         settings.setSelectedAudioTrack(index);
         setSelectedAudioTrack(index);
     }, [settings]);
@@ -595,7 +579,6 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
             settings.subtitleDelay,
             selectedTextTrack
         );
-        console.log('Subtitle actions built:', actions);
         return actions;
     }, [subtitles, settings.selectedSubtitle, useEmbeddedSubtitles, availableTextTracks, settings.subtitlePosition, settings.subtitleDelay, selectedTextTrack, adaptTextTracks]);
 
@@ -605,7 +588,6 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
             adaptedTracks,
             selectedAudioTrack
         );
-        console.log('Audio actions built:', actions);
         return actions;
     }, [availableAudioTracks, selectedAudioTrack, adaptAudioTracks]);
 
