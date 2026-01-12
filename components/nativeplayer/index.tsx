@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { TouchableOpacity, Animated, Platform } from "react-native";
-import Video, { OnLoadData, OnProgressData, VideoRef, OnBufferData, ResizeMode, SelectedTrack } from "react-native-video";
+import Video, { OnLoadData, OnProgressData, VideoRef, OnBufferData, ResizeMode, SelectedTrack, TextTrackType } from "react-native-video";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { MenuComponentRef, MenuView } from '@react-native-menu/menu';
 import { WebMenu } from "@/components/WebMenuView";
@@ -100,8 +100,9 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     const [availableTextTracks, setAvailableTextTracks] = useState<any[]>([]);
     const [selectedAudioTrack, setSelectedAudioTrack] = useState<number>(-1);
     const [selectedTextTrack, setSelectedTextTrack] = useState<number>(-1);
+    const [useEmbeddedSubtitles, setUseEmbeddedSubtitles] = useState(false);
 
-    const useCustomSubtitles = subtitles.length > 0;
+    const useCustomSubtitles = subtitles.length > 0 && !useEmbeddedSubtitles;
 
     // Restore progress - optimized with dependency array
     useEffect(() => {
@@ -159,11 +160,15 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         };
     }, [clearAllTimers, updateProgress, playerState.duration]);
 
-    // Load subtitles - optimized with better dependency tracking
+    // Load custom subtitles (OpenSubtitles)
     useEffect(() => {
+        // Only load custom subtitles if we're using them and have a valid selection
         if (!useCustomSubtitles || settings.selectedSubtitle < 0 || settings.selectedSubtitle >= subtitles.length) {
-            subtitleState.setParsedSubtitles([]);
-            subtitleState.setCurrentSubtitle('');
+            // Clear custom subtitles if not in use
+            if (!useEmbeddedSubtitles) {
+                subtitleState.setParsedSubtitles([]);
+                subtitleState.setCurrentSubtitle('');
+            }
             return;
         }
 
@@ -194,12 +199,15 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         return () => {
             isMounted = false;
         };
-    }, [settings.selectedSubtitle, subtitles, openSubtitlesClient, useCustomSubtitles]);
+    }, [settings.selectedSubtitle, subtitles, openSubtitlesClient, useCustomSubtitles, useEmbeddedSubtitles]);
 
-    // Update subtitle display with delay support - optimized interval
+    // Update subtitle display with delay support (only for custom subtitles)
     useEffect(() => {
-        if (subtitleState.parsedSubtitles.length === 0) {
-            subtitleState.setCurrentSubtitle('');
+        // Only update custom subtitles
+        if (!useCustomSubtitles || subtitleState.parsedSubtitles.length === 0) {
+            if (!useEmbeddedSubtitles) {
+                subtitleState.setCurrentSubtitle('');
+            }
             return;
         }
 
@@ -217,7 +225,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         updateSubtitle();
         const interval = setInterval(updateSubtitle, CONSTANTS.SUBTITLE_UPDATE_INTERVAL);
         return () => clearInterval(interval);
-    }, [subtitleState.parsedSubtitles, playerState.currentTime, subtitleState.currentSubtitle, settings.subtitleDelay]);
+    }, [subtitleState.parsedSubtitles, playerState.currentTime, subtitleState.currentSubtitle, settings.subtitleDelay, useCustomSubtitles, useEmbeddedSubtitles]);
 
     // Progress update interval - optimized
     useEffect(() => {
@@ -243,7 +251,9 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         console.log('Available text tracks:', availableTextTracks);
         console.log('Selected audio track:', selectedAudioTrack);
         console.log('Selected text track:', selectedTextTrack);
-    }, [availableAudioTracks, availableTextTracks, selectedAudioTrack, selectedTextTrack]);
+        console.log('Use embedded subtitles:', useEmbeddedSubtitles);
+        console.log('Use custom subtitles:', useCustomSubtitles);
+    }, [availableAudioTracks, availableTextTracks, selectedAudioTrack, selectedTextTrack, useEmbeddedSubtitles, useCustomSubtitles]);
 
     // Auto-hide controls when playback starts
     useEffect(() => {
@@ -277,13 +287,19 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         if (data.audioTracks && Array.isArray(data.audioTracks) && data.audioTracks.length > 0) {
             console.log('Audio tracks from onLoad:', data.audioTracks);
             setAvailableAudioTracks(data.audioTracks);
+            
+            // Auto-select first audio track if none selected
+            if (selectedAudioTrack === -1) {
+                setSelectedAudioTrack(0);
+                settings.setSelectedAudioTrack(0);
+            }
         }
 
         if (data.textTracks && Array.isArray(data.textTracks) && data.textTracks.length > 0) {
             console.log('Text tracks from onLoad:', data.textTracks);
             setAvailableTextTracks(data.textTracks);
         }
-    }, [bufferOpacity, playerState]);
+    }, [bufferOpacity, playerState, selectedAudioTrack, settings]);
 
     const handleAudioTracks = useCallback((data: { audioTracks: any[] }) => {
         console.log('onAudioTracks callback:', data.audioTracks);
@@ -470,16 +486,30 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     const handleSubtitleTrackSelect = useCallback((index: number) => {
         console.log('Selected subtitle track index:', index);
 
-        if (useCustomSubtitles) {
+        if (index === -1) {
+            // Turn off all subtitles
+            settings.setSelectedSubtitle(-1);
+            setSelectedTextTrack(-1);
+            setUseEmbeddedSubtitles(false);
+            subtitleState.setParsedSubtitles([]);
+            subtitleState.setCurrentSubtitle('');
+        } else if (index < subtitles.length) {
             // Custom subtitles (OpenSubtitles)
+            console.log('Selecting custom subtitle:', index);
             settings.setSelectedSubtitle(index);
-            setSelectedTextTrack(-1); // Disable embedded tracks
+            setSelectedTextTrack(-1);
+            setUseEmbeddedSubtitles(false);
         } else {
             // Embedded text tracks
-            settings.setSelectedSubtitle(-1); // Disable custom subtitles
-            setSelectedTextTrack(index);
+            const embeddedIndex = index - subtitles.length;
+            console.log('Selecting embedded subtitle:', embeddedIndex);
+            settings.setSelectedSubtitle(-1);
+            setSelectedTextTrack(embeddedIndex);
+            setUseEmbeddedSubtitles(true);
+            subtitleState.setParsedSubtitles([]);
+            subtitleState.setCurrentSubtitle('');
         }
-    }, [useCustomSubtitles, settings]);
+    }, [subtitles.length, settings, subtitleState]);
 
     const handleSubtitlePositionSelect = useCallback((position: SubtitlePosition) => {
         settings.setSubtitlePosition(position);
@@ -518,8 +548,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         }
     }, [contentFit]);
 
-    // Add these functions to your code
-
+    // Track adaptation functions
     const adaptTextTracks = useCallback((tracks: any[]): any[] => {
         if (!tracks || !Array.isArray(tracks)) return [];
 
@@ -544,12 +573,22 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
     // Memoize menu actions to prevent rebuilding on every render
     const settingsActions = useMemo(() => buildSettingsActions(settings.playbackSpeed), [settings.playbackSpeed]);
+    
     const subtitleActions = useMemo(() => {
         const adaptedTracks = adaptTextTracks(availableTextTracks);
+        
+        // Determine current selection
+        let currentSelection = -1;
+        if (useEmbeddedSubtitles && selectedTextTrack >= 0) {
+            currentSelection = subtitles.length + selectedTextTrack;
+        } else if (!useEmbeddedSubtitles && settings.selectedSubtitle >= 0) {
+            currentSelection = settings.selectedSubtitle;
+        }
+        
         const actions = buildSubtitleActions(
             subtitles as SubtitleSource[],
-            settings.selectedSubtitle,
-            useCustomSubtitles,
+            currentSelection,
+            !useEmbeddedSubtitles,
             adaptedTracks,
             settings.subtitlePosition,
             settings.subtitleDelay,
@@ -557,7 +596,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         );
         console.log('Subtitle actions built:', actions);
         return actions;
-    }, [subtitles, settings.selectedSubtitle, useCustomSubtitles, availableTextTracks, settings.subtitlePosition, settings.subtitleDelay, selectedTextTrack, adaptTextTracks]);
+    }, [subtitles, settings.selectedSubtitle, useEmbeddedSubtitles, availableTextTracks, settings.subtitlePosition, settings.subtitleDelay, selectedTextTrack, adaptTextTracks]);
 
     const audioActions = useMemo(() => {
         const adaptedTracks = adaptAudioTracks(availableAudioTracks);
@@ -605,23 +644,21 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         }
         // Subtitle track - OFF
         else if (id === 'subtitle-track-off') {
-            settings.setSelectedSubtitle(-1);
-            setSelectedTextTrack(-1);
+            handleSubtitleTrackSelect(-1);
         }
-        // Embedded subtitle tracks (VLC)
+        // Embedded subtitle tracks
         else if (id.startsWith('vlc-text-track-')) {
             const trackId = parseInt(id.split('vlc-text-track-')[1]);
             if (!isNaN(trackId)) {
-                settings.setSelectedSubtitle(-1); // Disable custom subtitles
-                setSelectedTextTrack(trackId);
+                // Pass the absolute index (custom subtitles count + embedded index)
+                handleSubtitleTrackSelect(subtitles.length + trackId);
             }
         }
         // Custom subtitle tracks (OpenSubtitles)
         else if (id.startsWith('subtitle-track-')) {
             const index = parseInt(id.split('subtitle-track-')[1]);
             if (!isNaN(index)) {
-                settings.setSelectedSubtitle(index);
-                setSelectedTextTrack(-1); // Disable embedded tracks
+                handleSubtitleTrackSelect(index);
             }
         }
         // Subtitle position
@@ -644,7 +681,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
             const index = parseInt(id.split('-')[1]);
             if (!isNaN(index)) handleStreamSelect(index);
         }
-    }, [handlePlaybackSpeedSelect, handleSubtitlePositionSelect, handleSubtitleDelaySelect, handleAudioSelect, handleStreamSelect, settings]);
+    }, [handlePlaybackSpeedSelect, handleSubtitleTrackSelect, handleSubtitlePositionSelect, handleSubtitleDelaySelect, handleAudioSelect, handleStreamSelect, subtitles.length]);
 
     const handleWebAction = useCallback((id: string) => {
         handleMenuAction(id);
@@ -677,6 +714,17 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     const handleSkipBackward = useCallback(() => skipTime(-10), [skipTime]);
     const handleSkipForward = useCallback(() => skipTime(30), [skipTime]);
 
+    // Prepare selectedTextTrack for Video component
+    const videoSelectedTextTrack: SelectedTrack | undefined = useMemo(() => {
+        if (useEmbeddedSubtitles && selectedTextTrack >= 0) {
+            return {
+                type: 'index',
+                value: selectedTextTrack
+            } as SelectedTrack;
+        }
+        return undefined;
+    }, [useEmbeddedSubtitles, selectedTextTrack]);
+
     // If there's an error, show error display
     if (videoError) {
         return (
@@ -708,7 +756,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                 onTextTracks={handleTextTracks}
                 progressUpdateInterval={250}
                 selectedAudioTrack={selectedAudioTrack >= 0 ? { type: 'index', value: selectedAudioTrack } as SelectedTrack : undefined}
-                selectedTextTrack={!useCustomSubtitles && selectedTextTrack >= 0 ? { type: 'index', value: selectedTextTrack } as SelectedTrack : undefined}
+                selectedTextTrack={videoSelectedTextTrack}
                 controls={false}
                 playInBackground={false}
                 playWhenInactive={false}
@@ -727,10 +775,13 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
             <TouchableOpacity style={styles.touchArea} activeOpacity={1} onPress={handleOverlayPress} />
 
-            <SubtitleDisplay
-                subtitle={useCustomSubtitles ? subtitleState.currentSubtitle : ''}
-                position={settings.subtitlePosition}
-            />
+            {/* Only show custom subtitle overlay when using custom subtitles */}
+            {useCustomSubtitles && subtitleState.currentSubtitle && (
+                <SubtitleDisplay
+                    subtitle={subtitleState.currentSubtitle}
+                    position={settings.subtitlePosition}
+                />
+            )}
 
             {uiState.showControls && (
                 <Animated.View style={[styles.controlsOverlay, { opacity: controlsOpacity }]} pointerEvents="box-none">
@@ -797,7 +848,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                             )}
 
                             {/* Show subtitle button if we have custom subtitles or embedded text tracks */}
-                            {(useCustomSubtitles || availableTextTracks.length > 0) && (
+                            {(subtitles.length > 0 || availableTextTracks.length > 0) && (
                                 <MenuWrapper
                                     style={{ zIndex: 1000 }}
                                     title="Subtitles"
