@@ -47,7 +47,6 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-video",
       "expo-build-properties",
       [
         "expo-build-properties",
@@ -60,13 +59,6 @@
             "targetSdkVersion": 35,
             "buildToolsVersion": "35.0.0"
           }
-        }
-      ],
-      [
-        "expo-video",
-        {
-          "supportsBackgroundPlayback": true,
-          "supportsPictureInPicture": true
         }
       ],
       [
