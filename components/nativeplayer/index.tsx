@@ -327,7 +327,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     }, [playerState]);
 
     const handleBuffer = useCallback((data: OnBufferData) => {
-        if (!isSeeking.current) {
+        if (!isSeeking.current && !playerState.isDragging) {
             playerState.setIsBuffering(data.isBuffering);
             Animated.timing(bufferOpacity, {
                 toValue: data.isBuffering ? 1 : 0,
@@ -403,14 +403,15 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
         seekTimeoutRef.current = setTimeout(() => {
             isSeeking.current = false;
+            
+            // Force hide buffering indicator after seek
+            playerState.setIsBuffering(false);
+            Animated.timing(bufferOpacity, { toValue: 0, duration: 200, useNativeDriver: true }).start();
 
             if (wasPlayingBeforeSeek.current) {
                 setIsPaused(false);
-            } else {
-                playerState.setIsBuffering(false);
-                Animated.timing(bufferOpacity, { toValue: 0, duration: 200, useNativeDriver: true }).start();
             }
-        }, 150);
+        }, 300);
 
         showControlsTemporarily();
     }, [playerState, isPaused, showControlsTemporarily, bufferOpacity]);
