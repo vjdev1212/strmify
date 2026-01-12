@@ -751,7 +751,6 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                 enterPictureInPictureOnLeave={true}
                 playInBackground={false}
                 playWhenInactive={false}
-                showNotificationControls={true}
                 allowsExternalPlayback={true}
                 onFullscreenPlayerWillPresent={() => setIsFullscreen(true)}
                 onFullscreenPlayerWillDismiss={() => setIsFullscreen(false)}
