@@ -1,6 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Animated, ActivityIndicator, Image, Platform, StatusBar } from 'react-native';
-import * as ScreenOrientation from 'expo-screen-orientation';
+import { View, Text, TouchableOpacity, Animated, ActivityIndicator, Image, Platform } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import Slider from '@react-native-assets/slider';
 import { showAlert } from '@/utils/platform';
@@ -8,7 +7,7 @@ import { parseSubtitleFile } from './subtitle';
 import { styles } from './styles';
 import { formatTime } from './utils';
 import { MediaPlayerProps } from './models';
-import { extractAudioCodec, extractQuality, extractSize, extractVideoCodec } from '@/utils/StreamItem';
+import { extractAudioCodec, extractHDR, extractQuality, extractSize, extractSource, extractVideoCodec } from '@/utils/StreamItem';
 import { MenuAction } from '@react-native-menu/menu';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
@@ -475,22 +474,29 @@ export const buildStreamActions = (streams: Stream[], currentIndex: number): Men
 
         const quality = extractQuality(name, title);
         const size = extractSize(title);
+        const source = extractSource(title);
         const videoCodec = extractVideoCodec(title);
         const audioCodec = extractAudioCodec(title);
+        const hdr = extractHDR(title);
+        const audioChannels = extractAudioCodec(title);
 
-        // Build parts dynamically
         const parts: string[] = [];
 
+        if (quality) parts.push(quality);
         if (size) parts.push(size);
+        if (hdr) parts.push(hdr);
+        if (audioCodec) parts.push(audioCodec);
+        if (audioChannels) parts.push(audioChannels);
+        if (source) parts.push(source);
         if (videoCodec) parts.push(videoCodec);
 
-        const suffix = `${parts.join(" - ")}`;
-
-        const displayName = parts.length > 0 ? `${name.substring(0, 20)} | ${suffix}` : name;
+        const suffix = parts.join(" • ");
+        const displayName = parts.length > 0 ? suffix : name;
 
         return {
             id: `stream-${index}`,
             title: displayName,
+            subtitle: name,
             titleColor: '#ffffff',
             image: Platform.select({
                 ios: 'play.circle',
