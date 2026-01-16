@@ -17,6 +17,8 @@ import { LibraryItem, libraryService } from '@/utils/LibraryService';
 import BlurGradientBackground from '@/components/BlurGradientBackground';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomSpacing from '@/components/BottomSpacing';
+import * as Haptics from 'expo-haptics';
+
 
 interface WatchHistoryItem {
   title: string;
@@ -109,6 +111,7 @@ const LibraryScreen: React.FC = () => {
 
   const removeFromLibrary = async (item: LibraryItem, itemKey: string) => {
     try {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
       const animValue = getAnimatedValue(itemKey);
 
       Animated.timing(animValue, {
@@ -127,6 +130,7 @@ const LibraryScreen: React.FC = () => {
 
   const toggleWatchStatus = async (item: LibraryItem) => {
     try {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
       await libraryService.toggleWatchStatus(item.moviedbid, item.type);
       await loadLibrary();
     } catch (error) {
@@ -518,7 +522,7 @@ const styles = StyleSheet.create({
   watchButton: {
     position: 'absolute',
     top: 8,
-    right: 40,
+    left: 8,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
     borderRadius: 16,
     padding: 6,

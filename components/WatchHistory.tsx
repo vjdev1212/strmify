@@ -10,6 +10,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { StorageKeys, storageService } from '@/utils/StorageService';
 import { View, Text } from './Themed';
+import * as Haptics from 'expo-haptics';
 
 interface WatchHistoryItem {
   title: string;
@@ -33,7 +34,7 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
   const [history, setHistory] = useState<WatchHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const animatedValues = useRef<Map<string, Animated.Value>>(new Map()).current;
-  
+
   const { width, height } = useWindowDimensions();
   const isPortrait = height > width;
 
@@ -60,7 +61,7 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
       const historyJson = storageService.getItem(WATCH_HISTORY_KEY);
       if (historyJson) {
         const parsedHistory: WatchHistoryItem[] = JSON.parse(historyJson);
-        
+
         if (type === 'all') {
           setHistory(parsedHistory);
         } else {
@@ -76,6 +77,8 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
 
   const removeHistoryItem = async (itemToRemove: WatchHistoryItem, itemKey: string) => {
     try {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+
       const animValue = getAnimatedValue(itemKey);
 
       Animated.timing(animValue, {
