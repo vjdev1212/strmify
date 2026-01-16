@@ -63,7 +63,7 @@ export default function HomeScreen() {
   );
 
   const filters = [
-    { key: 'all', label: 'All', icon: 'apps' },
+    { key: 'all', label: 'All', icon: 'albums-outline' },
     { key: 'movies', label: 'Movies', icon: 'film-outline' },
     { key: 'series', label: 'Series', icon: 'tv-outline' }
   ];
