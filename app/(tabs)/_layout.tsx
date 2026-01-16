@@ -16,7 +16,7 @@ export default function TabLayout() {
 
       <NativeTabs.Trigger name="library">
         <Label>Library</Label>
-        <Icon sf="books.vertical.fill" drawable="ic_library" />
+        <Icon sf="square.stack.fill" drawable="ic_library_books" />
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="settings">
