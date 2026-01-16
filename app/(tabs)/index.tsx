@@ -121,6 +121,9 @@ export default function HomeScreen() {
   }, [filter, allLists, movieLists, seriesLists]);
 
   const handleFilterChange = async (newFilter: 'all' | 'movies' | 'series') => {
+    if (await isHapticsSupported()) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     setFilter(newFilter);
   };
 
@@ -169,7 +172,7 @@ export default function HomeScreen() {
         />
 
         <View style={styles.contentContainer}>
-          {/* Filter buttons - moved to overlay on carousel */}
+          {/* Filter buttons */}
           <View style={[styles.filtersContainer]}>
             <FlatList
               data={filters}
@@ -184,12 +187,13 @@ export default function HomeScreen() {
                     filter === item.key && styles.filterButtonActive
                   ]}
                   onPress={() => handleFilterChange(item.key as 'all' | 'movies' | 'series')}
+                  activeOpacity={0.7}
                 >
                   <Ionicons
                     name={item.icon as any}
                     size={18}
-                    color={filter === item.key ? '#000000' : '#bbbbbb'}
-                    style={{ marginRight: 6 }}
+                    color={filter === item.key ? '#000000' : '#8E8E93'}
+                    style={styles.filterIcon}
                   />
                   <Text
                     style={[
@@ -230,35 +234,41 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   filtersContainer: {
-    paddingVertical: 8,
+    paddingVertical: 12,
     paddingHorizontal: 5,
   },
   filterRow: {
     paddingHorizontal: 10,
-    gap: 10,
+    gap: 15,
   },
   filterButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 25,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 20,
     backgroundColor: '#1a1a1a',
-    marginRight: 8,
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
   },
   filterButtonActive: {
     backgroundColor: '#ffffff',
+    borderColor: '#ffffff',
+  },
+  filterIcon: {
+    marginRight: 6,
   },
   filterButtonText: {
     fontSize: 15,
-    color: 'rgba(255, 255, 255, 0.9)',
-    fontWeight: '500',
+    color: '#8E8E93',
+    fontWeight: '600',
+    letterSpacing: -0.2,
   },
   filterButtonTextActive: {
     color: '#000000',
-    fontWeight: '600',
+    fontWeight: '700',
   },
   contentContainer: {
-    marginTop: 20,
+    marginTop: 16,
   },
 });
