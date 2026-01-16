@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
     },
     posterTitle: {
         fontSize: 14,
-        fontWeight: '600',
+        fontWeight: '500',
         lineHeight: 18,
     },
     posterYear: {
