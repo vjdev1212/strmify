@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
   addButtonText: {
     color: '#ffffff',
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '500',
     letterSpacing: -0.2,
   },
   contentContainer: {
@@ -421,7 +421,7 @@ const styles = StyleSheet.create({
   },
   addonName: {
     fontSize: 17,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#ffffff',
     marginBottom: 6,
     letterSpacing: -0.3,
@@ -444,7 +444,7 @@ const styles = StyleSheet.create({
   },
   versionText: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#aaaaaa',
   },
   cardBody: {
@@ -525,7 +525,7 @@ const styles = StyleSheet.create({
   emptyActionText: {
     color: '#535aff',
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: '500',
     letterSpacing: -0.2,
   },
 });
