@@ -271,22 +271,22 @@ const LibraryScreen: React.FC = () => {
         }
       >
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>My Library</Text>
+          <Text style={styles.headerTitle}>Library</Text>
           <Text style={styles.headerSubtitle}>
             {library.length} {library.length === 1 ? 'item' : 'items'}
           </Text>
         </View>
-
-        <WatchHistory
-          onItemSelect={handleWatchHistoryItemSelect}
-          type="all"
-        />
 
         <View style={styles.filterContainer}>
           {renderFilterButton('all', 'All', 'grid-outline')}
           {renderFilterButton('movie', 'Movies', 'film-outline')}
           {renderFilterButton('series', 'TV Shows', 'tv-outline')}
         </View>
+
+        <WatchHistory
+          onItemSelect={handleWatchHistoryItemSelect}
+          type="all"
+        />
 
         {isLoading ? (
           <View style={styles.loadingContainer}>

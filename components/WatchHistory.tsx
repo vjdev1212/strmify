@@ -54,7 +54,7 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
       const historyJson = storageService.getItem(WATCH_HISTORY_KEY);
       if (historyJson) {
         const parsedHistory: WatchHistoryItem[] = JSON.parse(historyJson);
-        if(type === 'all') {
+        if (type === 'all') {
           setHistory(parsedHistory);
           return;
         }
@@ -73,7 +73,7 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
   const removeHistoryItem = async (itemToRemove: WatchHistoryItem, itemKey: string) => {
     try {
       const animValue = getAnimatedValue(itemKey);
-      
+
       // Animate out
       Animated.timing(animValue, {
         toValue: 0,
@@ -85,17 +85,17 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
         if (historyJson) {
           const parsedHistory: WatchHistoryItem[] = JSON.parse(historyJson);
           const updatedHistory = parsedHistory.filter(
-            item => !(item.videoUrl === itemToRemove.videoUrl && 
-                     item.timestamp === itemToRemove.timestamp)
+            item => !(item.videoUrl === itemToRemove.videoUrl &&
+              item.timestamp === itemToRemove.timestamp)
           );
-          
+
           storageService.setItem(
             WATCH_HISTORY_KEY,
             JSON.stringify(updatedHistory)
           );
-          
+
           // Update local state
-          if(type === 'all') {
+          if (type === 'all') {
             setHistory(updatedHistory);
           } else {
             const filteredHistory = updatedHistory.filter(
@@ -103,7 +103,7 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
             );
             setHistory(filteredHistory);
           }
-          
+
           // Clean up animated value
           animatedValues.delete(itemKey);
         }
@@ -134,74 +134,75 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
         {history.map((item, index) => {
           const itemKey = `${item.videoUrl}-${index}`;
           const animValue = getAnimatedValue(itemKey);
-          
+
           return (
-          <Animated.View 
-            key={itemKey}
-            style={{
-              opacity: animValue,
-              transform: [
-                {
-                  scale: animValue,
-                },
-                {
-                  translateX: animValue.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [-50, 0],
-                  }),
-                },
-              ],
-            }}
-          >
-            <TouchableOpacity
-              style={styles.card}
-              onPress={() => onItemSelect(item)}
-              activeOpacity={0.8}
+            <Animated.View
+              key={itemKey}
+              style={{
+                opacity: animValue,
+                transform: [
+                  {
+                    scale: animValue,
+                  },
+                  {
+                    translateX: animValue.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-50, 0],
+                    }),
+                  },
+                ],
+              }}
             >
-              <View style={styles.imageContainer}>
-                <Image
-                  source={{ uri: item.artwork }}
-                  style={styles.artwork}
-                  resizeMode="cover" />
-                <LinearGradient
-                  colors={['transparent', 'rgba(0,0,0,0.95)']}
-                  style={styles.gradient} />
+              <TouchableOpacity
+                style={styles.card}
+                onPress={() => onItemSelect(item)}
+                activeOpacity={0.8}
+              >
+                <View style={styles.imageContainer}>
+                  <Image
+                    source={{ uri: item.artwork }}
+                    style={styles.artwork}
+                    resizeMode="cover" />
+                  <LinearGradient
+                    colors={['transparent', 'rgba(0,0,0,0.95)']}
+                    style={styles.gradient} />
 
-                <View style={styles.progressContainer}>
-                  <View style={styles.progressBackground}>
-                    <View
-                      style={[
-                        styles.progressBar,
-                        { width: `${item.progress}%` },
-                      ]} />
+                  <View style={styles.progressContainer}>
+                    <View style={styles.progressBackground}>
+                      <View
+                        style={[
+                          styles.progressBar,
+                          { width: `${item.progress}%` },
+                        ]} />
+                    </View>
                   </View>
-                </View>
 
-                <View style={styles.progressBadge}>
-                  <Text style={styles.progressText}>
-                    {item.progress}%
-                  </Text>
-                </View>
+                  <View style={styles.progressBadge}>
+                    <Text style={styles.progressText}>
+                      {item.progress}%
+                    </Text>
+                  </View>
 
-                <TouchableOpacity
-                  style={styles.removeButton}
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    removeHistoryItem(item, itemKey);
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="close-outline" size={16} color="rgba(255, 255, 255, 0.9)" />
-                </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.removeButton}
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      removeHistoryItem(item, itemKey);
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="close-outline" size={16} color="rgba(255, 255, 255, 0.9)" />
+                  </TouchableOpacity>
+                </View>
+              </TouchableOpacity>
+              <View style={styles.titleContainer}>
+                <Text style={styles.title} numberOfLines={1}>
+                  {item.title}
+                </Text>
               </View>
-            </TouchableOpacity>
-            <View style={styles.titleContainer}>
-              <Text style={styles.title} numberOfLines={1}>
-                {item.title}
-              </Text>
-            </View>
-          </Animated.View>
-        )})}
+            </Animated.View>
+          )
+        })}
 
       </ScrollView>
     </View>
