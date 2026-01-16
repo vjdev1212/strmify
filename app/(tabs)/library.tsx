@@ -14,6 +14,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { View, Text, StatusBar } from '@/components/Themed';
 import WatchHistory from '@/components/WatchHistory';
 import { LibraryItem, libraryService } from '@/utils/LibraryService';
+import BlurGradientBackground from '@/components/BlurGradientBackground';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface WatchHistoryItem {
   title: string;
@@ -89,7 +91,7 @@ const LibraryScreen: React.FC = () => {
   const removeFromLibrary = async (item: LibraryItem, itemKey: string) => {
     try {
       const animValue = getAnimatedValue(itemKey);
-      
+
       Animated.timing(animValue, {
         toValue: 0,
         duration: 300,
@@ -254,8 +256,9 @@ const LibraryScreen: React.FC = () => {
   );
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar />
+      <BlurGradientBackground />
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -301,7 +304,7 @@ const LibraryScreen: React.FC = () => {
 
         <View style={{ height: 100 }} />
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 
