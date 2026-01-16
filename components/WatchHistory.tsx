@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Animated,
   Dimensions,
+  useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { StorageKeys, storageService } from '@/utils/StorageService';
@@ -29,16 +30,22 @@ interface WatchHistoryProps {
   type: 'all' | 'movie' | 'series';
 }
 
+
 const WATCH_HISTORY_KEY = StorageKeys.WATCH_HISTORY_KEY;
-const { width } = Dimensions.get('window');
-const CARD_WIDTH = width * 0.58;
-const CARD_HEIGHT = CARD_WIDTH * 0.55;
+const windowWidth = Dimensions.get('window').width;
+const windowHeight = Dimensions.get('window').height
+const isPortrait = windowHeight > windowWidth;
+
+const CARD_WIDTH = isPortrait ? 210 : 270;
+const CARD_HEIGHT = Math.round((CARD_WIDTH * 9) / 16);
 const CARD_SPACING = 16;
 
 const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
   const [history, setHistory] = useState<WatchHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const animatedValues = useRef<Map<string, Animated.Value>>(new Map()).current;
+  const { width, height } = useWindowDimensions();
+
 
   useEffect(() => {
     loadWatchHistory();
@@ -228,7 +235,7 @@ const styles = StyleSheet.create({
   sectionCount: {
     fontSize: 14,
     opacity: 0.5,
-    fontWeight: '600',
+    fontWeight: '500',
   },
   scrollContent: {
     paddingHorizontal: 16,
@@ -274,7 +281,7 @@ const styles = StyleSheet.create({
   progressText: {
     color: '#fff',
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '500',
   },
   progressContainer: {
     position: 'absolute',
@@ -301,7 +308,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '500',
     marginBottom: 4,
     lineHeight: 18,
   },

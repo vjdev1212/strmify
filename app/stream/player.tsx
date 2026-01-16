@@ -101,16 +101,21 @@ const MediaPlayerScreen: React.FC = () => {
 
   useEffect(() => {
     // Check if we have a direct video URL (continue watching scenario)
-    if (directVideoUrl) {
-      // Setup orientation for in-app playback
-      setupOrientation();
-      setVideoUrl(directVideoUrl as string);
-      setIsLoadingStream(false);
-      initializeClient();
-      return () => {
-        cleanupOrientation();
-      };
+    try {
+      if (directVideoUrl) {
+        // Setup orientation for in-app playback
+        setupOrientation();
+        setVideoUrl(directVideoUrl as string);
+        setIsLoadingStream(false);
+        initializeClient();
+        return () => {
+          cleanupOrientation();
+        };
+      }
+    } catch (error) {
+      console.error('Initilization Error:', error);
     }
+
 
     // Parse streams from params (new playback scenario)
     if (streamsParam) {

@@ -17,6 +17,7 @@ import WatchHistory from '@/components/WatchHistory';
 import { LibraryItem, libraryService } from '@/utils/LibraryService';
 import BlurGradientBackground from '@/components/BlurGradientBackground';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import BottomSpacing from '@/components/BottomSpacing';
 
 interface WatchHistoryItem {
   title: string;
@@ -31,9 +32,12 @@ interface WatchHistoryItem {
   timestamp: number;
 }
 
-const { width } = Dimensions.get('window');
-const CARD_WIDTH = width * 0.54;
-const CARD_HEIGHT = CARD_WIDTH * 0.56;
+const windowWidth = Dimensions.get('window').width;
+const windowHeight = Dimensions.get('window').height
+const isPortrait = windowHeight > windowWidth;
+
+const CARD_WIDTH = isPortrait ? 210 : 270;
+const CARD_HEIGHT = Math.round((CARD_WIDTH * 9) / 16);
 const CARD_SPACING = 16;
 
 const LibraryScreen: React.FC = () => {
@@ -267,8 +271,7 @@ const LibraryScreen: React.FC = () => {
             {renderSection('TV Shows', series, 'tv-outline')}
           </>
         )}
-
-        <View style={{ height: 100 }} />
+        <BottomSpacing space={100} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -315,7 +318,7 @@ const styles = StyleSheet.create({
   sectionCount: {
     fontSize: 14,
     opacity: 0.5,
-    fontWeight: '600',
+    fontWeight: '500',
   },
   flatListContent: {
     paddingHorizontal: 16,
@@ -355,7 +358,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '500',
     marginBottom: 4,
     lineHeight: 18,
   },
@@ -387,7 +390,7 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 22,
-    fontWeight: '600',
+    fontWeight: '500',
     marginTop: 20,
     marginBottom: 8,
   },
