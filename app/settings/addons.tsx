@@ -87,7 +87,6 @@ const AddonsScreen = () => {
 
       const manifestData = await response.json();
 
-      // Prepare updated addon data
       const updatedAddon = {
         ...manifestData,
         id: addonId,
@@ -99,17 +98,13 @@ const AddonsScreen = () => {
           : defaultAddonLogo,
       };
 
-      // Get current addons
       const storedAddons = storageService.getItem(ADDONS_KEY);
       const addonsObject = storedAddons ? JSON.parse(storedAddons) : {};
 
-      // Update the specific addon
       addonsObject[addonId] = updatedAddon;
 
-      // Save back to storage
       storageService.setItem(ADDONS_KEY, JSON.stringify(addonsObject));
 
-      // Update local state
       await fetchAddons();
 
       showAlert('Success', `${manifestData.name || 'Addon'} updated successfully!`);
@@ -130,10 +125,8 @@ const AddonsScreen = () => {
       );
 
       if (updatedAddons.length === 0) {
-        // If no addons left, delete the key entirely
         storageService.removeItem(ADDONS_KEY);
       } else {
-        // Otherwise, update with remaining addons
         storageService.setItem(ADDONS_KEY, JSON.stringify(updatedAddonsObject));
       }
 
@@ -141,7 +134,6 @@ const AddonsScreen = () => {
     } catch (error) {
       console.error('Error removing addon:', error);
       showAlert('Error', 'Failed to remove addon from secure storage.');
-      // Revert the state change if storage operation failed
       await fetchAddons();
     }
   };
@@ -177,14 +169,13 @@ const AddonsScreen = () => {
 
     return (
       <View style={styles.addonCard} key={item.id}>
-        {/* Header Section */}
         <View style={styles.cardHeader}>
           <AddonLogo uri={item.logo} style={styles.addonLogo} />
           <View style={styles.headerInfo}>
             <Text style={styles.addonName} numberOfLines={2}>{item.name}</Text>
             <View style={styles.metaRow}>
               <Text style={styles.addonTypes} numberOfLines={1}>
-                {item.types?.join(', ') || 'Unknown'}
+                {item.types?.join(' · ') || 'Unknown'}
               </Text>
               {item.version && (
                 <View style={styles.versionBadge}>
@@ -195,56 +186,66 @@ const AddonsScreen = () => {
           </View>
         </View>
 
-        {/* Description Section */}
-        <View style={styles.cardBody}>
-          <Text style={styles.addonDescription} numberOfLines={5}>
-            {item.description}
-          </Text>
-        </View>
+        {item.description && (
+          <View style={styles.cardBody}>
+            <Text style={styles.addonDescription} numberOfLines={3}>
+              {item.description}
+            </Text>
+          </View>
+        )}
 
-        {/* Actions Section */}
         <View style={styles.cardActions}>
           {hasManifestUrl && (
             <Pressable
-              style={[styles.actionButton, styles.updateButton]}
+              style={({ pressed }) => [
+                styles.actionButton,
+                pressed && styles.actionButtonPressed
+              ]}
               onPress={() => updateAddonManifest(item.id, item.manifestUrl)}
               disabled={isUpdating}
             >
               {isUpdating ? (
                 <ActivityIndicator size="small" color="#ffffff" />
               ) : (
-                <Ionicons name="refresh-outline" size={20} color="#ffffff" />
+                <Ionicons name="refresh" size={18} color="#ffffff" />
               )}
             </Pressable>
           )}
 
           <Pressable
-            style={[styles.actionButton, styles.shareButton]}
+            style={({ pressed }) => [
+              styles.actionButton,
+              pressed && styles.actionButtonPressed
+            ]}
             onPress={() => shareManifestUrl(item.manifestUrl)}
           >
-            <Ionicons name="share-outline" size={20} color="#ffffff" />
+            <Ionicons name="share-outline" size={18} color="#ffffff" />
           </Pressable>
 
           <Pressable
-            style={[
+            style={({ pressed }) => [
               styles.actionButton,
-              styles.configureButton,
-              !configurable && styles.disabledButton
+              !configurable && styles.disabledButton,
+              pressed && configurable && styles.actionButtonPressed
             ]}
             onPress={() => openConfiguration(item.baseUrl)}
             disabled={!configurable}
           >
             <Ionicons
-              name="cog-outline"
-              size={22}
-              color={configurable ? "#ffffff" : '#666666'}
+              name="settings-outline"
+              size={18}
+              color={configurable ? "#ffffff" : '#555555'}
             />
           </Pressable>
 
           <Pressable
-            style={[styles.actionButton, styles.removeButton]}
+            style={({ pressed }) => [
+              styles.actionButton,
+              styles.removeButton,
+              pressed && styles.removeButtonPressed
+            ]}
             onPress={async () => {
-              const message = `Are you sure you want to remove "${item.name}"?`;
+              const message = `Remove "${item.name}"?`;
               if (Platform.OS === 'ios' || Platform.OS === 'android') {
                 showAlert(
                   'Remove Addon',
@@ -266,7 +267,7 @@ const AddonsScreen = () => {
               }
             }}
           >
-            <Ionicons name="trash-outline" size={20} color="#ff4757" />
+            <Ionicons name="trash-outline" size={18} color="#ff4757" />
           </Pressable>
         </View>
       </View>
@@ -281,12 +282,17 @@ const AddonsScreen = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar />
 
-      {/* Header with Add Button */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Addons</Text>
-        <Pressable style={styles.addButton} onPress={onAddNewPress}>
+        <Pressable 
+          style={({ pressed }) => [
+            styles.addButton,
+            pressed && styles.addButtonPressed
+          ]} 
+          onPress={onAddNewPress}
+        >
           <Ionicons name="add" size={20} color="#ffffff" />
-          <Text style={styles.addButtonText}>Add New</Text>
+          <Text style={styles.addButtonText}>Add</Text>
         </Pressable>
       </View>
 
@@ -313,13 +319,19 @@ const AddonsScreen = () => {
         ) : (
           <View style={styles.emptyState}>
             <View style={styles.emptyIconContainer}>
-              <Ionicons name="extension-puzzle-outline" size={60} color="#535aff" />
+              <Ionicons name="cube-outline" size={48} color="#535aff" />
             </View>
-            <Text style={styles.emptyStateTitle}>No Addons Yet</Text>
+            <Text style={styles.emptyStateTitle}>No Addons</Text>
             <Text style={styles.emptyStateText}>
-              Add your first addon!
+              Get started by adding your first addon
             </Text>
-            <Pressable style={styles.emptyActionButton} onPress={onAddNewPress}>
+            <Pressable 
+              style={({ pressed }) => [
+                styles.emptyActionButton,
+                pressed && styles.emptyActionButtonPressed
+              ]} 
+              onPress={onAddNewPress}
+            >
               <Ionicons name="add-circle-outline" size={20} color="#535aff" />
               <Text style={styles.emptyActionText}>Add Addon</Text>
             </Pressable>
@@ -335,7 +347,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginTop: 30,
     width: '100%',
-    maxWidth: 780,
+    maxWidth: 700,
     margin: 'auto'
   },
   header: {
@@ -343,38 +355,38 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 15,
+    paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#1a1a1a',
+    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
   },
   headerTitle: {
-    fontSize: 30,
-    fontWeight: '600',
+    fontSize: 28,
+    fontWeight: '700',
     color: '#ffffff',
+    letterSpacing: -0.5,
   },
   addButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#rgba(83, 90, 255, 0.75)',
+    backgroundColor: '#535aff',
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 8,
     borderRadius: 20,
-    shadowColor: '#535aff',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 4,
+    gap: 6,
+  },
+  addButtonPressed: {
+    opacity: 0.7,
   },
   addButtonText: {
     color: '#ffffff',
     fontSize: 14,
     fontWeight: '500',
-    marginLeft: 6,
+    letterSpacing: -0.2,
   },
   contentContainer: {
-    paddingHorizontal: 15,
-    paddingTop: 30,
-    paddingBottom: 50,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 40,
   },
   emptyContentContainer: {
     flex: 1,
@@ -382,15 +394,14 @@ const styles = StyleSheet.create({
   },
   addonList: {
     flex: 1,
-    alignItems: 'center',
+    gap: 16,
   },
   addonCard: {
-    backgroundColor: '#101010',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
     borderRadius: 16,
     padding: 16,
-    marginBottom: 16,
-    width: '100%',
-    maxWidth: 600,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
   },
   cardHeader: {
     flexDirection: 'row',
@@ -398,138 +409,124 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   addonLogo: {
-    width: 50,
-    height: 50,
-    borderRadius: 12,
-    marginRight: 12,
-    backgroundColor: '#1f1f1f',
+    width: 56,
+    height: 56,
+    borderRadius: 14,
+    marginRight: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
   headerInfo: {
     flex: 1,
     justifyContent: 'center',
   },
   addonName: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 17,
+    fontWeight: '500',
     color: '#ffffff',
-    marginBottom: 4,
+    marginBottom: 6,
+    letterSpacing: -0.3,
   },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
   },
   addonTypes: {
-    fontSize: 12,
-    color: '#999999',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    fontSize: 13,
+    color: '#888888',
+    fontWeight: '500',
   },
   versionBadge: {
-    backgroundColor: '#2a2a2a',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 8,
+    borderRadius: 6,
   },
   versionText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#888888',
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#aaaaaa',
   },
   cardBody: {
-    marginBottom: 16,
+    marginBottom: 14,
   },
   addonDescription: {
     fontSize: 14,
-    color: '#cccccc',
+    color: '#aaaaaa',
     lineHeight: 20,
-    maxHeight: 100
   },
   cardActions: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 8,
+    gap: 10,
   },
   actionButton: {
     flex: 1,
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#202020',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    paddingVertical: 12,
+    borderRadius: 10,
   },
-  updateButton: {
-    backgroundColor: '#2a2a2a',
-  },
-  shareButton: {
-    backgroundColor: '#2a2a2a',
-  },
-  configureButton: {
-    backgroundColor: '#2a2a2a',
+  actionButtonPressed: {
+    opacity: 0.6,
   },
   removeButton: {
-    backgroundColor: '#2a2a2a',
+    backgroundColor: 'rgba(255, 71, 87, 0.1)',
+  },
+  removeButtonPressed: {
+    opacity: 0.6,
   },
   disabledButton: {
-    backgroundColor: '#1a1a1a',
-    borderColor: '#2a2a2a',
-  },
-  actionButtonText: {
-    fontSize: 12,
-    color: '#ffffff',
-    fontWeight: '500',
-  },
-  disabledButtonText: {
-    color: '#666666',
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
   },
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 60,
+    paddingVertical: 80,
     paddingHorizontal: 40,
   },
   emptyIconContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
     backgroundColor: 'rgba(83, 90, 255, 0.1)',
-    paddingLeft: 7,
-    paddingBottom: 7
   },
   emptyStateTitle: {
-    fontSize: 22,
-    fontWeight: '600',
+    fontSize: 24,
+    fontWeight: '700',
     color: '#ffffff',
-    marginBottom: 12,
-    textAlign: 'center',
+    marginBottom: 8,
+    letterSpacing: -0.5,
   },
   emptyStateText: {
-    fontSize: 16,
-    color: '#999999',
+    fontSize: 15,
+    color: '#888888',
     textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 32,
+    lineHeight: 22,
+    marginBottom: 28,
   },
   emptyActionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'transparent',
+    backgroundColor: 'rgba(83, 90, 255, 0.1)',
     borderWidth: 1,
     borderColor: '#535aff',
     paddingHorizontal: 24,
-    paddingVertical: 15,
-    borderRadius: 25,
+    paddingVertical: 12,
+    borderRadius: 20,
+    gap: 8,
+  },
+  emptyActionButtonPressed: {
+    opacity: 0.7,
   },
   emptyActionText: {
     color: '#535aff',
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8,
+    fontSize: 15,
+    fontWeight: '500',
+    letterSpacing: -0.2,
   },
 });
 

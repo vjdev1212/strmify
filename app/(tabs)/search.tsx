@@ -32,25 +32,21 @@ const SearchScreen = () => {
   }, [query]);
 
   useEffect(() => {
-    // Clear existing timeout
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
     }
 
-    // If query is empty, clear results immediately
     if (!query.trim()) {
       setMoviesUrl(null);
       setSeriesUrl(null);
       return;
     }
 
-    // Debounce the search
     debounceTimeoutRef.current = setTimeout(() => {
       setMoviesUrl(urls.movies);
       setSeriesUrl(urls.series);
     }, 300);
 
-    // Cleanup
     return () => {
       if (debounceTimeoutRef.current) {
         clearTimeout(debounceTimeoutRef.current);
@@ -59,6 +55,9 @@ const SearchScreen = () => {
   }, [query, urls]);
 
   const clearSearch = useCallback(async () => {
+    if (await isHapticsSupported()) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     setQuery('');
   }, []);
 
@@ -87,12 +86,12 @@ const SearchScreen = () => {
       <View style={styles.searchSection}>
         <View style={styles.searchInputContainer}>
           <View style={styles.searchIconContainer}>
-            <Ionicons name="search-outline" size={20} color="#666" />
+            <Ionicons name="search-outline" size={20} color="#6E6E73" />
           </View>
           <TextInput
             style={styles.searchInput}
             placeholder="Search movies or series..."
-            placeholderTextColor="#666"
+            placeholderTextColor="#6E6E73"
             value={query}
             onChangeText={handleTextChange}
             submitBehavior="blurAndSubmit"
@@ -102,7 +101,7 @@ const SearchScreen = () => {
           {query.length > 0 && (
             <Pressable onPress={clearSearch} style={styles.clearButton}>
               <View style={styles.clearIconContainer}>
-                <Ionicons name="close" size={16} color="#888" />
+                <Ionicons name="close-circle" size={20} color="#6E6E73" />
               </View>
             </Pressable>
           )}
@@ -124,7 +123,7 @@ const SearchScreen = () => {
         {!loading && !moviesUrl && !seriesUrl && (
           <View style={styles.emptyStateContainer}>
             <View style={styles.emptyStateIconContainer}>
-              <Ionicons name="search-outline" color="#535aff" size={64} />
+              <Ionicons name="search" color="#535aff" size={48} />
             </View>
             <Text style={styles.emptyStateTitle}>
               {emptyStateContent.title}
@@ -165,19 +164,19 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerContainer: {
-    paddingHorizontal: 15,
-    paddingTop: 10,
-    paddingBottom: 16,
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 20,
   },
   headerTitle: {
-    fontSize: 30,
+    fontSize: 34,
     fontWeight: '700',
     color: '#ffffff',
-    marginBottom: 4,
+    letterSpacing: 0.3,
   },
   searchSection: {
-    paddingHorizontal: 15,
-    paddingBottom: 24,
+    paddingHorizontal: 16,
+    paddingBottom: 20,
   },
   searchInputContainer: {
     maxWidth: 780,
@@ -186,41 +185,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#1a1a1a',
-    borderRadius: 12,
-    height: 40,
+    borderRadius: 14,
+    height: 48,
     paddingHorizontal: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
   },
   searchIconContainer: {
-    marginRight: 12,
+    marginRight: 10,
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 17,
     color: '#ffffff',
     fontWeight: '400',
-    outline: 'none'
+    letterSpacing: -0.2,
+    outline: 'none',
   },
   clearButton: {
     marginLeft: 8,
+    padding: 2,
   },
   clearIconContainer: {
-    backgroundColor: '#2a2a2a',
-    borderRadius: 12,
-    width: 24,
-    height: 24,
     justifyContent: 'center',
     alignItems: 'center',
   },
   loadingContainer: {
-    paddingVertical: 32,
+    paddingVertical: 40,
     alignItems: 'center',
   },
   contentContainer: {
@@ -233,32 +224,34 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    marginTop: -100,
+    paddingHorizontal: 32,
+    marginTop: -80,
   },
   emptyStateIconContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: 'rgba(83, 90, 255, 0.1)',
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: 'rgba(83, 90, 255, 0.12)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 24,
-    paddingLeft: 5,
+    marginBottom: 20,
   },
   emptyStateTitle: {
-    fontSize: 24,
-    fontWeight: '600',
+    fontSize: 26,
+    fontWeight: '700',
     color: '#ffffff',
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
+    letterSpacing: 0.2,
   },
   emptyStateSubtitle: {
     fontSize: 16,
-    color: '#888',
+    color: '#8E8E93',
     textAlign: 'center',
-    lineHeight: 24,
-    maxWidth: 280,
+    lineHeight: 22,
+    maxWidth: 300,
+    fontWeight: '400',
+    letterSpacing: -0.1,
   },
   resultsSection: {
     marginBottom: 24,

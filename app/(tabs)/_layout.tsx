@@ -6,7 +6,7 @@ export default function TabLayout() {
     <NativeTabs minimizeBehavior="onScrollDown">
       <NativeTabs.Trigger name="index">
         <Label>Home</Label>
-        <Icon sf="house.fill" drawable="ic_home" />
+        <Icon sf="house" drawable="ic_home" />
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="search">
@@ -14,9 +14,14 @@ export default function TabLayout() {
         <Icon sf="magnifyingglass" drawable="ic_search" />
       </NativeTabs.Trigger>
 
+      <NativeTabs.Trigger name="library">
+        <Label>Library</Label>
+        <Icon sf="square.stack" drawable="ic_library_books" />
+      </NativeTabs.Trigger>
+
       <NativeTabs.Trigger name="settings">
         <Label>Settings</Label>
-        <Icon sf="gearshape.fill" drawable="ic_settings" />
+        <Icon sf="gearshape" drawable="ic_settings" />
       </NativeTabs.Trigger>
     </NativeTabs>
   );

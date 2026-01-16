@@ -1,7 +1,7 @@
 import { View } from './Themed';
 
 const BottomSpacing = ({ space = 50 }: { space: number }) => (
-  <View style={{ paddingBottom: space }}></View>
+  <View style={{ height: space }} />
 );
 
 export default BottomSpacing;

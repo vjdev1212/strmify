@@ -13,8 +13,7 @@ import PosterList from '@/components/PosterList';
 import MediaContentDetailsList from '@/components/MediaContentDetailsList';
 import PlayButton from '@/components/PlayButton';
 import WatchTrailerButton from '@/components/WatchTrailer';
-import { isHapticsSupported } from '@/utils/platform';
-import * as Haptics from 'expo-haptics';
+import LibraryButton from '@/components/LibraryButton';
 
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
@@ -243,6 +242,19 @@ const SeriesDetails = () => {
               releaseInfo={data.releaseInfo}
             />)}
           <View style={styles.buttonsContainer}>
+            <LibraryButton
+              item={{
+                id: `series-${moviedbid}`,
+                moviedbid: moviedbid as string,
+                type: 'series',
+                title: data.name,
+                poster: data.poster,
+                backdrop: data.background,
+                year: data.released?.split('-')[0],
+                rating: data.imdbRating,
+                genres: data.genre,
+              }}
+            />
             <PlayButton onPress={handlePlayPress} />
             <WatchTrailerButton trailerKey={trailerKey} />
           </View>

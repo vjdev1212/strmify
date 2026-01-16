@@ -46,9 +46,13 @@ const PosterItem = ({
   spacing: number;
 }) => {
   const [imgError, setImgError] = useState(false);
+  const [isPressed, setIsPressed] = useState(false);
   const year = item.year?.split('–')[0] || item.year;
 
   const handlePress = async () => {
+    if (await isHapticsSupported()) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     router.push({
       pathname: `/${type}/details`,
       params: { moviedbid: item.moviedbid },
@@ -58,13 +62,22 @@ const PosterItem = ({
   return (
     <Pressable
       onPress={handlePress}
-      style={[styles.posterContainer, { width: posterWidth, marginRight: spacing }]}
+      onPressIn={() => setIsPressed(true)}
+      onPressOut={() => setIsPressed(false)}
+      style={[
+        styles.posterContainer,
+        { width: posterWidth, marginRight: spacing },
+        isPressed && styles.posterPressed,
+      ]}
     >
       {!imgError ? (
         <Image
           source={{ uri: item.poster }}
           onError={() => setImgError(true)}
-          style={[styles.posterImage, { width: posterWidth, height: posterHeight }]}
+          style={[
+            styles.posterImage,
+            { width: posterWidth, height: posterHeight },
+          ]}
           resizeMode="cover"
         />
       ) : (
@@ -82,10 +95,10 @@ const PosterItem = ({
           <SvgXml xml={DefaultPosterImgXml} />
         </View>
       )}
-      <Text numberOfLines={1} style={[styles.posterTitle, { width: posterWidth }]}>
+      <Text numberOfLines={2} style={[styles.posterTitle, { width: posterWidth }]}>
         {item.name}
       </Text>
-      <Text style={styles.posterYear}>{`★ ${item.imdbRating}   ${year}`}</Text>
+      <Text style={styles.posterYear}>{year}</Text>
     </Pressable>
   );
 };
@@ -104,15 +117,15 @@ const SkeletonPoster = ({
     <RNView
       style={[
         styles.posterImage,
+        styles.skeletonPoster,
         {
           width: posterWidth,
           height: posterHeight,
-          backgroundColor: '#1a1a1a',
         },
       ]}
     />
-    <RNView style={[styles.skeletonText, { width: posterWidth * 0.8, marginTop: 8 }]} />
-    <RNView style={[styles.skeletonText, { width: posterWidth * 0.5, marginTop: 4, height: 12 }]} />
+    <RNView style={[styles.skeletonText, { width: posterWidth * 0.85, marginTop: 10 }]} />
+    <RNView style={[styles.skeletonText, { width: posterWidth * 0.5, marginTop: 6, height: 12 }]} />
   </RNView>
 );
 
@@ -206,6 +219,9 @@ const PosterList = ({
   }, [apiUrl, imageSize]);
 
   const handleSeeAllPress = useCallback(async () => {
+    if (await isHapticsSupported()) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     router.push({
       pathname: `/${type}/list`,
       params: { apiUrl },
@@ -243,10 +259,9 @@ const PosterList = ({
     <RNView style={styles.container}>
       <RNView style={styles.header}>
         <Text style={styles.title}>{title}</Text>
-        <Pressable onPress={handleSeeAllPress}>
-          <Text style={styles.seeAllText}>
-            See All<Ionicons name="chevron-forward" size={16} color="#fff" />
-          </Text>
+        <Pressable onPress={handleSeeAllPress} style={styles.seeAllButton}>
+          <Text style={styles.seeAllText}>See All</Text>
+          <Ionicons name="chevron-forward" size={16} color="#8E8E93" style={styles.chevronIcon} />
         </Pressable>
       </RNView>
 
@@ -284,36 +299,62 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 5,
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: 16,
   },
   title: {
-    fontSize: 20,
-    fontWeight: '500',
+    fontSize: 22,
+    fontWeight: '600',
+    letterSpacing: 0.2,
+    color: '#ffffff',
+  },
+  seeAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+    paddingHorizontal: 4,
   },
   seeAllText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '500',
+    color: '#8E8E93',
+    letterSpacing: -0.1,
+  },
+  chevronIcon: {
+    marginLeft: 2,
   },
   posterContainer: {
     marginBottom: 10,
   },
+  posterPressed: {
+    opacity: 0.7,
+  },
   posterImage: {
-    borderRadius: 8,
+    borderRadius: 10,
     backgroundColor: '#101010',
+    overflow: 'hidden',
   },
   posterTitle: {
-    marginTop: 8,
+    marginTop: 10,
     fontSize: 14,
+    fontWeight: '500',
+    color: '#ffffff',
+    letterSpacing: -0.2,
+    lineHeight: 20,
   },
   posterYear: {
     marginTop: 4,
     fontSize: 12,
-    color: '#cccccc',
+    color: '#8E8E93',
+    fontWeight: '500',
+    letterSpacing: -0.1,
+  },
+  skeletonPoster: {
+    backgroundColor: '#1a1a1a',
   },
   skeletonText: {
     height: 14,
     backgroundColor: '#1a1a1a',
-    borderRadius: 4,
+    borderRadius: 6,
   },
 });
 

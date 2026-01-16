@@ -14,6 +14,7 @@ import PosterList from '@/components/PosterList';
 import PlayButton from '@/components/PlayButton';
 import MediaContentDetailsList from '@/components/MediaContentDetailsList';
 import WatchTrailerButton from '@/components/WatchTrailer';
+import LibraryButton from '@/components/LibraryButton';
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
 const MovieDetails = () => {
@@ -189,6 +190,19 @@ const MovieDetails = () => {
               releaseInfo={data.releaseInfo}
             />)}
           <View style={styles.buttonsContainer}>
+            <LibraryButton
+              item={{
+                id: `movie-${moviedbid}`,
+                moviedbid: moviedbid as string,
+                type: 'movie',
+                title: data.name,
+                poster: data.poster,
+                backdrop: data.background,
+                year: data.year,
+                rating: data.imdbRating,
+                genres: data.genre,
+              }}
+            />
             <PlayButton onPress={handlePlayPress} />
             <WatchTrailerButton trailerKey={trailerKey} />
           </View>

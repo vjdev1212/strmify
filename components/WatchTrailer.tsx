@@ -1,19 +1,28 @@
 import React from 'react';
-import { TouchableOpacity, StyleSheet, Linking, Alert } from 'react-native';
-import { Text } from './Themed';
+import { TouchableOpacity, StyleSheet, Linking } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { isHapticsSupported, showAlert } from '@/utils/platform';
 import { Ionicons } from '@expo/vector-icons';
 
 interface WatchTrailerButtonProps {
     trailerKey: string | null;
+    size?: number;
+    color?: string;
 }
 
-const WatchTrailerButton: React.FC<WatchTrailerButtonProps> = ({ trailerKey }) => {
+const WatchTrailerButton: React.FC<WatchTrailerButtonProps> = ({ 
+    trailerKey,
+    size = 28,
+    color = '#fff'
+}) => {
     const handleTrailerPress = async () => {
         if (!trailerKey) {
-            showAlert('No Trailer Available', 'Sorry, no trailer is available for this movie.');
+            showAlert('No Trailer Available', 'Sorry, no trailer is available for this content.');
             return;
+        }
+
+        if (isHapticsSupported()) {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         }
 
         const youtubeUrl = `https://www.youtube.com/watch?v=${trailerKey}`;
@@ -28,42 +37,38 @@ const WatchTrailerButton: React.FC<WatchTrailerButtonProps> = ({ trailerKey }) =
 
     return (
         <TouchableOpacity
-            style={[styles.button]}
+            style={[
+                styles.button,
+                !trailerKey && styles.buttonDisabled
+            ]}
             onPress={handleTrailerPress}
             disabled={!trailerKey}
         >
-            <Ionicons name="film-outline" size={24} color="#fff" style={styles.icon} />
-            <Text style={styles.buttonText}> {trailerKey ? 'Trailer' : 'NA'}</Text>
+            <Ionicons 
+                name="film-outline" 
+                size={size} 
+                color={trailerKey ? color : 'rgba(255, 255, 255, 0.3)'} 
+            />
         </TouchableOpacity>
     );
 };
 
 const styles = StyleSheet.create({
     button: {
-        paddingVertical: 12,
-        paddingHorizontal: 20,
+        width: 50,
+        height: 50,
         borderRadius: 25,
-        minWidth: 150,
-        alignItems: 'center',
-        marginVertical: 20,
-        alignSelf: 'center',
-        flexDirection: 'row',
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
         justifyContent: 'center',
-        backgroundColor: '#1f1f1f',
+        alignItems: 'center',
+        borderWidth: 2,
+        borderColor: 'rgba(255, 255, 255, 0.3)',
     },
     buttonDisabled: {
-        backgroundColor: '#101010ff',
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
         borderColor: 'rgba(255, 255, 255, 0.1)',
-        opacity: 1,
+        opacity: 0.5,
     },
-    buttonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: '500',
-    },
-    icon: {
-        marginRight: 8,
-    }
 });
 
 export default WatchTrailerButton;

@@ -45,19 +45,16 @@ const StreamListScreen = () => {
         colors?: string;
     }>();
 
-    // State management
     const [addons, setAddons] = useState<Addon[]>([]);
     const [selectedAddon, setSelectedAddon] = useState<Addon | null>(null);
     const [streams, setStreams] = useState<Stream[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
 
-    // Refs for race condition prevention
     const abortControllerRef = useRef<AbortController | null>(null);
     const currentAddonRef = useRef<string>('');
 
     const router = useRouter();
 
-    // Fixed addon fetching with race condition prevention
     const fetchAddons = useCallback(async (): Promise<void> => {
         try {
             setLoading(true);
@@ -94,23 +91,18 @@ const StreamListScreen = () => {
         }
     }, [type]);
 
-    // Fixed stream fetching with abort controller
     const fetchStreams = useCallback(async (addon: Addon): Promise<void> => {
-        // Abort previous request if it exists
         if (abortControllerRef.current) {
             abortControllerRef.current.abort();
         }
 
-        // Create new abort controller
         const controller = new AbortController();
         abortControllerRef.current = controller;
 
-        // Store the addon name that this request is for
         const requestAddonName = addon.name;
 
-        // Clear streams immediately to prevent showing old data
         setStreams([]);
-        setLoading(true); // Always show loader when starting a new request
+        setLoading(true);
 
         try {
             const addonUrl = addon?.url || '';
@@ -128,22 +120,18 @@ const StreamListScreen = () => {
 
             const data = await response.json() as StreamResponse;
 
-            // Only update streams if this is still the current addon
             if (currentAddonRef.current === requestAddonName && !controller.signal.aborted) {
                 setStreams(data.streams || []);
-                setLoading(false); // Only stop loading after successfully setting streams
+                setLoading(false);
             }
         } catch (error: any) {
-            // Only handle error if not aborted
             if (error.name !== 'AbortError') {
                 console.error('Error fetching streams:', error);
-                // Only clear streams and stop loading if this is still the current addon
                 if (currentAddonRef.current === requestAddonName) {
                     setStreams([]);
                     setLoading(false);
                 }
             }
-            // If aborted, keep loading=true so the next request's loader shows
         }
     }, [imdbid, type, season, episode]);
 
@@ -151,21 +139,13 @@ const StreamListScreen = () => {
         fetchAddons();
     }, [fetchAddons]);
 
-    // Optimized addon selection handler
     const handleAddonPress = useCallback(async (item: Addon): Promise<void> => {
-
-        // Update current addon reference immediately
         currentAddonRef.current = item.name;
         setSelectedAddon(item);
-
-        // Fetch streams for the new addon
         await fetchStreams(item);
     }, [fetchStreams]);
 
-    // Stream selection handler - now navigates to player with all streams
     const handleStreamSelected = useCallback(async (stream: Stream, index: number): Promise<void> => {
-
-        // Navigate to player with all streams and selected index
         router.push({
             pathname: '/stream/player',
             params: {
@@ -180,7 +160,6 @@ const StreamListScreen = () => {
         });
     }, [streams, router, name, imdbid, type, season, episode]);
 
-    // Cleanup effect
     useEffect(() => {
         return () => {
             if (abortControllerRef.current) {
@@ -189,17 +168,20 @@ const StreamListScreen = () => {
         };
     }, []);
 
-    // Memoized components
     const AddonItem = React.memo<{ item: Addon }>(({ item }) => {
         if (!item.types?.includes(type)) return null;
 
         const isSelected = item.name === selectedAddon?.name;
         return (
             <Pressable
-                style={[styles.addonItem, isSelected && styles.selectedAddonItem]}
+                style={({ pressed }) => [
+                    styles.addonItem,
+                    isSelected && styles.selectedAddonItem,
+                    pressed && styles.addonItemPressed
+                ]}
                 onPress={() => handleAddonPress(item)}
             >
-                <Text style={[styles.addonName, isSelected && styles.selectedaddonName]} numberOfLines={1}>
+                <Text style={[styles.addonName, isSelected && styles.selectedAddonName]} numberOfLines={1}>
                     {item.name}
                 </Text>
             </Pressable>
@@ -213,39 +195,44 @@ const StreamListScreen = () => {
         const streamType = getStreamType(item);
 
         return (
-            <Pressable onPress={() => handleStreamSelected(item, index)} style={styles.streamContainer}>
+            <Pressable 
+                onPress={() => handleStreamSelected(item, index)} 
+                style={({ pressed }) => [
+                    styles.streamContainer,
+                    pressed && styles.streamContainerPressed
+                ]}
+            >
                 <Card style={styles.streamItem}>
                     <RNView style={styles.streamHeader}>
-                        <RNView style={styles.streamTitleContainer}>
-                            <Text style={styles.streamName} numberOfLines={2}>
-                                {name}
-                            </Text>
-                            {quality && (
-                                <RNView style={styles.qualityBadge}>
-                                    <Text style={styles.qualityText}>{quality}</Text>
-                                </RNView>
-                            )}
-                        </RNView>
+                        <Text style={styles.streamName} numberOfLines={2}>
+                            {name}
+                        </Text>
+                        {quality && (
+                            <RNView style={styles.qualityBadge}>
+                                <Text style={styles.qualityText}>{quality}</Text>
+                            </RNView>
+                        )}
                     </RNView>
 
                     {(title || description) && (
-                        <Text style={styles.streamDescription} numberOfLines={5}>
+                        <Text style={styles.streamDescription} numberOfLines={3}>
                             {title || description}
                         </Text>
                     )}
 
                     <RNView style={styles.streamFooter}>
-                        <RNView style={styles.streamMetadata}>
-                            {size && <Text style={styles.streamSize}>{size}</Text>}
-                            <Text style={styles.streamType}>{streamType}</Text>
-                        </RNView>
+                        {size && (
+                            <RNView style={styles.sizeBadge}>
+                                <Text style={styles.streamSize}>{size}</Text>
+                            </RNView>
+                        )}
+                        <Text style={styles.streamType}>{streamType}</Text>
                     </RNView>
                 </Card>
             </Pressable>
         );
     });
 
-    // Render helpers
     const renderLoadingState = (message: string) => (
         <RNView style={styles.loadingContainer}>
             <View style={styles.centeredContainer}>
@@ -255,16 +242,13 @@ const StreamListScreen = () => {
         </RNView>
     );
 
-    const renderEmptyState = (icon: string, message: string, topMargin = 0) => (
-        <RNView style={styles.loadingContainer}>
-            <View style={styles.centeredContainer}>
-                <Feather
-                    style={[topMargin ? { marginTop: topMargin } : undefined, { paddingBottom: 20 }]}
-                    name={icon as any}
-                    color={'#535aff'}
-                    size={50}
-                />
-                <Text style={styles.noAddonsText}>{message}</Text>
+    const renderEmptyState = (icon: string, message: string) => (
+        <RNView style={styles.emptyContainer}>
+            <View style={styles.emptyContent}>
+                <RNView style={styles.emptyIconContainer}>
+                    <Feather name={icon as any} color={'#535aff'} size={40} />
+                </RNView>
+                <Text style={styles.emptyText}>{message}</Text>
             </View>
         </RNView>
     );
@@ -276,7 +260,7 @@ const StreamListScreen = () => {
             {loading && addons.length === 0 ? (
                 renderLoadingState('Loading addons...')
             ) : addons.length > 0 ? (
-                <View style={styles.addonBorderContainer}>
+                <View style={styles.addonSection}>
                     <ScrollView
                         horizontal
                         showsHorizontalScrollIndicator={false}
@@ -288,7 +272,7 @@ const StreamListScreen = () => {
                     </ScrollView>
                 </View>
             ) : (
-                renderEmptyState('alert-circle', 'No addons have been found. Please ensure that you have configured the addons before searching.', 100)
+                renderEmptyState('alert-circle', 'No addons configured. Please add addons in settings.')
             )}
 
             {loading && addons.length > 0 ? (
@@ -301,7 +285,7 @@ const StreamListScreen = () => {
                                 <StreamItem key={`${item.name}-${index}`} item={item} index={index} />
                             ))
                         ) : (
-                            addons.length > 0 && renderEmptyState('alert-circle', 'No streams found!', -50)
+                            addons.length > 0 && renderEmptyState('video-off', 'No streams available')
                         )}
                     </View>
                 </ScrollView>
@@ -319,66 +303,68 @@ const styles = StyleSheet.create({
     },
     scrollContainer: {
         paddingBottom: 20,
-        maxWidth: 780,
+        maxWidth: 700,
         margin: 'auto',
         width: '100%'
     },
-    addonBorderContainer: {
+    addonSection: {
         borderBottomWidth: 1,
-        borderColor: 'rgba(136, 136, 136, 0.1)'
+        borderColor: 'rgba(255, 255, 255, 0.06)',
+        paddingVertical: 16,
     },
     addonListContainer: {
-        marginVertical: 15,
-        marginHorizontal: 15,
-        alignItems: 'center',
-        justifyContent: 'center'
+        paddingHorizontal: 16,
+        gap: 10,
     },
     addonItem: {
-        borderRadius: 25,
+        borderRadius: 20,
         paddingVertical: 10,
-        paddingHorizontal: 20,
-        marginHorizontal: 10,
-        backgroundColor: '#202020',
+        paddingHorizontal: 18,
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
         borderWidth: 1,
-        borderColor: 'transparent',
+        borderColor: 'rgba(255, 255, 255, 0.08)',
     },
     selectedAddonItem: {
-        backgroundColor: '#535aff'
+        backgroundColor: '#535aff',
+        borderColor: '#535aff',
+    },
+    addonItemPressed: {
+        opacity: 0.7,
     },
     addonName: {
-        fontSize: 16,
-        color: '#ccc',
-        fontWeight: '400',
+        fontSize: 14,
+        color: '#cccccc',
+        fontWeight: '500',
+        letterSpacing: -0.2,
     },
-    selectedaddonName: {
-        color: '#fff',
+    selectedAddonName: {
+        color: '#ffffff',
         fontWeight: '500',
     },
     streamsContainer: {
         paddingHorizontal: 16,
-        paddingVertical: 24,
+        paddingTop: 16,
+        gap: 12,
     },
     streamContainer: {
-        marginBottom: 12,
+        borderRadius: 14,
+    },
+    streamContainerPressed: {
+        opacity: 0.7,
     },
     streamItem: {
-        backgroundColor: '#101010',
-        borderRadius: 16,
-        padding: 18,
+        backgroundColor: 'rgba(255, 255, 255, 0.03)',
+        borderRadius: 14,
+        padding: 16,
         borderWidth: 1,
-        borderColor: '#1a1a1a',
+        borderColor: 'rgba(255, 255, 255, 0.06)',
     },
     streamHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'flex-start',
-        marginBottom: 10,
-    },
-    streamTitleContainer: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        paddingRight: 12,
+        marginBottom: 8,
+        gap: 10,
     },
     streamName: {
         fontSize: 16,
@@ -386,54 +372,51 @@ const styles = StyleSheet.create({
         color: '#ffffff',
         flex: 1,
         lineHeight: 22,
+        letterSpacing: -0.3,
     },
     qualityBadge: {
-        backgroundColor: 'rgba(83, 90, 255, 0.25)',
+        backgroundColor: 'rgba(83, 90, 255, 0.15)',
         paddingHorizontal: 10,
-        paddingVertical: 5,
+        paddingVertical: 4,
         borderRadius: 8,
-        marginLeft: 8,
-        marginTop: 2,
         borderWidth: 1,
         borderColor: 'rgba(83, 90, 255, 0.3)',
     },
     qualityText: {
         color: '#ffffff',
         fontSize: 12,
-        fontWeight: '500'
+        fontWeight: '500',
+        letterSpacing: 0.2,
     },
     streamDescription: {
         fontSize: 13,
         color: '#aaaaaa',
-        lineHeight: 20,
+        lineHeight: 19,
         marginBottom: 12,
     },
     streamFooter: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
+        gap: 10,
     },
-    streamMetadata: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        flex: 1,
-    },
-    streamSize: {
-        fontSize: 11,
-        color: '#aaaaaa',
-        marginRight: 12,
-        backgroundColor: '#2a2a2a',
+    sizeBadge: {
+        backgroundColor: 'rgba(255, 255, 255, 0.08)',
         paddingHorizontal: 8,
         paddingVertical: 4,
         borderRadius: 6,
+    },
+    streamSize: {
+        fontSize: 11,
+        color: '#cccccc',
         fontWeight: '500',
+        letterSpacing: 0.3,
     },
     streamType: {
         fontSize: 11,
-        color: '#aaaaaa',
+        color: '#888888',
         textTransform: 'uppercase',
-        fontWeight: '600',
-        letterSpacing: 0.5,
+        fontWeight: '500',
+        letterSpacing: 0.8,
     },
     loadingContainer: {
         flex: 1,
@@ -445,9 +428,9 @@ const styles = StyleSheet.create({
         color: '#535aff',
     },
     loadingText: {
-        fontSize: 15,
+        fontSize: 14,
         marginTop: 10,
-        color: '#999',
+        color: '#888888',
         fontWeight: '500',
     },
     centeredContainer: {
@@ -456,12 +439,29 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 20,
     },
-    noAddonsText: {
-        fontSize: 15,
+    emptyContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    emptyContent: {
+        alignItems: 'center',
+        paddingHorizontal: 40,
+    },
+    emptyIconContainer: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: 'rgba(83, 90, 255, 0.1)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 16,
+    },
+    emptyText: {
+        fontSize: 14,
         textAlign: 'center',
-        marginHorizontal: '10%',
-        color: '#999',
-        lineHeight: 22,
+        color: '#888888',
+        lineHeight: 20,
     },
 });
 

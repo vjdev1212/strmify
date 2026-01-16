@@ -5,8 +5,8 @@ import {
   Image,
   StyleSheet,
   Animated,
+  useWindowDimensions,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { StorageKeys, storageService } from '@/utils/StorageService';
 import { View, Text } from './Themed';
@@ -29,18 +29,24 @@ interface WatchHistoryProps {
   type: 'all' | 'movie' | 'series';
 }
 
-const WATCH_HISTORY_KEY = StorageKeys.WATCH_HISTORY_KEY;
-const CARD_WIDTH = 200;
-const CARD_HEIGHT = (CARD_WIDTH * 9) / 16;
-
 const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
   const [history, setHistory] = useState<WatchHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const animatedValues = useRef<Map<string, Animated.Value>>(new Map()).current;
+  
+  const { width, height } = useWindowDimensions();
+  const isPortrait = height > width;
+
+  // Constants moved inside to use window dimensions correctly
+  const CARD_WIDTH = isPortrait ? 210 : 270;
+  const CARD_HEIGHT = Math.round((CARD_WIDTH * 9) / 16);
+  const CARD_SPACING = 16;
+
+  const WATCH_HISTORY_KEY = StorageKeys.WATCH_HISTORY_KEY;
 
   useEffect(() => {
     loadWatchHistory();
-  }, []);
+  }, [type]); // Added type as dependency to reload if prop changes
 
   const getAnimatedValue = (key: string) => {
     if (!animatedValues.has(key)) {
@@ -54,14 +60,12 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
       const historyJson = storageService.getItem(WATCH_HISTORY_KEY);
       if (historyJson) {
         const parsedHistory: WatchHistoryItem[] = JSON.parse(historyJson);
-        if(type === 'all') {
+        
+        if (type === 'all') {
           setHistory(parsedHistory);
-          return;
+        } else {
+          setHistory(parsedHistory.filter(item => item.type === type));
         }
-        const filteredHistory = type
-          ? parsedHistory.filter(item => item.type === type)
-          : parsedHistory;
-        setHistory(filteredHistory);
       }
     } catch (error) {
       console.error('Failed to load watch history:', error);
@@ -73,38 +77,32 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
   const removeHistoryItem = async (itemToRemove: WatchHistoryItem, itemKey: string) => {
     try {
       const animValue = getAnimatedValue(itemKey);
-      
-      // Animate out
+
       Animated.timing(animValue, {
         toValue: 0,
         duration: 300,
         useNativeDriver: true,
       }).start(async () => {
-        // Remove from storage after animation
         const historyJson = storageService.getItem(WATCH_HISTORY_KEY);
         if (historyJson) {
           const parsedHistory: WatchHistoryItem[] = JSON.parse(historyJson);
           const updatedHistory = parsedHistory.filter(
-            item => !(item.videoUrl === itemToRemove.videoUrl && 
-                     item.timestamp === itemToRemove.timestamp)
+            item => !(item.videoUrl === itemToRemove.videoUrl &&
+              item.timestamp === itemToRemove.timestamp)
           );
-          
+
           storageService.setItem(
             WATCH_HISTORY_KEY,
             JSON.stringify(updatedHistory)
           );
-          
-          // Update local state
-          if(type === 'all') {
+
+          // Update local state based on current filter type
+          if (type === 'all') {
             setHistory(updatedHistory);
           } else {
-            const filteredHistory = updatedHistory.filter(
-              item => item.type === type
-            );
-            setHistory(filteredHistory);
+            setHistory(updatedHistory.filter(item => item.type === type));
           }
-          
-          // Clean up animated value
+
           animatedValues.delete(itemKey);
         }
       });
@@ -113,199 +111,190 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
     }
   };
 
-  if (isLoading) {
-    return null;
-  }
-
-  if (history.length === 0) {
+  if (isLoading || history.length === 0) {
     return null;
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.sectionTitle}>Continue Watching</Text>
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <View style={styles.sectionTitleRow}>
+          <Ionicons name="play-circle-outline" size={22} color="#ffffff" />
+          <Text style={styles.sectionTitle}>Continue Watching</Text>
+        </View>
+        <Text style={styles.sectionCount}>
+          {history.length} {history.length === 1 ? 'item' : 'items'}
+        </Text>
+      </View>
+
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-        decelerationRate="fast"
-        snapToInterval={CARD_WIDTH + 12}
+        contentContainerStyle={[styles.scrollContent, { gap: CARD_SPACING }]}
+        decelerationRate="normal"
       >
         {history.map((item, index) => {
-          const itemKey = `${item.videoUrl}-${index}`;
+          const itemKey = `${item.videoUrl}-${item.timestamp}-${index}`;
           const animValue = getAnimatedValue(itemKey);
-          
-          return (
-          <Animated.View 
-            key={itemKey}
-            style={{
-              opacity: animValue,
-              transform: [
-                {
-                  scale: animValue,
-                },
-                {
-                  translateX: animValue.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [-50, 0],
-                  }),
-                },
-              ],
-            }}
-          >
-            <TouchableOpacity
-              style={styles.card}
-              onPress={() => onItemSelect(item)}
-              activeOpacity={0.8}
-            >
-              <View style={styles.imageContainer}>
-                <Image
-                  source={{ uri: item.artwork }}
-                  style={styles.artwork}
-                  resizeMode="cover" />
-                <LinearGradient
-                  colors={['transparent', 'rgba(0,0,0,0.95)']}
-                  style={styles.gradient} />
 
-                <View style={styles.progressContainer}>
-                  <View style={styles.progressBackground}>
-                    <View
-                      style={[
-                        styles.progressBar,
-                        { width: `${item.progress}%` },
-                      ]} />
+          return (
+            <Animated.View
+              key={itemKey}
+              style={[
+                { width: CARD_WIDTH },
+                {
+                  opacity: animValue,
+                  transform: [{ scale: animValue }],
+                },
+              ]}
+            >
+              <TouchableOpacity
+                style={styles.card}
+                onPress={() => onItemSelect(item)}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.imageContainer, { height: CARD_HEIGHT }]}>
+                  <Image
+                    source={{ uri: item.artwork }}
+                    style={styles.backdrop}
+                    resizeMode="cover"
+                  />
+
+                  <TouchableOpacity
+                    style={styles.removeButton}
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      removeHistoryItem(item, itemKey);
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="close" size={16} color="#fff" />
+                  </TouchableOpacity>
+
+                  <View style={styles.progressBadge}>
+                    <Text style={styles.progressText}>{Math.round(item.progress)}%</Text>
+                  </View>
+
+                  <View style={styles.progressContainer}>
+                    <View style={styles.progressBackground}>
+                      <View
+                        style={[
+                          styles.progressBar,
+                          { width: `${item.progress}%` },
+                        ]}
+                      />
+                    </View>
                   </View>
                 </View>
 
-                <View style={styles.progressBadge}>
-                  <Text style={styles.progressText}>
-                    {item.progress}%
+                <View style={styles.infoContainer}>
+                  <Text style={styles.title} numberOfLines={2}>
+                    {item.title}
                   </Text>
                 </View>
-
-                <TouchableOpacity
-                  style={styles.removeButton}
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    removeHistoryItem(item, itemKey);
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="close-outline" size={16} color="rgba(255, 255, 255, 0.9)" />
-                </TouchableOpacity>
-              </View>
-            </TouchableOpacity>
-            <View style={styles.titleContainer}>
-              <Text style={styles.title} numberOfLines={1}>
-                {item.title}
-              </Text>
-            </View>
-          </Animated.View>
-        )})}
-
+              </TouchableOpacity>
+            </Animated.View>
+          );
+        })}
       </ScrollView>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    marginVertical: 16,
+  section: {
+    marginTop: 24,
+    marginBottom: 10
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
   sectionTitle: {
     fontSize: 20,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  sectionCount: {
+    fontSize: 14,
+    opacity: 0.5,
     fontWeight: '500',
-    marginBottom: 12,
-    marginLeft: 16,
-    letterSpacing: 0.5,
+    color: '#fff',
   },
   scrollContent: {
     paddingHorizontal: 16,
   },
   card: {
-    width: CARD_WIDTH,
-    marginRight: 12,
-    backgroundColor: '#1a1a1a',
-    borderRadius: 10,
-    overflow: 'hidden',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
+    backgroundColor: 'transparent',
+    borderRadius: 12,
   },
   imageContainer: {
     width: '100%',
-    height: CARD_HEIGHT,
     position: 'relative',
+    backgroundColor: '#2a2a2a',
+    borderRadius: 12,
+    overflow: 'hidden',
   },
-  artwork: {
+  backdrop: {
     width: '100%',
     height: '100%',
-    backgroundColor: '#2a2a2a',
   },
-  gradient: {
+  removeButton: {
     position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: '50%',
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    borderRadius: 16,
+    padding: 6,
+  },
+  progressBadge: {
+    position: 'absolute',
+    bottom: 12, // Moved slightly up so it doesn't overlap progress bar
+    left: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  progressText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '500',
   },
   progressContainer: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 6,
+    paddingHorizontal: 0, // Fill the width for a cleaner look
   },
   progressBackground: {
     width: '100%',
-    height: 3,
+    height: 4,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 2,
-    overflow: 'hidden',
   },
   progressBar: {
     height: '100%',
-    backgroundColor: 'rgba(83, 90, 255, 0.5)',
-    borderRadius: 2,
+    backgroundColor: '#535aff',
   },
-  progressBadge: {
-    position: 'absolute',
-    top: 6,
-    right: 6,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 4,
-    backdropFilter: 'blur(10px)',
-  },
-  progressText: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: '600',
-  },
-  removeButton: {
-    position: 'absolute',
-    top: 4,
-    left: 4,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    borderRadius: 25,
-    padding: 4,
-    backdropFilter: 'blur(10px)',
-  },
-  titleContainer: {
-    paddingVertical: 5,
-    paddingHorizontal: 5,
-    overflow: 'hidden',
-    width: CARD_WIDTH,
+  infoContainer: {
+    paddingTop: 8,
+    paddingHorizontal: 4,
   },
   title: {
-    fontSize: 13,
-    color: '#FFFFFF',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    lineHeight: 16,
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 4,
+    lineHeight: 18,
+    color: '#fff',
   },
 });
 
