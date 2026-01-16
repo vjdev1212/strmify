@@ -203,8 +203,8 @@ const MovieDetails = () => {
                 genres: data.genre,
               }}
             />
-            <WatchTrailerButton trailerKey={trailerKey} />
             <PlayButton onPress={handlePlayPress} />
+            <WatchTrailerButton trailerKey={trailerKey} />
           </View>
           <MediaContentDescription description={data.description} />
         </View>
