@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   ScrollView,
   TouchableOpacity,
@@ -6,11 +6,10 @@ import {
   StyleSheet,
   Animated,
   RefreshControl,
-  Dimensions,
   FlatList,
+  useWindowDimensions,
 } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { View, Text, StatusBar } from '@/components/Themed';
 import WatchHistory from '@/components/WatchHistory';
@@ -32,20 +31,22 @@ interface WatchHistoryItem {
   timestamp: number;
 }
 
-const windowWidth = Dimensions.get('window').width;
-const windowHeight = Dimensions.get('window').height
-const isPortrait = windowHeight > windowWidth;
-
-const CARD_WIDTH = isPortrait ? 210 : 270;
-const CARD_HEIGHT = Math.round((CARD_WIDTH * 9) / 16);
-const CARD_SPACING = 16;
-
 const LibraryScreen: React.FC = () => {
   const [movies, setMovies] = useState<LibraryItem[]>([]);
   const [series, setSeries] = useState<LibraryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [animatedValues] = useState(new Map<string, Animated.Value>());
+
+  // Use useRef for animated values to prevent unnecessary re-renders
+  const animatedValues = useRef(new Map<string, Animated.Value>()).current;
+
+  const { width, height } = useWindowDimensions();
+  const isPortrait = height > width;
+
+  // Calculate dimensions inside the component
+  const CARD_WIDTH = isPortrait ? 210 : 270;
+  const CARD_HEIGHT = Math.round((CARD_WIDTH * 9) / 16);
+  const CARD_SPACING = 16;
 
   useFocusEffect(
     useCallback(() => {
@@ -56,8 +57,6 @@ const LibraryScreen: React.FC = () => {
   const loadLibrary = async () => {
     try {
       const items = await libraryService.getLibrary();
-
-      // Get latest 100 items and separate by type
       const latest100 = items.slice(0, 100);
       const movieItems = latest100.filter(item => item.type === 'movie');
       const seriesItems = latest100.filter(item => item.type === 'series');
@@ -103,17 +102,10 @@ const LibraryScreen: React.FC = () => {
   };
 
   const handleItemPress = (item: LibraryItem) => {
-    if (item.type === 'movie') {
-      router.push({
-        pathname: '/movie/details',
-        params: { moviedbid: item.moviedbid }
-      });
-    } else {
-      router.push({
-        pathname: '/series/details',
-        params: { moviedbid: item.moviedbid }
-      });
-    }
+    router.push({
+      pathname: item.type === 'movie' ? '/movie/details' : '/series/details',
+      params: { moviedbid: item.moviedbid }
+    });
   };
 
   const handleWatchHistoryItemSelect = (item: WatchHistoryItem) => {
@@ -138,7 +130,7 @@ const LibraryScreen: React.FC = () => {
     return (
       <Animated.View
         style={[
-          styles.cardWrapper,
+          { width: CARD_WIDTH },
           {
             opacity: animValue,
             transform: [{ scale: animValue }],
@@ -150,7 +142,7 @@ const LibraryScreen: React.FC = () => {
           onPress={() => handleItemPress(item)}
           activeOpacity={0.8}
         >
-          <View style={styles.imageContainer}>
+          <View style={[styles.imageContainer, { height: CARD_HEIGHT }]}>
             <Image
               source={{ uri: item.backdrop || item.poster }}
               style={styles.backdrop}
@@ -175,9 +167,7 @@ const LibraryScreen: React.FC = () => {
             </Text>
 
             <View style={styles.metaRow}>
-              {item.year && (
-                <Text style={styles.year}>{item.year}</Text>
-              )}
+              {item.year && <Text style={styles.year}>{item.year}</Text>}
               {item.year && item.genres && item.genres.length > 0 && (
                 <Text style={styles.separator}>•</Text>
               )}
@@ -214,22 +204,12 @@ const LibraryScreen: React.FC = () => {
           keyExtractor={(item, index) => `${item.moviedbid}-${item.type}-${index}`}
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.flatListContent}
+          contentContainerStyle={[styles.flatListContent, { gap: CARD_SPACING }]}
           decelerationRate="normal"
         />
       </View>
     );
   };
-
-  const renderEmptyState = () => (
-    <View style={styles.emptyContainer}>
-      <Ionicons name="albums-outline" size={80} color="#535aff" />
-      <Text style={styles.emptyTitle}>Your Library is Empty</Text>
-      <Text style={styles.emptyText}>
-        Add movies and TV shows to your library to watch later
-      </Text>
-    </View>
-  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -264,7 +244,13 @@ const LibraryScreen: React.FC = () => {
             <Text style={styles.loadingText}>Loading...</Text>
           </View>
         ) : movies.length === 0 && series.length === 0 ? (
-          renderEmptyState()
+          <View style={styles.emptyContainer}>
+            <Ionicons name="albums-outline" size={80} color="#535aff" />
+            <Text style={styles.emptyTitle}>Your Library is Empty</Text>
+            <Text style={styles.emptyText}>
+              Add movies and TV shows to your library to watch later
+            </Text>
+          </View>
         ) : (
           <>
             {renderSection('Movies', movies, 'film-outline')}
@@ -291,13 +277,16 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.5,
     marginBottom: 4,
+    color: '#fff',
   },
   headerSubtitle: {
     fontSize: 14,
     opacity: 0.6,
+    color: '#fff',
   },
   section: {
     marginTop: 24,
+    marginBottom: 10
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -314,18 +303,16 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: '700',
+    color: '#fff',
   },
   sectionCount: {
     fontSize: 14,
     opacity: 0.5,
     fontWeight: '500',
+    color: '#fff',
   },
   flatListContent: {
     paddingHorizontal: 16,
-    gap: CARD_SPACING,
-  },
-  cardWrapper: {
-    width: CARD_WIDTH,
   },
   card: {
     backgroundColor: 'transparent',
@@ -333,7 +320,6 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     width: '100%',
-    height: CARD_HEIGHT,
     position: 'relative',
     backgroundColor: '#2a2a2a',
     borderRadius: 10,
@@ -350,7 +336,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
     borderRadius: 16,
     padding: 6,
-    backdropFilter: 'blur(10px)',
   },
   infoContainer: {
     paddingTop: 8,
@@ -361,6 +346,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginBottom: 4,
     lineHeight: 18,
+    color: '#fff',
   },
   metaRow: {
     flexDirection: 'row',
@@ -371,16 +357,19 @@ const styles = StyleSheet.create({
     fontSize: 12,
     opacity: 0.6,
     fontWeight: '500',
+    color: '#fff',
   },
   separator: {
     fontSize: 12,
     opacity: 0.4,
     marginHorizontal: 6,
+    color: '#fff',
   },
   genres: {
     fontSize: 12,
     opacity: 0.5,
     flex: 1,
+    color: '#fff',
   },
   emptyContainer: {
     alignItems: 'center',
@@ -393,12 +382,14 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginTop: 20,
     marginBottom: 8,
+    color: '#fff',
   },
   emptyText: {
     fontSize: 14,
     opacity: 0.6,
     textAlign: 'center',
     lineHeight: 20,
+    color: '#fff',
   },
   loadingContainer: {
     alignItems: 'center',
@@ -408,6 +399,7 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 16,
     opacity: 0.6,
+    color: '#fff',
   },
 });
 

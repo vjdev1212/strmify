@@ -5,7 +5,6 @@ import {
   Image,
   StyleSheet,
   Animated,
-  Dimensions,
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -30,26 +29,24 @@ interface WatchHistoryProps {
   type: 'all' | 'movie' | 'series';
 }
 
-
-const WATCH_HISTORY_KEY = StorageKeys.WATCH_HISTORY_KEY;
-const windowWidth = Dimensions.get('window').width;
-const windowHeight = Dimensions.get('window').height
-const isPortrait = windowHeight > windowWidth;
-
-const CARD_WIDTH = isPortrait ? 210 : 270;
-const CARD_HEIGHT = Math.round((CARD_WIDTH * 9) / 16);
-const CARD_SPACING = 16;
-
 const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
   const [history, setHistory] = useState<WatchHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const animatedValues = useRef<Map<string, Animated.Value>>(new Map()).current;
+  
   const { width, height } = useWindowDimensions();
+  const isPortrait = height > width;
 
+  // Constants moved inside to use window dimensions correctly
+  const CARD_WIDTH = isPortrait ? 210 : 270;
+  const CARD_HEIGHT = Math.round((CARD_WIDTH * 9) / 16);
+  const CARD_SPACING = 16;
+
+  const WATCH_HISTORY_KEY = StorageKeys.WATCH_HISTORY_KEY;
 
   useEffect(() => {
     loadWatchHistory();
-  }, []);
+  }, [type]); // Added type as dependency to reload if prop changes
 
   const getAnimatedValue = (key: string) => {
     if (!animatedValues.has(key)) {
@@ -63,14 +60,12 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
       const historyJson = storageService.getItem(WATCH_HISTORY_KEY);
       if (historyJson) {
         const parsedHistory: WatchHistoryItem[] = JSON.parse(historyJson);
+        
         if (type === 'all') {
           setHistory(parsedHistory);
-          return;
+        } else {
+          setHistory(parsedHistory.filter(item => item.type === type));
         }
-        const filteredHistory = type
-          ? parsedHistory.filter(item => item.type === type)
-          : parsedHistory;
-        setHistory(filteredHistory);
       }
     } catch (error) {
       console.error('Failed to load watch history:', error);
@@ -101,13 +96,11 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
             JSON.stringify(updatedHistory)
           );
 
+          // Update local state based on current filter type
           if (type === 'all') {
             setHistory(updatedHistory);
           } else {
-            const filteredHistory = updatedHistory.filter(
-              item => item.type === type
-            );
-            setHistory(filteredHistory);
+            setHistory(updatedHistory.filter(item => item.type === type));
           }
 
           animatedValues.delete(itemKey);
@@ -118,11 +111,7 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
     }
   };
 
-  if (isLoading) {
-    return null;
-  }
-
-  if (history.length === 0) {
+  if (isLoading || history.length === 0) {
     return null;
   }
 
@@ -141,18 +130,18 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { gap: CARD_SPACING }]}
         decelerationRate="normal"
       >
         {history.map((item, index) => {
-          const itemKey = `${item.videoUrl}-${index}`;
+          const itemKey = `${item.videoUrl}-${item.timestamp}-${index}`;
           const animValue = getAnimatedValue(itemKey);
 
           return (
             <Animated.View
               key={itemKey}
               style={[
-                styles.cardWrapper,
+                { width: CARD_WIDTH },
                 {
                   opacity: animValue,
                   transform: [{ scale: animValue }],
@@ -164,7 +153,7 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
                 onPress={() => onItemSelect(item)}
                 activeOpacity={0.8}
               >
-                <View style={styles.imageContainer}>
+                <View style={[styles.imageContainer, { height: CARD_HEIGHT }]}>
                   <Image
                     source={{ uri: item.artwork }}
                     style={styles.backdrop}
@@ -183,7 +172,7 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
                   </TouchableOpacity>
 
                   <View style={styles.progressBadge}>
-                    <Text style={styles.progressText}>{item.progress}%</Text>
+                    <Text style={styles.progressText}>{Math.round(item.progress)}%</Text>
                   </View>
 
                   <View style={styles.progressContainer}>
@@ -215,6 +204,7 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
 const styles = StyleSheet.create({
   section: {
     marginTop: 24,
+    marginBottom: 10
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -231,18 +221,16 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: '700',
+    color: '#fff',
   },
   sectionCount: {
     fontSize: 14,
     opacity: 0.5,
     fontWeight: '500',
+    color: '#fff',
   },
   scrollContent: {
     paddingHorizontal: 16,
-    gap: CARD_SPACING,
-  },
-  cardWrapper: {
-    width: CARD_WIDTH,
   },
   card: {
     backgroundColor: 'transparent',
@@ -250,7 +238,6 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     width: '100%',
-    height: CARD_HEIGHT,
     position: 'relative',
     backgroundColor: '#2a2a2a',
     borderRadius: 12,
@@ -267,11 +254,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
     borderRadius: 16,
     padding: 6,
-    backdropFilter: 'blur(10px)',
   },
   progressBadge: {
     position: 'absolute',
-    bottom: 8,
+    bottom: 12, // Moved slightly up so it doesn't overlap progress bar
     left: 8,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
     paddingHorizontal: 8,
@@ -288,19 +274,16 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 8,
+    paddingHorizontal: 0, // Fill the width for a cleaner look
   },
   progressBackground: {
     width: '100%',
-    height: 3,
+    height: 4,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 2,
-    overflow: 'hidden',
   },
   progressBar: {
     height: '100%',
     backgroundColor: '#535aff',
-    borderRadius: 2,
   },
   infoContainer: {
     paddingTop: 8,
@@ -311,6 +294,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginBottom: 4,
     lineHeight: 18,
+    color: '#fff',
   },
 });
 
