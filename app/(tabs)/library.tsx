@@ -31,11 +31,18 @@ interface WatchHistoryItem {
   timestamp: number;
 }
 
+type CategoryType = 'all' | 'movies' | 'tv';
+
 const LibraryScreen: React.FC = () => {
-  const [movies, setMovies] = useState<LibraryItem[]>([]);
-  const [series, setSeries] = useState<LibraryItem[]>([]);
+  const [allUnwatched, setAllUnwatched] = useState<LibraryItem[]>([]);
+  const [allWatched, setAllWatched] = useState<LibraryItem[]>([]);
+  const [moviesUnwatched, setMoviesUnwatched] = useState<LibraryItem[]>([]);
+  const [moviesWatched, setMoviesWatched] = useState<LibraryItem[]>([]);
+  const [seriesUnwatched, setSeriesUnwatched] = useState<LibraryItem[]>([]);
+  const [seriesWatched, setSeriesWatched] = useState<LibraryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<CategoryType>('all');
 
   // Use useRef for animated values to prevent unnecessary re-renders
   const animatedValues = useRef(new Map<string, Animated.Value>()).current;
@@ -56,13 +63,30 @@ const LibraryScreen: React.FC = () => {
 
   const loadLibrary = async () => {
     try {
-      const items = await libraryService.getLibrary();
-      const latest100 = items.slice(0, 100);
-      const movieItems = latest100.filter(item => item.type === 'movie');
-      const seriesItems = latest100.filter(item => item.type === 'series');
+      // Load all items
+      const allItems = await libraryService.getLibrary();
+      const latest100 = allItems.slice(0, 100);
 
-      setMovies(movieItems);
-      setSeries(seriesItems);
+      // All category
+      const allUnwatchedItems = latest100.filter(item => !item.watched);
+      const allWatchedItems = latest100.filter(item => item.watched);
+
+      // Movies category
+      const movieItems = latest100.filter(item => item.type === 'movie');
+      const moviesUnwatchedItems = movieItems.filter(item => !item.watched);
+      const moviesWatchedItems = movieItems.filter(item => item.watched);
+
+      // TV Shows category
+      const seriesItems = latest100.filter(item => item.type === 'series');
+      const seriesUnwatchedItems = seriesItems.filter(item => !item.watched);
+      const seriesWatchedItems = seriesItems.filter(item => item.watched);
+
+      setAllUnwatched(allUnwatchedItems);
+      setAllWatched(allWatchedItems);
+      setMoviesUnwatched(moviesUnwatchedItems);
+      setMoviesWatched(moviesWatchedItems);
+      setSeriesUnwatched(seriesUnwatchedItems);
+      setSeriesWatched(seriesWatchedItems);
     } catch (error) {
       console.error('Failed to load library:', error);
     } finally {
@@ -98,6 +122,15 @@ const LibraryScreen: React.FC = () => {
       });
     } catch (error) {
       console.error('Failed to remove from library:', error);
+    }
+  };
+
+  const toggleWatchStatus = async (item: LibraryItem) => {
+    try {
+      await libraryService.toggleWatchStatus(item.moviedbid, item.type);
+      await loadLibrary();
+    } catch (error) {
+      console.error('Failed to toggle watch status:', error);
     }
   };
 
@@ -151,6 +184,27 @@ const LibraryScreen: React.FC = () => {
               resizeMode="cover"
             />
 
+            {item.watched && (
+              <View style={styles.watchedBadge}>
+                <Ionicons name="checkmark-circle" size={20} color="#4ade80" />
+              </View>
+            )}
+
+            <TouchableOpacity
+              style={styles.watchButton}
+              onPress={(e) => {
+                e.stopPropagation();
+                toggleWatchStatus(item);
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name={item.watched ? "eye-off-outline" : "eye-outline"}
+                size={18}
+                color="#fff"
+              />
+            </TouchableOpacity>
+
             <TouchableOpacity
               style={styles.removeButton}
               onPress={(e) => {
@@ -192,7 +246,7 @@ const LibraryScreen: React.FC = () => {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <View style={styles.sectionTitleRow}>
-            <Ionicons name={icon as any} size={22} color="#ffffff" />
+            <Ionicons name={icon as any} size={20} color="#ffffff" />
             <Text style={styles.sectionTitle}>{title}</Text>
           </View>
           <Text style={styles.sectionCount}>
@@ -213,10 +267,122 @@ const LibraryScreen: React.FC = () => {
     );
   };
 
+  const renderCategoryButton = (category: CategoryType, label: string, icon: string) => {
+    const isActive = activeCategory === category;
+    return (
+      <TouchableOpacity
+        style={[styles.categoryButton, isActive && styles.categoryButtonActive]}
+        onPress={() => setActiveCategory(category)}
+        activeOpacity={0.7}
+      >
+        <Ionicons
+          name={icon as any}
+          size={18}
+          color={isActive ? '#000000' : '#999'}
+        />
+        <Text style={[styles.categoryButtonText, isActive && styles.categoryButtonTextActive]}>
+          {label}
+        </Text>
+      </TouchableOpacity>
+    );
+  };
+
+  const getTotalCount = () => {
+    switch (activeCategory) {
+      case 'all':
+        return allUnwatched.length + allWatched.length;
+      case 'movies':
+        return moviesUnwatched.length + moviesWatched.length;
+      case 'tv':
+        return seriesUnwatched.length + seriesWatched.length;
+      default:
+        return 0;
+    }
+  };
+
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Loading...</Text>
+        </View>
+      );
+    }
+
+    const totalCount = getTotalCount();
+    if (totalCount === 0) {
+      return (
+        <View style={styles.emptyContainer}>
+          <Ionicons name="albums-outline" size={80} color="#535aff" />
+          <Text style={styles.emptyTitle}>
+            {activeCategory === 'all'
+              ? 'Your Library is Empty'
+              : activeCategory === 'movies'
+                ? 'No Movies in Library'
+                : 'No TV Shows in Library'
+            }
+          </Text>
+          <Text style={styles.emptyText}>
+            Add {activeCategory === 'all' ? 'movies and TV shows' : activeCategory === 'movies' ? 'movies' : 'TV shows'} to your library to watch later
+          </Text>
+        </View>
+      );
+    }
+
+    switch (activeCategory) {
+      case 'all':
+        return (
+          <View>
+            <WatchHistory
+              onItemSelect={handleWatchHistoryItemSelect}
+              type="all"
+            />
+            {renderSection('Unwatched', allUnwatched, 'eye-outline')}
+            {renderSection('Watched', allWatched, 'checkmark-circle-outline')}
+          </View>
+        );
+      case 'movies':
+        return (
+          <View>
+            <WatchHistory
+              onItemSelect={handleWatchHistoryItemSelect}
+              type="movie"
+            />
+            {renderSection('Unwatched', moviesUnwatched, 'eye-outline')}
+            {renderSection('Watched', moviesWatched, 'checkmark-circle-outline')}
+          </View>
+        );
+      case 'tv':
+        return (
+          <View>
+            <WatchHistory
+              onItemSelect={handleWatchHistoryItemSelect}
+              type="series"
+            />
+            {renderSection('Unwatched', seriesUnwatched, 'eye-outline')}
+            {renderSection('Watched', seriesWatched, 'checkmark-circle-outline')}
+          </View>
+        );
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar />
       <BlurGradientBackground />
+
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Library</Text>
+        <Text style={styles.headerSubtitle}>
+          {getTotalCount()} {getTotalCount() === 1 ? 'item' : 'items'}
+        </Text>
+      </View>
+
+      <View style={styles.categoryContainer}>
+        {renderCategoryButton('all', 'All', 'albums-outline')}
+        {renderCategoryButton('movies', 'Movies', 'film-outline')}
+        {renderCategoryButton('tv', 'Series', 'tv-outline')}
+      </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -229,36 +395,7 @@ const LibraryScreen: React.FC = () => {
           />
         }
       >
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Library</Text>
-          <Text style={styles.headerSubtitle}>
-            {movies.length + series.length} {movies.length + series.length === 1 ? 'item' : 'items'}
-          </Text>
-        </View>
-
-        <WatchHistory
-          onItemSelect={handleWatchHistoryItemSelect}
-          type="all"
-        />
-
-        {isLoading ? (
-          <View style={styles.loadingContainer}>
-            <Text style={styles.loadingText}>Loading...</Text>
-          </View>
-        ) : movies.length === 0 && series.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Ionicons name="albums-outline" size={80} color="#535aff" />
-            <Text style={styles.emptyTitle}>Your Library is Empty</Text>
-            <Text style={styles.emptyText}>
-              Add movies and TV shows to your library to watch later
-            </Text>
-          </View>
-        ) : (
-          <>
-            {renderSection('Movies', movies, 'film-outline')}
-            {renderSection('TV Shows', series, 'tv-outline')}
-          </>
-        )}
+        {renderContent()}
         <BottomSpacing space={100} />
       </ScrollView>
     </SafeAreaView>
@@ -286,9 +423,48 @@ const styles = StyleSheet.create({
     opacity: 0.6,
     color: '#fff',
   },
+  categoryContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 10,
+  },
+  categoryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    gap: 8,
+  },
+  categoryButtonActive: {
+    backgroundColor: '#ffffff',
+  },
+  categoryButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#999',
+  },
+  categoryButtonTextActive: {
+    color: '#000000',
+  },
+  continueWatchingSection: {
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  continueWatchingHeader: {
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  mainSectionTitle: {
+    fontSize: 22,
+    fontWeight: '600',
+    color: '#fff',
+  },
   section: {
     marginTop: 24,
-    marginBottom: 10
+    marginBottom: 10,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -303,7 +479,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '600',
     color: '#fff',
   },
@@ -330,6 +506,22 @@ const styles = StyleSheet.create({
   backdrop: {
     width: '100%',
     height: '100%',
+  },
+  watchedBadge: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    borderRadius: 16,
+    padding: 4,
+  },
+  watchButton: {
+    position: 'absolute',
+    top: 8,
+    right: 40,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    borderRadius: 16,
+    padding: 6,
   },
   removeButton: {
     position: 'absolute',
