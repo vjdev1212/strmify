@@ -79,9 +79,9 @@
   "news": [
     {
       "title": "Strmify v1.3.0 Released",
-      "identifier": "strmify-v1.3.0-release-v2",
+      "identifier": "strmify-v1.3.0-release",
       "caption": "1. Added library section for watchlists.\n2. UI Improvements",
-      "date": "2026-01-16",
+      "date": "2026-01-17",
       "tintColor": "#535aff",
       "imageURL": "https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/assets/banners/Strmify-feature-graphic.png",
       "notify": true,
