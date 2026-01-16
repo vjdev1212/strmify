@@ -194,25 +194,20 @@ const MediaPlayerConfigScreen = () => {
                                     key={player.name}
                                     style={[
                                         styles.playerRow,
-                                        index === 0 && styles.firstRow,
                                         index === players.length - 1 && styles.lastRow
                                     ]}
                                     onPress={() => handlePlayerSelect(player.name)}
                                 >
                                     <View style={styles.playerContent}>
+                                        <View style={styles.radioButton}>
+                                            {selectedPlayer === player.name ? (
+                                                <View style={styles.radioButtonInner} />
+                                            ) : null}
+                                        </View>
                                         <View style={styles.playerInfo}>
                                             <Text style={styles.playerName}>
                                                 {player.name}
                                             </Text>
-                                        </View>
-                                        <View style={styles.checkmarkContainer}>
-                                            {selectedPlayer === player.name && (
-                                                <MaterialIcons
-                                                    name="check"
-                                                    size={20}
-                                                    color="#535aff"
-                                                />
-                                            )}
                                         </View>
                                     </View>
                                 </Pressable>
@@ -310,35 +305,42 @@ const styles = StyleSheet.create({
         marginBottom: 30,
     },
     playersContainer: {
-        backgroundColor: '#1C1C1E',
-        borderRadius: 12,
+        backgroundColor: 'transparent',
         overflow: 'hidden',
     },
     playerRow: {
-        paddingHorizontal: 16,
+        paddingHorizontal: 10,
         paddingVertical: 8,
         borderBottomWidth: 0.5,
         borderBottomColor: '#2C2C2E',
         minHeight: 44,
     },
-    firstRow: {
-        borderTopLeftRadius: 12,
-        borderTopRightRadius: 12,
-    },
     lastRow: {
         borderBottomWidth: 0,
-        borderBottomLeftRadius: 12,
-        borderBottomRightRadius: 12,
     },
     playerContent: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
         paddingVertical: 4,
+    },
+    radioButton: {
+        width: 15,
+        height: 15,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: '#535aff',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
+    },
+    radioButtonInner: {
+        width: 8,
+        height: 8,
+        borderRadius: 5,
+        backgroundColor: '#535aff',
     },
     playerInfo: {
         flex: 1,
-        paddingRight: 12,
     },
     playerName: {
         fontSize: 17,
@@ -360,11 +362,7 @@ const styles = StyleSheet.create({
     },
     buttonSection: {
         flexDirection: 'row',
-        gap: 16,
-        marginTop: 8,
-        paddingTop: 20,
-        borderTopWidth: 1,
-        borderTopColor: '#2a2a2a',
+        gap: 16
     },
     button: {
         flex: 1,
