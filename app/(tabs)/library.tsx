@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   ScrollView,
   TouchableOpacity,
@@ -7,6 +7,7 @@ import {
   Animated,
   RefreshControl,
   Dimensions,
+  FlatList,
 } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -31,17 +32,15 @@ interface WatchHistoryItem {
 }
 
 const { width } = Dimensions.get('window');
-const CARD_WIDTH = (width - 48) / 2;
-const CARD_HEIGHT = (CARD_WIDTH * 1.5);
-
-type FilterType = 'all' | 'movie' | 'series';
+const CARD_WIDTH = width * 0.54;
+const CARD_HEIGHT = CARD_WIDTH * 0.56;
+const CARD_SPACING = 16;
 
 const LibraryScreen: React.FC = () => {
-  const [library, setLibrary] = useState<LibraryItem[]>([]);
-  const [filteredLibrary, setFilteredLibrary] = useState<LibraryItem[]>([]);
+  const [movies, setMovies] = useState<LibraryItem[]>([]);
+  const [series, setSeries] = useState<LibraryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [animatedValues] = useState(new Map<string, Animated.Value>());
 
   useFocusEffect(
@@ -53,27 +52,20 @@ const LibraryScreen: React.FC = () => {
   const loadLibrary = async () => {
     try {
       const items = await libraryService.getLibrary();
-      setLibrary(items);
-      filterLibrary(items, activeFilter);
+
+      // Get latest 100 items and separate by type
+      const latest100 = items.slice(0, 100);
+      const movieItems = latest100.filter(item => item.type === 'movie');
+      const seriesItems = latest100.filter(item => item.type === 'series');
+
+      setMovies(movieItems);
+      setSeries(seriesItems);
     } catch (error) {
       console.error('Failed to load library:', error);
     } finally {
       setIsLoading(false);
       setRefreshing(false);
     }
-  };
-
-  const filterLibrary = (items: LibraryItem[], filter: FilterType) => {
-    if (filter === 'all') {
-      setFilteredLibrary(items);
-    } else {
-      setFilteredLibrary(items.filter(item => item.type === filter));
-    }
-  };
-
-  const handleFilterChange = (filter: FilterType) => {
-    setActiveFilter(filter);
-    filterLibrary(library, filter);
   };
 
   const onRefresh = () => {
@@ -135,52 +127,17 @@ const LibraryScreen: React.FC = () => {
     });
   };
 
-  const renderFilterButton = (filter: FilterType, label: string, icon: string) => (
-    <TouchableOpacity
-      key={filter}
-      style={[
-        styles.filterButton,
-        activeFilter === filter && styles.filterButtonActive,
-      ]}
-      onPress={() => handleFilterChange(filter)}
-      activeOpacity={0.7}
-    >
-      <Ionicons
-        name={icon as any}
-        size={18}
-        color={activeFilter === filter ? '#535aff' : '#999'}
-      />
-      <Text
-        style={[
-          styles.filterText,
-          activeFilter === filter && styles.filterTextActive,
-        ]}
-      >
-        {label}
-      </Text>
-    </TouchableOpacity>
-  );
-
-  const renderLibraryItem = (item: LibraryItem, index: number) => {
+  const renderLibraryItem = ({ item, index }: { item: LibraryItem; index: number }) => {
     const itemKey = `${item.moviedbid}-${item.type}-${index}`;
     const animValue = getAnimatedValue(itemKey);
 
     return (
       <Animated.View
-        key={itemKey}
         style={[
           styles.cardWrapper,
           {
             opacity: animValue,
-            transform: [
-              { scale: animValue },
-              {
-                translateY: animValue.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [50, 0],
-                }),
-              },
-            ],
+            transform: [{ scale: animValue }],
           },
         ]}
       >
@@ -191,22 +148,10 @@ const LibraryScreen: React.FC = () => {
         >
           <View style={styles.imageContainer}>
             <Image
-              source={{ uri: item.poster }}
-              style={styles.poster}
+              source={{ uri: item.backdrop || item.poster }}
+              style={styles.backdrop}
               resizeMode="cover"
             />
-            <LinearGradient
-              colors={['transparent', 'rgba(0,0,0,0.9)']}
-              style={styles.gradient}
-            />
-
-            <View style={styles.typeBadge}>
-              <Ionicons
-                name={item.type === 'movie' ? 'film' : 'tv'}
-                size={12}
-                color="#fff"
-              />
-            </View>
 
             <TouchableOpacity
               style={styles.removeButton}
@@ -216,38 +161,65 @@ const LibraryScreen: React.FC = () => {
               }}
               activeOpacity={0.7}
             >
-              <Ionicons name="close" size={18} color="#fff" />
+              <Ionicons name="close" size={16} color="#fff" />
             </TouchableOpacity>
-
-            {item.rating && (
-              <View style={styles.ratingBadge}>
-                <Ionicons name="star" size={10} color="#FFD700" />
-                <Text style={styles.ratingText}>{item.rating}</Text>
-              </View>
-            )}
           </View>
 
           <View style={styles.infoContainer}>
             <Text style={styles.title} numberOfLines={2}>
               {item.title}
             </Text>
-            {item.year && (
-              <Text style={styles.year}>{item.year}</Text>
-            )}
-            {item.genres && item.genres.length > 0 && (
-              <Text style={styles.genres} numberOfLines={1}>
-                {item.genres.slice(0, 2).join(' • ')}
-              </Text>
-            )}
+
+            <View style={styles.metaRow}>
+              {item.year && (
+                <Text style={styles.year}>{item.year}</Text>
+              )}
+              {item.year && item.genres && item.genres.length > 0 && (
+                <Text style={styles.separator}>•</Text>
+              )}
+              {item.genres && item.genres.length > 0 && (
+                <Text style={styles.genres} numberOfLines={1}>
+                  {item.genres[0]}
+                </Text>
+              )}
+            </View>
           </View>
         </TouchableOpacity>
       </Animated.View>
     );
   };
 
+  const renderSection = (title: string, items: LibraryItem[], icon: string) => {
+    if (items.length === 0) return null;
+
+    return (
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <View style={styles.sectionTitleRow}>
+            <Ionicons name={icon as any} size={22} color="#ffffff" />
+            <Text style={styles.sectionTitle}>{title}</Text>
+          </View>
+          <Text style={styles.sectionCount}>
+            {items.length} {items.length === 1 ? 'item' : 'items'}
+          </Text>
+        </View>
+
+        <FlatList
+          data={items}
+          renderItem={renderLibraryItem}
+          keyExtractor={(item, index) => `${item.moviedbid}-${item.type}-${index}`}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.flatListContent}
+          decelerationRate="normal"
+        />
+      </View>
+    );
+  };
+
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
-      <Ionicons name="library-outline" size={80} color="#535aff" />
+      <Ionicons name="albums-outline" size={80} color="#535aff" />
       <Text style={styles.emptyTitle}>Your Library is Empty</Text>
       <Text style={styles.emptyText}>
         Add movies and TV shows to your library to watch later
@@ -259,6 +231,7 @@ const LibraryScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar />
       <BlurGradientBackground />
+
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -273,14 +246,8 @@ const LibraryScreen: React.FC = () => {
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Library</Text>
           <Text style={styles.headerSubtitle}>
-            {library.length} {library.length === 1 ? 'item' : 'items'}
+            {movies.length + series.length} {movies.length + series.length === 1 ? 'item' : 'items'}
           </Text>
-        </View>
-
-        <View style={styles.filterContainer}>
-          {renderFilterButton('all', 'All', 'grid-outline')}
-          {renderFilterButton('movie', 'Movies', 'film-outline')}
-          {renderFilterButton('series', 'TV Shows', 'tv-outline')}
         </View>
 
         <WatchHistory
@@ -292,14 +259,13 @@ const LibraryScreen: React.FC = () => {
           <View style={styles.loadingContainer}>
             <Text style={styles.loadingText}>Loading...</Text>
           </View>
-        ) : filteredLibrary.length === 0 ? (
+        ) : movies.length === 0 && series.length === 0 ? (
           renderEmptyState()
         ) : (
-          <View style={styles.grid}>
-            {filteredLibrary.map((item, index) =>
-              renderLibraryItem(item, index)
-            )}
-          </View>
+          <>
+            {renderSection('Movies', movies, 'film-outline')}
+            {renderSection('TV Shows', series, 'tv-outline')}
+          </>
         )}
 
         <View style={{ height: 100 }} />
@@ -327,104 +293,65 @@ const styles = StyleSheet.create({
     fontSize: 14,
     opacity: 0.6,
   },
-  filterContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    gap: 12,
+  section: {
+    marginTop: 24,
   },
-  filterButton: {
+  sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 20,
-    gap: 6,
-    borderWidth: 1,
-    borderColor: 'transparent',
+    marginBottom: 12,
   },
-  filterButtonActive: {
-    backgroundColor: 'rgba(83, 90, 255, 0.15)',
-    borderColor: 'rgba(83, 90, 255, 0.3)',
-  },
-  filterText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#999',
-  },
-  filterTextActive: {
-    color: '#535aff',
-  },
-  grid: {
+  sectionTitleRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: 12,
-    gap: 12,
+    alignItems: 'center',
+    gap: 10,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  sectionCount: {
+    fontSize: 14,
+    opacity: 0.5,
+    fontWeight: '600',
+  },
+  flatListContent: {
+    paddingHorizontal: 16,
+    gap: CARD_SPACING,
   },
   cardWrapper: {
     width: CARD_WIDTH,
-    marginBottom: 8,
   },
   card: {
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderRadius: 12,
-    overflow: 'hidden',
+    backgroundColor: 'transparent',
+    borderRadius: 10,
   },
   imageContainer: {
     width: '100%',
     height: CARD_HEIGHT,
     position: 'relative',
+    backgroundColor: '#2a2a2a',
+    borderRadius: 10,
+    overflow: 'hidden',
   },
-  poster: {
+  backdrop: {
     width: '100%',
     height: '100%',
-    backgroundColor: '#2a2a2a',
-  },
-  gradient: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: '40%',
-  },
-  typeBadge: {
-    position: 'absolute',
-    top: 8,
-    left: 8,
-    backgroundColor: 'rgba(83, 90, 255, 0.9)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
   },
   removeButton: {
     position: 'absolute',
     top: 8,
     right: 8,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    borderRadius: 20,
+    borderRadius: 16,
     padding: 6,
     backdropFilter: 'blur(10px)',
   },
-  ratingBadge: {
-    position: 'absolute',
-    bottom: 8,
-    left: 8,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    gap: 4,
-  },
-  ratingText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
   infoContainer: {
-    padding: 12,
+    paddingTop: 8,
+    paddingHorizontal: 4,
   },
   title: {
     fontSize: 14,
@@ -432,14 +359,25 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     lineHeight: 18,
   },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+  },
   year: {
     fontSize: 12,
-    opacity: 0.7,
-    marginBottom: 4,
+    opacity: 0.6,
+    fontWeight: '500',
+  },
+  separator: {
+    fontSize: 12,
+    opacity: 0.4,
+    marginHorizontal: 6,
   },
   genres: {
-    fontSize: 11,
+    fontSize: 12,
     opacity: 0.5,
+    flex: 1,
   },
   emptyContainer: {
     alignItems: 'center',
