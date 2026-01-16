@@ -119,6 +119,8 @@ const LibraryScreen: React.FC = () => {
         season: item.season,
         episode: item.episode,
         useVlcKit: item.useVlcKit,
+        progress: item.progress,
+        artwork: item.artwork
       },
     });
   };
