@@ -135,27 +135,6 @@ export default function HomeScreen() {
     });
   };
 
-  const handleWatchHistoryItemPress = (item: any) => {
-    router.push({
-      pathname: '/stream/player',
-      params: {
-        videoUrl: item.videoUrl,
-        title: item.title,
-        imdbid: item.imdbid,
-        type: item.type,
-        season: item.season,
-        episode: item.episode,
-        progress: item.progress.toString(),
-      },
-    });
-  };
-
-  function getWatchHistoryType(filter: string): "all" | "series" | "movie" {
-    if (filter === 'movies') return 'movie';
-    if (filter === 'series') return 'series';
-    return 'all';
-  }
-
   return (
     <View style={[styles.container]}>
       <StatusBar />
@@ -208,11 +187,6 @@ export default function HomeScreen() {
             />
           </View>
 
-          <WatchHistory
-            key={refreshKey}
-            type={getWatchHistoryType(filter)}
-            onItemSelect={(item) => handleWatchHistoryItemPress(item)}
-          />
           {activeLists.map((list, i) => (
             <LazyPosterList
               key={`${filter}-${i}`}
