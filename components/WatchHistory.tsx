@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
   imageContainer: {
     width: '100%',
     position: 'relative',
-    backgroundColor: '#2a2a2a',
+    backgroundColor: '#101010',
     borderRadius: 12,
     overflow: 'hidden',
   },
