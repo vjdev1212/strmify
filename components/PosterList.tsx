@@ -349,11 +349,11 @@ const styles = StyleSheet.create({
     letterSpacing: -0.1,
   },
   skeletonPoster: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#101010',
   },
   skeletonText: {
     height: 14,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#101010',
     borderRadius: 6,
   },
 });
