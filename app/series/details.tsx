@@ -193,7 +193,7 @@ const SeriesDetails = () => {
   };
 
   const handlePlayPress = async () => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push({
       pathname: '/stream/list',
       params: {
