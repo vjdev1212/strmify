@@ -436,14 +436,17 @@ const styles = StyleSheet.create({
   categoryButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 20,
+    backgroundColor: '#1a1a1a',
+    borderWidth: 1,
     gap: 8,
+    borderColor: '#2a2a2a',
   },
   categoryButtonActive: {
     backgroundColor: '#ffffff',
+    borderColor: '#ffffff',
   },
   categoryButtonText: {
     fontSize: 15,
