@@ -18,7 +18,7 @@
       "subtitle": "Strmify - Your streaming companion for discovering and watching content from multiple sources.",
       "localizedDescription": "Strmify is your streaming companion for discovering and streaming movies and TV shows through various add-on sources and third-party integrations. Find, search, and play content using your preferred media player.",
       "iconURL": "https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/assets/images/icon.png",
-      "downloadURL": "https://github.com/vjdev1212/strmify/releases/download/v1.3.0/Strmify_v1.3.0.ipa",
+      "downloadURL": "https://github.com/vjdev1212/strmify/releases/download/v1.3.1/Strmify_v1.3.1.ipa",
       "tintColor": "#535aff",
       "category": "entertainment",
       "screenshots": [
@@ -29,6 +29,14 @@
         "https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/Strmify-screenshots/iPhone/4-Search.png"
       ],
       "versions": [
+        {
+          "version": "1.3.1",
+          "date": "2026-01-17",
+          "localizedDescription": "1. UI Improvements",
+          "downloadURL": "https://github.com/vjdev1212/strmify/releases/download/v1.3.1/Strmify_v1.3.1.ipa",
+          "size": 8680000,
+          "minOSVersion": "18.0"
+        },
         {
           "version": "1.3.0",
           "date": "2026-01-16",
@@ -68,7 +76,7 @@
           "downloadURL": "https://github.com/vjdev1212/strmify/releases/download/v1.1.0/Strmify_v1.1.0.ipa",
           "size": 8680000,
           "minOSVersion": "18.0"
-        }                     
+        }
       ],
       "appPermissions": {
         "entitlements": [],
@@ -78,9 +86,9 @@
   ],
   "news": [
     {
-      "title": "Strmify v1.3.0 Released",
-      "identifier": "strmify-v1.3.0-release",
-      "caption": "1. Added library section for watchlists.\n2. UI Improvements",
+      "title": "Strmify v1.3.1 Released",
+      "identifier": "strmify-v1.3.1-release",
+      "caption": "1. UI Improvements",
       "date": "2026-01-17",
       "tintColor": "#535aff",
       "imageURL": "https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/assets/banners/Strmify-feature-graphic.png",
