@@ -14,7 +14,7 @@ import MediaContentDetailsList from '@/components/MediaContentDetailsList';
 import PlayButton from '@/components/PlayButton';
 import WatchTrailerButton from '@/components/WatchTrailer';
 import LibraryButton from '@/components/LibraryButton';
-
+import * as Haptics from 'expo-haptics';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -193,6 +193,7 @@ const SeriesDetails = () => {
   };
 
   const handlePlayPress = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push({
       pathname: '/stream/list',
       params: {
@@ -253,6 +254,7 @@ const SeriesDetails = () => {
                 year: data.released?.split('-')[0],
                 rating: data.imdbRating,
                 genres: data.genre,
+                watched: false
               }}
             />
             <PlayButton onPress={handlePlayPress} />

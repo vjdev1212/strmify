@@ -1,13 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
-import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, StatusBar, Text, View } from '../../components/Themed';
 import MediaContentDescription from '@/components/MediaContentDescription';
 import MediaContentHeader from '@/components/MediaContentHeader';
 import MediaContentPoster from '@/components/MediaContentPoster';
-import * as Haptics from 'expo-haptics';
 import BottomSpacing from '@/components/BottomSpacing';
-import { isHapticsSupported } from '@/utils/platform';
 import MediaLogo from '@/components/MediaLogo';
 import MediaCastAndCrews from '@/components/MediaCastAndCrews';
 import PosterList from '@/components/PosterList';
@@ -15,6 +13,8 @@ import PlayButton from '@/components/PlayButton';
 import MediaContentDetailsList from '@/components/MediaContentDetailsList';
 import WatchTrailerButton from '@/components/WatchTrailer';
 import LibraryButton from '@/components/LibraryButton';
+import * as Haptics from 'expo-haptics';
+
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
 const MovieDetails = () => {
@@ -145,6 +145,7 @@ const MovieDetails = () => {
   }
 
   const handlePlayPress = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push({
       pathname: '/stream/list',
       params: {
@@ -201,6 +202,7 @@ const MovieDetails = () => {
                 year: data.year,
                 rating: data.imdbRating,
                 genres: data.genre,
+                watched: false
               }}
             />
             <PlayButton onPress={handlePlayPress} />
