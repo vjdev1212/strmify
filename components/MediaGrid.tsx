@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
         aspectRatio: 2 / 3,
         borderRadius: 12,
         overflow: 'hidden',
-        backgroundColor: '#1a1a1a',
+        backgroundColor: '#101010',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
