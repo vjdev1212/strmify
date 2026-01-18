@@ -789,7 +789,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                             <Text style={styles.titleText} numberOfLines={1}>{title}</Text>
                         </View>
 
-                        <GlassView style={styles.topRightControls}>
+                        <GlassView glassEffectStyle="clear" style={styles.topRightControls}>
                             {streams.length > 1 && (
                                 <MenuWrapper
                                     style={{ zIndex: 1000 }}

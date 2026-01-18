@@ -35,6 +35,8 @@ import {
     ExtendedMediaPlayerProps,
     buildStreamActions
 } from "../coreplayer";
+import { GlassView } from 'expo-glass-effect';
+
 
 const useVLCPlayerState = () => {
     const baseState = usePlayerState();
@@ -806,7 +808,7 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
                             <Text style={styles.titleText} numberOfLines={1}>{title}</Text>
                         </View>
 
-                        <View style={styles.topRightControls}>
+                        <GlassView glassEffectStyle="clear" style={styles.topRightControls}>
                             {/* Stream Selector */}
                             {streams.length > 1 && (
                                 <MenuView
@@ -924,7 +926,7 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
                                     <MaterialIcons name="settings" size={24} color="white" />
                                 </TouchableOpacity>
                             </MenuView>
-                        </View>
+                        </GlassView>
                     </View>
 
                     <CenterControls
@@ -953,8 +955,9 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
                         />
                     </View>
                 </Animated.View>
-            )}
-        </View>
+            )
+            }
+        </View >
     );
 };
 
