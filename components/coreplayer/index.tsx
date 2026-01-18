@@ -718,28 +718,29 @@ export const ProgressBar: React.FC<{
 }) => {
         return (
             <View style={styles.bottomControls}>
-                <View style={styles.timeContainer}>
-                    <Text style={styles.timeText}>{formatTime(currentTime)}</Text>
-                    <Text style={styles.timeText}>{formatTime(duration)}</Text>
-                </View>
-
                 <View style={styles.progressContainerWithMargin}>
-                    <GlassView glassEffectStyle="clear" style={styles.glassIcon}>
-                        <Slider
-                            style={styles.progressSlider}
-                            minimumValue={0}
-                            maximumValue={1}
-                            value={sliderValue}
-                            onValueChange={onValueChange}
-                            onSlidingStart={onSlidingStart}
-                            onSlidingComplete={onSlidingComplete}
-                            minimumTrackTintColor="rgba(83, 90, 255, 0.9)"
-                            maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
-                            thumbTintColor="#fff"
-                            thumbSize={20}
-                            trackHeight={5}
-                            enabled={isReady}
-                        />
+                    <GlassView glassEffectStyle="clear" style={styles.glassContainer}>
+                        <View style={styles.sliderRow}>
+                            <Text style={styles.timeText}>{formatTime(currentTime)}</Text>
+
+                            <Slider
+                                style={styles.progressSlider}
+                                minimumValue={0}
+                                maximumValue={1}
+                                value={sliderValue}
+                                onValueChange={onValueChange}
+                                onSlidingStart={onSlidingStart}
+                                onSlidingComplete={onSlidingComplete}
+                                minimumTrackTintColor="rgba(83, 90, 255, 0.9)"
+                                maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
+                                thumbTintColor="#fff"
+                                thumbSize={20}
+                                trackHeight={5}
+                                enabled={isReady}
+                            />
+
+                            <Text style={styles.timeText}>{formatTime(duration)}</Text>
+                        </View>
                     </GlassView>
                 </View>
             </View>

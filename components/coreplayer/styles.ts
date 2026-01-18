@@ -41,6 +41,11 @@ export const styles = StyleSheet.create({
     glassSlider: {
         borderRadius: 100
     },
+    glassTime: {
+        paddingHorizontal: 10,
+        paddingVertical: 8,
+        borderRadius: 100
+    },
 
     // Top Controls
     topControls: {
@@ -129,33 +134,41 @@ export const styles = StyleSheet.create({
     },
 
     // Progress Bar
-    timeContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-    },
-
     progressContainerWithMargin: {
-        marginBottom: 16,
+        marginBottom: 20,
         paddingVertical: 10,
     },
 
-    progressSlider: {
-        width: '100%',
-        height: 20,
-        paddingHorizontal: 10
+    glassContainer: {
+        paddingHorizontal: 10,
+        paddingVertical: 10,
+        borderRadius: 100
     },
+
+    sliderRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 12,
+    },
+
+    progressSlider: {
+        flex: 1,
+        height: 20,
+        paddingHorizontal: 10,
+    },
+
     timeText: {
         color: 'white',
         fontSize: 14,
-        marginHorizontal: 20,
-        fontWeight: 500,
+        marginHorizontal: 5,
+        fontWeight: '500',
     },
 
     speedText: {
         color: '#535aff',
         fontSize: 14,
-        fontWeight: 500,
+        fontWeight: '500',
         marginLeft: 12,
     },
 
