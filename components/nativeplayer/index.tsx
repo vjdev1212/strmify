@@ -36,6 +36,7 @@ import {
     ExtendedMediaPlayerProps
 } from "../coreplayer";
 import { View, Text } from "../Themed";
+import { GlassView } from 'expo-glass-effect';
 
 // Menu wrapper component - uses WebMenu on web, MenuView on native
 const MenuWrapper: React.FC<any> = (props) => {
@@ -788,7 +789,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                             <Text style={styles.titleText} numberOfLines={1}>{title}</Text>
                         </View>
 
-                        <View style={styles.topRightControls}>
+                        <GlassView style={styles.topRightControls}>
                             {streams.length > 1 && (
                                 <MenuWrapper
                                     style={{ zIndex: 1000 }}
@@ -891,7 +892,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                                     <MaterialIcons name="settings" size={24} color="white" />
                                 </TouchableOpacity>
                             </MenuWrapper>
-                        </View>
+                        </GlassView>
                     </View>
 
                     <CenterControls
