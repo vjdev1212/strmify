@@ -33,6 +33,20 @@ export const styles = StyleSheet.create({
         zIndex: 100,
     },
 
+    //Glass Effect
+    glassIcon: {
+        padding: 12,
+        borderRadius: 100
+    },
+    glassSlider: {
+        borderRadius: 100
+    },
+    glassTime: {
+        paddingHorizontal: 10,
+        paddingVertical: 8,
+        borderRadius: 100
+    },
+
     // Top Controls
     topControls: {
         position: 'absolute',
@@ -66,7 +80,9 @@ export const styles = StyleSheet.create({
     topRightControls: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginRight: 10
+        marginRight: 10,
+        borderRadius: 25,
+        padding: 5
     },
 
     controlButton: {
@@ -84,17 +100,22 @@ export const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        zIndex: 100
+        zIndex: 100,
+        gap: 10
     },
 
     skipButton: {
-        padding: 20,
-        marginHorizontal: 20,
+        marginHorizontal: 30,
+        borderRadius: 25,
     },
 
     playButton: {
-        paddingHorizontal: 16,
+        borderRadius: 100,
+    },
+
+    bufferingButton: {
         marginHorizontal: 30,
+        borderRadius: 25,
     },
 
     disabledButton: {
@@ -106,39 +127,48 @@ export const styles = StyleSheet.create({
         position: 'absolute',
         bottom: 0,
         left: 0,
-        right: 0,        
+        right: 0,
         paddingTop: 20,
-        height: 100,
         marginHorizontal: '3%',
         zIndex: 100,
     },
 
     // Progress Bar
-    timeContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-
     progressContainerWithMargin: {
-        marginBottom: 16,
+        marginBottom: 20,
         paddingVertical: 10,
     },
 
-    progressSlider: {
-        width: '100%',
-        height: 20,
+    glassContainer: {
+        paddingHorizontal: 10,
+        paddingVertical: 10,
+        borderRadius: 100
     },
+
+    sliderRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 12,
+    },
+
+    progressSlider: {
+        flex: 1,
+        height: 20,
+        paddingHorizontal: 10,
+    },
+
     timeText: {
         color: 'white',
         fontSize: 14,
-        fontWeight: 500,
+        marginHorizontal: 5,
+        fontWeight: '500',
     },
 
     speedText: {
         color: '#535aff',
         fontSize: 14,
-        fontWeight: 500,
+        fontWeight: '500',
         marginLeft: 12,
     },
 
