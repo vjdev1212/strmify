@@ -56,14 +56,11 @@ export default function HomeScreen() {
   const [serverReady, setServerReady] = useState(false);
 
   useEffect(() => {
-    nodejs.start("wrapper.js");
-
-    nodejs.channel.addListener("message", (msg) => {
-
-      if (msg.type === 'SERVER_STARTED') {
-        console.log('Log: Server Started')
-      }
-    });
+    try {
+      nodejs.start("wrapper.js");
+    } catch (err: any) {
+      console.log('ServerJs Error', err)
+    }
   }, []);
 
   // Refresh watch history when screen comes into focus
