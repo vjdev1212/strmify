@@ -23,6 +23,14 @@ export interface StreamResult {
   url: string;
   needsTranscoding: boolean;
   reason?: string;
+  serverType?: 'local' | 'remote';
+}
+
+export interface StatsResult {
+  downloadSpeed?: number;
+  uploadSpeed?: number;
+  peers?: number;
+  downloaded?: number;
 }
 
 export interface CompatibilityResult {
@@ -37,14 +45,12 @@ const IOS_CAPABILITIES: MediaCapabilities = {
   formats: ['mp4', 'm4v', 'mov', 'm4a', 'm3u8', 'ts', '3gp', '3g2', 'wav', 'caf'],
 };
 
-
 const ANDROID_CAPABILITIES: MediaCapabilities = {
   videoCodecs: ['h264', 'avc', 'avc1', 'h265', 'hevc', 'hvc1', 'hev1', 'vp8', 'vp9', 'av01', 'mp4v', 'h263'],
   audioCodecs: ['aac', 'mp4a', 'mp3', 'opus', 'vorbis', 'flac', 'alac', 'ac3', 'eac3', 'dtsc', 'dtsh', 'dtsl', 'pcm', 'lpcm', 'amr'],
   maxAudioChannels: 8,
   formats: ['mp4', 'm4v', 'm4a', 'mkv', 'webm', 'm3u8', 'ts', 'mp3', 'ogg', 'wav', 'flac', '3gp', '3g2', 'mpg', 'mpeg'],
 };
-
 
 const WEB_CAPABILITIES: MediaCapabilities = {
   videoCodecs: ['h264', 'avc', 'avc1', 'vp8', 'vp9'],
@@ -85,11 +91,16 @@ export class StreamingServerClient {
       this.capabilities = this.getPlatformCapabilities();
     }
 
-    console.log('Initialized:', {
+    console.log('StreamingServerClient Initialized:', {
       baseURL: this.baseURL,
       platform: this.platform,
+      isLocal: this.isLocal(),
       capabilities: this.capabilities,
     });
+  }
+
+  private isLocal(): boolean {
+    return this.baseURL.includes('localhost') || this.baseURL.includes('127.0.0.1');
   }
 
   private getPlatformCapabilities(): MediaCapabilities {
@@ -109,12 +120,30 @@ export class StreamingServerClient {
     }
   }
 
-  async getStreamingURL(infoHash: string, fileIdx: number = 0): Promise<string> {
+  /**
+   * Get streaming URL for a torrent file
+   * - Local (localhost/127.0.0.1): Always returns direct URL
+   * - Remote: Checks compatibility and may return HLS URL with transcoding
+   * @param infoHash - Torrent info hash
+   * @param fileIdx - File index (default -1 for largest file)
+   * @returns Streaming URL (direct or HLS)
+   */
+  async getStreamingURL(infoHash: string, fileIdx: number = -1): Promise<string> {
     console.log('Getting streaming URL:', { infoHash, fileIdx });
 
-    const directURL = `${this.baseURL}/${encodeURIComponent(infoHash)}/${encodeURIComponent(fileIdx)}`;
+    const directURL = `${this.baseURL}/${encodeURIComponent(infoHash)}/${fileIdx}`;
     console.log('Direct URL:', directURL);
 
+    // If local server, always use direct URL
+    const isLocal = this.baseURL.includes('localhost') || this.baseURL.includes('127.0.0.1');
+    
+    if (isLocal) {
+      console.log('✓ Local server - using direct URL');
+      return directURL;
+    }
+
+    // Remote server - check compatibility
+    console.log('Remote server - checking compatibility...');
     const result = await this.checkCompatibility(directURL);
 
     if (result.compatible) {
@@ -130,14 +159,33 @@ export class StreamingServerClient {
     return hlsURL;
   }
 
-  async getStream(infoHash: string, fileIdx: number = 0): Promise<StreamResult> {
-    const directURL = `${this.baseURL}/${encodeURIComponent(infoHash)}/${encodeURIComponent(fileIdx)}`;
+  /**
+   * Get stream info with URL
+   * @param infoHash - Torrent info hash
+   * @param fileIdx - File index (default -1 for largest file)
+   * @returns Stream result with URL and metadata
+   */
+  async getStream(infoHash: string, fileIdx: number = -1): Promise<StreamResult> {
+    const directURL = `${this.baseURL}/${encodeURIComponent(infoHash)}/${fileIdx}`;
+    const isLocal = this.baseURL.includes('localhost') || this.baseURL.includes('127.0.0.1');
+
+    // Local - always direct
+    if (isLocal) {
+      return {
+        url: directURL,
+        needsTranscoding: false,
+        serverType: 'local',
+      };
+    }
+
+    // Remote - check compatibility
     const result = await this.checkCompatibility(directURL);
 
     if (result.compatible) {
       return {
         url: directURL,
         needsTranscoding: false,
+        serverType: 'remote',
       };
     }
 
@@ -145,11 +193,41 @@ export class StreamingServerClient {
       url: this.generateHLSURL(directURL),
       needsTranscoding: true,
       reason: result.reason,
+      serverType: 'remote',
     };
   }
 
   /**
-   * Public method to check if a media URL is compatible with current platform capabilities
+   * Get streaming stats for a torrent
+   * @param infoHash - Torrent info hash
+   * @param fileIdx - File index (default -1 for largest file)
+   * @returns Stats or null if failed
+   */
+  async getStats(infoHash: string, fileIdx: number = -1): Promise<StatsResult | null> {
+    try {
+      const statsURL = `${this.baseURL}/${encodeURIComponent(infoHash)}/${fileIdx}/stats.json`;
+      console.log('Getting stats from:', statsURL);
+
+      const response = await fetch(statsURL);
+
+      if (!response.ok) {
+        console.warn('Stats request failed:', response.status);
+        return null;
+      }
+
+      const stats = await response.json();
+      console.log('Stats:', stats);
+      
+      return stats;
+    } catch (error) {
+      console.error('Stats error:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Check if a media URL is compatible with current platform capabilities
+   * Only works with remote servers that have /hlsv2/probe endpoint
    * @param mediaURL - The URL of the media to check
    * @returns Promise with compatibility result
    */
@@ -175,7 +253,7 @@ export class StreamingServerClient {
       const formatSupported = this.isFormatSupported(probe.format.name);
 
       if (!formatSupported) {
-        const reason = `Container format '${probe.format.name}' not supported on ${this.platform} (supports: ${this.capabilities.formats.join(', ')})`;
+        const reason = `Container format '${probe.format.name}' not supported on ${this.platform}`;
         console.log('Format check:', reason);
         return {
           compatible: false,
@@ -190,12 +268,10 @@ export class StreamingServerClient {
           console.log('Video codec check:', {
             codec: stream.codec,
             supported: isSupported,
-            availableCodecs: this.capabilities.videoCodecs,
           });
 
           if (!isSupported) {
-            const reason = `Video codec '${stream.codec}' not supported on ${this.platform} (supports: ${this.capabilities.videoCodecs.join(', ')})`;
-            console.log('Video codec check:', reason);
+            const reason = `Video codec '${stream.codec}' not supported on ${this.platform}`;
             return {
               compatible: false,
               reason
@@ -209,12 +285,10 @@ export class StreamingServerClient {
             codec: stream.codec,
             channels,
             supported: isSupported,
-            availableCodecs: this.capabilities.audioCodecs,
           });
 
           if (!isSupported) {
-            const reason = `Audio codec '${stream.codec}' not supported on ${this.platform} (supports: ${this.capabilities.audioCodecs.join(', ')})`;
-            console.log('Audio codec check:', reason);
+            const reason = `Audio codec '${stream.codec}' not supported on ${this.platform}`;
             return {
               compatible: false,
               reason
@@ -222,8 +296,7 @@ export class StreamingServerClient {
           }
 
           if (channels > this.capabilities.maxAudioChannels) {
-            const reason = `${channels} audio channels exceeds max ${this.capabilities.maxAudioChannels} on ${this.platform}`;
-            console.log('Audio channels check:', reason);
+            const reason = `${channels} audio channels exceeds max ${this.capabilities.maxAudioChannels}`;
             return {
               compatible: false,
               reason
@@ -242,7 +315,7 @@ export class StreamingServerClient {
   }
 
   /**
-   * Public method to check if a media URL can be played directly without transcoding
+   * Check if a media URL can be played directly without transcoding
    * @param mediaURL - The URL of the media to check
    * @returns Promise<boolean> - true if can play directly, false if transcoding needed
    */
@@ -252,7 +325,8 @@ export class StreamingServerClient {
   }
 
   /**
-   * Public method to probe media and get detailed information
+   * Probe media and get detailed information
+   * Only works with remote servers
    * @param mediaURL - The URL of the media to probe
    * @returns Promise with probe result or null if probe fails
    */
@@ -279,13 +353,7 @@ export class StreamingServerClient {
 
   private isFormatSupported(formatName: string): boolean {
     const lowerFormatName = formatName.toLowerCase();
-
-    // Direct check
-    if (this.capabilities.formats.some(fmt => lowerFormatName.includes(fmt))) {
-      return true;
-    }
-
-    return false;
+    return this.capabilities.formats.some(fmt => lowerFormatName.includes(fmt));
   }
 
   private isCodecSupported(codec: string, supportedCodecs: string[]): boolean {
@@ -317,8 +385,6 @@ export class StreamingServerClient {
     const id = this.generateRandomId();
     const params = new URLSearchParams({ mediaURL });
 
-    // Use SERVER_TRANSCODE_CAPABILITIES - all codecs the server can transcode to
-    // Not the client's playback capabilities
     SERVER_TRANSCODE_CAPABILITIES.videoCodecs.forEach(codec => {
       params.append('videoCodecs', codec);
     });
@@ -352,22 +418,70 @@ export class StreamingServerClient {
     return this.generateHLSURL(mediaURL);
   }
 
-  setCapabilities(capabilities: MediaCapabilities): void {
-    this.capabilities = capabilities;
-    console.log('Capabilities updated:', capabilities);
+  /**
+   * Check if server is responding
+   * @returns true if server is up
+   */
+  async checkServerHealth(): Promise<boolean> {
+    try {
+      const response = await fetch(this.baseURL, { 
+        method: 'HEAD',
+        timeout: 5000 
+      } as any);
+      return response.ok;
+    } catch (error) {
+      console.error('Server health check failed:', error);
+      return false;
+    }
   }
 
+  /**
+   * Get the base URL of the server
+   */
+  getBaseURL(): string {
+    return this.baseURL;
+  }
+
+  /**
+   * Check if this is a local server
+   */
+  getIsLocal(): boolean {
+    return this.isLocal();
+  }
+
+  /**
+   * Get platform name
+   */
   getPlatform(): string {
     return this.platform;
   }
 
+  /**
+   * Get current capabilities
+   */
   getCapabilities(): MediaCapabilities {
     return { ...this.capabilities };
   }
 
+  /**
+   * Get server transcode capabilities (for remote servers)
+   */
   getServerTranscodeCapabilities(): MediaCapabilities {
     return { ...SERVER_TRANSCODE_CAPABILITIES };
   }
+
+  /**
+   * Update capabilities
+   */
+  setCapabilities(capabilities: MediaCapabilities): void {
+    this.capabilities = capabilities;
+    console.log('Capabilities updated:', capabilities);
+  }
 }
 
-export { IOS_CAPABILITIES, ANDROID_CAPABILITIES, WEB_CAPABILITIES, SERVER_TRANSCODE_CAPABILITIES };
+export { 
+  IOS_CAPABILITIES, 
+  ANDROID_CAPABILITIES, 
+  WEB_CAPABILITIES,
+  SERVER_TRANSCODE_CAPABILITIES 
+};

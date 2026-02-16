@@ -660,7 +660,7 @@ export const CenterControls: React.FC<{
             {isBuffering ? (
                 <GlassView glassEffectStyle="clear" style={styles.glassIcon}>
                     <View style={styles.bufferingButton}>
-                        <ActivityIndicator style={{ paddingHorizontal: 12 }} size="large" color="#ffffff" />
+                        <ActivityIndicator size="large" color="#ffffff" />
                     </View>
                 </GlassView>
             ) : (
