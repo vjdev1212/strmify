@@ -35,7 +35,7 @@ workflows:
       - name: Clean and generate iOS project
         script: |
           rm -rf ios android
-          npx expo prebuild --platform ios
+          npx expo prebuild --clean --platform ios
       
       - name: Install iOS dependencies
         script: |
@@ -137,7 +137,7 @@ workflows:
       - name: Clean and generate iOS project
         script: |
           rm -rf ios android
-          npx expo prebuild --platform ios
+          npx expo prebuild --clean --platform ios
 
       - name: Install iOS dependencies
         script: |
