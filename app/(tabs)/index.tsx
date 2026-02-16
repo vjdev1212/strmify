@@ -52,8 +52,6 @@ const LazyPosterList = ({
 export default function HomeScreen() {
   const [filter, setFilter] = useState<'all' | 'movies' | 'series'>('all');
   const [refreshKey, setRefreshKey] = useState(0);
-  const [logs, setLogs] = useState([]);
-  const [serverReady, setServerReady] = useState(false);
 
   useEffect(() => {
     try {
