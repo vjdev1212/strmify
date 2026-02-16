@@ -1,5 +1,6 @@
 import { router, useFocusEffect } from 'expo-router';
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import nodejs from 'nodejs-mobile-react-native';
 import {
   ScrollView,
   StyleSheet,
@@ -51,6 +52,10 @@ const LazyPosterList = ({
 export default function HomeScreen() {
   const [filter, setFilter] = useState<'all' | 'movies' | 'series'>('all');
   const [refreshKey, setRefreshKey] = useState(0);
+
+  useEffect(() => {
+    nodejs.start("main.js");
+  }, []);
 
   // Refresh watch history when screen comes into focus
   useFocusEffect(
