@@ -52,9 +52,18 @@ const LazyPosterList = ({
 export default function HomeScreen() {
   const [filter, setFilter] = useState<'all' | 'movies' | 'series'>('all');
   const [refreshKey, setRefreshKey] = useState(0);
+  const [logs, setLogs] = useState([]);
+  const [serverReady, setServerReady] = useState(false);
 
   useEffect(() => {
-    nodejs.start("main.js");
+    nodejs.start("wrapper.js");
+
+    nodejs.channel.addListener("message", (msg) => {
+
+      if (msg.type === 'SERVER_STARTED') {
+        console.log('Log: Server Started')
+      }
+    });
   }, []);
 
   // Refresh watch history when screen comes into focus

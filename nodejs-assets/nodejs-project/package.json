@@ -1,0 +1,10 @@
+{
+  "name": "nodejs-project",
+  "version": "1.0.0",
+  "description": "Node.js backend running in React Native",
+  "main": "wrapper.js",
+  "scripts": {
+    "start": "node wrapper.js"
+  },
+  "dependencies": {}
+}
