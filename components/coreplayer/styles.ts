@@ -114,8 +114,8 @@ export const styles = StyleSheet.create({
     },
 
     bufferingButton: {
-        marginHorizontal: 30,
-        borderRadius: 25,
+        padding: 12,
+        borderRadius: 100,
     },
 
     disabledButton: {
