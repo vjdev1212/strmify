@@ -32,6 +32,17 @@ workflows:
             echo "APP_NAME=Strmify" >> $CM_ENV
           fi
       
+      - name: Fix expo-updates
+        script: |
+          mkdir -p node_modules/expo-updates/scripts
+          cat > node_modules/expo-updates/scripts/create-manifest-ios.sh << 'EOF'
+          #!/bin/bash
+          mkdir -p "${DERIVED_FILE_DIR}" 2>/dev/null || true
+          touch "${DERIVED_FILE_DIR}/EXUpdates.generated.m" 2>/dev/null || true
+          exit 0
+          EOF
+          chmod +x node_modules/expo-updates/scripts/create-manifest-ios.sh
+      
       - name: Clean and generate iOS project
         script: |
           rm -rf ios android
@@ -73,7 +84,6 @@ workflows:
 
           echo "📱 App bundle: $APP_BUNDLE"
 
-          # Create versioned IPA name
           IPA_NAME="${APP_NAME}_v${APP_VERSION}"
           
           echo "📦 IPA name: $IPA_NAME"
@@ -93,7 +103,6 @@ workflows:
             echo "📊 IPA size: $(ls -lh "$IPA_NAME.ipa" | awk '{print $5}')"
             echo "🏷️  Full version info: $APP_NAME v$APP_VERSION"
             
-            # Create a symlink with a simple name for easier access
             ln -sf "$IPA_NAME.ipa" "latest.ipa"
             echo "🔗 Symlink created: latest.ipa -> $IPA_NAME.ipa"
           else
