@@ -47,6 +47,7 @@ interface Stream {
   magnet?: string;
   magnetLink?: string;
   description?: string;
+  fileIdx?: number;
 }
 
 const WATCH_HISTORY_KEY = StorageKeys.WATCH_HISTORY_KEY;
@@ -134,7 +135,7 @@ const MediaPlayerScreen: React.FC = () => {
           // Don't initialize clients yet, keep loading state
           const platformPlayers = getPlatformSpecificPlayers();
           setPlayers(platformPlayers);
-          const { servers: serverList, selectedId } = fetchServerConfigs();
+          fetchServerConfigs();
 
         } else {
           // Has saved player - proceed with initialization
@@ -313,7 +314,7 @@ const MediaPlayerScreen: React.FC = () => {
     setHasTriedNative(false);
 
     const stream = streamsToUse[streamIndex];
-    const { url } = stream;
+    const { url, fileIdx } = stream;
     const infoHash = getInfoHashFromStream(stream);
     const isTorrentStream = !url && !!infoHash;
 
@@ -337,12 +338,10 @@ const MediaPlayerScreen: React.FC = () => {
 
         setIsTorrent(true);
 
-        // const fileIdx = type === 'series' ? parseInt(episode as string) - 1 : -1;
-        const fileIdx = -1;
         finalVideoUrl = await generatePlayerUrlWithInfoHash(
           infoHash!,
           selectedServer.serverUrl,
-          fileIdx,
+          fileIdx || -1,
           stremioClient || undefined
         );
       } else {
@@ -376,7 +375,7 @@ const MediaPlayerScreen: React.FC = () => {
     if (isProcessing) return;
 
     setIsProcessing(true);
-    const { url } = stream;
+    const { url, fileIdx } = stream;
     const infoHash = getInfoHashFromStream(stream);
     const isTorrentStream = !url && !!infoHash;
 
@@ -404,10 +403,7 @@ const MediaPlayerScreen: React.FC = () => {
 
         setStatusText('Generating direct stream URL...');
 
-        // Torrent + Stremio Server + External Player = NO transcoding, direct URL
-        // const fileIdx = type === 'series' ? parseInt(episode as string) : 0;
-        const fileIdx = -1;
-        const directURL = `${selectedServer.serverUrl}/${encodeURIComponent(infoHash!)}/${encodeURIComponent(fileIdx)}`;
+        const directURL = `${selectedServer.serverUrl}/${encodeURIComponent(infoHash!)}/${encodeURIComponent(fileIdx || -1)}`;
         videoUrl = directURL;
       }
       // else: Direct Stream + External Player = Use direct URL (no Stremio server check needed)
