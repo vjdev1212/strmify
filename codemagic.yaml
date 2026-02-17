@@ -2,20 +2,20 @@ workflows:
   strmify-ios-build:
     name: Strmify iOS Build
     environment:
-      node: 18
+      node: 20 # ← FIXED: was 18, toReversed() requires Node 20+
       xcode: latest
       groups:
         - EXPO
     scripts:
       - name: Install dependencies
         script: npm install --force
-      
+
       - name: Install Expo CLI
         script: npm install -g @expo/cli@latest --force
-      
+
       - name: Check Expo CLI version
         script: npx expo --version
-      
+
       - name: Extract app version from app.json
         script: |
           if [ -f "app.json" ]; then
@@ -31,28 +31,20 @@ workflows:
             echo "APP_VERSION=1.0.0" >> $CM_ENV
             echo "APP_NAME=Strmify" >> $CM_ENV
           fi
-      
-      - name: Fix expo-updates
-        script: |
-          mkdir -p node_modules/expo-updates/scripts
-          cat > node_modules/expo-updates/scripts/create-manifest-ios.sh << 'EOF'
-          #!/bin/bash
-          mkdir -p "${DERIVED_FILE_DIR}" 2>/dev/null || true
-          touch "${DERIVED_FILE_DIR}/EXUpdates.generated.m" 2>/dev/null || true
-          exit 0
-          EOF
-          chmod +x node_modules/expo-updates/scripts/create-manifest-ios.sh
-      
+
+      # REMOVED: "Fix expo-updates" script — it patched the wrong thing
+      # and didn't address the root cause (Node version too old).
+
       - name: Clean and generate iOS project
         script: |
           rm -rf ios android
           npx expo prebuild --clean --platform ios
-      
+
       - name: Install iOS dependencies
         script: |
           cd ios
           pod install
-      
+
       - name: Build with Xcode (unsigned)
         script: |
           cd ios
@@ -61,10 +53,10 @@ workflows:
             echo "❌ No .xcworkspace found"
             exit 1
           fi
-          
+
           SCHEME_NAME=$(basename "$WORKSPACE" .xcworkspace)
           echo "📱 Building scheme: $SCHEME_NAME"
-          
+
           xcodebuild -workspace "$WORKSPACE" \
             -scheme "$SCHEME_NAME" \
             -configuration Release \
@@ -85,7 +77,7 @@ workflows:
           echo "📱 App bundle: $APP_BUNDLE"
 
           IPA_NAME="${APP_NAME}_v${APP_VERSION}"
-          
+
           echo "📦 IPA name: $IPA_NAME"
 
           EXECUTABLE=$(plutil -extract CFBundleExecutable raw "build/Payload/$APP_BUNDLE/Info.plist" 2>/dev/null || echo "$BASE_NAME")
@@ -109,7 +101,7 @@ workflows:
             echo "❌ Failed to create IPA"
             exit 1
           fi
-    
+
     artifacts:
       - ios/build/*.ipa
       - ios/build/**/*.xcarchive
@@ -117,7 +109,7 @@ workflows:
   strmify-ios-dev:
     name: Strmify iOS Development Build
     environment:
-      node: 18
+      node: 20
       xcode: latest
       groups:
         - EXPO
@@ -195,7 +187,7 @@ workflows:
   strmify-android-build:
     name: Strmify Android Build
     environment:
-      node: 18
+      node: 20
       java: latest
       groups:
         - EXPO
@@ -239,7 +231,7 @@ workflows:
       - name: Build Android release
         script: |
           cd android
-          
+
           if [ "$UNSIGNED_BUILD" = "true" ]; then
             echo "📦 Building unsigned release APK"
             ./gradlew assembleRelease -x configureCMakeRelease -Pandroid.overridePathCheck=true
@@ -274,7 +266,7 @@ workflows:
       - name: Build Android App Bundle
         script: |
           cd android
-          
+
           if [ "$UNSIGNED_BUILD" = "true" ]; then
             echo "📦 Building unsigned App Bundle"
             ./gradlew bundleRelease -x configureCMakeRelease -Pandroid.overridePathCheck=true
@@ -311,7 +303,7 @@ workflows:
   strmify-android-dev:
     name: Strmify Android Development Build
     environment:
-      node: 18
+      node: 20
       java: latest
       groups:
         - EXPO
@@ -344,12 +336,12 @@ workflows:
       - name: Build Android debug APK
         script: |
           cd android
-          
+
           echo "📦 Building debug APK"
           ./gradlew assembleDebug -x configureCMakeDebug -Pandroid.overridePathCheck=true
-          
+
           BUILD_OUTPUT="app/build/outputs/apk/debug"
-          
+
           if [ -f "$BUILD_OUTPUT/app-debug.apk" ]; then
             APK_NAME="${APP_NAME}_Dev_v${APP_VERSION}_debug.apk"
             cp "$BUILD_OUTPUT/app-debug.apk" "../$APK_NAME"
