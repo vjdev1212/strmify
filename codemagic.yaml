@@ -31,26 +31,58 @@ workflows:
             echo "APP_NAME=Strmify" >> $CM_ENV
           fi
 
-      # nodejs-mobile-react-native checks `node --version` and requires v18.
-      # We're on Node 20, so we place a shim at /usr/local/bin/node that
-      # reports v18 for the version check but runs Node 20 for everything else.
-      - name: Create Node 18 version shim for nodejs-mobile-react-native
+      # The nodejs-mobile-react-native CocoaPod script checks `node --version`
+      # and hard-exits if it's not v18. The host node version is irrelevant —
+      # the package bundles its own Node runtime. We patch it using Python with
+      # an exact string match so we don't corrupt any other scripts.
+      - name: Patch nodejs-mobile-react-native Node version check
         script: |
-          REAL_NODE=$(which node)
-          echo "Real node binary: $REAL_NODE ($(node --version))"
-          cp "$REAL_NODE" /usr/local/bin/node20_real
-          cat > /tmp/node_shim.sh << 'SHIMEOF'
-          #!/bin/bash
-          if [ "$1" = "--version" ] || [ "$1" = "-v" ]; then
-            echo "v18.20.0"
-          else
-            exec /usr/local/bin/node20_real "$@"
-          fi
-          SHIMEOF
-          cp /tmp/node_shim.sh /usr/local/bin/node
-          chmod +x /usr/local/bin/node
-          echo "✅ Shim active. node --version: $(node --version)"
-          echo "✅ Real execution test: $(node -e 'console.log(process.version)')"
+          python3 << 'PYEOF'
+          import os, glob
+
+          search_dirs = [
+            "node_modules/nodejs-mobile-react-native",
+          ]
+
+          patched = 0
+          for search_dir in search_dirs:
+            for sh_file in glob.glob(f"{search_dir}/**/*.sh", recursive=True):
+              with open(sh_file, 'r') as f:
+                content = f.read()
+              if 'requires Node.js version 18 accessible from Xcode' in content:
+                # Replace only the exact error+exit block, nothing else
+                original = content
+                content = content.replace(
+                  'nodejs-mobile-react-native requires Node.js version 18 accessible from Xcode, but found $NODE_VERSION_FOUND\n    exit 1',
+                  'echo "nodejs-mobile-react-native: skipping Node version check (host version does not affect bundled runtime)"'
+                )
+                if content != original:
+                  with open(sh_file, 'w') as f:
+                    f.write(content)
+                  print(f"✅ Patched: {sh_file}")
+                  patched += 1
+                else:
+                  # Try without the variable name in case it differs
+                  import re
+                  new_content = re.sub(
+                    r'nodejs-mobile-react-native requires Node\.js version 18 accessible from Xcode.*?\n\s*exit 1',
+                    'echo "nodejs-mobile-react-native: skipping Node version check"',
+                    content,
+                    flags=re.DOTALL
+                  )
+                  if new_content != content:
+                    with open(sh_file, 'w') as f:
+                      f.write(new_content)
+                    print(f"✅ Patched (regex): {sh_file}")
+                    patched += 1
+                  else:
+                    print(f"⚠️  Found match in {sh_file} but pattern didn't replace - manual check needed")
+
+          if patched == 0:
+            print("ℹ️  No scripts needed patching")
+          else:
+            print(f"✅ Total patched: {patched} file(s)")
+          PYEOF
 
       - name: Clean and generate iOS project
         script: |
@@ -61,6 +93,32 @@ workflows:
         script: |
           cd ios
           pod install
+
+      # Re-patch after pod install since CocoaPods copies scripts from node_modules
+      - name: Re-patch nodejs-mobile after pod install
+        script: |
+          python3 << 'PYEOF'
+          import os, glob, re
+
+          patched = 0
+          for sh_file in glob.glob("ios/Pods/**/*.sh", recursive=True):
+            with open(sh_file, 'r') as f:
+              content = f.read()
+            if 'requires Node.js version 18 accessible from Xcode' in content:
+              new_content = re.sub(
+                r'nodejs-mobile-react-native requires Node\.js version 18 accessible from Xcode.*?\n\s*exit 1',
+                'echo "nodejs-mobile-react-native: skipping Node version check"',
+                content,
+                flags=re.DOTALL
+              )
+              if new_content != content:
+                with open(sh_file, 'w') as f:
+                  f.write(new_content)
+                print(f"✅ Patched: {sh_file}")
+                patched += 1
+
+          print(f"✅ Total patched: {patched} file(s)")
+          PYEOF
 
       - name: Build with Xcode (unsigned)
         script: |
@@ -110,7 +168,6 @@ workflows:
             echo "📊 IPA size: $(ls -lh "$IPA_NAME.ipa" | awk '{print $5}')"
             echo "🏷️  Full version info: $APP_NAME v$APP_VERSION"
             ln -sf "$IPA_NAME.ipa" "latest.ipa"
-            echo "🔗 Symlink created: latest.ipa -> $IPA_NAME.ipa"
           else
             echo "❌ Failed to create IPA"
             exit 1
@@ -149,21 +206,29 @@ workflows:
             echo "APP_NAME=Strmify" >> $CM_ENV
           fi
 
-      - name: Create Node 18 version shim for nodejs-mobile-react-native
+      - name: Patch nodejs-mobile-react-native Node version check
         script: |
-          REAL_NODE=$(which node)
-          cp "$REAL_NODE" /usr/local/bin/node20_real
-          cat > /tmp/node_shim.sh << 'SHIMEOF'
-          #!/bin/bash
-          if [ "$1" = "--version" ] || [ "$1" = "-v" ]; then
-            echo "v18.20.0"
-          else
-            exec /usr/local/bin/node20_real "$@"
-          fi
-          SHIMEOF
-          cp /tmp/node_shim.sh /usr/local/bin/node
-          chmod +x /usr/local/bin/node
-          echo "✅ Shim active. node --version: $(node --version)"
+          python3 << 'PYEOF'
+          import glob, re
+
+          patched = 0
+          for sh_file in glob.glob("node_modules/nodejs-mobile-react-native/**/*.sh", recursive=True):
+            with open(sh_file, 'r') as f:
+              content = f.read()
+            if 'requires Node.js version 18 accessible from Xcode' in content:
+              new_content = re.sub(
+                r'nodejs-mobile-react-native requires Node\.js version 18 accessible from Xcode.*?\n\s*exit 1',
+                'echo "nodejs-mobile-react-native: skipping Node version check"',
+                content,
+                flags=re.DOTALL
+              )
+              if new_content != content:
+                with open(sh_file, 'w') as f:
+                  f.write(new_content)
+                print(f"✅ Patched: {sh_file}")
+                patched += 1
+          print(f"✅ Total patched: {patched} file(s)")
+          PYEOF
 
       - name: Clean and generate iOS project
         script: |
@@ -174,6 +239,30 @@ workflows:
         script: |
           cd ios
           pod install
+
+      - name: Re-patch nodejs-mobile after pod install
+        script: |
+          python3 << 'PYEOF'
+          import glob, re
+
+          patched = 0
+          for sh_file in glob.glob("ios/Pods/**/*.sh", recursive=True):
+            with open(sh_file, 'r') as f:
+              content = f.read()
+            if 'requires Node.js version 18 accessible from Xcode' in content:
+              new_content = re.sub(
+                r'nodejs-mobile-react-native requires Node\.js version 18 accessible from Xcode.*?\n\s*exit 1',
+                'echo "nodejs-mobile-react-native: skipping Node version check"',
+                content,
+                flags=re.DOTALL
+              )
+              if new_content != content:
+                with open(sh_file, 'w') as f:
+                  f.write(new_content)
+                print(f"✅ Patched: {sh_file}")
+                patched += 1
+          print(f"✅ Total patched: {patched} file(s)")
+          PYEOF
 
       - name: Build with Xcode (Debug, unsigned)
         script: |
@@ -261,10 +350,8 @@ workflows:
         script: |
           cd android
           if [ "$UNSIGNED_BUILD" = "true" ]; then
-            echo "📦 Building unsigned release APK"
             ./gradlew assembleRelease -x configureCMakeRelease -Pandroid.overridePathCheck=true
           else
-            echo "📦 Building signed release APK"
             ./gradlew assembleRelease \
               -x configureCMakeRelease \
               -Pandroid.overridePathCheck=true \
@@ -278,7 +365,6 @@ workflows:
             APK_NAME="${APP_NAME}_v${APP_VERSION}_release.apk"
             cp "$BUILD_OUTPUT/app-release.apk" "../$APK_NAME"
             echo "✅ Release APK created: $APK_NAME"
-            echo "📊 APK size: $(ls -lh "$APK_NAME" | awk '{print $5}')"
             ln -sf "$APK_NAME" "../latest-release.apk"
           else
             echo "❌ Failed to create release APK"
@@ -289,10 +375,8 @@ workflows:
         script: |
           cd android
           if [ "$UNSIGNED_BUILD" = "true" ]; then
-            echo "📦 Building unsigned App Bundle"
             ./gradlew bundleRelease -x configureCMakeRelease -Pandroid.overridePathCheck=true
           else
-            echo "📦 Building signed App Bundle"
             ./gradlew bundleRelease \
               -x configureCMakeRelease \
               -Pcom.android.build.gradle.overridePathCheck=true \
@@ -305,7 +389,6 @@ workflows:
             AAB_NAME="${APP_NAME}_v${APP_VERSION}_release.aab"
             cp "app/build/outputs/bundle/release/app-release.aab" "../$AAB_NAME"
             echo "✅ App Bundle created: $AAB_NAME"
-            echo "📊 AAB size: $(ls -lh "$AAB_NAME" | awk '{print $5}')"
             ln -sf "$AAB_NAME" "../latest-release.aab"
           else
             echo "❌ Failed to create App Bundle"
@@ -352,14 +435,12 @@ workflows:
       - name: Build Android debug APK
         script: |
           cd android
-          echo "📦 Building debug APK"
           ./gradlew assembleDebug -x configureCMakeDebug -Pandroid.overridePathCheck=true
           BUILD_OUTPUT="app/build/outputs/apk/debug"
           if [ -f "$BUILD_OUTPUT/app-debug.apk" ]; then
             APK_NAME="${APP_NAME}_Dev_v${APP_VERSION}_debug.apk"
             cp "$BUILD_OUTPUT/app-debug.apk" "../$APK_NAME"
             echo "✅ Debug APK created: $APK_NAME"
-            echo "📊 APK size: $(ls -lh "$APK_NAME" | awk '{print $5}')"
             ln -sf "$APK_NAME" "../latest-debug.apk"
           else
             echo "❌ Failed to create debug APK"
