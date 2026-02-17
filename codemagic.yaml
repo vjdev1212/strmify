@@ -31,24 +31,32 @@ workflows:
             echo "APP_NAME=Strmify" >> $CM_ENV
           fi
 
-      # nodejs-mobile-react-native checks that the host `node` is v18, but the
-      # Node runtime it actually embeds in the app is its own bundled binary —
-      # the host version check is irrelevant. We patch it out so Node 20 can be
-      # used for expo-updates/metro-config which requires toReversed() (Node 20+).
-      - name: Patch nodejs-mobile-react-native Node version check
+      # nodejs-mobile-react-native checks `node --version` and requires it to
+      # report v18. However the Node runtime it actually bundles in the app is
+      # its own binary — the host version check is meaningless.
+      # Fix: place a shim at /usr/local/bin/node18_real pointing to real Node 20,
+      # then create a wrapper at /usr/local/bin/node that reports "v18.x.x" to
+      # satisfy the version check while still running Node 20 for everything else.
+      - name: Create Node 18 version shim for nodejs-mobile-react-native
         script: |
-          SCRIPTS=$(find node_modules/nodejs-mobile-react-native -name "*.sh" \
-            -exec grep -l "requires Node.js version" {} \; 2>/dev/null)
-          if [ -z "$SCRIPTS" ]; then
-            echo "ℹ️  No version check script found in node_modules, skipping"
-            exit 0
+          REAL_NODE=$(which node)
+          echo "Real node: $REAL_NODE ($($REAL_NODE --version))"
+          # Back up the real node binary path
+          cp "$REAL_NODE" /usr/local/bin/node20_real
+          # Write a shim that lies about its version when asked, but passes
+          # all other calls straight through to the real Node 20 binary
+          cat > /usr/local/bin/node << 'SHIMEOF'
+          #!/bin/bash
+          if [ "$1" = "--version" ] || [ "$1" = "-v" ]; then
+            echo "v18.20.0"
+          else
+            exec /usr/local/bin/node20_real "$@"
           fi
-          for SCRIPT in $SCRIPTS; do
-            echo "🔧 Patching: $SCRIPT"
-            sed -i.bak 's/.*requires Node\.js version.*/# nodejs-mobile version check disabled (host node version does not affect embedded runtime)/' "$SCRIPT"
-          done
-          echo "✅ Patched successfully"
-
+          SHIMEOF
+          chmod +x /usr/local/bin/node
+          echo "✅ Shim installed. node --version now reports: $(node --version)"
+          echo "✅ Real execution: $(node -e 'console.log(process.version)')"
+      
       - name: Clean and generate iOS project
         script: |
           rm -rf ios android
@@ -58,21 +66,6 @@ workflows:
         script: |
           cd ios
           pod install
-
-      # pod install copies scripts from node_modules into Pods/ — re-patch those copies
-      - name: Re-patch nodejs-mobile after pod install
-        script: |
-          POD_SCRIPTS=$(find ios/Pods -name "*.sh" \
-            -exec grep -l "requires Node.js version" {} \; 2>/dev/null)
-          if [ -z "$POD_SCRIPTS" ]; then
-            echo "ℹ️  No Pods scripts to patch"
-            exit 0
-          fi
-          for SCRIPT in $POD_SCRIPTS; do
-            echo "🔧 Patching Pods copy: $SCRIPT"
-            sed -i.bak 's/.*requires Node\.js version.*/# nodejs-mobile version check disabled/' "$SCRIPT"
-          done
-          echo "✅ Pods scripts patched"
 
       - name: Build with Xcode (unsigned)
         script: |
@@ -161,19 +154,20 @@ workflows:
             echo "APP_NAME=Strmify" >> $CM_ENV
           fi
 
-      - name: Patch nodejs-mobile-react-native Node version check
+      - name: Create Node 18 version shim for nodejs-mobile-react-native
         script: |
-          SCRIPTS=$(find node_modules/nodejs-mobile-react-native -name "*.sh" \
-            -exec grep -l "requires Node.js version" {} \; 2>/dev/null)
-          if [ -z "$SCRIPTS" ]; then
-            echo "ℹ️  No version check script found, skipping"
-            exit 0
+          REAL_NODE=$(which node)
+          cp "$REAL_NODE" /usr/local/bin/node20_real
+          cat > /usr/local/bin/node << 'SHIMEOF'
+          #!/bin/bash
+          if [ "$1" = "--version" ] || [ "$1" = "-v" ]; then
+            echo "v18.20.0"
+          else
+            exec /usr/local/bin/node20_real "$@"
           fi
-          for SCRIPT in $SCRIPTS; do
-            echo "🔧 Patching: $SCRIPT"
-            sed -i.bak 's/.*requires Node\.js version.*/# nodejs-mobile version check disabled/' "$SCRIPT"
-          done
-          echo "✅ Patched successfully"
+          SHIMEOF
+          chmod +x /usr/local/bin/node
+          echo "✅ Shim installed. node --version: $(node --version)"
 
       - name: Clean and generate iOS project
         script: |
@@ -184,20 +178,6 @@ workflows:
         script: |
           cd ios
           pod install
-
-      - name: Re-patch nodejs-mobile after pod install
-        script: |
-          POD_SCRIPTS=$(find ios/Pods -name "*.sh" \
-            -exec grep -l "requires Node.js version" {} \; 2>/dev/null)
-          if [ -z "$POD_SCRIPTS" ]; then
-            echo "ℹ️  No Pods scripts to patch"
-            exit 0
-          fi
-          for SCRIPT in $POD_SCRIPTS; do
-            echo "🔧 Patching Pods copy: $SCRIPT"
-            sed -i.bak 's/.*requires Node\.js version.*/# nodejs-mobile version check disabled/' "$SCRIPT"
-          done
-          echo "✅ Pods scripts patched"
 
       - name: Build with Xcode (Debug, unsigned)
         script: |
