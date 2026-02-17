@@ -215,7 +215,7 @@ const StreamListScreen = () => {
                     </RNView>
 
                     {(title || description) && (
-                        <Text style={styles.streamDescription} numberOfLines={3}>
+                        <Text style={styles.streamDescription}>
                             {title || description}
                         </Text>
                     )}
