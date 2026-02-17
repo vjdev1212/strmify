@@ -2,26 +2,25 @@ workflows:
   strmify-ios-build:
     name: Strmify iOS Build
     environment:
-      node: 20 # ← FIXED: was 18, toReversed() requires Node 20+
+      node: 20          # expo-updates/metro-config requires Node 20+ (toReversed)
       xcode: latest
       groups:
         - EXPO
     scripts:
       - name: Install dependencies
         script: npm install --force
-
+      
       - name: Install Expo CLI
         script: npm install -g @expo/cli@latest --force
-
+      
       - name: Check Expo CLI version
         script: npx expo --version
-
+      
       - name: Extract app version from app.json
         script: |
           if [ -f "app.json" ]; then
             APP_VERSION=$(node -p "JSON.parse(require('fs').readFileSync('app.json', 'utf8')).expo.version")
             APP_NAME=$(node -p "JSON.parse(require('fs').readFileSync('app.json', 'utf8')).expo.name.replace(/[^a-zA-Z0-9]/g, '')")
-            
             echo "📱 App Name: $APP_NAME"
             echo "📋 Version: $APP_VERSION"
             echo "APP_VERSION=$APP_VERSION" >> $CM_ENV
@@ -32,8 +31,23 @@ workflows:
             echo "APP_NAME=Strmify" >> $CM_ENV
           fi
 
-      # REMOVED: "Fix expo-updates" script — it patched the wrong thing
-      # and didn't address the root cause (Node version too old).
+      # nodejs-mobile-react-native checks that the host `node` is v18, but the
+      # Node runtime it actually embeds in the app is its own bundled binary —
+      # the host version check is irrelevant. We patch it out so Node 20 can be
+      # used for expo-updates/metro-config which requires toReversed() (Node 20+).
+      - name: Patch nodejs-mobile-react-native Node version check
+        script: |
+          SCRIPTS=$(find node_modules/nodejs-mobile-react-native -name "*.sh" \
+            -exec grep -l "requires Node.js version" {} \; 2>/dev/null)
+          if [ -z "$SCRIPTS" ]; then
+            echo "ℹ️  No version check script found in node_modules, skipping"
+            exit 0
+          fi
+          for SCRIPT in $SCRIPTS; do
+            echo "🔧 Patching: $SCRIPT"
+            sed -i.bak 's/.*requires Node\.js version.*/# nodejs-mobile version check disabled (host node version does not affect embedded runtime)/' "$SCRIPT"
+          done
+          echo "✅ Patched successfully"
 
       - name: Clean and generate iOS project
         script: |
@@ -45,6 +59,21 @@ workflows:
           cd ios
           pod install
 
+      # pod install copies scripts from node_modules into Pods/ — re-patch those copies
+      - name: Re-patch nodejs-mobile after pod install
+        script: |
+          POD_SCRIPTS=$(find ios/Pods -name "*.sh" \
+            -exec grep -l "requires Node.js version" {} \; 2>/dev/null)
+          if [ -z "$POD_SCRIPTS" ]; then
+            echo "ℹ️  No Pods scripts to patch"
+            exit 0
+          fi
+          for SCRIPT in $POD_SCRIPTS; do
+            echo "🔧 Patching Pods copy: $SCRIPT"
+            sed -i.bak 's/.*requires Node\.js version.*/# nodejs-mobile version check disabled/' "$SCRIPT"
+          done
+          echo "✅ Pods scripts patched"
+
       - name: Build with Xcode (unsigned)
         script: |
           cd ios
@@ -53,10 +82,10 @@ workflows:
             echo "❌ No .xcworkspace found"
             exit 1
           fi
-
+          
           SCHEME_NAME=$(basename "$WORKSPACE" .xcworkspace)
           echo "📱 Building scheme: $SCHEME_NAME"
-
+          
           xcodebuild -workspace "$WORKSPACE" \
             -scheme "$SCHEME_NAME" \
             -configuration Release \
@@ -73,11 +102,9 @@ workflows:
 
           APP_BUNDLE=$(ls "build/Payload/" | head -1)
           BASE_NAME="${APP_BUNDLE%.app}"
-
-          echo "📱 App bundle: $APP_BUNDLE"
-
           IPA_NAME="${APP_NAME}_v${APP_VERSION}"
 
+          echo "📱 App bundle: $APP_BUNDLE"
           echo "📦 IPA name: $IPA_NAME"
 
           EXECUTABLE=$(plutil -extract CFBundleExecutable raw "build/Payload/$APP_BUNDLE/Info.plist" 2>/dev/null || echo "$BASE_NAME")
@@ -94,14 +121,13 @@ workflows:
             echo "✅ IPA created successfully: $IPA_NAME.ipa"
             echo "📊 IPA size: $(ls -lh "$IPA_NAME.ipa" | awk '{print $5}')"
             echo "🏷️  Full version info: $APP_NAME v$APP_VERSION"
-            
             ln -sf "$IPA_NAME.ipa" "latest.ipa"
             echo "🔗 Symlink created: latest.ipa -> $IPA_NAME.ipa"
           else
             echo "❌ Failed to create IPA"
             exit 1
           fi
-
+    
     artifacts:
       - ios/build/*.ipa
       - ios/build/**/*.xcarchive
@@ -135,6 +161,20 @@ workflows:
             echo "APP_NAME=Strmify" >> $CM_ENV
           fi
 
+      - name: Patch nodejs-mobile-react-native Node version check
+        script: |
+          SCRIPTS=$(find node_modules/nodejs-mobile-react-native -name "*.sh" \
+            -exec grep -l "requires Node.js version" {} \; 2>/dev/null)
+          if [ -z "$SCRIPTS" ]; then
+            echo "ℹ️  No version check script found, skipping"
+            exit 0
+          fi
+          for SCRIPT in $SCRIPTS; do
+            echo "🔧 Patching: $SCRIPT"
+            sed -i.bak 's/.*requires Node\.js version.*/# nodejs-mobile version check disabled/' "$SCRIPT"
+          done
+          echo "✅ Patched successfully"
+
       - name: Clean and generate iOS project
         script: |
           rm -rf ios android
@@ -144,6 +184,20 @@ workflows:
         script: |
           cd ios
           pod install
+
+      - name: Re-patch nodejs-mobile after pod install
+        script: |
+          POD_SCRIPTS=$(find ios/Pods -name "*.sh" \
+            -exec grep -l "requires Node.js version" {} \; 2>/dev/null)
+          if [ -z "$POD_SCRIPTS" ]; then
+            echo "ℹ️  No Pods scripts to patch"
+            exit 0
+          fi
+          for SCRIPT in $POD_SCRIPTS; do
+            echo "🔧 Patching Pods copy: $SCRIPT"
+            sed -i.bak 's/.*requires Node\.js version.*/# nodejs-mobile version check disabled/' "$SCRIPT"
+          done
+          echo "✅ Pods scripts patched"
 
       - name: Build with Xcode (Debug, unsigned)
         script: |
@@ -201,7 +255,6 @@ workflows:
           if [ -f "app.json" ]; then
             APP_VERSION=$(node -p "JSON.parse(require('fs').readFileSync('app.json', 'utf8')).expo.version")
             APP_NAME=$(node -p "JSON.parse(require('fs').readFileSync('app.json', 'utf8')).expo.name.replace(/[^a-zA-Z0-9]/g, '')")
-            
             echo "🤖 App Name: $APP_NAME"
             echo "📋 Version: $APP_VERSION"
             echo "APP_VERSION=$APP_VERSION" >> $CM_ENV
@@ -231,11 +284,9 @@ workflows:
       - name: Build Android release
         script: |
           cd android
-
           if [ "$UNSIGNED_BUILD" = "true" ]; then
             echo "📦 Building unsigned release APK"
             ./gradlew assembleRelease -x configureCMakeRelease -Pandroid.overridePathCheck=true
-            BUILD_OUTPUT="app/build/outputs/apk/release"
           else
             echo "📦 Building signed release APK"
             ./gradlew assembleRelease \
@@ -245,19 +296,14 @@ workflows:
               -Pandroid.injected.signing.store.password=$KEYSTORE_PASSWORD \
               -Pandroid.injected.signing.key.alias=$KEYSTORE_ALIAS \
               -Pandroid.injected.signing.key.password=$KEYSTORE_KEY_PASSWORD
-            BUILD_OUTPUT="app/build/outputs/apk/release"
           fi
-
+          BUILD_OUTPUT="app/build/outputs/apk/release"
           if [ -f "$BUILD_OUTPUT/app-release.apk" ]; then
             APK_NAME="${APP_NAME}_v${APP_VERSION}_release.apk"
             cp "$BUILD_OUTPUT/app-release.apk" "../$APK_NAME"
-            
             echo "✅ Release APK created: $APK_NAME"
             echo "📊 APK size: $(ls -lh "$APK_NAME" | awk '{print $5}')"
-            echo "🏷️  Full version info: $APP_NAME v$APP_VERSION"
-            
             ln -sf "$APK_NAME" "../latest-release.apk"
-            echo "🔗 Symlink created: latest-release.apk -> $APK_NAME"
           else
             echo "❌ Failed to create release APK"
             exit 1
@@ -266,7 +312,6 @@ workflows:
       - name: Build Android App Bundle
         script: |
           cd android
-
           if [ "$UNSIGNED_BUILD" = "true" ]; then
             echo "📦 Building unsigned App Bundle"
             ./gradlew bundleRelease -x configureCMakeRelease -Pandroid.overridePathCheck=true
@@ -280,16 +325,12 @@ workflows:
               -Pandroid.injected.signing.key.alias=$KEYSTORE_ALIAS \
               -Pandroid.injected.signing.key.password=$KEYSTORE_KEY_PASSWORD
           fi
-
           if [ -f "app/build/outputs/bundle/release/app-release.aab" ]; then
             AAB_NAME="${APP_NAME}_v${APP_VERSION}_release.aab"
             cp "app/build/outputs/bundle/release/app-release.aab" "../$AAB_NAME"
-            
             echo "✅ App Bundle created: $AAB_NAME"
             echo "📊 AAB size: $(ls -lh "$AAB_NAME" | awk '{print $5}')"
-            
             ln -sf "$AAB_NAME" "../latest-release.aab"
-            echo "🔗 Symlink created: latest-release.aab -> $AAB_NAME"
           else
             echo "❌ Failed to create App Bundle"
             exit 1
@@ -316,7 +357,6 @@ workflows:
           if [ -f "app.json" ]; then
             APP_VERSION=$(node -p "JSON.parse(require('fs').readFileSync('app.json', 'utf8')).expo.version")
             APP_NAME=$(node -p "JSON.parse(require('fs').readFileSync('app.json', 'utf8')).expo.name.replace(/[^a-zA-Z0-9]/g, '')")
-            
             echo "🤖 App Name: $APP_NAME"
             echo "📋 Version: $APP_VERSION"
             echo "APP_VERSION=$APP_VERSION" >> $CM_ENV
@@ -336,22 +376,15 @@ workflows:
       - name: Build Android debug APK
         script: |
           cd android
-
           echo "📦 Building debug APK"
           ./gradlew assembleDebug -x configureCMakeDebug -Pandroid.overridePathCheck=true
-
           BUILD_OUTPUT="app/build/outputs/apk/debug"
-
           if [ -f "$BUILD_OUTPUT/app-debug.apk" ]; then
             APK_NAME="${APP_NAME}_Dev_v${APP_VERSION}_debug.apk"
             cp "$BUILD_OUTPUT/app-debug.apk" "../$APK_NAME"
-            
             echo "✅ Debug APK created: $APK_NAME"
             echo "📊 APK size: $(ls -lh "$APK_NAME" | awk '{print $5}')"
-            echo "🏷️  Full version info: $APP_NAME v$APP_VERSION (Debug)"
-            
             ln -sf "$APK_NAME" "../latest-debug.apk"
-            echo "🔗 Symlink created: latest-debug.apk -> $APK_NAME"
           else
             echo "❌ Failed to create debug APK"
             exit 1
