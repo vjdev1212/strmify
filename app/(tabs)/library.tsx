@@ -313,61 +313,63 @@ const LibraryScreen: React.FC = () => {
       );
     }
 
-    const totalCount = getTotalCount();
-    if (totalCount === 0) {
-      return (
-        <View style={styles.emptyContainer}>
-          <Ionicons name="albums-outline" size={80} color="#535aff" />
-          <Text style={styles.emptyTitle}>
-            {activeCategory === 'all'
-              ? 'Your Library is Empty'
-              : activeCategory === 'movies'
-                ? 'No Movies in Library'
-                : 'No TV Shows in Library'
-            }
-          </Text>
-          <Text style={styles.emptyText}>
-            Add {activeCategory === 'all' ? 'movies and TV shows' : activeCategory === 'movies' ? 'movies' : 'TV shows'} to your library to watch later
-          </Text>
-        </View>
-      );
-    }
+    const getUnwatched = () => {
+      switch (activeCategory) {
+        case 'movies': return moviesUnwatched;
+        case 'tv': return seriesUnwatched;
+        default: return allUnwatched;
+      }
+    };
 
-    switch (activeCategory) {
-      case 'all':
-        return (
-          <View>
-            <WatchHistory
-              onItemSelect={handleWatchHistoryItemSelect}
-              type="all"
-            />
-            {renderSection('Unwatched', allUnwatched, 'eye-outline')}
-            {renderSection('Watched', allWatched, 'checkmark-circle-outline')}
+    const getWatched = () => {
+      switch (activeCategory) {
+        case 'movies': return moviesWatched;
+        case 'tv': return seriesWatched;
+        default: return allWatched;
+      }
+    };
+
+    const getWatchHistoryType = () => {
+      switch (activeCategory) {
+        case 'movies': return 'movie';
+        case 'tv': return 'series';
+        default: return 'all';
+      }
+    };
+
+    const unwatched = getUnwatched();
+    const watched = getWatched();
+    const totalCount = unwatched.length + watched.length;
+
+    return (
+      <View>
+        <WatchHistory
+          onItemSelect={handleWatchHistoryItemSelect}
+          type={getWatchHistoryType()}
+        />
+        {totalCount === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Ionicons name="albums-outline" size={80} color="#535aff" />
+            <Text style={styles.emptyTitle}>
+              {activeCategory === 'all'
+                ? 'Your Library is Empty'
+                : activeCategory === 'movies'
+                  ? 'No Movies in Library'
+                  : 'No TV Shows in Library'
+              }
+            </Text>
+            <Text style={styles.emptyText}>
+              Add {activeCategory === 'all' ? 'movies and TV shows' : activeCategory === 'movies' ? 'movies' : 'TV shows'} to your library to watch later
+            </Text>
           </View>
-        );
-      case 'movies':
-        return (
-          <View>
-            <WatchHistory
-              onItemSelect={handleWatchHistoryItemSelect}
-              type="movie"
-            />
-            {renderSection('Unwatched', moviesUnwatched, 'eye-outline')}
-            {renderSection('Watched', moviesWatched, 'checkmark-circle-outline')}
-          </View>
-        );
-      case 'tv':
-        return (
-          <View>
-            <WatchHistory
-              onItemSelect={handleWatchHistoryItemSelect}
-              type="series"
-            />
-            {renderSection('Unwatched', seriesUnwatched, 'eye-outline')}
-            {renderSection('Watched', seriesWatched, 'checkmark-circle-outline')}
-          </View>
-        );
-    }
+        ) : (
+          <>
+            {renderSection('Unwatched', unwatched, 'eye-outline')}
+            {renderSection('Watched', watched, 'checkmark-circle-outline')}
+          </>
+        )}
+      </View>
+    );
   };
 
   return (
