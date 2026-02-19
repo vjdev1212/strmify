@@ -1,3 +1,3 @@
-// wrapper.js
-require('rn-bridge');
-require('./server.js');
+// // wrapper.js
+// require('rn-bridge');
+// require('./server.js');

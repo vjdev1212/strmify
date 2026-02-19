@@ -1,6 +1,6 @@
 import { router, useFocusEffect } from 'expo-router';
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import nodejs from 'nodejs-mobile-react-native';
+// import nodejs from 'nodejs-mobile-react-native';
 import {
   ScrollView,
   StyleSheet,
@@ -53,13 +53,13 @@ export default function HomeScreen() {
   const [filter, setFilter] = useState<'all' | 'movies' | 'series'>('all');
   const [refreshKey, setRefreshKey] = useState(0);
 
-  useEffect(() => {
-    try {
-      nodejs.start("wrapper.js");
-    } catch (err: any) {
-      console.log('ServerJs Error', err)
-    }
-  }, []);
+  // useEffect(() => {
+  //   try {
+  //     nodejs.start("wrapper.js");
+  //   } catch (err: any) {
+  //     console.log('ServerJs Error', err)
+  //   }
+  // }, []);
 
   // Refresh watch history when screen comes into focus
   useFocusEffect(
