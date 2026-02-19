@@ -514,32 +514,73 @@ const MediaPlayerScreen: React.FC = () => {
     try {
       setIsLoadingSubtitles(true);
 
+      const subtitleLanguagesConfig = storageService.getItem(SUBTITLE_LANGUAGES_KEY);
+      let subtitleLanguages: string[] = ['en'];
+      if (subtitleLanguagesConfig) {
+        subtitleLanguages = JSON.parse(subtitleLanguagesConfig);
+      } else {
+        console.log('Using default subtitle language: English');
+      }
+
+      const isEpisode = type === 'episode' && season && episode;
+
+      // Build IMDB-based search params if imdbid is available
+      if (imdbid) {
+        const imdbParams: import("@/clients/opensubtitles").SubtitleSearchParams = {
+          imdb_id: imdbid as string,
+          languages: subtitleLanguages.join(','),
+          format: 'srt',
+          ai_translated: 'include',
+          machine_translated: 'include',
+          trusted_sources: 'include',
+          hearing_impaired: 'include',
+        };
+
+        if (isEpisode) {
+          imdbParams.type = 'episode';
+          imdbParams.season_number = parseInt(season as string, 10);
+          imdbParams.episode_number = parseInt(episode as string, 10);
+        } else {
+          imdbParams.type = 'movie';
+        }
+
+        console.log('Subtitle search by IMDB ID:', imdbParams);
+
+        const imdbResponse = await openSubtitlesClient.searchSubtitles(imdbParams);
+
+        if (imdbResponse.success && imdbResponse.data.length > 0) {
+          const sortedData = imdbResponse.data.sort((a: any, b: any) => b.download_count - a.download_count);
+          const transformedSubtitles: Subtitle[] = sortedData.map((subtitle: SubtitleResult) => ({
+            fileId: subtitle.file_id,
+            language: subtitle.language,
+            url: subtitle.url,
+            label: `${subtitle.name}`,
+          }));
+          setSubtitles(transformedSubtitles);
+          setIsLoadingSubtitles(false);
+          return;
+        }
+
+        console.log('IMDB search returned no results, falling back to filename search');
+      }
+
+      // Fallback: search by file/title name
       const searchQuery = (title as string)
         .replace(/[:|,;.!?'"\/\\@#$%^&*_+=\[\]{}<>~`-]/g, '')
         .replace(/\s+/g, ' ')
         .trim();
 
-      console.log('Subtitle Query', searchQuery);
+      console.log('Subtitle fallback query:', searchQuery);
 
-      const subtitleLanguagesConfig = storageService.getItem(SUBTITLE_LANGUAGES_KEY);
-
-      console.log('Subtitle languages config', subtitleLanguagesConfig);
-      let subtitleLanguages: string[] = ['en'];
-      if (subtitleLanguagesConfig) {
-        subtitleLanguages = JSON.parse(subtitleLanguagesConfig);
-      }
-      else {
-        console.log('Using default subtitle language: English')
-      }
       const response = await openSubtitlesClient.searchByFileName(
-        searchQuery as string,
+        searchQuery,
         subtitleLanguages,
         {
           format: 'srt',
           ai_translated: 'include',
           machine_translated: 'include',
           trusted_sources: 'include',
-          hearing_impaired: 'include'
+          hearing_impaired: 'include',
         }
       );
 
@@ -550,14 +591,12 @@ const MediaPlayerScreen: React.FC = () => {
           return;
         }
         const sortedData = response.data.sort((a: any, b: any) => b.download_count - a.download_count);
-
         const transformedSubtitles: Subtitle[] = sortedData.map((subtitle: SubtitleResult) => ({
           fileId: subtitle.file_id,
           language: subtitle.language,
           url: subtitle.url,
-          label: `${subtitle.name}`
+          label: `${subtitle.name}`,
         }));
-
         setSubtitles(transformedSubtitles);
       } else {
         console.error('Failed to fetch subtitles:', response.error);
