@@ -37,6 +37,7 @@ import {
 } from "../coreplayer";
 import { View, Text } from "../Themed";
 import { GlassView } from 'expo-glass-effect';
+import { SkipBanner } from "../coreplayer/skipBanner";
 
 // Menu wrapper component - uses WebMenu on web, MenuView on native
 const MenuWrapper: React.FC<any> = (props) => {
@@ -46,7 +47,18 @@ const MenuWrapper: React.FC<any> = (props) => {
     return <MenuView {...props} />;
 };
 
-export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
+export interface TVShowMetadata {
+    imdbId: string;
+    season: number;
+    episode: number;
+}
+
+export interface ExtendedMediaPlayerPropsWithTV extends ExtendedMediaPlayerProps {
+    /** Pass this for TV shows to enable IntroDB segment skipping */
+    tvShow?: TVShowMetadata;
+}
+
+export const MediaPlayer: React.FC<ExtendedMediaPlayerPropsWithTV> = ({
     videoUrl,
     title,
     back: onBack,
@@ -59,7 +71,8 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     streams = [],
     currentStreamIndex = 0,
     onStreamChange,
-    onForceSwitchToVLC
+    onForceSwitchToVLC,
+    tvShow,
 }) => {
     const videoRef = useRef<VideoRef>(null);
     const shouldAutoHideControls = useRef(true);
@@ -165,9 +178,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
     // Load custom subtitles (OpenSubtitles)
     useEffect(() => {
-        // Only load custom subtitles if we're using them and have a valid selection
         if (!useCustomSubtitles || settings.selectedSubtitle < 0 || settings.selectedSubtitle >= subtitles.length) {
-            // Clear custom subtitles if not in use
             if (!useEmbeddedSubtitles) {
                 subtitleState.setParsedSubtitles([]);
                 subtitleState.setCurrentSubtitle('');
@@ -206,7 +217,6 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
     // Update subtitle display with delay support (only for custom subtitles)
     useEffect(() => {
-        // Only update custom subtitles
         if (!useCustomSubtitles || subtitleState.parsedSubtitles.length === 0) {
             if (!useEmbeddedSubtitles) {
                 subtitleState.setCurrentSubtitle('');
@@ -230,7 +240,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         return () => clearInterval(interval);
     }, [subtitleState.parsedSubtitles, playerState.currentTime, subtitleState.currentSubtitle, settings.subtitleDelay, useCustomSubtitles, useEmbeddedSubtitles]);
 
-    // Progress update interval - optimized
+    // Progress update interval
     useEffect(() => {
         if (!updateProgress || !playerState.isReady || playerState.duration <= 0) return;
 
@@ -278,11 +288,8 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
         Animated.timing(bufferOpacity, { toValue: 0, duration: 200, useNativeDriver: true }).start();
 
-        // Set available tracks - ensure they're arrays
         if (data.audioTracks && Array.isArray(data.audioTracks) && data.audioTracks.length > 0) {
             setAvailableAudioTracks(data.audioTracks);
-
-            // Auto-select first audio track if none selected
             if (selectedAudioTrack === -1) {
                 setSelectedAudioTrack(0);
                 settings.setSelectedAudioTrack(0);
@@ -297,7 +304,6 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     const handleAudioTracks = useCallback((data: { audioTracks: any[] }) => {
         if (data.audioTracks && Array.isArray(data.audioTracks) && data.audioTracks.length > 0) {
             setAvailableAudioTracks(data.audioTracks);
-            // Auto-select first track if none selected
             if (selectedAudioTrack === -1) {
                 setSelectedAudioTrack(0);
                 settings.setSelectedAudioTrack(0);
@@ -335,11 +341,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         if (onPlaybackError && !hasReportedErrorRef.current) {
             hasReportedErrorRef.current = true;
             const errorMessage = error?.error?.message || error?.message || 'Unable to load video';
-
-            onPlaybackError({
-                error: errorMessage
-            });
-
+            onPlaybackError({ error: errorMessage });
             setIsPaused(true);
         } else if (!onPlaybackError) {
             const errorMessage = error?.error?.message || error?.message || 'Unable to load video. The file may be corrupted or in an unsupported format.';
@@ -360,15 +362,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         playerState.setIsPlaying(false);
     }, [playerState]);
 
-    // Control actions - all optimized with stable dependencies
-    const togglePlayPause = useCallback(() => {
-        if (!playerState.isReady) return;
-
-        setIsPaused(!isPaused);
-        playerState.setIsPlaying(isPaused);
-        showControlsTemporarily();
-    }, [isPaused, playerState, showControlsTemporarily]);
-
+    // seekTo - used by both controls and IntroDB skip
     const seekTo = useCallback((seconds: number) => {
         if (!playerState.isReady || playerState.duration <= 0 || !videoRef.current) return;
 
@@ -394,8 +388,6 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
         seekTimeoutRef.current = setTimeout(() => {
             isSeeking.current = false;
-
-            // Force hide buffering indicator after seek
             playerState.setIsBuffering(false);
             Animated.timing(bufferOpacity, { toValue: 0, duration: 200, useNativeDriver: true }).start();
 
@@ -406,6 +398,22 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
         showControlsTemporarily();
     }, [playerState, isPaused, showControlsTemporarily, bufferOpacity]);
+
+    // ---- IntroDB segment skipping ----
+    const { activeSegment, skip: skipSegment } = useIntroDB({
+        imdbId: tvShow?.imdbId ?? null,
+        season: tvShow?.season ?? null,
+        episode: tvShow?.episode ?? null,
+        currentTime: playerState.currentTime,
+        onSkip: seekTo,
+    });
+
+    const togglePlayPause = useCallback(() => {
+        if (!playerState.isReady) return;
+        setIsPaused(!isPaused);
+        playerState.setIsPlaying(isPaused);
+        showControlsTemporarily();
+    }, [isPaused, playerState, showControlsTemporarily]);
 
     const skipTime = useCallback((seconds: number) => {
         if (!playerState.isReady) return;
@@ -427,7 +435,6 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         }
     }, [uiState.showControls, showControlsTemporarily, controlsOpacity, setShowControls]);
 
-    // Slider handlers - optimized
     const handleSliderChange = useCallback((value: number) => {
         if (!playerState.isReady || playerState.duration <= 0) return;
         playerState.setIsDragging(true);
@@ -469,28 +476,23 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         playerState.setIsDragging(false);
     }, [playerState, isPaused, bufferOpacity]);
 
-    // Menu handlers - stable callbacks
     const handlePlaybackSpeedSelect = useCallback((speed: number) => {
         settings.setPlaybackSpeed(speed);
         showControlsTemporarily();
     }, [showControlsTemporarily, settings]);
 
     const handleSubtitleTrackSelect = useCallback((index: number) => {
-
         if (index === -1) {
-            // Turn off all subtitles
             settings.setSelectedSubtitle(-1);
             setSelectedTextTrack(-1);
             setUseEmbeddedSubtitles(false);
             subtitleState.setParsedSubtitles([]);
             subtitleState.setCurrentSubtitle('');
         } else if (index < subtitles.length) {
-            // Custom subtitles (OpenSubtitles)
             settings.setSelectedSubtitle(index);
             setSelectedTextTrack(-1);
             setUseEmbeddedSubtitles(false);
         } else {
-            // Embedded text tracks
             const embeddedIndex = index - subtitles.length;
             settings.setSelectedSubtitle(-1);
             setSelectedTextTrack(embeddedIndex);
@@ -522,24 +524,17 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         showControlsTemporarily();
     }, [onStreamChange, showControlsTemporarily]);
 
-    // Memoized helper
     const getContentFitIcon = useCallback((): "fit-screen" | "crop" | "fullscreen" => {
         switch (contentFit) {
-            case ResizeMode.CONTAIN:
-                return 'fit-screen';
-            case ResizeMode.COVER:
-                return 'crop';
-            case ResizeMode.STRETCH:
-                return 'fullscreen';
-            default:
-                return 'crop';
+            case ResizeMode.CONTAIN: return 'fit-screen';
+            case ResizeMode.COVER: return 'crop';
+            case ResizeMode.STRETCH: return 'fullscreen';
+            default: return 'crop';
         }
     }, [contentFit]);
 
-    // Track adaptation functions
     const adaptTextTracks = useCallback((tracks: any[]): any[] => {
         if (!tracks || !Array.isArray(tracks)) return [];
-
         return tracks.map((track, index) => ({
             id: track.index ?? index,
             label: track.title || track.language || `Track ${index + 1}`,
@@ -550,7 +545,6 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
     const adaptAudioTracks = useCallback((tracks: any[]): any[] => {
         if (!tracks || !Array.isArray(tracks)) return [];
-
         return tracks.map((track, index) => ({
             id: track.index ?? index,
             label: track.title || track.language || `Track ${index + 1}`,
@@ -559,21 +553,17 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         }));
     }, []);
 
-    // Memoize menu actions to prevent rebuilding on every render
     const settingsActions = useMemo(() => buildSettingsActions(settings.playbackSpeed), [settings.playbackSpeed]);
 
     const subtitleActions = useMemo(() => {
         const adaptedTracks = adaptTextTracks(availableTextTracks);
-
-        // Determine current selection
         let currentSelection = -1;
         if (useEmbeddedSubtitles && selectedTextTrack >= 0) {
             currentSelection = subtitles.length + selectedTextTrack;
         } else if (!useEmbeddedSubtitles && settings.selectedSubtitle >= 0) {
             currentSelection = settings.selectedSubtitle;
         }
-
-        const actions = buildSubtitleActions(
+        return buildSubtitleActions(
             subtitles as SubtitleSource[],
             currentSelection,
             !useEmbeddedSubtitles,
@@ -582,21 +572,15 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
             settings.subtitleDelay,
             selectedTextTrack
         );
-        return actions;
     }, [subtitles, settings.selectedSubtitle, useEmbeddedSubtitles, availableTextTracks, settings.subtitlePosition, settings.subtitleDelay, selectedTextTrack, adaptTextTracks]);
 
     const audioActions = useMemo(() => {
         const adaptedTracks = adaptAudioTracks(availableAudioTracks);
-        const actions = buildAudioActions(
-            adaptedTracks,
-            selectedAudioTrack
-        );
-        return actions;
+        return buildAudioActions(adaptedTracks, selectedAudioTrack);
     }, [availableAudioTracks, selectedAudioTrack, adaptAudioTracks]);
 
     const streamActions = useMemo(() => buildStreamActions(streams, currentStreamIndex), [streams, currentStreamIndex]);
 
-    // Memoize slider values
     const { displayTime, sliderValue } = useMemo(() => calculateSliderValues(
         playerState.isDragging,
         playerState.dragPosition,
@@ -614,68 +598,41 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         hasReportedErrorRef.current = false;
         playerState.setIsReady(false);
         playerState.setIsBuffering(true);
-
         if (videoRef.current) {
             videoRef.current.seek(0);
         }
         setIsPaused(false);
     }, [playerState]);
 
-    // Unified menu action handler
     const handleMenuAction = useCallback((id: string) => {
-        // Playback speed
         if (id.startsWith('speed-')) {
             const speed = parseFloat(id.split('-')[1]);
             if (!isNaN(speed)) handlePlaybackSpeedSelect(speed);
-        }
-        // Subtitle track - OFF
-        else if (id === 'subtitle-track-off') {
+        } else if (id === 'subtitle-track-off') {
             handleSubtitleTrackSelect(-1);
-        }
-        // Embedded subtitle tracks
-        else if (id.startsWith('vlc-text-track-')) {
+        } else if (id.startsWith('vlc-text-track-')) {
             const trackId = parseInt(id.split('vlc-text-track-')[1]);
-            if (!isNaN(trackId)) {
-                // Pass the absolute index (custom subtitles count + embedded index)
-                handleSubtitleTrackSelect(subtitles.length + trackId);
-            }
-        }
-        // Custom subtitle tracks (OpenSubtitles)
-        else if (id.startsWith('subtitle-track-')) {
+            if (!isNaN(trackId)) handleSubtitleTrackSelect(subtitles.length + trackId);
+        } else if (id.startsWith('subtitle-track-')) {
             const index = parseInt(id.split('subtitle-track-')[1]);
-            if (!isNaN(index)) {
-                handleSubtitleTrackSelect(index);
-            }
-        }
-        // Subtitle position
-        else if (id.startsWith('position-')) {
+            if (!isNaN(index)) handleSubtitleTrackSelect(index);
+        } else if (id.startsWith('position-')) {
             const position = parseInt(id.split('-')[1]);
             if (!isNaN(position)) handleSubtitlePositionSelect(position);
-        }
-        // Subtitle delay
-        else if (id.startsWith('delay_')) {
+        } else if (id.startsWith('delay_')) {
             const delayMs = parseInt(id.replace('delay_', ''));
             if (!isNaN(delayMs)) handleSubtitleDelaySelect(delayMs);
-        }
-        // Audio track
-        else if (id.startsWith('audio-')) {
+        } else if (id.startsWith('audio-')) {
             const index = parseInt(id.split('-')[1]);
             if (!isNaN(index)) handleAudioSelect(index);
-        }
-        // Stream
-        else if (id.startsWith('stream-')) {
+        } else if (id.startsWith('stream-')) {
             const index = parseInt(id.split('-')[1]);
             if (!isNaN(index)) handleStreamSelect(index);
         }
     }, [handlePlaybackSpeedSelect, handleSubtitleTrackSelect, handleSubtitlePositionSelect, handleSubtitleDelaySelect, handleAudioSelect, handleStreamSelect, subtitles.length]);
 
-    const handleWebAction = useCallback((id: string) => {
-        handleMenuAction(id);
-    }, [handleMenuAction]);
-
-    const handleNativeAction = useCallback(({ nativeEvent }: any) => {
-        handleMenuAction(nativeEvent.event);
-    }, [handleMenuAction]);
+    const handleWebAction = useCallback((id: string) => handleMenuAction(id), [handleMenuAction]);
+    const handleNativeAction = useCallback(({ nativeEvent }: any) => handleMenuAction(nativeEvent.event), [handleMenuAction]);
 
     const handleMenuOpen = useCallback(() => {
         shouldAutoHideControls.current = false;
@@ -705,18 +662,13 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         showControlsTemporarily();
     }, [showControlsTemporarily]);
 
-    // Prepare selectedTextTrack for Video component
     const videoSelectedTextTrack: SelectedTrack | undefined = useMemo(() => {
         if (useEmbeddedSubtitles && selectedTextTrack >= 0) {
-            return {
-                type: 'index',
-                value: selectedTextTrack
-            } as SelectedTrack;
+            return { type: 'index', value: selectedTextTrack } as SelectedTrack;
         }
         return undefined;
     }, [useEmbeddedSubtitles, selectedTextTrack]);
 
-    // If there's an error, show error display
     if (videoError) {
         return (
             <ErrorDisplay
@@ -771,11 +723,18 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
             <TouchableOpacity style={styles.touchArea} activeOpacity={1} onPress={handleOverlayPress} />
 
-            {/* Only show custom subtitle overlay when using custom subtitles */}
             {useCustomSubtitles && subtitleState.currentSubtitle && (
                 <SubtitleDisplay
                     subtitle={subtitleState.currentSubtitle}
                     position={settings.subtitlePosition}
+                />
+            )}
+
+            {/* IntroDB skip banner - rendered outside controls overlay so it's always visible */}
+            {tvShow && (
+                <SkipBanner
+                    activeSegment={activeSegment}
+                    onSkip={skipSegment}
                 />
             )}
 
@@ -792,10 +751,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
                         <GlassView glassEffectStyle="clear" style={styles.topRightControls}>
                             {Platform.OS !== 'web' && onForceSwitchToVLC && (
-                                <TouchableOpacity
-                                    style={styles.controlButton}
-                                    onPress={onForceSwitchToVLC}
-                                >
+                                <TouchableOpacity style={styles.controlButton} onPress={onForceSwitchToVLC}>
                                     <MaterialCommunityIcons name="vlc" size={22} color="white" />
                                 </TouchableOpacity>
                             )}
@@ -813,9 +769,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                                     onCloseMenu={handleMenuClose}
                                 >
                                     <TouchableOpacity style={styles.controlButton} onPress={() => {
-                                        if (Platform.OS === 'android') {
-                                            streamMenuRef.current?.show();
-                                        }
+                                        if (Platform.OS === 'android') streamMenuRef.current?.show();
                                     }}>
                                         <MaterialIcons name="ondemand-video" size={24} color="white" />
                                     </TouchableOpacity>
@@ -828,15 +782,13 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                             <TouchableOpacity style={styles.controlButton} onPress={cycleContentFit}>
                                 <MaterialIcons name={getContentFitIcon()} size={24} color="white" />
                             </TouchableOpacity>
-                            {
-                                Platform.OS !== 'web' && playerState.isReady && (
-                                    <TouchableOpacity style={styles.controlButton} onPress={goToFullscreen}>
-                                        <MaterialIcons name={isFullscreen ? "fullscreen-exit" : "fullscreen"} size={24} color="white" />
-                                    </TouchableOpacity>
-                                )
-                            }
 
-                            {/* Always show audio track button if we have tracks */}
+                            {Platform.OS !== 'web' && playerState.isReady && (
+                                <TouchableOpacity style={styles.controlButton} onPress={goToFullscreen}>
+                                    <MaterialIcons name={isFullscreen ? "fullscreen-exit" : "fullscreen"} size={24} color="white" />
+                                </TouchableOpacity>
+                            )}
+
                             {availableAudioTracks.length > 0 && (
                                 <MenuWrapper
                                     style={{ zIndex: 1000 }}
@@ -850,16 +802,13 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                                     onCloseMenu={handleMenuClose}
                                 >
                                     <TouchableOpacity style={styles.controlButton} onPress={() => {
-                                        if (Platform.OS === 'android') {
-                                            audioMenuRef.current?.show();
-                                        }
+                                        if (Platform.OS === 'android') audioMenuRef.current?.show();
                                     }}>
                                         <MaterialIcons name="multitrack-audio" size={24} color="white" />
                                     </TouchableOpacity>
                                 </MenuWrapper>
                             )}
 
-                            {/* Show subtitle button if we have custom subtitles or embedded text tracks */}
                             {(subtitles.length > 0 || availableTextTracks.length > 0) && (
                                 <MenuWrapper
                                     style={{ zIndex: 1000 }}
@@ -873,16 +822,13 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                                     onCloseMenu={handleMenuClose}
                                 >
                                     <TouchableOpacity style={styles.controlButton} onPress={() => {
-                                        if (Platform.OS === 'android') {
-                                            subtitleMenuRef.current?.show();
-                                        }
+                                        if (Platform.OS === 'android') subtitleMenuRef.current?.show();
                                     }}>
                                         <MaterialIcons name="closed-caption" size={24} color="white" />
                                     </TouchableOpacity>
                                 </MenuWrapper>
                             )}
 
-                            {/* Settings Menu - Contains Playback Speed as nested item */}
                             <MenuWrapper
                                 style={{ zIndex: 1000 }}
                                 title="Settings"
@@ -895,9 +841,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                                 onCloseMenu={handleMenuClose}
                             >
                                 <TouchableOpacity style={styles.controlButton} onPress={() => {
-                                    if (Platform.OS === 'android') {
-                                        settingsMenuRef.current?.show();
-                                    }
+                                    if (Platform.OS === 'android') settingsMenuRef.current?.show();
                                 }}>
                                     <MaterialIcons name="settings" size={24} color="white" />
                                 </TouchableOpacity>
@@ -938,3 +882,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         </View>
     );
 };
+
+function useIntroDB(arg0: { imdbId: string | null; season: number | null; episode: number | null; currentTime: number; onSkip: (seconds: number) => void; }): { activeSegment: any; skip: any; } {
+    throw new Error("Function not implemented.");
+}
