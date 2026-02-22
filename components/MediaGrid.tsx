@@ -42,7 +42,7 @@ const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath }) => {
     };
 
     const numColumns = getNumColumns();
-    const spacing = isMobile ? 12 : 16;
+    const spacing = isMobile ? 10 : 14;
 
     useEffect(() => {
         const fetchData = async () => {
@@ -104,7 +104,7 @@ const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath }) => {
                     />
                 </View>
                 <View style={styles.infoContainer}>
-                    <Text numberOfLines={2} ellipsizeMode="tail" style={styles.posterTitle}>
+                    <Text numberOfLines={1} ellipsizeMode="tail" style={styles.posterTitle}>
                         {item.name}
                     </Text>
                     <Text style={styles.posterYear}>{year}</Text>
@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
         position: 'relative',
         width: '100%',
         aspectRatio: 2 / 3,
-        borderRadius: 12,
+        borderRadius: 5,
         overflow: 'hidden',
         backgroundColor: '#101010',
         shadowColor: '#000',

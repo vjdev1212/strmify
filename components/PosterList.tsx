@@ -95,7 +95,7 @@ const PosterItem = ({
           <SvgXml xml={DefaultPosterImgXml} />
         </View>
       )}
-      <Text numberOfLines={2} style={[styles.posterTitle, { width: posterWidth }]}>
+      <Text numberOfLines={1} style={[styles.posterTitle, { width: posterWidth }]}>
         {item.name}
       </Text>
       <Text style={styles.posterYear}>{year}</Text>
@@ -124,8 +124,8 @@ const SkeletonPoster = ({
         },
       ]}
     />
-    <RNView style={[styles.skeletonText, { width: posterWidth * 0.85, marginTop: 10 }]} />
-    <RNView style={[styles.skeletonText, { width: posterWidth * 0.5, marginTop: 6, height: 12 }]} />
+    {/* <RNView style={[styles.skeletonText, { width: posterWidth * 0.85, marginTop: 10 }]} />
+    <RNView style={[styles.skeletonText, { width: posterWidth * 0.5, marginTop: 6, height: 12 }]} /> */}
   </RNView>
 );
 
@@ -154,7 +154,7 @@ const PosterList = ({
   };
 
   const postersPerScreen = getPostersPerScreen();
-  const spacing = 12;
+  const spacing = 10;
 
   const containerMargin = 15;
   const posterWidth = useMemo(() => {
@@ -261,7 +261,7 @@ const PosterList = ({
         <Text style={styles.title}>{title}</Text>
         <Pressable onPress={handleSeeAllPress} style={styles.seeAllButton}>
           <Text style={styles.seeAllText}>See All</Text>
-          <Ionicons name="chevron-forward" size={16} color="#8E8E93" style={styles.chevronIcon} />
+          <Ionicons name="chevron-forward" size={16} color="#cccccc" style={styles.chevronIcon} />
         </Pressable>
       </RNView>
 
@@ -302,8 +302,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   title: {
-    fontSize: 22,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '500',
     letterSpacing: 0.2,
     color: '#ffffff',
   },
@@ -316,7 +316,7 @@ const styles = StyleSheet.create({
   seeAllText: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#8E8E93',
+    color: '#cccccc',
     letterSpacing: -0.1,
   },
   chevronIcon: {
@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   posterImage: {
-    borderRadius: 10,
+    borderRadius: 6,
     backgroundColor: '#101010',
     overflow: 'hidden',
   },
