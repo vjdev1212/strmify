@@ -2,7 +2,7 @@
   "expo": {
     "name": "Strmify",
     "slug": "strmify",
-    "version": "1.5.0",
+    "version": "1.6.0",
     "orientation": "default",
     "icon": "assets/images/icon.png",
     "scheme": "strmify",
@@ -82,6 +82,9 @@
     "owner": "vijayvcm",
     "runtimeVersion": {
       "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/d5580e97-7f37-4396-b166-98f416aab366"
     }
   }
 }
