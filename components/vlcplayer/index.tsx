@@ -36,7 +36,7 @@ import {
     buildStreamActions
 } from "../coreplayer";
 import { GlassView } from 'expo-glass-effect';
-import { SkipBanner } from "../coreplayer/skipBanner";
+import { SkipBanner } from "../introdb/skipBanner";
 import { useIntroDB } from "../introdb/useIntroDb";
 
 export interface TVShowMetadata {

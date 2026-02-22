@@ -37,7 +37,7 @@ import {
 } from "../coreplayer";
 import { View, Text } from "../Themed";
 import { GlassView } from 'expo-glass-effect';
-import { SkipBanner } from "../coreplayer/skipBanner";
+import { SkipBanner } from "../introdb/skipBanner";
 import { useIntroDB } from "../introdb/useIntroDb";
 
 // Menu wrapper component - uses WebMenu on web, MenuView on native
