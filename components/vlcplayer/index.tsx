@@ -271,7 +271,7 @@ const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
         const clampedTime = performSeek(seconds, playerState.duration);
         const position = clampedTime / playerState.duration;
 
-        console.log("[IntroDB] Seeking VLC to", clampedTime, "s (position", position + ")");
+        console.log("Seeking VLC to", clampedTime, "s (position", position + ")");
 
         isSeeking.current = true;
         playerRef.current?.seek(position);
