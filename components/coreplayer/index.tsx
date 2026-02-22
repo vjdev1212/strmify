@@ -42,6 +42,7 @@ export interface ExtendedMediaPlayerProps extends MediaPlayerProps {
     streams?: Stream[];
     currentStreamIndex?: number;
     onStreamChange?: (index: number) => void;
+    onForceSwitchToVLC?: () => void;
 }
 
 export interface SubtitleSource {

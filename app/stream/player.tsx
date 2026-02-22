@@ -673,6 +673,13 @@ const MediaPlayerScreen: React.FC = () => {
 
   const handleBack = async (event: BackEvent): Promise<void> => {
     saveToWatchHistory(Math.floor(event.progress));
+
+    if (event.message === 'force_vlc') {
+      setCurrentPlayerType("vlc");
+      setHasTriedNative(true);
+      return;
+    }
+
     router.back();
   };
 
@@ -736,6 +743,10 @@ const MediaPlayerScreen: React.FC = () => {
         streams={streams}
         currentStreamIndex={currentStreamIndex}
         onStreamChange={handleStreamChange}
+        onForceSwitchToVLC={() => {
+          setCurrentPlayerType("vlc");
+          setHasTriedNative(true);
+        }}
       />
     </GestureHandlerRootView>
   );

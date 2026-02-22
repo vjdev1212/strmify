@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { TouchableOpacity, Animated, Platform, Dimensions } from "react-native";
 import Video, { OnLoadData, OnProgressData, VideoRef, OnBufferData, ResizeMode, SelectedTrack, TextTrackType } from "react-native-video";
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import { MenuComponentRef, MenuView } from '@react-native-menu/menu';
 import { WebMenu } from "@/components/WebMenuView";
 import { styles } from "../coreplayer/styles";
@@ -58,7 +58,8 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     onPlaybackError,
     streams = [],
     currentStreamIndex = 0,
-    onStreamChange
+    onStreamChange,
+    onForceSwitchToVLC
 }) => {
     const videoRef = useRef<VideoRef>(null);
     const shouldAutoHideControls = useRef(true);
@@ -790,6 +791,15 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                         </View>
 
                         <GlassView glassEffectStyle="clear" style={styles.topRightControls}>
+                            {Platform.OS !== 'web' && onForceSwitchToVLC && (
+                                <TouchableOpacity
+                                    style={styles.controlButton}
+                                    onPress={onForceSwitchToVLC}
+                                >
+                                    <MaterialCommunityIcons name="vlc" size={22} color="white" />
+                                </TouchableOpacity>
+                            )}
+
                             {streams.length > 1 && (
                                 <MenuWrapper
                                     style={{ zIndex: 1000 }}
