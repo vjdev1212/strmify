@@ -46,6 +46,7 @@ export interface MediaPlayerProps {
     openSubtitlesClient: OpenSubtitlesClient;
     updateProgress: (event: UpdateProgessEvent) => void;
     onPlaybackError: (event: PlaybackErrorEvent) => void;
+    tvShow: TVShowMetadata
 }
 
 interface PlayerSwitchEvent {
@@ -53,6 +54,12 @@ interface PlayerSwitchEvent {
     code?: string;
     player: "native" | "vlc";
     progress: number;
+}
+
+export interface TVShowMetadata {
+    imdbId: string;
+    season: number;
+    episode: number;
 }
 
 interface UpdateProgessEvent {

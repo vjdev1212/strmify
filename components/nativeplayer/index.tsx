@@ -48,18 +48,8 @@ const MenuWrapper: React.FC<any> = (props) => {
     return <MenuView {...props} />;
 };
 
-export interface TVShowMetadata {
-    imdbId: string;
-    season: number;
-    episode: number;
-}
 
-export interface ExtendedMediaPlayerPropsWithTV extends ExtendedMediaPlayerProps {
-    /** Pass this for TV shows to enable IntroDB segment skipping */
-    tvShow?: TVShowMetadata;
-}
-
-export const MediaPlayer: React.FC<ExtendedMediaPlayerPropsWithTV> = ({
+export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     videoUrl,
     title,
     back: onBack,
@@ -73,7 +63,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerPropsWithTV> = ({
     currentStreamIndex = 0,
     onStreamChange,
     onForceSwitchToVLC,
-    tvShow,
+    tvShow
 }) => {
     const videoRef = useRef<VideoRef>(null);
     const shouldAutoHideControls = useRef(true);

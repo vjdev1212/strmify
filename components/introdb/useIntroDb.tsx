@@ -1,7 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 
-// ---- Types ----
-
 export interface Segment {
     start_sec: number;
     end_sec: number;
@@ -36,10 +34,7 @@ export interface TVShowMetadata {
     episode: number;
 }
 
-// ---- API ----
-
 const INTRODB_BASE_URL = "https://api.introdb.app";
-
 const _cache: Record<string, EpisodeSegments> = {};
 
 function _cacheKey(imdbId: string, season: number, episode: number): string {
@@ -57,20 +52,23 @@ async function loadEpisodeSegments(
     minConfidence: number
 ): Promise<EpisodeSegments> {
     const key = _cacheKey(imdbId, season, episode);
-    if (_cache[key]) return _cache[key];
+    if (_cache[key]) {
+        console.log("[IntroDB] Cache hit for", key);
+        return _cache[key];
+    }
 
     const url = INTRODB_BASE_URL + "/segments?imdb_id=" + imdbId + "&season=" + season + "&episode=" + episode;
     console.log("[IntroDB] Fetching:", url);
 
     const res = await fetch(url);
-    console.log("[IntroDB] Response status:", res.status, res.statusText);
-
-    if (!res.ok) {
-        throw new Error("IntroDB API error: " + res.status + " " + res.statusText);
-    }
+    if (!res.ok) throw new Error("IntroDB API error: " + res.status);
 
     const data = await res.json();
-    console.log("[IntroDB] Response data:", JSON.stringify(data));
+    console.log("[IntroDB] Loaded segments — intro:", 
+        data.intro ? data.intro.start_sec + "s–" + data.intro.end_sec + "s" : "null",
+        "recap:", data.recap ? "yes" : "null",
+        "outro:", data.outro ? "yes" : "null"
+    );
 
     const filtered: EpisodeSegments = {
         ...data,
@@ -97,8 +95,6 @@ function getActiveSegment(segments: EpisodeSegments, currentSec: number): SkipRe
 export function clearSegmentCache(): void {
     Object.keys(_cache).forEach(function(k) { delete _cache[k]; });
 }
-
-// ---- Hook ----
 
 interface UseIntroDBOptions {
     imdbId: string | null | undefined;
@@ -136,11 +132,16 @@ export function useIntroDB({
         recap: false,
         outro: false,
     });
-
     const lastSkipTimeRef = useRef<number>(0);
 
+    // Fetch segments when episode changes
     useEffect(function() {
-        if (!imdbId || season == null || episode == null) return;
+        console.log("[IntroDB] useEffect triggered — imdbId:", imdbId, "season:", season, "episode:", episode);
+
+        if (!imdbId || season == null || episode == null) {
+            console.log("[IntroDB] Skipping fetch — missing tvShow props");
+            return;
+        }
 
         let cancelled = false;
         skippedRef.current = { intro: false, recap: false, outro: false };
@@ -153,9 +154,13 @@ export function useIntroDB({
 
         loadEpisodeSegments(imdbId, season, episode, confidence)
             .then(function(data) {
-                if (!cancelled) setSegments(data);
+                if (!cancelled) {
+                    console.log("[IntroDB] Segments set in state");
+                    setSegments(data);
+                }
             })
             .catch(function(err) {
+                console.log("[IntroDB] Fetch error:", err);
                 if (!cancelled) setError(err instanceof Error ? err : new Error(String(err)));
             })
             .finally(function() {
@@ -165,17 +170,20 @@ export function useIntroDB({
         return function() { cancelled = true; };
     }, [imdbId, season, episode, minConfidence]);
 
+    // Evaluate active segment on every time update
     useEffect(function() {
-        if (!segments) {
-            setActiveSegment(null);
-            return;
-        }
+        if (!segments) return;
 
         const active = getActiveSegment(segments, currentTime);
+
+        // Only log when state changes to avoid spam
+        if ((active === null) !== (activeSegment === null) || (active && activeSegment && active.type !== activeSegment.type)) {
+            console.log("[IntroDB] Active segment changed:", active ? active.type + " (" + active.segment.start_sec + "–" + active.segment.end_sec + "s)" : "none", "| currentTime:", currentTime);
+        }
+
         setActiveSegment(active);
 
-        const shouldAutoSkip = autoSkip === true;
-        if (active && shouldAutoSkip && !skippedRef.current[active.type]) {
+        if (active && autoSkip === true && !skippedRef.current[active.type]) {
             const now = Date.now();
             if (now - lastSkipTimeRef.current >= 3000) {
                 lastSkipTimeRef.current = now;
@@ -183,7 +191,7 @@ export function useIntroDB({
                 onSkip(active.skipToSec);
             }
         }
-    }, [segments, currentTime, autoSkip, onSkip]);
+    }, [segments, currentTime]);
 
     const skip = useCallback(function() {
         if (!activeSegment) return;

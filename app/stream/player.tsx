@@ -747,6 +747,15 @@ const MediaPlayerScreen: React.FC = () => {
           setCurrentPlayerType("vlc");
           setHasTriedNative(true);
         }}
+        tvShow={
+          type === 'series' && imdbid && season && episode
+            ? {
+              imdbId: imdbid as string,
+              season: parseInt(season as string, 10),
+              episode: parseInt(episode as string, 10),
+            }
+            : undefined
+        }
       />
     </GestureHandlerRootView>
   );

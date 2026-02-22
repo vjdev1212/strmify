@@ -39,16 +39,6 @@ import { GlassView } from 'expo-glass-effect';
 import { SkipBanner } from "../introdb/skipBanner";
 import { useIntroDB } from "../introdb/useIntroDb";
 
-export interface TVShowMetadata {
-    imdbId: string;
-    season: number;
-    episode: number;
-}
-
-export interface ExtendedMediaPlayerPropsWithTV extends ExtendedMediaPlayerProps {
-    tvShow?: TVShowMetadata;
-}
-
 const useVLCPlayerState = () => {
     const baseState = usePlayerState();
     const [isPaused, setIsPaused] = useState(false);
@@ -73,7 +63,7 @@ const useVLCPlayerState = () => {
     };
 };
 
-const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerPropsWithTV> = ({
+const VlcMediaPlayerComponent: React.FC<ExtendedMediaPlayerProps> = ({
     videoUrl,
     title,
     back: onBack,
