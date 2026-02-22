@@ -1,8 +1,4 @@
-/**
- * IntroDB API Client
- * Fetches and handles intro/recap/outro segment skipping for TV shows.
- * https://api.introdb.app
- */
+
 
 const INTRODB_BASE_URL = "https://api.introdb.app";
 
@@ -43,26 +39,30 @@ export async function fetchSegments(
   season: number,
   episode: number
 ): Promise<EpisodeSegments> {
-  const url = new URL(`${INTRODB_BASE_URL}/segments`);
-  url.searchParams.set("imdb_id", imdbId);
-  url.searchParams.set("season", String(season));
-  url.searchParams.set("episode", String(episode));
+  // Plain string concat — no new URL() or URLSearchParams, those are not available in React Native
+  const url =
+    INTRODB_BASE_URL +
+    "/segments?imdb_id=" +
+    imdbId +
+    "&season=" +
+    season +
+    "&episode=" +
+    episode;
 
-  const res = await fetch(url.toString());
+  const res = await fetch(url);
+  console.log("[IntroDB] Fetching:", url);
+  console.log("[IntroDB] Response status:", res.status, res.statusText);
   if (!res.ok) {
-    throw new Error(`IntroDB API error: ${res.status} ${res.statusText}`);
+    throw new Error("IntroDB API error: " + res.status + " " + res.statusText);
   }
 
-  console.log('Segments', res.json())
-
-  return res.json() as Promise<EpisodeSegments>;
+  const data = await res.json();
+  console.log("[IntroDB] Response data:", JSON.stringify(data));
+  return data as EpisodeSegments;
 }
 
 // ---- Helpers ----
 
-/**
- * Returns the active segment at the given playback position, or null.
- */
 export function getActiveSegment(
   segments: EpisodeSegments,
   currentSec: number
@@ -79,37 +79,32 @@ export function getActiveSegment(
   return null;
 }
 
-// ---- Client with cache ----
+// ---- Cache ----
 
 export interface IntroDBClientOptions {
-  /** Minimum confidence threshold (0–1). Default: 0.5 */
   minConfidence?: number;
 }
 
-const _cache = new Map<string, EpisodeSegments>();
+const _cache: Record<string, EpisodeSegments> = {};
 
 function _cacheKey(imdbId: string, season: number, episode: number): string {
-  return `${imdbId}-s${season}e${episode}`;
+  return imdbId + "-s" + season + "e" + episode;
 }
 
 function _filter(seg: Segment | null, min: number): Segment | null {
-  return seg && seg.confidence >= min ? seg : null;
+  return seg !== null && seg.confidence >= min ? seg : null;
 }
 
-/**
- * Fetch (and cache) segments for a TV show episode.
- * Segments below the confidence threshold are set to null.
- */
 export async function loadEpisodeSegments(
   imdbId: string,
   season: number,
   episode: number,
   options: IntroDBClientOptions = {}
 ): Promise<EpisodeSegments> {
-  const minConfidence = options.minConfidence ?? 0.5;
+  const minConfidence = options.minConfidence !== undefined ? options.minConfidence : 0.5;
   const key = _cacheKey(imdbId, season, episode);
 
-  if (_cache.has(key)) return _cache.get(key)!;
+  if (_cache[key]) return _cache[key];
 
   const data = await fetchSegments(imdbId, season, episode);
 
@@ -120,10 +115,10 @@ export async function loadEpisodeSegments(
     outro: _filter(data.outro, minConfidence),
   };
 
-  _cache.set(key, filtered);
+  _cache[key] = filtered;
   return filtered;
 }
 
 export function clearSegmentCache(): void {
-  _cache.clear();
+  Object.keys(_cache).forEach((k) => delete _cache[k]);
 }

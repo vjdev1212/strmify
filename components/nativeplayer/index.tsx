@@ -38,6 +38,7 @@ import {
 import { View, Text } from "../Themed";
 import { GlassView } from 'expo-glass-effect';
 import { SkipBanner } from "../coreplayer/skipBanner";
+import { useIntroDB } from "../introdb/useIntroDb";
 
 // Menu wrapper component - uses WebMenu on web, MenuView on native
 const MenuWrapper: React.FC<any> = (props) => {
@@ -882,7 +883,3 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerPropsWithTV> = ({
         </View>
     );
 };
-
-function useIntroDB(arg0: { imdbId: string | null; season: number | null; episode: number | null; currentTime: number; onSkip: (seconds: number) => void; }): { activeSegment: any; skip: any; } {
-    throw new Error("Function not implemented.");
-}

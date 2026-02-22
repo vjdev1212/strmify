@@ -1,6 +1,6 @@
+import { SegmentType, SkipResult } from "@/clients/introDb";
 import React from "react";
 import { TouchableOpacity, StyleSheet, Text, View } from "react-native";
-import { SegmentType, SkipResult } from "./useIntroDb";
 
 const SEGMENT_LABELS: Record<SegmentType, string> = {
   recap: "Skip Recap",
