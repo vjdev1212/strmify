@@ -47,7 +47,7 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      "./withAbiFilters",
+      "expo-build-properties",
       [
         "expo-build-properties",
         {
