@@ -93,7 +93,9 @@ const MediaPlayerScreen: React.FC = () => {
   const [stremioClient, setStremioClient] = useState<StreamingServerClient | null>(null);
 
   // Player fallback state — KSPlayer is the only player now
-  const [currentPlayerType, setCurrentPlayerType] = useState<"native" | "ksplayer">("native");
+  const [currentPlayerType, setCurrentPlayerType] = useState<"native" | "ksplayer">(
+    Platform.OS === "ios" ? "ksplayer" : "native"
+  );
   const [hasTriedNative, setHasTriedNative] = useState(false);
 
   // Bottom sheet state
@@ -309,7 +311,7 @@ const MediaPlayerScreen: React.FC = () => {
 
     setIsLoadingStream(true);
     setStreamError('');
-    setCurrentPlayerType("native");
+    setCurrentPlayerType(Platform.OS === "ios" ? "ksplayer" : "native");
     setHasTriedNative(false);
 
     const stream = streamsToUse[streamIndex];
@@ -461,27 +463,14 @@ const MediaPlayerScreen: React.FC = () => {
   const handlePlaybackError = (event: PlaybackErrorEvent) => {
     console.log('Playback error:', event);
 
-    // Only attempt KSPlayer fallback for format errors on non-web platforms
-    if (
-      currentPlayerType === "native" &&
-      !hasTriedNative &&
-      Platform.OS == "ios"
-    ) {
-      console.log('Native player failed, falling back to KSPlayer');
-
+    if (Platform.OS === "ios" && currentPlayerType === "ksplayer" && !hasTriedNative) {
+      // KSPlayer failed on iOS — fall back to native
+      console.log('KSPlayer failed, falling back to native player');
       setHasTriedNative(true);
       setStreamError('');
-      setCurrentPlayerType("ksplayer");
-      setTimeout(() => {
-        console.log('KSPlayer ready, video URL:', videoUrl);
-      }, 100);
-
+      setCurrentPlayerType("native");
     } else {
-      // Show error - either KSPlayer also failed or no fallback available
-      const errorMessage = currentPlayerType === "ksplayer"
-        ? 'KSPlayer was unable to play this format. The video codec may not be supported.'
-        : (event.error || 'Playback failed');
-
+      const errorMessage = event.error || 'Playback failed';
       console.log('Final playback error:', errorMessage);
       setStreamError(errorMessage);
       setIsLoadingStream(false);
@@ -681,10 +670,9 @@ const MediaPlayerScreen: React.FC = () => {
   };
 
   function getPlayer() {
-    if (currentPlayerType === "ksplayer") {
+    if (Platform.OS === "ios" && currentPlayerType === "ksplayer") {
       return require("../../components/ksplayer").MediaPlayer;
     }
-
     return require("../../components/nativeplayer").MediaPlayer;
   }
 
