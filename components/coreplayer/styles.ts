@@ -339,7 +339,7 @@ export const styles = StyleSheet.create({
         zIndex: 1,
     },
 
-    // Seek Feedback (VLC-specific)
+    // Seek Feedback
     seekFeedback: {
         position: 'absolute',
         top: '40%',

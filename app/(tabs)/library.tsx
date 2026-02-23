@@ -27,7 +27,7 @@ interface WatchHistoryItem {
   type: string;
   season: string;
   episode: string;
-  useVlcKit: string;
+  useKsPlayer: string;
   progress: number;
   artwork: string;
   timestamp: number;
@@ -155,7 +155,7 @@ const LibraryScreen: React.FC = () => {
         type: item.type,
         season: item.season,
         episode: item.episode,
-        useVlcKit: item.useVlcKit,
+        useKsPlayer: item.useKsPlayer,
         progress: item.progress,
         artwork: item.artwork
       },

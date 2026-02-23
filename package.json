@@ -70,9 +70,7 @@
     "doctor": {
       "reactNativeDirectoryCheck": {
         "listUnknownPackages": false,
-        "exclude": [
-          "react-native-vlc-media-player"
-        ]
+        "exclude": []
       }
     }
   }
