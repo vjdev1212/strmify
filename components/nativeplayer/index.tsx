@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { TouchableOpacity, Animated, Platform, Dimensions } from "react-native";
 import Video, { OnLoadData, OnProgressData, VideoRef, OnBufferData, ResizeMode, SelectedTrack, TextTrackType } from "react-native-video";
-import { Ionicons, MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { MenuComponentRef, MenuView } from '@react-native-menu/menu';
 import { WebMenu } from "@/components/WebMenuView";
 import { styles } from "../coreplayer/styles";
@@ -62,7 +62,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     streams = [],
     currentStreamIndex = 0,
     onStreamChange,
-    onForceSwitchToVLC,
+    onForceSwitchToKSPlayer,
     tvShow
 }) => {
     const videoRef = useRef<VideoRef>(null);
@@ -111,7 +111,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
     const useCustomSubtitles = subtitles.length > 0 && !useEmbeddedSubtitles;
 
-    // Restore progress - optimized with dependency array
+    // Restore progress
     useEffect(() => {
         if (playerState.isReady && progress && progress > 0 && playerState.duration > 0) {
             const currentTime = (progress / 100) * playerState.duration;
@@ -206,7 +206,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         };
     }, [settings.selectedSubtitle, subtitles, openSubtitlesClient, useCustomSubtitles, useEmbeddedSubtitles]);
 
-    // Update subtitle display with delay support (only for custom subtitles)
+    // Update subtitle display with delay support
     useEffect(() => {
         if (!useCustomSubtitles || subtitleState.parsedSubtitles.length === 0) {
             if (!useEmbeddedSubtitles) {
@@ -353,7 +353,6 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         playerState.setIsPlaying(false);
     }, [playerState]);
 
-    // seekTo - used by both controls and IntroDB skip
     const seekTo = useCallback((seconds: number) => {
         if (!playerState.isReady || playerState.duration <= 0 || !videoRef.current) return;
 
@@ -721,7 +720,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                 />
             )}
 
-            {/* IntroDB skip banner - rendered outside controls overlay so it's always visible */}
+            {/* IntroDB skip banner */}
             {tvShow && (
                 <SkipBanner
                     activeSegment={activeSegment}
@@ -741,9 +740,10 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                         </View>
 
                         <GlassView glassEffectStyle="clear" style={styles.topRightControls}>
-                            {Platform.OS !== 'web' && onForceSwitchToVLC && (
-                                <TouchableOpacity style={styles.controlButton} onPress={onForceSwitchToVLC}>
-                                    <MaterialCommunityIcons name="vlc" size={22} color="white" />
+                            {/* KSPlayer fallback button */}
+                            {Platform.OS !== 'web' && onForceSwitchToKSPlayer && (
+                                <TouchableOpacity style={styles.controlButton} onPress={onForceSwitchToKSPlayer}>
+                                    <MaterialIcons name="switch-video" size={22} color="white" />
                                 </TouchableOpacity>
                             )}
 

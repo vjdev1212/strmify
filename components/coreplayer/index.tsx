@@ -42,7 +42,7 @@ export interface ExtendedMediaPlayerProps extends MediaPlayerProps {
     streams?: Stream[];
     currentStreamIndex?: number;
     onStreamChange?: (index: number) => void;
-    onForceSwitchToVLC?: () => void;
+    onForceSwitchToKSPlayer?: () => void;
 }
 
 export interface SubtitleSource {
@@ -379,7 +379,7 @@ export const buildSubtitleDelayActions = (currentDelay: number): MenuAction[] =>
         const prefix = delayMs > 0 ? '+' : '';
 
         return {
-            id: `delay_${delayMs}`, // Use underscore instead of dash to avoid double-dash issue
+            id: `delay_${delayMs}`,
             title: isDefault ? 'Default' : `${prefix}${delaySec.toFixed(Math.abs(delaySec) < 1 ? 2 : 1)}s`,
             state: currentDelay === delayMs ? ('on' as const) : undefined,
             titleColor: currentDelay === delayMs ? '#007AFF' : '#FFFFFF',
@@ -396,7 +396,6 @@ export const buildSubtitleActions = (
     subtitleDelay: number,
     selectedTextTrackId: number = -1
 ): MenuAction[] => {
-    // Build custom subtitle actions (OpenSubtitles)
     const customSubtitleActions: MenuAction[] = useCustomSubtitles
         ? subtitles.map((sub, i) => ({
             id: `subtitle-track-${i}`,
@@ -407,7 +406,6 @@ export const buildSubtitleActions = (
         }))
         : [];
 
-    // Build embedded text track actions using track.id instead of index
     const vlcTextTrackActions: MenuAction[] = availableTextTracks
         .map((track) => ({
             id: `vlc-text-track-${track.id}`,
@@ -417,7 +415,6 @@ export const buildSubtitleActions = (
             titleColor: selectedTextTrackId === track.id ? '#007AFF' : '#FFFFFF',
         }));
 
-    // Off action
     const offAction: MenuAction = {
         id: 'subtitle-track-off',
         title: 'Off',
@@ -425,7 +422,6 @@ export const buildSubtitleActions = (
         titleColor: selectedIndex === -1 && selectedTextTrackId === -1 ? '#007AFF' : '#FFFFFF',
     };
 
-    // Combine all track actions
     const trackActions: MenuAction[] = [
         offAction,
         ...vlcTextTrackActions,
@@ -638,7 +634,6 @@ export const CenterControls: React.FC<{
     onSkipBackward: () => void;
     onSkipForward: () => void;
 }> = ({ isPlaying, isReady, isBuffering, onPlayPause, onSkipBackward, onSkipForward }) => {
-    // Don't render anything if not ready at all
     if (!isReady) {
         return null;
     }
