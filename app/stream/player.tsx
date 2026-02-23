@@ -23,7 +23,7 @@ interface BackEvent {
   message: string;
   code?: string;
   progress: number;
-  player: "native" | "vlc",
+  player: "native" | "ksplayer",
 }
 
 interface WatchHistoryItem {
@@ -92,8 +92,10 @@ const MediaPlayerScreen: React.FC = () => {
   // Stremio client instance
   const [stremioClient, setStremioClient] = useState<StreamingServerClient | null>(null);
 
-  // Player fallback state
-  const [currentPlayerType, setCurrentPlayerType] = useState<"native" | "vlc">("native");
+  // Player fallback state — KSPlayer is the only player now
+  const [currentPlayerType, setCurrentPlayerType] = useState<"native" | "ksplayer">(
+    Platform.OS === "ios" ? "ksplayer" : "native"
+  );
   const [hasTriedNative, setHasTriedNative] = useState(false);
 
   // Bottom sheet state
@@ -132,7 +134,6 @@ const MediaPlayerScreen: React.FC = () => {
 
         if (!savedPlayer) {
           // No saved player - need to show selection
-          // Don't initialize clients yet, keep loading state
           const platformPlayers = getPlatformSpecificPlayers();
           setPlayers(platformPlayers);
           fetchServerConfigs();
@@ -162,8 +163,8 @@ const MediaPlayerScreen: React.FC = () => {
   }, [imdbid, type, season, episode, openSubtitlesClient]);
 
   useEffect(() => {
-    if (currentPlayerType === "vlc" && hasTriedNative) {
-      console.log('Switching to VLC player');
+    if (currentPlayerType === "ksplayer" && hasTriedNative) {
+      console.log('Switching to KSPlayer');
       setStreamError('');
       setIsLoadingStream(false);
     }
@@ -310,7 +311,7 @@ const MediaPlayerScreen: React.FC = () => {
 
     setIsLoadingStream(true);
     setStreamError('');
-    setCurrentPlayerType("native");
+    setCurrentPlayerType(Platform.OS === "ios" ? "ksplayer" : "native");
     setHasTriedNative(false);
 
     const stream = streamsToUse[streamIndex];
@@ -406,7 +407,6 @@ const MediaPlayerScreen: React.FC = () => {
         const directURL = `${selectedServer.serverUrl}/${encodeURIComponent(infoHash!)}/${encodeURIComponent(fileIdx || -1)}`;
         videoUrl = directURL;
       }
-      // else: Direct Stream + External Player = Use direct URL (no Stremio server check needed)
 
       if (!videoUrl) {
         setStatusText('Error: Unable to generate video URL');
@@ -463,29 +463,14 @@ const MediaPlayerScreen: React.FC = () => {
   const handlePlaybackError = (event: PlaybackErrorEvent) => {
     console.log('Playback error:', event);
 
-    // Only attempt VLC fallback for format errors on non-web platforms
-    if (
-      currentPlayerType === "native" &&
-      !hasTriedNative &&
-      Platform.OS !== "web"
-    ) {
-      console.log('Native player failed, falling back to VLC');
-
+    if (Platform.OS === "ios" && currentPlayerType === "ksplayer" && !hasTriedNative) {
+      // KSPlayer failed on iOS — fall back to native
+      console.log('KSPlayer failed, falling back to native player');
       setHasTriedNative(true);
       setStreamError('');
-      setCurrentPlayerType("vlc");
-      setTimeout(() => {
-        // Trigger re-load with current video URL
-        // The player will re-render as VLC due to currentPlayerType change
-        console.log('VLC player ready, video URL:', videoUrl);
-      }, 100);
-
+      setCurrentPlayerType("native");
     } else {
-      // Show error - either VLC also failed or no fallback available
-      const errorMessage = currentPlayerType === "vlc"
-        ? 'VLC player was unable to play this format. The video codec may not be supported.'
-        : (event.error || 'Playback failed');
-
+      const errorMessage = event.error || 'Playback failed';
       console.log('Final playback error:', errorMessage);
       setStreamError(errorMessage);
       setIsLoadingStream(false);
@@ -524,7 +509,6 @@ const MediaPlayerScreen: React.FC = () => {
 
       const isEpisode = type === 'episode' && season && episode;
 
-      // Build IMDB-based search params if imdbid is available
       if (imdbid) {
         const imdbParams: import("@/clients/opensubtitles").SubtitleSearchParams = {
           imdb_id: imdbid as string,
@@ -564,7 +548,6 @@ const MediaPlayerScreen: React.FC = () => {
         console.log('IMDB search returned no results, falling back to filename search');
       }
 
-      // Fallback: search by file/title name
       const searchQuery = (title as string)
         .replace(/[:|,;.!?'"\/\\@#$%^&*_+=\[\]{}<>~`-]/g, '')
         .replace(/\s+/g, ' ')
@@ -673,13 +656,6 @@ const MediaPlayerScreen: React.FC = () => {
 
   const handleBack = async (event: BackEvent): Promise<void> => {
     saveToWatchHistory(Math.floor(event.progress));
-
-    if (event.message === 'force_vlc') {
-      setCurrentPlayerType("vlc");
-      setHasTriedNative(true);
-      return;
-    }
-
     router.back();
   };
 
@@ -694,14 +670,9 @@ const MediaPlayerScreen: React.FC = () => {
   };
 
   function getPlayer() {
-    if (Platform.OS === "web") {
-      return require("../../components/nativeplayer").MediaPlayer;
+    if (Platform.OS === "ios" && currentPlayerType === "ksplayer") {
+      return require("../../components/ksplayer").MediaPlayer;
     }
-
-    if (currentPlayerType === "vlc") {
-      return require("../../components/vlcplayer").MediaPlayer;
-    }
-
     return require("../../components/nativeplayer").MediaPlayer;
   }
 
@@ -743,8 +714,8 @@ const MediaPlayerScreen: React.FC = () => {
         streams={streams}
         currentStreamIndex={currentStreamIndex}
         onStreamChange={handleStreamChange}
-        onForceSwitchToVLC={() => {
-          setCurrentPlayerType("vlc");
+        onForceSwitchToKSPlayer={() => {
+          setCurrentPlayerType("ksplayer");
           setHasTriedNative(true);
         }}
         tvShow={

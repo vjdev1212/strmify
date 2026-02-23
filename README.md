@@ -243,9 +243,9 @@ The tables below summarise the playback behaviour for Torrent and Direct streams
 
 | Stremio Server | Media Player     | Behavior |
 |----------------|-----------------|-------------------|
-| **No**         | Default  | Attempt direct playback; fallback to VLC if unsupported. |
+| **No**         | Default  | Attempt direct playback; fallback to KSPlayer if unsupported. |
 | **No**         | External | Opens the stream URL directly. |
-| **Yes**        | Default  | Ignores Stremio Server. Attempt direct playback; fallback to VLC if unsupported. |
+| **Yes**        | Default  | Ignores Stremio Server. Attempt direct playback; fallback to KSPlayer if unsupported. |
 | **Yes**        | External | Ignores Stremio Server. Opens the stream URL directly in an external player. |
 
 

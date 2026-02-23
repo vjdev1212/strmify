@@ -19,7 +19,7 @@ interface WatchHistoryItem {
   type: string;
   season: string;
   episode: string;
-  useVlcKit: string;
+  useKsPlayer: string;
   progress: number;
   artwork: string;
   timestamp: number;
