@@ -741,7 +741,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
                         <GlassView glassEffectStyle="clear" style={styles.topRightControls}>
                             {/* KSPlayer fallback button */}
-                            {Platform.OS !== 'web' && onForceSwitchToKSPlayer && (
+                            {Platform.OS === 'ios' && onForceSwitchToKSPlayer && (
                                 <TouchableOpacity style={styles.controlButton} onPress={onForceSwitchToKSPlayer}>
                                     <MaterialIcons name="switch-video" size={22} color="white" />
                                 </TouchableOpacity>
