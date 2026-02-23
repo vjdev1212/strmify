@@ -6,12 +6,6 @@ workflows:
       xcode: latest
       groups:
         - EXPO
-    cache:
-      cache_paths:
-        - $HOME/Library/Caches/org.swift.swiftpm
-        - $HOME/.cocoapods
-        - ios/Pods
-        - node_modules
     scripts:
       - name: Install dependencies
         script: npm install --force
@@ -128,12 +122,6 @@ workflows:
       xcode: latest
       groups:
         - EXPO
-    cache:
-      cache_paths:
-        - $HOME/Library/Caches/org.swift.swiftpm
-        - $HOME/.cocoapods
-        - ios/Pods
-        - node_modules
     scripts:
       - name: Install dependencies
         script: npm install --force
