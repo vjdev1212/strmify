@@ -156,11 +156,14 @@ class KSPlayerRNView: UIView {
     }
 
     // MARK: - Track Reporting
-    // We report trackID as "index" so the JS side can pass it back
-    // to selectAudioTrack/selectTextTrack which look up by trackID.
+    // trackID is reported as "index" so JS passes it back for lookup.
+    // All subtitle tracks are disabled by default to prevent auto-play.
 
     private func reportTracksAndLoad() {
         guard let player = playerView.playerLayer?.player else { return }
+
+        // Disable all subtitle tracks by default
+        player.tracks(mediaType: .subtitle).forEach { $0.isEnabled = false }
 
         let duration = player.duration
         let audioTrackList = player.tracks(mediaType: .audio)
