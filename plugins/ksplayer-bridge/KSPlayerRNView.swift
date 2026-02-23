@@ -221,22 +221,20 @@ class KSPlayerRNView: UIView {
         }
     }
 
-    /// index is the 0-based array position reported in onLoad/onAudioTracks
     func selectAudioTrack(_ index: Int32) {
         guard let player = playerView.playerLayer?.player else { return }
         let tracks = player.tracks(mediaType: .audio)
         let i = Int(index)
         guard i >= 0, i < tracks.count else { return }
-        player.select(track: tracks[i])
+        player.select(track: tracks[i] as! any MediaPlayerTrack)
     }
-
-    /// index is the 0-based array position reported in onLoad/onTextTracks
+    
     func selectTextTrack(_ index: Int32) {
         guard let player = playerView.playerLayer?.player else { return }
         let tracks = player.tracks(mediaType: .subtitle)
         let i = Int(index)
         guard i >= 0, i < tracks.count else { return }
-        player.select(track: tracks[i])
+        player.select(track: tracks[i] as! any MediaPlayerTrack)
     }
 
     func disableTextTrack() {
