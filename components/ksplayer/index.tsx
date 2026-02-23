@@ -396,9 +396,8 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     const handleAudioSelect = useCallback((index: number) => {
         settings.setSelectedAudioTrack(index);
         setSelectedAudioTrack(index);
-        const track = availableAudioTracks[index];
-        if (track) videoRef.current?.selectAudioTrack(track.index ?? index);
-    }, [settings, availableAudioTracks]);
+        videoRef.current?.selectAudioTrack(index);
+    }, [settings]);
 
     const handleSubtitleTrackSelect = useCallback((index: number) => {
         if (index === -1) {
@@ -415,17 +414,16 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
             setUseEmbeddedSubtitles(false);
             videoRef.current?.disableTextTrack();
         } else {
-            // Embedded
+            // Embedded — send embeddedIndex directly, not track.index
             const embeddedIndex = index - subtitles.length;
             settings.setSelectedSubtitle(-1);
             setSelectedTextTrack(embeddedIndex);
             setUseEmbeddedSubtitles(true);
             subtitleState.setParsedSubtitles([]);
             subtitleState.setCurrentSubtitle('');
-            const track = availableTextTracks[embeddedIndex];
-            if (track) videoRef.current?.selectTextTrack(track.index ?? embeddedIndex);
+            videoRef.current?.selectTextTrack(embeddedIndex);
         }
-    }, [subtitles.length, settings, subtitleState, availableTextTracks]);
+    }, [subtitles.length, settings, subtitleState]);
 
     const handleSubtitlePositionSelect = useCallback((position: SubtitlePosition) => {
         settings.setSubtitlePosition(position);

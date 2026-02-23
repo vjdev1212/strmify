@@ -65,7 +65,6 @@ class KSPlayerRNView: UIView {
     private lazy var playerView: IOSVideoPlayerView = {
         let view = IOSVideoPlayerView()
         view.translatesAutoresizingMaskIntoConstraints = false
-        // Hide KSPlayer native controls — RN overlay handles UI
         view.toolBar.isHidden = true
         view.navigationBar.isHidden = true
         return view
@@ -97,7 +96,6 @@ class KSPlayerRNView: UIView {
             playerView.trailingAnchor.constraint(equalTo: trailingAnchor),
         ])
 
-        // Progress via KSPlayer's time callback
         playerView.playTimeDidChange = { [weak self] currentTime, totalTime in
             guard let self = self else { return }
             if abs(currentTime - self.lastReportedTime) >= 0.25 {
@@ -111,7 +109,6 @@ class KSPlayerRNView: UIView {
             }
         }
 
-        // Use PlayerControllerDelegate for state and end events
         playerView.delegate = self
     }
 
@@ -130,14 +127,12 @@ class KSPlayerRNView: UIView {
         let options = KSOptions()
         options.isSecondOpen = true
         options.isAccurateSeek = true
-
         KSOptions.isAutoPlay = !paused
 
         if !httpHeaders.isEmpty {
             options.appendHeader(httpHeaders)
         }
 
-        // Use MEPlayer (FFmpeg engine) for non-native format support
         KSOptions.secondPlayerType = KSMEPlayer.self
 
         let resource = KSPlayerResource(url: videoURL, options: options)
@@ -155,30 +150,35 @@ class KSPlayerRNView: UIView {
             player.contentMode = .scaleAspectFit
         case "stretch":
             player.contentMode = .scaleToFill
-        default: // "cover"
+        default:
             player.contentMode = .scaleAspectFill
         }
     }
 
     // MARK: - Track Reporting
+    // IMPORTANT: We report enumerated array index (0,1,2...) as "index",
+    // NOT trackID. Selection is also done by array position, not trackID.
+    // This avoids mismatches caused by non-sequential container stream IDs.
 
     private func reportTracksAndLoad() {
         guard let player = playerView.playerLayer?.player else { return }
 
         let duration = player.duration
+        let audioTrackList = player.tracks(mediaType: .audio)
+        let textTrackList = player.tracks(mediaType: .subtitle)
 
-        let audioTracks = player.tracks(mediaType: .audio).map { track -> [String: Any] in
+        let audioTracks: [[String: Any]] = audioTrackList.enumerated().map { (i, track) in
             return [
-                "index": Int(track.trackID),
+                "index": i,
                 "title": track.name,
                 "language": track.language ?? "",
                 "selected": track.isEnabled
             ]
         }
 
-        let textTracks = player.tracks(mediaType: .subtitle).map { track -> [String: Any] in
+        let textTracks: [[String: Any]] = textTrackList.enumerated().map { (i, track) in
             return [
-                "index": Int(track.trackID),
+                "index": i,
                 "title": track.name,
                 "language": track.language ?? "",
                 "selected": track.isEnabled
@@ -221,26 +221,27 @@ class KSPlayerRNView: UIView {
         }
     }
 
-    func selectAudioTrack(_ trackId: Int32) {
+    /// index is the 0-based array position reported in onLoad/onAudioTracks
+    func selectAudioTrack(_ index: Int32) {
         guard let player = playerView.playerLayer?.player else { return }
         let tracks = player.tracks(mediaType: .audio)
-        if let track = tracks.first(where: { $0.trackID == trackId }) {
-            player.select(track: track)
-        }
+        let i = Int(index)
+        guard i >= 0, i < tracks.count else { return }
+        player.select(track: tracks[i])
     }
 
-    func selectTextTrack(_ trackId: Int32) {
+    /// index is the 0-based array position reported in onLoad/onTextTracks
+    func selectTextTrack(_ index: Int32) {
         guard let player = playerView.playerLayer?.player else { return }
         let tracks = player.tracks(mediaType: .subtitle)
-        if let track = tracks.first(where: { $0.trackID == trackId }) {
-            player.select(track: track)
-        }
+        let i = Int(index)
+        guard i >= 0, i < tracks.count else { return }
+        player.select(track: tracks[i])
     }
 
     func disableTextTrack() {
         guard let player = playerView.playerLayer?.player else { return }
-        let tracks = player.tracks(mediaType: .subtitle)
-        tracks.forEach { $0.isEnabled = false }
+        player.tracks(mediaType: .subtitle).forEach { $0.isEnabled = false }
     }
 
     func enterFullscreen() {
@@ -269,10 +270,13 @@ extension KSPlayerRNView: PlayerControllerDelegate {
             playerView.playerLayer?.player.isMuted = muted
             playerView.playerLayer?.player.playbackRate = rate
             applyResizeMode()
+
         case .buffering:
             onBuffer?(["isBuffering": true])
+
         case .bufferFinished:
             onBuffer?(["isBuffering": false])
+
         case .error:
             onError?([
                 "error": [
@@ -280,16 +284,16 @@ extension KSPlayerRNView: PlayerControllerDelegate {
                     "code": -1
                 ]
             ])
+
         case .playedToTheEnd:
             onEnd?([:])
+
         default:
             break
         }
     }
 
-    func playerController(currentTime: TimeInterval, totalTime: TimeInterval) {
-        // Time progress is handled via playTimeDidChange closure above
-    }
+    func playerController(currentTime: TimeInterval, totalTime: TimeInterval) {}
 
     func playerController(finish error: Error?) {
         if let error = error {
@@ -303,10 +307,7 @@ extension KSPlayerRNView: PlayerControllerDelegate {
     }
 
     func playerController(maskShow: Bool) {}
-
     func playerController(action: PlayerButtonType) {}
-
     func playerController(bufferedCount: Int, consumeTime: TimeInterval) {}
-
     func playerController(seek: TimeInterval) {}
 }
