@@ -45,6 +45,7 @@
       "favicon": "assets/images/favicon.png"
     },
     "plugins": [
+      "./plugins/withKSPlayer",
       "expo-router",
       "expo-font",
       "expo-build-properties",
