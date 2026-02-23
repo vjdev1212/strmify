@@ -465,7 +465,7 @@ const MediaPlayerScreen: React.FC = () => {
     if (
       currentPlayerType === "native" &&
       !hasTriedNative &&
-      Platform.OS !== "web"
+      Platform.OS == "ios"
     ) {
       console.log('Native player failed, falling back to KSPlayer');
 
