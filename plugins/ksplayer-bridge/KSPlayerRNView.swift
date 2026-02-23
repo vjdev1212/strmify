@@ -156,9 +156,8 @@ class KSPlayerRNView: UIView {
     }
 
     // MARK: - Track Reporting
-    // IMPORTANT: We report enumerated array index (0,1,2...) as "index",
-    // NOT trackID. Selection is also done by array position, not trackID.
-    // This avoids mismatches caused by non-sequential container stream IDs.
+    // We report trackID as "index" so the JS side can pass it back
+    // to selectAudioTrack/selectTextTrack which look up by trackID.
 
     private func reportTracksAndLoad() {
         guard let player = playerView.playerLayer?.player else { return }
@@ -167,18 +166,18 @@ class KSPlayerRNView: UIView {
         let audioTrackList = player.tracks(mediaType: .audio)
         let textTrackList = player.tracks(mediaType: .subtitle)
 
-        let audioTracks: [[String: Any]] = audioTrackList.enumerated().map { (i, track) in
+        let audioTracks: [[String: Any]] = audioTrackList.map { track in
             return [
-                "index": i,
+                "index": track.trackID,
                 "title": track.name,
                 "language": track.language ?? "",
                 "selected": track.isEnabled
             ]
         }
 
-        let textTracks: [[String: Any]] = textTrackList.enumerated().map { (i, track) in
+        let textTracks: [[String: Any]] = textTrackList.map { track in
             return [
-                "index": i,
+                "index": track.trackID,
                 "title": track.name,
                 "language": track.language ?? "",
                 "selected": track.isEnabled
@@ -221,20 +220,20 @@ class KSPlayerRNView: UIView {
         }
     }
 
-    func selectAudioTrack(_ index: Int32) {
+    func selectAudioTrack(_ trackId: Int32) {
         guard let player = playerView.playerLayer?.player else { return }
         let tracks = player.tracks(mediaType: .audio)
-        let i = Int(index)
-        guard i >= 0, i < tracks.count else { return }
-        player.select(track: tracks[i] as! any MediaPlayerTrack)
+        if let track = tracks.first(where: { $0.trackID == trackId }) {
+            player.select(track: track)
+        }
     }
-    
-    func selectTextTrack(_ index: Int32) {
+
+    func selectTextTrack(_ trackId: Int32) {
         guard let player = playerView.playerLayer?.player else { return }
         let tracks = player.tracks(mediaType: .subtitle)
-        let i = Int(index)
-        guard i >= 0, i < tracks.count else { return }
-        player.select(track: tracks[i] as! any MediaPlayerTrack)
+        if let track = tracks.first(where: { $0.trackID == trackId }) {
+            player.select(track: track)
+        }
     }
 
     func disableTextTrack() {
