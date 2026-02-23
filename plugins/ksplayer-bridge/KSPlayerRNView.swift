@@ -127,6 +127,7 @@ class KSPlayerRNView: UIView {
         let options = KSOptions()
         options.isSecondOpen = true
         options.isAccurateSeek = true
+        options.autoSelectEmbedSubtitle = false
         KSOptions.isAutoPlay = !paused
 
         if !httpHeaders.isEmpty {
