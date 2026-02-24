@@ -7,9 +7,10 @@ import {
   ViewStyle,
   StyleSheet,
   View,
+  Platform,
 } from 'react-native';
 
-// ─── Types (mirrors react-native-video shapes your MediaPlayer already uses) ──
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface KSAudioTrack {
   index: number;
@@ -56,21 +57,13 @@ export interface KSOnErrorData {
 }
 
 export interface KSPlayerViewProps {
-  // Source
   url: string;
   headers?: Record<string, string>;
-
-  // Playback control
   paused?: boolean;
   muted?: boolean;
   rate?: number;
   resizeMode?: 'contain' | 'cover' | 'stretch';
-
-  // Layout
   style?: ViewStyle;
-
-  // Callbacks — same names as react-native-video so your MediaPlayer needs
-  // minimal changes
   onLoad?: (data: KSOnLoadData) => void;
   onProgress?: (data: KSOnProgressData) => void;
   onBuffer?: (data: KSOnBufferData) => void;
@@ -82,7 +75,6 @@ export interface KSPlayerViewProps {
 }
 
 export interface KSPlayerRef {
-  // Imperative API — mirrors VideoRef methods your MediaPlayer calls
   seek: (time: number) => void;
   play: () => void;
   pause: () => void;
@@ -93,23 +85,26 @@ export interface KSPlayerRef {
   exitFullscreen: () => void;
 }
 
-// ─── Native component registration ───────────────────────────────────────────
+// ─── Native component ─────────────────────────────────────────────────────────
 
 const KSPlayerNative = requireNativeComponent<any>('KSPlayerView');
 
-// ─── Helper to dispatch UIManager commands ────────────────────────────────────
+// ─── Command dispatcher ───────────────────────────────────────────────────────
+// Uses the command NAME string directly — not the numeric index from Commands map.
+// This works across all React Native versions and avoids the silent failure
+// where commands[name] returns a number that newer RN ignores.
 
-function dispatchCommand(ref: React.RefObject<any>, command: string, args: any[] = []) {
+function dispatchCommand(ref: React.RefObject<any>, commandName: string, args: any[] = []) {
   const node = findNodeHandle(ref.current);
   if (!node) return;
 
-  const commands = UIManager.getViewManagerConfig('KSPlayerView')?.Commands;
-  if (!commands || commands[command] === undefined) {
-    console.warn(`[KSPlayerView] Command "${command}" not found in native module`);
-    return;
+  if (Platform.OS === 'ios' || Platform.OS === 'android') {
+    UIManager.dispatchViewManagerCommand(
+      node,
+      commandName,  // pass the string name, not commands[name]
+      args
+    );
   }
-
-  UIManager.dispatchViewManagerCommand(node, commands[command], args);
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -118,16 +113,15 @@ export const KSPlayerView = forwardRef<KSPlayerRef, KSPlayerViewProps>(
   (props, ref) => {
     const nativeRef = useRef<any>(null);
 
-    // Expose imperative API that mirrors VideoRef used in your MediaPlayer
     useImperativeHandle(ref, () => ({
       seek(time: number) {
         dispatchCommand(nativeRef, 'seekTo', [time]);
       },
       play() {
-        dispatchCommand(nativeRef, 'play');
+        dispatchCommand(nativeRef, 'play', []);
       },
       pause() {
-        dispatchCommand(nativeRef, 'pause');
+        dispatchCommand(nativeRef, 'pause', []);
       },
       selectAudioTrack(trackId: number) {
         dispatchCommand(nativeRef, 'selectAudioTrack', [trackId]);
@@ -136,65 +130,57 @@ export const KSPlayerView = forwardRef<KSPlayerRef, KSPlayerViewProps>(
         dispatchCommand(nativeRef, 'selectTextTrack', [trackId]);
       },
       disableTextTrack() {
-        dispatchCommand(nativeRef, 'disableTextTrack');
+        dispatchCommand(nativeRef, 'disableTextTrack', []);
       },
       enterFullscreen() {
-        dispatchCommand(nativeRef, 'enterFullscreen');
+        dispatchCommand(nativeRef, 'enterFullscreen', []);
       },
       exitFullscreen() {
-        dispatchCommand(nativeRef, 'exitFullscreen');
+        dispatchCommand(nativeRef, 'exitFullscreen', []);
       },
     }));
 
-    // ─── Event adapters (unwrap nativeEvent) ───────────────────────────────
+    // ─── Event unwrappers ─────────────────────────────────────────────────────
 
     const handleLoad = useCallback(
-      (e: NativeSyntheticEvent<KSOnLoadData>) => {
-        props.onLoad?.(e.nativeEvent);
-      },
+      (e: NativeSyntheticEvent<KSOnLoadData>) => props.onLoad?.(e.nativeEvent),
       [props.onLoad]
     );
 
     const handleProgress = useCallback(
-      (e: NativeSyntheticEvent<KSOnProgressData>) => {
-        props.onProgress?.(e.nativeEvent);
-      },
+      (e: NativeSyntheticEvent<KSOnProgressData>) => props.onProgress?.(e.nativeEvent),
       [props.onProgress]
     );
 
     const handleBuffer = useCallback(
-      (e: NativeSyntheticEvent<KSOnBufferData>) => {
-        props.onBuffer?.(e.nativeEvent);
-      },
+      (e: NativeSyntheticEvent<KSOnBufferData>) => props.onBuffer?.(e.nativeEvent),
       [props.onBuffer]
     );
 
     const handleError = useCallback(
-      (e: NativeSyntheticEvent<KSOnErrorData>) => {
-        props.onError?.(e.nativeEvent);
-      },
+      (e: NativeSyntheticEvent<KSOnErrorData>) => props.onError?.(e.nativeEvent),
       [props.onError]
     );
 
-    const handleEnd = useCallback(() => {
-      props.onEnd?.();
-    }, [props.onEnd]);
+    const handleEnd = useCallback(
+      () => props.onEnd?.(),
+      [props.onEnd]
+    );
 
-    const handleReadyForDisplay = useCallback(() => {
-      props.onReadyForDisplay?.();
-    }, [props.onReadyForDisplay]);
+    const handleReadyForDisplay = useCallback(
+      () => props.onReadyForDisplay?.(),
+      [props.onReadyForDisplay]
+    );
 
     const handleAudioTracks = useCallback(
-      (e: NativeSyntheticEvent<{ audioTracks: KSAudioTrack[] }>) => {
-        props.onAudioTracks?.(e.nativeEvent);
-      },
+      (e: NativeSyntheticEvent<{ audioTracks: KSAudioTrack[] }>) =>
+        props.onAudioTracks?.(e.nativeEvent),
       [props.onAudioTracks]
     );
 
     const handleTextTracks = useCallback(
-      (e: NativeSyntheticEvent<{ textTracks: KSTextTrack[] }>) => {
-        props.onTextTracks?.(e.nativeEvent);
-      },
+      (e: NativeSyntheticEvent<{ textTracks: KSTextTrack[] }>) =>
+        props.onTextTracks?.(e.nativeEvent),
       [props.onTextTracks]
     );
 
