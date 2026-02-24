@@ -406,6 +406,15 @@ export const buildSubtitleActions = (
         }))
         : [];
 
+    const embeddedTextTrackActions: MenuAction[] = availableTextTracks
+        .map((track) => ({
+            id: `embedded-track-${track.id}`,
+            title: track.label || track.name || `Track ${track.id}`,
+            subtitle: 'Embedded',
+            state: selectedTextTrackId === track.id ? ('on' as const) : undefined,
+            titleColor: selectedTextTrackId === track.id ? '#007AFF' : '#FFFFFF',
+        }));
+
     const offAction: MenuAction = {
         id: 'subtitle-track-off',
         title: 'Off',
@@ -415,6 +424,7 @@ export const buildSubtitleActions = (
 
     const trackActions: MenuAction[] = [
         offAction,
+        ...embeddedTextTrackActions,
         ...customSubtitleActions
     ];
 

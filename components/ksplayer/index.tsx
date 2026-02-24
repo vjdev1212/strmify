@@ -37,15 +37,10 @@ import {
 import { View, Text } from "../Themed";
 import { GlassView } from 'expo-glass-effect';
 
-// ─── KSPlayer on all platforms ────────────────────────────────────────────────
-// iOS  → KSPlayerView (native KSPlayer + FFmpeg)
-// Android/Web → KSPlayerView (same JS wrapper, falls back gracefully)
-
 const { KSPlayerView: VideoComponent } = require('@/components/ksplayer/KSPlayerView');
 
 const RNResizeMode = { COVER: 'cover', CONTAIN: 'contain', STRETCH: 'stretch' };
 
-// Menu wrapper — WebMenu on web, MenuView on native
 const MenuWrapper: React.FC<any> = (props) => {
     if (Platform.OS === 'web') {
         return <WebMenu {...props} />;
@@ -101,10 +96,14 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     const [showContentFitLabel, setShowContentFitLabel] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
     const [videoError, setVideoError] = useState<string | null>(null);
+
+    // Store full track objects so we always have the native trackID available
     const [availableAudioTracks, setAvailableAudioTracks] = useState<any[]>([]);
     const [availableTextTracks, setAvailableTextTracks] = useState<any[]>([]);
-    const [selectedAudioTrack, setSelectedAudioTrack] = useState<number>(-1);
-    const [selectedTextTrack, setSelectedTextTrack] = useState<number>(-1);
+
+    // selectedAudioTrack / selectedTextTrack store the native trackID (not array index)
+    const [selectedAudioTrackId, setSelectedAudioTrackId] = useState<number>(-1);
+    const [selectedTextTrackId, setSelectedTextTrackId] = useState<number>(-1);
     const [useEmbeddedSubtitles, setUseEmbeddedSubtitles] = useState(false);
 
     const useCustomSubtitles = subtitles.length > 0 && !useEmbeddedSubtitles;
@@ -237,26 +236,31 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
         if (data.audioTracks && Array.isArray(data.audioTracks) && data.audioTracks.length > 0) {
             setAvailableAudioTracks(data.audioTracks);
-            if (selectedAudioTrack === -1) {
-                setSelectedAudioTrack(0);
-                settings.setSelectedAudioTrack(0);
+            // Auto-select first audio track using its native trackID
+            if (selectedAudioTrackId === -1) {
+                const firstTrackId = data.audioTracks[0].index;
+                setSelectedAudioTrackId(firstTrackId);
+                settings.setSelectedAudioTrack(firstTrackId);
+                videoRef.current?.selectAudioTrack(firstTrackId);
             }
         }
 
         if (data.textTracks && Array.isArray(data.textTracks) && data.textTracks.length > 0) {
             setAvailableTextTracks(data.textTracks);
         }
-    }, [bufferOpacity, playerState, selectedAudioTrack, settings]);
+    }, [bufferOpacity, playerState, selectedAudioTrackId, settings]);
 
     const handleAudioTracks = useCallback((data: { audioTracks: any[] }) => {
         if (data.audioTracks && Array.isArray(data.audioTracks) && data.audioTracks.length > 0) {
             setAvailableAudioTracks(data.audioTracks);
-            if (selectedAudioTrack === -1) {
-                setSelectedAudioTrack(0);
-                settings.setSelectedAudioTrack(0);
+            if (selectedAudioTrackId === -1) {
+                const firstTrackId = data.audioTracks[0].index;
+                setSelectedAudioTrackId(firstTrackId);
+                settings.setSelectedAudioTrack(firstTrackId);
+                videoRef.current?.selectAudioTrack(firstTrackId);
             }
         }
-    }, [selectedAudioTrack, settings]);
+    }, [selectedAudioTrackId, settings]);
 
     const handleTextTracks = useCallback((data: { textTracks: any[] }) => {
         if (data.textTracks && Array.isArray(data.textTracks) && data.textTracks.length > 0) {
@@ -393,37 +397,47 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
     // ─── Track selection ──────────────────────────────────────────────────────
 
-    const handleAudioSelect = useCallback((index: number) => {
-        settings.setSelectedAudioTrack(index);
-        setSelectedAudioTrack(index);
-        videoRef.current?.selectAudioTrack(index);
+    const handleAudioSelect = useCallback((trackId: number) => {
+        // trackId here is already the native trackID from adaptTracks (id: track.index)
+        setSelectedAudioTrackId(trackId);
+        settings.setSelectedAudioTrack(trackId);
+        videoRef.current?.selectAudioTrack(trackId);
     }, [settings]);
 
     const handleSubtitleTrackSelect = useCallback((index: number) => {
         if (index === -1) {
+            // Off
             settings.setSelectedSubtitle(-1);
-            setSelectedTextTrack(-1);
+            setSelectedTextTrackId(-1);
             setUseEmbeddedSubtitles(false);
             subtitleState.setParsedSubtitles([]);
             subtitleState.setCurrentSubtitle('');
             videoRef.current?.disableTextTrack();
+
         } else if (index < subtitles.length) {
-            // Custom (OpenSubtitles)
+            // OpenSubtitles custom track
             settings.setSelectedSubtitle(index);
-            setSelectedTextTrack(-1);
+            setSelectedTextTrackId(-1);
             setUseEmbeddedSubtitles(false);
             videoRef.current?.disableTextTrack();
+
         } else {
-            // Embedded — send embeddedIndex directly, not track.index
-            const embeddedIndex = index - subtitles.length;
+            // Embedded track — index is (subtitles.length + arrayPosition in availableTextTracks)
+            // We need the native trackID, not the array position
+            const arrayPos = index - subtitles.length;
+            const track = availableTextTracks[arrayPos];
+            if (!track) return;
+
+            const nativeTrackId = track.index; // this is the trackID Swift reported
             settings.setSelectedSubtitle(-1);
-            setSelectedTextTrack(embeddedIndex);
+            setSelectedTextTrackId(nativeTrackId);
             setUseEmbeddedSubtitles(true);
             subtitleState.setParsedSubtitles([]);
             subtitleState.setCurrentSubtitle('');
-            videoRef.current?.selectTextTrack(embeddedIndex);
+            // Pass the actual native trackID to Swift, not the array position
+            videoRef.current?.selectTextTrack(nativeTrackId);
         }
-    }, [subtitles.length, settings, subtitleState]);
+    }, [subtitles.length, availableTextTracks, settings, subtitleState]);
 
     const handleSubtitlePositionSelect = useCallback((position: SubtitlePosition) => {
         settings.setSubtitlePosition(position);
@@ -467,13 +481,15 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         }
     }, [contentFit]);
 
+    // adaptTracks maps raw track objects to the shape buildSubtitleActions / buildAudioActions expect.
+    // IMPORTANT: id must be track.index (the native trackID), not the array position.
     const adaptTracks = useCallback((tracks: any[]): any[] => {
         if (!tracks || !Array.isArray(tracks)) return [];
-        return tracks.map((track, index) => ({
-            id: track.index ?? index,
-            label: track.title || track.language || `Track ${index + 1}`,
+        return tracks.map((track) => ({
+            id: track.index,                                          // native trackID
+            label: track.title || track.language || `Track ${track.index}`,
             language: track.language,
-            name: track.title || track.language || `Track ${index + 1}`
+            name: track.title || track.language || `Track ${track.index}`
         }));
     }, []);
 
@@ -484,8 +500,10 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     const subtitleActions = useMemo(() => {
         const adaptedTracks = adaptTracks(availableTextTracks);
         let currentSelection = -1;
-        if (useEmbeddedSubtitles && selectedTextTrack >= 0) {
-            currentSelection = subtitles.length + selectedTextTrack;
+        if (useEmbeddedSubtitles && selectedTextTrackId >= 0) {
+            // Find the array position of the selected native trackID
+            const arrayPos = availableTextTracks.findIndex(t => t.index === selectedTextTrackId);
+            if (arrayPos >= 0) currentSelection = subtitles.length + arrayPos;
         } else if (!useEmbeddedSubtitles && settings.selectedSubtitle >= 0) {
             currentSelection = settings.selectedSubtitle;
         }
@@ -496,13 +514,13 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
             adaptedTracks,
             settings.subtitlePosition,
             settings.subtitleDelay,
-            selectedTextTrack
+            selectedTextTrackId  // pass native trackID for "on" state highlighting
         );
-    }, [subtitles, settings.selectedSubtitle, useEmbeddedSubtitles, availableTextTracks, settings.subtitlePosition, settings.subtitleDelay, selectedTextTrack, adaptTracks]);
+    }, [subtitles, settings.selectedSubtitle, useEmbeddedSubtitles, availableTextTracks, settings.subtitlePosition, settings.subtitleDelay, selectedTextTrackId, adaptTracks]);
 
     const audioActions = useMemo(() =>
-        buildAudioActions(adaptTracks(availableAudioTracks), selectedAudioTrack),
-        [availableAudioTracks, selectedAudioTrack, adaptTracks]
+        buildAudioActions(adaptTracks(availableAudioTracks), selectedAudioTrackId),
+        [availableAudioTracks, selectedAudioTrackId, adaptTracks]
     );
 
     const streamActions = useMemo(() => buildStreamActions(streams, currentStreamIndex), [streams, currentStreamIndex]);
@@ -520,25 +538,50 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         if (id.startsWith('speed-')) {
             const speed = parseFloat(id.split('-')[1]);
             if (!isNaN(speed)) handlePlaybackSpeedSelect(speed);
+
         } else if (id === 'subtitle-track-off') {
             handleSubtitleTrackSelect(-1);
+
+        } else if (id.startsWith('embedded-track-')) {
+            // id format: "embedded-track-{nativeTrackID}"
+            // Find the array position by matching native trackID, then call handleSubtitleTrackSelect
+            const nativeTrackId = parseInt(id.split('embedded-track-')[1]);
+            if (!isNaN(nativeTrackId)) {
+                const arrayPos = availableTextTracks.findIndex(t => t.index === nativeTrackId);
+                if (arrayPos >= 0) handleSubtitleTrackSelect(subtitles.length + arrayPos);
+            }
+
         } else if (id.startsWith('subtitle-track-')) {
             const index = parseInt(id.split('subtitle-track-')[1]);
             if (!isNaN(index)) handleSubtitleTrackSelect(index);
+
         } else if (id.startsWith('position-')) {
             const position = parseInt(id.split('-')[1]);
             if (!isNaN(position)) handleSubtitlePositionSelect(position);
+
         } else if (id.startsWith('delay_')) {
             const delayMs = parseInt(id.replace('delay_', ''));
             if (!isNaN(delayMs)) handleSubtitleDelaySelect(delayMs);
+
         } else if (id.startsWith('audio-')) {
-            const index = parseInt(id.split('-')[1]);
-            if (!isNaN(index)) handleAudioSelect(index);
+            // id format: "audio-{nativeTrackID}" from buildAudioActions
+            const nativeTrackId = parseInt(id.split('audio-')[1]);
+            if (!isNaN(nativeTrackId)) handleAudioSelect(nativeTrackId);
+
         } else if (id.startsWith('stream-')) {
-            const index = parseInt(id.split('-')[1]);
+            const index = parseInt(id.split('stream-')[1]);
             if (!isNaN(index)) handleStreamSelect(index);
         }
-    }, [handlePlaybackSpeedSelect, handleSubtitleTrackSelect, handleSubtitlePositionSelect, handleSubtitleDelaySelect, handleAudioSelect, handleStreamSelect]);
+    }, [
+        handlePlaybackSpeedSelect,
+        handleSubtitleTrackSelect,
+        handleSubtitlePositionSelect,
+        handleSubtitleDelaySelect,
+        handleAudioSelect,
+        handleStreamSelect,
+        availableTextTracks,
+        subtitles.length
+    ]);
 
     const handleWebAction = useCallback((id: string) => handleMenuAction(id), [handleMenuAction]);
     const handleNativeAction = useCallback(({ nativeEvent }: any) => handleMenuAction(nativeEvent.event), [handleMenuAction]);
@@ -566,15 +609,12 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         setIsPaused(false);
     }, [playerState]);
 
-    // ─── Error screen ─────────────────────────────────────────────────────────
     if (videoError) {
         return <ErrorDisplay error={videoError} onBack={handleBack} onRetry={handleRetry} />;
     }
 
-    // ─── Render ───────────────────────────────────────────────────────────────
     return (
         <View style={styles.container}>
-            {/* KSPlayer — used on all platforms */}
             <VideoComponent
                 ref={videoRef}
                 url={videoUrl}

@@ -600,6 +600,9 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
             if (!isNaN(speed)) handlePlaybackSpeedSelect(speed);
         } else if (id === 'subtitle-track-off') {
             handleSubtitleTrackSelect(-1);
+        } else if (id.startsWith('embedded-track-')) {
+            const trackId = parseInt(id.split('embedded-track-')[1]);
+            if (!isNaN(trackId)) handleSubtitleTrackSelect(subtitles.length + trackId);
         } else if (id.startsWith('subtitle-track-')) {
             const index = parseInt(id.split('subtitle-track-')[1]);
             if (!isNaN(index)) handleSubtitleTrackSelect(index);
