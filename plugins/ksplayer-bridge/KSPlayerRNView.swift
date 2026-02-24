@@ -61,6 +61,8 @@ class KSPlayerRNView: UIView {
 
     private var hasSetup = false
     private var lastReportedTime: Double = -1
+    /// trackID of the currently active subtitle track, -1 means none
+    private var activeSubtitleTrackID: Int32 = -1
 
     private lazy var playerView: IOSVideoPlayerView = {
         let view = IOSVideoPlayerView()
@@ -117,6 +119,9 @@ class KSPlayerRNView: UIView {
     private func loadVideo() {
         guard !url.isEmpty, let videoURL = URL(string: url) else { return }
 
+        // Reset subtitle state on every new load
+        activeSubtitleTrackID = -1
+
         var httpHeaders: [String: String] = [:]
         headers.forEach { key, value in
             if let k = key as? String, let v = value as? String {
@@ -127,6 +132,7 @@ class KSPlayerRNView: UIView {
         let options = KSOptions()
         options.isSecondOpen = true
         options.isAccurateSeek = true
+        // Prevent KSPlayer from auto-selecting any embedded subtitle
         options.autoSelectEmbedSubtitle = false
         KSOptions.isAutoPlay = !paused
 
@@ -151,43 +157,47 @@ class KSPlayerRNView: UIView {
             player.contentMode = .scaleAspectFit
         case "stretch":
             player.contentMode = .scaleToFill
-        default:
+        default: // "cover"
             player.contentMode = .scaleAspectFill
         }
     }
 
     // MARK: - Track Reporting
-    // trackID is reported as "index" so JS passes it back for lookup.
-    // All subtitle tracks are disabled by default to prevent auto-play.
+    // We report all tracks to JS as-is (without forcefully disabling them first).
+    // JS controls which track is active via selectTextTrack / disableTextTrack.
+    // We disable all subtitle tracks after reporting so nothing auto-renders
+    // until the user explicitly picks one.
 
     private func reportTracksAndLoad() {
         guard let player = playerView.playerLayer?.player else { return }
 
-        // Disable all subtitle tracks by default
-        player.tracks(mediaType: .subtitle).forEach { $0.isEnabled = false }
-
         let duration = player.duration
         let audioTrackList = player.tracks(mediaType: .audio)
-        let textTrackList = player.tracks(mediaType: .subtitle)
+        let textTrackList  = player.tracks(mediaType: .subtitle)
 
         let audioTracks: [[String: Any]] = audioTrackList.map { track in
-            return [
-                "index": track.trackID,
-                "title": track.name,
+            [
+                "index":    track.trackID,
+                "title":    track.name,
                 "language": track.language ?? "",
                 "selected": track.isEnabled
             ]
         }
 
         let textTracks: [[String: Any]] = textTrackList.map { track in
-            return [
-                "index": track.trackID,
-                "title": track.name,
+            [
+                "index":    track.trackID,
+                "title":    track.name,
                 "language": track.language ?? "",
-                "selected": track.isEnabled
+                "selected": false   // always report as unselected; JS decides
             ]
         }
 
+        // Disable every subtitle track NOW (after we've read metadata).
+        // This ensures nothing auto-renders unless the user selects a track.
+        textTrackList.forEach { $0.isEnabled = false }
+
+        // Fire onLoad first so JS has duration + track lists
         onLoad?([
             "duration": duration,
             "currentTime": 0,
@@ -197,9 +207,10 @@ class KSPlayerRNView: UIView {
                 "orientation": "landscape"
             ],
             "audioTracks": audioTracks,
-            "textTracks": textTracks
+            "textTracks":  textTracks
         ])
 
+        // Also fire dedicated track events so JS updates its menus
         if !audioTracks.isEmpty {
             onAudioTracks?(["audioTracks": audioTracks])
         }
@@ -232,17 +243,29 @@ class KSPlayerRNView: UIView {
         }
     }
 
+    /// Enable the subtitle track with the given trackId and disable all others.
     func selectTextTrack(_ trackId: Int32) {
         guard let player = playerView.playerLayer?.player else { return }
         let tracks = player.tracks(mediaType: .subtitle)
+
+        // Disable every subtitle track first
+        tracks.forEach { $0.isEnabled = false }
+
+        // Enable only the requested track
         if let track = tracks.first(where: { $0.trackID == trackId }) {
+            track.isEnabled = true
+            // player.select(track:) notifies the demuxer to start delivering
+            // packets for this track — required in addition to isEnabled.
             player.select(track: track)
+            activeSubtitleTrackID = trackId
         }
     }
 
+    /// Disable all subtitle tracks (user chose "Off").
     func disableTextTrack() {
         guard let player = playerView.playerLayer?.player else { return }
         player.tracks(mediaType: .subtitle).forEach { $0.isEnabled = false }
+        activeSubtitleTrackID = -1
     }
 
     func enterFullscreen() {
@@ -268,6 +291,7 @@ extension KSPlayerRNView: PlayerControllerDelegate {
             onBuffer?(["isBuffering": false])
             onReadyForDisplay?([:])
             reportTracksAndLoad()
+            // Apply props that depend on the player being ready
             playerView.playerLayer?.player.isMuted = muted
             playerView.playerLayer?.player.playbackRate = rate
             applyResizeMode()
