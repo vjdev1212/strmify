@@ -18,7 +18,7 @@
       "subtitle": "Strmify - Your streaming companion for discovering and watching content from multiple sources.",
       "localizedDescription": "Strmify is your streaming companion for discovering and streaming movies and TV shows through various add-on sources and third-party integrations. Find, search, and play content using your preferred media player.",
       "iconURL": "https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/assets/images/icon.png",
-      "downloadURL": "https://github.com/vjdev1212/strmify/releases/download/v1.6.0/Strmify_v1.6.0.ipa",
+      "downloadURL": "https://github.com/vjdev1212/strmify/releases/download/v1.7.0/Strmify_v1.7.0.ipa",
       "tintColor": "#535aff",
       "category": "entertainment",
       "screenshots": [
@@ -29,6 +29,14 @@
         "https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/Strmify-screenshots/iPhone/4-Search.png"
       ],
       "versions": [
+        {
+          "version": "1.7.0",
+          "date": "2026-02-24",
+          "localizedDescription": "1. Replaced VLCKit with KSPlayer for better format support on iOS.",
+          "downloadURL": "https://github.com/vjdev1212/strmify/releases/download/v1.7.0/Strmify_v1.7.0.ipa",
+          "size": 8680000,
+          "minOSVersion": "18.0"
+        },
         {
           "version": "1.6.0",
           "date": "2026-02-22",
@@ -76,14 +84,6 @@
           "downloadURL": "https://github.com/vjdev1212/strmify/releases/download/v1.2.0/Strmify_v1.2.0.ipa",
           "size": 8680000,
           "minOSVersion": "18.0"
-        },
-        {
-          "version": "1.1.2",
-          "date": "2026-01-11",
-          "localizedDescription": "1. UI Improvements for TV Shows.",
-          "downloadURL": "https://github.com/vjdev1212/strmify/releases/download/v1.1.2/Strmify_v1.1.2.ipa",
-          "size": 8680000,
-          "minOSVersion": "18.0"
         }
       ],
       "appPermissions": {
@@ -94,9 +94,9 @@
   ],
   "news": [
     {
-      "title": "Strmify v1.6.0 Released",
-      "identifier": "strmify-v1.6.0-release",
-      "caption": "1. Add IntroDB Integration for skipping Intros and Credits.",
+      "title": "Strmify v1.7.0 Released",
+      "identifier": "strmify-v1.7.0-release",
+      "caption": "1. Replaced VLCKit with KSPlayer for better format support on iOS.",
       "date": "2026-02-22",
       "tintColor": "#535aff",
       "imageURL": "https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/assets/banners/Strmify-feature-graphic.png",
