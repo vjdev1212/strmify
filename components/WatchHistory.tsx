@@ -38,7 +38,6 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
   const { width, height } = useWindowDimensions();
   const isPortrait = height > width;
 
-  // Constants moved inside to use window dimensions correctly
   const CARD_WIDTH = isPortrait ? 210 : 270;
   const CARD_HEIGHT = Math.round((CARD_WIDTH * 9) / 16);
   const CARD_SPACING = 16;
@@ -47,7 +46,7 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
 
   useEffect(() => {
     loadWatchHistory();
-  }, [type]); // Added type as dependency to reload if prop changes
+  }, [type]);
 
   const getAnimatedValue = (key: string) => {
     if (!animatedValues.has(key)) {
@@ -61,7 +60,6 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
       const historyJson = storageService.getItem(WATCH_HISTORY_KEY);
       if (historyJson) {
         const parsedHistory: WatchHistoryItem[] = JSON.parse(historyJson);
-
         if (type === 'all') {
           setHistory(parsedHistory);
         } else {
@@ -77,7 +75,7 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
 
   const removeHistoryItem = async (itemToRemove: WatchHistoryItem, itemKey: string) => {
     try {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
       const animValue = getAnimatedValue(itemKey);
 
@@ -99,7 +97,6 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
             JSON.stringify(updatedHistory)
           );
 
-          // Update local state based on current filter type
           if (type === 'all') {
             setHistory(updatedHistory);
           } else {
@@ -114,6 +111,39 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
     }
   };
 
+  const clearAllHistory = async () => {
+    try {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+      // Animate all items out simultaneously
+      history.forEach((item, index) => {
+        const itemKey = `${item.videoUrl}-${item.timestamp}-${index}`;
+        const animValue = getAnimatedValue(itemKey);
+        Animated.timing(animValue, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }).start();
+      });
+
+      setTimeout(() => {
+        const historyJson = storageService.getItem(WATCH_HISTORY_KEY);
+        if (historyJson) {
+          const parsedHistory: WatchHistoryItem[] = JSON.parse(historyJson);
+          // If filtered view, only remove items of this type; otherwise clear all
+          const updatedHistory = type === 'all'
+            ? []
+            : parsedHistory.filter(item => item.type !== type);
+          storageService.setItem(WATCH_HISTORY_KEY, JSON.stringify(updatedHistory));
+        }
+        setHistory([]);
+        animatedValues.clear();
+      }, 320);
+    } catch (error) {
+      console.error('Failed to clear watch history:', error);
+    }
+  };
+
   if (isLoading || history.length === 0) {
     return null;
   }
@@ -125,9 +155,16 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
           <Ionicons name="play-circle-outline" size={22} color="#ffffff" />
           <Text style={styles.sectionTitle}>Continue Watching</Text>
         </View>
-        <Text style={styles.sectionCount}>
-          {history.length} {history.length === 1 ? 'item' : 'items'}
-        </Text>
+        <View style={styles.sectionRight}>
+          <TouchableOpacity
+            onPress={clearAllHistory}
+            activeOpacity={0.7}
+            style={styles.clearAllButton}
+          >
+            <Ionicons name="trash-outline" size={14} color="#ff6b6b" />
+            <Text style={styles.clearAllText}>Clear All</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView
@@ -221,6 +258,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
+  sectionRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
   sectionTitle: {
     fontSize: 20,
     fontWeight: '600',
@@ -232,7 +274,22 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#fff',
   },
+  clearAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 107, 107, 0.12)',
+  },
+  clearAllText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#ff6b6b',
+  },
   scrollContent: {
+    marginVertical: 10,
     paddingHorizontal: 16,
   },
   card: {
@@ -260,7 +317,7 @@ const styles = StyleSheet.create({
   },
   progressBadge: {
     position: 'absolute',
-    bottom: 12, // Moved slightly up so it doesn't overlap progress bar
+    bottom: 12,
     left: 8,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
     paddingHorizontal: 8,
@@ -277,7 +334,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    paddingHorizontal: 0, // Fill the width for a cleaner look
   },
   progressBackground: {
     width: '100%',
