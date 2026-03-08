@@ -507,7 +507,7 @@ const MediaPlayerScreen: React.FC = () => {
         console.log('Using default subtitle language: English');
       }
 
-      const isEpisode = type === 'episode' && season && episode;
+      const isEpisode = type === 'series' && season && episode;
 
       if (imdbid) {
         const imdbParams: import("@/clients/opensubtitles").SubtitleSearchParams = {
