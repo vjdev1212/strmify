@@ -20,7 +20,7 @@ import {
     calculateProgress,
     performSeek,
     buildSettingsActions,
-    buildSubtitleActions,
+    buildSubtitleActionsLegacy,   // ← use the legacy version that keeps offset-index ids
     buildAudioActions,
     buildStreamActions,
     calculateSliderValues,
@@ -471,6 +471,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         showControlsTemporarily();
     }, [showControlsTemporarily, settings]);
 
+    // Unchanged — still uses offset-index scheme matching buildSubtitleActionsLegacy ids
     const handleSubtitleTrackSelect = useCallback((index: number) => {
         if (index === -1) {
             settings.setSelectedSubtitle(-1);
@@ -545,6 +546,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
     const settingsActions = useMemo(() => buildSettingsActions(settings.playbackSpeed), [settings.playbackSpeed]);
 
+    // Uses buildSubtitleActionsLegacy — offset-index ids, handleSubtitleTrackSelect(number) unchanged
     const subtitleActions = useMemo(() => {
         const adaptedTracks = adaptTextTracks(availableTextTracks);
         let currentSelection = -1;
@@ -553,7 +555,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         } else if (!useEmbeddedSubtitles && settings.selectedSubtitle >= 0) {
             currentSelection = settings.selectedSubtitle;
         }
-        return buildSubtitleActions(
+        return buildSubtitleActionsLegacy(
             subtitles as SubtitleSource[],
             currentSelection,
             !useEmbeddedSubtitles,
@@ -594,6 +596,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         setIsPaused(false);
     }, [playerState]);
 
+    // Unchanged — parses numeric ids from "subtitle-track-{N}" as before
     const handleMenuAction = useCallback((id: string) => {
         if (id.startsWith('speed-')) {
             const speed = parseFloat(id.split('-')[1]);
