@@ -24,6 +24,18 @@ interface ConnectionStatus {
 }
 
 const SERVERS_KEY = StorageKeys.SERVERS_KEY;
+const DEFAULT_SERVER_ID = 'default-localhost';
+const DEFAULT_SERVER_URL = 'http://127.0.0.1:11470';
+
+const isDefaultServer = (serverId: string) => serverId === DEFAULT_SERVER_ID;
+
+const getDefaultServer = (serverType: string, serverName: string): ServerConfig => ({
+  serverId: DEFAULT_SERVER_ID,
+  serverType,
+  serverName,
+  serverUrl: DEFAULT_SERVER_URL,
+  current: true,
+});
 
 const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverType, defaultUrl }) => {
   const [serverUrl, setServerUrl] = useState<string>(defaultUrl);
@@ -38,7 +50,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({});
 
   useEffect(() => {
-    loadServers();
+    ensureDefaultServerExists();
   }, [serverType]);
 
   useEffect(() => {
@@ -58,6 +70,30 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
     }
   }, [serverConfigs]);
 
+  const ensureDefaultServerExists = async () => {
+    try {
+      const savedConfigs = storageService.getItem(SERVERS_KEY);
+      const allServers: ServerConfig[] = savedConfigs ? JSON.parse(savedConfigs) : [];
+
+      const serversOfType = allServers.filter(s => s.serverType === serverType);
+      const defaultExists = serversOfType.some(s => s.serverId === DEFAULT_SERVER_ID);
+
+      if (!defaultExists) {
+        const defaultServer = getDefaultServer(serverType, serverName);
+        // If no servers of this type yet, make the default current
+        const hasCurrent = serversOfType.some(s => s.current);
+        defaultServer.current = !hasCurrent;
+
+        const updatedAll = [...allServers, defaultServer];
+        storageService.setItem(SERVERS_KEY, JSON.stringify(updatedAll));
+      }
+
+      await loadServers();
+    } catch (error) {
+      console.error('Error ensuring default server:', error);
+    }
+  };
+
   const loadServers = async () => {
     try {
       const savedConfigs = storageService.getItem(SERVERS_KEY);
@@ -66,6 +102,8 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
 
       setServerConfigs(filteredServers);
 
+      // Only open the "add new" form if there are somehow no servers at all
+      // (shouldn't happen after ensureDefaultServerExists, but just in case)
       if (filteredServers.length === 0) {
         setServerUrl(defaultUrl);
         setIsCurrent(true);
@@ -322,6 +360,12 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
   };  
 
   const handleDelete = async (serverId: string) => {
+    // Guard: default server is never removable
+    if (isDefaultServer(serverId)) {
+      showAlert('Info', 'The default local server cannot be removed.');
+      return;
+    }
+
     const serverToDelete = serverConfigs.find(server => server.serverId === serverId);
     if (serverToDelete?.current) {
       showAlert('Error', 'Cannot delete the current server. Please set another server as current first.');
@@ -503,9 +547,16 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
                             {renderConnectionIndicator(item.serverId)}
                           </View>
                           <View style={styles.serverDetails}>
-                            <Text style={styles.serverUrl} numberOfLines={1}>
-                              {item.serverUrl}
-                            </Text>
+                            <View style={styles.serverNameRow}>
+                              <Text style={styles.serverUrl} numberOfLines={1}>
+                                {item.serverUrl}
+                              </Text>
+                              {isDefaultServer(item.serverId) && (
+                                <View style={styles.defaultBadge}>
+                                  <Text style={styles.defaultBadgeText}>built-in</Text>
+                                </View>
+                              )}
+                            </View>
                             <Text style={styles.serverStatus}>
                               {connectionStatus[item.serverId] === 'checking' ? 'Checking connection' :
                                connectionStatus[item.serverId] === 'connected' ? 'Connected' :
@@ -552,13 +603,16 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
                             <Text style={styles.actionBtnText}>Test</Text>
                           </Pressable>
 
-                          <Pressable
-                            style={styles.actionBtn}
-                            onPress={() => startInlineEdit(item)}
-                          >
-                            <MaterialIcons name="edit" size={16} color="#535aff" />
-                            <Text style={styles.actionBtnText}>Edit</Text>
-                          </Pressable>
+                          {/* Default server is read-only — no Edit action */}
+                          {!isDefaultServer(item.serverId) && (
+                            <Pressable
+                              style={styles.actionBtn}
+                              onPress={() => startInlineEdit(item)}
+                            >
+                              <MaterialIcons name="edit" size={16} color="#535aff" />
+                              <Text style={styles.actionBtnText}>Edit</Text>
+                            </Pressable>
+                          )}
 
                           {!item.current && (
                             <Pressable
@@ -570,16 +624,19 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
                             </Pressable>
                           )}
 
-                          <Pressable
-                            style={[styles.actionBtn, item.current && styles.disabledBtn]}
-                            onPress={() => handleDelete(item.serverId)}
-                            disabled={item.current}
-                          >
-                            <MaterialIcons name="delete-outline" size={16} color={item.current ? '#4A4A4A' : '#FF453A'} />
-                            <Text style={[styles.actionBtnDanger, item.current && styles.disabledText]}>
-                              Delete
-                            </Text>
-                          </Pressable>
+                          {/* Default server cannot be deleted — hide the button entirely */}
+                          {!isDefaultServer(item.serverId) && (
+                            <Pressable
+                              style={[styles.actionBtn, item.current && styles.disabledBtn]}
+                              onPress={() => handleDelete(item.serverId)}
+                              disabled={item.current}
+                            >
+                              <MaterialIcons name="delete-outline" size={16} color={item.current ? '#4A4A4A' : '#FF453A'} />
+                              <Text style={[styles.actionBtnDanger, item.current && styles.disabledText]}>
+                                Delete
+                              </Text>
+                            </Pressable>
+                          )}
                         </Animated.View>
                       )}
                     </>
@@ -781,11 +838,28 @@ const styles = StyleSheet.create({
   serverDetails: {
     flex: 1,
   },
+  serverNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
   serverUrl: {
     fontSize: 15,
     fontWeight: '500',
     color: '#FFFFFF',
-    marginBottom: 4,
+    flexShrink: 1,
+  },
+  defaultBadge: {
+    backgroundColor: '#2A2A2A',
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  defaultBadgeText: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#8A8A8A',
   },
   serverStatus: {
     fontSize: 13,
