@@ -36,6 +36,8 @@ import {
 } from "../coreplayer";
 import { View, Text } from "../Themed";
 import { GlassView } from 'expo-glass-effect';
+import { SkipBanner } from "../introdb/skipBanner";
+import { useIntroDB } from "../introdb/useIntroDb";
 
 // ─── KSPlayer on all platforms ────────────────────────────────────────────────
 // iOS  → KSPlayerView (native KSPlayer + FFmpeg)
@@ -65,7 +67,8 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     onPlaybackError,
     streams = [],
     currentStreamIndex = 0,
-    onStreamChange
+    onStreamChange,
+    tvShow
 }) => {
     const videoRef = useRef<any>(null);
     const shouldAutoHideControls = useRef(true);
@@ -304,13 +307,6 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
     // ─── Controls ─────────────────────────────────────────────────────────────
 
-    const togglePlayPause = useCallback(() => {
-        if (!playerState.isReady) return;
-        setIsPaused(!isPaused);
-        playerState.setIsPlaying(isPaused);
-        showControlsTemporarily();
-    }, [isPaused, playerState, showControlsTemporarily]);
-
     const seekTo = useCallback((seconds: number) => {
         if (!playerState.isReady || playerState.duration <= 0 || !videoRef.current) return;
         if (seekTimeoutRef.current) clearTimeout(seekTimeoutRef.current);
@@ -335,6 +331,22 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
         showControlsTemporarily();
     }, [playerState, isPaused, showControlsTemporarily, bufferOpacity]);
+
+    // ─── IntroDB segment skipping ─────────────────────────────────────────────
+    const { activeSegment, skip: skipSegment } = useIntroDB({
+        imdbId: tvShow?.imdbId ?? null,
+        season: tvShow?.season ?? null,
+        episode: tvShow?.episode ?? null,
+        currentTime: playerState.currentTime,
+        onSkip: seekTo,
+    });
+
+    const togglePlayPause = useCallback(() => {
+        if (!playerState.isReady) return;
+        setIsPaused(!isPaused);
+        playerState.setIsPlaying(isPaused);
+        showControlsTemporarily();
+    }, [isPaused, playerState, showControlsTemporarily]);
 
     const skipTime = useCallback((seconds: number) => {
         if (!playerState.isReady) return;
@@ -605,6 +617,14 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
             {useCustomSubtitles && subtitleState.currentSubtitle && (
                 <SubtitleDisplay subtitle={subtitleState.currentSubtitle} position={settings.subtitlePosition} />
+            )}
+
+            {/* IntroDB skip banner */}
+            {tvShow && (
+                <SkipBanner
+                    activeSegment={activeSegment}
+                    onSkip={skipSegment}
+                />
             )}
 
             {uiState.showControls && (
