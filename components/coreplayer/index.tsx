@@ -347,15 +347,6 @@ export const buildSubtitleActions = (
         titleColor: noneSelected ? '#007AFF' : '#FFFFFF',
     };
 
-    // OpenSubtitles / custom entries
-    const customActions: MenuAction[] = subtitles.map((sub, i) => ({
-        id: `subtitle-track-custom-${i}`,
-        title: sub.label,
-        subtitle: sub.language ? `OpenSubtitles · ${sub.language.toUpperCase()}` : 'OpenSubtitles',
-        state: selectedCustomIndex === i && selectedEmbeddedIndex === -1 ? ('on' as const) : undefined,
-        titleColor: selectedCustomIndex === i && selectedEmbeddedIndex === -1 ? '#007AFF' : '#FFFFFF',
-    }));
-
     // Embedded track entries
     const embeddedActions: MenuAction[] = availableEmbeddedTracks.map((track, i) => ({
         id: `subtitle-track-embedded-${i}`,
@@ -363,6 +354,15 @@ export const buildSubtitleActions = (
         subtitle: track.language ? track.language.toUpperCase() : undefined,
         state: selectedEmbeddedIndex === i ? ('on' as const) : undefined,
         titleColor: selectedEmbeddedIndex === i ? '#007AFF' : '#FFFFFF',
+    }));
+
+    // OpenSubtitles / custom entries
+    const customActions: MenuAction[] = subtitles.map((sub, i) => ({
+        id: `subtitle-track-custom-${i}`,
+        title: sub.label,
+        subtitle: sub.language ? `OpenSubtitles · ${sub.language.toUpperCase()}` : 'OpenSubtitles',
+        state: selectedCustomIndex === i && selectedEmbeddedIndex === -1 ? ('on' as const) : undefined,
+        titleColor: selectedCustomIndex === i && selectedEmbeddedIndex === -1 ? '#007AFF' : '#FFFFFF',
     }));
 
     const trackActions: MenuAction[] = [offAction, ...customActions, ...embeddedActions];
