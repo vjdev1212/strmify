@@ -69,11 +69,6 @@ A: It started as an hobby project when Stremio was not released for IOS so long.
 **Q: Will there be a TV version of the app?**  
 A: No, there are no plans to build a TV version. There are already good apps available for TV platforms.
 
-### Privacy & Data
-
-**Q: Does this app collect any data?**  
-A: No, the app does not collect any data. There isn't even a signup page.
-
 ### Content
 
 **Q: Will this project support Anime content?**  
@@ -223,29 +218,3 @@ Direct HTTP/HTTPS streaming URLs.
 - **Torrent Streams:** Both `infoHash` and `magnet` are supported. Provide at least one
 - **Stremio Service:** Torrent streaming requires the Stremio service to be configured in Strmify settings
 - **Stream Format:** Strmify handles both torrent and direct stream formats automatically
-
-
-## Media Player Compatibility Matrix
-
-The tables below summarise the playback behaviour for Torrent and Direct streams across various player and server configurations.
-
-### Torrent Streams
-
-| Stremio Server | Media Player     | Behavior |
-|----------------|-----------------|-------------------|
-| **Yes**        | Default  | Stream will be either played directly or Transcoded based on the metadata. |
-| **Yes**        | External | Opens the stream in an external player and lets the Media Player do the Transcoding. |
-| **No**         | Default  | Cannot proceed. Stremio Server configuration is required. |
-| **No**         | External | Cannot proceed. Stremio Server configuration is required. |
-
-
-### Direct Streams
-
-| Stremio Server | Media Player     | Behavior |
-|----------------|-----------------|-------------------|
-| **No**         | Default  | Attempt direct playback; fallback to KSPlayer if unsupported. |
-| **No**         | External | Opens the stream URL directly. |
-| **Yes**        | Default  | Ignores Stremio Server. Attempt direct playback; fallback to KSPlayer if unsupported. |
-| **Yes**        | External | Ignores Stremio Server. Opens the stream URL directly in an external player. |
-
-
