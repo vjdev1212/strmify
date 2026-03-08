@@ -343,6 +343,7 @@ export const buildSubtitleActions = (
     const offAction: MenuAction = {
         id: 'subtitle-track-off',
         title: 'Off',
+        subtitle: 'No subtitles',
         state: noneSelected ? ('on' as const) : undefined,
         titleColor: noneSelected ? '#007AFF' : '#FFFFFF',
     };
@@ -351,7 +352,7 @@ export const buildSubtitleActions = (
     const embeddedActions: MenuAction[] = availableEmbeddedTracks.map((track, i) => ({
         id: `subtitle-track-embedded-${i}`,
         title: track.label || track.name || `Track ${i + 1}`,
-        subtitle: track.language ? track.language.toUpperCase() : undefined,
+        subtitle: track.language ? track.language.toUpperCase() : 'Embedded',
         state: selectedEmbeddedIndex === i ? ('on' as const) : undefined,
         titleColor: selectedEmbeddedIndex === i ? '#007AFF' : '#FFFFFF',
     }));
@@ -365,7 +366,7 @@ export const buildSubtitleActions = (
         titleColor: selectedCustomIndex === i && selectedEmbeddedIndex === -1 ? '#007AFF' : '#FFFFFF',
     }));
 
-    const trackActions: MenuAction[] = [offAction, ...customActions, ...embeddedActions];
+    const trackActions: MenuAction[] = [offAction, ...embeddedActions, ...customActions];
     const positionActions = buildSubtitlePositionActions(subtitlePosition);
     const delayActions = buildSubtitleDelayActions(subtitleDelay);
 
