@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 
-// ─── Types (mirrors react-native-video shapes your MediaPlayer already uses) ──
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface KSAudioTrack {
   index: number;
@@ -28,11 +28,7 @@ export interface KSTextTrack {
 export interface KSOnLoadData {
   duration: number;
   currentTime: number;
-  naturalSize: {
-    width: number;
-    height: number;
-    orientation: string;
-  };
+  naturalSize: { width: number; height: number; orientation: string };
   audioTracks: KSAudioTrack[];
   textTracks: KSTextTrack[];
 }
@@ -44,33 +40,20 @@ export interface KSOnProgressData {
   seekableDuration: number;
 }
 
-export interface KSOnBufferData {
-  isBuffering: boolean;
-}
-
-export interface KSOnErrorData {
-  error: {
-    message: string;
-    code: number;
-  };
-}
+export interface KSOnBufferData { isBuffering: boolean }
+export interface KSOnErrorData { error: { message: string; code: number } }
+/** NEW – emitted by the native side each time the subtitle line changes. */
+export interface KSOnSubtitleTextData { text: string }
 
 export interface KSPlayerViewProps {
-  // Source
   url: string;
   headers?: Record<string, string>;
-
-  // Playback control
   paused?: boolean;
   muted?: boolean;
   rate?: number;
   resizeMode?: 'contain' | 'cover' | 'stretch';
-
-  // Layout
   style?: ViewStyle;
 
-  // Callbacks — same names as react-native-video so your MediaPlayer needs
-  // minimal changes
   onLoad?: (data: KSOnLoadData) => void;
   onProgress?: (data: KSOnProgressData) => void;
   onBuffer?: (data: KSOnBufferData) => void;
@@ -79,157 +62,115 @@ export interface KSPlayerViewProps {
   onReadyForDisplay?: () => void;
   onAudioTracks?: (data: { audioTracks: KSAudioTrack[] }) => void;
   onTextTracks?: (data: { textTracks: KSTextTrack[] }) => void;
+  /** NEW – called whenever the current subtitle text changes. */
+  onSubtitleText?: (data: KSOnSubtitleTextData) => void;
 }
 
 export interface KSPlayerRef {
-  // Imperative API — mirrors VideoRef methods your MediaPlayer calls
   seek: (time: number) => void;
   play: () => void;
   pause: () => void;
-  selectAudioTrack: (trackId: number) => void;
-  selectTextTrack: (trackId: number) => void;
+  selectAudioTrack: (index: number) => void;
+  selectTextTrack: (index: number) => void;
   disableTextTrack: () => void;
   enterFullscreen: () => void;
   exitFullscreen: () => void;
 }
 
-// ─── Native component registration ───────────────────────────────────────────
+// ─── Native component ─────────────────────────────────────────────────────────
 
 const KSPlayerNative = requireNativeComponent<any>('KSPlayerView');
-
-// ─── Helper to dispatch UIManager commands ────────────────────────────────────
 
 function dispatchCommand(ref: React.RefObject<any>, command: string, args: any[] = []) {
   const node = findNodeHandle(ref.current);
   if (!node) return;
-
   const commands = UIManager.getViewManagerConfig('KSPlayerView')?.Commands;
   if (!commands || commands[command] === undefined) {
-    console.warn(`[KSPlayerView] Command "${command}" not found in native module`);
+    console.warn(`[KSPlayerView] Command "${command}" not found`);
     return;
   }
-
   UIManager.dispatchViewManagerCommand(node, commands[command], args);
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export const KSPlayerView = forwardRef<KSPlayerRef, KSPlayerViewProps>(
-  (props, ref) => {
-    const nativeRef = useRef<any>(null);
+export const KSPlayerView = forwardRef<KSPlayerRef, KSPlayerViewProps>((props, ref) => {
+  const nativeRef = useRef<any>(null);
 
-    // Expose imperative API that mirrors VideoRef used in your MediaPlayer
-    useImperativeHandle(ref, () => ({
-      seek(time: number) {
-        dispatchCommand(nativeRef, 'seekTo', [time]);
-      },
-      play() {
-        dispatchCommand(nativeRef, 'play');
-      },
-      pause() {
-        dispatchCommand(nativeRef, 'pause');
-      },
-      selectAudioTrack(trackId: number) {
-        dispatchCommand(nativeRef, 'selectAudioTrack', [trackId]);
-      },
-      selectTextTrack(trackId: number) {
-        dispatchCommand(nativeRef, 'selectTextTrack', [trackId]);
-      },
-      disableTextTrack() {
-        dispatchCommand(nativeRef, 'disableTextTrack');
-      },
-      enterFullscreen() {
-        dispatchCommand(nativeRef, 'enterFullscreen');
-      },
-      exitFullscreen() {
-        dispatchCommand(nativeRef, 'exitFullscreen');
-      },
-    }));
+  useImperativeHandle(ref, () => ({
+    seek(time) { dispatchCommand(nativeRef, 'seekTo', [time]); },
+    play() { dispatchCommand(nativeRef, 'play'); },
+    pause() { dispatchCommand(nativeRef, 'pause'); },
+    selectAudioTrack(idx) { dispatchCommand(nativeRef, 'selectAudioTrack', [idx]); },
+    selectTextTrack(idx) { dispatchCommand(nativeRef, 'selectTextTrack', [idx]); },
+    disableTextTrack() { dispatchCommand(nativeRef, 'disableTextTrack'); },
+    enterFullscreen() { dispatchCommand(nativeRef, 'enterFullscreen'); },
+    exitFullscreen() { dispatchCommand(nativeRef, 'exitFullscreen'); },
+  }));
 
-    // ─── Event adapters (unwrap nativeEvent) ───────────────────────────────
+  // ─── Event adapters ───────────────────────────────────────────────────────
 
-    const handleLoad = useCallback(
-      (e: NativeSyntheticEvent<KSOnLoadData>) => {
-        props.onLoad?.(e.nativeEvent);
-      },
-      [props.onLoad]
-    );
+  const handleLoad = useCallback(
+    (e: NativeSyntheticEvent<KSOnLoadData>) => props.onLoad?.(e.nativeEvent),
+    [props.onLoad]
+  );
+  const handleProgress = useCallback(
+    (e: NativeSyntheticEvent<KSOnProgressData>) => props.onProgress?.(e.nativeEvent),
+    [props.onProgress]
+  );
+  const handleBuffer = useCallback(
+    (e: NativeSyntheticEvent<KSOnBufferData>) => props.onBuffer?.(e.nativeEvent),
+    [props.onBuffer]
+  );
+  const handleError = useCallback(
+    (e: NativeSyntheticEvent<KSOnErrorData>) => props.onError?.(e.nativeEvent),
+    [props.onError]
+  );
+  const handleEnd = useCallback(() => props.onEnd?.(), [props.onEnd]);
+  const handleReadyForDisplay = useCallback(() => props.onReadyForDisplay?.(), [props.onReadyForDisplay]);
+  const handleAudioTracks = useCallback(
+    (e: NativeSyntheticEvent<{ audioTracks: KSAudioTrack[] }>) => props.onAudioTracks?.(e.nativeEvent),
+    [props.onAudioTracks]
+  );
+  const handleTextTracks = useCallback(
+    (e: NativeSyntheticEvent<{ textTracks: KSTextTrack[] }>) => props.onTextTracks?.(e.nativeEvent),
+    [props.onTextTracks]
+  );
+  /** NEW – forward subtitle text from native to the parent. */
+  const handleSubtitleText = useCallback(
+    (e: NativeSyntheticEvent<KSOnSubtitleTextData>) => props.onSubtitleText?.(e.nativeEvent),
+    [props.onSubtitleText]
+  );
 
-    const handleProgress = useCallback(
-      (e: NativeSyntheticEvent<KSOnProgressData>) => {
-        props.onProgress?.(e.nativeEvent);
-      },
-      [props.onProgress]
-    );
-
-    const handleBuffer = useCallback(
-      (e: NativeSyntheticEvent<KSOnBufferData>) => {
-        props.onBuffer?.(e.nativeEvent);
-      },
-      [props.onBuffer]
-    );
-
-    const handleError = useCallback(
-      (e: NativeSyntheticEvent<KSOnErrorData>) => {
-        props.onError?.(e.nativeEvent);
-      },
-      [props.onError]
-    );
-
-    const handleEnd = useCallback(() => {
-      props.onEnd?.();
-    }, [props.onEnd]);
-
-    const handleReadyForDisplay = useCallback(() => {
-      props.onReadyForDisplay?.();
-    }, [props.onReadyForDisplay]);
-
-    const handleAudioTracks = useCallback(
-      (e: NativeSyntheticEvent<{ audioTracks: KSAudioTrack[] }>) => {
-        props.onAudioTracks?.(e.nativeEvent);
-      },
-      [props.onAudioTracks]
-    );
-
-    const handleTextTracks = useCallback(
-      (e: NativeSyntheticEvent<{ textTracks: KSTextTrack[] }>) => {
-        props.onTextTracks?.(e.nativeEvent);
-      },
-      [props.onTextTracks]
-    );
-
-    return (
-      <View style={[styles.container, props.style]}>
-        <KSPlayerNative
-          ref={nativeRef}
-          style={StyleSheet.absoluteFill}
-          url={props.url}
-          headers={props.headers ?? {}}
-          paused={props.paused ?? false}
-          muted={props.muted ?? false}
-          rate={props.rate ?? 1.0}
-          resizeMode={props.resizeMode ?? 'cover'}
-          onLoad={handleLoad}
-          onProgress={handleProgress}
-          onBuffer={handleBuffer}
-          onError={handleError}
-          onEnd={handleEnd}
-          onReadyForDisplay={handleReadyForDisplay}
-          onAudioTracks={handleAudioTracks}
-          onTextTracks={handleTextTracks}
-        />
-      </View>
-    );
-  }
-);
+  return (
+    <View style={[styles.container, props.style]}>
+      <KSPlayerNative
+        ref={nativeRef}
+        style={StyleSheet.absoluteFill}
+        url={props.url}
+        headers={props.headers ?? {}}
+        paused={props.paused ?? false}
+        muted={props.muted ?? false}
+        rate={props.rate ?? 1.0}
+        resizeMode={props.resizeMode ?? 'cover'}
+        onLoad={handleLoad}
+        onProgress={handleProgress}
+        onBuffer={handleBuffer}
+        onError={handleError}
+        onEnd={handleEnd}
+        onReadyForDisplay={handleReadyForDisplay}
+        onAudioTracks={handleAudioTracks}
+        onTextTracks={handleTextTracks}
+        onSubtitleText={handleSubtitleText}
+      />
+    </View>
+  );
+});
 
 KSPlayerView.displayName = 'KSPlayerView';
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: '#000',
-    overflow: 'hidden',
-  },
+  container: { backgroundColor: '#000', overflow: 'hidden' },
 });
 
 export default KSPlayerView;
