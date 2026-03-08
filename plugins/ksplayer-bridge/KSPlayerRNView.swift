@@ -5,8 +5,6 @@ import KSPlayer
 @objc(KSPlayerRNView)
 class KSPlayerRNView: UIView {
 
-    // MARK: - RN Props
-
     @objc var url: String = "" {
         didSet {
             guard !url.isEmpty else { return }
@@ -20,33 +18,21 @@ class KSPlayerRNView: UIView {
 
     @objc var paused: Bool = false {
         didSet {
-            if paused {
-                playerView.pause()
-            } else {
-                playerView.play()
-            }
+            if paused { playerView.pause() } else { playerView.play() }
         }
     }
 
     @objc var muted: Bool = false {
-        didSet {
-            playerView.playerLayer?.player.isMuted = muted
-        }
+        didSet { playerView.playerLayer?.player.isMuted = muted }
     }
 
     @objc var rate: Float = 1.0 {
-        didSet {
-            playerView.playerLayer?.player.playbackRate = rate
-        }
+        didSet { playerView.playerLayer?.player.playbackRate = rate }
     }
 
     @objc var resizeMode: String = "cover" {
-        didSet {
-            applyResizeMode()
-        }
+        didSet { applyResizeMode() }
     }
-
-    // MARK: - RN Event Callbacks
 
     @objc var onLoad: RCTDirectEventBlock?
     @objc var onProgress: RCTDirectEventBlock?
@@ -56,11 +42,11 @@ class KSPlayerRNView: UIView {
     @objc var onReadyForDisplay: RCTDirectEventBlock?
     @objc var onAudioTracks: RCTDirectEventBlock?
     @objc var onTextTracks: RCTDirectEventBlock?
-
-    // MARK: - Internal
+    @objc var onSubtitleText: RCTDirectEventBlock?
 
     private var hasSetup = false
     private var lastReportedTime: Double = -1
+    private var lastSubtitleText: String = ""
 
     private lazy var playerView: IOSVideoPlayerView = {
         let view = IOSVideoPlayerView()
@@ -82,6 +68,8 @@ class KSPlayerRNView: UIView {
         setupPlayer()
     }
 
+    // MARK: - Setup
+
     private func setupPlayer() {
         guard !hasSetup else { return }
         hasSetup = true
@@ -96,8 +84,13 @@ class KSPlayerRNView: UIView {
             playerView.trailingAnchor.constraint(equalTo: trailingAnchor),
         ])
 
+        // Subtitle text is extracted inside playTimeDidChange, which fires
+        // at the same cadence as VideoPlayerView.player(layer:currentTime:)
+        // — that's where KSPlayer itself updates srtControl.parts.
         playerView.playTimeDidChange = { [weak self] currentTime, totalTime in
             guard let self = self else { return }
+
+            // Progress event (throttled to 0.25 s)
             if abs(currentTime - self.lastReportedTime) >= 0.25 {
                 self.lastReportedTime = currentTime
                 self.onProgress?([
@@ -106,6 +99,18 @@ class KSPlayerRNView: UIView {
                     "playableDuration": totalTime,
                     "seekableDuration": totalTime
                 ])
+            }
+
+            // Subtitle text: ask srtControl to evaluate the current time,
+            // then read whatever part it resolved.
+            // srtControl.subtitle(currentTime:) updates srtControl.parts
+            // and returns true when the visible line changes.
+            if self.playerView.srtControl.subtitle(currentTime: currentTime) {
+                let text = self.playerView.srtControl.parts.first?.text?.string ?? ""
+                if text != self.lastSubtitleText {
+                    self.lastSubtitleText = text
+                    self.onSubtitleText?(["text": text])
+                }
             }
         }
 
@@ -127,12 +132,12 @@ class KSPlayerRNView: UIView {
         let options = KSOptions()
         options.isSecondOpen = true
         options.isAccurateSeek = true
+        // Must be false so KSPlayer doesn't auto-select and render its own
+        // subtitle overlay — we render the text in React via onSubtitleText.
         options.autoSelectEmbedSubtitle = false
         KSOptions.isAutoPlay = !paused
 
-        if !httpHeaders.isEmpty {
-            options.appendHeader(httpHeaders)
-        }
+        if !httpHeaders.isEmpty { options.appendHeader(httpHeaders) }
 
         KSOptions.secondPlayerType = KSMEPlayer.self
 
@@ -140,118 +145,101 @@ class KSPlayerRNView: UIView {
         playerView.set(resource: resource)
 
         lastReportedTime = -1
+        lastSubtitleText = ""
     }
 
-    // MARK: - Helpers
+    // MARK: - Resize
 
     private func applyResizeMode() {
         guard let player = playerView.playerLayer?.player else { return }
         switch resizeMode {
-        case "contain":
-            player.contentMode = .scaleAspectFit
-        case "stretch":
-            player.contentMode = .scaleToFill
-        default:
-            player.contentMode = .scaleAspectFill
+        case "contain": player.contentMode = .scaleAspectFit
+        case "stretch": player.contentMode = .scaleToFill
+        default:        player.contentMode = .scaleAspectFill
         }
     }
 
-    // MARK: - Track Reporting
-    // trackID is reported as "index" so JS passes it back for lookup.
-    // All subtitle tracks are disabled by default to prevent auto-play.
+    // MARK: - Track reporting
 
+    // KSPlayer adds embedded subtitles asynchronously (1 s after readyToPlay).
+    // We mirror that delay so srtControl.subtitleInfos is already populated
+    // when we report tracks to JS.
     private func reportTracksAndLoad() {
         guard let player = playerView.playerLayer?.player else { return }
 
-        // Disable all subtitle tracks by default
-        player.tracks(mediaType: .subtitle).forEach { $0.isEnabled = false }
+        let duration    = player.duration
+        let audioTracks = player.tracks(mediaType: .audio)
 
-        let duration = player.duration
-        let audioTrackList = player.tracks(mediaType: .audio)
-        let textTrackList = player.tracks(mediaType: .subtitle)
-
-        let audioTracks: [[String: Any]] = audioTrackList.map { track in
-            return [
-                "index": track.trackID,
-                "title": track.name,
-                "language": track.language ?? "",
-                "selected": track.isEnabled
-            ]
+        let audioPayload: [[String: Any]] = audioTracks.enumerated().map { idx, track in
+            ["index": idx, "title": track.name, "language": track.language ?? "", "selected": track.isEnabled]
         }
 
-        let textTracks: [[String: Any]] = textTrackList.map { track in
-            return [
-                "index": track.trackID,
-                "title": track.name,
-                "language": track.language ?? "",
-                "selected": track.isEnabled
-            ]
-        }
-
+        // Fire onLoad immediately with audio tracks; text tracks follow after
+        // the 1-second delay KSPlayer needs to populate them.
         onLoad?([
             "duration": duration,
             "currentTime": 0,
-            "naturalSize": [
-                "width": 1920,
-                "height": 1080,
-                "orientation": "landscape"
-            ],
-            "audioTracks": audioTracks,
-            "textTracks": textTracks
+            "naturalSize": ["width": 1920, "height": 1080, "orientation": "landscape"],
+            "audioTracks": audioPayload,
+            "textTracks": []          // will be sent via onTextTracks below
         ])
 
-        if !audioTracks.isEmpty {
-            onAudioTracks?(["audioTracks": audioTracks])
+        if !audioPayload.isEmpty { onAudioTracks?(["audioTracks": audioPayload]) }
+
+        // Wait 1.1 s (matches KSPlayer's own asyncAfter(deadline: .now() + 1))
+        // then read the embedded subtitle infos from srtControl.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.1) { [weak self] in
+            guard let self = self else { return }
+            let textPayload: [[String: Any]] = self.playerView.srtControl.subtitleInfos
+                .enumerated()
+                .map { idx, info in
+                    ["index": idx, "title": info.name, "language": "", "selected": false]
+                }
+            if !textPayload.isEmpty {
+                self.onTextTracks?(["textTracks": textPayload])
+            }
         }
-        if !textTracks.isEmpty {
-            onTextTracks?(["textTracks": textTracks])
-        }
     }
 
-    // MARK: - Commands
+    // MARK: - Imperative commands
 
-    func play() {
-        playerView.play()
-    }
-
-    func pause() {
-        playerView.pause()
-    }
+    func play()  { playerView.play() }
+    func pause() { playerView.pause() }
 
     func seek(to time: Double) {
-        playerView.seek(time: time) { [weak self] _ in
-            _ = self
-        }
+        playerView.seek(time: time) { [weak self] _ in _ = self }
     }
 
-    func selectAudioTrack(_ trackId: Int32) {
+    func selectAudioTrack(_ jsIndex: Int32) {
         guard let player = playerView.playerLayer?.player else { return }
         let tracks = player.tracks(mediaType: .audio)
-        if let track = tracks.first(where: { $0.trackID == trackId }) {
-            player.select(track: track)
-        }
+        let idx = Int(jsIndex)
+        guard idx >= 0, idx < tracks.count else { return }
+        tracks.enumerated().forEach { i, track in track.isEnabled = (i == idx) }
     }
 
-    func selectTextTrack(_ trackId: Int32) {
-        guard let player = playerView.playerLayer?.player else { return }
-        let tracks = player.tracks(mediaType: .subtitle)
-        if let track = tracks.first(where: { $0.trackID == trackId }) {
-            player.select(track: track)
-        }
+    /// Select a subtitle track by its index in srtControl.subtitleInfos.
+    /// This is the correct KSPlayer API: set srtControl.selectedSubtitleInfo.
+    /// KSPlayer then feeds srtControl.parts each frame via subtitle(currentTime:),
+    /// which we poll inside playTimeDidChange and forward as onSubtitleText.
+    func selectTextTrack(_ jsIndex: Int32) {
+        let idx = Int(jsIndex)
+        let infos = playerView.srtControl.subtitleInfos
+        guard idx >= 0, idx < infos.count else { return }
+        // Clear displayed text while switching
+        lastSubtitleText = ""
+        onSubtitleText?(["text": ""])
+        playerView.srtControl.selectedSubtitleInfo = infos[idx]
     }
 
     func disableTextTrack() {
-        guard let player = playerView.playerLayer?.player else { return }
-        player.tracks(mediaType: .subtitle).forEach { $0.isEnabled = false }
+        playerView.srtControl.selectedSubtitleInfo = nil
+        lastSubtitleText = ""
+        onSubtitleText?(["text": ""])
     }
 
-    func enterFullscreen() {
-        playerView.updateUI(isLandscape: true)
-    }
-
-    func exitFullscreen() {
-        playerView.updateUI(isLandscape: false)
-    }
+    func enterFullscreen() { playerView.updateUI(isLandscape: true) }
+    func exitFullscreen()  { playerView.updateUI(isLandscape: false) }
 }
 
 // MARK: - PlayerControllerDelegate
@@ -279,12 +267,7 @@ extension KSPlayerRNView: PlayerControllerDelegate {
             onBuffer?(["isBuffering": false])
 
         case .error:
-            onError?([
-                "error": [
-                    "message": "KSPlayer playback error",
-                    "code": -1
-                ]
-            ])
+            onError?(["error": ["message": "KSPlayer playback error", "code": -1]])
 
         case .playedToTheEnd:
             onEnd?([:])
@@ -295,18 +278,11 @@ extension KSPlayerRNView: PlayerControllerDelegate {
     }
 
     func playerController(currentTime: TimeInterval, totalTime: TimeInterval) {}
-
     func playerController(finish error: Error?) {
-        if let error = error {
-            onError?([
-                "error": [
-                    "message": error.localizedDescription,
-                    "code": -1
-                ]
-            ])
+        if let e = error {
+            onError?(["error": ["message": e.localizedDescription, "code": -1]])
         }
     }
-
     func playerController(maskShow: Bool) {}
     func playerController(action: PlayerButtonType) {}
     func playerController(bufferedCount: Int, consumeTime: TimeInterval) {}
