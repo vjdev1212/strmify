@@ -109,7 +109,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     // Custom sub text comes from subtitleState.currentSubtitle via JS interval.
     const [embeddedSubtitleText, setEmbeddedSubtitleText] = useState<string>('');
 
-    const isUsingCustomSub   = selectedCustomSubtitleIndex >= 0;
+    const isUsingCustomSub = selectedCustomSubtitleIndex >= 0;
     const isUsingEmbeddedSub = selectedEmbeddedTextTrack >= 0;
 
     // ─── Restore progress ────────────────────────────────────────────────────
@@ -418,6 +418,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         settings.setSelectedAudioTrack(index);
         setSelectedAudioTrack(index);
         videoRef.current?.selectAudioTrack(index);
+        videoRef.current?.seek(lastKnownTimeRef.current);
     }, [settings]);
 
     /**
@@ -492,14 +493,14 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     }, [showControlsTemporarily, playerState]);
 
     const handleSkipBackward = useCallback(() => skipTime(-10), [skipTime]);
-    const handleSkipForward  = useCallback(() => skipTime(30),  [skipTime]);
+    const handleSkipForward = useCallback(() => skipTime(30), [skipTime]);
 
     const getContentFitIcon = useCallback((): "fit-screen" | "crop" | "fullscreen" => {
         switch (contentFit) {
             case RNResizeMode.CONTAIN: return 'fit-screen';
-            case RNResizeMode.COVER:   return 'crop';
+            case RNResizeMode.COVER: return 'crop';
             case RNResizeMode.STRETCH: return 'fullscreen';
-            default:                   return 'crop';
+            default: return 'crop';
         }
     }, [contentFit]);
 
@@ -591,7 +592,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         handleStreamSelect
     ]);
 
-    const handleWebAction    = useCallback((id: string) => handleMenuAction(id), [handleMenuAction]);
+    const handleWebAction = useCallback((id: string) => handleMenuAction(id), [handleMenuAction]);
     const handleNativeAction = useCallback(({ nativeEvent }: any) => handleMenuAction(nativeEvent.event), [handleMenuAction]);
 
     const handleMenuOpen = useCallback(() => {
