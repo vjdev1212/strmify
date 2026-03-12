@@ -1,10 +1,9 @@
 import React from 'react';
 import { StyleSheet, Pressable, Linking, ScrollView } from 'react-native';
 import { AntDesign, Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 import { View, Text, StatusBar } from '@/components/Themed';
-import { isHapticsSupported } from '@/utils/platform';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Colors } from '@/constants/theme';
 
 type IconLibrary = 'AntDesign' | 'Ionicons';
 
@@ -45,7 +44,7 @@ const ContactScreen = () => {
         const iconProps = {
             name: item.icon as any,
             size: 24,
-            color: "#535aff"
+            color: Colors.primary
         };
 
         switch (item.iconLibrary) {
@@ -88,7 +87,7 @@ const ContactScreen = () => {
                                 <Text style={styles.value}>{item.value}</Text>
                             </View>
                             <View style={styles.arrowContainer}>
-                                <AntDesign name="right" size={16} color="#666" />
+                                <AntDesign name="right" size={16} color={Colors.textDim} />
                             </View>
                         </Pressable>
                     ))}
@@ -120,13 +119,13 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 28,
         fontWeight: '700',
-        color: '#ffffff',
+        color: Colors.text,
         marginBottom: 8,
         textAlign: 'center',
     },
     subtitle: {
         fontSize: 16,
-        color: '#999',
+        color: Colors.textMuted,
         textAlign: 'center',
         fontWeight: '400',
     },
@@ -136,31 +135,23 @@ const styles = StyleSheet.create({
     contactItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#101010',
+        backgroundColor: Colors.primarySurface,
         borderRadius: 16,
         paddingVertical: 15,
         paddingHorizontal: 20,
         marginBottom: 12,
         borderWidth: 0.5,
-        borderColor: '#1f1f1f',
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 1,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 3,
+        borderColor: Colors.primaryBorder
     },
     contactItemPressed: {
-        backgroundColor: '#1a1a1a',
+        backgroundColor: Colors.backgroundMid,
         transform: [{ scale: 0.98 }],
     },
     iconContainer: {
         width: 48,
         height: 48,
         borderRadius: 12,
-        backgroundColor: 'rgba(83, 90, 255, 0.1)',
+        backgroundColor: Colors.primarySurface,
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: 16,
@@ -172,12 +163,12 @@ const styles = StyleSheet.create({
     type: {
         fontSize: 17,
         fontWeight: '500',
-        color: '#ffffff',
+        color: Colors.text,
         marginBottom: 4,
     },
     value: {
         fontSize: 14,
-        color: '#999',
+        color: Colors.textMuted,
         fontWeight: '400',
         lineHeight: 20,
     },

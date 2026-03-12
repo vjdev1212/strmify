@@ -8,6 +8,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import BottomSpacing from '@/components/BottomSpacing';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Colors } from '@/constants/theme';
 
 const DisclaimerScreen = () => {
     return (
@@ -64,7 +65,7 @@ const DisclaimerScreen = () => {
                     </View>
 
                     <View style={styles.warningBox}>
-                        <Ionicons name="alert-circle" size={24} color="#535aff" />
+                        <Ionicons name="alert-circle" size={24} color={Colors.primary} />
                         <Text style={styles.warningText}>
                             This disclaimer serves to inform users of their responsibilities. The developer assumes no responsibility for how users choose to utilize third-party addons or external content sources accessible through this dashboard application.
                         </Text>
@@ -85,16 +86,16 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingVertical: 15,
         borderBottomWidth: 1,
-        borderBottomColor: '#1a1a1a',
+        borderBottomColor: Colors.primaryBorder,
     },
     headerTitle: {
         fontSize: 32,
         fontWeight: 'bold',
-        color: '#FFF',
+        color: Colors.text,
     },
     headerSubtitle: {
         fontSize: 16,
-        color: '#888',
+        color: Colors.textDim,
         marginTop: 5,
     },
     scrollView: {
@@ -111,7 +112,7 @@ const styles = StyleSheet.create({
     },
     disclaimerText: {
         fontSize: 16,
-        color: '#CCC',
+        color: Colors.textMuted,
         lineHeight: 24,
         marginBottom: 25,
         textAlign: 'center',
@@ -120,25 +121,25 @@ const styles = StyleSheet.create({
     section: {
         marginBottom: 20,
         padding: 16,
-        backgroundColor: '#1a1a1a',
+        backgroundColor: Colors.primarySurface,
         borderRadius: 12,
         borderLeftWidth: 4,
-        borderLeftColor: '#535aff',
+        borderLeftColor: Colors.primary,
     },
     sectionHeader: {
         fontSize: 18,
         fontWeight: '600',
-        color: '#FFF',
+        color: Colors.text,
         marginBottom: 12,
     },
     sectionText: {
         fontSize: 15,
-        color: '#CCC',
+        color: Colors.textMuted,
         lineHeight: 22,
     },
     warningBox: {
-        backgroundColor: '#1a1a1a',
-        borderColor: '#535aff',
+        backgroundColor: Colors.primarySurface,
+        borderColor: Colors.primary,
         borderWidth: 1,
         borderRadius: 12,
         padding: 16,
@@ -147,12 +148,12 @@ const styles = StyleSheet.create({
     },
     warningText: {
         fontSize: 15,
-        color: '#CCC',
+        color: Colors.textMuted,
         lineHeight: 22,
     },
     footerText: {
         fontSize: 16,
-        color: '#535aff',
+        color: Colors.primary,
         textAlign: 'center',
         fontWeight: '600',
         marginTop: 10,

@@ -8,10 +8,8 @@ import {
   Dimensions,
   ScrollView
 } from 'react-native';
-import * as Haptics from 'expo-haptics'
-import { isHapticsSupported } from '@/utils/platform';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
+import { Colors } from '@/constants/theme';
 const { width } = Dimensions.get('window');
 
 const AppResourcesScreen = () => {
@@ -113,14 +111,14 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 34,
     fontWeight: '600',
-    color: '#ffffff',
+    color: Colors.text,
     marginBottom: 8,
     letterSpacing: -1,
     textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
-    color: '#888888',
+    color: Colors.textDim,
     fontWeight: '400',
     textAlign: 'center',
     lineHeight: 22
@@ -132,19 +130,11 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   resourceCard: {
-    backgroundColor: '#101010',
+    backgroundColor: Colors.primarySurface,
     borderRadius: 15,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 12,
     borderWidth: 1,
-    borderColor: '#1a1a1a',
+    borderColor: Colors.primaryBorder,
   },
   cardContent: {
     flexDirection: 'row',
@@ -169,12 +159,12 @@ const styles = StyleSheet.create({
   resourceTitle: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#ffffff',
+    color: Colors.text,
     marginBottom: 6,
   },
   resourceSubtitle: {
     fontSize: 15,
-    color: '#888888',
+    color: Colors.textDim,
     fontWeight: '400',
     lineHeight: 20,
     paddingRight: 5
@@ -186,16 +176,16 @@ const styles = StyleSheet.create({
   arrowButton: {
     width: 40,
     height: 40,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: Colors.primarySurface,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#2a2a2a',
+    borderColor: Colors.primaryBorder,
   },
   arrow: {
     fontSize: 20,
-    color: '#ffffff',
+    color: Colors.text,
     fontWeight: '600',
   },
   footer: {
@@ -206,19 +196,19 @@ const styles = StyleSheet.create({
   footerDivider: {
     width: 60,
     height: 1,
-    backgroundColor: '#333333',
+    backgroundColor: Colors.primaryBorder,
     marginBottom: 20,
   },
   footerText: {
     fontSize: 16,
-    color: '#666666',
+    color: Colors.textDim,
     textAlign: 'center',
     marginBottom: 8,
     fontWeight: '500',
   },
   footerSubtext: {
     fontSize: 14,
-    color: '#444444',
+    color: Colors.textDim,
     textAlign: 'center',
     fontWeight: '400',
   },

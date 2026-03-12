@@ -13,13 +13,12 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { StorageKeys, storageService } from '@/utils/StorageService';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { isHapticsSupported, showAlert } from '@/utils/platform';
-import * as Haptics from 'expo-haptics';
+import { showAlert } from '@/utils/platform';
 import { MenuView, MenuAction } from '@react-native-menu/menu';
 import { WebMenu } from '@/components/WebMenuView';
 import { SUBTITLE_LANGUAGES } from '@/utils/Subtitles';
 import BottomSpacing from '@/components/BottomSpacing';
-
+import { Colors } from '@/constants/theme';
 
 const OpenSubtitlesConfigScreen: React.FC = () => {
     const [apiKey, setApiKey] = useState('');
@@ -93,7 +92,7 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
 
         const newUseDefault = !useDefaultKey;
         setUseDefaultKey(newUseDefault);
-        
+
         if (newUseDefault) {
             setApiKey('');
         }
@@ -120,7 +119,7 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
             } else {
                 storageService.setItem(StorageKeys.OPENSUBTITLES_API_KEY, apiKey.trim());
             }
-            
+
             storageService.setItem(StorageKeys.SUBTITLE_LANGUAGES_KEY, JSON.stringify(selectedLanguages));
 
             showAlert('Configuration Saved', 'Your OpenSubtitles configuration has been saved successfully.');
@@ -198,9 +197,9 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
                     }}
                 >
                     <TouchableOpacity style={styles.menuButton}>
-                        <Ionicons name="language-outline" size={20} color="#bbb" />
+                        <Ionicons name="language-outline" size={20} color={Colors.textMuted} />
                         <Text style={styles.menuButtonText}>Add Language</Text>
-                        <Ionicons name="chevron-down-outline" size={20} color="#bbb" />
+                        <Ionicons name="chevron-down-outline" size={20} color={Colors.textMuted} />
                     </TouchableOpacity>
                 </WebMenu>
             );
@@ -226,7 +225,7 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
         return (
             <SafeAreaView style={styles.container}>
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#535aff" />
+                    <ActivityIndicator size="large" color={Colors.primary} />
                     <Text style={styles.loadingText}>Loading configuration...</Text>
                 </View>
             </SafeAreaView>
@@ -240,7 +239,7 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
                 style={styles.keyboardAvoid}>
                 <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                     <View style={styles.header}>
-                        <Ionicons name="settings-outline" size={40} color="#535aff" />
+                        <Ionicons name="settings-outline" size={40} color={Colors.primary} />
                         <Text style={styles.title}>OpenSubtitles Configuration</Text>
                         <Text style={styles.subtitle}>
                             Configure your API credentials and subtitle preferences
@@ -250,8 +249,8 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
                     <View style={styles.form}>
                         <View style={styles.inputGroup}>
                             <Text style={styles.label}>API Key</Text>
-                            
-                            <TouchableOpacity 
+
+                            <TouchableOpacity
                                 style={styles.toggleContainer}
                                 onPress={toggleApiKeyMode}
                             >
@@ -293,11 +292,7 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
                                             style={styles.eyeButton}
                                             onPress={() => setShowApiKey(!showApiKey)}
                                         >
-                                            <Ionicons
-                                                name={showApiKey ? 'eye-off-outline' : 'eye-outline'}
-                                                size={20}
-                                                color="#bbb"
-                                            />
+                                            <Ionicons name={showApiKey ? 'eye-off-outline' : 'eye-outline'} size={20} color={Colors.textMuted} />
                                         </TouchableOpacity>
                                     </View>
                                     <Text style={styles.helpText}>
@@ -305,10 +300,10 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
                                     </Text>
                                 </>
                             )}
-                            
+
                             {useDefaultKey && (
                                 <View style={styles.infoBox}>
-                                    <Ionicons name="information-circle-outline" size={18} color="#535aff" />
+                                    <Ionicons name="information-circle-outline" size={18} color={Colors.primary} />
                                     <Text style={styles.infoText}>
                                         Using the default API key for OpenSubtitles (Rate-Limited)
                                     </Text>
@@ -339,7 +334,7 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
                                                     onPress={() => removeLanguage(code)}
                                                     style={styles.removeButton}
                                                 >
-                                                    <Ionicons name="close-circle" size={18} color="#777777" />
+                                                    <Ionicons name="close-circle" size={18} color={Colors.textDim} />
                                                 </TouchableOpacity>
                                             )}
                                         </View>
@@ -407,7 +402,7 @@ const styles = StyleSheet.create({
     loadingText: {
         marginTop: 10,
         fontSize: 16,
-        color: '#bbb',
+        color: Colors.textMuted,
     },
     header: {
         alignItems: 'center',
@@ -416,13 +411,13 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: '#fff',
+        color: Colors.text,
         marginTop: 10,
         textAlign: 'center',
     },
     subtitle: {
         fontSize: 16,
-        color: '#bbb',
+        color: Colors.textMuted,
         textAlign: 'center',
         marginTop: 5,
         lineHeight: 22,
@@ -436,7 +431,7 @@ const styles = StyleSheet.create({
     label: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#fff',
+        color: Colors.text,
         marginBottom: 10,
     },
     toggleContainer: {
@@ -444,10 +439,10 @@ const styles = StyleSheet.create({
         gap: 20,
         marginBottom: 12,
         padding: 12,
-        backgroundColor: '#202020',
+        backgroundColor: Colors.primarySurface,
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: '#303030',
+        borderColor: Colors.primaryBorder,
     },
     toggleOption: {
         flexDirection: 'row',
@@ -459,12 +454,12 @@ const styles = StyleSheet.create({
         height: 20,
         borderRadius: 10,
         borderWidth: 2,
-        borderColor: '#777777',
+        borderColor: Colors.textDim,
         justifyContent: 'center',
         alignItems: 'center',
     },
     radioButtonSelected: {
-        borderColor: '#535aff',
+        borderColor: Colors.primary,
     },
     radioButtonInner: {
         width: 10,
@@ -474,21 +469,21 @@ const styles = StyleSheet.create({
     },
     toggleText: {
         fontSize: 14,
-        color: '#fff',
+        color: Colors.text,
         fontWeight: '500',
     },
     input: {
         borderRadius: 8,
         padding: 12,
-        backgroundColor: '#101010',
-        color: '#fff',
+        backgroundColor: Colors.background,
+        color: Colors.text,
     },
     passwordContainer: {
         position: 'relative',
     },
     passwordInput: {
         paddingRight: 50,
-        backgroundColor: '#202020',
+        backgroundColor: Colors.primarySurface,
     },
     eyeButton: {
         position: 'absolute',
@@ -507,16 +502,16 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 8,
         padding: 12,
-        backgroundColor: 'rgba(83, 90, 255, 0.1)',
+        backgroundColor: Colors.primarySurface,
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: 'rgba(83, 90, 255, 0.3)',
+        borderColor: Colors.primaryBorder,
         marginTop: 12,
     },
     infoText: {
         flex: 1,
         fontSize: 13,
-        color: '#bbb',
+        color: Colors.textMuted,
         lineHeight: 18,
     },
     menuButton: {
@@ -524,15 +519,15 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 12,
         borderRadius: 8,
-        backgroundColor: '#202020',
+        backgroundColor: Colors.primarySurface,
         borderWidth: 1,
-        borderColor: '#303030',
+        borderColor: Colors.primaryBorder,
         gap: 8,
     },
     menuButtonText: {
         flex: 1,
         fontSize: 14,
-        color: '#bbb',
+        color: Colors.textMuted,
         fontWeight: '500',
     },
     selectedLanguagesContainer: {
@@ -544,17 +539,17 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 10,
         borderRadius: 8,
-        backgroundColor: '#202020',
+        backgroundColor: Colors.primarySurface,
         gap: 8,
     },
     selectedLanguageText: {
         flex: 1,
         fontSize: 14,
-        color: '#fff',
+        color: Colors.text,
         fontWeight: '500',
     },
     languageBadge: {
-        backgroundColor: '#777777',
+        backgroundColor: Colors.textDim,
         borderRadius: 12,
         width: 24,
         height: 24,
@@ -563,7 +558,7 @@ const styles = StyleSheet.create({
     },
     languageBadgeText: {
         fontSize: 12,
-        color: '#fff',
+        color: Colors.text,
         fontWeight: 'bold',
     },
     removeButton: {
@@ -585,23 +580,23 @@ const styles = StyleSheet.create({
         gap: 6,
     },
     saveButton: {
-        backgroundColor: '#535aff',
+        backgroundColor: Colors.primary,
     },
     clearButton: {
-        backgroundColor: '#303030',
+        backgroundColor: Colors.primaryBorder,
     },
     buttonText: {
-        color: '#FFF',
+        color: Colors.text,
         fontSize: 14,
         fontWeight: '600',
     },
     clearButtonText: {
-        color: '#fff',
+        color: Colors.text,
         fontSize: 14,
         fontWeight: '600',
     },
     disabledButton: {
-        backgroundColor: '#303030',
+        backgroundColor: Colors.primaryBorder,
     },
 });
 
