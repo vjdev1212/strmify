@@ -6,6 +6,7 @@ import { showAlert } from '@/utils/platform';
 import { useColorScheme } from '@/components/useColorScheme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StorageKeys, storageService } from '@/utils/StorageService';
+import { Colors } from '@/constants/theme';
 
 const defaultAddonLogo = 'https://i.ibb.co/fSJ42PJ/addon.png';
 
@@ -83,7 +84,7 @@ export default function AddAddonScreen() {
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar />
-            
+
             {/* Header Section */}
             <View style={styles.header}>
                 <Text style={styles.title}>Add New Addon</Text>
@@ -97,7 +98,7 @@ export default function AddAddonScreen() {
                     <TextInput
                         style={styles.input}
                         placeholder="https://example.com/manifest.json"
-                        placeholderTextColor="#666666"
+                        placeholderTextColor={Colors.textDim}
                         value={url}
                         onChangeText={setUrl}
                         autoCapitalize="none"
@@ -113,14 +114,14 @@ export default function AddAddonScreen() {
             {/* Loading State */}
             {loading && (
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#535aff" />
+                    <ActivityIndicator size="large" color={Colors.primary} />
                     <Text style={styles.loadingText}>Fetching addon details...</Text>
                 </View>
             )}
 
             {/* Content Section */}
-            <ScrollView 
-                showsVerticalScrollIndicator={false} 
+            <ScrollView
+                showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
                 style={styles.scrollView}
             >
@@ -173,8 +174,8 @@ export default function AddAddonScreen() {
                         )}
 
                         {/* Add Button */}
-                        <Pressable 
-                            style={[styles.addButton, styles.addButtonShadow]} 
+                        <Pressable
+                            style={[styles.addButton]}
                             onPress={addAddon}
                         >
                             <Text style={styles.addButtonText}>Install Addon</Text>
@@ -202,12 +203,12 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 30,
         fontWeight: '700',
-        color: '#ffffff',
+        color: Colors.text,
         marginBottom: 8,
     },
     subtitle: {
         fontSize: 16,
-        color: '#888888',
+        color: Colors.textDim,
         lineHeight: 22,
     },
     inputSection: {
@@ -220,20 +221,20 @@ const styles = StyleSheet.create({
     inputLabel: {
         fontSize: 14,
         fontWeight: '600',
-        color: '#ffffff',
+        color: Colors.text,
         marginBottom: 12,
         letterSpacing: 0.5,
     },
     input: {
         width: '100%',
         height: 44,
-        backgroundColor: '#1a1a1a',
+        backgroundColor: Colors.primarySurface,
         borderRadius: 12,
         paddingHorizontal: 16,
         fontSize: 15,
-        color: '#ffffff',
+        color: Colors.text,
         borderWidth: 1,
-        borderColor: '#2a2a2a',
+        borderColor: Colors.primaryBorder,
     },
     loadingContainer: {
         alignItems: 'center',
@@ -242,7 +243,7 @@ const styles = StyleSheet.create({
     loadingText: {
         marginTop: 16,
         fontSize: 16,
-        color: '#888888',
+        color: Colors.textDim,
     },
     scrollView: {
         flex: 1,
@@ -252,11 +253,11 @@ const styles = StyleSheet.create({
         paddingBottom: 40,
     },
     addonCard: {
-        backgroundColor: '#111111',
+        backgroundColor: 'rgba(255, 255, 255, 0.03)',
         borderRadius: 24,
         padding: 24,
         borderWidth: 1,
-        borderColor: '#222222',
+        borderColor: Colors.primaryBorder,
     },
     addonHeader: {
         flexDirection: 'row',
@@ -268,7 +269,7 @@ const styles = StyleSheet.create({
         height: 80,
         borderRadius: 20,
         overflow: 'hidden',
-        backgroundColor: '#1a1a1a',
+        backgroundColor: Colors.primarySurface,
         marginRight: 16,
     },
     logo: {
@@ -284,12 +285,12 @@ const styles = StyleSheet.create({
     addonName: {
         fontSize: 22,
         fontWeight: '700',
-        color: '#ffffff',
+        color: Colors.text,
         flex: 1,
         marginRight: 12,
     },
     versionBadge: {
-        backgroundColor: '#2a2a2a',
+        backgroundColor: Colors.primarySurface,
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 12,
@@ -297,7 +298,7 @@ const styles = StyleSheet.create({
     versionText: {
         fontSize: 12,
         fontWeight: '600',
-        color: '#888888',
+        color: Colors.textDim,
     },
     descriptionContainer: {
         marginBottom: 24,
@@ -305,7 +306,7 @@ const styles = StyleSheet.create({
     },
     description: {
         fontSize: 16,
-        color: '#cccccc',
+        color: Colors.textDim,
         lineHeight: 24,
     },
     typesContainer: {
@@ -314,7 +315,7 @@ const styles = StyleSheet.create({
     typesLabel: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#ffffff',
+        color: Colors.text,
         marginBottom: 12,
     },
     typesWrapper: {
@@ -323,20 +324,20 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     typeTag: {
-        backgroundColor: '#1a1a1a',
+        backgroundColor: Colors.primarySurface,
         paddingHorizontal: 16,
         paddingVertical: 8,
         borderRadius: 20,
         borderWidth: 1,
-        borderColor: '#333333',
+        borderColor: Colors.primaryBorder,
     },
     typeText: {
         fontSize: 14,
         fontWeight: '500',
-        color: '#888888',
+        color: Colors.textDim,
     },
     addButton: {
-        backgroundColor: '#535aff',
+        backgroundColor: Colors.primary,
         paddingVertical: 14,
         paddingHorizontal: 26,
         borderRadius: 12,
@@ -344,18 +345,8 @@ const styles = StyleSheet.create({
         alignSelf: 'center',
         minWidth: 140,
     },
-    addButtonShadow: {
-        shadowColor: 'rgba(83, 90, 255, 0.75)',
-        shadowOffset: {
-            width: 0,
-            height: 3,
-        },
-        shadowOpacity: 0.3,
-        shadowRadius: 6,
-        elevation: 6,
-    },
     addButtonText: {
-        color: '#ffffff',
+        color: Colors.text,
         fontSize: 16,
         fontWeight: '500',
         letterSpacing: 0.5,

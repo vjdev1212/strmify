@@ -4,6 +4,7 @@ import { View, Text } from '@/components/Themed';
 import { confirmAction, showAlert } from '@/utils/platform';
 import { MaterialIcons } from '@expo/vector-icons';
 import { StorageKeys, storageService } from '@/utils/StorageService';
+import { Colors } from '@/constants/theme';
 
 interface ServerConfigProps {
   serverName: string;
@@ -128,7 +129,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
       });
 
       clearTimeout(timeoutId);
-      
+
       if (response.ok || response.status < 500) {
         return 'connected';
       } else {
@@ -144,7 +145,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
 
   const checkAllConnections = async () => {
     const newStatus: ConnectionStatus = {};
-    
+
     serverConfigs.forEach(server => {
       newStatus[server.serverId] = 'checking';
     });
@@ -156,12 +157,12 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
     });
 
     const results = await Promise.all(promises);
-    
+
     const finalStatus: ConnectionStatus = {};
     results.forEach(({ serverId, status }) => {
       finalStatus[serverId] = status;
     });
-    
+
     setConnectionStatus(finalStatus);
   };
 
@@ -176,10 +177,10 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
 
   const renderConnectionIndicator = (serverId: string) => {
     const status = connectionStatus[serverId];
-    
+
     switch (status) {
       case 'checking':
-        return <ActivityIndicator size="small" color="#666666" />;
+        return <ActivityIndicator size="small" color={Colors.textDim} />;
       case 'connected':
         return <View style={[styles.dot, styles.dotConnected]} />;
       case 'disconnected':
@@ -357,7 +358,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
       showAlert('Error', 'Failed to update server URL.');
       console.error('Error updating server URL:', error);
     }
-  };  
+  };
 
   const handleDelete = async (serverId: string) => {
     // Guard: default server is never removable
@@ -450,9 +451,9 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
                 <Switch
                   value={isCurrent}
                   onValueChange={toggleCurrent}
-                  trackColor={{ false: '#2A2A2A', true: '#0A84FF' }}
-                  thumbColor="#FFFFFF"
-                  ios_backgroundColor="#2A2A2A"
+                  trackColor={{ false: Colors.primaryBorder, true: Colors.primary }}
+                  thumbColor={Colors.text}
+                  ios_backgroundColor={Colors.primaryBorder}
                 />
               </View>
             </View>
@@ -464,7 +465,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
                 value={serverUrl}
                 onChangeText={setServerUrl}
                 placeholder="https://example.com"
-                placeholderTextColor="#4A4A4A"
+                placeholderTextColor={Colors.textDim}
                 autoCapitalize="none"
                 autoCorrect={false}
               />
@@ -490,19 +491,19 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
               <Text style={styles.sectionCount}>{serverConfigs.length} configured</Text>
             </View>
             <View style={styles.headerActions}>
-              <Pressable 
+              <Pressable
                 style={styles.iconBtn}
                 onPress={checkAllConnections}
                 disabled={Object.values(connectionStatus).some(status => status === 'checking')}
               >
-                <MaterialIcons 
-                  name="refresh" 
-                  size={20} 
-                  color={Object.values(connectionStatus).some(status => status === 'checking') ? '#4A4A4A' : '#535aff'} 
+                <MaterialIcons
+                  name="refresh"
+                  size={20}
+                  color={Object.values(connectionStatus).some(s => s === 'checking') ? Colors.textDim : Colors.primary}
                 />
               </Pressable>
               <Pressable style={styles.addBtn} onPress={handleAddNew}>
-                <MaterialIcons name="add" size={18} color="#FFFFFF" />
+                <MaterialIcons name="add" size={18} color={Colors.text} />
                 <Text style={styles.addBtnText}>Add</Text>
               </Pressable>
             </View>
@@ -521,7 +522,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
                           value={inlineEditValue}
                           onChangeText={setInlineEditValue}
                           placeholder="https://example.com"
-                          placeholderTextColor="#4A4A4A"
+                          placeholderTextColor={Colors.textDim}
                           autoCapitalize="none"
                           autoCorrect={false}
                           autoFocus
@@ -559,8 +560,8 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
                             </View>
                             <Text style={styles.serverStatus}>
                               {connectionStatus[item.serverId] === 'checking' ? 'Checking connection' :
-                               connectionStatus[item.serverId] === 'connected' ? 'Connected' :
-                               connectionStatus[item.serverId] === 'disconnected' ? 'Disconnected' : 'Connection error'}
+                                connectionStatus[item.serverId] === 'connected' ? 'Connected' :
+                                  connectionStatus[item.serverId] === 'disconnected' ? 'Disconnected' : 'Connection error'}
                             </Text>
                           </View>
                         </View>
@@ -578,7 +579,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
                                 }) || '0deg'
                               }]
                             }}>
-                              <MaterialIcons name="chevron-right" size={22} color="#4A4A4A" />
+                              <MaterialIcons name="chevron-right" size={22} color={Colors.textDim} />
                             </Animated.View>
                           )}
                         </View>
@@ -631,7 +632,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
                               onPress={() => handleDelete(item.serverId)}
                               disabled={item.current}
                             >
-                              <MaterialIcons name="delete-outline" size={16} color={item.current ? '#4A4A4A' : '#FF453A'} />
+                              <MaterialIcons name="delete-outline" size={16} color={item.current ? Colors.textDim : '#FF453A'} />
                               <Text style={[styles.actionBtnDanger, item.current && styles.disabledText]}>
                                 Delete
                               </Text>
@@ -646,7 +647,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
             </View>
           ) : (
             <View style={styles.emptyState}>
-              <MaterialIcons name="dns" size={40} color="#4A4A4A" />
+              <MaterialIcons name="dns" size={40} color={Colors.textDim} />
               <Text style={styles.emptyTitle}>No servers configured</Text>
               <Text style={styles.emptyText}>Add your first server to get started</Text>
               <Pressable style={styles.emptyBtn} onPress={handleAddNew}>
@@ -672,12 +673,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: Colors.text,
     marginBottom: 6,
   },
   subtitle: {
     fontSize: 15,
-    color: '#8A8A8A',
+    color: Colors.textMuted,
   },
   section: {
     paddingHorizontal: 20,
@@ -692,11 +693,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: Colors.text,
   },
   sectionCount: {
     fontSize: 14,
-    color: '#666666',
+    color: Colors.textDim,
     marginTop: 2,
   },
   headerActions: {
@@ -708,7 +709,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#1A1A1A',
+    backgroundColor: Colors.primarySurface,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -716,7 +717,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#535aff',
+    backgroundColor: Colors.primary,
     paddingHorizontal: 14,
     paddingVertical: 9,
     borderRadius: 18,
@@ -724,13 +725,13 @@ const styles = StyleSheet.create({
   addBtnText: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#FFFFFF',
+    color: Colors.text,
   },
   serverList: {
     gap: 10,
   },
   card: {
-    backgroundColor: '#1A1A1A',
+    backgroundColor: Colors.primarySurface,
     borderRadius: 12,
     overflow: 'hidden',
   },
@@ -748,25 +749,25 @@ const styles = StyleSheet.create({
   labelText: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#FFFFFF',
+    color: Colors.text,
   },
   labelHint: {
     fontSize: 13,
-    color: '#666666',
+    color: Colors.textDim,
     marginTop: 2,
   },
   inputLabel: {
     fontSize: 13,
     fontWeight: '500',
-    color: '#8A8A8A',
+    color: Colors.textMuted,
     marginBottom: 8,
   },
   input: {
     fontSize: 15,
-    color: '#FFFFFF',
+    color: Colors.text,
     paddingVertical: 12,
     paddingHorizontal: 14,
-    backgroundColor: '#0F0F0F',
+    backgroundColor: Colors.primarySurface,
     borderRadius: 8,
   },
   buttonRow: {
@@ -776,7 +777,7 @@ const styles = StyleSheet.create({
   },
   btnCancel: {
     flex: 1,
-    backgroundColor: '#2A2A2A',
+    backgroundColor: Colors.primarySurface,
     paddingVertical: 13,
     borderRadius: 8,
     alignItems: 'center',
@@ -784,11 +785,11 @@ const styles = StyleSheet.create({
   btnCancelText: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#FFFFFF',
+    color: Colors.text,
   },
   btnSave: {
     flex: 1,
-    backgroundColor: '#535aff',
+    backgroundColor: Colors.primary,
     paddingVertical: 13,
     borderRadius: 8,
     alignItems: 'center',
@@ -796,7 +797,7 @@ const styles = StyleSheet.create({
   btnSaveText: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#FFFFFF',
+    color: Colors.text,
   },
   serverItem: {
     flexDirection: 'row',
@@ -833,7 +834,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF453A',
   },
   dotUnknown: {
-    backgroundColor: '#666666',
+    backgroundColor: Colors.textDim,
   },
   serverDetails: {
     flex: 1,
@@ -847,11 +848,11 @@ const styles = StyleSheet.create({
   serverUrl: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#FFFFFF',
+    color: Colors.text,
     flexShrink: 1,
   },
   defaultBadge: {
-    backgroundColor: '#2A2A2A',
+    backgroundColor: Colors.primaryBorder,
     borderRadius: 4,
     paddingHorizontal: 6,
     paddingVertical: 2,
@@ -859,11 +860,11 @@ const styles = StyleSheet.create({
   defaultBadgeText: {
     fontSize: 11,
     fontWeight: '500',
-    color: '#8A8A8A',
+    color: Colors.textMuted,
   },
   serverStatus: {
     fontSize: 13,
-    color: '#8A8A8A',
+    color: Colors.textMuted,
   },
   activeBadge: {
     flexDirection: 'row',
@@ -871,7 +872,7 @@ const styles = StyleSheet.create({
   },
   actionBar: {
     flexDirection: 'row',
-    backgroundColor: '#0F0F0F',
+    backgroundColor: Colors.backgroundMid,
     paddingHorizontal: 12,
     alignItems: 'center',
     justifyContent: 'space-around',
@@ -887,7 +888,7 @@ const styles = StyleSheet.create({
   actionBtnText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#535aff',
+    color: Colors.primary,
   },
   actionBtnDanger: {
     fontSize: 14,
@@ -898,13 +899,13 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   disabledText: {
-    color: '#666666',
+    color: Colors.textDim,
   },
   editContainer: {
     padding: 0,
   },
   emptyState: {
-    backgroundColor: '#1A1A1A',
+    backgroundColor: Colors.primarySurface,
     borderRadius: 12,
     paddingVertical: 56,
     paddingHorizontal: 24,
@@ -913,18 +914,18 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: Colors.text,
     marginTop: 16,
     marginBottom: 6,
   },
   emptyText: {
     fontSize: 14,
-    color: '#666666',
+    color: Colors.textDim,
     marginBottom: 24,
     textAlign: 'center',
   },
   emptyBtn: {
-    backgroundColor: '#535aff',
+    backgroundColor: Colors.primary,
     paddingHorizontal: 20,
     paddingVertical: 11,
     borderRadius: 8,
@@ -932,7 +933,7 @@ const styles = StyleSheet.create({
   emptyBtnText: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#FFFFFF',
+    color: Colors.text,
   },
 });
 

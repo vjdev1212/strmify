@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
     height: 56,
     borderRadius: 14,
     marginRight: 14,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: Colors.primarySurface,
   },
   headerInfo: {
     flex: 1,
@@ -423,7 +423,7 @@ const styles = StyleSheet.create({
   addonName: {
     fontSize: 17,
     fontWeight: '500',
-    color: '#ffffff',
+    color: Colors.text,
     marginBottom: 6,
     letterSpacing: -0.3,
   },
@@ -434,11 +434,11 @@ const styles = StyleSheet.create({
   },
   addonTypes: {
     fontSize: 13,
-    color: '#888888',
+    color: Colors.textDim,
     fontWeight: '500',
   },
   versionBadge: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: Colors.primarySurface,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
@@ -446,14 +446,14 @@ const styles = StyleSheet.create({
   versionText: {
     fontSize: 11,
     fontWeight: '500',
-    color: '#aaaaaa',
+    color: Colors.textMuted,
   },
   cardBody: {
     marginBottom: 14,
   },
   addonDescription: {
     fontSize: 14,
-    color: '#aaaaaa',
+    color: Colors.textMuted,
     lineHeight: 20,
   },
   cardActions: {
@@ -493,18 +493,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 20,
-    backgroundColor: 'rgba(83, 90, 255, 0.1)',
+    backgroundColor: Colors.primarySurface,
   },
   emptyStateTitle: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#ffffff',
+    color: Colors.text,
     marginBottom: 8,
     letterSpacing: -0.5,
   },
   emptyStateText: {
     fontSize: 15,
-    color: '#888888',
+    color: Colors.textDim,
     textAlign: 'center',
     lineHeight: 22,
     marginBottom: 28,
@@ -512,9 +512,9 @@ const styles = StyleSheet.create({
   emptyActionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(83, 90, 255, 0.1)',
+    backgroundColor: Colors.primarySurface,
     borderWidth: 1,
-    borderColor: '#535aff',
+    borderColor: Colors.primaryBorder,
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 20,
@@ -524,7 +524,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   emptyActionText: {
-    color: '#535aff',
+    color: Colors.primary,
     fontSize: 15,
     fontWeight: '500',
     letterSpacing: -0.2,

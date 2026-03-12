@@ -9,6 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomSpacing from '@/components/BottomSpacing';
 import Constants from 'expo-constants';
 import BlurGradientBackground from '@/components/BlurGradientBackground';
+import { Colors } from '@/constants/theme';
 
 const SettingsScreen = () => {
   const router = useRouter();
@@ -56,7 +57,7 @@ const SettingsScreen = () => {
         style={[
           styles.settingItem,
           {
-            backgroundColor: isPressed ? '#1a1a1a' : '#101010',
+            backgroundColor: isPressed ? Colors.backgroundMid : Colors.backgroundOverlay,
             borderTopLeftRadius: isFirst ? 12 : 0,
             borderTopRightRadius: isFirst ? 12 : 0,
             borderBottomLeftRadius: isLast ? 12 : 0,
@@ -69,21 +70,13 @@ const SettingsScreen = () => {
       >
         <View style={styles.leftContent}>
           <View style={styles.iconContainer}>
-            <Ionicons
-              name={icon}
-              size={22}
-              color='#535aff'
-            />
+            <Ionicons name={icon} size={22} color={Colors.primary} />
           </View>
           <Text style={styles.settingText}>
             {title}
           </Text>
         </View>
-        <MaterialIcons
-          name="chevron-right"
-          size={22}
-          color='#6E6E73'
-        />
+        <MaterialIcons name="chevron-right" size={22} color={Colors.textDim} />
         {!isLast && (
           <View style={styles.separator} />
         )}
@@ -219,7 +212,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 34,
     fontWeight: '700',
-    color: '#ffffff',
+    color: Colors.text,
     letterSpacing: 0.3,
   },
   section: {
@@ -229,7 +222,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
     textTransform: 'uppercase',
-    color: '#8E8E93',
+    color: Colors.textMuted,
     marginBottom: 10,
     marginLeft: 20,
     marginRight: 20,
@@ -258,7 +251,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 8,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: Colors.primarySurface,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,

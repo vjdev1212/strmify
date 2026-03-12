@@ -10,6 +10,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { ActionSheetProvider } from '@expo/react-native-action-sheet';
 import { AppThemeProvider } from '@/context/ThemeContext';
+import BlurGradientBackground from '@/components/BlurGradientBackground';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -50,18 +51,6 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
 
-  const GlassDarkTheme: Theme = {
-    ...DarkTheme,
-    colors: {
-      ...DarkTheme.colors,
-      background: '#0d0b2e', // was #0a0a0a
-      card: 'rgba(13, 11, 46, 0.9)', // was rgba(18,18,18,0.9)
-      border: 'rgba(140, 130, 255, 0.15)', // was rgba(255,255,255,0.1)
-    }
-  };
-
-  const theme = GlassDarkTheme;
-
   // Custom header background component
   const HeaderBackground = () => (
     <BlurView intensity={20} style={styles.headerBlur}>
@@ -76,264 +65,256 @@ function RootLayoutNav() {
 
   return (
     <View style={styles.container}>
-      {/* Global Background Gradient */}
-      <LinearGradient
-        colors={['#0d0b2e', '#1a1645', '#0d0b2e']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.backgroundGradient}
-      />
+      <BlurGradientBackground />
       <AppThemeProvider>
         <ActionSheetProvider>
-          <ThemeProvider value={theme}>
-            <Stack
-              screenOptions={{
-                headerStyle: styles.glassHeader,
-                headerBackground: HeaderBackground,
-                contentStyle: styles.screenContent,
+          <Stack
+            screenOptions={{
+              headerStyle: styles.glassHeader,
+              headerBackground: HeaderBackground,
+              contentStyle: styles.screenContent,
+            }}
+          >
+            <Stack.Screen
+              name="(tabs)"
+              options={{
+                headerShown: false,
+                headerTransparent: true,
+                headerBackground: InvisibleHeaderBackground,
+                headerShadowVisible: false,
+                headerTitle: '',
+                headerTintColor: '#ffffff',
+                headerBackTitle: '',
+                title: 'Home',
+                contentStyle: { backgroundColor: 'transparent' } // Only tabs can be transparent
               }}
-            >
-              <Stack.Screen
-                name="(tabs)"
-                options={{
-                  headerShown: false,
-                  headerTransparent: true,
-                  headerBackground: InvisibleHeaderBackground,
-                  headerShadowVisible: false,
-                  headerTitle: '',
-                  headerTintColor: '#ffffff',
-                  headerBackTitle: '',
-                  title: 'Home',
-                  contentStyle: { backgroundColor: 'transparent' } // Only tabs can be transparent
-                }}
-              />
-              <Stack.Screen
-                name="modal"
-                options={{
-                  presentation: 'modal',
-                  contentStyle: styles.modalContent
-                }}
-              />
-              <Stack.Screen
-                name="movie/details"
-                options={{
-                  headerShown: true,
-                  headerTransparent: true,
-                  headerBackground: InvisibleHeaderBackground,
-                  headerTitle: '',
-                  headerTintColor: '#ffffff',
-                  headerBackTitle: '',
-                  headerShadowVisible: false,
-                  headerStyle: {
-                    backgroundColor: 'transparent',
-                  }
-                }}
-              />
-              <Stack.Screen
-                name="movie/list"
-                options={{
-                  headerShown: true,
-                  headerTransparent: true,
-                  headerBackground: InvisibleHeaderBackground,
-                  headerTitle: '',
-                  headerTintColor: '#ffffff',
-                  headerBackTitle: '',
-                  headerShadowVisible: false,
-                  headerStyle: {
-                    backgroundColor: 'transparent',
-                  }
-                }}
-              />
-              <Stack.Screen
-                name="series/details"
-                options={{
-                  headerShown: true,
-                  headerTransparent: true,
-                  headerBackground: InvisibleHeaderBackground,
-                  headerTitle: '',
-                  headerTintColor: '#ffffff',
-                  headerBackTitle: '',
-                  headerShadowVisible: false,
-                  headerStyle: {
-                    backgroundColor: 'transparent',
-                  }
-                }}
-              />
-              <Stack.Screen
-                name="series/list"
-                options={{
-                  headerShown: true,
-                  headerTransparent: true,
-                  headerBackground: InvisibleHeaderBackground,
-                  headerTitle: '',
-                  headerTintColor: '#ffffff',
-                  headerBackTitle: '',
-                  headerShadowVisible: false,
-                  headerStyle: {
-                    backgroundColor: 'transparent',
-                  }
-                }}
-              />
-              <Stack.Screen
-                name="stream/list"
-                options={{
-                  headerShown: true,
-                  headerTransparent: true,
-                  headerBackground: InvisibleHeaderBackground,
-                  headerTitle: '',
-                  headerTintColor: '#ffffff',
-                  headerBackTitle: '',
-                  headerShadowVisible: false,
-                  headerStyle: {
-                    backgroundColor: 'transparent',
-                  }
-                }}
-              />
-              <Stack.Screen
-                name="stream/player"
-                options={{
-                  headerShown: false,
-                  headerTransparent: true,
-                  headerBackground: InvisibleHeaderBackground,
-                }}
-              />
-              <Stack.Screen
-                name="settings/addons"
-                options={{
-                  headerShown: true,
-                  headerTransparent: true,
-                  headerBackground: InvisibleHeaderBackground,
-                  headerTitle: '',
-                  headerTintColor: '#ffffff',
-                  headerBackTitle: '',
-                  headerShadowVisible: false,
-                  headerStyle: {
-                    backgroundColor: 'transparent',
-                  }
-                }}
-              />
-              <Stack.Screen
-                name="settings/add"
-                options={{
-                  headerShown: true,
-                  headerTransparent: true,
-                  headerBackground: InvisibleHeaderBackground,
-                  headerTitle: '',
-                  headerTintColor: '#ffffff',
-                  headerBackTitle: '',
-                  headerShadowVisible: false,
-                  headerStyle: {
-                    backgroundColor: 'transparent',
-                  }
-                }}
-              />
-              <Stack.Screen
-                name="settings/stremioserver"
-                options={{
-                  headerShown: true,
-                  headerTransparent: true,
-                  headerBackground: InvisibleHeaderBackground,
-                  headerTitle: '',
-                  headerTintColor: '#ffffff',
-                  headerBackTitle: '',
-                  headerShadowVisible: false,
-                  headerStyle: {
-                    backgroundColor: 'transparent',
-                  }
-                }}
-              />
-              <Stack.Screen
-                name="settings/opensubtitles"
-                options={{
-                  headerShown: true,
-                  headerTransparent: true,
-                  headerBackground: InvisibleHeaderBackground,
-                  headerTitle: '',
-                  headerTintColor: '#ffffff',
-                  headerBackTitle: '',
-                  headerShadowVisible: false,
-                  headerStyle: {
-                    backgroundColor: 'transparent',
-                  }
-                }}
-              />
-              <Stack.Screen
-                name="settings/contact"
-                options={{
-                  headerShown: true,
-                  headerTransparent: true,
-                  headerBackground: InvisibleHeaderBackground,
-                  headerTitle: '',
-                  headerTintColor: '#ffffff',
-                  headerBackTitle: '',
-                  headerShadowVisible: false,
-                  headerStyle: {
-                    backgroundColor: 'transparent',
-                  }
-                }}
-              />
-              <Stack.Screen
-                name="settings/disclaimer"
-                options={{
-                  headerShown: true,
-                  headerTransparent: true,
-                  headerBackground: InvisibleHeaderBackground,
-                  headerTitle: '',
-                  headerTintColor: '#ffffff',
-                  headerBackTitle: '',
-                  headerShadowVisible: false,
-                  headerStyle: {
-                    backgroundColor: 'transparent',
-                  }
-                }}
-              />
-              <Stack.Screen
-                name="settings/donate"
-                options={{
-                  headerShown: true,
-                  headerTransparent: true,
-                  headerBackground: InvisibleHeaderBackground,
-                  headerTitle: '',
-                  headerTintColor: '#ffffff',
-                  headerBackTitle: '',
-                  headerShadowVisible: false,
-                  headerStyle: {
-                    backgroundColor: 'transparent',
-                  }
-                }}
-              />
-              <Stack.Screen
-                name="settings/downloads"
-                options={{
-                  headerShown: true,
-                  headerTransparent: true,
-                  headerBackground: InvisibleHeaderBackground,
-                  headerTitle: '',
-                  headerTintColor: '#ffffff',
-                  headerBackTitle: '',
-                  headerShadowVisible: false,
-                  headerStyle: {
-                    backgroundColor: 'transparent',
-                  }
-                }}
-              />
-              <Stack.Screen
-                name="settings/mediaplayer"
-                options={{
-                  headerShown: true,
-                  headerTransparent: true,
-                  headerBackground: InvisibleHeaderBackground,
-                  headerTitle: '',
-                  headerTintColor: '#ffffff',
-                  headerBackTitle: '',
-                  headerShadowVisible: false,
-                  headerStyle: {
-                    backgroundColor: 'transparent',
-                  }
-                }}
-              />
-            </Stack>
-          </ThemeProvider>
+            />
+            <Stack.Screen
+              name="modal"
+              options={{
+                presentation: 'modal',
+                contentStyle: styles.modalContent
+              }}
+            />
+            <Stack.Screen
+              name="movie/details"
+              options={{
+                headerShown: true,
+                headerTransparent: true,
+                headerBackground: InvisibleHeaderBackground,
+                headerTitle: '',
+                headerTintColor: '#ffffff',
+                headerBackTitle: '',
+                headerShadowVisible: false,
+                headerStyle: {
+                  backgroundColor: 'transparent',
+                }
+              }}
+            />
+            <Stack.Screen
+              name="movie/list"
+              options={{
+                headerShown: true,
+                headerTransparent: true,
+                headerBackground: InvisibleHeaderBackground,
+                headerTitle: '',
+                headerTintColor: '#ffffff',
+                headerBackTitle: '',
+                headerShadowVisible: false,
+                headerStyle: {
+                  backgroundColor: 'transparent',
+                }
+              }}
+            />
+            <Stack.Screen
+              name="series/details"
+              options={{
+                headerShown: true,
+                headerTransparent: true,
+                headerBackground: InvisibleHeaderBackground,
+                headerTitle: '',
+                headerTintColor: '#ffffff',
+                headerBackTitle: '',
+                headerShadowVisible: false,
+                headerStyle: {
+                  backgroundColor: 'transparent',
+                }
+              }}
+            />
+            <Stack.Screen
+              name="series/list"
+              options={{
+                headerShown: true,
+                headerTransparent: true,
+                headerBackground: InvisibleHeaderBackground,
+                headerTitle: '',
+                headerTintColor: '#ffffff',
+                headerBackTitle: '',
+                headerShadowVisible: false,
+                headerStyle: {
+                  backgroundColor: 'transparent',
+                }
+              }}
+            />
+            <Stack.Screen
+              name="stream/list"
+              options={{
+                headerShown: true,
+                headerTransparent: true,
+                headerBackground: InvisibleHeaderBackground,
+                headerTitle: '',
+                headerTintColor: '#ffffff',
+                headerBackTitle: '',
+                headerShadowVisible: false,
+                headerStyle: {
+                  backgroundColor: 'transparent',
+                }
+              }}
+            />
+            <Stack.Screen
+              name="stream/player"
+              options={{
+                headerShown: false,
+                headerTransparent: true,
+                headerBackground: InvisibleHeaderBackground,
+              }}
+            />
+            <Stack.Screen
+              name="settings/addons"
+              options={{
+                headerShown: true,
+                headerTransparent: true,
+                headerBackground: InvisibleHeaderBackground,
+                headerTitle: '',
+                headerTintColor: '#ffffff',
+                headerBackTitle: '',
+                headerShadowVisible: false,
+                headerStyle: {
+                  backgroundColor: 'transparent',
+                }
+              }}
+            />
+            <Stack.Screen
+              name="settings/add"
+              options={{
+                headerShown: true,
+                headerTransparent: true,
+                headerBackground: InvisibleHeaderBackground,
+                headerTitle: '',
+                headerTintColor: '#ffffff',
+                headerBackTitle: '',
+                headerShadowVisible: false,
+                headerStyle: {
+                  backgroundColor: 'transparent',
+                }
+              }}
+            />
+            <Stack.Screen
+              name="settings/stremioserver"
+              options={{
+                headerShown: true,
+                headerTransparent: true,
+                headerBackground: InvisibleHeaderBackground,
+                headerTitle: '',
+                headerTintColor: '#ffffff',
+                headerBackTitle: '',
+                headerShadowVisible: false,
+                headerStyle: {
+                  backgroundColor: 'transparent',
+                }
+              }}
+            />
+            <Stack.Screen
+              name="settings/opensubtitles"
+              options={{
+                headerShown: true,
+                headerTransparent: true,
+                headerBackground: InvisibleHeaderBackground,
+                headerTitle: '',
+                headerTintColor: '#ffffff',
+                headerBackTitle: '',
+                headerShadowVisible: false,
+                headerStyle: {
+                  backgroundColor: 'transparent',
+                }
+              }}
+            />
+            <Stack.Screen
+              name="settings/contact"
+              options={{
+                headerShown: true,
+                headerTransparent: true,
+                headerBackground: InvisibleHeaderBackground,
+                headerTitle: '',
+                headerTintColor: '#ffffff',
+                headerBackTitle: '',
+                headerShadowVisible: false,
+                headerStyle: {
+                  backgroundColor: 'transparent',
+                }
+              }}
+            />
+            <Stack.Screen
+              name="settings/disclaimer"
+              options={{
+                headerShown: true,
+                headerTransparent: true,
+                headerBackground: InvisibleHeaderBackground,
+                headerTitle: '',
+                headerTintColor: '#ffffff',
+                headerBackTitle: '',
+                headerShadowVisible: false,
+                headerStyle: {
+                  backgroundColor: 'transparent',
+                }
+              }}
+            />
+            <Stack.Screen
+              name="settings/donate"
+              options={{
+                headerShown: true,
+                headerTransparent: true,
+                headerBackground: InvisibleHeaderBackground,
+                headerTitle: '',
+                headerTintColor: '#ffffff',
+                headerBackTitle: '',
+                headerShadowVisible: false,
+                headerStyle: {
+                  backgroundColor: 'transparent',
+                }
+              }}
+            />
+            <Stack.Screen
+              name="settings/downloads"
+              options={{
+                headerShown: true,
+                headerTransparent: true,
+                headerBackground: InvisibleHeaderBackground,
+                headerTitle: '',
+                headerTintColor: '#ffffff',
+                headerBackTitle: '',
+                headerShadowVisible: false,
+                headerStyle: {
+                  backgroundColor: 'transparent',
+                }
+              }}
+            />
+            <Stack.Screen
+              name="settings/mediaplayer"
+              options={{
+                headerShown: true,
+                headerTransparent: true,
+                headerBackground: InvisibleHeaderBackground,
+                headerTitle: '',
+                headerTintColor: '#ffffff',
+                headerBackTitle: '',
+                headerShadowVisible: false,
+                headerStyle: {
+                  backgroundColor: 'transparent',
+                }
+              }}
+            />
+          </Stack>
         </ActionSheetProvider>
       </AppThemeProvider>
     </View>
