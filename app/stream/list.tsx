@@ -1,14 +1,14 @@
-import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { StyleSheet, Pressable, View as RNView, ScrollView } from 'react-native';
 import { ActivityIndicator, Card, StatusBar, Text, View } from '@/components/Themed';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import * as Haptics from 'expo-haptics';
-import { isHapticsSupported, showAlert } from '@/utils/platform';
+import { showAlert } from '@/utils/platform';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import BottomSpacing from '@/components/BottomSpacing';
 import { extractQuality, extractSize, getStreamType } from '@/utils/StreamItem';
 import { StorageKeys, storageService } from '@/utils/StorageService';
+import { Colors } from '@/constants/theme';
 
 interface Stream {
     name: string;
@@ -236,7 +236,7 @@ const StreamListScreen = () => {
     const renderLoadingState = (message: string) => (
         <RNView style={styles.loadingContainer}>
             <View style={styles.centeredContainer}>
-                <ActivityIndicator size="large" style={styles.activityIndicator} color="#535aff" />
+                <ActivityIndicator size="large" style={styles.activityIndicator} color={Colors.primary} />
                 <Text style={styles.loadingText}>{message}</Text>
             </View>
         </RNView>
@@ -246,7 +246,7 @@ const StreamListScreen = () => {
         <RNView style={styles.emptyContainer}>
             <View style={styles.emptyContent}>
                 <RNView style={styles.emptyIconContainer}>
-                    <Feather name={icon as any} color={'#535aff'} size={40} />
+                    <Feather name={icon as any} color={Colors.primary} size={40} />
                 </RNView>
                 <Text style={styles.emptyText}>{message}</Text>
             </View>
@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
     },
     addonSection: {
         borderBottomWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.06)',
+        borderColor: Colors.primaryBorder,
         paddingVertical: 16,
     },
     addonListContainer: {
@@ -320,25 +320,25 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         paddingVertical: 10,
         paddingHorizontal: 18,
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        backgroundColor: Colors.primarySurface,
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.08)',
+        borderColor: Colors.primaryBorder,
     },
     selectedAddonItem: {
-        backgroundColor: '#535aff',
-        borderColor: '#535aff',
+        backgroundColor: Colors.primary,
+        borderColor: Colors.primary,
     },
     addonItemPressed: {
         opacity: 0.7,
     },
     addonName: {
         fontSize: 14,
-        color: '#cccccc',
+        color: Colors.textMuted,
         fontWeight: '500',
         letterSpacing: -0.2,
     },
     selectedAddonName: {
-        color: '#ffffff',
+        color: Colors.text,
         fontWeight: '500',
     },
     streamsContainer: {
@@ -353,11 +353,11 @@ const styles = StyleSheet.create({
         opacity: 0.7,
     },
     streamItem: {
-        backgroundColor: 'rgba(255, 255, 255, 0.03)',
+        backgroundColor: Colors.primarySurface,
         borderRadius: 14,
         padding: 16,
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.06)',
+        borderColor: Colors.primaryBorder,
     },
     streamHeader: {
         flexDirection: 'row',
@@ -369,28 +369,28 @@ const styles = StyleSheet.create({
     streamName: {
         fontSize: 16,
         fontWeight: '500',
-        color: '#ffffff',
+        color: Colors.text,
         flex: 1,
         lineHeight: 22,
         letterSpacing: -0.3,
     },
     qualityBadge: {
-        backgroundColor: 'rgba(83, 90, 255, 0.15)',
+        backgroundColor: Colors.primaryMuted,
         paddingHorizontal: 10,
         paddingVertical: 4,
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: 'rgba(83, 90, 255, 0.3)',
+        borderColor: Colors.primaryBorder,
     },
     qualityText: {
-        color: '#ffffff',
+        color: Colors.text,
         fontSize: 12,
         fontWeight: '500',
         letterSpacing: 0.2,
     },
     streamDescription: {
         fontSize: 13,
-        color: '#aaaaaa',
+        color: Colors.textMuted,
         lineHeight: 19,
         marginBottom: 12,
     },
@@ -400,20 +400,20 @@ const styles = StyleSheet.create({
         gap: 10,
     },
     sizeBadge: {
-        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        backgroundColor: Colors.primarySurface,
         paddingHorizontal: 8,
         paddingVertical: 4,
         borderRadius: 6,
     },
     streamSize: {
         fontSize: 11,
-        color: '#cccccc',
+        color: Colors.textMuted,
         fontWeight: '500',
         letterSpacing: 0.3,
     },
     streamType: {
         fontSize: 11,
-        color: '#888888',
+        color: Colors.textDim,
         textTransform: 'uppercase',
         fontWeight: '500',
         letterSpacing: 0.8,
@@ -430,7 +430,7 @@ const styles = StyleSheet.create({
     loadingText: {
         fontSize: 14,
         marginTop: 10,
-        color: '#888888',
+        color: Colors.textDim,
         fontWeight: '500',
     },
     centeredContainer: {
@@ -452,7 +452,7 @@ const styles = StyleSheet.create({
         width: 80,
         height: 80,
         borderRadius: 40,
-        backgroundColor: 'rgba(83, 90, 255, 0.1)',
+        backgroundColor: Colors.primarySurface,
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 16,
@@ -460,7 +460,7 @@ const styles = StyleSheet.create({
     emptyText: {
         fontSize: 14,
         textAlign: 'center',
-        color: '#888888',
+        color: Colors.textDim,
         lineHeight: 20,
     },
 });
