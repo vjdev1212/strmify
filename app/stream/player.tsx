@@ -10,6 +10,7 @@ import { ServerConfig } from "@/components/ServerConfig";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StreamingServerClient } from "@/clients/stremio";
 import * as ScreenOrientation from 'expo-screen-orientation';
+import { Colors } from '@/constants/theme';
 
 interface UpdateProgressEvent {
   progress: number
@@ -689,7 +690,7 @@ const MediaPlayerScreen: React.FC = () => {
             />
           )}
           <View style={styles.loadingOverlay}>
-            <ActivityIndicator size="large" color="#535aff" />
+            <ActivityIndicator size="large" color={Colors.primary} />
             <Text style={styles.loadingText}>Loading stream. Please wait...</Text>
           </View>
         </View>
@@ -750,14 +751,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    color: '#fff',
+    color: Colors.text,
     marginTop: 20,
     fontSize: 16,
     fontWeight: 500,
   },
   errorContainer: {
     flex: 1,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: Colors.background,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -787,7 +788,7 @@ const styles = StyleSheet.create({
     fontSize: 48,
   },
   errorTitle: {
-    color: '#fff',
+    color: Colors.text,
     fontSize: 24,
     fontWeight: 600,
     marginBottom: 12,
@@ -801,7 +802,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   errorSubMessage: {
-    color: '#999',
+    color: Colors.textMuted,
     fontSize: 13,
     textAlign: 'center',
     marginBottom: 28,
@@ -812,46 +813,46 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   retryButton: {
-    backgroundColor: '#535aff',
+    backgroundColor: Colors.primary,
     paddingVertical: 14,
     paddingHorizontal: 32,
     borderRadius: 14,
     width: '100%',
     alignItems: 'center',
-    shadowColor: '#535aff',
+    shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
   },
   retryButtonText: {
-    color: '#fff',
+    color: Colors.text,
     fontSize: 16,
     fontWeight: 600,
     letterSpacing: 0.5,
   },
   backButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: Colors.primarySurface,
     paddingVertical: 14,
     paddingHorizontal: 32,
     borderRadius: 14,
     width: '100%',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: Colors.primaryBorder,
   },
   backButtonText: {
-    color: '#fff',
+    color: Colors.text,
     fontSize: 16,
     fontWeight: 600,
   },
   bottomSheetBackground: {
-    backgroundColor: '#101010',
+    backgroundColor: Colors.background,
     borderTopLeftRadius: 10,
     borderTopRightRadius: 10,
   },
   bottomSheetIndicator: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: Colors.text,
     width: 40,
   },
   bottomSheetContent: {
@@ -872,14 +873,14 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 16,
-    color: '#ffffff',
+    color: Colors.text,
     textAlign: 'center',
     marginBottom: 30,
     paddingHorizontal: 20,
     lineHeight: 22,
   },
   cancelButton: {
-    backgroundColor: '#535aff',
+    backgroundColor: Colors.primary,
     paddingVertical: 12,
     paddingHorizontal: 40,
     borderRadius: 8,
@@ -887,7 +888,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cancelButtonText: {
-    color: '#ffffff',
+    color: Colors.text,
     fontSize: 16,
     fontWeight: 600,
   },
