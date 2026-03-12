@@ -15,6 +15,7 @@ import * as Haptics from 'expo-haptics';
 import { isHapticsSupported } from '@/utils/platform';
 import { DefaultPosterImgXml } from '@/utils/Svg';
 import { Ionicons } from '@expo/vector-icons';
+import { Colors } from '@/constants/theme';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -261,7 +262,7 @@ const PosterList = ({
         <Text style={styles.title}>{title}</Text>
         <Pressable onPress={handleSeeAllPress} style={styles.seeAllButton}>
           <Text style={styles.seeAllText}>See All</Text>
-          <Ionicons name="chevron-forward" size={16} color="#cccccc" style={styles.chevronIcon} />
+          <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} style={styles.chevronIcon} />
         </Pressable>
       </RNView>
 
@@ -305,7 +306,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '500',
     letterSpacing: 0.2,
-    color: '#ffffff',
+    color: Colors.text,
   },
   seeAllButton: {
     flexDirection: 'row',
@@ -316,7 +317,7 @@ const styles = StyleSheet.create({
   seeAllText: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#cccccc',
+    color: Colors.textMuted,
     letterSpacing: -0.1,
   },
   chevronIcon: {
@@ -330,30 +331,30 @@ const styles = StyleSheet.create({
   },
   posterImage: {
     borderRadius: 6,
-    backgroundColor: '#101010',
+    backgroundColor: Colors.background,
     overflow: 'hidden',
   },
   posterTitle: {
     marginTop: 10,
     fontSize: 14,
     fontWeight: '500',
-    color: '#ffffff',
+    color: Colors.text,
     letterSpacing: -0.2,
     lineHeight: 20,
   },
   posterYear: {
     marginTop: 4,
     fontSize: 12,
-    color: '#8E8E93',
+    color: Colors.textMuted,
     fontWeight: '500',
     letterSpacing: -0.1,
   },
   skeletonPoster: {
-    backgroundColor: '#101010',
+    backgroundColor: Colors.backgroundCard,
   },
   skeletonText: {
     height: 14,
-    backgroundColor: '#101010',
+    backgroundColor: Colors.backgroundCard,
     borderRadius: 6,
   },
 });

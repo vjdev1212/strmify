@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { StyleSheet, Animated, ActivityIndicator, Platform } from 'react-native';
 import { View } from './Themed';
+import { Colors } from '@/constants/theme';
 
 interface MediaContentPosterProps {
   background: string;
@@ -57,7 +58,7 @@ const MediaContentPoster: React.FC<MediaContentPosterProps> = ({ background, isP
       <Animated.View style={shadowContainerStyle}>
         {isLoading && (
           <Animated.View style={styles.loaderContainer}>
-            <ActivityIndicator color="#535aff" />
+            <ActivityIndicator color={Colors.primary} />
           </Animated.View>
         )}
 

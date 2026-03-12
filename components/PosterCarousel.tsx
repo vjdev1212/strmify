@@ -12,6 +12,7 @@ import { ActivityIndicator, Text } from '@/components/Themed';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { getYear } from '@/utils/Date';
+import { Colors } from '@/constants/theme';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -51,7 +52,6 @@ export default function AppleTVCarousel({
     const flatListRef = useRef<FlatList>(null);
     const autoPlayRef = useRef<any>(null);
 
-    // Handle orientation changes
     useEffect(() => {
         const subscription = Dimensions.addEventListener('change', ({ window }) => {
             setDimensions({
@@ -60,14 +60,11 @@ export default function AppleTVCarousel({
                 isLandscape: window.width > window.height
             });
         });
-
         return () => subscription?.remove();
     }, []);
 
-    // Calculate responsive dimensions
     const getResponsiveDimensions = () => {
         const { width, height, isLandscape } = dimensions;
-
         return {
             screenWidth: width,
             screenHeight: height,
@@ -84,7 +81,6 @@ export default function AppleTVCarousel({
 
     const responsiveDims = getResponsiveDimensions();
 
-    // Fetch carousel data from TMDB
     useEffect(() => {
         const fetchCarouselData = async () => {
             try {
@@ -92,7 +88,6 @@ export default function AppleTVCarousel({
                 setLoading(true);
                 const promises: Promise<any>[] = [];
 
-                // Fetch based on filter
                 if (filter === 'all' || filter === 'movies') {
                     promises.push(
                         fetch(`https://api.themoviedb.org/3/trending/movie/week?api_key=${EXPO_PUBLIC_TMDB_API_KEY}`).then(r => r.json()),
@@ -110,18 +105,11 @@ export default function AppleTVCarousel({
 
                 results.forEach((result, index) => {
                     let type: 'movie' | 'series';
+                    if (filter === 'movies') type = 'movie';
+                    else if (filter === 'series') type = 'series';
+                    else type = index === 0 ? 'movie' : 'series';
 
-                    if (filter === 'movies') {
-                        type = 'movie';
-                    } else if (filter === 'series') {
-                        type = 'series';
-                    } else {
-                        // filter === 'all'
-                        type = index === 0 ? 'movie' : 'series'; // first API call = movies, second = TV
-                    }
-
-                    const items = result?.results?.slice(0, 5) || []; // Take top 3 from each category
-
+                    const items = result?.results?.slice(0, 5) || [];
                     items.forEach((item: any) => {
                         if (item.poster_path && item.backdrop_path) {
                             allItems.push({
@@ -139,7 +127,6 @@ export default function AppleTVCarousel({
                     });
                 });
 
-                // Shuffle and limit to 6 items for variety
                 const shuffled = allItems.sort(() => 0.5 - Math.random()).slice(0, 6);
                 setData(shuffled);
             } catch (error) {
@@ -152,21 +139,16 @@ export default function AppleTVCarousel({
         fetchCarouselData();
     }, [filter]);
 
-    // Auto-play functionality with proper cleanup
     useEffect(() => {
         if (autoPlay && data.length > 1) {
             autoPlayRef.current = setInterval(() => {
                 setActiveIndex((prevIndex) => {
                     const nextIndex = (prevIndex + 1) % data.length;
-                    flatListRef.current?.scrollToIndex({
-                        index: nextIndex,
-                        animated: true
-                    });
+                    flatListRef.current?.scrollToIndex({ index: nextIndex, animated: true });
                     return nextIndex;
                 });
             }, autoPlayInterval);
         }
-
         return () => {
             if (autoPlayRef.current) {
                 clearInterval(autoPlayRef.current);
@@ -184,7 +166,6 @@ export default function AppleTVCarousel({
     };
 
     const handleItemPress = (item: CarouselItem) => {
-        // Clear auto-play when user interacts
         if (autoPlayRef.current) {
             clearInterval(autoPlayRef.current);
             autoPlayRef.current = null;
@@ -194,13 +175,8 @@ export default function AppleTVCarousel({
 
     const scrollToIndex = (index: number) => {
         if (flatListRef.current && index >= 0 && index < data.length) {
-            flatListRef.current.scrollToIndex({
-                index,
-                animated: true,
-                viewPosition: 0
-            });
+            flatListRef.current.scrollToIndex({ index, animated: true, viewPosition: 0 });
             setActiveIndex(index);
-            // Clear auto-play when user manually navigates
             if (autoPlayRef.current) {
                 clearInterval(autoPlayRef.current);
                 autoPlayRef.current = null;
@@ -210,68 +186,51 @@ export default function AppleTVCarousel({
 
     const renderCarouselItem = ({ item, index }: { item: CarouselItem; index: number }) => {
         const dims = responsiveDims;
-
         return (
-            <View style={[styles.carouselItem, {
-                width: dims.itemWidth,
-                height: dims.carouselHeight
-            }]}>
+            <View style={[styles.carouselItem, { width: dims.itemWidth, height: dims.carouselHeight }]}>
                 <TouchableOpacity
                     style={styles.carouselTouchable}
                     onPress={() => handleItemPress(item)}
                     activeOpacity={0.9}
                 >
                     <ImageBackground
-                        key={`${item.id}-${index}`} // Force re-render with unique key
+                        key={`${item.id}-${index}`}
                         source={{ uri: item.backdropUrl || item.posterUrl }}
                         style={styles.backdropImage}
                         resizeMode="cover"
                     >
-                        {/* Gradient overlay */}
                         <LinearGradient
-                            colors={['transparent', 'rgba(0,0,0,0.3)', 'rgba(0,0,0,0.8)']}
+                            colors={Colors.gradientOverlay as any}
                             style={styles.gradient}
                         />
 
-                        {/* Content container */}
                         <View style={[styles.contentContainer, {
                             paddingHorizontal: dims.contentPadding,
                             paddingBottom: dims.bottomPadding,
-                            flexDirection: dimensions.isLandscape ? 'row' : 'row',
+                            flexDirection: 'row',
                         }]}>
-
-                            <View style={[styles.textContainer, {
-                                flex: 1,
-                            }]}>
-                                <Text style={[styles.title, {
-                                    fontSize: dims.titleSize
-                                }]} numberOfLines={1}>
+                            <View style={[styles.textContainer, { flex: 1 }]}>
+                                <Text style={[styles.title, { fontSize: dims.titleSize }]} numberOfLines={1}>
                                     {item.title}
                                 </Text>
                                 {item.subtitle && (
                                     <Text
-                                        style={[styles.subtitle, {
-                                            fontSize: dims.subtitleSize
-                                        }]}
+                                        style={[styles.subtitle, { fontSize: dims.subtitleSize }]}
                                         numberOfLines={dimensions.isLandscape ? 2 : 2}
                                     >
                                         {item.subtitle}
                                     </Text>
                                 )}
                                 <View style={[styles.metaContainer, {
-                                    flexDirection: dimensions.isLandscape ? 'row' : 'row',
+                                    flexDirection: 'row',
                                     alignItems: dimensions.isLandscape ? 'flex-start' : 'center',
                                     gap: dimensions.isLandscape ? 8 : 0,
                                 }]}>
-                                    <Text style={[styles.metaText, {
-                                        fontSize: dimensions.isLandscape ? 12 : 14,
-                                    }]}>
+                                    <Text style={[styles.metaText, { fontSize: dimensions.isLandscape ? 12 : 14 }]}>
                                         ★ {item.rating}   {item.year}
                                     </Text>
                                     <View style={styles.typeIndicator}>
-                                        <Text style={[styles.typeText, {
-                                            fontSize: dimensions.isLandscape ? 10 : 12,
-                                        }]}>
+                                        <Text style={[styles.typeText, { fontSize: dimensions.isLandscape ? 10 : 12 }]}>
                                             {item.type === 'movie' ? 'MOVIE' : 'SERIES'}
                                         </Text>
                                     </View>
@@ -297,10 +256,8 @@ export default function AppleTVCarousel({
 
     if (loading || !data.length) {
         return (
-            <View style={[styles.container, styles.loadingContainer, {
-                height: responsiveDims.carouselHeight
-            }]}>
-                <ActivityIndicator color="#535aff"></ActivityIndicator>
+            <View style={[styles.container, styles.loadingContainer, { height: responsiveDims.carouselHeight }]}>
+                <ActivityIndicator color={Colors.primary} />
             </View>
         );
     }
@@ -311,7 +268,7 @@ export default function AppleTVCarousel({
                 ref={flatListRef}
                 data={data}
                 renderItem={renderCarouselItem}
-                keyExtractor={(item, index) => `${item.id}-${index}`} // More reliable key
+                keyExtractor={(item, index) => `${item.id}-${index}`}
                 horizontal
                 pagingEnabled
                 showsHorizontalScrollIndicator={false}
@@ -320,7 +277,7 @@ export default function AppleTVCarousel({
                 snapToInterval={responsiveDims.itemWidth}
                 snapToAlignment="start"
                 style={styles.carousel}
-                removeClippedSubviews={false} // Prevent image loading issues
+                removeClippedSubviews={false}
                 initialNumToRender={3}
                 maxToRenderPerBatch={3}
                 windowSize={5}
@@ -331,13 +288,12 @@ export default function AppleTVCarousel({
                 })}
             />
 
-            {/* Pagination dots */}
             {data.length > 1 && (
                 <View style={[styles.paginationContainer, {
                     bottom: dimensions.isLandscape ? 15 : 20,
                     left: dimensions.isLandscape ? 35 : 20,
                 }]}>
-                    <BlurView intensity={20} style={[styles.paginationBlur]}>
+                    <BlurView intensity={20} style={styles.paginationBlur}>
                         <View style={styles.paginationDots}>
                             {data.map((_, index) => renderPaginationDot(index))}
                         </View>
@@ -351,7 +307,7 @@ export default function AppleTVCarousel({
 const styles = StyleSheet.create({
     container: {
         position: 'relative',
-        backgroundColor: '#101010'
+        backgroundColor: Colors.background,
     },
     carousel: {
         flex: 1,
@@ -377,38 +333,20 @@ const styles = StyleSheet.create({
         alignItems: 'flex-end',
         zIndex: 1,
     },
-    posterContainer: {
-        position: 'relative',
-    },
-    posterImage: {
-        borderRadius: 12,
-        borderWidth: 2,
-        borderColor: 'rgba(255,255,255,0.1)',
-    },
-    posterShadow: {
-        position: 'absolute',
-        top: 8,
-        left: 8,
-        right: -8,
-        bottom: -8,
-        backgroundColor: 'rgba(0,0,0,0.3)',
-        borderRadius: 12,
-        zIndex: -1,
-    },
     textContainer: {
         justifyContent: 'flex-end',
         paddingBottom: 10,
     },
     title: {
         fontWeight: '700',
-        color: '#fff',
+        color: Colors.text,
         marginBottom: 6,
         textShadowColor: 'rgba(0,0,0,0.8)',
         textShadowOffset: { width: 0, height: 2 },
         textShadowRadius: 4,
     },
     subtitle: {
-        color: 'rgba(255,255,255,0.8)',
+        color: Colors.textMuted,
         lineHeight: 22,
         textShadowColor: 'rgba(0,0,0,0.6)',
         textShadowOffset: { width: 0, height: 1 },
@@ -420,30 +358,26 @@ const styles = StyleSheet.create({
         marginTop: 10,
     },
     metaText: {
-        color: 'rgba(255,255,255,0.9)',
+        color: Colors.text,
         fontWeight: '500',
     },
     typeIndicator: {
-        backgroundColor: 'rgba(255,255,255,0.2)',
+        backgroundColor: Colors.primaryMuted,
         paddingHorizontal: 10,
         paddingVertical: 4,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.1)',
+        borderColor: Colors.primaryBorder,
     },
     typeText: {
         fontWeight: '600',
-        color: '#fff',
+        color: Colors.text,
         letterSpacing: 1,
     },
     loadingContainer: {
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#000',
-    },
-    loadingText: {
-        color: '#fff',
-        fontSize: 16,
+        backgroundColor: Colors.background,
     },
     paginationContainer: {
         position: 'absolute',
@@ -462,11 +396,11 @@ const styles = StyleSheet.create({
         width: 8,
         height: 8,
         borderRadius: 4,
-        backgroundColor: 'rgba(255,255,255,0.4)',
+        backgroundColor: Colors.primaryMuted,
         marginHorizontal: 4,
     },
     paginationDotActive: {
-        backgroundColor: '#fff',
+        backgroundColor: Colors.primary,
         width: 12,
         height: 8,
         borderRadius: 4,

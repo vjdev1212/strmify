@@ -11,6 +11,7 @@ import { useRouter } from 'expo-router';
 import { getYear } from '@/utils/Date';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomSpacing from './BottomSpacing';
+import { Colors } from '@/constants/theme';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -118,7 +119,7 @@ const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath }) => {
             <StatusBar />
             {loading ? (
                 <View style={styles.centeredContainer}>
-                    <ActivityIndicator size="large" color="#535aff" />
+                    <ActivityIndicator size="large" color={Colors.primary} />
                     <Text style={styles.loadingText}>Loading content...</Text>
                 </View>
             ) : (
@@ -154,7 +155,7 @@ const styles = StyleSheet.create({
         aspectRatio: 2 / 3,
         borderRadius: 5,
         overflow: 'hidden',
-        backgroundColor: '#101010',
+        backgroundColor: Colors.background,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
@@ -177,7 +178,7 @@ const styles = StyleSheet.create({
     },
     posterYear: {
         fontSize: 12,
-        color: '#999',
+        color: Colors.textMuted,
         fontWeight: '500',
     },
     centeredContainer: {
