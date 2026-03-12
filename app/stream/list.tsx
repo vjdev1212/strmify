@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
         opacity: 0.7,
     },
     streamItem: {
-        backgroundColor: Colors.primarySurface,
+        backgroundColor: 'rgba(255, 255, 255, 0.03)',
         borderRadius: 14,
         padding: 16,
         borderWidth: 1,

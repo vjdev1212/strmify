@@ -13,6 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { ResizeMode } from 'react-native-video';
 import { GlassView } from 'expo-glass-effect';
+import { Colors } from '@/constants/theme';
 
 // ==================== CONSTANTS ====================
 export const CONSTANTS = {
@@ -520,7 +521,7 @@ export const WaitingLobby: React.FC<{
     if (hasStartedPlaying || error) return null;
     return (
         <Animated.View style={[styles.bufferingContainer, { opacity }]} pointerEvents="none">
-            <ActivityIndicator size="large" color="#535aff" />
+            <ActivityIndicator size="large" color={Colors.primary} />
             <Text style={styles.bufferingText}>{"Loading..."}</Text>
         </Animated.View>
     );
@@ -539,7 +540,7 @@ export const ArtworkBackground: React.FC<{
             <View style={styles.artworkOverlay} />
             {isBuffering && (
                 <View style={styles.artworkLoadingOverlay}>
-                    <ActivityIndicator size="large" color="#535aff" />
+                    <ActivityIndicator size="large" color={Colors.primary} />
                     <Text style={styles.bufferingText}>Loading...</Text>
                 </View>
             )}

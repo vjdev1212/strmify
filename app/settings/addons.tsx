@@ -20,6 +20,7 @@ import { isHapticsSupported, showAlert } from '@/utils/platform';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StorageKeys, storageService } from '@/utils/StorageService';
+import { Colors } from '@/constants/theme';
 
 const ADDONS_KEY = StorageKeys.ADDONS_KEY;
 const defaultAddonLogo = 'https://i.ibb.co/fSJ42PJ/addon.png';
@@ -284,11 +285,11 @@ const AddonsScreen = () => {
 
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Addons</Text>
-        <Pressable 
+        <Pressable
           style={({ pressed }) => [
             styles.addButton,
             pressed && styles.addButtonPressed
-          ]} 
+          ]}
           onPress={onAddNewPress}
         >
           <Ionicons name="add" size={20} color="#ffffff" />
@@ -306,9 +307,9 @@ const AddonsScreen = () => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#535aff"
-            colors={['#535aff']}
-            progressBackgroundColor="#1a1a1a"
+            tintColor={Colors.primary}
+            colors={[Colors.primary]}
+            progressBackgroundColor={Colors.background}
           />
         }
       >
@@ -319,20 +320,20 @@ const AddonsScreen = () => {
         ) : (
           <View style={styles.emptyState}>
             <View style={styles.emptyIconContainer}>
-              <Ionicons name="cube-outline" size={48} color="#535aff" />
+              <Ionicons name="cube-outline" size={48} color={Colors.primary} />
             </View>
             <Text style={styles.emptyStateTitle}>No Addons</Text>
             <Text style={styles.emptyStateText}>
               Get started by adding your first addon
             </Text>
-            <Pressable 
+            <Pressable
               style={({ pressed }) => [
                 styles.emptyActionButton,
                 pressed && styles.emptyActionButtonPressed
-              ]} 
+              ]}
               onPress={onAddNewPress}
             >
-              <Ionicons name="add-circle-outline" size={20} color="#535aff" />
+              <Ionicons name="add-circle-outline" size={20} color={Colors.primary} />
               <Text style={styles.emptyActionText}>Add Addon</Text>
             </Pressable>
           </View>
@@ -357,18 +358,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
+    borderBottomColor: Colors.primaryBorder,
   },
   headerTitle: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#ffffff',
+    color: Colors.text,
     letterSpacing: -0.5,
   },
   addButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#535aff',
+    backgroundColor: Colors.primary,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
@@ -378,7 +379,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   addButtonText: {
-    color: '#ffffff',
+    color: Colors.text,
     fontSize: 14,
     fontWeight: '500',
     letterSpacing: -0.2,
@@ -401,7 +402,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: Colors.primaryBorder,
   },
   cardHeader: {
     flexDirection: 'row',
