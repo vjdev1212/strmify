@@ -17,6 +17,7 @@ import * as Haptics from 'expo-haptics';
 import { isHapticsSupported } from '@/utils/platform';
 import { CatalogUrl, MovieGneres, TvGneres } from '@/constants/Tmdb';
 import BlurGradientBackground from '@/components/BlurGradientBackground';
+import { Colors } from '@/constants/theme';
 
 // Lazy loading wrapper component
 const LazyPosterList = ({
@@ -177,7 +178,7 @@ export default function HomeScreen() {
                   <Ionicons
                     name={item.icon as any}
                     size={18}
-                    color={filter === item.key ? '#000000' : '#8E8E93'}
+                    color={filter === item.key ? Colors.text : Colors.textMuted}
                     style={styles.filterIcon}
                   />
                   <Text
@@ -227,26 +228,26 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 18,
     borderRadius: 20,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: Colors.primarySurface,
     borderWidth: 1,
-    borderColor: '#2a2a2a',
+    borderColor: Colors.primaryBorder,
   },
   filterButtonActive: {
-    backgroundColor: '#ffffff',
-    borderColor: '#ffffff',
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
   },
   filterIcon: {
     marginRight: 6,
   },
   filterButtonText: {
     fontSize: 15,
-    color: '#8E8E93',
-    fontWeight: '600',
+    color: Colors.textMuted,
+    fontWeight: '500',
     letterSpacing: -0.2,
   },
   filterButtonTextActive: {
-    color: '#000000',
-    fontWeight: '700',
+    color: Colors.text,
+    fontWeight: '600',
   },
   contentContainer: {
     marginTop: 16,

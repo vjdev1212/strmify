@@ -1,15 +1,14 @@
 import { Text, ActivityIndicator, TextInput, View, StatusBar } from '@/components/Themed';
-import { useRouter } from 'expo-router';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { ScrollView, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { isHapticsSupported } from '@/utils/platform';
-import { getYear } from '@/utils/Date';
 import BottomSpacing from '@/components/BottomSpacing';
 import PosterList from '@/components/PosterList';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BlurGradientBackground from '@/components/BlurGradientBackground';
+import { Colors } from '@/constants/theme';
 
 const TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -86,12 +85,12 @@ const SearchScreen = () => {
       <View style={styles.searchSection}>
         <View style={styles.searchInputContainer}>
           <View style={styles.searchIconContainer}>
-            <Ionicons name="search-outline" size={20} color="#6E6E73" />
+            <Ionicons name="search-outline" size={20} color={Colors.textDim} />
           </View>
           <TextInput
             style={styles.searchInput}
             placeholder="Search movies or series..."
-            placeholderTextColor="#6E6E73"
+            placeholderTextColor={Colors.textDim}
             value={query}
             onChangeText={handleTextChange}
             submitBehavior="blurAndSubmit"
@@ -101,7 +100,7 @@ const SearchScreen = () => {
           {query.length > 0 && (
             <Pressable onPress={clearSearch} style={styles.clearButton}>
               <View style={styles.clearIconContainer}>
-                <Ionicons name="close-circle" size={20} color="#6E6E73" />
+                <Ionicons name="close-circle" size={20} color={Colors.textDim} />
               </View>
             </Pressable>
           )}
@@ -110,7 +109,7 @@ const SearchScreen = () => {
 
       {loading && (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#535aff" />
+          <ActivityIndicator size="large" color={Colors.primary} />
         </View>
       )}
 
@@ -171,7 +170,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 34,
     fontWeight: '700',
-    color: '#ffffff',
+    color: Colors.text,
     letterSpacing: 0.3,
   },
   searchSection: {
@@ -184,12 +183,12 @@ const styles = StyleSheet.create({
     margin: 'auto',
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1a1a1a',
+    backgroundColor: Colors.primarySurface,
     borderRadius: 14,
     height: 48,
     paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: '#2a2a2a',
+    borderColor: Colors.primaryBorder,
   },
   searchIconContainer: {
     marginRight: 10,
@@ -197,7 +196,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 17,
-    color: '#ffffff',
+    color: Colors.text,
     fontWeight: '400',
     letterSpacing: -0.2,
     outline: 'none',
@@ -231,7 +230,7 @@ const styles = StyleSheet.create({
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: 'rgba(83, 90, 255, 0.12)',
+    backgroundColor: Colors.primarySurface,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
@@ -239,14 +238,14 @@ const styles = StyleSheet.create({
   emptyStateTitle: {
     fontSize: 26,
     fontWeight: '700',
-    color: '#ffffff',
+    color: Colors.text,
     textAlign: 'center',
     marginBottom: 10,
     letterSpacing: 0.2,
   },
   emptyStateSubtitle: {
     fontSize: 16,
-    color: '#8E8E93',
+    color: Colors.textMuted,
     textAlign: 'center',
     lineHeight: 22,
     maxWidth: 300,
