@@ -3,6 +3,7 @@ import { TouchableOpacity, StyleSheet, Linking } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { isHapticsSupported, showAlert } from '@/utils/platform';
 import { Ionicons } from '@expo/vector-icons';
+import { Colors } from '@/constants/theme';
 
 interface WatchTrailerButtonProps {
     trailerKey: string | null;
@@ -47,7 +48,7 @@ const WatchTrailerButton: React.FC<WatchTrailerButtonProps> = ({
             <Ionicons 
                 name="film-outline" 
                 size={size} 
-                color={trailerKey ? color : 'rgba(255, 255, 255, 0.3)'} 
+                color={trailerKey ? Colors.text : Colors.textDim}
             />
         </TouchableOpacity>
     );
@@ -58,15 +59,15 @@ const styles = StyleSheet.create({
         width: 50,
         height: 50,
         borderRadius: 25,
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        backgroundColor: Colors.primarySurface,
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 2,
-        borderColor: 'rgba(255, 255, 255, 0.3)',
+        borderColor: Colors.primaryBorder,
     },
     buttonDisabled: {
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-        borderColor: 'rgba(255, 255, 255, 0.1)',
+        backgroundColor: Colors.backgroundCard,
+        borderColor: Colors.primaryBorder,
         opacity: 0.5,
     },
 });

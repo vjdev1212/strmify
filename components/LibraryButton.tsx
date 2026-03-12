@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { libraryService, LibraryItem } from '@/utils/LibraryService';
 import * as Haptics from 'expo-haptics';
 import { isHapticsSupported } from '@/utils/platform';
+import { Colors } from '@/constants/theme';
 
 interface LibraryButtonProps {
     item: Omit<LibraryItem, 'timestamp'>;
@@ -83,15 +84,16 @@ const styles = StyleSheet.create({
         width: 50,
         height: 50,
         borderRadius: 25,
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        backgroundColor: Colors.primarySurface,
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 2,
-        borderColor: 'rgba(255, 255, 255, 0.3)',
+        borderColor: Colors.primaryBorder,
     },
     buttonActive: {
-        backgroundColor: 'rgba(83, 90, 255, 0.3)',
-        borderColor: 'rgba(83, 90, 255, 0.5)',
+        backgroundColor: Colors.primaryMuted,
+        borderColor: Colors.primaryBorder,
+        opacity: 0.5,
     },
 });
 
