@@ -122,7 +122,7 @@ const SearchScreen = () => {
         {!loading && !moviesUrl && !seriesUrl && (
           <View style={styles.emptyStateContainer}>
             <View style={styles.emptyStateIconContainer}>
-              <Ionicons name="search" color="#535aff" size={48} />
+              <Ionicons name="search" color={Colors.primary} size={48} />
             </View>
             <Text style={styles.emptyStateTitle}>
               {emptyStateContent.title}

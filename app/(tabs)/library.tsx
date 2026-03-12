@@ -18,7 +18,7 @@ import BlurGradientBackground from '@/components/BlurGradientBackground';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomSpacing from '@/components/BottomSpacing';
 import * as Haptics from 'expo-haptics';
-
+import { Colors } from '@/constants/theme';
 
 interface WatchHistoryItem {
   title: string;
@@ -250,7 +250,7 @@ const LibraryScreen: React.FC = () => {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <View style={styles.sectionTitleRow}>
-            <Ionicons name={icon as any} size={20} color="#ffffff" />
+            <Ionicons name={icon as any} size={20} color={Colors.text} />
             <Text style={styles.sectionTitle}>{title}</Text>
           </View>
           <Text style={styles.sectionCount}>
@@ -282,7 +282,7 @@ const LibraryScreen: React.FC = () => {
         <Ionicons
           name={icon as any}
           size={18}
-          color={isActive ? '#000000' : '#999'}
+          color={isActive ? Colors.text : Colors.textMuted}
         />
         <Text style={[styles.categoryButtonText, isActive && styles.categoryButtonTextActive]}>
           {label}
@@ -349,7 +349,7 @@ const LibraryScreen: React.FC = () => {
         />
         {totalCount === 0 ? (
           <View style={styles.emptyContainer}>
-            <Ionicons name="albums-outline" size={80} color="#535aff" />
+            <Ionicons name="albums-outline" size={80} color={Colors.primary} />
             <Text style={styles.emptyTitle}>
               {activeCategory === 'all'
                 ? 'Your Library is Empty'
@@ -396,8 +396,8 @@ const LibraryScreen: React.FC = () => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#535aff"
-            colors={['#535aff']}
+            tintColor={Colors.primary}
+            colors={[Colors.primary]}
           />
         }
       >
@@ -422,12 +422,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.5,
     marginBottom: 4,
-    color: '#fff',
+    color: Colors.text,
   },
   headerSubtitle: {
     fontSize: 14,
     opacity: 0.6,
-    color: '#fff',
+    color: Colors.text,
   },
   categoryContainer: {
     flexDirection: 'row',
@@ -441,22 +441,22 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 18,
     borderRadius: 20,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: Colors.primarySurface,
     borderWidth: 1,
     gap: 8,
-    borderColor: '#2a2a2a',
+    borderColor: Colors.primaryBorder,
   },
   categoryButtonActive: {
-    backgroundColor: '#ffffff',
-    borderColor: '#ffffff',
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
   },
   categoryButtonText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#999',
+    color: Colors.textMuted,
   },
   categoryButtonTextActive: {
-    color: '#000000',
+    color: Colors.text,
   },
   continueWatchingSection: {
     marginTop: 10,
@@ -469,7 +469,7 @@ const styles = StyleSheet.create({
   mainSectionTitle: {
     fontSize: 22,
     fontWeight: '600',
-    color: '#fff',
+    color: Colors.text,
   },
   section: {
     marginTop: 24,
@@ -490,13 +490,13 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#fff',
+    color: Colors.text,
   },
   sectionCount: {
     fontSize: 14,
     opacity: 0.5,
     fontWeight: '500',
-    color: '#fff',
+    color: Colors.text,
   },
   flatListContent: {
     paddingHorizontal: 16,
@@ -508,7 +508,7 @@ const styles = StyleSheet.create({
   imageContainer: {
     width: '100%',
     position: 'relative',
-    backgroundColor: '#101010',
+    backgroundColor: Colors.background,
     borderRadius: 10,
     overflow: 'hidden',
   },
@@ -549,7 +549,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginBottom: 4,
     lineHeight: 18,
-    color: '#fff',
+    color: Colors.text,
   },
   metaRow: {
     flexDirection: 'row',
@@ -560,19 +560,19 @@ const styles = StyleSheet.create({
     fontSize: 12,
     opacity: 0.6,
     fontWeight: '500',
-    color: '#fff',
+    color: Colors.text,
   },
   separator: {
     fontSize: 12,
     opacity: 0.4,
     marginHorizontal: 6,
-    color: '#fff',
+    color: Colors.text,
   },
   genres: {
     fontSize: 12,
     opacity: 0.5,
     flex: 1,
-    color: '#fff',
+    color: Colors.text,
   },
   emptyContainer: {
     alignItems: 'center',
@@ -585,14 +585,14 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginTop: 20,
     marginBottom: 8,
-    color: '#fff',
+    color: Colors.text,
   },
   emptyText: {
     fontSize: 14,
     opacity: 0.6,
     textAlign: 'center',
     lineHeight: 20,
-    color: '#fff',
+    color: Colors.text,
   },
   loadingContainer: {
     alignItems: 'center',
@@ -602,7 +602,7 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 16,
     opacity: 0.6,
-    color: '#fff',
+    color: Colors.text,
   },
 });
 

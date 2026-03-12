@@ -9,6 +9,7 @@ import { DefaultEpisodeThumbnailImgXml } from '@/utils/Svg';
 import { MenuView, MenuComponentRef } from '@react-native-menu/menu';
 import CustomContextMenu from './ContextMenu';
 import { Ionicons } from '@expo/vector-icons';
+import { Colors } from '@/constants/theme';
 
 // Type definitions
 interface Episode {
@@ -36,9 +37,9 @@ interface EpisodeItemProps {
 }
 
 // Constants
-const THUMBNAIL_BACKGROUND_COLOR = '#0f0f0f';
-const EPISODE_AIRED_COLOR = '#cccccc';
-const SELECTED_SEASON_COLOR = '#535aff';
+const THUMBNAIL_BACKGROUND_COLOR = Colors.background;
+const EPISODE_AIRED_COLOR = Colors.textMuted;
+const SELECTED_SEASON_COLOR = Colors.primary;
 const ANIMATION_DURATION = 100;
 const IMAGE_LOAD_DELAY = 100;
 const THUMBNAIL_ASPECT_RATIO = 16 / 9;
@@ -358,7 +359,7 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
               <Text style={styles.seasonDropdownText}>
                 {getCurrentSeasonText()}
               </Text>
-              <Ionicons name='chevron-expand' size={24} color='#ffffff' />
+              <Ionicons name='chevron-expand' size={24} color={Colors.text} />
             </TouchableOpacity>
           </MenuView>
         )}
@@ -408,14 +409,14 @@ const styles = StyleSheet.create({
   },
   seasonDropdownText: {
     fontSize: 20,
-    color: '#ffffff',
+    color: Colors.text,
     fontWeight: '500',
     letterSpacing: 0.3,
     flex: 1,
   },
   seasonDropdownArrow: {
     fontSize: 18,
-    color: '#ffffff',
+    color: Colors.text,
     fontWeight: '600'
   },
   episodeScrollView: {
@@ -469,7 +470,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     lineHeight: 18,
-    color: '#ffffff',
+    color: Colors.text,
   },
   episodeAired: {
     fontSize: 12,
@@ -488,7 +489,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: '#888',
+    color: Colors.textMuted,
     textAlign: 'center',
   },
   noEpisodesContainer: {
@@ -497,7 +498,7 @@ const styles = StyleSheet.create({
   },
   noEpisodesText: {
     fontSize: 14,
-    color: '#888',
+    color: Colors.textMuted,
     textAlign: 'center',
   },
   thumbnailWrapper: {

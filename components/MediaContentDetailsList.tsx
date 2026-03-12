@@ -3,8 +3,7 @@ import { StyleSheet } from 'react-native';
 import { Text, View } from './Themed';
 import { formatDate } from '@/utils/Date';
 import { FontAwesome } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Colors } from '@/constants/theme';
 
 // Type definitions
 interface Language {
@@ -28,14 +27,6 @@ const STAR_COLOR = '#E6BD37';
 const STAR_SIZE = 14;
 const containerMargin = 15;
 
-const COLORS = {
-  background: '#000000',
-  primary: '#FFFFFF',
-  secondary: '#B0B0B0',
-  accent: '#333333',
-  border: '#444444',
-  placeholderBg: '#1a1a1a',
-};
 
 // Helper function for country code conversion
 const countryCodeToName = (code: string) => {
@@ -134,7 +125,7 @@ const MediaContentDetailsList: React.FC<MediaContentDetailsListProps> = ({
   return (
     <View style={styles.container}>
       <View style={[styles.headerContainer, { paddingHorizontal: containerMargin }]}>
-        <Text style={[styles.sectionTitle, { color: COLORS.primary }]}>
+        <Text style={[styles.sectionTitle, { color: Colors.text }]}>
           Information
         </Text>
       </View>
@@ -167,8 +158,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     overflow: 'hidden',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
-    backgroundColor: 'rgba(16, 16, 16, 0.4)', // translucent
+    borderColor: Colors.primaryBorder,
+    backgroundColor: Colors.backgroundCard, // translucent
   },
   tableRow: {
     flexDirection: 'row',
@@ -178,7 +169,7 @@ const styles = StyleSheet.create({
   },
   rowBorder: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(119, 119, 119, 0.25)',
+    borderBottomColor: Colors.border,
   },
   labelCell: {
     width: 120,
@@ -192,11 +183,11 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#ddd',
+    color: Colors.text,
   },
   value: {
     fontSize: 14,
-    color: '#cccccc',
+    color: Colors.textMuted,
     lineHeight: 20,
   },
   ratingContainer: {

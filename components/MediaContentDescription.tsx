@@ -7,6 +7,7 @@ import {
   UIManager,
 } from 'react-native';
 import { Text, View } from './Themed';
+import { Colors } from '@/constants/theme';
 
 interface MediaContentDescriptionProps {
   description: string;
@@ -72,7 +73,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   moreText: {
-    color: 'rgba(255, 255, 255, 0.5)',
+    color: Colors.textMuted,
     fontSize: 13,
     marginTop: 5,
     paddingHorizontal: 20,

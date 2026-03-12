@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { StorageKeys, storageService } from '@/utils/StorageService';
 import { View, Text } from './Themed';
 import * as Haptics from 'expo-haptics';
+import { Colors } from '@/constants/theme';
 
 interface WatchHistoryItem {
   title: string;
@@ -152,7 +153,7 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
         <View style={styles.sectionTitleRow}>
-          <Ionicons name="play-circle-outline" size={22} color="#ffffff" />
+          <Ionicons name="play-circle-outline" size={22} color={Colors.text} />
           <Text style={styles.sectionTitle}>Continue Watching</Text>
         </View>
         <View style={styles.sectionRight}>
@@ -208,7 +209,7 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
                     }}
                     activeOpacity={0.7}
                   >
-                    <Ionicons name="close" size={16} color="#fff" />
+                    <Ionicons name="close" size={16} color={Colors.text} />
                   </TouchableOpacity>
 
                   <View style={styles.progressBadge}>
@@ -266,13 +267,13 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#fff',
+    color: Colors.text,
   },
   sectionCount: {
     fontSize: 14,
     opacity: 0.5,
     fontWeight: '500',
-    color: '#fff',
+    color: Colors.text,
   },
   clearAllButton: {
     flexDirection: 'row',
@@ -299,7 +300,7 @@ const styles = StyleSheet.create({
   imageContainer: {
     width: '100%',
     position: 'relative',
-    backgroundColor: '#101010',
+    backgroundColor: Colors.background,
     borderRadius: 12,
     overflow: 'hidden',
   },
@@ -325,7 +326,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   progressText: {
-    color: '#fff',
+    color: Colors.text,
     fontSize: 11,
     fontWeight: '500',
   },
@@ -342,7 +343,7 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     height: '100%',
-    backgroundColor: '#535aff',
+    backgroundColor: Colors.primary,
   },
   infoContainer: {
     paddingTop: 8,
@@ -353,7 +354,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginBottom: 4,
     lineHeight: 18,
-    color: '#fff',
+    color: Colors.text,
   },
 });
 

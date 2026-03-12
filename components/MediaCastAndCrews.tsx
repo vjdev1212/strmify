@@ -7,6 +7,7 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { View, Text } from "./Themed";
+import { Colors } from '@/constants/theme';
 
 const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/h632";
 
@@ -60,16 +61,6 @@ const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
     return Math.max(minSize, Math.min(120, calculatedSize));
   }, [width, castPerScreen, shortSide]);
 
-  // Modern color scheme
-  const COLORS = {
-    background: '#000000',
-    primary: '#FFFFFF',
-    secondary: '#B0B0B0',
-    accent: '#333333',
-    border: '#444444',
-    placeholderBg: '#1a1a1a',
-  };
-
   // Memoized cast items to prevent unnecessary re-renders
   const castItems = useMemo(() => {
     return cast.map((member, index) => {
@@ -98,7 +89,7 @@ const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
   return (
     <View style={styles.container}>
       <View style={[styles.headerContainer, { paddingHorizontal: containerMargin }]}>
-        <Text style={[styles.sectionTitle, { color: COLORS.primary }]}>
+        <Text style={[styles.sectionTitle, { color: Colors.text }]}>
           Cast & Crew
         </Text>
       </View>
@@ -135,11 +126,11 @@ const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
                   width: avatarSize,
                   height: avatarSize,
                   borderRadius: avatarSize / 2,
-                  backgroundColor: COLORS.placeholderBg,
-                  borderColor: COLORS.border,
+                  backgroundColor: Colors.backgroundCard,
+                  borderColor: Colors.border,
                 }]}>
                   <Text style={[styles.initials, {
-                    color: COLORS.primary,
+                    color: Colors.text,
                     fontSize: avatarSize * 0.3, // Scale initials with avatar size
                   }]}>{item.initials}</Text>
                 </View>
@@ -156,7 +147,7 @@ const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
             <View style={styles.textContainer}>
               <Text
                 style={[styles.name, {
-                  color: COLORS.primary,
+                  color: Colors.text,
                   fontSize: Math.max(13, avatarSize * 0.12), // Scale text with avatar
                 }]}
                 numberOfLines={1}
@@ -166,7 +157,7 @@ const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
               </Text>
               <Text
                 style={[styles.character, {
-                  color: COLORS.secondary,
+                  color: Colors.textMuted,
                   fontSize: Math.max(11, avatarSize * 0.1), // Scale text with avatar
                 }]}
                 numberOfLines={1}
