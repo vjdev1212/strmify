@@ -251,10 +251,10 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
     // Auto-hide controls when playback starts
     useEffect(() => {
-        if (!isPaused && uiState.showControls && shouldAutoHideControls.current && !isHideControlsScheduled.current) {
+        if (playerState.isReady && !isPaused) {
             showControlsTemporarily();
         }
-    }, [isPaused, uiState.showControls, showControlsTemporarily]);
+    }, [playerState.isReady]);
 
     const showContentFitLabelTemporarily = useCallback(() => {
         setShowContentFitLabel(true);
