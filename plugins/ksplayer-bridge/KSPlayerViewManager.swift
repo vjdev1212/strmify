@@ -1,5 +1,6 @@
 import Foundation
 import React
+import KSPlayer
 
 @objc(KSPlayerViewManager)
 class KSPlayerViewManager: RCTViewManager {
@@ -12,12 +13,11 @@ class KSPlayerViewManager: RCTViewManager {
         return true
     }
 
-    // MARK: - Exported Props (must match KSPlayerRNView @objc vars)
+    override init() {
+        super.init()
+        KSOptions.setAudioSession()
+    }
 
-    // All props are handled automatically via @objc on KSPlayerRNView.
-    // Commands below are imperative actions dispatched from RN.
-
-    // MARK: - Commands
 
     @objc func play(_ node: NSNumber) {
         DispatchQueue.main.async {
@@ -39,7 +39,7 @@ class KSPlayerViewManager: RCTViewManager {
             view.seek(to: time.doubleValue)
         }
     }
-
+    
     @objc func selectAudioTrack(_ node: NSNumber, trackId: NSNumber) {
         DispatchQueue.main.async {
             guard let view = self.bridge.uiManager.view(forReactTag: node) as? KSPlayerRNView else { return }

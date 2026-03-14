@@ -84,9 +84,6 @@ class KSPlayerRNView: UIView {
             playerView.trailingAnchor.constraint(equalTo: trailingAnchor),
         ])
 
-        // Subtitle text is extracted inside playTimeDidChange, which fires
-        // at the same cadence as VideoPlayerView.player(layer:currentTime:)
-        // — that's where KSPlayer itself updates srtControl.parts.
         playerView.playTimeDidChange = { [weak self] currentTime, totalTime in
             guard let self = self else { return }
 
@@ -103,8 +100,6 @@ class KSPlayerRNView: UIView {
 
             // Subtitle text: ask srtControl to evaluate the current time,
             // then read whatever part it resolved.
-            // srtControl.subtitle(currentTime:) updates srtControl.parts
-            // and returns true when the visible line changes.
             if self.playerView.srtControl.subtitle(currentTime: currentTime) {
                 let text = self.playerView.srtControl.parts.first?.text?.string ?? ""
                 if text != self.lastSubtitleText {
@@ -135,11 +130,14 @@ class KSPlayerRNView: UIView {
         // Must be false so KSPlayer doesn't auto-select and render its own
         // subtitle overlay — we render the text in React via onSubtitleText.
         options.autoSelectEmbedSubtitle = false
+        
+        KSOptions.audioPlayerType = AudioRendererPlayer.self
+        // ─────────────────────────────────────────────────────────────────────
+
         KSOptions.isAutoPlay = !paused
+        KSOptions.secondPlayerType = KSMEPlayer.self
 
         if !httpHeaders.isEmpty { options.appendHeader(httpHeaders) }
-
-        KSOptions.secondPlayerType = KSMEPlayer.self
 
         let resource = KSPlayerResource(url: videoURL, options: options)
         playerView.set(resource: resource)
@@ -209,19 +207,22 @@ class KSPlayerRNView: UIView {
     func seek(to time: Double) {
         playerView.seek(time: time) { [weak self] _ in _ = self }
     }
-
+    
     func selectAudioTrack(_ jsIndex: Int32) {
         guard let player = playerView.playerLayer?.player else { return }
         let tracks = player.tracks(mediaType: .audio)
         let idx = Int(jsIndex)
         guard idx >= 0, idx < tracks.count else { return }
-        tracks.enumerated().forEach { i, track in track.isEnabled = (i == idx) }
+        tracks.enumerated().forEach { i, track in
+            if i == idx {                
+                func doSelect<T: MediaPlayerTrack>(_ t: T) {
+                    player.select(track: t)
+                }
+                doSelect(track)
+            }
+        }
     }
 
-    /// Select a subtitle track by its index in srtControl.subtitleInfos.
-    /// This is the correct KSPlayer API: set srtControl.selectedSubtitleInfo.
-    /// KSPlayer then feeds srtControl.parts each frame via subtitle(currentTime:),
-    /// which we poll inside playTimeDidChange and forward as onSubtitleText.
     func selectTextTrack(_ jsIndex: Int32) {
         let idx = Int(jsIndex)
         let infos = playerView.srtControl.subtitleInfos
