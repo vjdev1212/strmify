@@ -15,6 +15,7 @@ import PlayButton from '@/components/PlayButton';
 import WatchTrailerButton from '@/components/WatchTrailer';
 import LibraryButton from '@/components/LibraryButton';
 import * as Haptics from 'expo-haptics';
+import { useTheme } from '@/context/ThemeContext';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -30,6 +31,7 @@ const SeriesDetails = () => {
   const ref = useRef<ScrollView | null>(null);
   const [season, setSeason] = useState<number>(1);
   const [episode, setEpisode] = useState<number>(1);
+  const { colors } = useTheme();
 
   useEffect(() => {
     const fetchDetails = async () => {
@@ -160,7 +162,7 @@ const SeriesDetails = () => {
   if (loading) {
     return (
       <View style={styles.centeredContainer}>
-        <ActivityIndicator size="large" style={styles.activityIndicator} color="#535aff" />
+        <ActivityIndicator size="large" style={styles.activityIndicator} color={colors.primary} />
       </View>
     );
   }
@@ -321,7 +323,6 @@ const styles = StyleSheet.create({
   },
   activityIndicator: {
     marginBottom: 10,
-    color: '#535aff',
   },
   centeredContainer: {
     flex: 1,

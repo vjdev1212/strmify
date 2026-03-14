@@ -1,15 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, ScrollView, Pressable, Alert, Platform } from 'react-native';
+import { StyleSheet, ScrollView, Pressable } from 'react-native';
 import { Text, View, StatusBar } from '@/components/Themed';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 import { getOriginalPlatform, isHapticsSupported, showAlert } from '@/utils/platform';
 import BottomSpacing from '@/components/BottomSpacing';
 import { Players } from '@/utils/MediaPlayer';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StorageKeys, storageService } from '@/utils/StorageService';
-
+import { useTheme } from '@/context/ThemeContext';
 
 interface PlayerConfig {
     name: string;
@@ -21,6 +20,7 @@ interface PlayerConfig {
 const DEFAULT_MEDIA_PLAYER_KEY = StorageKeys.DEFAULT_MEDIA_PLAYER_KEY;
 
 const MediaPlayerConfigScreen = () => {
+    const { colors } = useTheme();
     const [players, setPlayers] = useState<PlayerConfig[]>([]);
     const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
@@ -78,22 +78,17 @@ const MediaPlayerConfigScreen = () => {
     const loadPlayerConfig = async () => {
         try {
             const platformPlayers = getPlatformSpecificPlayers();
-
-            // Load saved default player
             const savedDefault = storageService.getItem(DEFAULT_MEDIA_PLAYER_KEY);
 
             if (savedDefault) {
                 const defaultPlayerName = JSON.parse(savedDefault);
                 setSelectedPlayer(defaultPlayerName);
-
-                // Mark the default player
                 const updatedPlayers = platformPlayers.map(player => ({
                     ...player,
                     isDefault: player.name === defaultPlayerName
                 }));
                 setPlayers(updatedPlayers);
             } else {
-                // No saved default, use first player as default
                 setPlayers(platformPlayers);
                 if (platformPlayers.length > 0) {
                     setSelectedPlayer(platformPlayers[0].name);
@@ -117,9 +112,7 @@ const MediaPlayerConfigScreen = () => {
             showAlert('Error', 'Please select a media player');
             return;
         }
-
         setSaving(true);
-
         try {
             storageService.setItem(DEFAULT_MEDIA_PLAYER_KEY, JSON.stringify(selectedPlayer));
             showAlert('Success', 'Default media player saved successfully');
@@ -136,10 +129,7 @@ const MediaPlayerConfigScreen = () => {
             'Reset to Default',
             'Are you sure you want to reset to the default media player?',
             [
-                {
-                    text: 'Cancel',
-                    style: 'cancel'
-                },
+                { text: 'Cancel', style: 'cancel' },
                 {
                     text: 'Reset',
                     onPress: async () => {
@@ -150,7 +140,6 @@ const MediaPlayerConfigScreen = () => {
                             if (platformPlayers.length > 0) {
                                 setSelectedPlayer(platformPlayers[0].name);
                             }
-
                             showAlert('Success', 'Player configuration reset to default');
                         } catch (error) {
                             console.error('Error resetting player config:', error);
@@ -166,7 +155,7 @@ const MediaPlayerConfigScreen = () => {
         return (
             <SafeAreaView style={styles.centeredContainer}>
                 <View style={styles.loadingContainer}>
-                    <Text style={styles.loadingText}>Loading...</Text>
+                    <Text style={[styles.loadingText, { color: colors.textMuted }]}>Loading...</Text>
                 </View>
             </SafeAreaView>
         );
@@ -181,8 +170,8 @@ const MediaPlayerConfigScreen = () => {
             >
                 <View style={styles.contentContainer}>
                     <View style={styles.headerSection}>
-                        <Text style={styles.title}>Media Player</Text>
-                        <Text style={styles.subtitle}>
+                        <Text style={[styles.title, { color: colors.text }]}>Media Player</Text>
+                        <Text style={[styles.subtitle, { color: colors.textMuted }]}>
                             Select your preferred player for streaming
                         </Text>
                     </View>
@@ -193,22 +182,32 @@ const MediaPlayerConfigScreen = () => {
                                 key={player.name}
                                 style={({ pressed }) => [
                                     styles.playerRow,
+                                    { borderBottomColor: colors.primaryBorder },
                                     index === players.length - 1 && styles.lastRow,
-                                    pressed && styles.playerRowPressed
+                                    pressed && styles.playerRowPressed,
                                 ]}
                                 onPress={() => handlePlayerSelect(player.name)}
                             >
                                 <View style={styles.radioButton}>
                                     <View style={[
                                         styles.radioButtonOuter,
-                                        selectedPlayer === player.name && styles.radioButtonOuterSelected
+                                        { borderColor: colors.borderStrong },
+                                        selectedPlayer === player.name && {
+                                            borderColor: colors.primary,
+                                            backgroundColor: colors.primarySurface,
+                                        },
                                     ]}>
                                         {selectedPlayer === player.name && (
-                                            <View style={styles.radioButtonInner} />
+                                            <View style={[
+                                                styles.radioButtonInner,
+                                                { backgroundColor: colors.primary },
+                                            ]} />
                                         )}
                                     </View>
                                 </View>
-                                <Text style={styles.playerName}>{player.name}</Text>
+                                <Text style={[styles.playerName, { color: colors.text }]}>
+                                    {player.name}
+                                </Text>
                             </Pressable>
                         ))}
                     </View>
@@ -217,31 +216,31 @@ const MediaPlayerConfigScreen = () => {
                         <Pressable
                             style={({ pressed }) => [
                                 styles.button,
-                                styles.secondaryButton,
-                                pressed && styles.buttonPressed
+                                { backgroundColor: colors.primarySurface, borderWidth: 1, borderColor: colors.primaryBorder },
+                                pressed && styles.buttonPressed,
                             ]}
                             onPress={resetToDefault}
                         >
-                            <MaterialIcons name="refresh" size={20} color="#ffffff" />
-                            <Text style={styles.buttonText}>Reset</Text>
+                            <MaterialIcons name="refresh" size={20} color={colors.text} />
+                            <Text style={[styles.buttonText, { color: colors.text }]}>Reset</Text>
                         </Pressable>
 
                         <Pressable
                             style={({ pressed }) => [
                                 styles.button,
-                                styles.primaryButton,
+                                { backgroundColor: colors.primary },
                                 pressed && styles.buttonPressed,
-                                saving && styles.buttonDisabled
+                                saving && styles.buttonDisabled,
                             ]}
                             onPress={savePlayerConfig}
                             disabled={saving}
                         >
                             <MaterialIcons
-                                name={saving ? "hourglass-empty" : "save"}
+                                name={saving ? 'hourglass-empty' : 'save'}
                                 size={20}
-                                color="#ffffff"
+                                color={colors.text}
                             />
-                            <Text style={styles.buttonText}>
+                            <Text style={[styles.buttonText, { color: colors.text }]}>
                                 {saving ? 'Saving...' : 'Save'}
                             </Text>
                         </Pressable>
@@ -256,7 +255,7 @@ const MediaPlayerConfigScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        marginTop: 30
+        marginTop: 30,
     },
     scrollContent: {
         paddingBottom: 20,
@@ -278,7 +277,6 @@ const styles = StyleSheet.create({
     },
     loadingText: {
         fontSize: 15,
-        color: '#666666',
         fontWeight: '400',
     },
     headerSection: {
@@ -291,13 +289,11 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         marginBottom: 8,
         textAlign: 'center',
-        color: '#ffffff',
         letterSpacing: -0.5,
     },
     subtitle: {
         fontSize: 15,
         textAlign: 'center',
-        color: '#888888',
         lineHeight: 20,
         fontWeight: '400',
     },
@@ -310,7 +306,6 @@ const styles = StyleSheet.create({
         paddingVertical: 16,
         paddingHorizontal: 4,
         borderBottomWidth: 1,
-        borderBottomColor: 'rgba(255, 255, 255, 0.06)',
     },
     lastRow: {
         borderBottomWidth: 0,
@@ -326,25 +321,17 @@ const styles = StyleSheet.create({
         height: 20,
         borderRadius: 10,
         borderWidth: 2,
-        borderColor: 'rgba(255, 255, 255, 0.2)',
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'transparent',
-    },
-    radioButtonOuterSelected: {
-        borderColor: '#535aff',
-        backgroundColor: 'rgba(83, 90, 255, 0.1)',
     },
     radioButtonInner: {
         width: 10,
         height: 10,
         borderRadius: 5,
-        backgroundColor: '#535aff',
     },
     playerName: {
         fontSize: 16,
         fontWeight: '500',
-        color: '#ffffff',
         letterSpacing: -0.2,
     },
     buttonSection: {
@@ -362,18 +349,11 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         gap: 8,
     },
-    primaryButton: {
-        backgroundColor: '#535aff',
-    },
-    secondaryButton: {
-        backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    },
     buttonPressed: {
         opacity: 0.7,
     },
     buttonText: {
         fontSize: 15,
-        color: '#ffffff',
         fontWeight: '600',
         letterSpacing: -0.2,
     },
