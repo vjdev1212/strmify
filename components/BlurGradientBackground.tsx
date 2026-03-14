@@ -16,9 +16,9 @@ export default function BlurGradientBackground({
     intensity = 40,
     tint = 'dark',
     colors = [
-        'rgba(30, 27, 75, 0.85)',   // deep indigo top
-        'rgba(23, 20, 80, 0.90)',   // dark navy middle
-        'rgba(15, 12, 60, 0.95)',   // near-black indigo bottom
+        'rgba(30, 27, 75, 0.85)',
+        'rgba(23, 20, 80, 0.90)',
+        'rgba(15, 12, 60, 0.95)',
     ],
     start = { x: 0, y: 0 },
     end = { x: 0, y: 1 },

@@ -161,11 +161,7 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
             id: `lang-${lang.code}`,
             title: lang.name,
             state: selectedLanguages.includes(lang.code) ? ('on' as const) : undefined,
-            titleColor: selectedLanguages.includes(lang.code) ? '#007AFF' : '#FFFFFF',
-            image: Platform.select({
-                ios: selectedLanguages.includes(lang.code) ? 'checkmark' : undefined,
-                default: undefined,
-            }),
+            titleColor: selectedLanguages.includes(lang.code) ? '#007AFF' : '#FFFFFF'
         }));
     };
 
