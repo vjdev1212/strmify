@@ -145,20 +145,20 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
                     <Text style={[styles.progressText, { color: colors.text }]}>{Math.round(item.progress)}%</Text>
                   </View>
                   <View style={styles.progressContainer}>
-                    <View style={styles.progressBackground}>
-                      <View style={[styles.progressBar, { width: `${item.progress}%`, backgroundColor: colors.primary }]} />
-                    </View>
+                    <View style={[styles.progressBackground, { backgroundColor: colors.primaryFaint }]} >
+                    <View style={[styles.progressBar, { width: `${item.progress}%`, backgroundColor: colors.primary }]} />
                   </View>
                 </View>
-                <View style={styles.infoContainer}>
-                  <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>{item.title}</Text>
-                </View>
-              </TouchableOpacity>
+              </View>
+              <View style={styles.infoContainer}>
+                <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>{item.title}</Text>
+              </View>
+            </TouchableOpacity>
             </Animated.View>
-          );
+      );
         })}
-      </ScrollView>
-    </View>
+    </ScrollView>
+    </View >
   );
 };
 
@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
   progressBadge: { position: 'absolute', bottom: 12, left: 8, backgroundColor: 'rgba(0,0,0,0.7)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
   progressText: { fontSize: 11, fontWeight: '500' },
   progressContainer: { position: 'absolute', bottom: 0, left: 0, right: 0 },
-  progressBackground: { width: '100%', height: 4, backgroundColor: 'rgba(255,255,255,0.2)' },
+  progressBackground: { width: '100%', height: 4 },
   progressBar: { height: '100%' },
   infoContainer: { paddingTop: 8, paddingHorizontal: 4 },
   title: { fontSize: 14, fontWeight: '500', marginBottom: 4, lineHeight: 18 },

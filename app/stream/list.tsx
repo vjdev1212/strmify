@@ -98,7 +98,7 @@ const StreamListScreen = () => {
         const streamType = getStreamType(item);
         return (
             <Pressable onPress={() => handleStreamSelected(item, index)} style={({ pressed }) => [styles.streamContainer, pressed && styles.streamContainerPressed]}>
-                <Card style={[styles.streamItem, { borderColor: colors.primaryBorder }]}>
+                <Card style={[styles.streamItem, { borderColor: colors.primaryBorder, backgroundColor: colors.primaryGhost }]}>
                     <RNView style={styles.streamHeader}>
                         <Text style={[styles.streamName, { color: colors.text }]} numberOfLines={2}>{name}</Text>
                         {quality && <RNView style={[styles.qualityBadge, { backgroundColor: colors.primaryMuted, borderColor: colors.primaryBorder }]}><Text style={[styles.qualityText, { color: colors.text }]}>{quality}</Text></RNView>}
@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
     streamsContainer: { paddingHorizontal: 16, paddingTop: 16, gap: 12 },
     streamContainer: { borderRadius: 14 },
     streamContainerPressed: { opacity: 0.7 },
-    streamItem: { backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 14, padding: 16, borderWidth: 1 },
+    streamItem: { borderRadius: 14, padding: 16, borderWidth: 1 },
     streamHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8, gap: 10 },
     streamName: { fontSize: 16, fontWeight: '500', flex: 1, lineHeight: 22, letterSpacing: -0.3 },
     qualityBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, borderWidth: 1 },

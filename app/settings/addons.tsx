@@ -78,7 +78,7 @@ const AddonsScreen = () => {
     const isUpdating = updatingAddonId === item.id;
 
     return (
-      <View style={[styles.addonCard, { borderColor: colors.primaryBorder }]} key={item.id}>
+      <View style={[styles.addonCard, { borderColor: colors.primaryBorder, backgroundColor: colors.primaryGhost }]} key={item.id}>
         <View style={styles.cardHeader}>
           <Image source={{ uri: item.logo }} style={[styles.addonLogo, { backgroundColor: colors.primarySurface }]} />
           <View style={styles.headerInfo}>
@@ -96,14 +96,14 @@ const AddonsScreen = () => {
         {item.description && <View style={styles.cardBody}><Text style={[styles.addonDescription, { color: colors.textMuted }]} numberOfLines={3}>{item.description}</Text></View>}
         <View style={styles.cardActions}>
           {hasManifestUrl && (
-            <Pressable style={({ pressed }) => [styles.actionButton, pressed && styles.actionButtonPressed]} onPress={() => updateAddonManifest(item.id, item.manifestUrl)} disabled={isUpdating}>
+            <Pressable style={({ pressed }) => [styles.actionButton, { backgroundColor: colors.primaryGhost }, pressed && styles.actionButtonPressed]} onPress={() => updateAddonManifest(item.id, item.manifestUrl)} disabled={isUpdating}>
               {isUpdating ? <ActivityIndicator size="small" color="#ffffff" /> : <Ionicons name="refresh" size={18} color="#ffffff" />}
             </Pressable>
           )}
-          <Pressable style={({ pressed }) => [styles.actionButton, pressed && styles.actionButtonPressed]} onPress={() => shareManifestUrl(item.manifestUrl)}>
+          <Pressable style={({ pressed }) => [styles.actionButton, { backgroundColor: colors.primaryGhost }, pressed && styles.actionButtonPressed]} onPress={() => shareManifestUrl(item.manifestUrl)}>
             <Ionicons name="share-outline" size={18} color="#ffffff" />
           </Pressable>
-          <Pressable style={({ pressed }) => [styles.actionButton, !configurable && styles.disabledButton, pressed && configurable && styles.actionButtonPressed]} onPress={() => openConfiguration(item.baseUrl)} disabled={!configurable}>
+          <Pressable style={({ pressed }) => [styles.actionButton, { backgroundColor: colors.primaryGhost }, !configurable && { backgroundColor: colors.primaryFaint }, pressed && configurable && styles.actionButtonPressed]} onPress={() => openConfiguration(item.baseUrl)} disabled={!configurable}>
             <Ionicons name="settings-outline" size={18} color={configurable ? "#ffffff" : '#555555'} />
           </Pressable>
           <Pressable
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
   contentContainer: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 },
   emptyContentContainer: { flex: 1, justifyContent: 'center' },
   addonList: { flex: 1, gap: 16 },
-  addonCard: { backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 16, padding: 16, borderWidth: 1 },
+  addonCard: { borderRadius: 16, padding: 16, borderWidth: 1 },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 12 },
   addonLogo: { width: 56, height: 56, borderRadius: 14, marginRight: 14 },
   headerInfo: { flex: 1, justifyContent: 'center' },
@@ -181,11 +181,11 @@ const styles = StyleSheet.create({
   cardBody: { marginBottom: 14 },
   addonDescription: { fontSize: 14, lineHeight: 20 },
   cardActions: { flexDirection: 'row', gap: 10 },
-  actionButton: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.08)', paddingVertical: 12, borderRadius: 10 },
+  actionButton: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderRadius: 10 },
   actionButtonPressed: { opacity: 0.6 },
   removeButton: { backgroundColor: 'rgba(255,71,87,0.1)' },
   removeButtonPressed: { opacity: 0.6 },
-  disabledButton: { backgroundColor: 'rgba(255,255,255,0.02)' },
+  disabledButton: {},
   emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 80, paddingHorizontal: 40 },
   emptyIconContainer: { width: 100, height: 100, borderRadius: 50, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
   emptyStateTitle: { fontSize: 24, fontWeight: '700', marginBottom: 8, letterSpacing: -0.5 },
