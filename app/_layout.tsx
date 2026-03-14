@@ -56,7 +56,7 @@ function RootLayoutNav() {
     headerTintColor: '#ffffff',
     headerBackTitle: '',
     headerShadowVisible: false,
-    headerStyle: { backgroundColor: 'transparent' },
+    headerStyle: { backgroundColor: 'transparent' }
   };
 
   return (

@@ -19,7 +19,7 @@ export default function BlurGradientBackground({
     colors,
     start = { x: 0, y: 0 },
     end = { x: 0, y: 1 },
-    borderRadius = 24,
+    borderRadius = 0,
 }: BlurGradientBackgroundProps) {
     const { colors: themeColors } = useTheme();
 

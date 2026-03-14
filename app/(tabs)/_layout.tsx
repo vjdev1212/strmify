@@ -1,9 +1,15 @@
 import React from 'react';
 import { NativeTabs, Label, Icon } from 'expo-router/unstable-native-tabs';
+import { useTheme } from '@/context/ThemeContext';
 
 export default function TabLayout() {
+  const { colors } = useTheme();
+
   return (
-    <NativeTabs minimizeBehavior="onScrollDown">
+    <NativeTabs
+      minimizeBehavior="onScrollDown"
+      tintColor={colors.primary}
+    >
       <NativeTabs.Trigger name="index">
         <Label>Home</Label>
         <Icon sf="house" drawable="ic_home" />
