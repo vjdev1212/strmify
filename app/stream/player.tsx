@@ -10,7 +10,7 @@ import { ServerConfig } from "@/components/ServerConfig";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StreamingServerClient } from "@/clients/stremio";
 import * as ScreenOrientation from 'expo-screen-orientation';
-import { Colors } from '@/constants/theme';
+import { useTheme } from '@/context/ThemeContext';
 
 interface UpdateProgressEvent {
   progress: number
@@ -59,6 +59,7 @@ const SUBTITLE_LANGUAGES_KEY = StorageKeys.SUBTITLE_LANGUAGES_KEY;
 
 const MediaPlayerScreen: React.FC = () => {
   const router = useRouter();
+  const { colors } = useTheme();
 
   const {
     streams: streamsParam,
@@ -78,7 +79,6 @@ const MediaPlayerScreen: React.FC = () => {
   const [progress, setProgress] = useState(watchHistoryProgress || 0);
   const artwork = `https://images.metahub.space/background/medium/${imdbid}/img`;
 
-  // Stream handling state
   const [streams, setStreams] = useState<Stream[]>([]);
   const [currentStreamIndex, setCurrentStreamIndex] = useState<number>(0);
   const [videoUrl, setVideoUrl] = useState<string>('');
@@ -90,38 +90,29 @@ const MediaPlayerScreen: React.FC = () => {
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
   const [isTorrent, setIsTorrent] = useState<boolean>(false);
 
-  // Stremio client instance
   const [stremioClient, setStremioClient] = useState<StreamingServerClient | null>(null);
 
-  // Player fallback state — KSPlayer is the only player now
   const [currentPlayerType, setCurrentPlayerType] = useState<"native" | "ksplayer">(
     Platform.OS === "ios" ? "ksplayer" : "native"
   );
   const [hasTriedNative, setHasTriedNative] = useState(false);
 
-  // Bottom sheet state
   const [statusText, setStatusText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
-    // Check if we have a direct video URL (continue watching scenario)
     try {
       if (directVideoUrl) {
-        // Setup orientation for in-app playback
         setupOrientation();
         setVideoUrl(directVideoUrl as string);
         setIsLoadingStream(false);
         initializeClient();
-        return () => {
-          cleanupOrientation();
-        };
+        return () => { cleanupOrientation(); };
       }
     } catch (error) {
       console.error('Initilization Error:', error);
     }
 
-
-    // Parse streams from params (new playback scenario)
     if (streamsParam) {
       try {
         const parsedStreams = JSON.parse(streamsParam as string);
@@ -130,17 +121,13 @@ const MediaPlayerScreen: React.FC = () => {
         const initialIndex = selectedStreamIndex ? parseInt(selectedStreamIndex as string) : 0;
         setCurrentStreamIndex(initialIndex);
 
-        // Check if there's a saved default player
         const savedPlayer = loadDefaultPlayer();
 
         if (!savedPlayer) {
-          // No saved player - need to show selection
           const platformPlayers = getPlatformSpecificPlayers();
           setPlayers(platformPlayers);
           fetchServerConfigs();
-
         } else {
-          // Has saved player - proceed with initialization
           initializePlayerAndSelect(parsedStreams, initialIndex);
         }
       } catch (error) {
@@ -152,15 +139,11 @@ const MediaPlayerScreen: React.FC = () => {
 
     initializeClient();
 
-    return () => {
-      cleanupOrientation();
-    }
+    return () => { cleanupOrientation(); };
   }, []);
 
   useEffect(() => {
-    if (openSubtitlesClient) {
-      fetchSubtitles();
-    }
+    if (openSubtitlesClient) fetchSubtitles();
   }, [imdbid, type, season, episode, openSubtitlesClient]);
 
   useEffect(() => {
@@ -184,11 +167,9 @@ const MediaPlayerScreen: React.FC = () => {
       setSelectedPlayer(savedPlayer);
 
       if (savedPlayer === Players.Default) {
-        // Only setup orientation for in-app playback
         setupOrientation();
         await loadStream(streamIndex, parsedStreams, serverList, selectedId);
       } else {
-        // External player - no orientation change
         handleExternalPlayer(parsedStreams[streamIndex], savedPlayer, platformPlayers, serverList, selectedId);
       }
     }
@@ -212,7 +193,6 @@ const MediaPlayerScreen: React.FC = () => {
     }
   };
 
-
   const loadDefaultPlayer = () => {
     try {
       const savedDefault = storageService.getItem(DEFAULT_MEDIA_PLAYER_KEY);
@@ -231,7 +211,6 @@ const MediaPlayerScreen: React.FC = () => {
         setStremioServers([]);
         setSelectedServerId(null);
         setStremioClient(null);
-
         return { servers: [], selectedId: null };
       }
 
@@ -242,7 +221,6 @@ const MediaPlayerScreen: React.FC = () => {
         setStremioServers([]);
         setSelectedServerId(null);
         setStremioClient(null);
-
         return { servers: [], selectedId: null };
       }
 
@@ -254,17 +232,12 @@ const MediaPlayerScreen: React.FC = () => {
       const client = new StreamingServerClient(currentServer.serverUrl);
       setStremioClient(client);
 
-      return {
-        servers: filteredStremioServers,
-        selectedId: currentServer.serverId
-      };
+      return { servers: filteredStremioServers, selectedId: currentServer.serverId };
     } catch (error) {
       console.error('Error loading server configurations:', error);
-
       setStremioServers([]);
       setSelectedServerId(null);
       setStremioClient(null);
-
       return { servers: [], selectedId: null };
     }
   };
@@ -272,7 +245,6 @@ const MediaPlayerScreen: React.FC = () => {
   const getInfoHashFromStream = (stream: Stream): string | null => {
     const { infoHash, magnet, magnetLink } = stream;
     if (infoHash) return infoHash;
-
     const magnetToUse = magnet || magnetLink;
     if (magnetToUse) {
       const match = magnetToUse.match(/xt=urn:btih:([a-fA-F0-9]{40}|[a-fA-F0-9]{32})/i);
@@ -288,18 +260,14 @@ const MediaPlayerScreen: React.FC = () => {
     client?: StreamingServerClient
   ): Promise<string> => {
     setStatusText('Generating stream URL...');
-
     const clientToUse = client || new StreamingServerClient(serverUrl);
-
     try {
-      const streamUrl = await clientToUse.getStreamingURL(infoHash, fileIdx);
-      return streamUrl;
+      return await clientToUse.getStreamingURL(infoHash, fileIdx);
     } catch (error) {
       console.error('Error generating stream URL:', error);
       throw new Error(`Failed to generate stream URL: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
-
 
   const loadStream = async (
     streamIndex: number,
@@ -324,7 +292,6 @@ const MediaPlayerScreen: React.FC = () => {
       let finalVideoUrl: string = url || '';
 
       if (isTorrentStream) {
-        // Torrent stream - requires Stremio server
         const serversToUse = serverList || stremioServers;
         const serverIdToUse = serverId !== undefined ? serverId : selectedServerId;
 
@@ -333,13 +300,11 @@ const MediaPlayerScreen: React.FC = () => {
         }
 
         const selectedServer = serversToUse.find(s => s.serverId === serverIdToUse);
-
         if (!selectedServer) {
           throw new Error('Stremio server is required for torrent streams. Please configure a Stremio server in settings.');
         }
 
         setIsTorrent(true);
-
         finalVideoUrl = await generatePlayerUrlWithInfoHash(
           infoHash!,
           selectedServer.serverUrl,
@@ -347,16 +312,12 @@ const MediaPlayerScreen: React.FC = () => {
           stremioClient || undefined
         );
       } else {
-        if (!url) {
-          return;
-        }
+        if (!url) return;
         finalVideoUrl = url;
         setIsTorrent(false);
       }
 
-      if (!finalVideoUrl) {
-        throw new Error('Unable to generate video URL');
-      }
+      if (!finalVideoUrl) throw new Error('Unable to generate video URL');
 
       setVideoUrl(finalVideoUrl);
       setIsLoadingStream(false);
@@ -385,7 +346,6 @@ const MediaPlayerScreen: React.FC = () => {
       let videoUrl: string = url || '';
 
       if (isTorrentStream) {
-        // Torrent + External Player - requires Stremio server, NO transcoding
         const serversToUse = serverList || stremioServers;
         const serverIdToUse = serverId !== undefined ? serverId : selectedServerId;
 
@@ -396,7 +356,6 @@ const MediaPlayerScreen: React.FC = () => {
         }
 
         const selectedServer = serversToUse.find(s => s.serverId === serverIdToUse);
-
         if (!selectedServer) {
           setStatusText('Error: Stremio server not found');
           showAlert('Error', 'Stremio server configuration not found');
@@ -404,7 +363,6 @@ const MediaPlayerScreen: React.FC = () => {
         }
 
         setStatusText('Generating direct stream URL...');
-
         const directURL = `${selectedServer.serverUrl}/${encodeURIComponent(infoHash!)}/${encodeURIComponent(fileIdx || -1)}`;
         videoUrl = directURL;
       }
@@ -432,9 +390,7 @@ const MediaPlayerScreen: React.FC = () => {
       setStatusText('Opening in external player...');
       await Linking.openURL(playerUrl);
 
-      setTimeout(() => {
-        router.back();
-      }, 1000);
+      setTimeout(() => { router.back(); }, 1000);
     } catch (error) {
       console.error('Error opening external player:', error);
       setStatusText('Error: Failed to open external player');
@@ -448,7 +404,6 @@ const MediaPlayerScreen: React.FC = () => {
     if (newIndex >= 0 && newIndex < streams.length) {
       setCurrentStreamIndex(newIndex);
       const newStream = streams[newIndex];
-
       if (selectedPlayer === Players.Default) {
         if (newStream.url) {
           setVideoUrl(newStream.url);
@@ -463,9 +418,7 @@ const MediaPlayerScreen: React.FC = () => {
 
   const handlePlaybackError = (event: PlaybackErrorEvent) => {
     console.log('Playback error:', event);
-
     if (Platform.OS === "ios" && currentPlayerType === "ksplayer" && !hasTriedNative) {
-      // KSPlayer failed on iOS — fall back to native
       console.log('KSPlayer failed, falling back to native player');
       setHasTriedNative(true);
       setStreamError('');
@@ -504,8 +457,6 @@ const MediaPlayerScreen: React.FC = () => {
       let subtitleLanguages: string[] = ['en'];
       if (subtitleLanguagesConfig) {
         subtitleLanguages = JSON.parse(subtitleLanguagesConfig);
-      } else {
-        console.log('Using default subtitle language: English');
       }
 
       const isEpisode = type === 'series' && season && episode;
@@ -529,8 +480,6 @@ const MediaPlayerScreen: React.FC = () => {
           imdbParams.type = 'movie';
         }
 
-        console.log('Subtitle search by IMDB ID:', imdbParams);
-
         const imdbResponse = await openSubtitlesClient.searchSubtitles(imdbParams);
 
         if (imdbResponse.success && imdbResponse.data.length > 0) {
@@ -545,16 +494,12 @@ const MediaPlayerScreen: React.FC = () => {
           setIsLoadingSubtitles(false);
           return;
         }
-
-        console.log('IMDB search returned no results, falling back to filename search');
       }
 
       const searchQuery = (title as string)
         .replace(/[:|,;.!?'"\/\\@#$%^&*_+=\[\]{}<>~`-]/g, '')
         .replace(/\s+/g, ' ')
         .trim();
-
-      console.log('Subtitle fallback query:', searchQuery);
 
       const response = await openSubtitlesClient.searchByFileName(
         searchQuery,
@@ -603,10 +548,7 @@ const MediaPlayerScreen: React.FC = () => {
 
       if (progress >= minProgressAsWatched) {
         history = history.filter(item =>
-          !(item.imdbid === imdbid &&
-            item.type === type &&
-            item.season === season &&
-            item.episode === episode)
+          !(item.imdbid === imdbid && item.type === type && item.season === season && item.episode === episode)
         );
         storageService.setItem(WATCH_HISTORY_KEY, JSON.stringify(history));
         return;
@@ -615,8 +557,8 @@ const MediaPlayerScreen: React.FC = () => {
       const historyItem: WatchHistoryItem = {
         title: title as string,
         videoUrl: videoUrl as string,
-        progress: progress,
-        artwork: artwork,
+        progress,
+        artwork,
         imdbid: imdbid as string,
         type: type as string,
         season: season as string,
@@ -625,20 +567,16 @@ const MediaPlayerScreen: React.FC = () => {
       };
 
       const existingIndex = history.findIndex(item =>
-        item.imdbid === imdbid &&
-        item.type === type &&
-        item.season === season &&
-        item.episode === episode
+        item.imdbid === imdbid && item.type === type && item.season === season && item.episode === episode
       );
 
       if (existingIndex !== -1) {
         history[existingIndex] = {
           ...history[existingIndex],
           videoUrl: videoUrl as string,
-          progress: progress,
+          progress,
           timestamp: Date.now()
         };
-
         const [updatedItem] = history.splice(existingIndex, 1);
         history.unshift(updatedItem);
       } else {
@@ -661,12 +599,9 @@ const MediaPlayerScreen: React.FC = () => {
   };
 
   const handleUpdateProgress = async (event: UpdateProgressEvent): Promise<void> => {
-    if (event.progress <= 1)
-      return;
-
+    if (event.progress <= 1) return;
     const progressPercentage = Math.floor(event.progress);
     setProgress(progressPercentage);
-
     saveToWatchHistory(progressPercentage);
   };
 
@@ -684,14 +619,13 @@ const MediaPlayerScreen: React.FC = () => {
       <GestureHandlerRootView style={{ flex: 1 }}>
         <View style={styles.loadingContainer}>
           {artwork && (
-            <Image
-              source={{ uri: artwork }}
-              style={styles.backdropImage}
-            />
+            <Image source={{ uri: artwork }} style={styles.backdropImage} />
           )}
           <View style={styles.loadingOverlay}>
-            <ActivityIndicator size="large" color={Colors.primary} />
-            <Text style={styles.loadingText}>Loading stream. Please wait...</Text>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={[styles.loadingText, { color: colors.text }]}>
+              Loading stream. Please wait...
+            </Text>
           </View>
         </View>
       </GestureHandlerRootView>
@@ -737,28 +671,26 @@ const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
   },
   backdropImage: {
     position: 'absolute',
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
-    opacity: 0.5
+    opacity: 0.5,
   },
   loadingOverlay: {
     justifyContent: 'center',
     alignItems: 'center',
   },
   loadingText: {
-    color: Colors.text,
     marginTop: 20,
     fontSize: 16,
-    fontWeight: 500,
+    fontWeight: '500',
   },
   errorContainer: {
     flex: 1,
-    backgroundColor: Colors.background,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -774,7 +706,7 @@ const styles = StyleSheet.create({
     padding: 32,
     width: '90%',
     maxWidth: 400,
-    alignItems: 'center'
+    alignItems: 'center',
   },
   errorIconContainer: {
     width: 80,
@@ -788,9 +720,8 @@ const styles = StyleSheet.create({
     fontSize: 48,
   },
   errorTitle: {
-    color: Colors.text,
     fontSize: 24,
-    fontWeight: 600,
+    fontWeight: '600',
     marginBottom: 12,
     textAlign: 'center',
   },
@@ -802,7 +733,6 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   errorSubMessage: {
-    color: Colors.textMuted,
     fontSize: 13,
     textAlign: 'center',
     marginBottom: 28,
@@ -813,53 +743,45 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   retryButton: {
-    backgroundColor: Colors.primary,
     paddingVertical: 14,
     paddingHorizontal: 32,
     borderRadius: 14,
     width: '100%',
     alignItems: 'center',
-    shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
   },
   retryButtonText: {
-    color: Colors.text,
     fontSize: 16,
-    fontWeight: 600,
+    fontWeight: '600',
     letterSpacing: 0.5,
   },
   backButton: {
-    backgroundColor: Colors.primarySurface,
     paddingVertical: 14,
     paddingHorizontal: 32,
     borderRadius: 14,
     width: '100%',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: Colors.primaryBorder,
   },
   backButtonText: {
-    color: Colors.text,
     fontSize: 16,
-    fontWeight: 600,
+    fontWeight: '600',
   },
   bottomSheetBackground: {
-    backgroundColor: Colors.background,
     borderTopLeftRadius: 10,
     borderTopRightRadius: 10,
   },
   bottomSheetIndicator: {
-    backgroundColor: Colors.text,
     width: 40,
   },
   bottomSheetContent: {
     flex: 1,
     paddingHorizontal: 20,
     paddingBottom: 20,
-    marginBottom: 20
+    marginBottom: 20,
   },
   statusContainer: {
     flex: 1,
@@ -873,14 +795,12 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 16,
-    color: Colors.text,
     textAlign: 'center',
     marginBottom: 30,
     paddingHorizontal: 20,
     lineHeight: 22,
   },
   cancelButton: {
-    backgroundColor: Colors.primary,
     paddingVertical: 12,
     paddingHorizontal: 40,
     borderRadius: 8,
@@ -888,9 +808,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cancelButtonText: {
-    color: Colors.text,
     fontSize: 16,
-    fontWeight: 600,
+    fontWeight: '600',
   },
 });
 

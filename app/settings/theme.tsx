@@ -15,7 +15,6 @@ import * as Haptics from 'expo-haptics';
 import { isHapticsSupported } from '@/utils/platform';
 import BlurGradientBackground from '@/components/BlurGradientBackground';
 import BottomSpacing from '@/components/BottomSpacing';
-import { Colors } from '@/constants/theme';
 import { useTheme } from '@/context/ThemeContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -88,7 +87,7 @@ const THEME_PRESETS: ThemePreset[] = [
   },
 ];
 
-// ─── Accent Color Swatches (primary only, inherit bg from current theme) ──────
+// ─── Accent Color Swatches ─────────────────────────────────────────────────────
 const ACCENT_COLORS = [
   '#535aff', '#ff3b5c', '#00e57a', '#ffb830',
   '#00c8ff', '#ff5fa3', '#aaff00', '#a0b4cc',
@@ -98,8 +97,8 @@ const ACCENT_COLORS = [
 
 // ─── Sub-components ────────────────────────────────────────────────────────────
 
-const SectionHeader = ({ title }: { title: string }) => (
-  <Text style={styles.sectionHeader}>{title}</Text>
+const SectionHeader = ({ title, textMuted }: { title: string; textMuted: string }) => (
+  <Text style={[styles.sectionHeader, { color: textMuted }]}>{title}</Text>
 );
 
 const PresetCard = ({
@@ -141,49 +140,21 @@ const PresetCard = ({
       >
         {/* Mini preview */}
         <View style={styles.presetPreview}>
-          {/* Simulated glow blob */}
-          <View
-            style={[
-              styles.previewBlob,
-              { backgroundColor: primaryAlpha20 },
-            ]}
-          />
-          {/* Simulated header bar */}
+          <View style={[styles.previewBlob, { backgroundColor: primaryAlpha20 }]} />
           <View style={styles.previewHeader}>
-            <View
-              style={[styles.previewDot, { backgroundColor: preset.primary }]}
-            />
-            <View
-              style={[
-                styles.previewBar,
-                { backgroundColor: primaryAlpha60, width: '45%' },
-              ]}
-            />
+            <View style={[styles.previewDot, { backgroundColor: preset.primary }]} />
+            <View style={[styles.previewBar, { backgroundColor: primaryAlpha60, width: '45%' }]} />
           </View>
-          {/* Simulated list rows */}
           {[0.9, 0.7, 0.5].map((opacity, i) => (
             <View key={i} style={styles.previewRow}>
-              <View
-                style={[
-                  styles.previewIcon,
-                  { backgroundColor: preset.primary + '26' },
-                ]}
-              >
-                <View
-                  style={[
-                    styles.previewIconDot,
-                    { backgroundColor: preset.primary, opacity },
-                  ]}
-                />
+              <View style={[styles.previewIcon, { backgroundColor: preset.primary + '26' }]}>
+                <View style={[styles.previewIconDot, { backgroundColor: preset.primary, opacity }]} />
               </View>
               <View style={styles.previewRowBars}>
                 <View
                   style={[
                     styles.previewBar,
-                    {
-                      backgroundColor: 'rgba(255,255,255,0.25)',
-                      width: `${55 - i * 10}%`,
-                    },
+                    { backgroundColor: 'rgba(255,255,255,0.25)', width: `${55 - i * 10}%` },
                   ]}
                 />
               </View>
@@ -234,9 +205,7 @@ const AccentSwatch = ({
         Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, speed: 20 }).start()
       }
     >
-      <Animated.View
-        style={[styles.swatchOuter, { transform: [{ scale: scaleAnim }] }]}
-      >
+      <Animated.View style={[styles.swatchOuter, { transform: [{ scale: scaleAnim }] }]}>
         <View
           style={[
             styles.swatchRing,
@@ -247,9 +216,7 @@ const AccentSwatch = ({
           ]}
         >
           <View style={[styles.swatchInner, { backgroundColor: color }]}>
-            {isSelected && (
-              <Ionicons name="checkmark" size={12} color="#000" />
-            )}
+            {isSelected && <Ionicons name="checkmark" size={12} color="#000" />}
           </View>
         </View>
       </Animated.View>
@@ -261,9 +228,8 @@ const AccentSwatch = ({
 
 const ThemeColorScreen = () => {
   const router = useRouter();
-  const { savedTheme, applyTheme } = useTheme();
+  const { savedTheme, applyTheme, colors } = useTheme();
 
-  // Initialise from whatever is persisted in MMKV
   const [selectedPreset, setSelectedPreset] = useState<string>(savedTheme.presetId);
   const [selectedAccent, setSelectedAccent] = useState<string>(savedTheme.primary);
   const [activeTab, setActiveTab] = useState<'presets' | 'custom'>('presets');
@@ -303,8 +269,10 @@ const ThemeColorScreen = () => {
       >
         {/* ── Header ── */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Appearance</Text>
-          <Text style={styles.headerSubtitle}>Choose a theme that feels like you</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Appearance</Text>
+          <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>
+            Choose a theme that feels like you
+          </Text>
         </View>
 
         {/* ── Live Preview Strip ── */}
@@ -318,12 +286,7 @@ const ThemeColorScreen = () => {
           ]}
         >
           <View style={styles.livePreviewLeft}>
-            <View
-              style={[
-                styles.liveAccentDot,
-                { backgroundColor: selectedAccent },
-              ]}
-            />
+            <View style={[styles.liveAccentDot, { backgroundColor: selectedAccent }]} />
             <View>
               <Text style={styles.livePreviewLabel}>Live Preview</Text>
               <Text style={[styles.livePreviewAccent, { color: selectedAccent }]}>
@@ -348,6 +311,7 @@ const ThemeColorScreen = () => {
               key={tab}
               style={[
                 styles.tab,
+                { borderColor: 'rgba(255,255,255,0.08)' },
                 activeTab === tab && {
                   backgroundColor: selectedAccent + '1a',
                   borderColor: selectedAccent + '66',
@@ -358,7 +322,7 @@ const ThemeColorScreen = () => {
               <Text
                 style={[
                   styles.tabText,
-                  { color: activeTab === tab ? selectedAccent : 'rgba(255,255,255,0.4)' },
+                  { color: activeTab === tab ? selectedAccent : colors.textMuted },
                 ]}
               >
                 {tab === 'presets' ? 'Themes' : 'Custom Accent'}
@@ -370,7 +334,7 @@ const ThemeColorScreen = () => {
         {/* ── Presets Grid ── */}
         {activeTab === 'presets' && (
           <View style={styles.section}>
-            <SectionHeader title="SELECT THEME" />
+            <SectionHeader title="SELECT THEME" textMuted={colors.textMuted} />
             <View style={styles.presetsGrid}>
               {THEME_PRESETS.map(preset => (
                 <PresetCard
@@ -387,11 +351,14 @@ const ThemeColorScreen = () => {
         {/* ── Custom Accent Picker ── */}
         {activeTab === 'custom' && (
           <View style={styles.section}>
-            <SectionHeader title="ACCENT COLOR" />
+            <SectionHeader title="ACCENT COLOR" textMuted={colors.textMuted} />
             <View
               style={[
                 styles.swatchGrid,
-                { borderColor: 'rgba(255,255,255,0.06)' },
+                {
+                  backgroundColor: colors.backgroundOverlay,
+                  borderColor: 'rgba(255,255,255,0.06)',
+                },
               ]}
             >
               {ACCENT_COLORS.map(color => (
@@ -406,11 +373,13 @@ const ThemeColorScreen = () => {
 
             {/* Selected color readout */}
             <View style={styles.colorReadout}>
-              <View
-                style={[styles.colorReadoutSwatch, { backgroundColor: selectedAccent }]}
-              />
-              <Text style={styles.colorReadoutHex}>{selectedAccent.toUpperCase()}</Text>
-              <Text style={styles.colorReadoutLabel}>Current accent</Text>
+              <View style={[styles.colorReadoutSwatch, { backgroundColor: selectedAccent }]} />
+              <Text style={[styles.colorReadoutHex, { color: colors.text }]}>
+                {selectedAccent.toUpperCase()}
+              </Text>
+              <Text style={[styles.colorReadoutLabel, { color: colors.textMuted }]}>
+                Current accent
+              </Text>
             </View>
           </View>
         )}
@@ -459,12 +428,10 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 34,
     fontWeight: '700',
-    color: Colors.text,
     letterSpacing: 0.3,
   },
   headerSubtitle: {
     fontSize: 15,
-    color: Colors.textMuted,
     marginTop: 4,
     letterSpacing: 0.1,
   },
@@ -522,7 +489,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
     alignItems: 'center',
   },
   tabText: {
@@ -539,7 +505,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
     textTransform: 'uppercase',
-    color: Colors.textMuted,
     marginBottom: 12,
     marginLeft: 20,
     marginRight: 20,
@@ -648,7 +613,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 14,
-    backgroundColor: Colors.backgroundOverlay,
     borderRadius: 16,
     borderWidth: 1,
     padding: 18,
@@ -684,12 +648,10 @@ const styles = StyleSheet.create({
   colorReadoutHex: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#fff',
     letterSpacing: 1,
   },
   colorReadoutLabel: {
     fontSize: 13,
-    color: 'rgba(255,255,255,0.35)',
   },
 
   // Apply button
