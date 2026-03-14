@@ -13,6 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { ResizeMode } from 'react-native-video';
 import { GlassView } from 'expo-glass-effect';
+import { useTheme } from '@/context/ThemeContext';
 
 // ==================== CONSTANTS ====================
 export const CONSTANTS = {
@@ -332,11 +333,11 @@ export const buildSubtitleDelayActions = (currentDelay: number): MenuAction[] =>
 
 export const buildSubtitleActions = (
     subtitles: SubtitleSource[],
-    selectedCustomIndex: number,        // index into subtitles[], -1 = none
-    availableEmbeddedTracks: any[],     // adapted embedded tracks (always pass, even if empty)
+    selectedCustomIndex: number,
+    availableEmbeddedTracks: any[],
     subtitlePosition: SubtitlePosition,
     subtitleDelay: number,
-    selectedEmbeddedIndex: number = -1  // index into availableEmbeddedTracks[], -1 = none
+    selectedEmbeddedIndex: number = -1
 ): MenuAction[] => {
     const noneSelected = selectedCustomIndex === -1 && selectedEmbeddedIndex === -1;
 
@@ -348,7 +349,6 @@ export const buildSubtitleActions = (
         titleColor: noneSelected ? '#007AFF' : '#FFFFFF',
     };
 
-    // Embedded track entries
     const embeddedActions: MenuAction[] = availableEmbeddedTracks.map((track, i) => ({
         id: `subtitle-track-embedded-${i}`,
         title: track.label || track.name || `Track ${i + 1}`,
@@ -357,7 +357,6 @@ export const buildSubtitleActions = (
         titleColor: selectedEmbeddedIndex === i ? '#007AFF' : '#FFFFFF',
     }));
 
-    // OpenSubtitles / custom entries
     const customActions: MenuAction[] = subtitles.map((sub, i) => ({
         id: `subtitle-track-custom-${i}`,
         title: sub.label,
@@ -397,12 +396,12 @@ export const buildSubtitleActions = (
 
 export const buildSubtitleActionsLegacy = (
     subtitles: SubtitleSource[],
-    selectedIndex: number,              // combined offset index, -1 = off
+    selectedIndex: number,
     useCustomSubtitles: boolean,
-    availableSubtitleTracks: any[],     // adapted embedded tracks
+    availableSubtitleTracks: any[],
     subtitlePosition: SubtitlePosition,
     subtitleDelay: number,
-    selectedTextTrackId: number = -1    // raw embedded index, -1 = none
+    selectedTextTrackId: number = -1
 ): MenuAction[] => {
     const noneSelected = selectedIndex === -1 && selectedTextTrackId === -1;
 
@@ -413,7 +412,6 @@ export const buildSubtitleActionsLegacy = (
         titleColor: noneSelected ? '#007AFF' : '#FFFFFF',
     };
 
-    // Custom (OpenSubtitles) entries — ids 0..subtitles.length-1
     const customActions: MenuAction[] = useCustomSubtitles
         ? subtitles.map((sub, i) => ({
             id: `subtitle-track-${i}`,
@@ -424,7 +422,6 @@ export const buildSubtitleActionsLegacy = (
         }))
         : [];
 
-    // Embedded entries — ids start at subtitles.length (offset scheme)
     const embeddedActions: MenuAction[] = availableSubtitleTracks.map((track, i) => {
         const offsetIndex = subtitles.length + i;
         return {
@@ -517,10 +514,11 @@ export const WaitingLobby: React.FC<{
     opacity: Animated.Value;
     error?: boolean;
 }> = ({ hasStartedPlaying, opacity, error }) => {
+    const { colors } = useTheme();
     if (hasStartedPlaying || error) return null;
     return (
         <Animated.View style={[styles.bufferingContainer, { opacity }]} pointerEvents="none">
-            <ActivityIndicator size="large" color="#535aff" />
+            <ActivityIndicator size="large" color={colors.primary} />
             <Text style={styles.bufferingText}>{"Loading..."}</Text>
         </Animated.View>
     );
@@ -532,6 +530,7 @@ export const ArtworkBackground: React.FC<{
     hasStartedPlaying?: boolean;
     error?: boolean;
 }> = ({ artwork, isBuffering, hasStartedPlaying = true, error }) => {
+    const { colors } = useTheme();
     if (!artwork || hasStartedPlaying || error) return null;
     return (
         <View style={styles.artworkContainer}>
@@ -539,7 +538,7 @@ export const ArtworkBackground: React.FC<{
             <View style={styles.artworkOverlay} />
             {isBuffering && (
                 <View style={styles.artworkLoadingOverlay}>
-                    <ActivityIndicator size="large" color="#535aff" />
+                    <ActivityIndicator size="large" color={colors.primary} />
                     <Text style={styles.bufferingText}>Loading...</Text>
                 </View>
             )}
@@ -630,6 +629,7 @@ export const ProgressBar: React.FC<{
     showSpeed?: boolean;
     playbackSpeed?: number;
 }> = ({ currentTime, duration, sliderValue, isReady, onValueChange, onSlidingStart, onSlidingComplete }) => {
+    const { colors } = useTheme();
     return (
         <View style={styles.bottomControls}>
             <View style={styles.progressContainerWithMargin}>
@@ -644,7 +644,7 @@ export const ProgressBar: React.FC<{
                             onValueChange={onValueChange}
                             onSlidingStart={onSlidingStart}
                             onSlidingComplete={onSlidingComplete}
-                            minimumTrackTintColor="rgba(83, 90, 255, 0.9)"
+                            minimumTrackTintColor={colors.primary}
                             maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
                             thumbTintColor="#fff"
                             thumbSize={20}

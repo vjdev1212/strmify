@@ -14,6 +14,7 @@ import MediaContentDetailsList from '@/components/MediaContentDetailsList';
 import WatchTrailerButton from '@/components/WatchTrailer';
 import LibraryButton from '@/components/LibraryButton';
 import * as Haptics from 'expo-haptics';
+import { useTheme } from '@/context/ThemeContext';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -27,6 +28,7 @@ const MovieDetails = () => {
   const { width, height } = useWindowDimensions();
   const isPortrait = height > width;
   const ref = useRef<ScrollView | null>(null);
+  const { colors } = useTheme();
 
   useEffect(() => {
     const fetchDetails = async () => {
@@ -130,7 +132,7 @@ const MovieDetails = () => {
   if (loading) {
     return (
       <View style={styles.centeredContainer}>
-        <ActivityIndicator size="large" style={styles.activityIndicator} color="#535aff" />
+        <ActivityIndicator size="large" style={styles.activityIndicator} color={colors.primary} />
         <Text style={styles.centeredText}>Loading</Text>
       </View>
     );
@@ -256,8 +258,7 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   activityIndicator: {
-    marginBottom: 10,
-    color: '#535aff',
+    marginBottom: 10
   },
   centeredContainer: {
     flex: 1,
