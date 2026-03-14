@@ -57,7 +57,7 @@ const SettingsScreen = () => {
         style={[
           styles.settingItem,
           {
-            backgroundColor: isPressed ? Colors.backgroundMid : Colors.backgroundOverlay,
+            backgroundColor: Colors.backgroundOverlay,
             borderTopLeftRadius: isFirst ? 12 : 0,
             borderTopRightRadius: isFirst ? 12 : 0,
             borderBottomLeftRadius: isLast ? 12 : 0,
