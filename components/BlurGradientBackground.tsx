@@ -54,8 +54,8 @@ export default function BlurGradientBackground({
             />
             <LinearGradient
                 colors={[
-                    'rgba(255, 255, 255, 0.06)',
-                    'rgba(255, 255, 255, 0.00)',
+                    themeColors.primarySurface,
+                    'rgba(0, 0, 0, 0)',
                 ]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
