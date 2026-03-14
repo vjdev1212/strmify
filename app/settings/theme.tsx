@@ -30,6 +30,13 @@ export type ThemePreset = {
 
 const THEME_PRESETS: ThemePreset[] = [
   {
+    id: 'dark',
+    label: 'Dark',
+    primary: '#666666',
+    background: '#101010',
+    description: 'Default dark',
+  },
+  {
     id: 'violet',
     label: 'Violet',
     primary: '#535aff',
@@ -85,14 +92,6 @@ const THEME_PRESETS: ThemePreset[] = [
     background: '#0a0e14',
     description: 'Subdued & refined',
   },
-];
-
-// ─── Accent Color Swatches ─────────────────────────────────────────────────────
-const ACCENT_COLORS = [
-  '#535aff', '#ff3b5c', '#00e57a', '#ffb830',
-  '#00c8ff', '#ff5fa3', '#aaff00', '#a0b4cc',
-  '#9b5de5', '#f15bb5', '#fee440', '#00bbf9',
-  '#ff6b35', '#7bed9f', '#eccc68', '#a29bfe',
 ];
 
 // ─── Sub-components ────────────────────────────────────────────────────────────
@@ -184,46 +183,6 @@ const PresetCard = ({
   );
 };
 
-const AccentSwatch = ({
-  color,
-  isSelected,
-  onPress,
-}: {
-  color: string;
-  isSelected: boolean;
-  onPress: () => void;
-}) => {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-
-  return (
-    <Pressable
-      onPress={onPress}
-      onPressIn={() =>
-        Animated.spring(scaleAnim, { toValue: 0.85, useNativeDriver: true, speed: 40 }).start()
-      }
-      onPressOut={() =>
-        Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, speed: 20 }).start()
-      }
-    >
-      <Animated.View style={[styles.swatchOuter, { transform: [{ scale: scaleAnim }] }]}>
-        <View
-          style={[
-            styles.swatchRing,
-            {
-              borderColor: isSelected ? color : 'transparent',
-              borderWidth: isSelected ? 2 : 0,
-            },
-          ]}
-        >
-          <View style={[styles.swatchInner, { backgroundColor: color }]}>
-            {isSelected && <Ionicons name="checkmark" size={12} color="#000" />}
-          </View>
-        </View>
-      </Animated.View>
-    </Pressable>
-  );
-};
-
 // ─── Main Screen ───────────────────────────────────────────────────────────────
 
 const ThemeColorScreen = () => {
@@ -232,7 +191,6 @@ const ThemeColorScreen = () => {
 
   const [selectedPreset, setSelectedPreset] = useState<string>(savedTheme.presetId);
   const [selectedAccent, setSelectedAccent] = useState<string>(savedTheme.primary);
-  const [activeTab, setActiveTab] = useState<'presets' | 'custom'>('presets');
 
   const currentPreset =
     THEME_PRESETS.find(p => p.id === selectedPreset) ?? THEME_PRESETS[0];
@@ -241,11 +199,6 @@ const ThemeColorScreen = () => {
     if (await isHapticsSupported()) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedPreset(preset.id);
     setSelectedAccent(preset.primary);
-  };
-
-  const handleAccentSelect = async (color: string) => {
-    if (await isHapticsSupported()) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setSelectedAccent(color);
   };
 
   const handleApply = async () => {
@@ -304,100 +257,34 @@ const ThemeColorScreen = () => {
           </View>
         </View>
 
-        {/* ── Tab Toggle ── */}
-        <View style={styles.tabRow}>
-          {(['presets', 'custom'] as const).map(tab => (
-            <Pressable
-              key={tab}
-              style={[
-                styles.tab,
-                { borderColor: 'rgba(255,255,255,0.08)' },
-                activeTab === tab && {
-                  backgroundColor: selectedAccent + '1a',
-                  borderColor: selectedAccent + '66',
-                },
-              ]}
-              onPress={() => setActiveTab(tab)}
-            >
-              <Text
-                style={[
-                  styles.tabText,
-                  { color: activeTab === tab ? selectedAccent : colors.textMuted },
-                ]}
-              >
-                {tab === 'presets' ? 'Themes' : 'Custom Accent'}
-              </Text>
-            </Pressable>
-          ))}
+        {/* ── Presets Grid ── */}
+        <View style={styles.section}>
+          <SectionHeader title="SELECT THEME" textMuted={colors.textMuted} />
+          <View style={styles.presetsGrid}>
+            {THEME_PRESETS.map(preset => (
+              <PresetCard
+                key={preset.id}
+                preset={preset}
+                isSelected={selectedPreset === preset.id}
+                onPress={() => handlePresetSelect(preset)}
+              />
+            ))}
+          </View>
         </View>
 
-        {/* ── Presets Grid ── */}
-        {activeTab === 'presets' && (
-          <View style={styles.section}>
-            <SectionHeader title="SELECT THEME" textMuted={colors.textMuted} />
-            <View style={styles.presetsGrid}>
-              {THEME_PRESETS.map(preset => (
-                <PresetCard
-                  key={preset.id}
-                  preset={preset}
-                  isSelected={selectedPreset === preset.id}
-                  onPress={() => handlePresetSelect(preset)}
-                />
-              ))}
-            </View>
-          </View>
-        )}
-
-        {/* ── Custom Accent Picker ── */}
-        {activeTab === 'custom' && (
-          <View style={styles.section}>
-            <SectionHeader title="ACCENT COLOR" textMuted={colors.textMuted} />
-            <View
-              style={[
-                styles.swatchGrid,
-                {
-                  backgroundColor: colors.backgroundOverlay,
-                  borderColor: 'rgba(255,255,255,0.06)',
-                },
-              ]}
-            >
-              {ACCENT_COLORS.map(color => (
-                <AccentSwatch
-                  key={color}
-                  color={color}
-                  isSelected={selectedAccent === color}
-                  onPress={() => handleAccentSelect(color)}
-                />
-              ))}
-            </View>
-
-            {/* Selected color readout */}
-            <View style={styles.colorReadout}>
-              <View style={[styles.colorReadoutSwatch, { backgroundColor: selectedAccent }]} />
-              <Text style={[styles.colorReadoutHex, { color: colors.text }]}>
-                {selectedAccent.toUpperCase()}
-              </Text>
-              <Text style={[styles.colorReadoutLabel, { color: colors.textMuted }]}>
-                Current accent
-              </Text>
-            </View>
-          </View>
-        )}
-
         {/* ── Apply Button ── */}
-        <Pressable
-          style={({ pressed }) => [
-            styles.applyButton,
-            {
-              backgroundColor: selectedAccent,
-              opacity: pressed ? 0.85 : 1,
-            },
-          ]}
-          onPress={handleApply}
-        >
-          <Ionicons name="checkmark-circle" size={20} color="#000" style={styles.applyIcon} />
-          <Text style={styles.applyText}>Apply Theme</Text>
-        </Pressable>
+        <View style={styles.buttonSection}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.applyButton,
+              { backgroundColor: selectedAccent, opacity: pressed ? 0.85 : 1 },
+            ]}
+            onPress={handleApply}
+          >
+            <Ionicons name="checkmark-circle" size={20} color="#000" />
+            <Text style={styles.applyText}>Apply Theme</Text>
+          </Pressable>
+        </View>
 
         <BottomSpacing space={50} />
       </ScrollView>
@@ -475,26 +362,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-
-  // Tab toggle
-  tabRow: {
-    flexDirection: 'row',
-    marginHorizontal: 16,
-    gap: 10,
-    marginBottom: 24,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-    alignItems: 'center',
-  },
-  tabText: {
-    fontSize: 14,
-    fontWeight: '600',
-    letterSpacing: 0.1,
   },
 
   // Section
@@ -607,71 +474,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  // Swatch grid
-  swatchGrid: {
-    marginHorizontal: 16,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 14,
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 18,
-  },
-  swatchOuter: {
-    padding: 3,
-  },
-  swatchRing: {
-    borderRadius: 18,
-    padding: 2,
-  },
-  swatchInner: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  // Color readout
-  colorReadout: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginTop: 14,
-    marginHorizontal: 20,
-  },
-  colorReadoutSwatch: {
-    width: 20,
-    height: 20,
-    borderRadius: 5,
-  },
-  colorReadoutHex: {
-    fontSize: 14,
-    fontWeight: '700',
-    letterSpacing: 1,
-  },
-  colorReadoutLabel: {
-    fontSize: 13,
-  },
-
   // Apply button
+  buttonSection: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+  },
   applyButton: {
-    marginHorizontal: 16,
-    borderRadius: 14,
-    paddingVertical: 16,
+    flex: 1,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  applyIcon: {
-    marginRight: 8,
+    gap: 8,
   },
   applyText: {
-    fontSize: 17,
-    fontWeight: '700',
+    fontSize: 15,
     color: '#000',
-    letterSpacing: 0.2,
+    fontWeight: '600',
+    letterSpacing: -0.2,
   },
 });
 

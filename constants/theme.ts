@@ -1,4 +1,4 @@
-const PRIMARY = '#535aff';
+const PRIMARY = '#666666';
 const BACKGROUND = '#1a1a1a';
 
 export type AppColors = {

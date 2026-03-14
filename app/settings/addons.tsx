@@ -96,14 +96,14 @@ const AddonsScreen = () => {
         {item.description && <View style={styles.cardBody}><Text style={[styles.addonDescription, { color: colors.textMuted }]} numberOfLines={3}>{item.description}</Text></View>}
         <View style={styles.cardActions}>
           {hasManifestUrl && (
-            <Pressable style={({ pressed }) => [styles.actionButton, { backgroundColor: colors.primaryGhost }, pressed && styles.actionButtonPressed]} onPress={() => updateAddonManifest(item.id, item.manifestUrl)} disabled={isUpdating}>
+            <Pressable style={({ pressed }) => [styles.actionButton, { backgroundColor: colors.primarySurface }, pressed && styles.actionButtonPressed]} onPress={() => updateAddonManifest(item.id, item.manifestUrl)} disabled={isUpdating}>
               {isUpdating ? <ActivityIndicator size="small" color="#ffffff" /> : <Ionicons name="refresh" size={18} color="#ffffff" />}
             </Pressable>
           )}
-          <Pressable style={({ pressed }) => [styles.actionButton, { backgroundColor: colors.primaryGhost }, pressed && styles.actionButtonPressed]} onPress={() => shareManifestUrl(item.manifestUrl)}>
+          <Pressable style={({ pressed }) => [styles.actionButton, { backgroundColor: colors.primarySurface }, pressed && styles.actionButtonPressed]} onPress={() => shareManifestUrl(item.manifestUrl)}>
             <Ionicons name="share-outline" size={18} color="#ffffff" />
           </Pressable>
-          <Pressable style={({ pressed }) => [styles.actionButton, { backgroundColor: colors.primaryGhost }, !configurable && { backgroundColor: colors.primaryFaint }, pressed && configurable && styles.actionButtonPressed]} onPress={() => openConfiguration(item.baseUrl)} disabled={!configurable}>
+          <Pressable style={({ pressed }) => [styles.actionButton, { backgroundColor: colors.primarySurface }, !configurable && { backgroundColor: colors.primaryFaint }, pressed && configurable && styles.actionButtonPressed]} onPress={() => openConfiguration(item.baseUrl)} disabled={!configurable}>
             <Ionicons name="settings-outline" size={18} color={configurable ? "#ffffff" : '#555555'} />
           </Pressable>
           <Pressable
