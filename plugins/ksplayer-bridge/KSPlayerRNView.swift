@@ -130,7 +130,7 @@ class KSPlayerRNView: UIView {
         // Must be false so KSPlayer doesn't auto-select and render its own
         // subtitle overlay — we render the text in React via onSubtitleText.
         options.autoSelectEmbedSubtitle = false
-
+        
         KSOptions.audioPlayerType = AudioRendererPlayer.self
         // ─────────────────────────────────────────────────────────────────────
 
@@ -213,9 +213,16 @@ class KSPlayerRNView: UIView {
         let tracks = player.tracks(mediaType: .audio)
         let idx = Int(jsIndex)
         guard idx >= 0, idx < tracks.count else { return }
-        player.select(track: tracks[idx])
+        tracks.enumerated().forEach { i, track in
+            if i == idx {                
+                func doSelect<T: MediaPlayerTrack>(_ t: T) {
+                    player.select(track: t)
+                }
+                doSelect(track)
+            }
+        }
     }
-    
+
     func selectTextTrack(_ jsIndex: Int32) {
         let idx = Int(jsIndex)
         let infos = playerView.srtControl.subtitleInfos
