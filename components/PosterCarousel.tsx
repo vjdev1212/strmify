@@ -307,7 +307,7 @@ export default function AppleTVCarousel({
 const styles = StyleSheet.create({
     container: {
         position: 'relative',
-        backgroundColor: Colors.background,
+        backgroundColor: Colors.backgroundOverlay,
     },
     carousel: {
         flex: 1,

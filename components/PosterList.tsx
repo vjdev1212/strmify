@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
   },
   posterImage: {
     borderRadius: 6,
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.backgroundOverlay,
     overflow: 'hidden',
   },
   posterTitle: {
@@ -350,11 +350,11 @@ const styles = StyleSheet.create({
     letterSpacing: -0.1,
   },
   skeletonPoster: {
-    backgroundColor: Colors.backgroundCard,
+    backgroundColor: Colors.backgroundOverlay,
   },
   skeletonText: {
     height: 14,
-    backgroundColor: Colors.backgroundCard,
+    backgroundColor: Colors.backgroundOverlay,
     borderRadius: 6,
   },
 });
