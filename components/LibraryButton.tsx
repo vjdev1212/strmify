@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { libraryService, LibraryItem } from '@/utils/LibraryService';
 import * as Haptics from 'expo-haptics';
 import { isHapticsSupported } from '@/utils/platform';
-import { Colors } from '@/constants/theme';
+import { useTheme } from '@/context/ThemeContext';
 
 interface LibraryButtonProps {
     item: Omit<LibraryItem, 'timestamp'>;
@@ -12,43 +12,26 @@ interface LibraryButtonProps {
     color?: string;
 }
 
-const LibraryButton: React.FC<LibraryButtonProps> = ({
-    item,
-    size = 28,
-    color = '#fff'
-}) => {
+const LibraryButton: React.FC<LibraryButtonProps> = ({ item, size = 28, color = '#fff' }) => {
+    const { colors } = useTheme();
     const [isInLibrary, setIsInLibrary] = useState(false);
     const [loading, setLoading] = useState(false);
 
-    useEffect(() => {
-        checkLibraryStatus();
-    }, [item.moviedbid, item.type]);
+    useEffect(() => { checkLibraryStatus(); }, [item.moviedbid, item.type]);
 
     const checkLibraryStatus = async () => {
-        const inLibrary = await libraryService.isInLibrary(item.moviedbid, item.type);
-        setIsInLibrary(inLibrary);
+        setIsInLibrary(await libraryService.isInLibrary(item.moviedbid, item.type));
     };
 
     const handlePress = async () => {
         if (loading) return;
-
         setLoading(true);
-
-        if (isHapticsSupported()) {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        }
-
+        if (isHapticsSupported()) await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         try {
             if (isInLibrary) {
-                const success = await libraryService.removeFromLibrary(item.moviedbid, item.type);
-                if (success) {
-                    setIsInLibrary(false);
-                }
+                if (await libraryService.removeFromLibrary(item.moviedbid, item.type)) setIsInLibrary(false);
             } else {
-                const success = await libraryService.addToLibrary(item);
-                if (success) {
-                    setIsInLibrary(true);
-                }
+                if (await libraryService.addToLibrary(item)) setIsInLibrary(true);
             }
         } catch (error) {
             console.error('Error toggling library status:', error);
@@ -62,39 +45,21 @@ const LibraryButton: React.FC<LibraryButtonProps> = ({
             onPress={handlePress}
             style={[
                 styles.button,
-                isInLibrary && styles.buttonActive
+                { backgroundColor: colors.primarySurface, borderColor: colors.primaryBorder },
+                isInLibrary && { backgroundColor: colors.primaryMuted, opacity: 0.5 },
             ]}
             disabled={loading}
         >
-            {loading ? (
-                <ActivityIndicator size="small" color={color} />
-            ) : (
-                <Ionicons
-                    name={isInLibrary ? 'bookmark' : 'bookmark-outline'}
-                    size={size}
-                    color={color}
-                />
-            )}
+            {loading
+                ? <ActivityIndicator size="small" color={color} />
+                : <Ionicons name={isInLibrary ? 'bookmark' : 'bookmark-outline'} size={size} color={color} />
+            }
         </TouchableOpacity>
     );
 };
 
 const styles = StyleSheet.create({
-    button: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
-        backgroundColor: Colors.primarySurface,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 2,
-        borderColor: Colors.primaryBorder,
-    },
-    buttonActive: {
-        backgroundColor: Colors.primaryMuted,
-        borderColor: Colors.primaryBorder,
-        opacity: 0.5,
-    },
+    button: { width: 50, height: 50, borderRadius: 25, justifyContent: 'center', alignItems: 'center', borderWidth: 2 },
 });
 
 export default LibraryButton;

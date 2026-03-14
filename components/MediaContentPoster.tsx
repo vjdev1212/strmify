@@ -1,71 +1,32 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { StyleSheet, Animated, ActivityIndicator, Platform } from 'react-native';
 import { View } from './Themed';
-import { Colors } from '@/constants/theme';
+import { useTheme } from '@/context/ThemeContext';
 
-interface MediaContentPosterProps {
-  background: string;
-  isPortrait: boolean;
-}
+interface MediaContentPosterProps { background: string; isPortrait: boolean; }
 
 const MediaContentPoster: React.FC<MediaContentPosterProps> = ({ background, isPortrait }) => {
+  const { colors } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   const startAnimations = useCallback(() => {
     setIsLoading(false);
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 500,
-      useNativeDriver: true,
-    }).start();
+    Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }).start();
   }, [fadeAnim]);
 
-  const containerStyle = [
-    styles.posterContainer,
-    { aspectRatio: isPortrait ? 1 / 1 : 16 / 9 }
-  ];
-
-  const posterStyle = [
-    styles.poster,
-    {
-      opacity: fadeAnim,
-      borderRadius: isPortrait ? 0 : 10,
-    }
-  ];
-
-  const shadowContainerStyle = [
-    styles.shadowContainer,
-    {
-      borderRadius: isPortrait ? 0 : 10,
-      // Platform-specific shadows
-      ...Platform.select({
-        ios: {
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 8 },
-          shadowOpacity: 0.44,
-          shadowRadius: 10.32,
-        },
-        android: {
-          elevation: 16,
-        },
-      }),
-    }
-  ];
-
   return (
-    <View style={containerStyle}>
-      <Animated.View style={shadowContainerStyle}>
+    <View style={[styles.posterContainer, { aspectRatio: isPortrait ? 1 / 1 : 16 / 9 }]}>
+      <Animated.View style={[styles.shadowContainer, { borderRadius: isPortrait ? 0 : 10, ...Platform.select({ ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.44, shadowRadius: 10.32 }, android: { elevation: 16 } }) }]}>
         {isLoading && (
           <Animated.View style={styles.loaderContainer}>
-            <ActivityIndicator color={Colors.primary} />
+            <ActivityIndicator color={colors.primary} />
           </Animated.View>
         )}
-
         <Animated.Image
           resizeMode={isPortrait ? 'cover' : 'contain'}
           source={{ uri: background }}
-          style={posterStyle}
+          style={[styles.poster, { opacity: fadeAnim, borderRadius: isPortrait ? 0 : 10 }]}
           onLoad={startAnimations}
         />
       </Animated.View>
@@ -74,28 +35,10 @@ const MediaContentPoster: React.FC<MediaContentPosterProps> = ({ background, isP
 };
 
 const styles = StyleSheet.create({
-  posterContainer: {
-    position: 'relative',
-    width: '100%',
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  shadowContainer: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: 'transparent',
-  },
-  poster: {
-    width: '100%',
-    height: '100%',
-  },
-  loaderContainer: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.2)',
-  },
+  posterContainer: { position: 'relative', width: '100%', overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
+  shadowContainer: { width: '100%', height: '100%', backgroundColor: 'transparent' },
+  poster: { width: '100%', height: '100%' },
+  loaderContainer: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.2)' },
 });
 
 export default MediaContentPoster;

@@ -1,6 +1,5 @@
 import { router, useFocusEffect } from 'expo-router';
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
-// import nodejs from 'nodejs-mobile-react-native';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -17,9 +16,8 @@ import * as Haptics from 'expo-haptics';
 import { isHapticsSupported } from '@/utils/platform';
 import { CatalogUrl, MovieGneres, TvGneres } from '@/constants/Tmdb';
 import BlurGradientBackground from '@/components/BlurGradientBackground';
-import { Colors } from '@/constants/theme';
+import { useTheme } from '@/context/ThemeContext';
 
-// Lazy loading wrapper component
 const LazyPosterList = ({
   apiUrl,
   title,
@@ -31,16 +29,10 @@ const LazyPosterList = ({
   type: 'movie' | 'series';
   index: number;
 }) => {
-  const [shouldLoad, setShouldLoad] = useState(index < 2); // Load first 2 immediately
+  const [shouldLoad, setShouldLoad] = useState(index < 2);
 
   return (
-    <View
-      onLayout={() => {
-        if (!shouldLoad) {
-          setShouldLoad(true);
-        }
-      }}
-    >
+    <View onLayout={() => { if (!shouldLoad) setShouldLoad(true); }}>
       {shouldLoad ? (
         <PosterList apiUrl={apiUrl} title={title} type={type} />
       ) : (
@@ -51,18 +43,10 @@ const LazyPosterList = ({
 };
 
 export default function HomeScreen() {
+  const { colors } = useTheme();
   const [filter, setFilter] = useState<'all' | 'movies' | 'series'>('all');
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // useEffect(() => {
-  //   try {
-  //     nodejs.start("wrapper.js");
-  //   } catch (err: any) {
-  //     console.log('ServerJs Error', err)
-  //   }
-  // }, []);
-
-  // Refresh watch history when screen comes into focus
   useFocusEffect(
     useCallback(() => {
       setRefreshKey(prev => prev + 1);
@@ -75,7 +59,6 @@ export default function HomeScreen() {
     { key: 'series', label: 'Series', icon: 'tv-outline' }
   ];
 
-  // All mode fixed curated list
   const allLists = useMemo(() => [
     { apiUrl: CatalogUrl.trendingMovies, title: 'Movies - Trending', type: 'movie' },
     { apiUrl: CatalogUrl.trendingSeries, title: 'Series - Trending', type: 'series' },
@@ -119,7 +102,6 @@ export default function HomeScreen() {
     { apiUrl: TvGneres.kids, title: 'Kids', type: 'series' },
   ], []);
 
-  // Pick correct list based on filter
   const activeLists = useMemo(() => {
     if (filter === 'all') return allLists;
     if (filter === 'movies') return movieLists;
@@ -128,38 +110,28 @@ export default function HomeScreen() {
   }, [filter, allLists, movieLists, seriesLists]);
 
   const handleFilterChange = async (newFilter: 'all' | 'movies' | 'series') => {
-    if (await isHapticsSupported()) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    if (await isHapticsSupported()) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setFilter(newFilter);
   };
 
   const handleCarouselItemPress = (item: any) => {
-    const type = item.type == 'movie' ? 'movie' : 'series'
-    router.push({
-      pathname: `/${type}/details`,
-      params: { moviedbid: item.moviedbid },
-    });
+    const type = item.type == 'movie' ? 'movie' : 'series';
+    router.push({ pathname: `/${type}/details`, params: { moviedbid: item.moviedbid } });
   };
 
   return (
-    <View style={[styles.container]}>
+    <View style={styles.container}>
       <StatusBar />
       <BlurGradientBackground />
-      {/* Scrollable content */}
       <ScrollView showsVerticalScrollIndicator={false} key={filter}>
-
-        {/* Apple TV Carousel */}
         <AppleTVCarousel
           filter={filter}
           onItemPress={handleCarouselItemPress}
           autoPlay={true}
           autoPlayInterval={6000}
         />
-
         <View style={styles.contentContainer}>
-          {/* Filter buttons */}
-          <View style={[styles.filtersContainer]}>
+          <View style={styles.filtersContainer}>
             <FlatList
               data={filters}
               horizontal
@@ -170,7 +142,10 @@ export default function HomeScreen() {
                 <TouchableOpacity
                   style={[
                     styles.filterButton,
-                    filter === item.key && styles.filterButtonActive
+                    {
+                      backgroundColor: filter === item.key ? colors.primary : colors.primarySurface,
+                      borderColor: filter === item.key ? colors.primary : colors.primaryBorder,
+                    },
                   ]}
                   onPress={() => handleFilterChange(item.key as 'all' | 'movies' | 'series')}
                   activeOpacity={0.7}
@@ -178,13 +153,14 @@ export default function HomeScreen() {
                   <Ionicons
                     name={item.icon as any}
                     size={18}
-                    color={filter === item.key ? Colors.text : Colors.textMuted}
+                    color={filter === item.key ? colors.text : colors.textMuted}
                     style={styles.filterIcon}
                   />
                   <Text
                     style={[
                       styles.filterButtonText,
-                      filter === item.key && styles.filterButtonTextActive
+                      { color: filter === item.key ? colors.text : colors.textMuted },
+                      filter === item.key && styles.filterButtonTextActive,
                     ]}
                   >
                     {item.label}
@@ -228,25 +204,17 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 18,
     borderRadius: 20,
-    backgroundColor: Colors.primarySurface,
     borderWidth: 1,
-    borderColor: Colors.primaryBorder,
-  },
-  filterButtonActive: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
   },
   filterIcon: {
     marginRight: 6,
   },
   filterButtonText: {
     fontSize: 15,
-    color: Colors.textMuted,
     fontWeight: '500',
     letterSpacing: -0.2,
   },
   filterButtonTextActive: {
-    color: Colors.text,
     fontWeight: '600',
   },
   contentContainer: {

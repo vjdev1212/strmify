@@ -6,7 +6,7 @@ import {
   Platform
 } from 'react-native';
 import { StatusBar as DefaultStatusBar } from 'expo-status-bar';
-import { Colors } from '@/constants/theme';
+import { useTheme } from '@/context/ThemeContext';
 
 export type TextProps = DefaultText['props'];
 export type TextInputProps = DefaultTextInput['props'];
@@ -16,18 +16,21 @@ export type ActivityIndicatorProps = DefaultActivityIndicator['props'];
 
 export function Text(props: TextProps) {
   const { style, ...otherProps } = props;
+  const { colors } = useTheme();
   const webFontStyle = Platform.OS === 'web' ? { fontFamily: 'SF Pro Display, -apple-system, BlinkMacSystemFont, sans-serif' } : {};
-  return <DefaultText style={[webFontStyle, { color: Colors.text }, style]} {...otherProps} />;
+  return <DefaultText style={[webFontStyle, { color: colors.text }, style]} {...otherProps} />;
 }
 
 export function TextInput(props: TextInputProps) {
   const { style, ...otherProps } = props;
-  return <DefaultTextInput style={[{ color: Colors.text }, style]} {...otherProps} />;
+  const { colors } = useTheme();
+  return <DefaultTextInput style={[{ color: colors.text }, style]} {...otherProps} />;
 }
 
 export function ActivityIndicator(props: ActivityIndicatorProps) {
-  const { style, color = Colors.primary, ...otherProps } = props;
-  return <DefaultActivityIndicator style={style} color={color} {...otherProps} />;
+  const { style, color, ...otherProps } = props;
+  const { colors } = useTheme();
+  return <DefaultActivityIndicator style={style} color={color ?? colors.primary} {...otherProps} />;
 }
 
 export function View(props: ViewProps) {
@@ -41,10 +44,5 @@ export function StatusBar(props: StatusBarProps) {
 
 export function Card(props: ViewProps) {
   const { style, ...otherProps } = props;
-  return (
-    <DefaultView
-      style={[{ overflow: 'hidden' }, style]}
-      {...otherProps}
-    />
-  );
+  return <DefaultView style={[{ overflow: 'hidden' }, style]} {...otherProps} />;
 }
