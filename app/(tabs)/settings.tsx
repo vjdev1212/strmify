@@ -25,6 +25,7 @@ const SettingsScreen = () => {
   const General: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [
     { title: 'Addons', route: '/settings/addons', icon: 'extension-puzzle-outline' },
     { title: 'Media Player', route: '/settings/mediaplayer', icon: 'play-circle-outline' },
+    { title: 'Theme', route: '/settings/theme', icon: 'color-palette-outline' },
   ];
 
   const contactList: { title: string, route: string, icon: keyof typeof Ionicons.glyphMap }[] = [

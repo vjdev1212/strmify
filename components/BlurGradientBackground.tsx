@@ -2,6 +2,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTheme } from '@/context/ThemeContext';
 
 interface BlurGradientBackgroundProps {
     intensity?: number;
@@ -15,15 +16,15 @@ interface BlurGradientBackgroundProps {
 export default function BlurGradientBackground({
     intensity = 40,
     tint = 'dark',
-    colors = [
-        'rgba(30, 27, 75, 0.85)',
-        'rgba(23, 20, 80, 0.90)',
-        'rgba(15, 12, 60, 0.95)',
-    ],
+    colors,
     start = { x: 0, y: 0 },
     end = { x: 0, y: 1 },
     borderRadius = 24,
 }: BlurGradientBackgroundProps) {
+    const { colors: themeColors } = useTheme();
+
+    const gradientColors = colors ?? themeColors.gradientBg;
+
     return (
         <View
             pointerEvents="none"
@@ -40,22 +41,17 @@ export default function BlurGradientBackground({
                 },
             ]}
         >
-            {/* Blur layer */}
             <BlurView
                 intensity={intensity}
                 tint={tint}
                 style={StyleSheet.absoluteFill}
             />
-
-            {/* Deep navy gradient overlay */}
             <LinearGradient
-                colors={colors as any}
+                colors={gradientColors as any}
                 start={start}
                 end={end}
                 style={StyleSheet.absoluteFill}
             />
-
-            {/* Subtle top-left highlight for glass sheen */}
             <LinearGradient
                 colors={[
                     'rgba(255, 255, 255, 0.06)',

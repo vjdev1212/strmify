@@ -25,7 +25,7 @@ const DonateScreen = () => {
                         <View style={styles.iconWrapper}>
                             <Ionicons name="heart" size={32} color={Colors.primary} />
                         </View>
-                        <Text style={styles.title}>Enjoying the App?</Text>
+                        <Text style={styles.title}>Enjoying the App!</Text>
                         <Text style={styles.subtitle}>
                             Your support helps keep this project alive and enables continuous improvements.
                             Every contribution makes a difference!
