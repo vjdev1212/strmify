@@ -1,15 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-    View,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    StyleSheet,
-    ActivityIndicator,
-    ScrollView,
-    KeyboardAvoidingView,
-    Platform,
-} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { StorageKeys, storageService } from '@/utils/StorageService';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,9 +8,10 @@ import { MenuView, MenuAction } from '@react-native-menu/menu';
 import { WebMenu } from '@/components/WebMenuView';
 import { SUBTITLE_LANGUAGES } from '@/utils/Subtitles';
 import BottomSpacing from '@/components/BottomSpacing';
-import { Colors } from '@/constants/theme';
+import { useTheme } from '@/context/ThemeContext';
 
 const OpenSubtitlesConfigScreen: React.FC = () => {
+    const { colors } = useTheme();
     const [apiKey, setApiKey] = useState('');
     const [useDefaultKey, setUseDefaultKey] = useState(true);
     const [selectedLanguages, setSelectedLanguages] = useState<string[]>(['en']);
@@ -28,150 +19,79 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
     const [isSaving, setIsSaving] = useState(false);
     const [showApiKey, setShowApiKey] = useState(false);
 
-    useEffect(() => {
-        loadSavedConfig();
-    }, []);
+    useEffect(() => { loadSavedConfig(); }, []);
 
     const loadSavedConfig = async () => {
         setIsLoading(true);
         try {
             const savedApiKey = storageService.getItem(StorageKeys.OPENSUBTITLES_API_KEY);
+            if (!savedApiKey) { setUseDefaultKey(true); setApiKey(''); }
+            else { setUseDefaultKey(false); setApiKey(savedApiKey); }
             const savedLanguages = storageService.getItem(StorageKeys.SUBTITLE_LANGUAGES_KEY);
-
-            if (savedApiKey === undefined || savedApiKey === null || savedApiKey === '') {
-                setUseDefaultKey(true);
-                setApiKey('');
-            } else {
-                setUseDefaultKey(false);
-                setApiKey(savedApiKey);
-            }
-
             if (savedLanguages) {
-                try {
-                    const languages = JSON.parse(savedLanguages);
-                    if (Array.isArray(languages) && languages.length > 0) {
-                        setSelectedLanguages(languages);
-                    }
-                } catch (e) {
-                    console.error('Failed to parse saved languages:', e);
-                }
+                const languages = JSON.parse(savedLanguages);
+                if (Array.isArray(languages) && languages.length > 0) setSelectedLanguages(languages);
             }
-        } catch (error) {
-            console.error('Failed to load saved config:', error);
-        } finally {
-            setIsLoading(false);
-        }
+        } catch (error) { console.error('Failed to load saved config:', error); }
+        finally { setIsLoading(false); }
     };
 
-    const toggleLanguage = async (languageCode: string) => {
+    const toggleLanguage = (languageCode: string) => {
         setSelectedLanguages(prev => {
             if (prev.includes(languageCode)) {
-                // Don't allow removing the last language
-                if (prev.length === 1) {
-                    showAlert('Error', 'You must have at least one language selected');
-                    return prev;
-                }
+                if (prev.length === 1) { showAlert('Error', 'You must have at least one language selected'); return prev; }
                 return prev.filter(code => code !== languageCode);
-            } else {
-                return [...prev, languageCode];
             }
+            return [...prev, languageCode];
         });
     };
 
-    const removeLanguage = async (languageCode: string) => {
-
-        if (selectedLanguages.length === 1) {
-            showAlert('Error', 'You must have at least one language selected');
-            return;
-        }
-
+    const removeLanguage = (languageCode: string) => {
+        if (selectedLanguages.length === 1) { showAlert('Error', 'You must have at least one language selected'); return; }
         setSelectedLanguages(prev => prev.filter(code => code !== languageCode));
     };
 
-    const toggleApiKeyMode = async () => {
-
-        const newUseDefault = !useDefaultKey;
-        setUseDefaultKey(newUseDefault);
-
-        if (newUseDefault) {
-            setApiKey('');
-        }
-    };
+    const toggleApiKeyMode = () => { const n = !useDefaultKey; setUseDefaultKey(n); if (n) setApiKey(''); };
 
     const saveConfiguration = async () => {
-
-        if (!useDefaultKey && !apiKey.trim()) {
-            showAlert('Error', 'Please enter an API key or use the default key');
-            return;
-        }
-
-        if (selectedLanguages.length === 0) {
-            showAlert('Error', 'Please select at least one language');
-            return;
-        }
-
+        if (!useDefaultKey && !apiKey.trim()) { showAlert('Error', 'Please enter an API key or use the default key'); return; }
+        if (selectedLanguages.length === 0) { showAlert('Error', 'Please select at least one language'); return; }
         setIsSaving(true);
-
         try {
-            if (useDefaultKey) {
-                // Set to undefined to use default/built-in key
-                storageService.removeItem(StorageKeys.OPENSUBTITLES_API_KEY);
-            } else {
-                storageService.setItem(StorageKeys.OPENSUBTITLES_API_KEY, apiKey.trim());
-            }
-
+            if (useDefaultKey) storageService.removeItem(StorageKeys.OPENSUBTITLES_API_KEY);
+            else storageService.setItem(StorageKeys.OPENSUBTITLES_API_KEY, apiKey.trim());
             storageService.setItem(StorageKeys.SUBTITLE_LANGUAGES_KEY, JSON.stringify(selectedLanguages));
-
             showAlert('Configuration Saved', 'Your OpenSubtitles configuration has been saved successfully.');
-        } catch (error) {
-            showAlert('Save Failed', `Failed to save configuration:\n${error instanceof Error ? error.message : 'Unknown error'}`);
-        } finally {
-            setIsSaving(false);
-        }
+        } catch (error) { showAlert('Save Failed', `Failed to save configuration:\n${error instanceof Error ? error.message : 'Unknown error'}`); }
+        finally { setIsSaving(false); }
     };
 
     const clearConfiguration = async () => {
         showAlert('Clear Configuration', 'Are you sure you want to clear the saved configuration?', [
             { text: 'Cancel', style: 'cancel' },
-            {
-                text: 'Clear',
-                style: 'destructive',
-                onPress: async () => {
-                    try {
-                        storageService.removeItem(StorageKeys.OPENSUBTITLES_API_KEY);
-                        storageService.removeItem(StorageKeys.SUBTITLE_LANGUAGES_KEY);
-                        setApiKey('');
-                        setUseDefaultKey(true);
-                        setSelectedLanguages(['en']);
-                        showAlert('Success', 'Configuration cleared successfully');
-                    } catch (error) {
-                        showAlert('Error', 'Failed to clear configuration');
-                    }
-                },
-            },
+            { text: 'Clear', style: 'destructive', onPress: async () => {
+                try {
+                    storageService.removeItem(StorageKeys.OPENSUBTITLES_API_KEY);
+                    storageService.removeItem(StorageKeys.SUBTITLE_LANGUAGES_KEY);
+                    setApiKey(''); setUseDefaultKey(true); setSelectedLanguages(['en']);
+                    showAlert('Success', 'Configuration cleared successfully');
+                } catch { showAlert('Error', 'Failed to clear configuration'); }
+            }},
         ]);
     };
 
-    const getLanguageName = (code: string) => {
-        return SUBTITLE_LANGUAGES.find(lang => lang.code === code)?.name || code;
-    };
+    const getLanguageName = (code: string) => SUBTITLE_LANGUAGES.find(l => l.code === code)?.name || code;
 
-    const buildLanguageMenuActions = (): MenuAction[] => {
-        return SUBTITLE_LANGUAGES.map(lang => ({
-            id: `lang-${lang.code}`,
-            title: lang.name,
-            state: selectedLanguages.includes(lang.code) ? ('on' as const) : undefined,
-            titleColor: selectedLanguages.includes(lang.code) ? '#007AFF' : '#FFFFFF'
-        }));
-    };
+    const buildLanguageMenuActions = (): MenuAction[] => SUBTITLE_LANGUAGES.map(lang => ({
+        id: `lang-${lang.code}`,
+        title: lang.name,
+        state: selectedLanguages.includes(lang.code) ? ('on' as const) : undefined,
+        titleColor: selectedLanguages.includes(lang.code) ? '#007AFF' : '#FFFFFF'
+    }));
 
     const handleLanguageMenuAction = (event: { nativeEvent: { event: string } }) => {
-        const actionId = event.nativeEvent.event;
-        const languageCode = actionId.replace('lang-', '');
-        toggleLanguage(languageCode);
+        toggleLanguage(event.nativeEvent.event.replace('lang-', ''));
     };
-
-    const languageMenuActions = buildLanguageMenuActions();
 
     const webMenuActions = SUBTITLE_LANGUAGES.map(lang => ({
         title: lang.name,
@@ -180,49 +100,25 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
     }));
 
     const renderLanguageMenu = () => {
-        if (Platform.OS === 'web') {
-            return (
-                <WebMenu
-                    title="Select Languages"
-                    actions={webMenuActions as any}
-                    onPressAction={(action: any) => {
-                        const language = SUBTITLE_LANGUAGES.find(lang => lang.name === action.title);
-                        if (language) {
-                            toggleLanguage(language.code);
-                        }
-                    }}
-                >
-                    <TouchableOpacity style={styles.menuButton}>
-                        <Ionicons name="language-outline" size={20} color={Colors.textMuted} />
-                        <Text style={styles.menuButtonText}>Add Language</Text>
-                        <Ionicons name="chevron-down-outline" size={20} color={Colors.textMuted} />
-                    </TouchableOpacity>
-                </WebMenu>
-            );
-        }
-
-        return (
-            <MenuView
-                actions={languageMenuActions}
-                onPressAction={handleLanguageMenuAction}
-                themeVariant='dark'
-                shouldOpenOnLongPress={false}
-            >
-                <TouchableOpacity style={styles.menuButton}>
-                    <Ionicons name="language-outline" size={20} color="#bbb" />
-                    <Text style={styles.menuButtonText}>Add Language</Text>
-                    <Ionicons name="chevron-down-outline" size={20} color="#bbb" />
-                </TouchableOpacity>
-            </MenuView>
+        const btn = (
+            <TouchableOpacity style={[styles.menuButton, { backgroundColor: colors.primarySurface, borderColor: colors.primaryBorder }]}>
+                <Ionicons name="language-outline" size={20} color={colors.textMuted} />
+                <Text style={[styles.menuButtonText, { color: colors.textMuted }]}>Add Language</Text>
+                <Ionicons name="chevron-down-outline" size={20} color={colors.textMuted} />
+            </TouchableOpacity>
         );
+        if (Platform.OS === 'web') {
+            return <WebMenu title="Select Languages" actions={webMenuActions as any} onPressAction={(action: any) => { const language = SUBTITLE_LANGUAGES.find(l => l.name === action.title); if (language) toggleLanguage(language.code); }}>{btn}</WebMenu>;
+        }
+        return <MenuView actions={buildLanguageMenuActions()} onPressAction={handleLanguageMenuAction} themeVariant='dark' shouldOpenOnLongPress={false}>{btn}</MenuView>;
     };
 
     if (isLoading) {
         return (
             <SafeAreaView style={styles.container}>
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={Colors.primary} />
-                    <Text style={styles.loadingText}>Loading configuration...</Text>
+                    <ActivityIndicator size="large" color={colors.primary} />
+                    <Text style={[styles.loadingText, { color: colors.textMuted }]}>Loading configuration...</Text>
                 </View>
             </SafeAreaView>
         );
@@ -230,107 +126,59 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
 
     return (
         <SafeAreaView style={styles.container}>
-            <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                style={styles.keyboardAvoid}>
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardAvoid}>
                 <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                     <View style={styles.header}>
-                        <Ionicons name="settings-outline" size={40} color={Colors.primary} />
-                        <Text style={styles.title}>OpenSubtitles Configuration</Text>
-                        <Text style={styles.subtitle}>
-                            Configure your API credentials and subtitle preferences
-                        </Text>
+                        <Ionicons name="settings-outline" size={40} color={colors.primary} />
+                        <Text style={[styles.title, { color: colors.text }]}>OpenSubtitles Configuration</Text>
+                        <Text style={[styles.subtitle, { color: colors.textMuted }]}>Configure your API credentials and subtitle preferences</Text>
                     </View>
-
                     <View style={styles.form}>
                         <View style={styles.inputGroup}>
-                            <Text style={styles.label}>API Key</Text>
-
-                            <TouchableOpacity
-                                style={styles.toggleContainer}
-                                onPress={toggleApiKeyMode}
-                            >
-                                <View style={styles.toggleOption}>
-                                    <View style={[
-                                        styles.radioButton,
-                                        useDefaultKey && styles.radioButtonSelected
-                                    ]}>
-                                        {useDefaultKey && <View style={styles.radioButtonInner} />}
+                            <Text style={[styles.label, { color: colors.text }]}>API Key</Text>
+                            <TouchableOpacity style={[styles.toggleContainer, { backgroundColor: colors.primarySurface, borderColor: colors.primaryBorder }]} onPress={toggleApiKeyMode}>
+                                {[true, false].map((isDefault) => (
+                                    <View key={String(isDefault)} style={styles.toggleOption}>
+                                        <View style={[styles.radioButton, { borderColor: colors.textDim }, (isDefault ? useDefaultKey : !useDefaultKey) && { borderColor: colors.primary }]}>
+                                            {(isDefault ? useDefaultKey : !useDefaultKey) && <View style={[styles.radioButtonInner, { backgroundColor: colors.primary }]} />}
+                                        </View>
+                                        <Text style={[styles.toggleText, { color: colors.text }]}>{isDefault ? 'Default' : 'Custom API Key'}</Text>
                                     </View>
-                                    <Text style={styles.toggleText}>Default</Text>
-                                </View>
-                                <View style={styles.toggleOption}>
-                                    <View style={[
-                                        styles.radioButton,
-                                        !useDefaultKey && styles.radioButtonSelected
-                                    ]}>
-                                        {!useDefaultKey && <View style={styles.radioButtonInner} />}
-                                    </View>
-                                    <Text style={styles.toggleText}>Custom API Key</Text>
-                                </View>
+                                ))}
                             </TouchableOpacity>
-
                             {!useDefaultKey && (
                                 <>
                                     <View style={styles.passwordContainer}>
-                                        <TextInput
-                                            style={[styles.input, styles.passwordInput]}
-                                            value={apiKey}
-                                            onChangeText={setApiKey}
-                                            placeholder="Enter your OpenSubtitles API key"
-                                            placeholderTextColor="#aaa"
-                                            secureTextEntry={!showApiKey}
-                                            autoCapitalize="none"
-                                            autoCorrect={false}
-                                            submitBehavior='blurAndSubmit'
-                                        />
-                                        <TouchableOpacity
-                                            style={styles.eyeButton}
-                                            onPress={() => setShowApiKey(!showApiKey)}
-                                        >
-                                            <Ionicons name={showApiKey ? 'eye-off-outline' : 'eye-outline'} size={20} color={Colors.textMuted} />
+                                        <TextInput style={[styles.input, styles.passwordInput, { backgroundColor: colors.primarySurface, color: colors.text }]} value={apiKey} onChangeText={setApiKey} placeholder="Enter your OpenSubtitles API key" placeholderTextColor="#aaa" secureTextEntry={!showApiKey} autoCapitalize="none" autoCorrect={false} submitBehavior='blurAndSubmit' />
+                                        <TouchableOpacity style={styles.eyeButton} onPress={() => setShowApiKey(!showApiKey)}>
+                                            <Ionicons name={showApiKey ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.textMuted} />
                                         </TouchableOpacity>
                                     </View>
-                                    <Text style={styles.helpText}>
-                                        Get your API key from OpenSubtitles.com account settings
-                                    </Text>
+                                    <Text style={styles.helpText}>Get your API key from OpenSubtitles.com account settings</Text>
                                 </>
                             )}
-
                             {useDefaultKey && (
-                                <View style={styles.infoBox}>
-                                    <Ionicons name="information-circle-outline" size={18} color={Colors.primary} />
-                                    <Text style={styles.infoText}>
-                                        Using the default API key for OpenSubtitles (Rate-Limited)
-                                    </Text>
+                                <View style={[styles.infoBox, { backgroundColor: colors.primarySurface, borderColor: colors.primaryBorder }]}>
+                                    <Ionicons name="information-circle-outline" size={18} color={colors.primary} />
+                                    <Text style={[styles.infoText, { color: colors.textMuted }]}>Using the default API key for OpenSubtitles (Rate-Limited)</Text>
                                 </View>
                             )}
                         </View>
-
                         <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Preferred Languages</Text>
-                            <Text style={[styles.helpText, { marginBottom: 12, marginTop: 0 }]}>
-                                Select languages for subtitle search (in order of preference)
-                            </Text>
-
+                            <Text style={[styles.label, { color: colors.text }]}>Preferred Languages</Text>
+                            <Text style={[styles.helpText, { marginBottom: 12, marginTop: 0 }]}>Select languages for subtitle search (in order of preference)</Text>
                             {renderLanguageMenu()}
-
                             {selectedLanguages.length > 0 && (
                                 <View style={styles.selectedLanguagesContainer}>
                                     {selectedLanguages.map((code, index) => (
-                                        <View key={code} style={styles.selectedLanguageChip}>
-                                            <View style={styles.languageBadge}>
-                                                <Text style={styles.languageBadgeText}>{index + 1}</Text>
+                                        <View key={code} style={[styles.selectedLanguageChip, { backgroundColor: colors.primarySurface }]}>
+                                            <View style={[styles.languageBadge, { backgroundColor: colors.textDim }]}>
+                                                <Text style={[styles.languageBadgeText, { color: colors.text }]}>{index + 1}</Text>
                                             </View>
-                                            <Text style={styles.selectedLanguageText}>
-                                                {getLanguageName(code)}
-                                            </Text>
+                                            <Text style={[styles.selectedLanguageText, { color: colors.text }]}>{getLanguageName(code)}</Text>
                                             {selectedLanguages.length > 1 && (
-                                                <TouchableOpacity
-                                                    onPress={() => removeLanguage(code)}
-                                                    style={styles.removeButton}
-                                                >
-                                                    <Ionicons name="close-circle" size={18} color={Colors.textDim} />
+                                                <TouchableOpacity onPress={() => removeLanguage(code)} style={styles.removeButton}>
+                                                    <Ionicons name="close-circle" size={18} color={colors.textDim} />
                                                 </TouchableOpacity>
                                             )}
                                         </View>
@@ -338,33 +186,13 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
                                 </View>
                             )}
                         </View>
-
                         <View style={styles.buttonGroup}>
-                            <TouchableOpacity
-                                style={[styles.button, styles.clearButton]}
-                                onPress={clearConfiguration}
-                                disabled={isSaving}
-                            >
+                            <TouchableOpacity style={[styles.button, styles.clearButton, { backgroundColor: colors.primaryBorder }]} onPress={clearConfiguration} disabled={isSaving}>
                                 <Ionicons name="trash-outline" size={16} color="#FFF" />
-                                <Text style={styles.clearButtonText}>Clear</Text>
+                                <Text style={[styles.buttonText, { color: colors.text }]}>Clear</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[
-                                    styles.button,
-                                    styles.saveButton,
-                                    (!useDefaultKey && !apiKey.trim()) && styles.disabledButton,
-                                ]}
-                                onPress={saveConfiguration}
-                                disabled={isSaving || (!useDefaultKey && !apiKey.trim())}
-                            >
-                                {isSaving ? (
-                                    <ActivityIndicator size="small" color="#FFF" />
-                                ) : (
-                                    <>
-                                        <Ionicons name="save-outline" size={16} color="#FFF" />
-                                        <Text style={styles.buttonText}>Save</Text>
-                                    </>
-                                )}
+                            <TouchableOpacity style={[styles.button, { backgroundColor: (!useDefaultKey && !apiKey.trim()) ? colors.primaryBorder : colors.primary }]} onPress={saveConfiguration} disabled={isSaving || (!useDefaultKey && !apiKey.trim())}>
+                                {isSaving ? <ActivityIndicator size="small" color="#FFF" /> : <><Ionicons name="save-outline" size={16} color="#FFF" /><Text style={[styles.buttonText, { color: colors.text }]}>Save</Text></>}
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -376,224 +204,41 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        marginTop: 30,
-        width: '100%',
-        maxWidth: 780,
-        margin: 'auto'
-    },
-    keyboardAvoid: {
-        flex: 1,
-    },
-    scrollContent: {
-        flexGrow: 1,
-        padding: 15,
-    },
-    loadingContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    loadingText: {
-        marginTop: 10,
-        fontSize: 16,
-        color: Colors.textMuted,
-    },
-    header: {
-        alignItems: 'center',
-        marginBottom: 30,
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: Colors.text,
-        marginTop: 10,
-        textAlign: 'center',
-    },
-    subtitle: {
-        fontSize: 16,
-        color: Colors.textMuted,
-        textAlign: 'center',
-        marginTop: 5,
-        lineHeight: 22,
-    },
-    form: {
-        padding: 10,
-    },
-    inputGroup: {
-        marginBottom: 24,
-    },
-    label: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: Colors.text,
-        marginBottom: 10,
-    },
-    toggleContainer: {
-        flexDirection: 'row',
-        gap: 20,
-        marginBottom: 12,
-        padding: 12,
-        backgroundColor: Colors.primarySurface,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: Colors.primaryBorder,
-    },
-    toggleOption: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-    },
-    radioButton: {
-        width: 20,
-        height: 20,
-        borderRadius: 10,
-        borderWidth: 2,
-        borderColor: Colors.textDim,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    radioButtonSelected: {
-        borderColor: Colors.primary,
-    },
-    radioButtonInner: {
-        width: 10,
-        height: 10,
-        borderRadius: 5,
-        backgroundColor: '#535aff',
-    },
-    toggleText: {
-        fontSize: 14,
-        color: Colors.text,
-        fontWeight: '500',
-    },
-    input: {
-        borderRadius: 8,
-        padding: 12,
-        backgroundColor: Colors.background,
-        color: Colors.text,
-    },
-    passwordContainer: {
-        position: 'relative',
-    },
-    passwordInput: {
-        paddingRight: 50,
-        backgroundColor: Colors.primarySurface,
-    },
-    eyeButton: {
-        position: 'absolute',
-        right: 10,
-        top: 8,
-        padding: 4,
-    },
-    helpText: {
-        fontSize: 12,
-        color: '#aaa',
-        marginTop: 10,
-        lineHeight: 16,
-    },
-    infoBox: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        padding: 12,
-        backgroundColor: Colors.primarySurface,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: Colors.primaryBorder,
-        marginTop: 12,
-    },
-    infoText: {
-        flex: 1,
-        fontSize: 13,
-        color: Colors.textMuted,
-        lineHeight: 18,
-    },
-    menuButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 12,
-        borderRadius: 8,
-        backgroundColor: Colors.primarySurface,
-        borderWidth: 1,
-        borderColor: Colors.primaryBorder,
-        gap: 8,
-    },
-    menuButtonText: {
-        flex: 1,
-        fontSize: 14,
-        color: Colors.textMuted,
-        fontWeight: '500',
-    },
-    selectedLanguagesContainer: {
-        marginTop: 12,
-        gap: 8,
-    },
-    selectedLanguageChip: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 10,
-        borderRadius: 8,
-        backgroundColor: Colors.primarySurface,
-        gap: 8,
-    },
-    selectedLanguageText: {
-        flex: 1,
-        fontSize: 14,
-        color: Colors.text,
-        fontWeight: '500',
-    },
-    languageBadge: {
-        backgroundColor: Colors.textDim,
-        borderRadius: 12,
-        width: 24,
-        height: 24,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    languageBadgeText: {
-        fontSize: 12,
-        color: Colors.text,
-        fontWeight: 'bold',
-    },
-    removeButton: {
-        padding: 2,
-    },
-    buttonGroup: {
-        marginTop: 30,
-        flexDirection: 'row',
-        gap: 12,
-    },
-    button: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 16,
-        paddingHorizontal: 16,
-        borderRadius: 25,
-        gap: 6,
-    },
-    saveButton: {
-        backgroundColor: Colors.primary,
-    },
-    clearButton: {
-        backgroundColor: Colors.primaryBorder,
-    },
-    buttonText: {
-        color: Colors.text,
-        fontSize: 14,
-        fontWeight: '600',
-    },
-    clearButtonText: {
-        color: Colors.text,
-        fontSize: 14,
-        fontWeight: '600',
-    },
-    disabledButton: {
-        backgroundColor: Colors.primaryBorder,
-    },
+    container: { flex: 1, marginTop: 30, width: '100%', maxWidth: 780, margin: 'auto' },
+    keyboardAvoid: { flex: 1 },
+    scrollContent: { flexGrow: 1, padding: 15 },
+    loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    loadingText: { marginTop: 10, fontSize: 16 },
+    header: { alignItems: 'center', marginBottom: 30 },
+    title: { fontSize: 24, fontWeight: 'bold', marginTop: 10, textAlign: 'center' },
+    subtitle: { fontSize: 16, textAlign: 'center', marginTop: 5, lineHeight: 22 },
+    form: { padding: 10 },
+    inputGroup: { marginBottom: 24 },
+    label: { fontSize: 16, fontWeight: '600', marginBottom: 10 },
+    toggleContainer: { flexDirection: 'row', gap: 20, marginBottom: 12, padding: 12, borderRadius: 8, borderWidth: 1 },
+    toggleOption: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    radioButton: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, justifyContent: 'center', alignItems: 'center' },
+    radioButtonInner: { width: 10, height: 10, borderRadius: 5 },
+    toggleText: { fontSize: 14, fontWeight: '500' },
+    input: { borderRadius: 8, padding: 12 },
+    passwordContainer: { position: 'relative' },
+    passwordInput: { paddingRight: 50 },
+    eyeButton: { position: 'absolute', right: 10, top: 8, padding: 4 },
+    helpText: { fontSize: 12, color: '#aaa', marginTop: 10, lineHeight: 16 },
+    infoBox: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12, borderRadius: 8, borderWidth: 1, marginTop: 12 },
+    infoText: { flex: 1, fontSize: 13, lineHeight: 18 },
+    menuButton: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 8, borderWidth: 1, gap: 8 },
+    menuButtonText: { flex: 1, fontSize: 14, fontWeight: '500' },
+    selectedLanguagesContainer: { marginTop: 12, gap: 8 },
+    selectedLanguageChip: { flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 8, gap: 8 },
+    selectedLanguageText: { flex: 1, fontSize: 14, fontWeight: '500' },
+    languageBadge: { borderRadius: 12, width: 24, height: 24, justifyContent: 'center', alignItems: 'center' },
+    languageBadgeText: { fontSize: 12, fontWeight: 'bold' },
+    removeButton: { padding: 2 },
+    buttonGroup: { marginTop: 30, flexDirection: 'row', gap: 12 },
+    button: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, paddingHorizontal: 16, borderRadius: 25, gap: 6 },
+    clearButton: {},
+    buttonText: { fontSize: 14, fontWeight: '600' },
 });
 
 export default OpenSubtitlesConfigScreen;
