@@ -1,19 +1,32 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
+import { View, Text, StatusBar } from '@/components/Themed';
 import { Ionicons } from '@expo/vector-icons';
 import BottomSpacing from '@/components/BottomSpacing';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
+import BlurGradientBackground from '@/components/BlurGradientBackground';
 
 const DisclaimerScreen = () => {
     const { colors } = useTheme();
+
     return (
         <SafeAreaView style={styles.container}>
-            <View style={[styles.header, { borderBottomColor: colors.primaryBorder }]}>
+            <BlurGradientBackground />
+            <StatusBar />
+
+            {/* ✅ Fixed header */}
+            <View style={styles.header}>
                 <Text style={[styles.headerTitle, { color: colors.text }]}>Disclaimer</Text>
                 <Text style={[styles.headerSubtitle, { color: colors.textDim }]}>Important Information</Text>
             </View>
-            <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+
+            {/* ✅ Only content scrolls */}
+            <ScrollView
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+            >
                 <View style={styles.disclaimerContainer}>
                     <Text style={[styles.disclaimerText, { color: colors.textMuted }]}>
                         This application serves solely as a dashboard interface for movies and TV shows information and does not host, store, or distribute any content.
@@ -43,19 +56,67 @@ const DisclaimerScreen = () => {
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, marginTop: 30 },
-    header: { paddingHorizontal: 20, paddingVertical: 15, borderBottomWidth: 1 },
-    headerTitle: { fontSize: 32, fontWeight: 'bold' },
-    headerSubtitle: { fontSize: 16, marginTop: 5 },
-    scrollView: { flex: 1 },
-    scrollContent: { paddingBottom: 40, width: '100%', maxWidth: 780, margin: 'auto' },
-    disclaimerContainer: { padding: 20 },
-    disclaimerText: { fontSize: 16, lineHeight: 24, marginBottom: 25, textAlign: 'center', fontStyle: 'italic' },
-    section: { marginBottom: 20, padding: 16, borderRadius: 12, borderLeftWidth: 4 },
-    sectionHeader: { fontSize: 18, fontWeight: '600', marginBottom: 12 },
-    sectionText: { fontSize: 15, lineHeight: 22 },
-    warningBox: { borderWidth: 1, borderRadius: 12, padding: 16, marginTop: 10, marginBottom: 25 },
-    warningText: { fontSize: 15, lineHeight: 22 },
+    container: {
+        flex: 1,
+        maxWidth: 780,
+        width: '100%',
+        alignSelf: 'center',
+    },
+    header: {
+        paddingHorizontal: 20,
+        paddingTop: 50,
+        paddingBottom: 16,
+    },
+    headerTitle: {
+        fontSize: 32,
+        fontWeight: 'bold',
+    },
+    headerSubtitle: {
+        fontSize: 16,
+        marginTop: 5,
+    },
+    scrollView: {
+        flex: 1,
+        backgroundColor: 'transparent',
+    },
+    scrollContent: {
+        paddingBottom: 40,
+    },
+    disclaimerContainer: {
+        padding: 20,
+    },
+    disclaimerText: {
+        fontSize: 16,
+        lineHeight: 24,
+        marginBottom: 25,
+        fontStyle: 'italic',
+    },
+    section: {
+        marginBottom: 20,
+        padding: 16,
+        borderRadius: 12,
+        borderLeftWidth: 4,
+    },
+    sectionHeader: {
+        fontSize: 18,
+        fontWeight: '600',
+        marginBottom: 12,
+    },
+    sectionText: {
+        fontSize: 15,
+        lineHeight: 22,
+    },
+    warningBox: {
+        borderWidth: 1,
+        borderRadius: 12,
+        padding: 16,
+        marginTop: 10,
+        marginBottom: 25,
+    },
+    warningText: {
+        fontSize: 15,
+        lineHeight: 22,
+    },
 });
 
 export default DisclaimerScreen;

@@ -19,7 +19,7 @@ const StremioServerScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        marginTop: 30,
+        marginTop: 40,
         width: '100%',
         maxWidth: 780,
         margin: 'auto'

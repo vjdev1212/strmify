@@ -164,18 +164,17 @@ const MediaPlayerConfigScreen = () => {
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar />
-            <ScrollView
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.scrollContent}
-            >
-                <View style={styles.contentContainer}>
-                    <View style={styles.headerSection}>
-                        <Text style={[styles.title, { color: colors.text }]}>Media Player</Text>
-                        <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-                            Select your preferred player for streaming
-                        </Text>
-                    </View>
-
+            <View style={styles.contentContainer}>
+                <View style={styles.headerSection}>
+                    <Text style={[styles.title, { color: colors.text }]}>Media Player</Text>
+                    <Text style={[styles.subtitle, { color: colors.textMuted }]}>
+                        Select your preferred player for streaming
+                    </Text>
+                </View>
+                <ScrollView
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={styles.scrollContent}
+                >
                     <View style={styles.playersSection}>
                         {players.map((player, index) => (
                             <Pressable
@@ -245,9 +244,9 @@ const MediaPlayerConfigScreen = () => {
                             </Text>
                         </Pressable>
                     </View>
-                </View>
-                <BottomSpacing space={30} />
-            </ScrollView>
+                </ScrollView>
+            </View>
+            <BottomSpacing space={30} />
         </SafeAreaView>
     );
 };
@@ -255,7 +254,6 @@ const MediaPlayerConfigScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        marginTop: 30,
     },
     scrollContent: {
         paddingBottom: 20,
@@ -280,20 +278,18 @@ const styles = StyleSheet.create({
         fontWeight: '400',
     },
     headerSection: {
-        alignItems: 'center',
-        marginBottom: 32,
+        paddingTop: 60,
+        marginBottom: 10,
         paddingVertical: 16,
     },
     title: {
         fontSize: 28,
         fontWeight: '700',
         marginBottom: 8,
-        textAlign: 'center',
         letterSpacing: -0.5,
     },
     subtitle: {
         fontSize: 15,
-        textAlign: 'center',
         lineHeight: 20,
         fontWeight: '400',
     },
@@ -343,7 +339,7 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingVertical: 14,
         paddingHorizontal: 20,
-        borderRadius: 12,
+        borderRadius: 25,
         alignItems: 'center',
         flexDirection: 'row',
         justifyContent: 'center',

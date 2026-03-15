@@ -25,14 +25,6 @@ const DonateScreen = () => {
                         <Text style={[styles.title, { color: colors.text }]}>Enjoying the App!</Text>
                         <Text style={[styles.subtitle, { color: colors.textMuted }]}>Your support helps keep this project alive and enables continuous improvements. Every contribution makes a difference!</Text>
                     </View>
-                    <View style={[styles.featuresSection, { backgroundColor: colors.primarySurface }]}>
-                        {['Regular updates & improvements', 'New features development', 'Bug fixes & maintenance'].map((text, i) => (
-                            <View key={i} style={styles.featureItem}>
-                                <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
-                                <Text style={[styles.featureText, { color: colors.textMuted }]}>{text}</Text>
-                            </View>
-                        ))}
-                    </View>
                     <View style={styles.donationSection}>
                         <Pressable style={({ pressed }) => [styles.donateButton, { backgroundColor: colors.primaryDark }, pressed && styles.donateButtonPressed]} onPress={handleDonate}>
                             <View style={styles.buttonContent}>
@@ -56,12 +48,9 @@ const styles = StyleSheet.create({
     headerSection: { alignItems: 'center', marginBottom: 40 },
     iconWrapper: { width: 80, height: 80, borderRadius: 40, alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
     title: { fontSize: 28, fontWeight: '700', marginBottom: 16, textAlign: 'center', lineHeight: 34 },
-    subtitle: { fontSize: 16, textAlign: 'center', lineHeight: 24, paddingHorizontal: 20 },
-    featuresSection: { borderRadius: 16, padding: 20, marginBottom: 32 },
-    featureItem: { flexDirection: 'row', alignItems: 'center', marginVertical: 10 },
-    featureText: { fontSize: 16, marginLeft: 12, flex: 1 },
+    subtitle: { fontSize: 16, textAlign: 'center', lineHeight: 24, paddingHorizontal: 20 },    
     donationSection: { alignItems: 'center' },
-    donateButton: { borderRadius: 16, paddingVertical: 15, paddingHorizontal: 26, marginBottom: 16, minWidth: 200 },
+    donateButton: { borderRadius: 25, paddingVertical: 15, paddingHorizontal: 26, marginBottom: 16, minWidth: 200 },
     donateButtonPressed: { transform: [{ scale: 0.96 }] },
     buttonContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
     donateText: { fontSize: 18, fontWeight: '500', marginLeft: 12, marginRight: 8 },
