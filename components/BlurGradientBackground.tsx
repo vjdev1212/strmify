@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '@/context/ThemeContext';
@@ -22,7 +22,6 @@ export default function BlurGradientBackground({
     borderRadius = 0,
 }: BlurGradientBackgroundProps) {
     const { colors: themeColors } = useTheme();
-
     const gradientColors = colors ?? themeColors.gradientBg;
 
     return (
@@ -41,11 +40,26 @@ export default function BlurGradientBackground({
                 },
             ]}
         >
-            <BlurView
-                intensity={intensity}
-                tint={tint}
-                style={StyleSheet.absoluteFill}
-            />
+            {/* ✅ BlurView is a no-op on web — CSS backdropFilter instead */}
+            {Platform.OS === 'web' ? (
+                <View
+                    style={[
+                        StyleSheet.absoluteFill,
+                        {
+                            backdropFilter: `blur(${intensity}px)`,
+                            // @ts-ignore
+                            WebkitBackdropFilter: `blur(${intensity}px)`,
+                        },
+                    ]}
+                />
+            ) : (
+                <BlurView
+                    intensity={intensity}
+                    tint={tint}
+                    style={StyleSheet.absoluteFill}
+                />
+            )}
+
             <LinearGradient
                 colors={gradientColors as any}
                 start={start}
@@ -53,10 +67,7 @@ export default function BlurGradientBackground({
                 style={StyleSheet.absoluteFill}
             />
             <LinearGradient
-                colors={[
-                    themeColors.primarySurface,
-                    'rgba(0, 0, 0, 0)',
-                ]}
+                colors={[themeColors.primarySurface, 'rgba(0,0,0,0)']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={StyleSheet.absoluteFill}

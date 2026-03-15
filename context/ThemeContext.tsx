@@ -54,15 +54,19 @@ function loadSavedTheme(): SavedTheme {
     }
 }
 
+// ✅ FIX 1: Read storage once, use it for BOTH the default context value and initial state
+const _initialTheme = loadSavedTheme();
+
 const ThemeContext = createContext<ThemeContextValue>({
-    colors: Colors,
-    savedTheme: DEFAULT_THEME,
+    colors: buildColors(_initialTheme),   // ✅ was: Colors (always stale static object)
+    savedTheme: _initialTheme,
     applyTheme: () => {},
 });
 
 export const AppThemeProvider = ({ children }: { children: React.ReactNode }) => {
-    const [savedTheme, setSavedTheme] = useState<SavedTheme>(loadSavedTheme);
-    const [colors, setColors] = useState<AppColors>(() => buildColors(loadSavedTheme()));
+    // ✅ FIX 2: Single loadSavedTheme() read — both states derived from same value
+    const [savedTheme, setSavedTheme] = useState<SavedTheme>(_initialTheme);
+    const [colors, setColors] = useState<AppColors>(() => buildColors(_initialTheme));
 
     const applyTheme = useCallback((theme: SavedTheme) => {
         storageService.setObject(StorageKeys.THEME_KEY, theme);
