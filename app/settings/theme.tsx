@@ -13,7 +13,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { isHapticsSupported } from '@/utils/platform';
-import BlurGradientBackground from '@/components/BlurGradientBackground';
 import BottomSpacing from '@/components/BottomSpacing';
 import { useTheme } from '@/context/ThemeContext';
 
@@ -138,7 +137,6 @@ const ThemeColorScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar />
-      <BlurGradientBackground />
       <View style={styles.contentContainer}>
         <View style={styles.header}>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Appearance</Text>

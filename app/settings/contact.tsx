@@ -4,7 +4,6 @@ import { AntDesign, Ionicons } from '@expo/vector-icons';
 import { View, Text, StatusBar } from '@/components/Themed';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
-import BlurGradientBackground from '@/components/BlurGradientBackground';
 
 type IconLibrary = 'AntDesign' | 'Ionicons';
 interface ContactItem { type: string; value: string; icon: string; iconLibrary: IconLibrary; action: () => Promise<void>; }
@@ -26,7 +25,6 @@ const ContactScreen = () => {
 
     return (
         <SafeAreaView style={styles.container}>
-            <BlurGradientBackground />
             <StatusBar />
 
             {/* ✅ Fixed header */}

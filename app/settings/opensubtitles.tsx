@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { StorageKeys, storageService } from '@/utils/StorageService';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,7 +9,7 @@ import { WebMenu } from '@/components/WebMenuView';
 import { SUBTITLE_LANGUAGES } from '@/utils/Subtitles';
 import BottomSpacing from '@/components/BottomSpacing';
 import { useTheme } from '@/context/ThemeContext';
-import BlurGradientBackground from '@/components/BlurGradientBackground';
+import { View, Text } from '@/components/Themed';
 
 const OpenSubtitlesConfigScreen: React.FC = () => {
     const { colors } = useTheme();
@@ -119,7 +119,6 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
     if (isLoading) {
         return (
             <SafeAreaView style={styles.container}>
-                <BlurGradientBackground />
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={colors.primary} />
                     <Text style={[styles.loadingText, { color: colors.textMuted }]}>Loading configuration...</Text>
@@ -130,10 +129,8 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
 
     return (
         <SafeAreaView style={styles.container}>
-            <BlurGradientBackground />
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardAvoid}>
 
-                {/* ✅ Fixed header — outside ScrollView */}
                 <View style={styles.header}>
                     <Text style={[styles.title, { color: colors.text }]}>OpenSubtitles</Text>
                     <Text style={[styles.subtitle, { color: colors.textMuted }]}>
@@ -254,7 +251,6 @@ const styles = StyleSheet.create({
     },
     scrollView: {
         flex: 1,
-        backgroundColor: 'transparent',
     },
     scrollContent: {
         flexGrow: 1,

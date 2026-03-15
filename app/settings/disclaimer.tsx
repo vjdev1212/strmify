@@ -5,14 +5,12 @@ import { Ionicons } from '@expo/vector-icons';
 import BottomSpacing from '@/components/BottomSpacing';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
-import BlurGradientBackground from '@/components/BlurGradientBackground';
 
 const DisclaimerScreen = () => {
     const { colors } = useTheme();
 
     return (
         <SafeAreaView style={styles.container}>
-            <BlurGradientBackground />
             <StatusBar />
 
             {/* ✅ Fixed header */}

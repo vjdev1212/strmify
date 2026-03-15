@@ -4,7 +4,6 @@ import React from 'react';
 import { TouchableOpacity, StyleSheet, Linking, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
-import BlurGradientBackground from '@/components/BlurGradientBackground';
 
 const resources = [
   { id: 1, title: 'Google Play Store', subtitle: 'Download for Android Devices', icon: '📱', url: 'https://play.google.com/store/apps/details?id=com.vijayyuvi.strmify' },
@@ -19,7 +18,6 @@ const DownloadsScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <BlurGradientBackground />
       <StatusBar />
 
       <View style={styles.header}>
