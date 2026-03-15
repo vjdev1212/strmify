@@ -19,19 +19,31 @@ const DownloadsScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar />
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={[styles.title, { color: colors.text }]}>Downloads</Text>
-          <Text style={[styles.subtitle, { color: colors.textDim }]}>Choose your preferred platform</Text>
-        </View>
+
+      <View style={styles.header}>
+        <Text style={[styles.title, { color: colors.text }]}>Downloads</Text>
+        <Text style={[styles.subtitle, { color: colors.textMuted }]}>Choose your preferred platform</Text>
+      </View>
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+      >
         <View style={styles.resourcesContainer}>
           {resources.map((resource) => (
-            <TouchableOpacity key={resource.id} style={[styles.resourceCard, { backgroundColor: colors.primarySurface, borderColor: colors.primaryBorder }]} onPress={() => handlePress(resource.url)}>
+            <TouchableOpacity
+              key={resource.id}
+              style={[styles.resourceCard, { backgroundColor: colors.primarySurface, borderColor: colors.primaryBorder }]}
+              onPress={() => handlePress(resource.url)}
+            >
               <View style={styles.cardContent}>
-                <View style={styles.iconContainer}><Text style={styles.icon}>{resource.icon}</Text></View>
+                <View style={styles.iconContainer}>
+                  <Text style={styles.icon}>{resource.icon}</Text>
+                </View>
                 <View style={styles.textContainer}>
                   <Text style={[styles.resourceTitle, { color: colors.text }]}>{resource.title}</Text>
-                  <Text style={[styles.resourceSubtitle, { color: colors.textDim }]}>{resource.subtitle}</Text>
+                  <Text style={[styles.resourceSubtitle, { color: colors.textMuted }]}>{resource.subtitle}</Text>
                 </View>
                 <View style={styles.arrowContainer}>
                   <View style={[styles.arrowButton, { backgroundColor: colors.primarySurface, borderColor: colors.primaryBorder }]}>
@@ -49,20 +61,88 @@ const DownloadsScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, maxWidth: 780, width: '100%', margin: 'auto', marginTop: 30 },
-  header: { paddingHorizontal: 24, paddingTop: 20, paddingBottom: 32, alignItems: 'center' },
-  title: { fontSize: 34, fontWeight: '600', marginBottom: 8, letterSpacing: -1, textAlign: 'center' },
-  subtitle: { fontSize: 16, fontWeight: '400', textAlign: 'center', lineHeight: 22 },
-  resourcesContainer: { flex: 1, paddingHorizontal: 20, justifyContent: 'center', gap: 20 },
-  resourceCard: { borderRadius: 15, overflow: 'hidden', borderWidth: 1 },
-  cardContent: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 16 },
-  iconContainer: { width: 30, height: 60, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginRight: 15 },
+  container: {
+    flex: 1,
+    maxWidth: 780,
+    width: '100%',
+    alignSelf: 'center',
+  },
+  header: {
+    paddingHorizontal: 24,
+    paddingTop: 50,
+    paddingBottom: 20,
+    alignItems: 'flex-start',
+  },
+  title: {
+    fontSize: 34,
+    fontWeight: '600',
+    marginBottom: 8,
+    letterSpacing: -1,
+    textAlign: 'left',
+  },
+  subtitle: {
+    fontSize: 16,
+    fontWeight: '400',
+    textAlign: 'left',
+    lineHeight: 22,
+  },
+  scrollView: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  scrollContent: {
+    paddingBottom: 40,
+  },
+  resourcesContainer: {
+    flex: 1,
+    paddingHorizontal: 20,
+    justifyContent: 'center',
+    gap: 20,
+  },
+  resourceCard: {
+    borderRadius: 15,
+    overflow: 'hidden',
+    borderWidth: 1,
+  },
+  cardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  iconContainer: {
+    width: 30,
+    height: 60,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+  },
   icon: { fontSize: 28 },
   textContainer: { flex: 1 },
-  resourceTitle: { fontSize: 16, fontWeight: '500', marginBottom: 6 },
-  resourceSubtitle: { fontSize: 15, fontWeight: '400', lineHeight: 20, paddingRight: 5 },
-  arrowContainer: { justifyContent: 'center', alignItems: 'center' },
-  arrowButton: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center', borderWidth: 1 },
+  resourceTitle: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 6,
+  },
+  resourceSubtitle: {
+    fontSize: 15,
+    fontWeight: '400',
+    lineHeight: 20,
+    paddingRight: 5,
+  },
+  arrowContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  arrowButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+  },
   arrow: { fontSize: 20, fontWeight: '600' },
 });
 

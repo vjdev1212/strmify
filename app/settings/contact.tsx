@@ -26,19 +26,33 @@ const ContactScreen = () => {
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar />
-            <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-                <View style={styles.headerContainer}>
-                    <Text style={[styles.title, { color: colors.text }]}>Get in Touch</Text>
-                    <Text style={[styles.subtitle, { color: colors.textMuted }]}>Your input makes the app better</Text>
-                </View>
+
+            {/* ✅ Fixed header */}
+            <View style={styles.headerContainer}>
+                <Text style={[styles.title, { color: colors.text }]}>Get in Touch</Text>
+                <Text style={[styles.subtitle, { color: colors.textMuted }]}>Your input makes the app better</Text>
+            </View>
+
+            {/* ✅ Only content scrolls */}
+            <ScrollView
+                style={styles.scrollContainer}
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+            >
                 <View style={styles.contactList}>
                     {contactInfo.map((item, index) => (
                         <Pressable
                             key={index}
-                            style={({ pressed }) => [styles.contactItem, { backgroundColor: colors.primarySurface, borderColor: colors.primaryBorder }, pressed && { backgroundColor: colors.backgroundMid, transform: [{ scale: 0.98 }] }]}
+                            style={({ pressed }) => [
+                                styles.contactItem,
+                                { backgroundColor: colors.primarySurface, borderColor: colors.primaryBorder },
+                                pressed && { backgroundColor: colors.backgroundMid, transform: [{ scale: 0.98 }] },
+                            ]}
                             onPress={item.action}
                         >
-                            <View style={[styles.iconContainer, { backgroundColor: colors.primarySurface }]}>{renderIcon(item)}</View>
+                            <View style={[styles.iconContainer, { backgroundColor: colors.primarySurface }]}>
+                                {renderIcon(item)}
+                            </View>
                             <View style={styles.contentContainer}>
                                 <Text style={[styles.type, { color: colors.text }]}>{item.type}</Text>
                                 <Text style={[styles.value, { color: colors.textMuted }]}>{item.value}</Text>
@@ -55,19 +69,75 @@ const ContactScreen = () => {
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, width: '100%', maxWidth: 780, margin: 'auto' },
-    scrollContainer: { flex: 1 },
-    scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
-    headerContainer: { alignItems: 'center', paddingVertical: 40, paddingHorizontal: 20 },
-    title: { fontSize: 28, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
-    subtitle: { fontSize: 16, textAlign: 'center', fontWeight: '400' },
-    contactList: { backgroundColor: 'transparent' },
-    contactItem: { flexDirection: 'row', alignItems: 'center', borderRadius: 16, paddingVertical: 15, paddingHorizontal: 20, marginBottom: 12, borderWidth: 0.5 },
-    iconContainer: { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
-    contentContainer: { flex: 1, backgroundColor: 'transparent' },
-    type: { fontSize: 17, fontWeight: '500', marginBottom: 4 },
-    value: { fontSize: 14, fontWeight: '400', lineHeight: 20 },
-    arrowContainer: { backgroundColor: 'transparent', marginLeft: 8 },
+    container: {
+        flex: 1,
+        width: '100%',
+        maxWidth: 780,
+        alignSelf: 'center',
+    },
+    headerContainer: {
+        alignItems: 'flex-start',
+        paddingHorizontal: 20,
+        paddingTop: 50,
+        paddingBottom: 20,
+    },
+    title: {
+        fontSize: 28,
+        fontWeight: '700',
+        marginBottom: 8,
+        textAlign: 'left',
+    },
+    subtitle: {
+        fontSize: 16,
+        textAlign: 'left',
+        fontWeight: '400',
+    },
+    scrollContainer: {
+        flex: 1,
+        backgroundColor: 'transparent',
+    },
+    scrollContent: {
+        paddingHorizontal: 20,
+        paddingBottom: 40,
+    },
+    contactList: {
+        backgroundColor: 'transparent',
+    },
+    contactItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderRadius: 16,
+        paddingVertical: 15,
+        paddingHorizontal: 20,
+        marginBottom: 12,
+        borderWidth: 0.5,
+    },
+    iconContainer: {
+        width: 48,
+        height: 48,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 16,
+    },
+    contentContainer: {
+        flex: 1,
+        backgroundColor: 'transparent',
+    },
+    type: {
+        fontSize: 17,
+        fontWeight: '500',
+        marginBottom: 4,
+    },
+    value: {
+        fontSize: 14,
+        fontWeight: '400',
+        lineHeight: 20,
+    },
+    arrowContainer: {
+        backgroundColor: 'transparent',
+        marginLeft: 8,
+    },
 });
 
 export default ContactScreen;

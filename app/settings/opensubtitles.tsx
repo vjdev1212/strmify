@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { StorageKeys, storageService } from '@/utils/StorageService';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,6 +9,7 @@ import { WebMenu } from '@/components/WebMenuView';
 import { SUBTITLE_LANGUAGES } from '@/utils/Subtitles';
 import BottomSpacing from '@/components/BottomSpacing';
 import { useTheme } from '@/context/ThemeContext';
+import { View, Text } from '@/components/Themed';
 
 const OpenSubtitlesConfigScreen: React.FC = () => {
     const { colors } = useTheme();
@@ -69,14 +70,16 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
     const clearConfiguration = async () => {
         showAlert('Clear Configuration', 'Are you sure you want to clear the saved configuration?', [
             { text: 'Cancel', style: 'cancel' },
-            { text: 'Clear', style: 'destructive', onPress: async () => {
-                try {
-                    storageService.removeItem(StorageKeys.OPENSUBTITLES_API_KEY);
-                    storageService.removeItem(StorageKeys.SUBTITLE_LANGUAGES_KEY);
-                    setApiKey(''); setUseDefaultKey(true); setSelectedLanguages(['en']);
-                    showAlert('Success', 'Configuration cleared successfully');
-                } catch { showAlert('Error', 'Failed to clear configuration'); }
-            }},
+            {
+                text: 'Clear', style: 'destructive', onPress: async () => {
+                    try {
+                        storageService.removeItem(StorageKeys.OPENSUBTITLES_API_KEY);
+                        storageService.removeItem(StorageKeys.SUBTITLE_LANGUAGES_KEY);
+                        setApiKey(''); setUseDefaultKey(true); setSelectedLanguages(['en']);
+                        showAlert('Success', 'Configuration cleared successfully');
+                    } catch { showAlert('Error', 'Failed to clear configuration'); }
+                }
+            },
         ]);
     };
 
@@ -127,12 +130,20 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
     return (
         <SafeAreaView style={styles.container}>
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardAvoid}>
-                <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-                    <View style={styles.header}>
-                        <Ionicons name="settings-outline" size={40} color={colors.primary} />
-                        <Text style={[styles.title, { color: colors.text }]}>OpenSubtitles Configuration</Text>
-                        <Text style={[styles.subtitle, { color: colors.textMuted }]}>Configure your API credentials and subtitle preferences</Text>
-                    </View>
+
+                <View style={styles.header}>
+                    <Text style={[styles.title, { color: colors.text }]}>OpenSubtitles</Text>
+                    <Text style={[styles.subtitle, { color: colors.textMuted }]}>
+                        Configure your OpenSubtitles preferences
+                    </Text>
+                </View>
+
+                {/* ✅ Only content scrolls */}
+                <ScrollView
+                    contentContainerStyle={styles.scrollContent}
+                    showsVerticalScrollIndicator={false}
+                    style={styles.scrollView}
+                >
                     <View style={styles.form}>
                         <View style={styles.inputGroup}>
                             <Text style={[styles.label, { color: colors.text }]}>API Key</Text>
@@ -149,7 +160,17 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
                             {!useDefaultKey && (
                                 <>
                                     <View style={styles.passwordContainer}>
-                                        <TextInput style={[styles.input, styles.passwordInput, { backgroundColor: colors.primarySurface, color: colors.text }]} value={apiKey} onChangeText={setApiKey} placeholder="Enter your OpenSubtitles API key" placeholderTextColor="#aaa" secureTextEntry={!showApiKey} autoCapitalize="none" autoCorrect={false} submitBehavior='blurAndSubmit' />
+                                        <TextInput
+                                            style={[styles.input, styles.passwordInput, { backgroundColor: colors.primarySurface, color: colors.text }]}
+                                            value={apiKey}
+                                            onChangeText={setApiKey}
+                                            placeholder="Enter your OpenSubtitles API key"
+                                            placeholderTextColor="#aaa"
+                                            secureTextEntry={!showApiKey}
+                                            autoCapitalize="none"
+                                            autoCorrect={false}
+                                            submitBehavior='blurAndSubmit'
+                                        />
                                         <TouchableOpacity style={styles.eyeButton} onPress={() => setShowApiKey(!showApiKey)}>
                                             <Ionicons name={showApiKey ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.textMuted} />
                                         </TouchableOpacity>
@@ -164,9 +185,12 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
                                 </View>
                             )}
                         </View>
+
                         <View style={styles.inputGroup}>
                             <Text style={[styles.label, { color: colors.text }]}>Preferred Languages</Text>
-                            <Text style={[styles.helpText, { marginBottom: 12, marginTop: 0 }]}>Select languages for subtitle search (in order of preference)</Text>
+                            <Text style={[styles.helpText, { marginBottom: 12, marginTop: 0 }]}>
+                                Select languages for subtitle search (in order of preference)
+                            </Text>
                             {renderLanguageMenu()}
                             {selectedLanguages.length > 0 && (
                                 <View style={styles.selectedLanguagesContainer}>
@@ -186,13 +210,25 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
                                 </View>
                             )}
                         </View>
+
                         <View style={styles.buttonGroup}>
-                            <TouchableOpacity style={[styles.button, styles.clearButton, { backgroundColor: colors.primaryBorder }]} onPress={clearConfiguration} disabled={isSaving}>
+                            <TouchableOpacity
+                                style={[styles.button, { backgroundColor: colors.primaryBorder }]}
+                                onPress={clearConfiguration}
+                                disabled={isSaving}
+                            >
                                 <Ionicons name="trash-outline" size={16} color="#FFF" />
                                 <Text style={[styles.buttonText, { color: colors.text }]}>Clear</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity style={[styles.button, { backgroundColor: (!useDefaultKey && !apiKey.trim()) ? colors.primaryBorder : colors.primary }]} onPress={saveConfiguration} disabled={isSaving || (!useDefaultKey && !apiKey.trim())}>
-                                {isSaving ? <ActivityIndicator size="small" color="#FFF" /> : <><Ionicons name="save-outline" size={16} color="#FFF" /><Text style={[styles.buttonText, { color: colors.text }]}>Save</Text></>}
+                            <TouchableOpacity
+                                style={[styles.button, { backgroundColor: (!useDefaultKey && !apiKey.trim()) ? colors.primaryBorder : colors.primary }]}
+                                onPress={saveConfiguration}
+                                disabled={isSaving || (!useDefaultKey && !apiKey.trim())}
+                            >
+                                {isSaving
+                                    ? <ActivityIndicator size="small" color="#FFF" />
+                                    : <><Ionicons name="save-outline" size={16} color="#FFF" /><Text style={[styles.buttonText, { color: colors.text }]}>Save</Text></>
+                                }
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -204,41 +240,189 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, marginTop: 30, width: '100%', maxWidth: 780, margin: 'auto' },
-    keyboardAvoid: { flex: 1 },
-    scrollContent: { flexGrow: 1, padding: 15 },
-    loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    loadingText: { marginTop: 10, fontSize: 16 },
-    header: { alignItems: 'center', marginBottom: 30 },
-    title: { fontSize: 24, fontWeight: 'bold', marginTop: 10, textAlign: 'center' },
-    subtitle: { fontSize: 16, textAlign: 'center', marginTop: 5, lineHeight: 22 },
-    form: { padding: 10 },
-    inputGroup: { marginBottom: 24 },
-    label: { fontSize: 16, fontWeight: '600', marginBottom: 10 },
-    toggleContainer: { flexDirection: 'row', gap: 20, marginBottom: 12, padding: 12, borderRadius: 8, borderWidth: 1 },
-    toggleOption: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    radioButton: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, justifyContent: 'center', alignItems: 'center' },
-    radioButtonInner: { width: 10, height: 10, borderRadius: 5 },
-    toggleText: { fontSize: 14, fontWeight: '500' },
-    input: { borderRadius: 8, padding: 12 },
-    passwordContainer: { position: 'relative' },
-    passwordInput: { paddingRight: 50 },
-    eyeButton: { position: 'absolute', right: 10, top: 8, padding: 4 },
-    helpText: { fontSize: 12, color: '#aaa', marginTop: 10, lineHeight: 16 },
-    infoBox: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12, borderRadius: 8, borderWidth: 1, marginTop: 12 },
-    infoText: { flex: 1, fontSize: 13, lineHeight: 18 },
-    menuButton: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 8, borderWidth: 1, gap: 8 },
-    menuButtonText: { flex: 1, fontSize: 14, fontWeight: '500' },
-    selectedLanguagesContainer: { marginTop: 12, gap: 8 },
-    selectedLanguageChip: { flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 8, gap: 8 },
-    selectedLanguageText: { flex: 1, fontSize: 14, fontWeight: '500' },
-    languageBadge: { borderRadius: 12, width: 24, height: 24, justifyContent: 'center', alignItems: 'center' },
-    languageBadgeText: { fontSize: 12, fontWeight: 'bold' },
-    removeButton: { padding: 2 },
-    buttonGroup: { marginTop: 30, flexDirection: 'row', gap: 12 },
-    button: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, paddingHorizontal: 16, borderRadius: 25, gap: 6 },
-    clearButton: {},
-    buttonText: { fontSize: 14, fontWeight: '600' },
+    container: {
+        flex: 1,
+        maxWidth: 780,
+        width: '100%',
+        alignSelf: 'center',
+    },
+    keyboardAvoid: {
+        flex: 1,
+    },
+    scrollView: {
+        flex: 1,
+    },
+    scrollContent: {
+        flexGrow: 1,
+        paddingHorizontal: 15,
+        paddingBottom: 40,
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    loadingText: {
+        marginTop: 10,
+        fontSize: 16,
+    },
+    header: {
+        alignItems: 'flex-start',
+        paddingHorizontal: 15,
+        paddingTop: 50,
+        paddingBottom: 20,
+    },
+    title: {
+        fontSize: 28,
+        fontWeight: 'bold',
+        marginTop: 10,
+        textAlign: 'left',
+    },
+    subtitle: {
+        fontSize: 15,
+        textAlign: 'left',
+        marginTop: 5,
+        lineHeight: 22,
+    },
+    form: {
+        paddingTop: 8,
+    },
+    inputGroup: {
+        marginBottom: 24,
+    },
+    label: {
+        fontSize: 16,
+        fontWeight: '600',
+        marginBottom: 10,
+    },
+    toggleContainer: {
+        flexDirection: 'row',
+        gap: 20,
+        marginBottom: 12,
+        padding: 12,
+        borderRadius: 8,
+        borderWidth: 1,
+    },
+    toggleOption: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    radioButton: {
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        borderWidth: 2,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    radioButtonInner: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+    },
+    toggleText: {
+        fontSize: 14,
+        fontWeight: '500',
+    },
+    input: {
+        borderRadius: 8,
+        padding: 12,
+    },
+    passwordContainer: {
+        position: 'relative',
+    },
+    passwordInput: {
+        paddingRight: 50,
+    },
+    eyeButton: {
+        position: 'absolute',
+        right: 10,
+        top: 8,
+        padding: 4,
+    },
+    helpText: {
+        fontSize: 12,
+        color: '#aaa',
+        marginTop: 10,
+        lineHeight: 16,
+    },
+    infoBox: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        padding: 12,
+        borderRadius: 8,
+        borderWidth: 1,
+        marginTop: 12,
+    },
+    infoText: {
+        flex: 1,
+        fontSize: 13,
+        lineHeight: 18,
+    },
+    menuButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 12,
+        borderRadius: 8,
+        borderWidth: 1,
+        gap: 8,
+    },
+    menuButtonText: {
+        flex: 1,
+        fontSize: 14,
+        fontWeight: '500',
+    },
+    selectedLanguagesContainer: {
+        marginTop: 12,
+        gap: 8,
+    },
+    selectedLanguageChip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 10,
+        borderRadius: 8,
+        gap: 8,
+    },
+    selectedLanguageText: {
+        flex: 1,
+        fontSize: 14,
+        fontWeight: '500',
+    },
+    languageBadge: {
+        borderRadius: 12,
+        width: 24,
+        height: 24,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    languageBadgeText: {
+        fontSize: 12,
+        fontWeight: 'bold',
+    },
+    removeButton: {
+        padding: 2,
+    },
+    buttonGroup: {
+        marginTop: 30,
+        flexDirection: 'row',
+        gap: 12,
+    },
+    button: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 16,
+        paddingHorizontal: 16,
+        borderRadius: 25,
+        gap: 6,
+    },
+    buttonText: {
+        fontSize: 14,
+        fontWeight: '600',
+    },
 });
 
 export default OpenSubtitlesConfigScreen;
