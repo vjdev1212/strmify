@@ -62,7 +62,7 @@ function RootLayoutNav() {
         headerBackTitle: '',
         headerShadowVisible: false,
         headerStyle: { backgroundColor: 'transparent' },
-        contentStyle: { backgroundColor: colors.background },
+        contentStyle: { backgroundColor: 'transparent' },
     };
 
     return (
@@ -74,7 +74,7 @@ function RootLayoutNav() {
                     screenOptions={{
                         headerStyle: styles.glassHeader,
                         headerBackground: HeaderBackground,
-                        contentStyle: { backgroundColor: colors.background },
+                        contentStyle: { backgroundColor: 'transparent' },
                     }}
                 >
                     <Stack.Screen

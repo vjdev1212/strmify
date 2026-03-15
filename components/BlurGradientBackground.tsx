@@ -61,7 +61,7 @@ export default function BlurGradientBackground({
             )}
 
             <LinearGradient
-                colors={gradientColors as any}
+                colors={[themeColors.background, themeColors.background, themeColors.background]}
                 start={start}
                 end={end}
                 style={StyleSheet.absoluteFill}
