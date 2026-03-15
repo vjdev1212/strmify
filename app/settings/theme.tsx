@@ -191,7 +191,7 @@ const ThemeColorScreen = () => {
               <Ionicons name="checkmark-circle" size={20} color={colors.text} />
               <Text style={[styles.applyText, { color: colors.text }]}>Apply Theme</Text>
             </Pressable>
-            <BottomSpacing space={100} />
+            <BottomSpacing space={30} />
           </View>
         </ScrollView>
       </View>
