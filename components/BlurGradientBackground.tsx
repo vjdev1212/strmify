@@ -1,6 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Platform } from 'react-native';
-import { BlurView } from 'expo-blur';
+import { View, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '@/context/ThemeContext';
 
@@ -39,27 +38,7 @@ export default function BlurGradientBackground({
                     elevation: 12,
                 },
             ]}
-        >
-            {/* ✅ BlurView is a no-op on web — CSS backdropFilter instead */}
-            {Platform.OS === 'web' ? (
-                <View
-                    style={[
-                        StyleSheet.absoluteFill,
-                        {
-                            backdropFilter: `blur(${intensity}px)`,
-                            // @ts-ignore
-                            WebkitBackdropFilter: `blur(${intensity}px)`,
-                        },
-                    ]}
-                />
-            ) : (
-                <BlurView
-                    intensity={intensity}
-                    tint={tint}
-                    style={StyleSheet.absoluteFill}
-                />
-            )}
-
+        >           
             <LinearGradient
                 colors={[themeColors.background, themeColors.background, themeColors.background]}
                 start={start}
