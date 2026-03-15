@@ -62,7 +62,7 @@ function RootLayoutNav() {
         headerBackTitle: '',
         headerShadowVisible: false,
         headerStyle: { backgroundColor: 'transparent' },
-        contentStyle: { backgroundColor: 'transparent' },
+        contentStyle: { backgroundColor: colors.background },
     };
 
     return (
