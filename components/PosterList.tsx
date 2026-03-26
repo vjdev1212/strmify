@@ -48,10 +48,15 @@ const PosterItem = ({
   const { colors } = useTheme();
   const [imgError, setImgError] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
+  const [hapticsEnabled, setHapticsEnabled] = useState(false);
   const year = item.year?.split('–')[0] || item.year;
 
+  useEffect(() => {
+    setHapticsEnabled(isHapticsSupported());
+  }, []);
+
   const handlePress = async () => {
-    if (await isHapticsSupported()) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push({ pathname: `/${type}/details`, params: { moviedbid: item.moviedbid } });
   };
 
@@ -91,6 +96,11 @@ const PosterList = ({ apiUrl, title, type }: { apiUrl: string; title: string; ty
   const { width, height } = useWindowDimensions();
   const shortSide = Math.min(width, height);
   const isPortrait = height >= width;
+  const [hapticsEnabled, setHapticsEnabled] = useState(false);
+
+  useEffect(() => {
+    setHapticsEnabled(isHapticsSupported());
+  }, []);
 
   const [data, setData] = useState<PosterItemData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -160,7 +170,7 @@ const PosterList = ({ apiUrl, title, type }: { apiUrl: string; title: string; ty
   }, [apiUrl]);
 
   const handleSeeAllPress = useCallback(async () => {
-    if (await isHapticsSupported()) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push({ pathname: `/${type}/list`, params: { apiUrl } });
   }, [apiUrl, type]);
 

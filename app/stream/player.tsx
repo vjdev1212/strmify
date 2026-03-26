@@ -101,45 +101,64 @@ const MediaPlayerScreen: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
-    try {
+    let cancelled = false;
+
+    const init = async () => {
+      if (Platform.OS !== 'web') {
+        try {
+          await ScreenOrientation.unlockAsync();
+          await new Promise(r => setTimeout(r, 100));
+          await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
+          StatusBar.setHidden(true, 'slide');
+        } catch (e) {
+          console.warn('Orientation lock failed:', e);
+        }
+      }
+
+      if (cancelled) return;
+
       if (directVideoUrl) {
-        setupOrientation();
         setVideoUrl(directVideoUrl as string);
         setIsLoadingStream(false);
         initializeClient();
-        return () => { cleanupOrientation(); };
+        return;
       }
-    } catch (error) {
-      console.error('Initilization Error:', error);
-    }
 
-    if (streamsParam) {
-      try {
-        const parsedStreams = JSON.parse(streamsParam as string);
-        setStreams(parsedStreams);
-
-        const initialIndex = selectedStreamIndex ? parseInt(selectedStreamIndex as string) : 0;
-        setCurrentStreamIndex(initialIndex);
-
-        const savedPlayer = loadDefaultPlayer();
-
-        if (!savedPlayer) {
-          const platformPlayers = getPlatformSpecificPlayers();
-          setPlayers(platformPlayers);
-          fetchServerConfigs();
-        } else {
-          initializePlayerAndSelect(parsedStreams, initialIndex);
+      if (streamsParam) {
+        try {
+          const parsedStreams = JSON.parse(streamsParam as string);
+          setStreams(parsedStreams);
+          const initialIndex = selectedStreamIndex ? parseInt(selectedStreamIndex as string) : 0;
+          setCurrentStreamIndex(initialIndex);
+          const savedPlayer = loadDefaultPlayer();
+          if (!savedPlayer) {
+            const platformPlayers = getPlatformSpecificPlayers();
+            setPlayers(platformPlayers);
+            fetchServerConfigs();
+          } else {
+            initializePlayerAndSelect(parsedStreams, initialIndex);
+          }
+        } catch (error) {
+          console.error('Failed to parse streams:', error);
+          setStreamError('Failed to load streams');
+          setIsLoadingStream(false);
         }
-      } catch (error) {
-        console.error('Failed to parse streams:', error);
-        setStreamError('Failed to load streams');
-        setIsLoadingStream(false);
       }
-    }
 
-    initializeClient();
+      initializeClient();
+    };
 
-    return () => { cleanupOrientation(); };
+    init();
+
+    return () => {
+      (async () => {
+        try {
+          await ScreenOrientation.unlockAsync();
+          await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+          StatusBar.setHidden(false, 'slide');
+        } catch { }
+      })();
+    };
   }, []);
 
   useEffect(() => {
