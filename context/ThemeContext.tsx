@@ -17,8 +17,8 @@ type ThemeContextValue = {
 
 const DEFAULT_THEME: SavedTheme = {
     presetId: 'dark',
-    primary: '#666666',
-    background: '#101010',
+    primary: '#777777',
+    background: '#0a0a0a',
 };
 
 function buildColors(theme: SavedTheme): AppColors {

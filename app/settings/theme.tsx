@@ -27,7 +27,7 @@ export type ThemePreset = {
 };
 
 const THEME_PRESETS: ThemePreset[] = [
-  { id: 'dark', label: 'Dark', primary: '#666666', background: '#101010', description: 'Default dark' },
+  { id: 'dark', label: 'Dark', primary: '#777777', background: '#0a0a0a', description: 'Default dark' },
   { id: 'violet', label: 'Violet', primary: '#535aff', background: '#0d0b2e', description: 'Default deep space' },
   { id: 'crimson', label: 'Crimson', primary: '#ff3b5c', background: '#1a0a0e', description: 'Bold & cinematic' },
   { id: 'emerald', label: 'Emerald', primary: '#00e57a', background: '#061a0f', description: 'Fresh & electric' },

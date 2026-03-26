@@ -1,5 +1,5 @@
-const PRIMARY = '#666666';
-const BACKGROUND = '#1a1a1a';
+const PRIMARY = '#777777';
+const BACKGROUND = '#0a0a0a';
 
 export type AppColors = {
     primary: string;
