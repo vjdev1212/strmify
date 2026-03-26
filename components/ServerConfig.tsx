@@ -362,7 +362,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
                       </Pressable>
 
                       {selectedServerId === item.serverId && (
-                        <Animated.View style={[styles.actionBar, { backgroundColor: colors.backgroundMid, height: animatedValues[item.serverId]?.height || 48, opacity: animatedValues[item.serverId]?.height.interpolate({ inputRange: [0, 48], outputRange: [0, 1] }) || 1 }]}>
+                        <Animated.View style={[styles.actionBar, { backgroundColor: colors.backgroundCard, height: animatedValues[item.serverId]?.height || 48, opacity: animatedValues[item.serverId]?.height.interpolate({ inputRange: [0, 48], outputRange: [0, 1] }) || 1 }]}>
                           <Pressable style={styles.actionBtn} onPress={() => refreshConnection(item.serverId)}>
                             <MaterialIcons name="wifi-tethering" size={16} color={colors.primary} />
                             <Text style={[styles.actionBtnText, { color: colors.primary }]}>Test</Text>
