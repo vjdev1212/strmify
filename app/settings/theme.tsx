@@ -28,14 +28,14 @@ export type ThemePreset = {
 
 const THEME_PRESETS: ThemePreset[] = [
   { id: 'dark', label: 'Dark', primary: '#777777', background: '#0a0a0a', description: 'Default dark' },
-  { id: 'violet', label: 'Violet', primary: '#535aff', background: '#0d0b2e', description: 'Default deep space' },
-  { id: 'crimson', label: 'Crimson', primary: '#ff3b5c', background: '#1a0a0e', description: 'Bold & cinematic' },
-  { id: 'emerald', label: 'Emerald', primary: '#00e57a', background: '#061a0f', description: 'Fresh & electric' },
-  { id: 'amber', label: 'Amber', primary: '#ffb830', background: '#160f00', description: 'Warm & golden' },
-  { id: 'cyan', label: 'Cyan', primary: '#00c8ff', background: '#040f1a', description: 'Icy & sharp' },
-  { id: 'rose', label: 'Rose', primary: '#ff5fa3', background: '#1a0812', description: 'Soft neon glow' },
-  { id: 'lime', label: 'Lime', primary: '#aaff00', background: '#0a1200', description: 'Acid & alive' },
-  { id: 'slate', label: 'Slate', primary: '#a0b4cc', background: '#0a0e14', description: 'Subdued & refined' },
+  { id: 'violet', label: 'Violet', primary: '#535aff', background: '#1a1640', description: 'Default deep space' },
+  { id: 'crimson', label: 'Crimson', primary: '#ff3b5c', background: '#2a1018', description: 'Bold & cinematic' },
+  { id: 'emerald', label: 'Emerald', primary: '#00e57a', background: '#0d2a1a', description: 'Fresh & electric' },
+  { id: 'amber', label: 'Amber', primary: '#ffb830', background: '#221800', description: 'Warm & golden' },
+  { id: 'cyan', label: 'Cyan', primary: '#00c8ff', background: '#081824', description: 'Icy & sharp' },
+  { id: 'rose', label: 'Rose', primary: '#ff5fa3', background: '#2a101e', description: 'Soft neon glow' },
+  { id: 'lime', label: 'Lime', primary: '#aaff00', background: '#121e00', description: 'Acid & alive' },
+  { id: 'slate', label: 'Slate', primary: '#a0b4cc', background: '#10161e', description: 'Subdued & refined' },
 ];
 
 const SectionHeader = ({ title, textMuted }: { title: string; textMuted: string }) => (
