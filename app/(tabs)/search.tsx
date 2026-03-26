@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
   headerContainer: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 20 },
   headerTitle: { fontSize: 34, fontWeight: '700', letterSpacing: 0.3 },
   searchSection: { paddingHorizontal: 16, paddingBottom: 20 },
-  searchInputContainer: { maxWidth: 780, width: '100%', margin: 'auto', flexDirection: 'row', alignItems: 'center', borderRadius: 14, height: 48, paddingHorizontal: 16, borderWidth: 1 },
+  searchInputContainer: { maxWidth: 780, width: '100%', margin: 'auto', flexDirection: 'row', alignItems: 'center', borderRadius: 12, height: 48, paddingHorizontal: 16, borderWidth: StyleSheet.hairlineWidth },
   searchIconContainer: { marginRight: 10 },
   searchInput: { flex: 1, fontSize: 17, fontWeight: '400', letterSpacing: -0.2, outline: 'none' },
   clearButton: { marginLeft: 8, padding: 2 },

@@ -143,7 +143,7 @@ export default function HomeScreen() {
                   style={[
                     styles.filterButton,
                     {
-                      backgroundColor: filter === item.key ? colors.primary : colors.primarySurface,
+                      backgroundColor: filter === item.key ? colors.primary : colors.primaryCard,
                       borderColor: filter === item.key ? colors.primary : colors.primaryBorder,
                     },
                   ]}

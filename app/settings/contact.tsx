@@ -109,8 +109,8 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         paddingVertical: 15,
         paddingHorizontal: 20,
-        marginBottom: 12,
-        borderWidth: 0.5,
+        marginBottom: 20,
+        borderWidth: StyleSheet.hairlineWidth,
     },
     iconContainer: {
         width: 48,

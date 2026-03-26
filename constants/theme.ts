@@ -4,6 +4,7 @@ const BACKGROUND = '#1a1a1a';
 export type AppColors = {
     primary: string;
     background: string;
+    primaryCard: string;
     primaryDark: string;
     primaryMuted: string;
     primaryBorder: string;
@@ -30,6 +31,7 @@ export const Colors: AppColors = {
     primaryMuted: PRIMARY + '40',
     primaryBorder: PRIMARY + '26',
     primarySurface: PRIMARY + '1a',
+    primaryCard: PRIMARY + '10',
     primarySubtle: PRIMARY + '0a',
     primaryGhost: PRIMARY + '08',
     primaryFaint: PRIMARY + '05',
@@ -39,8 +41,8 @@ export const Colors: AppColors = {
     gradientBg: [BACKGROUND, BACKGROUND + '0d', BACKGROUND] as const,
     gradientOverlay: ['transparent', BACKGROUND + '80', BACKGROUND + 'eb'] as const,
     text: '#ffffff',
-    textMuted: 'rgba(255,255,255,0.5)',
-    textDim: 'rgba(255,255,255,0.25)',
+    textMuted: 'rgba(255,255,255,0.75)',
+    textDim: 'rgba(255,255,255,0.5)',
     border: PRIMARY + '26',
     borderStrong: PRIMARY + '66',
 };

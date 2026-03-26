@@ -98,7 +98,7 @@ const StreamListScreen = () => {
         const streamType = getStreamType(item);
         return (
             <Pressable onPress={() => handleStreamSelected(item, index)} style={({ pressed }) => [styles.streamContainer, pressed && styles.streamContainerPressed]}>
-                <Card style={[styles.streamItem, { borderColor: colors.primaryBorder, backgroundColor: colors.primaryGhost }]}>
+                <Card style={[styles.streamItem, { borderColor: colors.primaryBorder, backgroundColor: colors.primaryCard }]}>
                     <RNView style={styles.streamHeader}>
                         <Text style={[styles.streamName, { color: colors.text }]} numberOfLines={2}>{name}</Text>
                         {quality && <RNView style={[styles.qualityBadge, { backgroundColor: colors.primaryMuted, borderColor: colors.primaryBorder }]}><Text style={[styles.qualityText, { color: colors.text }]}>{quality}</Text></RNView>}

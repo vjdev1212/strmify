@@ -91,7 +91,7 @@ export default function AddAddonScreen() {
             )}
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} style={styles.scrollView}>
                 {manifestData && (
-                    <View style={[styles.addonCard, { borderColor: colors.primaryBorder, backgroundColor: colors.primaryGhost }]}>
+                    <View style={[styles.addonCard, { borderColor: colors.primaryBorder, backgroundColor: colors.primaryCard }]}>
                         <View style={styles.addonHeader}>
                             <View style={[styles.logoContainer, { backgroundColor: colors.primarySurface }]}>
                                 <Image source={{ uri: manifestData.logo?.match(/\.(png|jpg|jpeg)$/i) ? manifestData.logo : defaultAddonLogo }} style={styles.logo} resizeMode="cover" />
@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
     loadingText: { marginTop: 16, fontSize: 16 },
     scrollView: { flex: 1 },
     scrollContent: { paddingHorizontal: 24, paddingBottom: 40 },
-    addonCard: { borderRadius: 24, padding: 24, borderWidth: 1 },
+    addonCard: { borderRadius: 16, padding: 24, borderWidth: StyleSheet.hairlineWidth },
     addonHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
     logoContainer: { width: 80, height: 80, borderRadius: 20, overflow: 'hidden', marginRight: 16 },
     logo: { width: '100%', height: '100%' },

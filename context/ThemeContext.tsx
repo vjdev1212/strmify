@@ -27,6 +27,7 @@ function buildColors(theme: SavedTheme): AppColors {
         primary:           P,
         background:        BG,
         primaryDark:       P + 'cc',
+        primaryCard:       P + '10',
         primaryMuted:      P + '40',
         primaryBorder:     P + '26',
         primarySurface:    P + '1a',
@@ -39,8 +40,8 @@ function buildColors(theme: SavedTheme): AppColors {
         gradientBg:        [BG, BG + 'cc', BG] as const,
         gradientOverlay:   ['transparent', BG + '80', BG + 'eb'] as const,
         text:              '#ffffff',
-        textMuted:         'rgba(255,255,255,0.5)',
-        textDim:           'rgba(255,255,255,0.25)',
+        textMuted:         'rgba(255,255,255,0.75)',
+        textDim:           'rgba(255,255,255,0.5)',
         border:            P + '26',
         borderStrong:      P + '66',
     };

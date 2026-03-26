@@ -100,9 +100,9 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   resourceCard: {
-    borderRadius: 15,
+    borderRadius: 12,
     overflow: 'hidden',
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   cardContent: {
     flexDirection: 'row',

@@ -78,9 +78,9 @@ const AddonsScreen = () => {
     const isUpdating = updatingAddonId === item.id;
 
     return (
-      <View style={[styles.addonCard, { borderColor: colors.primaryBorder, backgroundColor: colors.primaryGhost }]} key={item.id}>
+      <View style={[styles.addonCard, { borderColor: colors.border, backgroundColor: colors.primaryCard }]} key={item.id}>
         <View style={styles.cardHeader}>
-          <Image source={{ uri: item.logo }} style={[styles.addonLogo, { backgroundColor: colors.primarySurface }]} />
+          <Image source={{ uri: item.logo }} style={[styles.addonLogo, { backgroundColor: colors.primarySubtle }]} />
           <View style={styles.headerInfo}>
             <Text style={[styles.addonName, { color: colors.text }]} numberOfLines={2}>{item.name}</Text>
             <View style={styles.metaRow}>
@@ -96,14 +96,14 @@ const AddonsScreen = () => {
         {item.description && <View style={styles.cardBody}><Text style={[styles.addonDescription, { color: colors.textMuted }]} numberOfLines={3}>{item.description}</Text></View>}
         <View style={styles.cardActions}>
           {hasManifestUrl && (
-            <Pressable style={({ pressed }) => [styles.actionButton, { backgroundColor: colors.primarySurface }, pressed && styles.actionButtonPressed]} onPress={() => updateAddonManifest(item.id, item.manifestUrl)} disabled={isUpdating}>
+            <Pressable style={({ pressed }) => [styles.actionButton, { backgroundColor: colors.primarySubtle }, pressed && styles.actionButtonPressed]} onPress={() => updateAddonManifest(item.id, item.manifestUrl)} disabled={isUpdating}>
               {isUpdating ? <ActivityIndicator size="small" color="#ffffff" /> : <Ionicons name="refresh" size={18} color="#ffffff" />}
             </Pressable>
           )}
-          <Pressable style={({ pressed }) => [styles.actionButton, { backgroundColor: colors.primarySurface }, pressed && styles.actionButtonPressed]} onPress={() => shareManifestUrl(item.manifestUrl)}>
+          <Pressable style={({ pressed }) => [styles.actionButton, { backgroundColor: colors.primarySubtle }, pressed && styles.actionButtonPressed]} onPress={() => shareManifestUrl(item.manifestUrl)}>
             <Ionicons name="share-outline" size={18} color="#ffffff" />
           </Pressable>
-          <Pressable style={({ pressed }) => [styles.actionButton, { backgroundColor: colors.primarySurface }, !configurable && { backgroundColor: colors.primaryFaint }, pressed && configurable && styles.actionButtonPressed]} onPress={() => openConfiguration(item.baseUrl)} disabled={!configurable}>
+          <Pressable style={({ pressed }) => [styles.actionButton, { backgroundColor: colors.primarySubtle }, !configurable && { backgroundColor: colors.primaryFaint }, pressed && configurable && styles.actionButtonPressed]} onPress={() => openConfiguration(item.baseUrl)} disabled={!configurable}>
             <Ionicons name="settings-outline" size={18} color={configurable ? "#ffffff" : '#555555'} />
           </Pressable>
           <Pressable
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
   contentContainer: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 },
   emptyContentContainer: { flex: 1, justifyContent: 'center' },
   addonList: { flex: 1, gap: 16 },
-  addonCard: { borderRadius: 16, padding: 16, borderWidth: 1 },
+  addonCard: { borderRadius: 16, padding: 16, borderWidth: StyleSheet.hairlineWidth },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 12 },
   addonLogo: { width: 56, height: 56, borderRadius: 14, marginRight: 14 },
   headerInfo: { flex: 1, justifyContent: 'center' },

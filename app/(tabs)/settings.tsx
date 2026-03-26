@@ -56,7 +56,7 @@ const SettingsScreen = () => {
         style={[
           styles.settingItem,
           {
-            backgroundColor: colors.backgroundOverlay,
+            backgroundColor: colors.primaryCard,
             borderTopLeftRadius: isFirst ? 12 : 0,
             borderTopRightRadius: isFirst ? 12 : 0,
             borderBottomLeftRadius: isLast ? 12 : 0,
@@ -67,7 +67,7 @@ const SettingsScreen = () => {
       >
         <View style={styles.leftContent}>
           <View style={[styles.iconContainer, { backgroundColor: colors.primarySurface }]}>
-            <Ionicons name={icon} size={22} color={colors.primary} />
+            <Ionicons name={icon} size={22} color={colors.textMuted} />
           </View>
           <Text style={styles.settingText}>{title}</Text>
         </View>
