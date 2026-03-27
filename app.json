@@ -67,7 +67,8 @@
         {
           "launchMode": "most-recent"
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
