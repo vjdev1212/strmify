@@ -74,6 +74,7 @@ A: Not at the moment — there are already some great apps out there for TV plat
 
 **Q: Will this support Anime content?**  
 A: Not right now — there are dedicated apps for anime that do it much better.
+
 ---
 
 ## For Developers: Addon Documentation
