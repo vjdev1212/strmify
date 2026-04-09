@@ -243,6 +243,14 @@ class KSPlayerRNView: UIView {
 
     func enterFullscreen() { playerView.updateUI(isLandscape: true) }
     func exitFullscreen()  { playerView.updateUI(isLandscape: false) }
+    
+    func setBrightness(_ value: CGFloat) {
+        UIScreen.main.brightness = max(0, min(1, value))
+    }
+
+    func setVolume(_ value: Float) {
+        volumeSlider?.value = max(0, min(1, value))
+    }
 }
 
 // MARK: - PlayerControllerDelegate
@@ -300,11 +308,3 @@ private lazy var volumeSlider: UISlider? = {
     }
     return v.subviews.compactMap { $0 as? UISlider }.first
 }()
-
-func setBrightness(_ value: CGFloat) {
-    UIScreen.main.brightness = max(0, min(1, value))
-}
-
-func setVolume(_ value: Float) {
-    volumeSlider?.value = max(0, min(1, value))
-}

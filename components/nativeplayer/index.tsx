@@ -20,7 +20,7 @@ import {
     calculateProgress,
     performSeek,
     buildSettingsActions,
-    buildSubtitleActionsLegacy,   // ← use the legacy version that keeps offset-index ids
+    buildSubtitleActionsLegacy,
     buildAudioActions,
     buildStreamActions,
     calculateSliderValues,
@@ -106,7 +106,6 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     const [selectedAudioTrack, setSelectedAudioTrack] = useState<number>(-1);
     const [selectedTextTrack, setSelectedTextTrack] = useState<number>(-1);
     const [useEmbeddedSubtitles, setUseEmbeddedSubtitles] = useState(false);
-    const [isFullscreen, setIsFullscreen] = useState(false);
 
     const useCustomSubtitles = subtitles.length > 0 && !useEmbeddedSubtitles;
 
@@ -690,13 +689,10 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                 selectedAudioTrack={selectedAudioTrack >= 0 ? { type: 'index', value: selectedAudioTrack } as SelectedTrack : undefined}
                 selectedTextTrack={videoSelectedTextTrack}
                 controls={false}
-                fullscreen={isFullscreen}
                 enterPictureInPictureOnLeave={true}
                 playInBackground={false}
                 playWhenInactive={false}
                 allowsExternalPlayback={true}
-                onFullscreenPlayerWillPresent={() => setIsFullscreen(true)}
-                onFullscreenPlayerWillDismiss={() => setIsFullscreen(false)}
             />
 
             <ArtworkBackground
@@ -772,12 +768,6 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                             <TouchableOpacity style={styles.controlButton} onPress={cycleContentFit}>
                                 <MaterialIcons name={getContentFitIcon()} size={24} color="white" />
                             </TouchableOpacity>
-
-                            {Platform.OS !== 'web' && playerState.isReady && (
-                                <TouchableOpacity style={styles.controlButton} onPress={goToFullscreen}>
-                                    <MaterialIcons name={isFullscreen ? "fullscreen-exit" : "fullscreen"} size={24} color="white" />
-                                </TouchableOpacity>
-                            )}
 
                             {availableAudioTracks.length > 0 && (
                                 <MenuWrapper
