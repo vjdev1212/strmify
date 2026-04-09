@@ -179,7 +179,9 @@ class KSPlayerRNView: UIView {
             "currentTime": 0,
             "naturalSize": ["width": 1920, "height": 1080, "orientation": "landscape"],
             "audioTracks": audioPayload,
-            "textTracks": []          // will be sent via onTextTracks below
+            "textTracks": [],
+            "brightness": UIScreen.main.brightness,
+            "volume": AVAudioSession.sharedInstance().outputVolume
         ])
 
         if !audioPayload.isEmpty { onAudioTracks?(["audioTracks": audioPayload]) }
@@ -288,4 +290,21 @@ extension KSPlayerRNView: PlayerControllerDelegate {
     func playerController(action: PlayerButtonType) {}
     func playerController(bufferedCount: Int, consumeTime: TimeInterval) {}
     func playerController(seek: TimeInterval) {}
+}
+
+private lazy var volumeSlider: UISlider? = {
+    let v = MPVolumeView(frame: .zero)
+    if let window = UIApplication.shared.windows.first {
+        window.addSubview(v)
+        v.frame = CGRect(x: -2000, y: -2000, width: 1, height: 1)
+    }
+    return v.subviews.compactMap { $0 as? UISlider }.first
+}()
+
+func setBrightness(_ value: CGFloat) {
+    UIScreen.main.brightness = max(0, min(1, value))
+}
+
+func setVolume(_ value: Float) {
+    volumeSlider?.value = max(0, min(1, value))
 }
