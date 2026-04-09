@@ -654,12 +654,12 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                 onPress={handleOverlayPress}
             />
 
-            <BrightnessVolumeOverlay
+            {/* <BrightnessVolumeOverlay
                 brightness={brightness}
                 volume={volume}
                 onBrightnessChange={setBrightness}
                 onVolumeChange={setVolume}
-            />
+            /> */}
 
             {!!displaySubtitleText && (
                 <SubtitleDisplay
