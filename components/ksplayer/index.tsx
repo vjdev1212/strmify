@@ -81,9 +81,6 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     const timers = useTimers();
     const animations = usePlayerAnimations();
 
-    const { brightness, volume, setBrightness, setVolume, initFromLoad } =
-        useSystemControls(videoRef);
-
     const setShowControls = uiState.setShowControls;
     const controlsOpacity = animations.controlsOpacity;
     const bufferOpacity = animations.bufferOpacity;
@@ -254,13 +251,8 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
             setAvailableTextTracks(data.textTracks);
         }
 
-        // Sync initial brightness + volume from native layer
-        if (data.brightness !== undefined && data.volume !== undefined) {
-            initFromLoad(data.brightness, data.volume);
-        }
-
         setEmbeddedSubtitleText('');
-    }, [bufferOpacity, playerState, selectedAudioTrack, settings, initFromLoad]);
+    }, [bufferOpacity, playerState, selectedAudioTrack, settings]);
 
     const handleAudioTracks = useCallback((data: { audioTracks: any[] }) => {
         if (data.audioTracks && Array.isArray(data.audioTracks) && data.audioTracks.length > 0) {
@@ -653,13 +645,6 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                 activeOpacity={1}
                 onPress={handleOverlayPress}
             />
-
-            {/* <BrightnessVolumeOverlay
-                brightness={brightness}
-                volume={volume}
-                onBrightnessChange={setBrightness}
-                onVolumeChange={setVolume}
-            /> */}
 
             {!!displaySubtitleText && (
                 <SubtitleDisplay
