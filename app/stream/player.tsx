@@ -3,7 +3,7 @@ import { Subtitle } from "@/components/coreplayer/models";
 import { StorageKeys, storageService } from "@/utils/StorageService";
 import { getPlatformSpecificPlayers, Players } from "@/utils/MediaPlayer";
 import { showAlert } from "@/utils/platform";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Platform, Linking, ActivityIndicator, View, Text, StyleSheet, Image, StatusBar } from "react-native";
 import { ServerConfig } from "@/components/ServerConfig";
@@ -99,6 +99,7 @@ const MediaPlayerScreen: React.FC = () => {
 
   const [statusText, setStatusText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const navigation = useNavigation();
 
   useEffect(() => {
     let cancelled = false;
@@ -109,6 +110,7 @@ const MediaPlayerScreen: React.FC = () => {
           await ScreenOrientation.unlockAsync();
           await new Promise(r => setTimeout(r, 100));
           await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
+          navigation.setOptions({ gestureEnabled: false });
           StatusBar.setHidden(true, 'slide');
         } catch (e) {
           console.warn('Orientation lock failed:', e);
@@ -155,6 +157,7 @@ const MediaPlayerScreen: React.FC = () => {
         try {
           await ScreenOrientation.unlockAsync();
           await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+          navigation.setOptions({ gestureEnabled: true });
           StatusBar.setHidden(false, 'slide');
         } catch { }
       })();

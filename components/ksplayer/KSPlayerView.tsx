@@ -75,6 +75,8 @@ export interface KSPlayerRef {
   disableTextTrack: () => void;
   enterFullscreen: () => void;
   exitFullscreen: () => void;
+  setBrightness: (value: number) => void;
+  setVolume: (value: number) => void;
 }
 
 // ─── Native component ─────────────────────────────────────────────────────────
@@ -106,6 +108,8 @@ export const KSPlayerView = forwardRef<KSPlayerRef, KSPlayerViewProps>((props, r
     disableTextTrack() { dispatchCommand(nativeRef, 'disableTextTrack'); },
     enterFullscreen() { dispatchCommand(nativeRef, 'enterFullscreen'); },
     exitFullscreen() { dispatchCommand(nativeRef, 'exitFullscreen'); },
+    setBrightness(value) { dispatchCommand(nativeRef, 'setBrightness', [value]); },
+    setVolume(value) { dispatchCommand(nativeRef, 'setVolume', [value]); },
   }));
 
   // ─── Event adapters ───────────────────────────────────────────────────────

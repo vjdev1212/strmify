@@ -1,4 +1,5 @@
 import UIKit
+import MediaPlayer
 import React
 import KSPlayer
 
@@ -54,6 +55,27 @@ class KSPlayerRNView: UIView {
         view.toolBar.isHidden = true
         view.navigationBar.isHidden = true
         return view
+    }()
+
+    // MARK: - Brightness / Volume
+
+    func setBrightness(_ value: CGFloat) {
+        UIScreen.main.brightness = max(0, min(1, value))
+    }
+
+    func setVolume(_ value: Float) {
+        volumeSlider?.value = max(0, min(1, value))
+    }
+
+    private lazy var volumeSlider: UISlider? = {
+        let v = MPVolumeView(frame: .zero)
+        if let scene = UIApplication.shared.connectedScenes
+            .compactMap({ $0 as? UIWindowScene }).first,
+           let window = scene.windows.first {
+            window.addSubview(v)
+            v.frame = CGRect(x: -2000, y: -2000, width: 1, height: 1)
+        }
+        return v.subviews.compactMap { $0 as? UISlider }.first
     }()
 
     // MARK: - Init
@@ -130,10 +152,8 @@ class KSPlayerRNView: UIView {
         // Must be false so KSPlayer doesn't auto-select and render its own
         // subtitle overlay — we render the text in React via onSubtitleText.
         options.autoSelectEmbedSubtitle = false
-        
-        KSOptions.audioPlayerType = AudioRendererPlayer.self
-        // ─────────────────────────────────────────────────────────────────────
 
+        KSOptions.audioPlayerType = AudioRendererPlayer.self
         KSOptions.isAutoPlay = !paused
         KSOptions.secondPlayerType = KSMEPlayer.self
 
@@ -179,7 +199,9 @@ class KSPlayerRNView: UIView {
             "currentTime": 0,
             "naturalSize": ["width": 1920, "height": 1080, "orientation": "landscape"],
             "audioTracks": audioPayload,
-            "textTracks": []          // will be sent via onTextTracks below
+            "textTracks": [],
+            "brightness": UIScreen.main.brightness,
+            "volume": AVAudioSession.sharedInstance().outputVolume
         ])
 
         if !audioPayload.isEmpty { onAudioTracks?(["audioTracks": audioPayload]) }
@@ -207,14 +229,14 @@ class KSPlayerRNView: UIView {
     func seek(to time: Double) {
         playerView.seek(time: time) { [weak self] _ in _ = self }
     }
-    
+
     func selectAudioTrack(_ jsIndex: Int32) {
         guard let player = playerView.playerLayer?.player else { return }
         let tracks = player.tracks(mediaType: .audio)
         let idx = Int(jsIndex)
         guard idx >= 0, idx < tracks.count else { return }
         tracks.enumerated().forEach { i, track in
-            if i == idx {                
+            if i == idx {
                 func doSelect<T: MediaPlayerTrack>(_ t: T) {
                     player.select(track: t)
                 }
@@ -227,7 +249,6 @@ class KSPlayerRNView: UIView {
         let idx = Int(jsIndex)
         let infos = playerView.srtControl.subtitleInfos
         guard idx >= 0, idx < infos.count else { return }
-        // Clear displayed text while switching
         lastSubtitleText = ""
         onSubtitleText?(["text": ""])
         playerView.srtControl.selectedSubtitleInfo = infos[idx]

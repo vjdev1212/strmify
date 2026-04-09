@@ -74,4 +74,18 @@ class KSPlayerViewManager: RCTViewManager {
             view.exitFullscreen()
         }
     }
+
+    @objc func setBrightness(_ node: NSNumber, value: NSNumber) {
+        DispatchQueue.main.async {
+            guard let view = self.bridge.uiManager.view(forReactTag: node) as? KSPlayerRNView else { return }
+            view.setBrightness(CGFloat(value.floatValue))
+        }
+    }
+
+    @objc func setVolume(_ node: NSNumber, value: NSNumber) {
+        DispatchQueue.main.async {
+            guard let view = self.bridge.uiManager.view(forReactTag: node) as? KSPlayerRNView else { return }
+            view.setVolume(value.floatValue)
+        }
+    }
 }
