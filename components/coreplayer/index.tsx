@@ -723,8 +723,7 @@ export const ErrorDisplay: React.FC<{
 
 // ==================== BRIGHTNESS / VOLUME OVERLAY ====================
 
-const SCREEN_HEIGHT = Dimensions.get('window').height;
-const GESTURE_SENSITIVITY = 250;
+const GESTURE_SENSITIVITY = 100;
 
 export const BrightnessVolumeOverlay: React.FC<{
     brightness: number;
