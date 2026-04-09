@@ -724,7 +724,7 @@ export const ErrorDisplay: React.FC<{
 // ==================== BRIGHTNESS / VOLUME OVERLAY ====================
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
-const GESTURE_SENSITIVITY = 1.5;
+const GESTURE_SENSITIVITY = 250;
 
 export const BrightnessVolumeOverlay: React.FC<{
     brightness: number;
@@ -732,21 +732,20 @@ export const BrightnessVolumeOverlay: React.FC<{
     onBrightnessChange: (value: number) => void;
     onVolumeChange: (value: number) => void;
 }> = ({ brightness, volume, onBrightnessChange, onVolumeChange }) => {
-    // Animated opacity for each pill — hidden by default, shown on gesture
     const leftPillOpacity = useRef(new Animated.Value(0)).current;
     const rightPillOpacity = useRef(new Animated.Value(0)).current;
 
-    // Animated bar fill values (drive the vertical progress bar height %)
     const brightnessAnim = useRef(new Animated.Value(brightness)).current;
     const volumeAnim = useRef(new Animated.Value(volume)).current;
 
-    // Refs hold the live value so PanResponder closures always see fresh state
     const brightnessRef = useRef(brightness);
     const volumeRef = useRef(volume);
     brightnessRef.current = brightness;
     volumeRef.current = volume;
 
-    // Auto-hide timers
+    const leftLastDy = useRef(0);
+    const rightLastDy = useRef(0);
+
     const hideLeftTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const hideRightTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -776,13 +775,16 @@ export const BrightnessVolumeOverlay: React.FC<{
     const leftPanResponder = useRef(
         PanResponder.create({
             onStartShouldSetPanResponder: () => true,
-            onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 4,
+            onMoveShouldSetPanResponder: () => true,
             onPanResponderGrant: () => {
+                leftLastDy.current = 0;
                 showPill(leftPillOpacity);
             },
             onPanResponderMove: (_, g) => {
-                // Drag up = positive delta, drag down = negative
-                const delta = -(g.dy / SCREEN_HEIGHT) * GESTURE_SENSITIVITY;
+                const deltaDy = g.dy - leftLastDy.current;
+                leftLastDy.current = g.dy;
+
+                const delta = -(deltaDy / GESTURE_SENSITIVITY);
                 const next = Math.max(0, Math.min(1, brightnessRef.current + delta));
                 brightnessAnim.setValue(next);
                 onBrightnessChange(next);
@@ -802,12 +804,16 @@ export const BrightnessVolumeOverlay: React.FC<{
     const rightPanResponder = useRef(
         PanResponder.create({
             onStartShouldSetPanResponder: () => true,
-            onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 4,
+            onMoveShouldSetPanResponder: () => true,
             onPanResponderGrant: () => {
+                rightLastDy.current = 0;
                 showPill(rightPillOpacity);
             },
             onPanResponderMove: (_, g) => {
-                const delta = -(g.dy / SCREEN_HEIGHT) * GESTURE_SENSITIVITY;
+                const deltaDy = g.dy - rightLastDy.current;
+                rightLastDy.current = g.dy;
+
+                const delta = -(deltaDy / GESTURE_SENSITIVITY);
                 const next = Math.max(0, Math.min(1, volumeRef.current + delta));
                 volumeAnim.setValue(next);
                 onVolumeChange(next);
@@ -823,7 +829,6 @@ export const BrightnessVolumeOverlay: React.FC<{
         })
     ).current;
 
-    // Sync animated values when props change externally
     useEffect(() => { brightnessAnim.setValue(brightness); }, [brightness]);
     useEffect(() => { volumeAnim.setValue(volume); }, [volume]);
 
@@ -842,7 +847,6 @@ export const BrightnessVolumeOverlay: React.FC<{
                         style={styles.pillIcon}
                     />
                     <View style={styles.pillTrack}>
-                        {/* Fill grows from bottom */}
                         <Animated.View style={[styles.pillFill, { height: barFill(brightnessAnim) }]} />
                     </View>
                 </Animated.View>

@@ -496,52 +496,49 @@ export const styles = StyleSheet.create({
 
     gestureZoneLeft: {
         position: 'absolute',
-        top: 0,
         left: 0,
+        top: 0,
         bottom: 0,
-        width: '20%',
-        zIndex: 50,       
+        width: '30%',
+        zIndex: 10,
         justifyContent: 'center',
-        alignItems: 'center',
+        alignItems: 'flex-start',
+        paddingLeft: '5%',
     },
-
     gestureZoneRight: {
         position: 'absolute',
-        top: 0,
         right: 0,
+        top: 0,
         bottom: 0,
-        width: '20%',
-        zIndex: 50,
+        width: '30%',
+        zIndex: 10,
         justifyContent: 'center',
-        alignItems: 'center',
+        alignItems: 'flex-end',
+        paddingRight: '5%',
     },
-
     gesturePill: {
-        alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.55)',
+        width: 40,
+        height: 140,
         borderRadius: 24,
-        paddingVertical: 14,
-        paddingHorizontal: 12,
-        gap: 10,
-        width: 48,
+        backgroundColor: 'rgba(0,0,0,0.55)',
+        alignItems: 'center',
+        paddingVertical: 10,
+        gap: 8,
     },
-
     pillIcon: {
-        opacity: 0.9,
+        marginTop: 2,
     },
-
     pillTrack: {
+        flex: 1,
         width: 4,
-        height: 100,
-        backgroundColor: 'rgba(255, 255, 255, 0.25)',
         borderRadius: 2,
+        backgroundColor: 'rgba(255,255,255,0.25)',
         overflow: 'hidden',
         justifyContent: 'flex-end',
     },
-
     pillFill: {
         width: '100%',
-        backgroundColor: '#ffffff',
         borderRadius: 2,
+        backgroundColor: '#ffffff',
     },
 });
