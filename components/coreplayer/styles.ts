@@ -493,4 +493,55 @@ export const styles = StyleSheet.create({
         fontSize: 12,
         marginTop: 2,
     },
+
+    gestureZoneLeft: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        bottom: 0,
+        width: '20%',
+        zIndex: 50,       
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+
+    gestureZoneRight: {
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        bottom: 0,
+        width: '20%',
+        zIndex: 50,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+
+    gesturePill: {
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.55)',
+        borderRadius: 24,
+        paddingVertical: 14,
+        paddingHorizontal: 12,
+        gap: 10,
+        width: 48,
+    },
+
+    pillIcon: {
+        opacity: 0.9,
+    },
+
+    pillTrack: {
+        width: 4,
+        height: 100,
+        backgroundColor: 'rgba(255, 255, 255, 0.25)',
+        borderRadius: 2,
+        overflow: 'hidden',
+        justifyContent: 'flex-end',
+    },
+
+    pillFill: {
+        width: '100%',
+        backgroundColor: '#ffffff',
+        borderRadius: 2,
+    },
 });

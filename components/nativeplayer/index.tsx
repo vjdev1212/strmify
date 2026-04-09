@@ -29,7 +29,6 @@ import {
     SubtitleDisplay,
     CenterControls,
     ProgressBar,
-    ContentFitLabel,
     SubtitleSource,
     SubtitlePosition,
     ErrorDisplay,
@@ -864,12 +863,6 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                     </View>
                 </Animated.View>
             )}
-
-            <ContentFitLabel
-                show={showContentFitLabel}
-                contentFit={contentFit}
-                opacity={contentFitLabelOpacity}
-            />
         </View>
     );
 };

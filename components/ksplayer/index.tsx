@@ -28,16 +28,17 @@ import {
     SubtitleDisplay,
     CenterControls,
     ProgressBar,
-    ContentFitLabel,
     SubtitleSource,
     SubtitlePosition,
     ErrorDisplay,
-    ExtendedMediaPlayerProps
+    ExtendedMediaPlayerProps,
+    BrightnessVolumeOverlay,
 } from "../coreplayer";
 import { View, Text } from "../Themed";
 import { GlassView } from 'expo-glass-effect';
 import { SkipBanner } from "../introdb/skipBanner";
 import { useIntroDB } from "../introdb/useIntroDb";
+import { useSystemControls } from "@/hooks/useSystemControls";
 
 const { KSPlayerView: VideoComponent } = require('@/components/ksplayer/KSPlayerView');
 
@@ -80,6 +81,9 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     const timers = useTimers();
     const animations = usePlayerAnimations();
 
+    const { brightness, volume, setBrightness, setVolume, initFromLoad } =
+        useSystemControls(videoRef);
+
     const setShowControls = uiState.setShowControls;
     const controlsOpacity = animations.controlsOpacity;
     const bufferOpacity = animations.bufferOpacity;
@@ -101,12 +105,8 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     const [availableTextTracks, setAvailableTextTracks] = useState<any[]>([]);
     const [selectedAudioTrack, setSelectedAudioTrack] = useState<number>(-1);
 
-    // -1 = none active. These are mutually exclusive.
     const [selectedCustomSubtitleIndex, setSelectedCustomSubtitleIndex] = useState<number>(-1);
     const [selectedEmbeddedTextTrack, setSelectedEmbeddedTextTrack] = useState<number>(-1);
-
-    // Text pushed from the native layer via onSubtitleText (embedded subs only).
-    // Custom sub text comes from subtitleState.currentSubtitle via JS interval.
     const [embeddedSubtitleText, setEmbeddedSubtitleText] = useState<string>('');
 
     const isUsingCustomSub = selectedCustomSubtitleIndex >= 0;
@@ -155,7 +155,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         };
     }, [clearAllTimers, updateProgress, playerState.duration]);
 
-    // ─── Load custom (OpenSubtitles) subtitles ────────────────────────────────
+    // ─── Load custom subtitles ────────────────────────────────────────────────
     useEffect(() => {
         if (selectedCustomSubtitleIndex < 0 || selectedCustomSubtitleIndex >= subtitles.length) {
             subtitleState.setParsedSubtitles([]);
@@ -216,7 +216,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         return () => { if (progressUpdateTimerRef.current) clearInterval(progressUpdateTimerRef.current); };
     }, [playerState.isReady, playerState.duration, updateProgress]);
 
-    // Auto-hide controls
+    // Auto-hide controls on ready
     useEffect(() => {
         if (playerState.isReady && !isPaused) {
             showControlsTemporarily();
@@ -253,9 +253,14 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         if (data.textTracks && Array.isArray(data.textTracks) && data.textTracks.length > 0) {
             setAvailableTextTracks(data.textTracks);
         }
-        // Clear any subtitle state from a previous video
+
+        // Sync initial brightness + volume from native layer
+        if (data.brightness !== undefined && data.volume !== undefined) {
+            initFromLoad(data.brightness, data.volume);
+        }
+
         setEmbeddedSubtitleText('');
-    }, [bufferOpacity, playerState, selectedAudioTrack, settings]);
+    }, [bufferOpacity, playerState, selectedAudioTrack, settings, initFromLoad]);
 
     const handleAudioTracks = useCallback((data: { audioTracks: any[] }) => {
         if (data.audioTracks && Array.isArray(data.audioTracks) && data.audioTracks.length > 0) {
@@ -273,12 +278,6 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         }
     }, []);
 
-    /**
-     * Receives per-frame subtitle text from KSPlayerRNView.playTimeDidChange.
-     * The native side calls srtControl.subtitle(currentTime:) each frame and
-     * only fires this event when the visible line actually changes, so this
-     * handler just stores whatever it receives.
-     */
     const handleSubtitleText = useCallback((data: { text: string }) => {
         setEmbeddedSubtitleText(data.text ?? '');
     }, []);
@@ -345,7 +344,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         showControlsTemporarily();
     }, [playerState, isPaused, showControlsTemporarily, bufferOpacity]);
 
-    // ─── IntroDB ─────────────────────────────────────────────────────────────
+    // ─── IntroDB ──────────────────────────────────────────────────────────────
     const { activeSegment, skip: skipSegment } = useIntroDB({
         imdbId: tvShow?.imdbId ?? null,
         season: tvShow?.season ?? null,
@@ -421,13 +420,6 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         videoRef.current?.seek(lastKnownTimeRef.current);
     }, [settings]);
 
-    /**
-     * id values produced by buildSubtitleActions:
-     *   'off'          — disable all subtitles
-     *   'custom-{i}'   — load OpenSubtitles entry i via JS fetch + interval
-     *   'embedded-{i}' — activate embedded track i via KSPlayer native API;
-     *                    text is delivered back via onSubtitleText → handleSubtitleText
-     */
     const handleSubtitleTrackSelect = useCallback((id: string) => {
         if (id === 'off') {
             setSelectedCustomSubtitleIndex(-1);
@@ -440,23 +432,19 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         } else if (id.startsWith('custom-')) {
             const index = parseInt(id.replace('custom-', ''), 10);
             if (isNaN(index)) return;
-            // Disable any active embedded track
             videoRef.current?.disableTextTrack();
             setSelectedEmbeddedTextTrack(-1);
             setEmbeddedSubtitleText('');
-            // Trigger the load effect
             setSelectedCustomSubtitleIndex(index);
             settings.setSelectedSubtitle(index);
 
         } else if (id.startsWith('embedded-')) {
             const index = parseInt(id.replace('embedded-', ''), 10);
             if (isNaN(index)) return;
-            // Clear any loaded custom subtitle
             setSelectedCustomSubtitleIndex(-1);
             settings.setSelectedSubtitle(-1);
             subtitleState.setParsedSubtitles([]);
             subtitleState.setCurrentSubtitle('');
-            // Tell KSPlayer to start feeding subtitle text via onSubtitleText
             setSelectedEmbeddedTextTrack(index);
             videoRef.current?.selectTextTrack(index);
         }
@@ -618,9 +606,6 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         setIsPaused(false);
     }, [playerState]);
 
-    // Resolve which subtitle text to display in our React overlay.
-    // Custom sub text  → subtitleState.currentSubtitle (JS interval)
-    // Embedded sub text → embeddedSubtitleText (native onSubtitleText event)
     const displaySubtitleText = isUsingCustomSub
         ? subtitleState.currentSubtitle
         : isUsingEmbeddedSub
@@ -633,6 +618,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
     return (
         <View style={styles.container}>
+            {/* ── Video ─────────────────────────────────────────────────────── */}
             <VideoComponent
                 ref={videoRef}
                 url={videoUrl}
@@ -652,17 +638,29 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                 onSubtitleText={handleSubtitleText}
             />
 
+            {/* ── Pre-play artwork ──────────────────────────────────────────── */}
             <ArtworkBackground
                 artwork={artwork}
                 isBuffering={playerState.isBuffering}
                 hasStartedPlaying={playerState.isReady}
             />
 
+            {/* ── Buffering spinner ─────────────────────────────────────────── */}
             <WaitingLobby hasStartedPlaying={playerState.isReady} opacity={bufferOpacity} />
 
-            <TouchableOpacity style={styles.touchArea} activeOpacity={1} onPress={handleOverlayPress} />
+            <TouchableOpacity
+                style={styles.touchArea}
+                activeOpacity={1}
+                onPress={handleOverlayPress}
+            />
 
-            {/* Single unified subtitle display for both custom and embedded subs */}
+            <BrightnessVolumeOverlay
+                brightness={brightness}
+                volume={volume}
+                onBrightnessChange={setBrightness}
+                onVolumeChange={setVolume}
+            />
+
             {!!displaySubtitleText && (
                 <SubtitleDisplay
                     subtitle={displaySubtitleText}
@@ -674,8 +672,13 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                 <SkipBanner activeSegment={activeSegment} onSkip={skipSegment} />
             )}
 
+            {/* ── Controls overlay ──────────────────────────────────────────── */}
             {uiState.showControls && (
-                <Animated.View style={[styles.controlsOverlay, { opacity: controlsOpacity }]} pointerEvents="box-none">
+                <Animated.View
+                    style={[styles.controlsOverlay, { opacity: controlsOpacity }]}
+                    pointerEvents="box-none"
+                >
+                    {/* Top bar */}
                     <View style={styles.topControls}>
                         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
                             <Ionicons name="chevron-back" size={28} color="white" />
@@ -707,8 +710,13 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                             )}
 
                             <TouchableOpacity style={styles.controlButton} onPress={handleMuteToggle}>
-                                <Ionicons name={settings.isMuted ? "volume-mute" : "volume-high"} size={24} color="white" />
+                                <Ionicons
+                                    name={settings.isMuted ? "volume-mute" : "volume-high"}
+                                    size={24}
+                                    color="white"
+                                />
                             </TouchableOpacity>
+
                             <TouchableOpacity style={styles.controlButton} onPress={cycleContentFit}>
                                 <MaterialIcons name={getContentFitIcon()} size={24} color="white" />
                             </TouchableOpacity>
@@ -773,6 +781,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                         </GlassView>
                     </View>
 
+                    {/* Centre play / skip controls */}
                     <CenterControls
                         isPlaying={!isPaused}
                         isReady={playerState.isReady}
@@ -782,6 +791,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                         onSkipForward={handleSkipForward}
                     />
 
+                    {/* Bottom progress bar */}
                     <View style={styles.bottomControls}>
                         <ProgressBar
                             currentTime={displayTime}
@@ -797,12 +807,6 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                     </View>
                 </Animated.View>
             )}
-
-            <ContentFitLabel
-                show={showContentFitLabel}
-                contentFit={contentFit}
-                opacity={contentFitLabelOpacity}
-            />
         </View>
     );
 };

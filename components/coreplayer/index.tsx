@@ -1,5 +1,5 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Animated, ActivityIndicator, Image, Platform } from 'react-native';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { View, Text, TouchableOpacity, Animated, ActivityIndicator, Image, Platform, PanResponder, Dimensions } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import Slider from '@react-native-assets/slider';
 import { showAlert } from '@/utils/platform';
@@ -706,19 +706,6 @@ export const SeekFeedback: React.FC<{
     );
 });
 
-export const ContentFitLabel: React.FC<{
-    show: boolean;
-    contentFit: string;
-    opacity: Animated.Value;
-}> = ({ show, contentFit, opacity }) => {
-    if (!show) return null;
-    return (
-        <Animated.View style={[styles.contentFitLabelContainer, { opacity }]} pointerEvents="none">
-            <Text style={styles.contentFitLabelText}>{contentFit.toUpperCase()}</Text>
-        </Animated.View>
-    );
-};
-
 export const ErrorDisplay: React.FC<{
     error: string | null;
     onBack: () => void;
@@ -731,5 +718,150 @@ export const ErrorDisplay: React.FC<{
             <Text style={styles.errorTitle}>Playback Error</Text>
             <Text style={styles.errorText}>{error}</Text>
         </View>
+    );
+};
+
+// ==================== BRIGHTNESS / VOLUME OVERLAY ====================
+
+const SCREEN_HEIGHT = Dimensions.get('window').height;
+const GESTURE_SENSITIVITY = 1.5;
+
+export const BrightnessVolumeOverlay: React.FC<{
+    brightness: number;
+    volume: number;
+    onBrightnessChange: (value: number) => void;
+    onVolumeChange: (value: number) => void;
+}> = ({ brightness, volume, onBrightnessChange, onVolumeChange }) => {
+    // Animated opacity for each pill — hidden by default, shown on gesture
+    const leftPillOpacity = useRef(new Animated.Value(0)).current;
+    const rightPillOpacity = useRef(new Animated.Value(0)).current;
+
+    // Animated bar fill values (drive the vertical progress bar height %)
+    const brightnessAnim = useRef(new Animated.Value(brightness)).current;
+    const volumeAnim = useRef(new Animated.Value(volume)).current;
+
+    // Refs hold the live value so PanResponder closures always see fresh state
+    const brightnessRef = useRef(brightness);
+    const volumeRef = useRef(volume);
+    brightnessRef.current = brightness;
+    volumeRef.current = volume;
+
+    // Auto-hide timers
+    const hideLeftTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const hideRightTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const showPill = (pillOpacity: Animated.Value) => {
+        Animated.timing(pillOpacity, {
+            toValue: 1,
+            duration: 150,
+            useNativeDriver: true,
+        }).start();
+    };
+
+    const schedulePillHide = (
+        pillOpacity: Animated.Value,
+        timerRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>
+    ) => {
+        if (timerRef.current) clearTimeout(timerRef.current);
+        timerRef.current = setTimeout(() => {
+            Animated.timing(pillOpacity, {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: true,
+            }).start();
+        }, 800);
+    };
+
+    // ── Left zone: brightness ────────────────────────────────────────────────
+    const leftPanResponder = useRef(
+        PanResponder.create({
+            onStartShouldSetPanResponder: () => true,
+            onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 4,
+            onPanResponderGrant: () => {
+                showPill(leftPillOpacity);
+            },
+            onPanResponderMove: (_, g) => {
+                // Drag up = positive delta, drag down = negative
+                const delta = -(g.dy / SCREEN_HEIGHT) * GESTURE_SENSITIVITY;
+                const next = Math.max(0, Math.min(1, brightnessRef.current + delta));
+                brightnessAnim.setValue(next);
+                onBrightnessChange(next);
+                showPill(leftPillOpacity);
+                if (hideLeftTimer.current) clearTimeout(hideLeftTimer.current);
+            },
+            onPanResponderRelease: () => {
+                schedulePillHide(leftPillOpacity, hideLeftTimer);
+            },
+            onPanResponderTerminate: () => {
+                schedulePillHide(leftPillOpacity, hideLeftTimer);
+            },
+        })
+    ).current;
+
+    // ── Right zone: volume ───────────────────────────────────────────────────
+    const rightPanResponder = useRef(
+        PanResponder.create({
+            onStartShouldSetPanResponder: () => true,
+            onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 4,
+            onPanResponderGrant: () => {
+                showPill(rightPillOpacity);
+            },
+            onPanResponderMove: (_, g) => {
+                const delta = -(g.dy / SCREEN_HEIGHT) * GESTURE_SENSITIVITY;
+                const next = Math.max(0, Math.min(1, volumeRef.current + delta));
+                volumeAnim.setValue(next);
+                onVolumeChange(next);
+                showPill(rightPillOpacity);
+                if (hideRightTimer.current) clearTimeout(hideRightTimer.current);
+            },
+            onPanResponderRelease: () => {
+                schedulePillHide(rightPillOpacity, hideRightTimer);
+            },
+            onPanResponderTerminate: () => {
+                schedulePillHide(rightPillOpacity, hideRightTimer);
+            },
+        })
+    ).current;
+
+    // Sync animated values when props change externally
+    useEffect(() => { brightnessAnim.setValue(brightness); }, [brightness]);
+    useEffect(() => { volumeAnim.setValue(volume); }, [volume]);
+
+    const barFill = (anim: Animated.Value) =>
+        anim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] });
+
+    return (
+        <>
+            {/* ── Left touch zone: brightness ── */}
+            <View style={styles.gestureZoneLeft} {...leftPanResponder.panHandlers}>
+                <Animated.View style={[styles.gesturePill, { opacity: leftPillOpacity }]}>
+                    <Ionicons
+                        name={brightness < 0.15 ? 'sunny-outline' : 'sunny'}
+                        size={16}
+                        color="#fff"
+                        style={styles.pillIcon}
+                    />
+                    <View style={styles.pillTrack}>
+                        {/* Fill grows from bottom */}
+                        <Animated.View style={[styles.pillFill, { height: barFill(brightnessAnim) }]} />
+                    </View>
+                </Animated.View>
+            </View>
+
+            {/* ── Right touch zone: volume ── */}
+            <View style={styles.gestureZoneRight} {...rightPanResponder.panHandlers}>
+                <Animated.View style={[styles.gesturePill, { opacity: rightPillOpacity }]}>
+                    <Ionicons
+                        name={volume === 0 ? 'volume-mute' : volume < 0.4 ? 'volume-low' : 'volume-high'}
+                        size={16}
+                        color="#fff"
+                        style={styles.pillIcon}
+                    />
+                    <View style={styles.pillTrack}>
+                        <Animated.View style={[styles.pillFill, { height: barFill(volumeAnim) }]} />
+                    </View>
+                </Animated.View>
+            </View>
+        </>
     );
 };
