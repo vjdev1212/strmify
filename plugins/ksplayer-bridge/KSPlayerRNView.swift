@@ -243,7 +243,7 @@ class KSPlayerRNView: UIView {
 
     func enterFullscreen() { playerView.updateUI(isLandscape: true) }
     func exitFullscreen()  { playerView.updateUI(isLandscape: false) }
-    
+
     func setBrightness(_ value: CGFloat) {
         UIScreen.main.brightness = max(0, min(1, value))
     }
@@ -251,6 +251,15 @@ class KSPlayerRNView: UIView {
     func setVolume(_ value: Float) {
         volumeSlider?.value = max(0, min(1, value))
     }
+
+    private lazy var volumeSlider: UISlider? = {
+        let v = MPVolumeView(frame: .zero)
+        if let window = UIApplication.shared.windows.first {
+            window.addSubview(v)
+            v.frame = CGRect(x: -2000, y: -2000, width: 1, height: 1)
+        }
+        return v.subviews.compactMap { $0 as? UISlider }.first
+    }()
 }
 
 // MARK: - PlayerControllerDelegate
@@ -299,12 +308,3 @@ extension KSPlayerRNView: PlayerControllerDelegate {
     func playerController(bufferedCount: Int, consumeTime: TimeInterval) {}
     func playerController(seek: TimeInterval) {}
 }
-
-private lazy var volumeSlider: UISlider? = {
-    let v = MPVolumeView(frame: .zero)
-    if let window = UIApplication.shared.windows.first {
-        window.addSubview(v)
-        v.frame = CGRect(x: -2000, y: -2000, width: 1, height: 1)
-    }
-    return v.subviews.compactMap { $0 as? UISlider }.first
-}()
