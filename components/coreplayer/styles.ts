@@ -499,7 +499,7 @@ export const styles = StyleSheet.create({
         left: 0,
         top: 0,
         bottom: 0,
-        width: '30%',
+        width: '25%',
         zIndex: 10,
         justifyContent: 'center',
         alignItems: 'flex-start',
@@ -510,7 +510,7 @@ export const styles = StyleSheet.create({
         right: 0,
         top: 0,
         bottom: 0,
-        width: '30%',
+        width: '25%',
         zIndex: 10,
         justifyContent: 'center',
         alignItems: 'flex-end',
@@ -518,7 +518,7 @@ export const styles = StyleSheet.create({
     },
     gesturePill: {
         width: 40,
-        height: 140,
+        height: 150,
         borderRadius: 24,
         backgroundColor: 'rgba(0,0,0,0.55)',
         alignItems: 'center',
@@ -540,5 +540,11 @@ export const styles = StyleSheet.create({
         width: '100%',
         borderRadius: 2,
         backgroundColor: '#ffffff',
+    },
+    pillPercent: {
+        color: '#ffffff',
+        fontSize: 10,
+        marginBottom: 2,
+        opacity: 0.85,
     },
 });

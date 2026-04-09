@@ -723,7 +723,7 @@ export const ErrorDisplay: React.FC<{
 
 // ==================== BRIGHTNESS / VOLUME OVERLAY ====================
 
-const GESTURE_SENSITIVITY = 100;
+const GESTURE_SENSITIVITY = 250;
 
 export const BrightnessVolumeOverlay: React.FC<{
     brightness: number;
@@ -741,6 +741,10 @@ export const BrightnessVolumeOverlay: React.FC<{
     const volumeRef = useRef(volume);
     brightnessRef.current = brightness;
     volumeRef.current = volume;
+
+    // ── State for displaying percentage text ─────────────────────────────────
+    const [brightnessPercent, setBrightnessPercent] = useState(Math.round(brightness * 100));
+    const [volumePercent, setVolumePercent] = useState(Math.round(volume * 100));
 
     const leftLastDy = useRef(0);
     const rightLastDy = useRef(0);
@@ -787,6 +791,7 @@ export const BrightnessVolumeOverlay: React.FC<{
                 const next = Math.max(0, Math.min(1, brightnessRef.current + delta));
                 brightnessAnim.setValue(next);
                 onBrightnessChange(next);
+                setBrightnessPercent(Math.round(next * 100));
                 showPill(leftPillOpacity);
                 if (hideLeftTimer.current) clearTimeout(hideLeftTimer.current);
             },
@@ -816,6 +821,7 @@ export const BrightnessVolumeOverlay: React.FC<{
                 const next = Math.max(0, Math.min(1, volumeRef.current + delta));
                 volumeAnim.setValue(next);
                 onVolumeChange(next);
+                setVolumePercent(Math.round(next * 100));
                 showPill(rightPillOpacity);
                 if (hideRightTimer.current) clearTimeout(hideRightTimer.current);
             },
@@ -828,8 +834,15 @@ export const BrightnessVolumeOverlay: React.FC<{
         })
     ).current;
 
-    useEffect(() => { brightnessAnim.setValue(brightness); }, [brightness]);
-    useEffect(() => { volumeAnim.setValue(volume); }, [volume]);
+    useEffect(() => {
+        brightnessAnim.setValue(brightness);
+        setBrightnessPercent(Math.round(brightness * 100));
+    }, [brightness]);
+
+    useEffect(() => {
+        volumeAnim.setValue(volume);
+        setVolumePercent(Math.round(volume * 100));
+    }, [volume]);
 
     const barFill = (anim: Animated.Value) =>
         anim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] });
@@ -848,6 +861,7 @@ export const BrightnessVolumeOverlay: React.FC<{
                     <View style={styles.pillTrack}>
                         <Animated.View style={[styles.pillFill, { height: barFill(brightnessAnim) }]} />
                     </View>
+                    <Text style={styles.pillPercent}>{brightnessPercent}%</Text>
                 </Animated.View>
             </View>
 
@@ -863,6 +877,7 @@ export const BrightnessVolumeOverlay: React.FC<{
                     <View style={styles.pillTrack}>
                         <Animated.View style={[styles.pillFill, { height: barFill(volumeAnim) }]} />
                     </View>
+                    <Text style={styles.pillPercent}>{volumePercent}%</Text>
                 </Animated.View>
             </View>
         </>
