@@ -31,5 +31,6 @@ RCT_EXTERN_METHOD(selectTextTrack:(nonnull NSNumber *)node trackId:(nonnull NSNu
 RCT_EXTERN_METHOD(disableTextTrack:(nonnull NSNumber *)node)
 RCT_EXTERN_METHOD(enterFullscreen:(nonnull NSNumber *)node)
 RCT_EXTERN_METHOD(exitFullscreen:(nonnull NSNumber *)node)
-
+RCT_EXTERN_METHOD(setBrightness:(nonnull NSNumber *)node value:(CGFloat)value)
+RCT_EXTERN_METHOD(setVolume:(nonnull NSNumber *)node value:(float)value)
 @end
