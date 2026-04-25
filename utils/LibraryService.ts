@@ -2,7 +2,7 @@ import { StorageKeys, storageService } from '@/utils/StorageService';
 
 export interface LibraryItem {
   id: string;
-  moviedbid: string;
+  tmdbid: string;
   type: 'movie' | 'series';
   title: string;
   poster: string;
@@ -26,7 +26,7 @@ class LibraryService {
 
       // Check if item already exists
       const exists = library.some(
-        l => l.moviedbid === item.moviedbid && l.type === item.type
+        l => l.tmdbid === item.tmdbid && l.type === item.type
       );
 
       if (exists) {
@@ -51,11 +51,11 @@ class LibraryService {
   /**
    * Remove item from library
    */
-  async removeFromLibrary(moviedbid: string, type: 'movie' | 'series'): Promise<boolean> {
+  async removeFromLibrary(tmdbid: string, type: 'movie' | 'series'): Promise<boolean> {
     try {
       const library = await this.getLibrary();
       const updatedLibrary = library.filter(
-        item => !(item.moviedbid === moviedbid && item.type === type)
+        item => !(item.tmdbid === tmdbid && item.type === type)
       );
 
       storageService.setItem(LIBRARY_KEY, JSON.stringify(updatedLibrary));
@@ -69,11 +69,11 @@ class LibraryService {
   /**
    * Mark item as watched
    */
-  async markAsWatched(moviedbid: string, type: 'movie' | 'series'): Promise<boolean> {
+  async markAsWatched(tmdbid: string, type: 'movie' | 'series'): Promise<boolean> {
     try {
       const library = await this.getLibrary();
       const updatedLibrary = library.map(item => {
-        if (item.moviedbid === moviedbid && item.type === type) {
+        if (item.tmdbid === tmdbid && item.type === type) {
           return { ...item, watched: true };
         }
         return item;
@@ -90,11 +90,11 @@ class LibraryService {
   /**
    * Mark item as unwatched
    */
-  async markAsUnwatched(moviedbid: string, type: 'movie' | 'series'): Promise<boolean> {
+  async markAsUnwatched(tmdbid: string, type: 'movie' | 'series'): Promise<boolean> {
     try {
       const library = await this.getLibrary();
       const updatedLibrary = library.map(item => {
-        if (item.moviedbid === moviedbid && item.type === type) {
+        if (item.tmdbid === tmdbid && item.type === type) {
           return { ...item, watched: false };
         }
         return item;
@@ -111,11 +111,11 @@ class LibraryService {
   /**
    * Toggle watch status
    */
-  async toggleWatchStatus(moviedbid: string, type: 'movie' | 'series'): Promise<boolean> {
+  async toggleWatchStatus(tmdbid: string, type: 'movie' | 'series'): Promise<boolean> {
     try {
       const library = await this.getLibrary();
       const updatedLibrary = library.map(item => {
-        if (item.moviedbid === moviedbid && item.type === type) {
+        if (item.tmdbid === tmdbid && item.type === type) {
           return { ...item, watched: !item.watched };
         }
         return item;
@@ -132,11 +132,11 @@ class LibraryService {
   /**
    * Check if item is in library
    */
-  async isInLibrary(moviedbid: string, type: 'movie' | 'series'): Promise<boolean> {
+  async isInLibrary(tmdbid: string, type: 'movie' | 'series'): Promise<boolean> {
     try {
       const library = await this.getLibrary();
       return library.some(
-        item => item.moviedbid === moviedbid && item.type === type
+        item => item.tmdbid === tmdbid && item.type === type
       );
     } catch (error) {
       console.error('Failed to check library:', error);
@@ -147,11 +147,11 @@ class LibraryService {
   /**
    * Get watch status of an item
    */
-  async getWatchStatus(moviedbid: string, type: 'movie' | 'series'): Promise<boolean | null> {
+  async getWatchStatus(tmdbid: string, type: 'movie' | 'series'): Promise<boolean | null> {
     try {
       const library = await this.getLibrary();
       const item = library.find(
-        i => i.moviedbid === moviedbid && i.type === type
+        i => i.tmdbid === tmdbid && i.type === type
       );
       return item ? item.watched : null;
     } catch (error) {

@@ -24,7 +24,7 @@ const CACHE_DURATION = 5 * 60 * 1000;
 const cacheTimestamps = new Map<string, number>();
 
 interface PosterItemData {
-  moviedbid: number;
+  tmdbid: number;
   name: string;
   poster: string;
   background: string;
@@ -57,7 +57,7 @@ const PosterItem = ({
 
   const handlePress = async () => {
     if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push({ pathname: `/${type}/details`, params: { moviedbid: item.moviedbid } });
+    router.push({ pathname: `/${type}/details`, params: { tmdbid: item.tmdbid } });
   };
 
   return (
@@ -148,7 +148,7 @@ const PosterList = ({ apiUrl, title, type }: { apiUrl: string; title: string; ty
           .filter((item: any) => item.poster_path && item.backdrop_path)
           .slice(0, 20)
           .map((item: any) => ({
-            moviedbid: item.id,
+            tmdbid: item.id,
             name: item.title || item.name,
             poster: `https://image.tmdb.org/t/p/${imageSize()}${item.poster_path}`,
             background: `https://image.tmdb.org/t/p/w780${item.backdrop_path}`,
@@ -209,7 +209,7 @@ const PosterList = ({ apiUrl, title, type }: { apiUrl: string; title: string; ty
         renderItem={({ item }) => (
           <PosterItem item={item} posterWidth={posterWidth} posterHeight={posterHeight} type={type} spacing={spacing} />
         )}
-        keyExtractor={(item, index) => `${item.moviedbid}-${index}`}
+        keyExtractor={(item, index) => `${item.tmdbid}-${index}`}
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingRight: 4 }}
         initialNumToRender={postersPerScreen}

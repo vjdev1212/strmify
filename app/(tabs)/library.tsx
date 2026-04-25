@@ -113,7 +113,7 @@ const LibraryScreen: React.FC = () => {
         duration: 300,
         useNativeDriver: true,
       }).start(async () => {
-        await libraryService.removeFromLibrary(item.moviedbid, item.type);
+        await libraryService.removeFromLibrary(item.tmdbid, item.type);
         await loadLibrary();
         animatedValues.delete(itemKey);
       });
@@ -125,7 +125,7 @@ const LibraryScreen: React.FC = () => {
   const toggleWatchStatus = async (item: LibraryItem) => {
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      await libraryService.toggleWatchStatus(item.moviedbid, item.type);
+      await libraryService.toggleWatchStatus(item.tmdbid, item.type);
       await loadLibrary();
     } catch (error) {
       console.error('Failed to toggle watch status:', error);
@@ -135,7 +135,7 @@ const LibraryScreen: React.FC = () => {
   const handleItemPress = (item: LibraryItem) => {
     router.push({
       pathname: item.type === 'movie' ? '/movie/details' : '/series/details',
-      params: { moviedbid: item.moviedbid }
+      params: { tmdbid: item.tmdbid }
     });
   };
 
@@ -157,7 +157,7 @@ const LibraryScreen: React.FC = () => {
   };
 
   const renderLibraryItem = ({ item, index }: { item: LibraryItem; index: number }) => {
-    const itemKey = `${item.moviedbid}-${item.type}-${index}`;
+    const itemKey = `${item.tmdbid}-${item.type}-${index}`;
     const animValue = getAnimatedValue(itemKey);
 
     return (
@@ -231,7 +231,7 @@ const LibraryScreen: React.FC = () => {
         <FlatList
           data={items}
           renderItem={renderLibraryItem}
-          keyExtractor={(item, index) => `${item.moviedbid}-${item.type}-${index}`}
+          keyExtractor={(item, index) => `${item.tmdbid}-${item.type}-${index}`}
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={[styles.flatListContent, { gap: CARD_SPACING }]}

@@ -49,7 +49,7 @@ const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath }) => {
                     setData(result.results
                         .filter((item: any) => item.poster_path && item.backdrop_path)
                         .map((item: any) => ({
-                            moviedbid: item.id,
+                            tmdbid: item.id,
                             name: item.title || item.name,
                             year: getYear(item.release_date || item.first_air_date),
                             poster: `https://image.tmdb.org/t/p/w780${item.poster_path}`,
@@ -72,7 +72,7 @@ const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath }) => {
         return (
             <Pressable
                 style={({ pressed }) => [styles.posterContainer, { flexBasis: `${100 / numColumns}%`, paddingHorizontal: spacing / 2, opacity: pressed ? 0.7 : 1 }]}
-                onPress={() => router.push({ pathname: detailsPath, params: { moviedbid: item.moviedbid || item.id } })}
+                onPress={() => router.push({ pathname: detailsPath, params: { tmdbid: item.tmdbid || item.id } })}
             >
                 <View style={[styles.imageContainer, { backgroundColor: colors.background }]}>
                     <Image source={{ uri: item.poster }} style={styles.posterImage} resizeMode="cover" />

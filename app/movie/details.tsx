@@ -19,7 +19,7 @@ import { useTheme } from '@/context/ThemeContext';
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
 const MovieDetails = () => {
-  const { moviedbid } = useLocalSearchParams();
+  const { tmdbid } = useLocalSearchParams();
   const [data, setData] = useState<any>(null);
   const [imdbid, setImdbId] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -34,7 +34,7 @@ const MovieDetails = () => {
     const fetchDetails = async () => {
       try {
         const response = await fetch(
-          `https://api.themoviedb.org/3/movie/${moviedbid}?api_key=${EXPO_PUBLIC_TMDB_API_KEY}`
+          `https://api.themoviedb.org/3/movie/${tmdbid}?api_key=${EXPO_PUBLIC_TMDB_API_KEY}`
         );
         const result = await response.json();
         if (result) {
@@ -72,11 +72,11 @@ const MovieDetails = () => {
     };
 
     fetchDetails();
-  }, [moviedbid]);
+  }, [tmdbid]);
 
   const getExternalIds = async () => {
     const externalIdsResponse = await fetch(
-      `https://api.themoviedb.org/3/movie/${moviedbid}/external_ids?api_key=${EXPO_PUBLIC_TMDB_API_KEY}`
+      `https://api.themoviedb.org/3/movie/${tmdbid}/external_ids?api_key=${EXPO_PUBLIC_TMDB_API_KEY}`
     );
     const externalIdsResult = await externalIdsResponse.json();
     return externalIdsResult;
@@ -84,7 +84,7 @@ const MovieDetails = () => {
 
   const getCastandCrew = async () => {
     const castAndCrewsResponse = await fetch(
-      `https://api.themoviedb.org/3/movie/${moviedbid}/credits?api_key=${EXPO_PUBLIC_TMDB_API_KEY}`
+      `https://api.themoviedb.org/3/movie/${tmdbid}/credits?api_key=${EXPO_PUBLIC_TMDB_API_KEY}`
     );
     const castAndCrewResult = await castAndCrewsResponse.json();
     return castAndCrewResult.cast || [];
@@ -93,7 +93,7 @@ const MovieDetails = () => {
   const getTrailer = async () => {
     try {
       const videosResponse = await fetch(
-        `https://api.themoviedb.org/3/movie/${moviedbid}/videos?api_key=${EXPO_PUBLIC_TMDB_API_KEY}`
+        `https://api.themoviedb.org/3/movie/${tmdbid}/videos?api_key=${EXPO_PUBLIC_TMDB_API_KEY}`
       );
       const videosResult = await videosResponse.json();
 
@@ -194,8 +194,8 @@ const MovieDetails = () => {
           <View style={styles.buttonsContainer}>
             <LibraryButton
               item={{
-                id: `movie-${moviedbid}`,
-                moviedbid: moviedbid as string,
+                id: `movie-${tmdbid}`,
+                tmdbid: tmdbid as string,
                 type: 'movie',
                 title: data.name,
                 poster: data.poster,
@@ -221,10 +221,10 @@ const MovieDetails = () => {
         )
       }
       <View style={styles.recommendationsContainer}>
-        <PosterList apiUrl={`https://api.themoviedb.org/3/movie/${moviedbid}/recommendations`} title='Recommended' type='movie' />
+        <PosterList apiUrl={`https://api.themoviedb.org/3/movie/${tmdbid}/recommendations`} title='Recommended' type='movie' />
       </View>
       <View style={styles.recommendationsContainer}>
-        <PosterList apiUrl={`https://api.themoviedb.org/3/movie/${moviedbid}/similar`} title='Similar to this' type='movie' />
+        <PosterList apiUrl={`https://api.themoviedb.org/3/movie/${tmdbid}/similar`} title='Similar to this' type='movie' />
       </View>
       <BottomSpacing space={50} />
     </ScrollView>

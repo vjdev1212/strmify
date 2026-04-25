@@ -17,10 +17,10 @@ const LibraryButton: React.FC<LibraryButtonProps> = ({ item, size = 28, color = 
     const [isInLibrary, setIsInLibrary] = useState(false);
     const [loading, setLoading] = useState(false);
 
-    useEffect(() => { checkLibraryStatus(); }, [item.moviedbid, item.type]);
+    useEffect(() => { checkLibraryStatus(); }, [item.tmdbid, item.type]);
 
     const checkLibraryStatus = async () => {
-        setIsInLibrary(await libraryService.isInLibrary(item.moviedbid, item.type));
+        setIsInLibrary(await libraryService.isInLibrary(item.tmdbid, item.type));
     };
 
     const handlePress = async () => {
@@ -29,7 +29,7 @@ const LibraryButton: React.FC<LibraryButtonProps> = ({ item, size = 28, color = 
         if (isHapticsSupported()) await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         try {
             if (isInLibrary) {
-                if (await libraryService.removeFromLibrary(item.moviedbid, item.type)) setIsInLibrary(false);
+                if (await libraryService.removeFromLibrary(item.tmdbid, item.type)) setIsInLibrary(false);
             } else {
                 if (await libraryService.addToLibrary(item)) setIsInLibrary(true);
             }

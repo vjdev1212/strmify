@@ -24,7 +24,7 @@ interface CarouselItem {
     type: 'movie' | 'series';
     year: string;
     rating: string;
-    moviedbid: number;
+    tmdbid: number;
 }
 
 interface AppleTVCarouselProps {
@@ -112,7 +112,7 @@ export default function AppleTVCarousel({
                                 type,
                                 year: getYear(item.release_date || item.first_air_date),
                                 rating: item.vote_average?.toFixed(1) || '0.0',
-                                moviedbid: item.id,
+                                tmdbid: item.id,
                             });
                         }
                     });

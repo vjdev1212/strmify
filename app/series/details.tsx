@@ -20,7 +20,7 @@ import { useTheme } from '@/context/ThemeContext';
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
 const SeriesDetails = () => {
-  const { moviedbid } = useLocalSearchParams();
+  const { tmdbid } = useLocalSearchParams();
   const [data, setData] = useState<any>(null);
   const [imdbid, setImdbId] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -37,7 +37,7 @@ const SeriesDetails = () => {
     const fetchDetails = async () => {
       try {
         const response = await fetch(
-          `https://api.themoviedb.org/3/tv/${moviedbid}?api_key=${EXPO_PUBLIC_TMDB_API_KEY}`
+          `https://api.themoviedb.org/3/tv/${tmdbid}?api_key=${EXPO_PUBLIC_TMDB_API_KEY}`
         );
         const result = await response.json();
         if (result) {
@@ -90,11 +90,11 @@ const SeriesDetails = () => {
     };
 
     fetchDetails();
-  }, [moviedbid]);
+  }, [tmdbid]);
 
   const getExternalIds = async () => {
     const externalIdsResponse = await fetch(
-      `https://api.themoviedb.org/3/tv/${moviedbid}/external_ids?api_key=${EXPO_PUBLIC_TMDB_API_KEY}`
+      `https://api.themoviedb.org/3/tv/${tmdbid}/external_ids?api_key=${EXPO_PUBLIC_TMDB_API_KEY}`
     );
     const externalIdsResult = await externalIdsResponse.json();
     return externalIdsResult;
@@ -102,7 +102,7 @@ const SeriesDetails = () => {
 
   const getEpisodes = async (season: string) => {
     const episodesResponse = await fetch(
-      `https://api.themoviedb.org/3/tv/${moviedbid}/season/${season}?api_key=${EXPO_PUBLIC_TMDB_API_KEY}`
+      `https://api.themoviedb.org/3/tv/${tmdbid}/season/${season}?api_key=${EXPO_PUBLIC_TMDB_API_KEY}`
     );
     const episodesResult = await episodesResponse.json();
     return episodesResult;
@@ -110,7 +110,7 @@ const SeriesDetails = () => {
 
   const getCastandCrew = async () => {
     const castAndCrewsResponse = await fetch(
-      `https://api.themoviedb.org/3/tv/${moviedbid}/credits?api_key=${EXPO_PUBLIC_TMDB_API_KEY}`
+      `https://api.themoviedb.org/3/tv/${tmdbid}/credits?api_key=${EXPO_PUBLIC_TMDB_API_KEY}`
     );
     const castAndCrewResult = await castAndCrewsResponse.json();
     return castAndCrewResult.cast || [];
@@ -119,7 +119,7 @@ const SeriesDetails = () => {
   const getTrailer = async () => {
     try {
       const videosResponse = await fetch(
-        `https://api.themoviedb.org/3/tv/${moviedbid}/videos?api_key=${EXPO_PUBLIC_TMDB_API_KEY}`
+        `https://api.themoviedb.org/3/tv/${tmdbid}/videos?api_key=${EXPO_PUBLIC_TMDB_API_KEY}`
       );
       const videosResult = await videosResponse.json();
 
@@ -184,7 +184,7 @@ const SeriesDetails = () => {
         imdbid:
           imdbid,
         tmdbid:
-          moviedbid,
+          tmdbid,
         type: 'series',
         name: data.name,
         title: getFormattedName(data, season, episode),
@@ -200,7 +200,7 @@ const SeriesDetails = () => {
       pathname: '/stream/list',
       params: {
         imdbid: imdbid,
-        tmdbid: moviedbid,
+        tmdbid: tmdbid,
         type: 'series',
         name: data.name,
         title: getFormattedName(data, season, episode),
@@ -247,8 +247,8 @@ const SeriesDetails = () => {
           <View style={styles.buttonsContainer}>
             <LibraryButton
               item={{
-                id: `series-${moviedbid}`,
-                moviedbid: moviedbid as string,
+                id: `series-${tmdbid}`,
+                tmdbid: tmdbid as string,
                 type: 'series',
                 title: data.name,
                 poster: data.poster,
@@ -286,10 +286,10 @@ const SeriesDetails = () => {
         )
       }
       <View style={styles.recommendationsContainer}>
-        <PosterList apiUrl={`https://api.themoviedb.org/3/tv/${moviedbid}/recommendations`} title='Recommended' type='series' />
+        <PosterList apiUrl={`https://api.themoviedb.org/3/tv/${tmdbid}/recommendations`} title='Recommended' type='series' />
       </View>
       <View style={styles.recommendationsContainer}>
-        <PosterList apiUrl={`https://api.themoviedb.org/3/tv/${moviedbid}/similar`} title='Similar to this' type='series' />
+        <PosterList apiUrl={`https://api.themoviedb.org/3/tv/${tmdbid}/similar`} title='Similar to this' type='series' />
       </View>
       <BottomSpacing space={50} />
     </ScrollView>

@@ -116,7 +116,7 @@ export default function HomeScreen() {
 
   const handleCarouselItemPress = (item: any) => {
     const type = item.type == 'movie' ? 'movie' : 'series';
-    router.push({ pathname: `/${type}/details`, params: { moviedbid: item.moviedbid } });
+    router.push({ pathname: `/${type}/details`, params: { tmdbid: item.tmdbid } });
   };
 
   return (
