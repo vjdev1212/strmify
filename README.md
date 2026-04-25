@@ -28,6 +28,7 @@ Instead of relying on addon catalogues, Strmify provides content discovery throu
 [![Install via AltStore](https://img.shields.io/badge/AltStore-4CAF50?style=for-the-badge&logo=apple&logoColor=white)](altstore://source?url=https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/sources/sidestore-source.json)
 [![Install via SideStore](https://img.shields.io/badge/SideStore-A020F0?style=for-the-badge&logo=apple&logoColor=white)](sidestore://source?url=https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/sources/sidestore-source.json)
 [![Direct URL](https://img.shields.io/badge/Direct_URL-0078D4?style=for-the-badge&logo=link&logoColor=white)](https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/sources/sidestore-source.json)
+
 Or download directly from [GitHub Releases](https://github.com/vjdev1212/strmify/releases)
 
 ---
