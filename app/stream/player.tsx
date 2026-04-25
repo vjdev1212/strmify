@@ -8,7 +8,7 @@ import React, { useEffect, useState } from "react";
 import { Platform, Linking, ActivityIndicator, View, Text, StyleSheet, Image, StatusBar } from "react-native";
 import { ServerConfig } from "@/components/ServerConfig";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { StreamingServerClient } from "@/clients/stremio";
+import { StreamingServerClient, TorrentFile } from "@/clients/stremio";
 import * as ScreenOrientation from 'expo-screen-orientation';
 import { useTheme } from '@/context/ThemeContext';
 
@@ -56,6 +56,60 @@ const MAX_HISTORY_ITEMS = 30;
 const DEFAULT_MEDIA_PLAYER_KEY = StorageKeys.DEFAULT_MEDIA_PLAYER_KEY;
 const SERVERS_KEY = StorageKeys.SERVERS_KEY;
 const SUBTITLE_LANGUAGES_KEY = StorageKeys.SUBTITLE_LANGUAGES_KEY;
+
+const VIDEO_EXTENSIONS = /\.(mkv|mp4|avi|mov|wmv|m4v|ts|webm|flv|mpeg|mpg)$/i;
+
+function pickEpisodeFileIdx(
+  files: TorrentFile[],
+  season?: number | null,
+  episode?: number | null
+): number {
+  const videoFiles = files.filter(f => VIDEO_EXTENSIONS.test(f.name));
+  const candidates = videoFiles.length > 0 ? videoFiles : files;
+
+  if (candidates.length === 0) return 0;
+  if (candidates.length === 1) return candidates[0].id;
+
+  // No episode info — return the largest file (e.g. a movie torrent)
+  if (!episode) {
+    return candidates.reduce((best, f) => (f.length > best.length ? f : best)).id;
+  }
+
+  const ep = episode;
+  const se = season ?? 1;
+
+  const matchesSE = (name: string): boolean => {
+    const upper = name.toUpperCase();
+    // Patterns: S01E05, S1E5, 1x05, 01x05
+    const sePattern = new RegExp(`S0*${se}[._\\- ]?E0*${ep}\\b`, 'i');
+    const altPattern = new RegExp(`\\b0*${se}[xX×]0*${ep}\\b`);
+    return sePattern.test(upper) || altPattern.test(upper);
+  };
+
+  const matchesEpOnly = (name: string): boolean => {
+    // e.g. " - 05 -", ".05.", "_05_", "[05]"
+    const epPattern = new RegExp(`[^\\d]0*${ep}[^\\d]`);
+    return epPattern.test(name);
+  };
+
+  // 1. Exact S+E match
+  const seMatches = candidates.filter(f => matchesSE(f.name));
+  if (seMatches.length === 1) return seMatches[0].id;
+  if (seMatches.length > 1) {
+    // Multiple matches (e.g. multi-audio variants) — pick the largest
+    return seMatches.reduce((best, f) => (f.length > best.length ? f : best)).id;
+  }
+
+  // 2. Episode-number-only match
+  const epMatches = candidates.filter(f => matchesEpOnly(f.name));
+  if (epMatches.length === 1) return epMatches[0].id;
+  if (epMatches.length > 1) {
+    return epMatches.reduce((best, f) => (f.length > best.length ? f : best)).id;
+  }
+
+  // 3. Fallback: largest video file
+  return candidates.reduce((best, f) => (f.length > best.length ? f : best)).id;
+}
 
 const MediaPlayerScreen: React.FC = () => {
   const router = useRouter();
@@ -275,6 +329,41 @@ const MediaPlayerScreen: React.FC = () => {
     return null;
   };
 
+  const resolveFileIdx = async (
+    infoHash: string,
+    streamFileIdx: number | undefined,
+    client: StreamingServerClient
+  ): Promise<number> => {
+    // A non-negative fileIdx from the stream source is authoritative — use it directly.
+    if (streamFileIdx !== undefined && streamFileIdx >= 0) {
+      console.log(`Using addon provided fileIdx ${streamFileIdx} from stream source`);
+      return streamFileIdx;
+    }
+
+    const episodeNum = episode ? parseInt(episode as string, 10) : null;
+    const seasonNum = season ? parseInt(season as string, 10) : null;
+
+    try {
+      setStatusText('Fetching torrent file list...');
+      console.log('Fetching torrent files for infoHash:', infoHash);
+      const files = await client.getTorrentFiles(infoHash);
+      console.log('Torrent files:', files);
+
+      if (files.length === 0) {
+        console.warn('No files returned from torrent, defaulting to fileIdx 0');
+        return 0;
+      }
+
+      const resolvedIdx = pickEpisodeFileIdx(files, seasonNum, episodeNum);
+      console.log(`Resolved fileIdx ${resolvedIdx} for S${seasonNum}E${episodeNum}`);
+      return resolvedIdx;
+    } catch (error) {
+      console.error('Failed to fetch torrent files, falling back to fileIdx -1:', error);
+      // Fall back to -1 (let the server decide) when the file-list endpoint is unavailable.
+      return -1;
+    }
+  };
+
   const generatePlayerUrlWithInfoHash = async (
     infoHash: string,
     serverUrl: string,
@@ -327,11 +416,17 @@ const MediaPlayerScreen: React.FC = () => {
         }
 
         setIsTorrent(true);
+
+        const client = stremioClient || new StreamingServerClient(selectedServer.serverUrl);
+
+        // Resolve the correct file index, fetching the torrent file list if needed.
+        const resolvedFileIdx = await resolveFileIdx(infoHash!, fileIdx, client);
+
         finalVideoUrl = await generatePlayerUrlWithInfoHash(
           infoHash!,
           selectedServer.serverUrl,
-          fileIdx || -1,
-          stremioClient || undefined
+          resolvedFileIdx,
+          client
         );
       } else {
         if (!url) return;
@@ -384,8 +479,13 @@ const MediaPlayerScreen: React.FC = () => {
           return;
         }
 
+        const client = stremioClient || new StreamingServerClient(selectedServer.serverUrl);
+
+        // Resolve the correct file index, fetching the torrent file list if needed.
+        const resolvedFileIdx = await resolveFileIdx(infoHash!, fileIdx, client);
+
         setStatusText('Generating direct stream URL...');
-        const directURL = `${selectedServer.serverUrl}/${encodeURIComponent(infoHash!)}/${encodeURIComponent(fileIdx || -1)}`;
+        const directURL = `${selectedServer.serverUrl}/${encodeURIComponent(infoHash!)}/${encodeURIComponent(resolvedFileIdx)}`;
         videoUrl = directURL;
       }
 
@@ -646,7 +746,7 @@ const MediaPlayerScreen: React.FC = () => {
           <View style={styles.loadingOverlay}>
             <ActivityIndicator size="large" color={colors.primary} />
             <Text style={[styles.loadingText, { color: colors.text }]}>
-              Loading stream. Please wait...
+              {statusText || 'Loading stream. Please wait...'}
             </Text>
           </View>
         </View>
