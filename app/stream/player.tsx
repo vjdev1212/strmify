@@ -78,7 +78,6 @@ function pickEpisodeFileIdx(
   const ep = episode;
   const se = season ?? 1;
 
-  // Helper: does a filename contain "SxxExx" or "xx×xx" style markers?
   const matchesSE = (name: string): boolean => {
     const upper = name.toUpperCase();
     // Patterns: S01E05, S1E5, 1x05, 01x05
@@ -87,7 +86,6 @@ function pickEpisodeFileIdx(
     return sePattern.test(upper) || altPattern.test(upper);
   };
 
-  // Helper: does a filename contain the episode number in isolation?
   const matchesEpOnly = (name: string): boolean => {
     // e.g. " - 05 -", ".05.", "_05_", "[05]"
     const epPattern = new RegExp(`[^\\d]0*${ep}[^\\d]`);
