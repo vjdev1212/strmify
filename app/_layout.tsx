@@ -92,18 +92,11 @@ function RootLayoutNav() {
                             contentStyle: { backgroundColor: 'transparent' },
                         }}
                     />
-                    <Stack.Screen
-                        name="modal"
-                        options={{
-                            presentation: 'modal',
-                            contentStyle: { backgroundColor: colors.background },
-                        }}
-                    />
-                    <Stack.Screen name="movie/details"          options={screenOptions} />
-                    <Stack.Screen name="movie/list"             options={screenOptions} />
-                    <Stack.Screen name="series/details"         options={screenOptions} />
-                    <Stack.Screen name="series/list"            options={screenOptions} />
-                    <Stack.Screen name="stream/list"            options={screenOptions} />
+                    <Stack.Screen name="movie/details" options={screenOptions} />
+                    <Stack.Screen name="movie/list" options={screenOptions} />
+                    <Stack.Screen name="series/details" options={screenOptions} />
+                    <Stack.Screen name="series/list" options={screenOptions} />
+                    <Stack.Screen name="stream/list" options={screenOptions} />
                     <Stack.Screen
                         name="stream/player"
                         options={{
@@ -111,16 +104,16 @@ function RootLayoutNav() {
                             contentStyle: { backgroundColor: '#000000' },
                         }}
                     />
-                    <Stack.Screen name="settings/addons"        options={screenOptions} />
-                    <Stack.Screen name="settings/add"           options={screenOptions} />
+                    <Stack.Screen name="settings/addons" options={screenOptions} />
+                    <Stack.Screen name="settings/add" options={screenOptions} />
                     <Stack.Screen name="settings/stremioserver" options={screenOptions} />
-                    <Stack.Screen name="settings/theme"         options={screenOptions} />
+                    <Stack.Screen name="settings/theme" options={screenOptions} />
                     <Stack.Screen name="settings/opensubtitles" options={screenOptions} />
-                    <Stack.Screen name="settings/contact"       options={screenOptions} />
-                    <Stack.Screen name="settings/disclaimer"    options={screenOptions} />
-                    <Stack.Screen name="settings/donate"        options={screenOptions} />
-                    <Stack.Screen name="settings/downloads"     options={screenOptions} />
-                    <Stack.Screen name="settings/mediaplayer"   options={screenOptions} />
+                    <Stack.Screen name="settings/contact" options={screenOptions} />
+                    <Stack.Screen name="settings/disclaimer" options={screenOptions} />
+                    <Stack.Screen name="settings/donate" options={screenOptions} />
+                    <Stack.Screen name="settings/downloads" options={screenOptions} />
+                    <Stack.Screen name="settings/mediaplayer" options={screenOptions} />
                 </Stack>
             </ActionSheetProvider>
         </View>
