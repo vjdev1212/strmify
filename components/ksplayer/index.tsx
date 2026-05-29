@@ -220,6 +220,10 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         }
     }, [playerState.isReady]);
 
+    useEffect(() => {
+        playerState.setIsPlaying(playerState.isReady && !isPaused);
+    }, [isPaused, playerState.isReady, playerState.setIsPlaying]);
+
     const showContentFitLabelTemporarily = useCallback(() => {
         setShowContentFitLabel(true);
         Animated.timing(contentFitLabelOpacity, { toValue: 1, duration: 200, useNativeDriver: true }).start();
@@ -347,10 +351,13 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
     const togglePlayPause = useCallback(() => {
         if (!playerState.isReady) return;
-        setIsPaused(!isPaused);
-        playerState.setIsPlaying(isPaused);
+        setIsPaused((wasPaused) => {
+            const nextPaused = !wasPaused;
+            playerState.setIsPlaying(!nextPaused);
+            return nextPaused;
+        });
         showControlsTemporarily();
-    }, [isPaused, playerState, showControlsTemporarily]);
+    }, [playerState, showControlsTemporarily]);
 
     const skipTime = useCallback((seconds: number) => {
         if (!playerState.isReady) return;
@@ -768,7 +775,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
                     {/* Centre play / skip controls */}
                     <CenterControls
-                        isPlaying={!isPaused}
+                        isPlaying={playerState.isPlaying}
                         isReady={playerState.isReady}
                         isBuffering={playerState.isBuffering}
                         onPlayPause={togglePlayPause}
