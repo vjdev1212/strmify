@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { TouchableOpacity, Animated, Platform, Dimensions } from "react-native";
-import Video, { OnLoadData, OnProgressData, VideoRef, OnBufferData, ResizeMode, SelectedTrack, TextTrackType } from "react-native-video";
+import Video, { OnLoadData, OnProgressData, VideoRef, OnBufferData, ResizeMode, SelectedTrack, TextTrackType, OnPlaybackStateChangedData } from "react-native-video";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { MenuComponentRef, MenuView } from '@react-native-menu/menu';
 import { WebMenu } from "@/components/WebMenuView";
@@ -254,6 +254,10 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         }
     }, [playerState.isReady]);
 
+    useEffect(() => {
+        playerState.setIsPlaying(playerState.isReady && !isPaused);
+    }, [isPaused, playerState.isReady, playerState.setIsPlaying]);
+
     const showContentFitLabelTemporarily = useCallback(() => {
         setShowContentFitLabel(true);
         Animated.timing(contentFitLabelOpacity, { toValue: 1, duration: 200, useNativeDriver: true }).start();
@@ -310,6 +314,10 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         if (!playerState.isDragging && !isSeeking.current) {
             playerState.setCurrentTime(data.currentTime);
         }
+    }, [playerState]);
+
+    const handlePlaybackStateChanged = useCallback((data: OnPlaybackStateChangedData) => {
+        playerState.setIsPlaying(data.isPlaying);
     }, [playerState]);
 
     const handleBuffer = useCallback((data: OnBufferData) => {
@@ -398,10 +406,13 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
     const togglePlayPause = useCallback(() => {
         if (!playerState.isReady) return;
-        setIsPaused(!isPaused);
-        playerState.setIsPlaying(isPaused);
+        setIsPaused((wasPaused) => {
+            const nextPaused = !wasPaused;
+            playerState.setIsPlaying(!nextPaused);
+            return nextPaused;
+        });
         showControlsTemporarily();
-    }, [isPaused, playerState, showControlsTemporarily]);
+    }, [playerState, showControlsTemporarily]);
 
     const skipTime = useCallback((seconds: number) => {
         if (!playerState.isReady) return;
@@ -656,6 +667,10 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         }
         return undefined;
     }, [useEmbeddedSubtitles, selectedTextTrack]);
+    const videoSource = useMemo(() => ({ uri: videoUrl }), [videoUrl]);
+    const videoSelectedAudioTrack: SelectedTrack | undefined = useMemo(() => (
+        selectedAudioTrack >= 0 ? { type: 'index', value: selectedAudioTrack } as SelectedTrack : undefined
+    ), [selectedAudioTrack]);
 
     if (videoError) {
         return (
@@ -671,7 +686,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         <View style={styles.container}>
             <Video
                 ref={videoRef}
-                source={{ uri: videoUrl }}
+                source={videoSource}
                 style={styles.video}
                 paused={isPaused}
                 muted={settings.isMuted}
@@ -679,6 +694,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                 resizeMode={contentFit}
                 onLoad={handleLoad}
                 onProgress={handleProgress}
+                onPlaybackStateChanged={handlePlaybackStateChanged}
                 onBuffer={handleBuffer}
                 onError={handleError}
                 onLoadStart={handleLoadStart}
@@ -686,7 +702,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                 onAudioTracks={handleAudioTracks}
                 onTextTracks={handleTextTracks}
                 progressUpdateInterval={250}
-                selectedAudioTrack={selectedAudioTrack >= 0 ? { type: 'index', value: selectedAudioTrack } as SelectedTrack : undefined}
+                selectedAudioTrack={videoSelectedAudioTrack}
                 selectedTextTrack={videoSelectedTextTrack}
                 controls={false}
                 enterPictureInPictureOnLeave={true}
@@ -830,7 +846,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                     </View>
 
                     <CenterControls
-                        isPlaying={!isPaused}
+                        isPlaying={playerState.isPlaying}
                         isReady={playerState.isReady}
                         isBuffering={playerState.isBuffering}
                         onPlayPause={togglePlayPause}

@@ -82,37 +82,34 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
   const [webMenuVisible, setWebMenuVisible] = useState(false);
   const [anchorPosition, setAnchorPosition] = useState({ x: 0, y: 0 });
 
-  const computedValues = useMemo(() => {
-    const cardWidth = getCardWidth(width, height);
-    const groupedEpisodes = videos.reduce((acc, video) => {
+  const cardWidth = useMemo(() => getCardWidth(width, height), [height, width]);
+
+  const groupedEpisodes = useMemo(() => (
+    videos.reduce((acc, video) => {
       if (!acc[video.season]) acc[video.season] = [];
       acc[video.season].push(video);
       return acc;
-    }, {} as Record<number, Episode[]>);
+    }, {} as Record<number, Episode[]>)
+  ), [videos]);
 
-    const seasonData = [
+  const seasonData = useMemo(() => [
       ...Object.keys(groupedEpisodes).map(Number).filter(s => s !== 0).sort((a, b) => a - b),
       ...(groupedEpisodes[0] ? [0] : []),
-    ];
+  ], [groupedEpisodes]);
 
-    return {
-      cardWidth,
-      groupedEpisodes,
-      seasonData,
-      menuActions: seasonData.map(season => ({
-        id: `season-${season}`,
-        title: season === 0 ? 'Specials' : `Season ${season}`,
-        titleColor: selectedSeason === season ? colors.primary : '#ffffff',
-        state: selectedSeason === season ? ('on' as const) : undefined,
-      })),
-      webMenuItems: seasonData.map((season, index) => ({
-        id: `season-${season}-${index}`,
-        title: season === 0 ? 'Specials' : `Season ${season}`,
-        value: season,
-        key: `season-item-${season}-${index}`
-      })),
-    };
-  }, [videos, height, width, selectedSeason, colors.primary]);
+  const menuActions = useMemo(() => seasonData.map(season => ({
+    id: `season-${season}`,
+    title: season === 0 ? 'Specials' : `Season ${season}`,
+    titleColor: selectedSeason === season ? colors.primary : '#ffffff',
+    state: selectedSeason === season ? ('on' as const) : undefined,
+  })), [colors.primary, seasonData, selectedSeason]);
+
+  const webMenuItems = useMemo(() => seasonData.map((season, index) => ({
+    id: `season-${season}-${index}`,
+    title: season === 0 ? 'Specials' : `Season ${season}`,
+    value: season,
+    key: `season-item-${season}-${index}`
+  })), [seasonData]);
 
   const handleSeasonSelect = useCallback((season: number) => { setSelectedSeason(season); setWebMenuVisible(false); }, []);
   const handleMenuPress = useCallback(({ nativeEvent }: any) => {
@@ -126,12 +123,12 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
   }, []);
   const handleWebContextMenuItemSelect = useCallback((item: any) => handleSeasonSelect(item.value || item.id), [handleSeasonSelect]);
   const renderEpisodeItem = useCallback((episode: Episode, index: number) => (
-    <EpisodeItem key={`episode-${episode.season}-${episode.episode || episode.number}-${index}`} item={episode} onEpisodeSelect={onEpisodeSelect} cardWidth={computedValues.cardWidth} />
-  ), [onEpisodeSelect, computedValues.cardWidth]);
+    <EpisodeItem key={`episode-${episode.season}-${episode.episode || episode.number}-${index}`} item={episode} onEpisodeSelect={onEpisodeSelect} cardWidth={cardWidth} />
+  ), [onEpisodeSelect, cardWidth]);
 
   useEffect(() => {
     if (videos.length > 0) {
-      const seasons = Object.keys(videos.reduce((acc, v) => ({ ...acc, [v.season]: true }), {})).map(Number).sort((a, b) => a - b);
+      const seasons = Array.from(new Set(videos.map(v => v.season))).sort((a, b) => a - b);
       setSelectedSeason(seasons.find(s => s !== 0) || seasons[0] || 1);
     }
   }, [videos]);
@@ -151,10 +148,10 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
               <Text style={[styles.seasonDropdownText, { color: colors.text }]}>{getCurrentSeasonText()}</Text>
               <Text style={[styles.seasonDropdownArrow, { color: colors.text }]}>▼</Text>
             </TouchableOpacity>
-            <CustomContextMenu visible={webMenuVisible} onClose={() => setWebMenuVisible(false)} items={computedValues.webMenuItems} selectedItem={selectedSeason} onItemSelect={handleWebContextMenuItemSelect} anchorPosition={anchorPosition} />
+            <CustomContextMenu visible={webMenuVisible} onClose={() => setWebMenuVisible(false)} items={webMenuItems} selectedItem={selectedSeason} onItemSelect={handleWebContextMenuItemSelect} anchorPosition={anchorPosition} />
           </>
         ) : (
-          <MenuView ref={menuRef} onPressAction={handleMenuPress} actions={computedValues.menuActions} shouldOpenOnLongPress={false} themeVariant='dark'>
+          <MenuView ref={menuRef} onPressAction={handleMenuPress} actions={menuActions} shouldOpenOnLongPress={false} themeVariant='dark'>
             <TouchableOpacity style={styles.seasonDropdownButton}>
               <Text style={[styles.seasonDropdownText, { color: colors.text }]}>{getCurrentSeasonText()}</Text>
               <Ionicons name='chevron-expand' size={24} color={colors.text} />
@@ -163,8 +160,8 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
         )}
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.episodeScrollContent} style={styles.episodeScrollView}>
-        {computedValues.groupedEpisodes[selectedSeason]?.length > 0
-          ? computedValues.groupedEpisodes[selectedSeason].map((ep, i) => renderEpisodeItem(ep, i))
+        {groupedEpisodes[selectedSeason]?.length > 0
+          ? groupedEpisodes[selectedSeason].map((ep, i) => renderEpisodeItem(ep, i))
           : <View style={styles.noEpisodesContainer}><Text style={[styles.noEpisodesText, { color: colors.textMuted }]}>No episodes available for {getCurrentSeasonText()}</Text></View>
         }
       </ScrollView>

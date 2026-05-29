@@ -13,8 +13,66 @@ import { useTheme } from '@/context/ThemeContext';
 interface Stream { name: string; title?: string; url?: string; embed?: string; infoHash?: string; magnet?: string; magnetLink?: string; description?: string; }
 interface Addon { name: string; url?: string; streamBaseUrl?: string; types?: string[]; }
 interface StreamResponse { streams?: Stream[]; }
+type ThemeColors = ReturnType<typeof useTheme>['colors'];
 
 const ADDONS_KEY = StorageKeys.ADDONS_KEY;
+
+const AddonItem = React.memo(({
+    item,
+    type,
+    selectedAddonName,
+    colors,
+    onPress,
+}: {
+    item: Addon;
+    type: string;
+    selectedAddonName?: string;
+    colors: ThemeColors;
+    onPress: (item: Addon) => void;
+}) => {
+    if (!item.types?.includes(type)) return null;
+    const isSelected = item.name === selectedAddonName;
+    return (
+        <Pressable
+            style={({ pressed }) => [styles.addonItem, { backgroundColor: isSelected ? colors.primary : colors.primarySurface, borderColor: isSelected ? colors.primary : colors.primaryBorder }, pressed && styles.addonItemPressed]}
+            onPress={() => onPress(item)}
+        >
+            <Text style={[styles.addonName, { color: isSelected ? colors.text : colors.textMuted }]} numberOfLines={1}>{item.name}</Text>
+        </Pressable>
+    );
+});
+
+const StreamItem = React.memo(({
+    item,
+    index,
+    colors,
+    onPress,
+}: {
+    item: Stream;
+    index: number;
+    colors: ThemeColors;
+    onPress: (stream: Stream, index: number) => void;
+}) => {
+    const { name, title, description } = item;
+    const quality = extractQuality(name, title);
+    const size = extractSize(description || title || '');
+    const streamType = getStreamType(item);
+    return (
+        <Pressable onPress={() => onPress(item, index)} style={({ pressed }) => [styles.streamContainer, pressed && styles.streamContainerPressed]}>
+            <Card style={[styles.streamItem, { borderColor: colors.primaryBorder, backgroundColor: colors.primaryCard }]}>
+                <RNView style={styles.streamHeader}>
+                    <Text style={[styles.streamName, { color: colors.text }]} numberOfLines={2}>{name}</Text>
+                    {quality && <RNView style={[styles.qualityBadge, { backgroundColor: colors.primaryMuted, borderColor: colors.primaryBorder }]}><Text style={[styles.qualityText, { color: colors.text }]}>{quality}</Text></RNView>}
+                </RNView>
+                {(title || description) && <Text style={[styles.streamDescription, { color: colors.textMuted }]}>{title || description}</Text>}
+                <RNView style={styles.streamFooter}>
+                    {size && <RNView style={[styles.sizeBadge, { backgroundColor: colors.primarySurface }]}><Text style={[styles.streamSize, { color: colors.textMuted }]}>{size}</Text></RNView>}
+                    <Text style={[styles.streamType, { color: colors.textDim }]}>{streamType}</Text>
+                </RNView>
+            </Card>
+        </Pressable>
+    );
+});
 
 const StreamListScreen = () => {
     const { colors } = useTheme();
@@ -78,41 +136,6 @@ const StreamListScreen = () => {
         router.push({ pathname: '/stream/player', params: { streams: JSON.stringify(streams), selectedStreamIndex: index.toString(), title, imdbid, type, season, episode } });
     }, [streams, router, imdbid, type, season, episode]);
 
-    const AddonItem = React.memo<{ item: Addon }>(({ item }) => {
-        if (!item.types?.includes(type)) return null;
-        const isSelected = item.name === selectedAddon?.name;
-        return (
-            <Pressable
-                style={({ pressed }) => [styles.addonItem, { backgroundColor: isSelected ? colors.primary : colors.primarySurface, borderColor: isSelected ? colors.primary : colors.primaryBorder }, pressed && styles.addonItemPressed]}
-                onPress={() => handleAddonPress(item)}
-            >
-                <Text style={[styles.addonName, { color: isSelected ? colors.text : colors.textMuted }]} numberOfLines={1}>{item.name}</Text>
-            </Pressable>
-        );
-    });
-
-    const StreamItem = React.memo<{ item: Stream; index: number }>(({ item, index }) => {
-        const { name, title, description } = item;
-        const quality = extractQuality(name, title);
-        const size = extractSize(description || title || '');
-        const streamType = getStreamType(item);
-        return (
-            <Pressable onPress={() => handleStreamSelected(item, index)} style={({ pressed }) => [styles.streamContainer, pressed && styles.streamContainerPressed]}>
-                <Card style={[styles.streamItem, { borderColor: colors.primaryBorder, backgroundColor: colors.primaryCard }]}>
-                    <RNView style={styles.streamHeader}>
-                        <Text style={[styles.streamName, { color: colors.text }]} numberOfLines={2}>{name}</Text>
-                        {quality && <RNView style={[styles.qualityBadge, { backgroundColor: colors.primaryMuted, borderColor: colors.primaryBorder }]}><Text style={[styles.qualityText, { color: colors.text }]}>{quality}</Text></RNView>}
-                    </RNView>
-                    {(title || description) && <Text style={[styles.streamDescription, { color: colors.textMuted }]}>{title || description}</Text>}
-                    <RNView style={styles.streamFooter}>
-                        {size && <RNView style={[styles.sizeBadge, { backgroundColor: colors.primarySurface }]}><Text style={[styles.streamSize, { color: colors.textMuted }]}>{size}</Text></RNView>}
-                        <Text style={[styles.streamType, { color: colors.textDim }]}>{streamType}</Text>
-                    </RNView>
-                </Card>
-            </Pressable>
-        );
-    });
-
     const renderLoadingState = (message: string) => (
         <RNView style={styles.loadingContainer}>
             <View style={styles.centeredContainer}>
@@ -139,14 +162,31 @@ const StreamListScreen = () => {
             {loading && addons.length === 0 ? renderLoadingState('Loading addons...') : addons.length > 0 ? (
                 <View style={[styles.addonSection, { borderColor: colors.primaryBorder }]}>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.addonListContainer}>
-                        {addons.map((item, index) => <AddonItem key={`${item.name}-${index}`} item={item} />)}
+                        {addons.map((item, index) => (
+                            <AddonItem
+                                key={`${item.name}-${index}`}
+                                item={item}
+                                type={type}
+                                selectedAddonName={selectedAddon?.name}
+                                colors={colors}
+                                onPress={handleAddonPress}
+                            />
+                        ))}
                     </ScrollView>
                 </View>
             ) : renderEmptyState('alert-circle', 'No addons configured. Please add addons in settings.')}
             {loading && addons.length > 0 ? renderLoadingState('Loading streams...') : (
                 <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer}>
                     <View style={styles.streamsContainer}>
-                        {streams.length > 0 ? streams.map((item, index) => <StreamItem key={`${item.name}-${index}`} item={item} index={index} />) : addons.length > 0 && renderEmptyState('video-off', 'No streams available')}
+                        {streams.length > 0 ? streams.map((item, index) => (
+                            <StreamItem
+                                key={`${item.name}-${index}`}
+                                item={item}
+                                index={index}
+                                colors={colors}
+                                onPress={handleStreamSelected}
+                            />
+                        )) : addons.length > 0 && renderEmptyState('video-off', 'No streams available')}
                     </View>
                 </ScrollView>
             )}
