@@ -7,6 +7,8 @@ This repo uses two focused Codex TOML agent profiles:
 - `.codex/agents/development.toml`: use for new features, enhancements, refactors, UI improvements, integrations, and general ongoing development.
 - `.codex/agents/bug-fix.toml`: use for crashes, regressions, broken UI, playback defects, bad data handling, and production bug fixes.
 
+MCP server configuration lives in `.codex/config.toml`. Keep this file token-free; put secrets in the user-level Codex config or environment variables.
+
 ## Project Snapshot
 
 Strmify is an Expo Router React Native app for iOS, Android, and web. It discovers movies and series through TMDB metadata, resolves streams through Stremio-compatible add-ons, supports direct and torrent streams, integrates OpenSubtitles, and offers multiple playback paths including React Native Video, native players, TorrServer/Stremio service URLs, and a custom iOS KSPlayer bridge.
