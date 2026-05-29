@@ -610,6 +610,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         : isUsingEmbeddedSub
             ? embeddedSubtitleText
             : '';
+    const videoHeaders = useMemo(() => ({}), []);
 
     if (videoError) {
         return <ErrorDisplay error={videoError} onBack={handleBack} onRetry={handleRetry} />;
@@ -621,7 +622,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
             <VideoComponent
                 ref={videoRef}
                 url={videoUrl}
-                headers={{}}
+                headers={videoHeaders}
                 paused={isPaused}
                 muted={settings.isMuted}
                 rate={settings.playbackSpeed}

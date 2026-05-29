@@ -22,6 +22,8 @@ const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 const posterCache = new Map<string, PosterItemData[]>();
 const CACHE_DURATION = 5 * 60 * 1000;
 const cacheTimestamps = new Map<string, number>();
+const POSTER_IMAGE_SIZE = 'w780';
+const SKELETON_DATA = [1, 2, 3, 4, 5];
 
 interface PosterItemData {
   tmdbid: number;
@@ -32,7 +34,7 @@ interface PosterItemData {
   imdbRating: string;
 }
 
-const PosterItem = ({
+const PosterItem = React.memo(({
   item,
   posterWidth,
   posterHeight,
@@ -55,16 +57,19 @@ const PosterItem = ({
     setHapticsEnabled(isHapticsSupported());
   }, []);
 
-  const handlePress = async () => {
+  const handlePress = useCallback(async () => {
     if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push({ pathname: `/${type}/details`, params: { tmdbid: item.tmdbid } });
-  };
+  }, [hapticsEnabled, item.tmdbid, type]);
+
+  const handlePressIn = useCallback(() => setIsPressed(true), []);
+  const handlePressOut = useCallback(() => setIsPressed(false), []);
 
   return (
     <Pressable
       onPress={handlePress}
-      onPressIn={() => setIsPressed(true)}
-      onPressOut={() => setIsPressed(false)}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
       style={[styles.posterContainer, { width: posterWidth, marginRight: spacing }, isPressed && styles.posterPressed]}
     >
       {!imgError ? (
@@ -83,13 +88,13 @@ const PosterItem = ({
       <Text style={[styles.posterYear, { color: colors.textMuted }]}>{year}</Text>
     </Pressable>
   );
-};
+});
 
-const SkeletonPoster = ({ posterWidth, posterHeight, spacing, bgColor }: { posterWidth: number; posterHeight: number; spacing: number; bgColor: string }) => (
+const SkeletonPoster = React.memo(({ posterWidth, posterHeight, spacing, bgColor }: { posterWidth: number; posterHeight: number; spacing: number; bgColor: string }) => (
   <RNView style={[styles.posterContainer, { width: posterWidth, marginRight: spacing }]}>
     <RNView style={[styles.posterImage, { width: posterWidth, height: posterHeight, backgroundColor: bgColor }]} />
   </RNView>
-);
+));
 
 const PosterList = ({ apiUrl, title, type }: { apiUrl: string; title: string; type: 'movie' | 'series' }) => {
   const { colors } = useTheme();
@@ -105,14 +110,12 @@ const PosterList = ({ apiUrl, title, type }: { apiUrl: string; title: string; ty
   const [data, setData] = useState<PosterItemData[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const getPostersPerScreen = () => {
+  const postersPerScreen = useMemo(() => {
     if (shortSide < 580) return isPortrait ? 3 : 5;
     if (shortSide < 1024) return isPortrait ? 6 : 8;
     if (shortSide < 1440) return isPortrait ? 7 : 9;
     return isPortrait ? 7 : 10;
-  };
-
-  const postersPerScreen = getPostersPerScreen();
+  }, [isPortrait, shortSide]);
   const spacing = 10;
   const containerMargin = 15;
 
@@ -123,8 +126,7 @@ const PosterList = ({ apiUrl, title, type }: { apiUrl: string; title: string; ty
   }, [width, postersPerScreen]);
 
   const posterHeight = posterWidth * 1.5;
-
-  const imageSize = useCallback(() => 'w780', [posterWidth]);
+  const listContentStyle = useMemo(() => ({ paddingRight: 4 }), []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -150,7 +152,7 @@ const PosterList = ({ apiUrl, title, type }: { apiUrl: string; title: string; ty
           .map((item: any) => ({
             tmdbid: item.id,
             name: item.title || item.name,
-            poster: `https://image.tmdb.org/t/p/${imageSize()}${item.poster_path}`,
+            poster: `https://image.tmdb.org/t/p/${POSTER_IMAGE_SIZE}${item.poster_path}`,
             background: `https://image.tmdb.org/t/p/w780${item.backdrop_path}`,
             year: getYear(item.release_date || item.first_air_date),
             imdbRating: item.vote_average?.toFixed(1),
@@ -172,7 +174,18 @@ const PosterList = ({ apiUrl, title, type }: { apiUrl: string; title: string; ty
   const handleSeeAllPress = useCallback(async () => {
     if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push({ pathname: `/${type}/list`, params: { apiUrl } });
-  }, [apiUrl, type]);
+  }, [apiUrl, hapticsEnabled, type]);
+
+  const renderSkeletonPoster = useCallback(() => (
+    <SkeletonPoster posterWidth={posterWidth} posterHeight={posterHeight} spacing={spacing} bgColor={colors.backgroundOverlay} />
+  ), [colors.backgroundOverlay, posterHeight, posterWidth]);
+
+  const renderPosterItem = useCallback(({ item }: { item: PosterItemData }) => (
+    <PosterItem item={item} posterWidth={posterWidth} posterHeight={posterHeight} type={type} spacing={spacing} />
+  ), [posterHeight, posterWidth, type]);
+
+  const keyExtractor = useCallback((item: PosterItemData, index: number) => `${item.tmdbid}-${index}`, []);
+  const skeletonKeyExtractor = useCallback((_: number, index: number) => `skeleton-${index}`, []);
 
   if (loading) {
     return (
@@ -181,12 +194,12 @@ const PosterList = ({ apiUrl, title, type }: { apiUrl: string; title: string; ty
           <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
         </RNView>
         <FlatList
-          data={[1, 2, 3, 4, 5]}
+          data={SKELETON_DATA}
           horizontal
-          renderItem={() => <SkeletonPoster posterWidth={posterWidth} posterHeight={posterHeight} spacing={spacing} bgColor={colors.backgroundOverlay} />}
-          keyExtractor={(_, index) => `skeleton-${index}`}
+          renderItem={renderSkeletonPoster}
+          keyExtractor={skeletonKeyExtractor}
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingRight: 4 }}
+          contentContainerStyle={listContentStyle}
         />
       </RNView>
     );
@@ -206,12 +219,10 @@ const PosterList = ({ apiUrl, title, type }: { apiUrl: string; title: string; ty
       <FlatList
         data={data}
         horizontal
-        renderItem={({ item }) => (
-          <PosterItem item={item} posterWidth={posterWidth} posterHeight={posterHeight} type={type} spacing={spacing} />
-        )}
-        keyExtractor={(item, index) => `${item.tmdbid}-${index}`}
+        renderItem={renderPosterItem}
+        keyExtractor={keyExtractor}
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingRight: 4 }}
+        contentContainerStyle={listContentStyle}
         initialNumToRender={postersPerScreen}
         maxToRenderPerBatch={postersPerScreen}
         windowSize={3}

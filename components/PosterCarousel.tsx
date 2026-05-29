@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     View,
     FlatList,
@@ -59,7 +59,7 @@ export default function AppleTVCarousel({
         return () => subscription?.remove();
     }, []);
 
-    const getResponsiveDimensions = () => {
+    const responsiveDims = useMemo(() => {
         const { width, height, isLandscape } = dimensions;
         return {
             screenWidth: width,
@@ -73,9 +73,7 @@ export default function AppleTVCarousel({
             contentPadding: isLandscape ? 40 : 20,
             bottomPadding: isLandscape ? 40 : 40,
         };
-    };
-
-    const responsiveDims = getResponsiveDimensions();
+    }, [dimensions]);
 
     useEffect(() => {
         const fetchCarouselData = async () => {
@@ -145,26 +143,26 @@ export default function AppleTVCarousel({
         };
     }, [autoPlay, autoPlayInterval, data.length]);
 
-    const handleScroll = (event: any) => {
+    const handleScroll = useCallback((event: any) => {
         const scrollPosition = event.nativeEvent.contentOffset.x;
         const index = Math.round(scrollPosition / responsiveDims.itemWidth);
         if (index !== activeIndex && index >= 0 && index < data.length) setActiveIndex(index);
-    };
+    }, [activeIndex, data.length, responsiveDims.itemWidth]);
 
-    const handleItemPress = (item: CarouselItem) => {
+    const handleItemPress = useCallback((item: CarouselItem) => {
         if (autoPlayRef.current) { clearInterval(autoPlayRef.current); autoPlayRef.current = null; }
         onItemPress?.(item);
-    };
+    }, [onItemPress]);
 
-    const scrollToIndex = (index: number) => {
+    const scrollToIndex = useCallback((index: number) => {
         if (flatListRef.current && index >= 0 && index < data.length) {
             flatListRef.current.scrollToIndex({ index, animated: true, viewPosition: 0 });
             setActiveIndex(index);
             if (autoPlayRef.current) { clearInterval(autoPlayRef.current); autoPlayRef.current = null; }
         }
-    };
+    }, [data.length]);
 
-    const renderCarouselItem = ({ item, index }: { item: CarouselItem; index: number }) => {
+    const renderCarouselItem = useCallback(({ item, index }: { item: CarouselItem; index: number }) => {
         const dims = responsiveDims;
         return (
             <View style={[styles.carouselItem, { width: dims.itemWidth, height: dims.carouselHeight }]}>
@@ -205,9 +203,9 @@ export default function AppleTVCarousel({
                 </TouchableOpacity>
             </View>
         );
-    };
+    }, [colors.gradientOverlay, colors.primaryBorder, colors.primaryMuted, colors.text, colors.textMuted, dimensions.isLandscape, handleItemPress, responsiveDims]);
 
-    const renderPaginationDot = (index: number) => (
+    const renderPaginationDot = useCallback((index: number) => (
         <TouchableOpacity
             key={`dot-${index}`}
             style={[
@@ -217,7 +215,13 @@ export default function AppleTVCarousel({
             ]}
             onPress={() => scrollToIndex(index)}
         />
-    );
+    ), [activeIndex, colors.primary, colors.primaryMuted, scrollToIndex]);
+
+    const getItemLayout = useCallback((_: ArrayLike<CarouselItem> | null | undefined, index: number) => ({
+        length: responsiveDims.itemWidth,
+        offset: responsiveDims.itemWidth * index,
+        index,
+    }), [responsiveDims.itemWidth]);
 
     if (loading || !data.length) {
         return (
@@ -246,11 +250,7 @@ export default function AppleTVCarousel({
                 initialNumToRender={3}
                 maxToRenderPerBatch={3}
                 windowSize={5}
-                getItemLayout={(data, index) => ({
-                    length: responsiveDims.itemWidth,
-                    offset: responsiveDims.itemWidth * index,
-                    index,
-                })}
+                getItemLayout={getItemLayout}
             />
             {data.length > 1 && (
                 <View style={[styles.paginationContainer, { bottom: dimensions.isLandscape ? 15 : 20, left: dimensions.isLandscape ? 35 : 20 }]}>

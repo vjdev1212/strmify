@@ -667,6 +667,10 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         }
         return undefined;
     }, [useEmbeddedSubtitles, selectedTextTrack]);
+    const videoSource = useMemo(() => ({ uri: videoUrl }), [videoUrl]);
+    const videoSelectedAudioTrack: SelectedTrack | undefined = useMemo(() => (
+        selectedAudioTrack >= 0 ? { type: 'index', value: selectedAudioTrack } as SelectedTrack : undefined
+    ), [selectedAudioTrack]);
 
     if (videoError) {
         return (
@@ -682,7 +686,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         <View style={styles.container}>
             <Video
                 ref={videoRef}
-                source={{ uri: videoUrl }}
+                source={videoSource}
                 style={styles.video}
                 paused={isPaused}
                 muted={settings.isMuted}
@@ -698,7 +702,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                 onAudioTracks={handleAudioTracks}
                 onTextTracks={handleTextTracks}
                 progressUpdateInterval={250}
-                selectedAudioTrack={selectedAudioTrack >= 0 ? { type: 'index', value: selectedAudioTrack } as SelectedTrack : undefined}
+                selectedAudioTrack={videoSelectedAudioTrack}
                 selectedTextTrack={videoSelectedTextTrack}
                 controls={false}
                 enterPictureInPictureOnLeave={true}

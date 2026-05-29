@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, Image, StyleSheet, Pressable, useWindowDimensions } from 'react-native';
 import { ActivityIndicator, StatusBar, Text, View } from '@/components/Themed';
 import { useRouter } from 'expo-router';
@@ -14,10 +14,21 @@ interface MediaGridProps {
     detailsPath: '/movie/details' | '/series/details';
 }
 
+interface MediaGridItem {
+    id?: number;
+    tmdbid: number;
+    name: string;
+    year: string;
+    poster: string;
+    background: string;
+    imdbRating?: string;
+    imdbid?: string;
+}
+
 const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath }) => {
     const { colors } = useTheme();
     const router = useRouter();
-    const [data, setData] = useState<any[]>([]);
+    const [data, setData] = useState<MediaGridItem[]>([]);
     const [loading, setLoading] = useState(true);
 
     const { width, height } = useWindowDimensions();
@@ -28,16 +39,16 @@ const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath }) => {
     const isLaptop = shortSide >= 1024 && shortSide < 1440;
     const isDesktop = shortSide >= 1440;
 
-    const getNumColumns = () => {
+    const numColumns = useMemo(() => {
         if (isMobile) return isPortrait ? 3 : 5;
         if (isTablet) return isPortrait ? 5 : 8;
         if (isLaptop) return isPortrait ? 6 : 9;
         if (isDesktop) return isPortrait ? 7 : 10;
         return 5;
-    };
-
-    const numColumns = getNumColumns();
+    }, [isDesktop, isLaptop, isMobile, isPortrait, isTablet]);
     const spacing = isMobile ? 10 : 14;
+    const columnWrapperStyle = useMemo(() => ({ paddingHorizontal: spacing / 2 }), [spacing]);
+    const listContentStyle = useMemo(() => [styles.listContent, { paddingBottom: 30 }], []);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -67,7 +78,7 @@ const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath }) => {
         fetchData();
     }, [apiUrl]);
 
-    const renderItem = ({ item }: { item: any }) => {
+    const renderItem = useCallback(({ item }: { item: MediaGridItem }) => {
         const year = item.year?.split('–')[0] || item.year;
         return (
             <Pressable
@@ -83,7 +94,9 @@ const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath }) => {
                 </View>
             </Pressable>
         );
-    };
+    }, [colors.background, colors.textMuted, detailsPath, numColumns, router, spacing]);
+
+    const keyExtractor = useCallback((item: MediaGridItem, index: number) => `${item.tmdbid}-${index}`, []);
 
     return (
         <SafeAreaView style={styles.container}>
@@ -97,11 +110,11 @@ const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath }) => {
                 <FlatList
                     data={data}
                     renderItem={renderItem}
-                    keyExtractor={(_, index) => index.toString()}
+                    keyExtractor={keyExtractor}
                     numColumns={numColumns}
                     key={numColumns}
-                    columnWrapperStyle={{ paddingHorizontal: spacing / 2 }}
-                    contentContainerStyle={[styles.listContent, { paddingBottom: 30 }]}
+                    columnWrapperStyle={columnWrapperStyle}
+                    contentContainerStyle={listContentStyle}
                     showsVerticalScrollIndicator={false}
                 />
             )}
