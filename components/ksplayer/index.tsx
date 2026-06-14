@@ -38,6 +38,10 @@ import { GlassView } from 'expo-glass-effect';
 import { SkipBanner } from "../introdb/skipBanner";
 import { useIntroDB } from "../introdb/useIntroDb";
 import { useSystemControls } from "@/hooks/useSystemControls";
+import {
+    DEFAULT_PICTURE_IN_PICTURE_ENABLED,
+    isPictureInPictureSupported
+} from "@/utils/MediaPlayer";
 
 const { KSPlayerView: VideoComponent } = require('@/components/ksplayer/KSPlayerView');
 
@@ -53,6 +57,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     title,
     back: onBack,
     resumePositionSeconds = 0,
+    pictureInPictureEnabled = DEFAULT_PICTURE_IN_PICTURE_ENABLED,
     artwork,
     subtitles = [],
     openSubtitlesClient,
@@ -107,6 +112,8 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
     const isUsingCustomSub = selectedCustomSubtitleIndex >= 0;
     const isUsingEmbeddedSub = selectedEmbeddedTextTrack >= 0;
+    const canUsePictureInPicture =
+        pictureInPictureEnabled && isPictureInPictureSupported();
 
     // Restore playback position
     useEffect(() => {
@@ -485,6 +492,10 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         showControlsTemporarily();
     }, [settings, showControlsTemporarily]);
 
+    const handlePictureInPicture = useCallback(() => {
+        videoRef.current?.enterPictureInPicture();
+    }, []);
+
     const handleSliderStart = useCallback(() => {
         playerState.setIsDragging(true);
         showControlsTemporarily();
@@ -643,6 +654,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                 muted={settings.isMuted}
                 rate={settings.playbackSpeed}
                 resizeMode={contentFit}
+                pictureInPictureEnabled={pictureInPictureEnabled}
                 style={styles.video}
                 onLoad={handleLoad}
                 onProgress={handleProgress}
@@ -698,6 +710,12 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                         </View>
 
                         <GlassView glassEffectStyle="clear" style={styles.topRightControls}>
+                            {canUsePictureInPicture && playerState.isReady && (
+                                <TouchableOpacity style={styles.controlButton} onPress={handlePictureInPicture}>
+                                    <MaterialIcons name="picture-in-picture-alt" size={22} color="white" />
+                                </TouchableOpacity>
+                            )}
+
                             {streams.length > 1 && (
                                 <MenuWrapper
                                     style={{ zIndex: 1000 }}

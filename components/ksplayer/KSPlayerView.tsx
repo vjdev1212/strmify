@@ -52,6 +52,7 @@ export interface KSPlayerViewProps {
   muted?: boolean;
   rate?: number;
   resizeMode?: 'contain' | 'cover' | 'stretch';
+  pictureInPictureEnabled?: boolean;
   style?: ViewStyle;
 
   onLoad?: (data: KSOnLoadData) => void;
@@ -75,6 +76,8 @@ export interface KSPlayerRef {
   disableTextTrack: () => void;
   enterFullscreen: () => void;
   exitFullscreen: () => void;
+  enterPictureInPicture: () => void;
+  exitPictureInPicture: () => void;
   setBrightness: (value: number) => void;
   setVolume: (value: number) => void;
 }
@@ -108,6 +111,8 @@ export const KSPlayerView = forwardRef<KSPlayerRef, KSPlayerViewProps>((props, r
     disableTextTrack() { dispatchCommand(nativeRef, 'disableTextTrack'); },
     enterFullscreen() { dispatchCommand(nativeRef, 'enterFullscreen'); },
     exitFullscreen() { dispatchCommand(nativeRef, 'exitFullscreen'); },
+    enterPictureInPicture() { dispatchCommand(nativeRef, 'enterPictureInPicture'); },
+    exitPictureInPicture() { dispatchCommand(nativeRef, 'exitPictureInPicture'); },
     setBrightness(value) { dispatchCommand(nativeRef, 'setBrightness', [value]); },
     setVolume(value) { dispatchCommand(nativeRef, 'setVolume', [value]); },
   }));
@@ -157,6 +162,7 @@ export const KSPlayerView = forwardRef<KSPlayerRef, KSPlayerViewProps>((props, r
         muted={props.muted ?? false}
         rate={props.rate ?? 1.0}
         resizeMode={props.resizeMode ?? 'cover'}
+        pictureInPictureEnabled={props.pictureInPictureEnabled ?? true}
         onLoad={handleLoad}
         onProgress={handleProgress}
         onBuffer={handleBuffer}

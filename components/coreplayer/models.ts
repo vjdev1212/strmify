@@ -41,6 +41,7 @@ export interface MediaPlayerProps {
     back: (event: BackEvent) => void;
     resumePositionSeconds?: number;
     autoPlay?: boolean;
+    pictureInPictureEnabled?: boolean;
     artwork?: string;
     subtitles?: Subtitle[];
     openSubtitlesClient: OpenSubtitlesClient;

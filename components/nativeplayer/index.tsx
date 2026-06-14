@@ -37,6 +37,10 @@ import { View, Text } from "../Themed";
 import { GlassView } from 'expo-glass-effect';
 import { SkipBanner } from "../introdb/skipBanner";
 import { useIntroDB } from "../introdb/useIntroDb";
+import {
+    DEFAULT_PICTURE_IN_PICTURE_ENABLED,
+    isPictureInPictureSupported
+} from "@/utils/MediaPlayer";
 
 // Menu wrapper component - uses WebMenu on web, MenuView on native
 const MenuWrapper: React.FC<any> = (props) => {
@@ -52,6 +56,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     title,
     back: onBack,
     resumePositionSeconds = 0,
+    pictureInPictureEnabled = DEFAULT_PICTURE_IN_PICTURE_ENABLED,
     artwork,
     subtitles = [],
     openSubtitlesClient,
@@ -107,6 +112,8 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     const [useEmbeddedSubtitles, setUseEmbeddedSubtitles] = useState(false);
 
     const useCustomSubtitles = subtitles.length > 0 && !useEmbeddedSubtitles;
+    const canUsePictureInPicture =
+        pictureInPictureEnabled && isPictureInPictureSupported();
 
     // Restore playback position
     useEffect(() => {
@@ -362,6 +369,14 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         setIsPaused(true);
         playerState.setIsPlaying(false);
     }, [playerState]);
+
+    const handlePictureInPicture = useCallback(() => {
+        videoRef.current?.enterPictureInPicture();
+    }, []);
+
+    const handleRestorePictureInPicture = useCallback(() => {
+        videoRef.current?.restoreUserInterfaceForPictureInPictureStopCompleted(true);
+    }, []);
 
     const seekTo = useCallback((seconds: number) => {
         if (!playerState.isReady || playerState.duration <= 0 || !videoRef.current) return;
@@ -713,7 +728,8 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                 selectedAudioTrack={videoSelectedAudioTrack}
                 selectedTextTrack={videoSelectedTextTrack}
                 controls={false}
-                enterPictureInPictureOnLeave={true}
+                enterPictureInPictureOnLeave={pictureInPictureEnabled}
+                onRestoreUserInterfaceForPictureInPictureStop={handleRestorePictureInPicture}
                 playInBackground={false}
                 playWhenInactive={false}
                 allowsExternalPlayback={true}
@@ -759,6 +775,12 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                         </View>
 
                         <GlassView glassEffectStyle="clear" style={styles.topRightControls}>
+                            {canUsePictureInPicture && playerState.isReady && (
+                                <TouchableOpacity style={styles.controlButton} onPress={handlePictureInPicture}>
+                                    <MaterialIcons name="picture-in-picture-alt" size={22} color="white" />
+                                </TouchableOpacity>
+                            )}
+
                             {/* KSPlayer fallback button */}
                             {Platform.OS === 'ios' && onForceSwitchToKSPlayer && (
                                 <TouchableOpacity style={styles.controlButton} onPress={onForceSwitchToKSPlayer}>
