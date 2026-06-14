@@ -1,4 +1,19 @@
+import { Platform } from "react-native";
 import { getOriginalPlatform } from "./platform";
+
+export const DEFAULT_PICTURE_IN_PICTURE_ENABLED = true;
+
+export const isPictureInPictureSupported = (): boolean => {
+    if (Platform.OS === 'ios' || Platform.OS === 'android') {
+        return true;
+    }
+
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+        return document.pictureInPictureEnabled === true;
+    }
+
+    return false;
+};
 
 export enum Players {
     Default = 'Default',

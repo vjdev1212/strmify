@@ -1,4 +1,5 @@
 import UIKit
+import AVKit
 import MediaPlayer
 import React
 import KSPlayer
@@ -33,6 +34,10 @@ class KSPlayerRNView: UIView {
 
     @objc var resizeMode: String = "cover" {
         didSet { applyResizeMode() }
+    }
+
+    @objc var pictureInPictureEnabled: Bool = true {
+        didSet { configurePictureInPicture() }
     }
 
     @objc var onLoad: RCTDirectEventBlock?
@@ -149,6 +154,7 @@ class KSPlayerRNView: UIView {
         let options = KSOptions()
         options.isSecondOpen = true
         options.isAccurateSeek = true
+        options.canStartPictureInPictureAutomaticallyFromInline = pictureInPictureEnabled
         // Must be false so KSPlayer doesn't auto-select and render its own
         // subtitle overlay — we render the text in React via onSubtitleText.
         options.autoSelectEmbedSubtitle = false
@@ -175,6 +181,14 @@ class KSPlayerRNView: UIView {
         case "stretch": player.contentMode = .scaleToFill
         default:        player.contentMode = .scaleAspectFill
         }
+    }
+
+    private func configurePictureInPicture() {
+        guard #available(iOS 14.2, *),
+              let controller = playerView.playerLayer?.player.pipController else {
+            return
+        }
+        controller.canStartPictureInPictureAutomaticallyFromInline = pictureInPictureEnabled
     }
 
     // MARK: - Track reporting
@@ -262,6 +276,18 @@ class KSPlayerRNView: UIView {
 
     func enterFullscreen() { playerView.updateUI(isLandscape: true) }
     func exitFullscreen()  { playerView.updateUI(isLandscape: false) }
+
+    func enterPictureInPicture() {
+        guard pictureInPictureEnabled,
+              AVPictureInPictureController.isPictureInPictureSupported() else {
+            return
+        }
+        playerView.playerLayer?.isPipActive = true
+    }
+
+    func exitPictureInPicture() {
+        playerView.playerLayer?.isPipActive = false
+    }
 }
 
 // MARK: - PlayerControllerDelegate
@@ -281,6 +307,7 @@ extension KSPlayerRNView: PlayerControllerDelegate {
             playerView.playerLayer?.player.isMuted = muted
             playerView.playerLayer?.player.playbackRate = rate
             applyResizeMode()
+            configurePictureInPicture()
 
         case .buffering:
             onBuffer?(["isBuffering": true])
