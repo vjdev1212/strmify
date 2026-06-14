@@ -4,10 +4,10 @@ import { Text, View } from './Themed';
 import { formatDate } from '@/utils/Date';
 import { SvgXml } from 'react-native-svg';
 import { DefaultEpisodeThumbnailImgXml } from '@/utils/Svg';
-import { MenuView, MenuComponentRef } from '@react-native-menu/menu';
 import CustomContextMenu from './ContextMenu';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/context/ThemeContext';
+import ContextMenuView from 'react-native-context-menu-view';
 
 interface Episode {
   name: string; title: string; season: number; episode: number;
@@ -78,7 +78,6 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
   const { colors } = useTheme();
   const [selectedSeason, setSelectedSeason] = useState<number>(1);
   const { width, height } = useWindowDimensions();
-  const menuRef = useRef<MenuComponentRef>(null);
   const [webMenuVisible, setWebMenuVisible] = useState(false);
   const [anchorPosition, setAnchorPosition] = useState({ x: 0, y: 0 });
 
@@ -97,12 +96,12 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
       ...(groupedEpisodes[0] ? [0] : []),
   ], [groupedEpisodes]);
 
-  const menuActions = useMemo(() => seasonData.map(season => ({
-    id: `season-${season}`,
+  // react-native-context-menu-view uses `actions` with `title` (and optionally `subtitle`, `systemIcon`)
+  const contextMenuActions = useMemo(() => seasonData.map(season => ({
     title: season === 0 ? 'Specials' : `Season ${season}`,
-    titleColor: selectedSeason === season ? colors.primary : '#ffffff',
-    state: selectedSeason === season ? ('on' as const) : undefined,
-  })), [colors.primary, seasonData, selectedSeason]);
+    // Encode the season number in the title; we decode it in the onPress handler.
+    // Alternatively you can match by index via e.nativeEvent.index.
+  })), [seasonData]);
 
   const webMenuItems = useMemo(() => seasonData.map((season, index) => ({
     id: `season-${season}-${index}`,
@@ -112,16 +111,20 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
   })), [seasonData]);
 
   const handleSeasonSelect = useCallback((season: number) => { setSelectedSeason(season); setWebMenuVisible(false); }, []);
-  const handleMenuPress = useCallback(({ nativeEvent }: any) => {
-    const match = nativeEvent.event.match(/season-(\d+)/);
-    if (match) handleSeasonSelect(parseInt(match[1], 10));
-  }, [handleSeasonSelect]);
+
+  // react-native-context-menu-view fires onPress with { nativeEvent: { index, name } }
+  const handleContextMenuPress = useCallback(({ nativeEvent }: { nativeEvent: { index: number; name: string } }) => {
+    const season = seasonData[nativeEvent.index];
+    if (season !== undefined) handleSeasonSelect(season);
+  }, [seasonData, handleSeasonSelect]);
+
   const handleWebSeasonDropdownPress = useCallback((event: any) => {
     const { pageX, pageY } = event.nativeEvent;
     setAnchorPosition({ x: pageX, y: pageY });
     setWebMenuVisible(true);
   }, []);
   const handleWebContextMenuItemSelect = useCallback((item: any) => handleSeasonSelect(item.value || item.id), [handleSeasonSelect]);
+
   const renderEpisodeItem = useCallback((episode: Episode, index: number) => (
     <EpisodeItem key={`episode-${episode.season}-${episode.episode || episode.number}-${index}`} item={episode} onEpisodeSelect={onEpisodeSelect} cardWidth={cardWidth} />
   ), [onEpisodeSelect, cardWidth]);
@@ -151,12 +154,15 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
             <CustomContextMenu visible={webMenuVisible} onClose={() => setWebMenuVisible(false)} items={webMenuItems} selectedItem={selectedSeason} onItemSelect={handleWebContextMenuItemSelect} anchorPosition={anchorPosition} />
           </>
         ) : (
-          <MenuView ref={menuRef} onPressAction={handleMenuPress} actions={menuActions} shouldOpenOnLongPress={false} themeVariant='dark'>
+          <ContextMenuView
+            actions={contextMenuActions}
+            onPress={handleContextMenuPress}
+          >
             <TouchableOpacity style={styles.seasonDropdownButton}>
               <Text style={[styles.seasonDropdownText, { color: colors.text }]}>{getCurrentSeasonText()}</Text>
               <Ionicons name='chevron-expand' size={24} color={colors.text} />
             </TouchableOpacity>
-          </MenuView>
+          </ContextMenuView>
         )}
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.episodeScrollContent} style={styles.episodeScrollView}>
