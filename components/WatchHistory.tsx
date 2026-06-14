@@ -22,6 +22,7 @@ export interface WatchHistoryItem {
   episode: string;
   useKsPlayer?: string;
   positionSeconds: number;
+  durationSeconds?: number;
   artwork: string;
   timestamp: number;
 }
@@ -39,6 +40,32 @@ interface WatchHistoryProps {
 const isValidWatchHistoryItem = (item: WatchHistoryItem): boolean =>
   Number.isFinite(item.positionSeconds) &&
   item.positionSeconds > 0;
+
+const formatDuration = (secs: number): string => {
+  const s = Math.floor(Number(secs) || 0);
+  if (!Number.isFinite(s) || s <= 0) return '0s';
+  const hours = Math.floor(s / 3600);
+  const minutes = Math.floor((s % 3600) / 60);
+  const seconds = s % 60;
+  if (hours > 0) {
+    return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+  }
+  if (minutes > 0) {
+    return seconds > 0 ? `${minutes}m ${seconds}s` : `${minutes}m`;
+  }
+  return `${seconds}s`;
+};
+
+const formatTimeShort = (secs: number): string => {
+  const s = Math.floor(Number(secs) || 0);
+  const hours = Math.floor(s / 3600);
+  const minutes = Math.floor((s % 3600) / 60);
+  const seconds = s % 60;
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
+};
 
 const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
   const { colors } = useTheme();
@@ -64,9 +91,12 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
       const historyJson = storageService.getItem(StorageKeys.WATCH_HISTORY_KEY);
       if (historyJson) {
         const parsed: PersistedWatchHistoryItem[] = JSON.parse(historyJson);
-        const validHistory = parsed
-          .filter(isValidWatchHistoryItem)
-          .map(({ durationSeconds: _durationSeconds, progress: _progress, ...item }) => item);
+        const normalized = parsed
+          .map(p => ({
+            ...p,
+            durationSeconds: p.durationSeconds ? Number(p.durationSeconds) : undefined,
+          })) as unknown as WatchHistoryItem[];
+        const validHistory = normalized.filter(isValidWatchHistoryItem);
         storageService.setItem(StorageKeys.WATCH_HISTORY_KEY, JSON.stringify(validHistory));
         setHistory(type === 'all' ? validHistory : validHistory.filter(item => item.type === type));
       }
@@ -155,19 +185,24 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
                     <Ionicons name="close" size={16} color={colors.text} />
                   </TouchableOpacity>
                   <View style={styles.positionBadge}>
-                    <Text style={[styles.positionText, { color: colors.text }]}>
-                      {Math.floor(item.positionSeconds)}s
+                    <Text
+                      style={[styles.positionText, { color: colors.text }]}
+                      accessibilityLabel={item.durationSeconds ? `Watched ${formatDuration(item.positionSeconds)} of ${formatDuration(item.durationSeconds)}` : `Watched ${formatDuration(item.positionSeconds)}`}
+                    >
+                      {item.durationSeconds && Number.isFinite(item.durationSeconds)
+                        ? `${formatTimeShort(item.positionSeconds)} / ${formatTimeShort(item.durationSeconds)}`
+                        : formatDuration(item.positionSeconds)}
                     </Text>
                   </View>
                 </View>
-              <View style={styles.infoContainer}>
-                <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>{item.title}</Text>
-              </View>
-            </TouchableOpacity>
+                <View style={styles.infoContainer}>
+                  <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>{item.title}</Text>
+                </View>
+              </TouchableOpacity>
             </Animated.View>
-      );
+          );
         })}
-    </ScrollView>
+      </ScrollView>
     </View >
   );
 };
