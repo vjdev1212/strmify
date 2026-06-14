@@ -2,7 +2,6 @@ import OpenSubtitlesClient, { SubtitleResult } from "@/clients/opensubtitles";
 import { Subtitle } from "@/components/coreplayer/models";
 import { StorageKeys, storageService } from "@/utils/StorageService";
 import {
-  DEFAULT_PICTURE_IN_PICTURE_ENABLED,
   getPlatformSpecificPlayers,
   Players
 } from "@/utils/MediaPlayer";
@@ -60,7 +59,6 @@ interface Stream {
 const WATCH_HISTORY_KEY = StorageKeys.WATCH_HISTORY_KEY;
 const MAX_HISTORY_ITEMS = 30;
 const DEFAULT_MEDIA_PLAYER_KEY = StorageKeys.DEFAULT_MEDIA_PLAYER_KEY;
-const PICTURE_IN_PICTURE_ENABLED_KEY = StorageKeys.PICTURE_IN_PICTURE_ENABLED_KEY;
 
 const parsePositiveNumberParam = (value: string | string[] | undefined): number => {
   const rawValue = Array.isArray(value) ? value[0] : value;
@@ -156,10 +154,6 @@ const MediaPlayerScreen: React.FC = () => {
   const [players, setPlayers] = useState<{ name: string; scheme: string; encodeUrl: boolean }[]>([]);
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
   const [isTorrent, setIsTorrent] = useState<boolean>(false);
-  const [pictureInPictureEnabled] = useState(
-    () => storageService.getBoolean(PICTURE_IN_PICTURE_ENABLED_KEY)
-      ?? DEFAULT_PICTURE_IN_PICTURE_ENABLED
-  );
 
   const [stremioClient, setStremioClient] = useState<StreamingServerClient | null>(null);
 
@@ -788,7 +782,6 @@ const MediaPlayerScreen: React.FC = () => {
         title={title as string}
         back={handleBack}
         resumePositionSeconds={resumePositionSeconds}
-        pictureInPictureEnabled={pictureInPictureEnabled}
         artwork={artwork as string}
         subtitles={subtitles}
         openSubtitlesClient={openSubtitlesClient}

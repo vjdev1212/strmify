@@ -1,8 +1,6 @@
 import { Platform } from "react-native";
 import { getOriginalPlatform } from "./platform";
 
-export const DEFAULT_PICTURE_IN_PICTURE_ENABLED = true;
-
 export const isPictureInPictureSupported = (): boolean => {
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
         return true;

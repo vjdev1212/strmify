@@ -1,13 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, ScrollView, Pressable, Switch } from 'react-native';
+import { StyleSheet, ScrollView, Pressable } from 'react-native';
 import { Text, View, StatusBar } from '@/components/Themed';
-import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
-import { getOriginalPlatform, isHapticsSupported, showAlert } from '@/utils/platform';
+import { getOriginalPlatform, showAlert } from '@/utils/platform';
 import BottomSpacing from '@/components/BottomSpacing';
 import {
-    DEFAULT_PICTURE_IN_PICTURE_ENABLED,
-    isPictureInPictureSupported,
     Players
 } from '@/utils/MediaPlayer';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -22,18 +19,13 @@ interface PlayerConfig {
 }
 
 const DEFAULT_MEDIA_PLAYER_KEY = StorageKeys.DEFAULT_MEDIA_PLAYER_KEY;
-const PICTURE_IN_PICTURE_ENABLED_KEY = StorageKeys.PICTURE_IN_PICTURE_ENABLED_KEY;
 
 const MediaPlayerConfigScreen = () => {
     const { colors } = useTheme();
     const [players, setPlayers] = useState<PlayerConfig[]>([]);
     const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
-    const [pictureInPictureEnabled, setPictureInPictureEnabled] = useState(
-        DEFAULT_PICTURE_IN_PICTURE_ENABLED
-    );
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const pictureInPictureSupported = isPictureInPictureSupported();
 
     useEffect(() => {
         loadPlayerConfig();
@@ -88,10 +80,6 @@ const MediaPlayerConfigScreen = () => {
         try {
             const platformPlayers = getPlatformSpecificPlayers();
             const savedDefault = storageService.getItem(DEFAULT_MEDIA_PLAYER_KEY);
-            const savedPictureInPicture = storageService.getBoolean(PICTURE_IN_PICTURE_ENABLED_KEY);
-            setPictureInPictureEnabled(
-                savedPictureInPicture ?? DEFAULT_PICTURE_IN_PICTURE_ENABLED
-            );
 
             if (savedDefault) {
                 const defaultPlayerName = JSON.parse(savedDefault);
@@ -128,7 +116,6 @@ const MediaPlayerConfigScreen = () => {
         setSaving(true);
         try {
             storageService.setItem(DEFAULT_MEDIA_PLAYER_KEY, JSON.stringify(selectedPlayer));
-            storageService.setBoolean(PICTURE_IN_PICTURE_ENABLED_KEY, pictureInPictureEnabled);
             showAlert('Success', 'Player settings saved successfully');
         } catch (error) {
             console.error('Error saving player config:', error);
@@ -149,10 +136,8 @@ const MediaPlayerConfigScreen = () => {
                     onPress: async () => {
                         try {
                             storageService.removeItem(DEFAULT_MEDIA_PLAYER_KEY);
-                            storageService.removeItem(PICTURE_IN_PICTURE_ENABLED_KEY);
                             const platformPlayers = getPlatformSpecificPlayers();
                             setPlayers(platformPlayers);
-                            setPictureInPictureEnabled(DEFAULT_PICTURE_IN_PICTURE_ENABLED);
                             if (platformPlayers.length > 0) {
                                 setSelectedPlayer(platformPlayers[0].name);
                             }
@@ -227,26 +212,7 @@ const MediaPlayerConfigScreen = () => {
                         ))}
                     </View>
 
-                    {pictureInPictureSupported && (
-                        <View style={styles.playbackSection}>
-                            <View style={styles.preferenceRow}>
-                                <View style={styles.preferenceText}>
-                                    <Text style={[styles.preferenceTitle, { color: colors.text }]}>
-                                        Picture in Picture
-                                    </Text>
-                                    <Text style={[styles.preferenceDescription, { color: colors.textMuted }]}>
-                                        Continue playback in a floating window. Mobile players also start it when you leave Strmify.
-                                    </Text>
-                                </View>
-                                <Switch
-                                    value={pictureInPictureEnabled}
-                                    onValueChange={setPictureInPictureEnabled}
-                                    trackColor={{ false: colors.primaryBorder, true: colors.primary }}
-                                    thumbColor={colors.text}
-                                />
-                            </View>
-                        </View>
-                    )}
+
 
                     <View style={styles.buttonSection}>
                         <Pressable

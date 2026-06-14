@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
-import { TouchableOpacity, Animated, Platform, Dimensions } from "react-native";
-import Video, { OnLoadData, OnProgressData, VideoRef, OnBufferData, ResizeMode, SelectedTrack, TextTrackType, OnPlaybackStateChangedData } from "react-native-video";
+import { TouchableOpacity, Animated, Platform } from "react-native";
+import Video, { OnLoadData, OnProgressData, VideoRef, OnBufferData, ResizeMode, SelectedTrack, OnPlaybackStateChangedData } from "react-native-video";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { MenuComponentRef, MenuView } from '@react-native-menu/menu';
 import { WebMenu } from "@/components/WebMenuView";
@@ -37,10 +37,7 @@ import { View, Text } from "../Themed";
 import { GlassView } from 'expo-glass-effect';
 import { SkipBanner } from "../introdb/skipBanner";
 import { useIntroDB } from "../introdb/useIntroDb";
-import {
-    DEFAULT_PICTURE_IN_PICTURE_ENABLED,
-    isPictureInPictureSupported
-} from "@/utils/MediaPlayer";
+import { isPictureInPictureSupported } from "@/utils/MediaPlayer";
 
 // Menu wrapper component - uses WebMenu on web, MenuView on native
 const MenuWrapper: React.FC<any> = (props) => {
@@ -56,7 +53,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     title,
     back: onBack,
     resumePositionSeconds = 0,
-    pictureInPictureEnabled = DEFAULT_PICTURE_IN_PICTURE_ENABLED,
+    pictureInPictureEnabled = true,
     artwork,
     subtitles = [],
     openSubtitlesClient,

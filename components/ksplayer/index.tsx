@@ -31,17 +31,12 @@ import {
     SubtitlePosition,
     ErrorDisplay,
     ExtendedMediaPlayerProps,
-    BrightnessVolumeOverlay,
 } from "../coreplayer";
 import { View, Text } from "../Themed";
 import { GlassView } from 'expo-glass-effect';
 import { SkipBanner } from "../introdb/skipBanner";
 import { useIntroDB } from "../introdb/useIntroDb";
-import { useSystemControls } from "@/hooks/useSystemControls";
-import {
-    DEFAULT_PICTURE_IN_PICTURE_ENABLED,
-    isPictureInPictureSupported
-} from "@/utils/MediaPlayer";
+import { isPictureInPictureSupported } from "@/utils/MediaPlayer";
 
 const { KSPlayerView: VideoComponent } = require('@/components/ksplayer/KSPlayerView');
 
@@ -57,7 +52,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     title,
     back: onBack,
     resumePositionSeconds = 0,
-    pictureInPictureEnabled = DEFAULT_PICTURE_IN_PICTURE_ENABLED,
+    pictureInPictureEnabled = true,
     artwork,
     subtitles = [],
     openSubtitlesClient,
