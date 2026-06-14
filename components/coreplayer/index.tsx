@@ -8,7 +8,7 @@ import { styles } from './styles';
 import { formatTime } from './utils';
 import { MediaPlayerProps } from './models';
 import { extractAudioCodec, extractHDR, extractQuality, extractSize, extractSource, extractVideoCodec } from '@/utils/StreamItem';
-import { MenuAction } from '@react-native-menu/menu';
+import { ContextMenuAction } from 'react-native-context-menu-view';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { ResizeMode } from 'react-native-video';
@@ -24,6 +24,8 @@ export const CONSTANTS = {
     CONTENT_FIT_OPTIONS: ['contain', 'cover', 'fill'] as const,
     RN_VIDEO_CONTENT_FIT_OPTIONS: [ResizeMode.CONTAIN, ResizeMode.COVER, ResizeMode.STRETCH]
 };
+
+export const SUBTITLE_DELAY_VALUES = [-10000, -9000, -8000, -7000, -6000, -5000, -4000, -3000, -2000, -1500, -1000, -750, -500, -250, -100, 0, 100, 250, 500, 750, 1000, 1500, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000];
 
 export type SubtitlePosition = number;
 
@@ -285,48 +287,39 @@ export const handlePlaybackError = (error: any, message: string = "Unable to loa
     showAlert("Playback Error", message);
 };
 
-// ==================== MENU ACTION BUILDERS ====================
+// ==================== CONTEXT MENU ACTION BUILDERS ====================
 
-export const buildSettingsActions = (currentSpeed: number): MenuAction[] => {
-    const speedActions = CONSTANTS.PLAYBACK_SPEEDS.map(speed => ({
-        id: `speed-${speed}`,
+export const buildSettingsActions = (currentSpeed: number): ContextMenuAction[] => {
+    const speedActions: ContextMenuAction[] = CONSTANTS.PLAYBACK_SPEEDS.map(speed => ({
         title: `${speed}x`,
-        state: currentSpeed === speed ? ('on' as const) : undefined,
-        titleColor: currentSpeed === speed ? '#007AFF' : '#FFFFFF',
+        selected: currentSpeed === speed,
     }));
 
     return [
         {
-            id: 'settings-playback-speed',
             title: 'Playback Speed',
-            image: Platform.select({ ios: 'speedometer', default: undefined }),
-            imageColor: '#ffffff',
-            subactions: speedActions,
+            systemIcon: Platform.select({ ios: 'speedometer', default: undefined }),
+            actions: speedActions,
         }
     ];
 };
 
-export const buildSubtitlePositionActions = (currentPosition: SubtitlePosition): MenuAction[] => {
+export const buildSubtitlePositionActions = (currentPosition: SubtitlePosition): ContextMenuAction[] => {
     const positions = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
     return positions.map(pos => ({
-        id: `position-${pos}`,
         title: pos === 0 ? 'Default' : `+${pos}`,
-        state: currentPosition === pos ? ('on' as const) : undefined,
-        titleColor: currentPosition === pos ? '#007AFF' : '#FFFFFF',
+        selected: currentPosition === pos,
     }));
 };
 
-export const buildSubtitleDelayActions = (currentDelay: number): MenuAction[] => {
-    const delays = [-10000, -9000, -8000, -7000, -6000, -5000, -4000, -3000, -2000, -1500, -1000, -750, -500, -250, -100, 0, 100, 250, 500, 750, 1000, 1500, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000];
-    return delays.map(delayMs => {
+export const buildSubtitleDelayActions = (currentDelay: number): ContextMenuAction[] => {
+    return SUBTITLE_DELAY_VALUES.map(delayMs => {
         const delaySec = delayMs / 1000;
         const isDefault = delayMs === 0;
         const prefix = delayMs > 0 ? '+' : '';
         return {
-            id: `delay_${delayMs}`,
             title: isDefault ? 'Default' : `${prefix}${delaySec.toFixed(Math.abs(delaySec) < 1 ? 2 : 1)}s`,
-            state: currentDelay === delayMs ? ('on' as const) : undefined,
-            titleColor: currentDelay === delayMs ? '#007AFF' : '#FFFFFF',
+            selected: currentDelay === delayMs,
         };
     });
 };
@@ -338,58 +331,44 @@ export const buildSubtitleActions = (
     subtitlePosition: SubtitlePosition,
     subtitleDelay: number,
     selectedEmbeddedIndex: number = -1
-): MenuAction[] => {
+): ContextMenuAction[] => {
     const noneSelected = selectedCustomIndex === -1 && selectedEmbeddedIndex === -1;
 
-    const offAction: MenuAction = {
-        id: 'subtitle-track-off',
+    const offAction: ContextMenuAction = {
         title: 'Off',
         subtitle: 'No subtitles',
-        state: noneSelected ? ('on' as const) : undefined,
-        titleColor: noneSelected ? '#007AFF' : '#FFFFFF',
+        selected: noneSelected,
     };
 
-    const embeddedActions: MenuAction[] = availableEmbeddedTracks.map((track, i) => ({
-        id: `subtitle-track-embedded-${i}`,
+    const embeddedActions: ContextMenuAction[] = availableEmbeddedTracks.map((track, i) => ({
         title: track.label || track.name || `Track ${i + 1}`,
         subtitle: track.language ? track.language.toUpperCase() : 'Embedded',
-        state: selectedEmbeddedIndex === i ? ('on' as const) : undefined,
-        titleColor: selectedEmbeddedIndex === i ? '#007AFF' : '#FFFFFF',
+        selected: selectedEmbeddedIndex === i,
     }));
 
-    const customActions: MenuAction[] = subtitles.map((sub, i) => ({
-        id: `subtitle-track-custom-${i}`,
+    const customActions: ContextMenuAction[] = subtitles.map((sub, i) => ({
         title: sub.label,
         subtitle: sub.language ? `OpenSubtitles · ${sub.language.toUpperCase()}` : 'OpenSubtitles',
-        state: selectedCustomIndex === i && selectedEmbeddedIndex === -1 ? ('on' as const) : undefined,
-        titleColor: selectedCustomIndex === i && selectedEmbeddedIndex === -1 ? '#007AFF' : '#FFFFFF',
+        selected: selectedCustomIndex === i && selectedEmbeddedIndex === -1,
     }));
 
-    const trackActions: MenuAction[] = [offAction, ...embeddedActions, ...customActions];
-    const positionActions = buildSubtitlePositionActions(subtitlePosition);
-    const delayActions = buildSubtitleDelayActions(subtitleDelay);
+    const trackActions: ContextMenuAction[] = [offAction, ...embeddedActions, ...customActions];
 
     return [
         {
-            id: 'subtitle-tracks',
             title: 'Tracks',
-            image: Platform.select({ ios: 'text.bubble', default: undefined }),
-            imageColor: '#ffffff',
-            subactions: trackActions,
+            systemIcon: Platform.select({ ios: 'text.bubble', default: undefined }),
+            actions: trackActions,
         },
         {
-            id: 'subtitle-position',
             title: 'Position',
-            image: Platform.select({ ios: 'arrow.up.and.down', default: undefined }),
-            imageColor: '#ffffff',
-            subactions: positionActions,
+            systemIcon: Platform.select({ ios: 'arrow.up.and.down', default: undefined }),
+            actions: buildSubtitlePositionActions(subtitlePosition),
         },
         {
-            id: 'subtitle-delay',
             title: 'Delay',
-            image: Platform.select({ ios: 'clock', default: undefined }),
-            imageColor: '#ffffff',
-            subactions: delayActions,
+            systemIcon: Platform.select({ ios: 'clock', default: undefined }),
+            actions: buildSubtitleDelayActions(subtitleDelay),
         }
     ];
 };
@@ -402,67 +381,50 @@ export const buildSubtitleActionsLegacy = (
     subtitlePosition: SubtitlePosition,
     subtitleDelay: number,
     selectedTextTrackId: number = -1
-): MenuAction[] => {
+): ContextMenuAction[] => {
     const noneSelected = selectedIndex === -1 && selectedTextTrackId === -1;
 
-    const offAction: MenuAction = {
-        id: 'subtitle-track-off',
+    const offAction: ContextMenuAction = {
         title: 'Off',
-        state: noneSelected ? ('on' as const) : undefined,
-        titleColor: noneSelected ? '#007AFF' : '#FFFFFF',
+        selected: noneSelected,
     };
 
-    const customActions: MenuAction[] = useCustomSubtitles
+    const customActions: ContextMenuAction[] = useCustomSubtitles
         ? subtitles.map((sub, i) => ({
-            id: `subtitle-track-${i}`,
             title: sub.label,
             subtitle: sub.language ? `OpenSubtitles · ${sub.language.toUpperCase()}` : 'OpenSubtitles',
-            state: selectedIndex === i && selectedTextTrackId === -1 ? ('on' as const) : undefined,
-            titleColor: selectedIndex === i && selectedTextTrackId === -1 ? '#007AFF' : '#FFFFFF',
+            selected: selectedIndex === i && selectedTextTrackId === -1,
         }))
         : [];
 
-    const embeddedActions: MenuAction[] = availableSubtitleTracks.map((track, i) => {
-        const offsetIndex = subtitles.length + i;
-        return {
-            id: `subtitle-track-${offsetIndex}`,
-            title: track.label || track.name || `Track ${i + 1}`,
-            subtitle: track.language ? track.language.toUpperCase() : undefined,
-            state: selectedTextTrackId === i ? ('on' as const) : undefined,
-            titleColor: selectedTextTrackId === i ? '#007AFF' : '#FFFFFF',
-        };
-    });
+    const embeddedActions: ContextMenuAction[] = availableSubtitleTracks.map((track, i) => ({
+        title: track.label || track.name || `Track ${i + 1}`,
+        subtitle: track.language ? track.language.toUpperCase() : undefined,
+        selected: selectedTextTrackId === i,
+    }));
 
-    const trackActions: MenuAction[] = [offAction, ...customActions, ...embeddedActions];
-    const positionActions = buildSubtitlePositionActions(subtitlePosition);
-    const delayActions = buildSubtitleDelayActions(subtitleDelay);
+    const trackActions: ContextMenuAction[] = [offAction, ...customActions, ...embeddedActions];
 
     return [
         {
-            id: 'subtitle-tracks',
             title: 'Tracks',
-            image: Platform.select({ ios: 'text.bubble', default: undefined }),
-            imageColor: '#ffffff',
-            subactions: trackActions,
+            systemIcon: Platform.select({ ios: 'text.bubble', default: undefined }),
+            actions: trackActions,
         },
         {
-            id: 'subtitle-position',
             title: 'Position',
-            image: Platform.select({ ios: 'arrow.up.and.down', default: undefined }),
-            imageColor: '#ffffff',
-            subactions: positionActions,
+            systemIcon: Platform.select({ ios: 'arrow.up.and.down', default: undefined }),
+            actions: buildSubtitlePositionActions(subtitlePosition),
         },
         {
-            id: 'subtitle-delay',
             title: 'Delay',
-            image: Platform.select({ ios: 'clock', default: undefined }),
-            imageColor: '#ffffff',
-            subactions: delayActions,
+            systemIcon: Platform.select({ ios: 'clock', default: undefined }),
+            actions: buildSubtitleDelayActions(subtitleDelay),
         }
     ];
 };
 
-export const buildStreamActions = (streams: Stream[], currentIndex: number): MenuAction[] => {
+export const buildStreamActions = (streams: Stream[], currentIndex: number): ContextMenuAction[] => {
     return streams.map((stream, index) => {
         const name = stream.name || "";
         const title = stream.title || stream.description || "";
@@ -486,24 +448,18 @@ export const buildStreamActions = (streams: Stream[], currentIndex: number): Men
         const displayName = parts.length > 0 ? parts.join(" • ") : name;
 
         return {
-            id: `stream-${index}`,
             title: displayName,
             subtitle: name,
-            titleColor: '#ffffff',
-            image: Platform.select({ ios: 'play.circle', default: undefined }),
-            imageColor: '#ffffff',
-            state: index === currentIndex ? ('on' as const) : 'off',
-            attributes: { disabled: false },
+            systemIcon: Platform.select({ ios: 'play.circle', default: undefined }),
+            selected: index === currentIndex,
         };
     });
 };
 
-export const buildAudioActions = (audioTracks: any[], selectedTrackId: number) => {
+export const buildAudioActions = (audioTracks: any[], selectedTrackId: number): ContextMenuAction[] => {
     return audioTracks.map((track) => ({
-        id: `audio-${track.id}`,
         title: track.label || track.name || `Track ${track.id}`,
-        state: selectedTrackId === track.id ? ('on' as const) : undefined,
-        titleColor: selectedTrackId === track.id ? '#007AFF' : '#FFFFFF',
+        selected: selectedTrackId === track.id,
     }));
 };
 
@@ -742,7 +698,6 @@ export const BrightnessVolumeOverlay: React.FC<{
     brightnessRef.current = brightness;
     volumeRef.current = volume;
 
-    // ── State for displaying percentage text ─────────────────────────────────
     const [brightnessPercent, setBrightnessPercent] = useState(Math.round(brightness * 100));
     const [volumePercent, setVolumePercent] = useState(Math.round(volume * 100));
 
@@ -774,7 +729,6 @@ export const BrightnessVolumeOverlay: React.FC<{
         }, 800);
     };
 
-    // ── Left zone: brightness ────────────────────────────────────────────────
     const leftPanResponder = useRef(
         PanResponder.create({
             onStartShouldSetPanResponder: () => true,
@@ -804,7 +758,6 @@ export const BrightnessVolumeOverlay: React.FC<{
         })
     ).current;
 
-    // ── Right zone: volume ───────────────────────────────────────────────────
     const rightPanResponder = useRef(
         PanResponder.create({
             onStartShouldSetPanResponder: () => true,
@@ -849,7 +802,6 @@ export const BrightnessVolumeOverlay: React.FC<{
 
     return (
         <>
-            {/* ── Left touch zone: brightness ── */}
             <View style={styles.gestureZoneLeft} {...leftPanResponder.panHandlers}>
                 <Animated.View style={[styles.gesturePill, { opacity: leftPillOpacity }]}>
                     <Ionicons
@@ -865,7 +817,6 @@ export const BrightnessVolumeOverlay: React.FC<{
                 </Animated.View>
             </View>
 
-            {/* ── Right touch zone: volume ── */}
             <View style={styles.gestureZoneRight} {...rightPanResponder.panHandlers}>
                 <Animated.View style={[styles.gesturePill, { opacity: rightPillOpacity }]}>
                     <Ionicons

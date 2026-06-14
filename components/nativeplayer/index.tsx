@@ -1,9 +1,8 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
-import { TouchableOpacity, Animated, Platform, Dimensions } from "react-native";
+import { TouchableOpacity, View as RNView, Animated, Platform, Dimensions } from "react-native";
 import Video, { OnLoadData, OnProgressData, VideoRef, OnBufferData, ResizeMode, SelectedTrack, TextTrackType, OnPlaybackStateChangedData } from "react-native-video";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import { MenuComponentRef, MenuView } from '@react-native-menu/menu';
-import { WebMenu } from "@/components/WebMenuView";
+import ContextMenu from 'react-native-context-menu-view';
 import { styles } from "../coreplayer/styles";
 import {
     usePlayerState,
@@ -14,6 +13,7 @@ import {
     usePlayerAnimations,
     hideControls,
     CONSTANTS,
+    SUBTITLE_DELAY_VALUES,
     loadSubtitle,
     handleSubtitleError,
     findActiveSubtitleWithDelay,
@@ -37,15 +37,6 @@ import { View, Text } from "../Themed";
 import { GlassView } from 'expo-glass-effect';
 import { SkipBanner } from "../introdb/skipBanner";
 import { useIntroDB } from "../introdb/useIntroDb";
-
-// Menu wrapper component - uses WebMenu on web, MenuView on native
-const MenuWrapper: React.FC<any> = (props) => {
-    if (Platform.OS === 'web') {
-        return <WebMenu {...props} />;
-    }
-    return <MenuView {...props} />;
-};
-
 
 export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     videoUrl,
@@ -89,11 +80,6 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     const clearTimer = timers.clearTimer;
     const setTimer = timers.setTimer;
     const clearAllTimers = timers.clearAllTimers;
-
-    const audioMenuRef = useRef<MenuComponentRef>(null);
-    const subtitleMenuRef = useRef<MenuComponentRef>(null);
-    const settingsMenuRef = useRef<MenuComponentRef>(null);
-    const streamMenuRef = useRef<MenuComponentRef>(null);
 
     // Local state
     const [contentFit, setContentFit] = useState<ResizeMode>(ResizeMode.COVER);
@@ -484,7 +470,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         showControlsTemporarily();
     }, [showControlsTemporarily, settings]);
 
-    // Unchanged — still uses offset-index scheme matching buildSubtitleActionsLegacy ids
+    // Offset-index scheme: 0..subtitles.length-1 = custom, subtitles.length.. = embedded, -1 = off
     const handleSubtitleTrackSelect = useCallback((index: number) => {
         if (index === -1) {
             settings.setSelectedSubtitle(-1);
@@ -559,7 +545,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
     const settingsActions = useMemo(() => buildSettingsActions(settings.playbackSpeed), [settings.playbackSpeed]);
 
-    // Uses buildSubtitleActionsLegacy — offset-index ids, handleSubtitleTrackSelect(number) unchanged
+    // Offset-index ids preserved internally via handleSubtitleTrackSelect(number)
     const subtitleActions = useMemo(() => {
         const adaptedTracks = adaptTextTracks(availableTextTracks);
         let currentSelection = -1;
@@ -613,43 +599,54 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         setIsPaused(false);
     }, [playerState]);
 
-    // Unchanged — parses numeric ids from "subtitle-track-{N}" as before
-    const handleMenuAction = useCallback((id: string) => {
-        if (id.startsWith('speed-')) {
-            const speed = parseFloat(id.split('-')[1]);
-            if (!isNaN(speed)) handlePlaybackSpeedSelect(speed);
-        } else if (id === 'subtitle-track-off') {
-            handleSubtitleTrackSelect(-1);
-        } else if (id.startsWith('subtitle-track-')) {
-            const index = parseInt(id.split('subtitle-track-')[1]);
-            if (!isNaN(index)) handleSubtitleTrackSelect(index);
-        } else if (id.startsWith('position-')) {
-            const position = parseInt(id.split('-')[1]);
-            if (!isNaN(position)) handleSubtitlePositionSelect(position);
-        } else if (id.startsWith('delay_')) {
-            const delayMs = parseInt(id.replace('delay_', ''));
-            if (!isNaN(delayMs)) handleSubtitleDelaySelect(delayMs);
-        } else if (id.startsWith('audio-')) {
-            const index = parseInt(id.split('-')[1]);
-            if (!isNaN(index)) handleAudioSelect(index);
-        } else if (id.startsWith('stream-')) {
-            const index = parseInt(id.split('-')[1]);
-            if (!isNaN(index)) handleStreamSelect(index);
+    // ─── Context menu press handlers ──────────────────────────────────────────
+
+    const handleSettingsMenuPress = useCallback(({ nativeEvent }: any) => {
+        const { indexPath } = nativeEvent;
+        if (indexPath && indexPath.length === 2 && indexPath[0] === 0) {
+            const speed = CONSTANTS.PLAYBACK_SPEEDS[indexPath[1]];
+            if (speed !== undefined) handlePlaybackSpeedSelect(speed);
         }
-    }, [handlePlaybackSpeedSelect, handleSubtitleTrackSelect, handleSubtitlePositionSelect, handleSubtitleDelaySelect, handleAudioSelect, handleStreamSelect, subtitles.length]);
-
-    const handleWebAction = useCallback((id: string) => handleMenuAction(id), [handleMenuAction]);
-    const handleNativeAction = useCallback(({ nativeEvent }: any) => handleMenuAction(nativeEvent.event), [handleMenuAction]);
-
-    const handleMenuOpen = useCallback(() => {
-        shouldAutoHideControls.current = false;
-        clearTimer('hideControls');
-    }, [clearTimer]);
-
-    const handleMenuClose = useCallback(() => {
-        shouldAutoHideControls.current = true;
         showControlsTemporarily();
-    }, [showControlsTemporarily]);
+    }, [handlePlaybackSpeedSelect, showControlsTemporarily]);
+
+    const handleSubtitleMenuPress = useCallback(({ nativeEvent }: any) => {
+        const { indexPath } = nativeEvent;
+        if (!indexPath || indexPath.length !== 2) { showControlsTemporarily(); return; }
+        const [groupIndex, itemIndex] = indexPath;
+
+        if (groupIndex === 0) {
+            // Tracks order matches buildSubtitleActionsLegacy: [Off, ...custom, ...embedded]
+            if (itemIndex === 0) {
+                handleSubtitleTrackSelect(-1);
+            } else if (itemIndex <= subtitles.length) {
+                handleSubtitleTrackSelect(itemIndex - 1);
+            } else {
+                const embeddedIndex = itemIndex - 1 - subtitles.length;
+                handleSubtitleTrackSelect(subtitles.length + embeddedIndex);
+            }
+        } else if (groupIndex === 1) {
+            handleSubtitlePositionSelect(itemIndex as SubtitlePosition);
+        } else if (groupIndex === 2) {
+            const delay = SUBTITLE_DELAY_VALUES[itemIndex];
+            if (delay !== undefined) handleSubtitleDelaySelect(delay);
+        }
+        showControlsTemporarily();
+    }, [subtitles.length, handleSubtitleTrackSelect, handleSubtitlePositionSelect, handleSubtitleDelaySelect, showControlsTemporarily]);
+
+    const handleStreamMenuPress = useCallback(({ nativeEvent }: any) => {
+        if (nativeEvent.indexPath && nativeEvent.indexPath.length === 1) {
+            handleStreamSelect(nativeEvent.indexPath[0]);
+        }
+        showControlsTemporarily();
+    }, [handleStreamSelect, showControlsTemporarily]);
+
+    const handleAudioMenuPress = useCallback(({ nativeEvent }: any) => {
+        if (nativeEvent.indexPath && nativeEvent.indexPath.length === 1) {
+            handleAudioSelect(nativeEvent.indexPath[0]);
+        }
+        showControlsTemporarily();
+    }, [handleAudioSelect, showControlsTemporarily]);
 
     const handleMuteToggle = useCallback(() => {
         settings.setIsMuted(!settings.isMuted);
@@ -767,23 +764,16 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                             )}
 
                             {streams.length > 1 && (
-                                <MenuWrapper
-                                    style={{ zIndex: 1000 }}
-                                    ref={streamMenuRef}
+                                <ContextMenu
                                     title="Select Stream"
-                                    onPressAction={Platform.OS === 'web' ? handleWebAction : handleNativeAction}
                                     actions={streamActions}
-                                    shouldOpenOnLongPress={false}
-                                    themeVariant="dark"
-                                    onOpenMenu={handleMenuOpen}
-                                    onCloseMenu={handleMenuClose}
+                                    onPress={handleStreamMenuPress}
+                                    previewBackgroundColor="transparent"
                                 >
-                                    <TouchableOpacity style={styles.controlButton} onPress={() => {
-                                        if (Platform.OS === 'android') streamMenuRef.current?.show();
-                                    }}>
+                                    <RNView style={styles.controlButton}>
                                         <MaterialIcons name="ondemand-video" size={24} color="white" />
-                                    </TouchableOpacity>
-                                </MenuWrapper>
+                                    </RNView>
+                                </ContextMenu>
                             )}
 
                             <TouchableOpacity style={styles.controlButton} onPress={handleMuteToggle}>
@@ -794,62 +784,41 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                             </TouchableOpacity>
 
                             {availableAudioTracks.length > 0 && (
-                                <MenuWrapper
-                                    style={{ zIndex: 1000 }}
+                                <ContextMenu
                                     title="Audio Track"
-                                    ref={audioMenuRef}
-                                    onPressAction={Platform.OS === 'web' ? handleWebAction : handleNativeAction}
                                     actions={audioActions}
-                                    shouldOpenOnLongPress={false}
-                                    themeVariant="dark"
-                                    onOpenMenu={handleMenuOpen}
-                                    onCloseMenu={handleMenuClose}
+                                    onPress={handleAudioMenuPress}
+                                    previewBackgroundColor="transparent"
                                 >
-                                    <TouchableOpacity style={styles.controlButton} onPress={() => {
-                                        if (Platform.OS === 'android') audioMenuRef.current?.show();
-                                    }}>
+                                    <RNView style={styles.controlButton}>
                                         <MaterialIcons name="multitrack-audio" size={24} color="white" />
-                                    </TouchableOpacity>
-                                </MenuWrapper>
+                                    </RNView>
+                                </ContextMenu>
                             )}
 
                             {(subtitles.length > 0 || availableTextTracks.length > 0) && (
-                                <MenuWrapper
-                                    style={{ zIndex: 1000 }}
+                                <ContextMenu
                                     title="Subtitles"
-                                    ref={subtitleMenuRef}
-                                    onPressAction={Platform.OS === 'web' ? handleWebAction : handleNativeAction}
                                     actions={subtitleActions}
-                                    shouldOpenOnLongPress={false}
-                                    themeVariant="dark"
-                                    onOpenMenu={handleMenuOpen}
-                                    onCloseMenu={handleMenuClose}
+                                    onPress={handleSubtitleMenuPress}
+                                    previewBackgroundColor="transparent"
                                 >
-                                    <TouchableOpacity style={styles.controlButton} onPress={() => {
-                                        if (Platform.OS === 'android') subtitleMenuRef.current?.show();
-                                    }}>
+                                    <RNView style={styles.controlButton}>
                                         <MaterialIcons name="closed-caption" size={24} color="white" />
-                                    </TouchableOpacity>
-                                </MenuWrapper>
+                                    </RNView>
+                                </ContextMenu>
                             )}
 
-                            <MenuWrapper
-                                style={{ zIndex: 1000 }}
+                            <ContextMenu
                                 title="Settings"
-                                ref={settingsMenuRef}
-                                onPressAction={Platform.OS === 'web' ? handleWebAction : handleNativeAction}
                                 actions={settingsActions}
-                                shouldOpenOnLongPress={false}
-                                themeVariant="dark"
-                                onOpenMenu={handleMenuOpen}
-                                onCloseMenu={handleMenuClose}
+                                onPress={handleSettingsMenuPress}
+                                previewBackgroundColor="transparent"
                             >
-                                <TouchableOpacity style={styles.controlButton} onPress={() => {
-                                    if (Platform.OS === 'android') settingsMenuRef.current?.show();
-                                }}>
+                                <RNView style={styles.controlButton}>
                                     <MaterialIcons name="settings" size={24} color="white" />
-                                </TouchableOpacity>
-                            </MenuWrapper>
+                                </RNView>
+                            </ContextMenu>
                         </GlassView>
                     </View>
 
