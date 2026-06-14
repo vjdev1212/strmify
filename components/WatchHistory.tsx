@@ -13,23 +13,32 @@ import { View, Text } from './Themed';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '@/context/ThemeContext';
 
-interface WatchHistoryItem {
+export interface WatchHistoryItem {
   title: string;
   videoUrl: string;
   imdbid: string;
   type: string;
   season: string;
   episode: string;
-  useKsPlayer: string;
-  progress: number;
+  useKsPlayer?: string;
+  positionSeconds: number;
   artwork: string;
   timestamp: number;
 }
+
+type PersistedWatchHistoryItem = WatchHistoryItem & {
+  durationSeconds?: unknown;
+  progress?: unknown;
+};
 
 interface WatchHistoryProps {
   onItemSelect: (item: WatchHistoryItem) => void;
   type: 'all' | 'movie' | 'series';
 }
+
+const isValidWatchHistoryItem = (item: WatchHistoryItem): boolean =>
+  Number.isFinite(item.positionSeconds) &&
+  item.positionSeconds > 0;
 
 const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
   const { colors } = useTheme();
@@ -54,8 +63,12 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
     try {
       const historyJson = storageService.getItem(StorageKeys.WATCH_HISTORY_KEY);
       if (historyJson) {
-        const parsed: WatchHistoryItem[] = JSON.parse(historyJson);
-        setHistory(type === 'all' ? parsed : parsed.filter(item => item.type === type));
+        const parsed: PersistedWatchHistoryItem[] = JSON.parse(historyJson);
+        const validHistory = parsed
+          .filter(isValidWatchHistoryItem)
+          .map(({ durationSeconds: _durationSeconds, progress: _progress, ...item }) => item);
+        storageService.setItem(StorageKeys.WATCH_HISTORY_KEY, JSON.stringify(validHistory));
+        setHistory(type === 'all' ? validHistory : validHistory.filter(item => item.type === type));
       }
     } catch (error) {
       console.error('Failed to load watch history:', error);
@@ -141,15 +154,12 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
                   >
                     <Ionicons name="close" size={16} color={colors.text} />
                   </TouchableOpacity>
-                  <View style={styles.progressBadge}>
-                    <Text style={[styles.progressText, { color: colors.text }]}>{Math.round(item.progress)}%</Text>
-                  </View>
-                  <View style={styles.progressContainer}>
-                    <View style={[styles.progressBackground, { backgroundColor: colors.primaryFaint }]} >
-                    <View style={[styles.progressBar, { width: `${item.progress}%`, backgroundColor: colors.primary }]} />
+                  <View style={styles.positionBadge}>
+                    <Text style={[styles.positionText, { color: colors.text }]}>
+                      {Math.floor(item.positionSeconds)}s
+                    </Text>
                   </View>
                 </View>
-              </View>
               <View style={styles.infoContainer}>
                 <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>{item.title}</Text>
               </View>
@@ -174,11 +184,8 @@ const styles = StyleSheet.create({
   imageContainer: { width: '100%', position: 'relative', borderRadius: 12, overflow: 'hidden' },
   backdrop: { width: '100%', height: '100%' },
   removeButton: { position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: 16, padding: 6 },
-  progressBadge: { position: 'absolute', bottom: 12, left: 8, backgroundColor: 'rgba(0,0,0,0.7)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  progressText: { fontSize: 11, fontWeight: '500' },
-  progressContainer: { position: 'absolute', bottom: 0, left: 0, right: 0 },
-  progressBackground: { width: '100%', height: 4 },
-  progressBar: { height: '100%' },
+  positionBadge: { position: 'absolute', bottom: 8, left: 8, backgroundColor: 'rgba(0,0,0,0.7)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  positionText: { fontSize: 11, fontWeight: '500' },
   infoContainer: { paddingTop: 8, paddingHorizontal: 4 },
   title: { fontSize: 14, fontWeight: '500', marginBottom: 4, lineHeight: 18 },
 });

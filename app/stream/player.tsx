@@ -12,8 +12,9 @@ import { StreamingServerClient, TorrentFile } from "@/clients/stremio";
 import * as ScreenOrientation from 'expo-screen-orientation';
 import { useTheme } from '@/context/ThemeContext';
 
-interface UpdateProgressEvent {
-  progress: number
+interface PlaybackPositionEvent {
+  positionSeconds: number;
+  durationSeconds: number;
 }
 
 interface PlaybackErrorEvent {
@@ -23,7 +24,8 @@ interface PlaybackErrorEvent {
 interface BackEvent {
   message: string;
   code?: string;
-  progress: number;
+  positionSeconds: number;
+  durationSeconds: number;
   player: "native" | "ksplayer",
 }
 
@@ -34,7 +36,7 @@ interface WatchHistoryItem {
   type: string;
   season: string;
   episode: string;
-  progress: number;
+  positionSeconds: number;
   artwork: string;
   timestamp: number;
 }
@@ -54,6 +56,12 @@ interface Stream {
 const WATCH_HISTORY_KEY = StorageKeys.WATCH_HISTORY_KEY;
 const MAX_HISTORY_ITEMS = 30;
 const DEFAULT_MEDIA_PLAYER_KEY = StorageKeys.DEFAULT_MEDIA_PLAYER_KEY;
+
+const parsePositiveNumberParam = (value: string | string[] | undefined): number => {
+  const rawValue = Array.isArray(value) ? value[0] : value;
+  const parsedValue = Number(rawValue);
+  return Number.isFinite(parsedValue) && parsedValue > 0 ? parsedValue : 0;
+};
 const SERVERS_KEY = StorageKeys.SERVERS_KEY;
 const SUBTITLE_LANGUAGES_KEY = StorageKeys.SUBTITLE_LANGUAGES_KEY;
 
@@ -124,13 +132,13 @@ const MediaPlayerScreen: React.FC = () => {
     type,
     season,
     episode,
-    progress: watchHistoryProgress
+    positionSeconds: watchHistoryPositionSeconds
   } = useLocalSearchParams();
 
   const [subtitles, setSubtitles] = useState<Subtitle[]>([]);
   const [isLoadingSubtitles, setIsLoadingSubtitles] = useState(true);
   const [openSubtitlesClient, setOpenSubtitlesClient] = useState<OpenSubtitlesClient | null>(null);
-  const [progress, setProgress] = useState(watchHistoryProgress || 0);
+  const resumePositionSeconds = parsePositiveNumberParam(watchHistoryPositionSeconds);
   const artwork = `https://images.metahub.space/background/medium/${imdbid}/img`;
 
   const [streams, setStreams] = useState<Stream[]>([]);
@@ -661,14 +669,21 @@ const MediaPlayerScreen: React.FC = () => {
     }
   };
 
-  const saveToWatchHistory = (progress: number) => {
-    const minProgressAsWatched = 95;
+  const saveToWatchHistory = ({ positionSeconds, durationSeconds }: PlaybackPositionEvent) => {
+    if (!Number.isFinite(positionSeconds) || !Number.isFinite(durationSeconds)) return;
+
+    const elapsedSeconds = Math.max(0, Math.floor(positionSeconds));
+    const totalSeconds = Math.max(0, Math.floor(durationSeconds));
+    if (elapsedSeconds <= 1 || totalSeconds <= 0) return;
+
+    const savedPositionSeconds = Math.min(elapsedSeconds, totalSeconds);
+    const isCompleted = savedPositionSeconds >= totalSeconds * 0.95;
 
     try {
       const existingHistoryJson = storageService.getItem(WATCH_HISTORY_KEY);
       let history: WatchHistoryItem[] = existingHistoryJson ? JSON.parse(existingHistoryJson) : [];
 
-      if (progress >= minProgressAsWatched) {
+      if (isCompleted) {
         history = history.filter(item =>
           !(item.imdbid === imdbid && item.type === type && item.season === season && item.episode === episode)
         );
@@ -679,7 +694,7 @@ const MediaPlayerScreen: React.FC = () => {
       const historyItem: WatchHistoryItem = {
         title: title as string,
         videoUrl: videoUrl as string,
-        progress,
+        positionSeconds: savedPositionSeconds,
         artwork,
         imdbid: imdbid as string,
         type: type as string,
@@ -694,9 +709,14 @@ const MediaPlayerScreen: React.FC = () => {
 
       if (existingIndex !== -1) {
         history[existingIndex] = {
-          ...history[existingIndex],
+          title: title as string,
           videoUrl: videoUrl as string,
-          progress,
+          artwork,
+          imdbid: imdbid as string,
+          type: type as string,
+          season: season as string,
+          episode: episode as string,
+          positionSeconds: savedPositionSeconds,
           timestamp: Date.now()
         };
         const [updatedItem] = history.splice(existingIndex, 1);
@@ -716,15 +736,12 @@ const MediaPlayerScreen: React.FC = () => {
   };
 
   const handleBack = async (event: BackEvent): Promise<void> => {
-    saveToWatchHistory(Math.floor(event.progress));
+    saveToWatchHistory(event);
     router.back();
   };
 
-  const handleUpdateProgress = async (event: UpdateProgressEvent): Promise<void> => {
-    if (event.progress <= 1) return;
-    const progressPercentage = Math.floor(event.progress);
-    setProgress(progressPercentage);
-    saveToWatchHistory(progressPercentage);
+  const handleUpdateProgress = async (event: PlaybackPositionEvent): Promise<void> => {
+    saveToWatchHistory(event);
   };
 
   function getPlayer() {
@@ -761,7 +778,7 @@ const MediaPlayerScreen: React.FC = () => {
         isTorrent={isTorrent}
         title={title as string}
         back={handleBack}
-        progress={progress}
+        resumePositionSeconds={resumePositionSeconds}
         artwork={artwork as string}
         subtitles={subtitles}
         openSubtitlesClient={openSubtitlesClient}

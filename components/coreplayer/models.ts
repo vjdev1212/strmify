@@ -39,12 +39,12 @@ export interface MediaPlayerProps {
     title: string;
     audioTracks?: AudioTrack[];
     back: (event: BackEvent) => void;
-    progress?: number;
+    resumePositionSeconds?: number;
     autoPlay?: boolean;
     artwork?: string;
     subtitles?: Subtitle[];
     openSubtitlesClient: OpenSubtitlesClient;
-    updateProgress: (event: UpdateProgessEvent) => void;
+    updateProgress: (event: PlaybackPositionEvent) => void;
     onPlaybackError: (event: PlaybackErrorEvent) => void;
     tvShow: TVShowMetadata
 }
@@ -53,7 +53,8 @@ interface PlayerSwitchEvent {
     message: string;
     code?: string;
     player: "native" | "ksplayer";
-    progress: number;
+    positionSeconds: number;
+    durationSeconds: number;
 }
 
 export interface TVShowMetadata {
@@ -62,8 +63,9 @@ export interface TVShowMetadata {
     episode: number;
 }
 
-interface UpdateProgessEvent {
-    progress: number;
+interface PlaybackPositionEvent {
+    positionSeconds: number;
+    durationSeconds: number;
 }
 
 interface PlaybackErrorEvent {
@@ -72,7 +74,8 @@ interface PlaybackErrorEvent {
 
 interface BackEvent {
     message: string;
-    progress: number;
+    positionSeconds: number;
+    durationSeconds: number;
     code?: string;
     player: "native" | "ksplayer";
 }

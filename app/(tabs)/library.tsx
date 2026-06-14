@@ -12,26 +12,13 @@ import {
 import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { View, Text, StatusBar } from '@/components/Themed';
-import WatchHistory from '@/components/WatchHistory';
+import WatchHistory, { WatchHistoryItem } from '@/components/WatchHistory';
 import { LibraryItem, libraryService } from '@/utils/LibraryService';
 import BlurGradientBackground from '@/components/BlurGradientBackground';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomSpacing from '@/components/BottomSpacing';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '@/context/ThemeContext';
-
-interface WatchHistoryItem {
-  title: string;
-  videoUrl: string;
-  imdbid: string;
-  type: string;
-  season: string;
-  episode: string;
-  useKsPlayer: string;
-  progress: number;
-  artwork: string;
-  timestamp: number;
-}
 
 type CategoryType = 'all' | 'movies' | 'tv';
 
@@ -150,7 +137,7 @@ const LibraryScreen: React.FC = () => {
         season: item.season,
         episode: item.episode,
         useKsPlayer: item.useKsPlayer,
-        progress: item.progress,
+        positionSeconds: item.positionSeconds,
         artwork: item.artwork
       },
     });
