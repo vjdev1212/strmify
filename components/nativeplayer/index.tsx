@@ -17,7 +17,6 @@ import {
     loadSubtitle,
     handleSubtitleError,
     findActiveSubtitleWithDelay,
-    calculateProgress,
     performSeek,
     buildSettingsActions,
     buildSubtitleActionsLegacy,
@@ -52,7 +51,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     videoUrl,
     title,
     back: onBack,
-    progress,
+    resumePositionSeconds = 0,
     artwork,
     subtitles = [],
     openSubtitlesClient,
@@ -109,24 +108,25 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
     const useCustomSubtitles = subtitles.length > 0 && !useEmbeddedSubtitles;
 
-    // Restore progress
+    // Restore playback position
     useEffect(() => {
-        if (playerState.isReady && progress && progress > 0 && playerState.duration > 0) {
-            const currentTime = (progress / 100) * playerState.duration;
-            isSeeking.current = true;
-            wasPlayingBeforeSeek.current = false;
-
-            if (videoRef.current) {
-                videoRef.current.seek(currentTime);
-            }
-            playerState.setCurrentTime(currentTime);
-
-            const timeoutId = setTimeout(() => {
-                isSeeking.current = false;
-            }, 300);
-            return () => clearTimeout(timeoutId);
+        if (!playerState.isReady || playerState.duration <= 0 || resumePositionSeconds <= 0) {
+            return;
         }
-    }, [playerState.isReady, playerState.duration, progress]);
+
+        const currentTime = Math.min(resumePositionSeconds, playerState.duration);
+        isSeeking.current = true;
+        wasPlayingBeforeSeek.current = false;
+
+        videoRef.current?.seek(currentTime);
+        playerState.setCurrentTime(currentTime);
+        lastKnownTimeRef.current = currentTime;
+
+        const timeoutId = setTimeout(() => {
+            isSeeking.current = false;
+        }, 300);
+        return () => clearTimeout(timeoutId);
+    }, [playerState.isReady, playerState.duration, resumePositionSeconds]);
 
     const showControlsTemporarily = useCallback(() => {
         setShowControls(true);
@@ -152,8 +152,10 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     useEffect(() => {
         return () => {
             if (updateProgress) {
-                const progressValue = calculateProgress(lastKnownTimeRef.current, playerState.duration);
-                updateProgress({ progress: progressValue });
+                updateProgress({
+                    positionSeconds: lastKnownTimeRef.current,
+                    durationSeconds: playerState.duration
+                });
             }
             clearAllTimers();
             if (seekTimeoutRef.current) {
@@ -229,14 +231,16 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         return () => clearInterval(interval);
     }, [subtitleState.parsedSubtitles, playerState.currentTime, subtitleState.currentSubtitle, settings.subtitleDelay, useCustomSubtitles, useEmbeddedSubtitles]);
 
-    // Progress update interval
+    // Playback position update interval
     useEffect(() => {
         if (!updateProgress || !playerState.isReady || playerState.duration <= 0) return;
 
         progressUpdateTimerRef.current = setInterval(() => {
-            if (playerState.currentTime !== undefined && playerState.duration > 0) {
-                const progressValue = calculateProgress(playerState.currentTime, playerState.duration);
-                updateProgress({ progress: progressValue });
+            if (lastKnownTimeRef.current > 0 && playerState.duration > 0) {
+                updateProgress({
+                    positionSeconds: lastKnownTimeRef.current,
+                    durationSeconds: playerState.duration
+                });
             }
         }, 1 * 60 * 1000);
 
@@ -590,8 +594,12 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     ), [playerState.isDragging, playerState.dragPosition, playerState.currentTime, playerState.duration]);
 
     const handleBack = useCallback(() => {
-        const progressValue = calculateProgress(lastKnownTimeRef.current, playerState.duration);
-        onBack({ message: '', progress: progressValue, player: "native" });
+        onBack({
+            message: '',
+            positionSeconds: lastKnownTimeRef.current,
+            durationSeconds: playerState.duration,
+            player: "native"
+        });
     }, [playerState.duration, onBack]);
 
     const handleRetry = useCallback(() => {
