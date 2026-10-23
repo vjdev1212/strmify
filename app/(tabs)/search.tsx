@@ -119,10 +119,10 @@ const SearchScreen = () => {
             <Text style={[styles.emptyStateSubtitle, { color: colors.textMuted }]}>{emptyStateContent.subtitle}</Text>
           </View>
         )}
-        {moviesUrl && <View style={styles.resultsSection}><PosterList apiUrl={moviesUrl} title="Movies" type="movie" /></View>}
-        {seriesUrl && <View style={styles.resultsSection}><PosterList apiUrl={seriesUrl} title="Series" type="series" /></View>}
+        {moviesUrl && <View style={styles.resultsSection}><PosterList apiUrl={moviesUrl} title="Movies" type="movie" compact /></View>}
+        {seriesUrl && <View style={styles.resultsSection}><PosterList apiUrl={seriesUrl} title="Series" type="series" compact /></View>}
       </ScrollView>
-      <BottomSpacing space={50} />
+      <BottomSpacing space={10} />
     </SafeAreaView>
   );
 };
@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
   emptyStateIconContainer: { width: 96, height: 96, borderRadius: 48, justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
   emptyStateTitle: { fontSize: 26, fontWeight: '700', textAlign: 'center', marginBottom: 10, letterSpacing: 0.2 },
   emptyStateSubtitle: { fontSize: 16, textAlign: 'center', lineHeight: 22, maxWidth: 300, fontWeight: '400', letterSpacing: -0.1 },
-  resultsSection: { marginBottom: 24 },
+  resultsSection: { marginBottom: 0 },
 });
 
 export default SearchScreen;

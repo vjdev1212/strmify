@@ -5,6 +5,7 @@ export default function NativeStackList<T>({
   data,
   axis,
   spacing = 0,
+  horizontalContentInset = 0,
   scrollable = true,
   keyExtractor,
   renderItem,
@@ -16,6 +17,7 @@ export default function NativeStackList<T>({
   const contentStyle = {
     flexDirection: axis === 'horizontal' ? 'row' as const : 'column' as const,
     gap: spacing,
+    paddingHorizontal: axis === 'horizontal' ? horizontalContentInset : 0,
   };
 
   return scrollable ? (

@@ -97,7 +97,17 @@ const SkeletonPoster = React.memo(({ posterWidth, posterHeight, cardHeight, bgCo
   </RNView>
 ));
 
-const PosterList = ({ apiUrl, title, type }: { apiUrl: string; title: string; type: 'movie' | 'series' }) => {
+const PosterList = ({
+  apiUrl,
+  title,
+  type,
+  compact = false,
+}: {
+  apiUrl: string;
+  title: string;
+  type: 'movie' | 'series';
+  compact?: boolean;
+}) => {
   const { colors } = useTheme();
   const { width, height } = useWindowDimensions();
   const shortSide = Math.min(width, height);
@@ -202,8 +212,8 @@ const PosterList = ({ apiUrl, title, type }: { apiUrl: string; title: string; ty
 
   if (loading) {
     return (
-      <RNView style={styles.container}>
-        <RNView style={styles.header}>
+      <RNView style={[styles.container, compact && styles.compactContainer]}>
+        <RNView style={[styles.header, compact && styles.compactHeader]}>
           <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
         </RNView>
         <RNView style={listContentStyle}>
@@ -222,8 +232,8 @@ const PosterList = ({ apiUrl, title, type }: { apiUrl: string; title: string; ty
   if (!data || data.length === 0) return null;
 
   return (
-    <RNView style={styles.container}>
-      <RNView style={styles.header}>
+    <RNView style={[styles.container, compact && styles.compactContainer]}>
+      <RNView style={[styles.header, compact && styles.compactHeader]}>
         <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
         <NativeButton variant="text" onPress={handleSeeAllPress} style={styles.seeAllButton} seedColor={colors.primary}>
           <Text style={[styles.seeAllText, { color: colors.textMuted }]}>See All</Text>
@@ -245,7 +255,9 @@ const PosterList = ({ apiUrl, title, type }: { apiUrl: string; title: string; ty
 
 const styles = StyleSheet.create({
   container: { paddingTop: 10, marginBottom: 20, marginHorizontal: 15 },
+  compactContainer: { paddingTop: 4, marginBottom: 4 },
   header: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 5, alignItems: 'center', marginBottom: 16 },
+  compactHeader: { marginBottom: 8 },
   title: { fontSize: 18, fontWeight: '500', letterSpacing: 0.2 },
   seeAllButton: { flexDirection: 'row', alignItems: 'center', paddingVertical: 4, paddingHorizontal: 4 },
   seeAllText: { fontSize: 15, fontWeight: '500', letterSpacing: -0.1 },

@@ -7,6 +7,7 @@ export interface NativeStackListProps<T> {
   data: readonly T[];
   axis: NativeStackAxis;
   spacing?: number;
+  horizontalContentInset?: number;
   scrollable?: boolean;
   keyExtractor: (item: T, index: number) => string;
   renderItem: (item: T, index: number) => ReactNode;

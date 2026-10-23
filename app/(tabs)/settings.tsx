@@ -10,7 +10,6 @@ import BottomSpacing from '@/components/BottomSpacing';
 import Constants from 'expo-constants';
 import BlurGradientBackground from '@/components/BlurGradientBackground';
 import { useTheme } from '@/context/ThemeContext';
-import NativeStackList from '@/components/native-stack-list';
 import { NativeButton } from '@/components/native-ui-controls';
 
 const SettingsScreen = () => {
@@ -89,22 +88,18 @@ const SettingsScreen = () => {
   const renderSection = (title: string, list: typeof General) => (
     <View style={styles.section}>
       <Text style={[styles.sectionHeader, { color: colors.textMuted }]}>{title}</Text>
-      <NativeStackList
-        data={list}
-        axis="vertical"
-        scrollable={false}
-        keyExtractor={(item) => item.route}
-        style={styles.settingsGroup}
-        renderItem={(item, index) => (
+      <View style={styles.settingsGroup}>
+        {list.map((item, index) => (
           <SettingItem
+            key={item.route}
             title={item.title}
             icon={item.icon}
             onPress={() => onSettingsItemPress(item)}
             isFirst={index === 0}
             isLast={index === list.length - 1}
           />
-        )}
-      />
+        ))}
+      </View>
     </View>
   );
 
@@ -137,7 +132,7 @@ const styles = StyleSheet.create({
   section: { marginBottom: 32 },
   sectionHeader: { fontSize: 13, fontWeight: '500', textTransform: 'uppercase', marginBottom: 10, marginLeft: 20, marginRight: 20, letterSpacing: 0.5 },
   settingsGroup: { marginHorizontal: 16, overflow: 'hidden', borderRadius: 12 },
-  settingItem: { flexDirection: 'row', paddingVertical: 14, paddingHorizontal: 16, justifyContent: 'space-between', alignItems: 'center', minHeight: 52, position: 'relative' },
+  settingItem: { width: '100%', height: 60, flexShrink: 0, flexDirection: 'row', paddingHorizontal: 16, justifyContent: 'space-between', alignItems: 'center', position: 'relative' },
   leftContent: { flexDirection: 'row', alignItems: 'center', flex: 1 },
   iconContainer: { width: 32, height: 32, borderRadius: 8, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
   settingText: { fontSize: 17, fontWeight: '400', color: '#FFFFFF', letterSpacing: -0.2 },

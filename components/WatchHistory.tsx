@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
+  Pressable,
   TouchableOpacity,
   Image,
   StyleSheet,
@@ -73,6 +74,8 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
   const [history, setHistory] = useState<WatchHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const animatedValues = useRef<Map<string, Animated.Value>>(new Map()).current;
+  const touchStartRef = useRef<{ pageX: number; pageY: number } | null>(null);
+  const didScrollRef = useRef(false);
 
   const { width, height } = useWindowDimensions();
   const isPortrait = height > width;
@@ -164,13 +167,14 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
         </NativeButton>
       </View>
 
-      <View style={styles.scrollContent}>
-        <NativeStackList
-          data={history}
-          axis="horizontal"
-          spacing={CARD_SPACING}
-          keyExtractor={(item, index) => `${item.videoUrl}-${item.timestamp}-${index}`}
-          renderItem={(item, index) => {
+      <NativeStackList
+        data={history}
+        axis="horizontal"
+        spacing={CARD_SPACING}
+        horizontalContentInset={CARD_SPACING}
+        keyExtractor={(item, index) => `${item.videoUrl}-${item.timestamp}-${index}`}
+        style={styles.scrollContent}
+        renderItem={(item, index) => {
           const itemKey = `${item.videoUrl}-${item.timestamp}-${index}`;
           const animValue = getAnimatedValue(itemKey);
           return (
@@ -180,7 +184,28 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
                 { opacity: animValue, transform: [{ scale: animValue }] },
               ]}
             >
-              <TouchableOpacity style={styles.card} onPress={() => onItemSelect(item)} activeOpacity={0.8}>
+              <Pressable
+                style={styles.card}
+                onTouchStart={(event) => {
+                  touchStartRef.current = {
+                    pageX: event.nativeEvent.pageX,
+                    pageY: event.nativeEvent.pageY,
+                  };
+                  didScrollRef.current = false;
+                }}
+                onTouchMove={(event) => {
+                  const start = touchStartRef.current;
+                  if (!start) return;
+
+                  const { pageX, pageY } = event.nativeEvent;
+                  if (Math.abs(pageX - start.pageX) > 10 || Math.abs(pageY - start.pageY) > 10) {
+                    didScrollRef.current = true;
+                  }
+                }}
+                onPress={() => {
+                  if (!didScrollRef.current) onItemSelect(item);
+                }}
+              >
                 <View style={[styles.imageContainer, { height: CARD_HEIGHT, backgroundColor: colors.background }]}>
                   <Image source={{ uri: item.artwork }} style={styles.backdrop} resizeMode="cover" />
                   <TouchableOpacity
@@ -204,12 +229,11 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
                 <View style={styles.infoContainer}>
                   <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>{item.title}</Text>
                 </View>
-              </TouchableOpacity>
+              </Pressable>
             </Animated.View>
           );
-          }}
-        />
-      </View>
+        }}
+      />
     </View >
   );
 };
@@ -221,7 +245,7 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 20, fontWeight: '600' },
   clearAllButton: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 8, backgroundColor: 'rgba(255, 107, 107, 0.12)' },
   clearAllText: { fontSize: 13, fontWeight: '500', color: '#ff6b6b' },
-  scrollContent: { marginVertical: 10, paddingHorizontal: 16 },
+  scrollContent: { marginVertical: 10 },
   card: { backgroundColor: 'transparent', borderRadius: 12 },
   imageContainer: { width: '100%', position: 'relative', borderRadius: 12, overflow: 'hidden' },
   backdrop: { width: '100%', height: '100%' },

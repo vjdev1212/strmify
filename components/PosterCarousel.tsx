@@ -13,7 +13,6 @@ import { BlurView } from 'expo-blur';
 import { getYear } from '@/utils/Date';
 import { useTheme } from '@/context/ThemeContext';
 import NativePager from '@/components/native-pager';
-import { NativeButton } from '@/components/native-ui-controls';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -234,16 +233,18 @@ export default function AppleTVCarousel({
     }, [colors.gradientOverlay, colors.primaryBorder, colors.primaryMuted, colors.text, colors.textMuted, dimensions.isLandscape, handleItemPress, responsiveDims, topInset]);
 
     const renderPaginationDot = useCallback((index: number) => (
-        <NativeButton
-            variant="text"
+        <Pressable
             key={`dot-${index}`}
+            accessibilityRole="button"
+            accessibilityLabel={`Go to slide ${index + 1}`}
+            accessibilityState={{ selected: activeIndex === index }}
+            hitSlop={8}
             style={[
                 styles.paginationDot,
                 { backgroundColor: colors.primaryMuted },
                 activeIndex === index && { backgroundColor: colors.primary, width: 12 },
             ]}
             onPress={() => scrollToIndex(index)}
-            seedColor={colors.primary}
         />
     ), [activeIndex, colors.primary, colors.primaryMuted, scrollToIndex]);
 
@@ -293,7 +294,7 @@ const styles = StyleSheet.create({
     typeIndicator: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1 },
     typeText: { fontWeight: '600', letterSpacing: 1 },
     loadingContainer: { justifyContent: 'center', alignItems: 'center' },
-    paginationContainer: { position: 'absolute', left: 0, right: 0, bottom: 12, alignItems: 'center' },
+    paginationContainer: { position: 'absolute', zIndex: 2, left: 0, right: 0, bottom: 12, alignItems: 'center' },
     paginationBlur: { borderRadius: 20, overflow: 'hidden', paddingHorizontal: 8, paddingVertical: 8 },
     paginationDots: { flexDirection: 'row', alignItems: 'center' },
     paginationDot: { width: 8, height: 8, borderRadius: 4, marginHorizontal: 4 },

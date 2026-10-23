@@ -49,7 +49,7 @@ const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath }) => {
         return 5;
     }, [isDesktop, isLaptop, isMobile, isPortrait, isTablet]);
     const spacing = isMobile ? 10 : 14;
-    const horizontalPadding = 5;
+    const horizontalPadding = 12;
     const itemWidth = Math.max(
         0,
         (width - horizontalPadding * 2 - spacing * (numColumns - 1)) / numColumns,
@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
     container: { flex: 1, marginTop: 30 },
     listContent: { paddingTop: 8 },
     listContainer: { flex: 1, paddingBottom: 30 },
-    gridRow: { flexDirection: 'row', paddingHorizontal: 5 },
+    gridRow: { flexDirection: 'row', paddingHorizontal: 12 },
     posterContainer: { marginBottom: 24 },
     imageContainer: { position: 'relative', borderRadius: 5, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 8 },
     posterImage: { width: '100%', height: '100%' },

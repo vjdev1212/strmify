@@ -20,30 +20,6 @@ import { useTheme } from '@/context/ThemeContext';
 import NativeStackList from '@/components/native-stack-list';
 import { NativeButton } from '@/components/native-ui-controls';
 
-const LazyPosterList = ({
-  apiUrl,
-  title,
-  type,
-  index
-}: {
-  apiUrl: string;
-  title: string;
-  type: 'movie' | 'series';
-  index: number;
-}) => {
-  const [shouldLoad, setShouldLoad] = useState(index < 2);
-
-  return (
-    <View onLayout={() => { if (!shouldLoad) setShouldLoad(true); }}>
-      {shouldLoad ? (
-        <PosterList apiUrl={apiUrl} title={title} type={type} />
-      ) : (
-        <View style={{ height: 280, marginBottom: 20 }} />
-      )}
-    </View>
-  );
-};
-
 export default function HomeScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -126,7 +102,11 @@ export default function HomeScreen() {
     <View style={styles.container}>
       <StatusBar />
       <BlurGradientBackground />
-      <ScrollView showsVerticalScrollIndicator={false} key={filter}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        removeClippedSubviews={false}
+        key={filter}
+      >
         <AppleTVCarousel
           filter={filter}
           onItemPress={handleCarouselItemPress}
@@ -140,7 +120,7 @@ export default function HomeScreen() {
               data={filters}
               axis="horizontal"
               spacing={15}
-              style={styles.filterRow}
+              scrollable={false}
               keyExtractor={(item) => item.key}
               renderItem={(item) => (
                 <NativeButton
@@ -175,13 +155,12 @@ export default function HomeScreen() {
             />
           </View>
 
-          {activeLists.map((list, i) => (
-            <LazyPosterList
-              key={`${filter}-${i}`}
+          {activeLists.map((list) => (
+            <PosterList
+              key={`${filter}-${list.apiUrl}`}
               apiUrl={list.apiUrl}
               title={list.title}
               type={list.type as 'movie' | 'series'}
-              index={i}
             />
           ))}
         </View>
@@ -198,9 +177,6 @@ const styles = StyleSheet.create({
   filtersContainer: {
     paddingVertical: 12,
     paddingHorizontal: 5,
-  },
-  filterRow: {
-    paddingHorizontal: 10,
   },
   filterButton: {
     flexDirection: 'row',

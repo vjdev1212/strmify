@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useRef } from 'react';
 import {
   ScrollView,
+  Pressable,
   TouchableOpacity,
   Image,
   StyleSheet,
@@ -36,6 +37,8 @@ const LibraryScreen: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<CategoryType>('all');
 
   const animatedValues = useRef(new Map<string, Animated.Value>()).current;
+  const touchStartRef = useRef<{ pageX: number; pageY: number } | null>(null);
+  const didScrollRef = useRef(false);
 
   const { width, height } = useWindowDimensions();
   const isPortrait = height > width;
@@ -155,10 +158,27 @@ const LibraryScreen: React.FC = () => {
           { opacity: animValue, transform: [{ scale: animValue }] },
         ]}
       >
-        <TouchableOpacity
+        <Pressable
           style={styles.card}
-          onPress={() => handleItemPress(item)}
-          activeOpacity={0.8}
+          onTouchStart={(event) => {
+            touchStartRef.current = {
+              pageX: event.nativeEvent.pageX,
+              pageY: event.nativeEvent.pageY,
+            };
+            didScrollRef.current = false;
+          }}
+          onTouchMove={(event) => {
+            const start = touchStartRef.current;
+            if (!start) return;
+
+            const { pageX, pageY } = event.nativeEvent;
+            if (Math.abs(pageX - start.pageX) > 10 || Math.abs(pageY - start.pageY) > 10) {
+              didScrollRef.current = true;
+            }
+          }}
+          onPress={() => {
+            if (!didScrollRef.current) handleItemPress(item);
+          }}
         >
           <View style={[styles.imageContainer, { height: CARD_HEIGHT, backgroundColor: colors.background }]}>
             <Image
@@ -198,7 +218,7 @@ const LibraryScreen: React.FC = () => {
               )}
             </View>
           </View>
-        </TouchableOpacity>
+        </Pressable>
       </Animated.View>
     );
   };
@@ -216,11 +236,12 @@ const LibraryScreen: React.FC = () => {
             {items.length} {items.length === 1 ? 'item' : 'items'}
           </Text>
         </View>
-        <View style={styles.posterListInset}>
+        <View style={{ height: CARD_HEIGHT + 62 }}>
           <NativeStackList
             data={items}
             axis="horizontal"
             spacing={CARD_SPACING}
+            horizontalContentInset={CARD_SPACING}
             renderItem={renderLibraryItem}
             keyExtractor={(item, index) => `${item.tmdbid}-${item.type}-${index}`}
           />
@@ -313,7 +334,7 @@ const LibraryScreen: React.FC = () => {
           </View>
         ) : (
           <>
-            {renderSection('Unwatched', unwatched, 'eye-outline')}
+            {renderSection('Watchlists', unwatched, 'eye-outline')}
             {renderSection('Watched', watched, 'checkmark-circle-outline')}
           </>
         )}
@@ -362,12 +383,11 @@ const styles = StyleSheet.create({
   categoryContainer: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 12, gap: 10 },
   categoryButton: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 18, borderRadius: 20, borderWidth: 1, gap: 8 },
   categoryButtonText: { fontSize: 15 },
-  section: { marginTop: 24, marginBottom: 10 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 12 },
+  section: { marginTop: 12, marginBottom: 0 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 8 },
   sectionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   sectionTitle: { fontSize: 18, fontWeight: '600' },
   sectionCount: { fontSize: 14, opacity: 0.5, fontWeight: '500' },
-  posterListInset: { paddingHorizontal: 16 },
   card: { backgroundColor: 'transparent', borderRadius: 10 },
   imageContainer: { width: '100%', position: 'relative', borderRadius: 10, overflow: 'hidden' },
   backdrop: { width: '100%', height: '100%' },
