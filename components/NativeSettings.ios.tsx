@@ -2,18 +2,23 @@ import type { ReactElement, ReactNode } from 'react';
 import { Children, isValidElement } from 'react';
 import { View } from 'react-native';
 import { FieldGroup, Host, ListItem, RNHostView, Text as NativeText } from '@expo/ui';
-import { refreshable } from '@expo/ui/swift-ui/modifiers';
+import NativeFieldSelect from '@/components/native-field-select';
+import { refreshable, scrollIndicators } from '@expo/ui/swift-ui/modifiers';
 
 interface SettingsPageProps {
   children: ReactNode;
   refreshControl?: ReactElement;
   onRefresh?: () => Promise<void>;
+  hideScrollIndicator?: boolean;
 }
 
-export function SettingsPage({ children, onRefresh }: SettingsPageProps) {
+export function SettingsPage({ children, onRefresh, hideScrollIndicator = false }: SettingsPageProps) {
   return (
     <Host style={{ flex: 1 }} colorScheme="dark">
-      <FieldGroup modifiers={onRefresh ? [refreshable(onRefresh)] : []}>
+      <FieldGroup modifiers={[
+        ...(onRefresh ? [refreshable(onRefresh)] : []),
+        ...(hideScrollIndicator ? [scrollIndicators('hidden')] : []),
+      ]}>
         {children}
       </FieldGroup>
     </Host>
@@ -21,7 +26,7 @@ export function SettingsPage({ children, onRefresh }: SettingsPageProps) {
 }
 
 interface SettingsSectionProps {
-  title: string;
+  title?: string;
   footer?: string;
   children: ReactNode;
 }
@@ -29,7 +34,7 @@ interface SettingsSectionProps {
 export function SettingsSection({ title, footer, children }: SettingsSectionProps) {
   const sectionChildren = Children.map(children, (child, index) => {
     if (!isValidElement(child)) return null;
-    if (child.type === SettingsRow) return child;
+    if (child.type === SettingsRow || child.type === NativeFieldSelect) return child;
 
     return (
       <RNHostView key={`native-setting-content-${index}`} matchContents={{ vertical: true }}>

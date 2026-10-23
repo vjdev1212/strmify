@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { NativeSwitch, NativeTextInput } from '@/components/native-ui-controls';
 import { SettingsPage, SettingsRow, SettingsSection } from '@/components/NativeSettings';
 import { useTheme } from '@/context/ThemeContext';
@@ -60,12 +60,30 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
     const ensureDefaultServerExists = async () => {
       try {
         const savedConfigs = storageService.getItem(SERVERS_KEY);
-        const allServers: ServerConfig[] = savedConfigs ? JSON.parse(savedConfigs) : [];
-        const serversOfType = allServers.filter((server) => server.serverType === serverType);
+        let allServers: ServerConfig[] = savedConfigs ? JSON.parse(savedConfigs) : [];
+        let serversOfType = allServers.filter((server) => server.serverType === serverType);
+        let hasChanges = false;
+
         if (!serversOfType.some((server) => server.serverId === DEFAULT_SERVER_ID)) {
           const defaultServer = getDefaultServer(serverType, serverName);
           defaultServer.current = !serversOfType.some((server) => server.current);
-          storageService.setItem(SERVERS_KEY, JSON.stringify([...allServers, defaultServer]));
+          allServers = [...allServers, defaultServer];
+          serversOfType = [...serversOfType, defaultServer];
+          hasChanges = true;
+        }
+
+        if (!serversOfType.some((server) => server.current)) {
+          const fallbackServer = serversOfType.find((server) => isDefaultServer(server.serverId)) ?? serversOfType[0];
+          if (fallbackServer) {
+            allServers = allServers.map((server) => server.serverType === serverType
+              ? { ...server, current: server.serverId === fallbackServer.serverId }
+              : server);
+            hasChanges = true;
+          }
+        }
+
+        if (hasChanges) {
+          storageService.setItem(SERVERS_KEY, JSON.stringify(allServers));
         }
         await loadServers();
       } catch (error) {
@@ -128,6 +146,34 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
         return 'Connection error';
       default:
         return 'Connection not checked';
+    }
+  };
+
+  const getConnectionColor = (serverId: string) => {
+    switch (connectionStatus[serverId]) {
+      case 'connected':
+        return '#30d158';
+      case 'disconnected':
+      case 'error':
+        return '#ff453a';
+      case 'checking':
+        return '#ff9f0a';
+      default:
+        return '#8e8e93';
+    }
+  };
+
+  const getConnectionIcon = (serverId: string) => {
+    switch (connectionStatus[serverId]) {
+      case 'connected':
+        return 'check-circle' as const;
+      case 'disconnected':
+      case 'error':
+        return 'error' as const;
+      case 'checking':
+        return 'hourglass-empty' as const;
+      default:
+        return 'help-outline' as const;
     }
   };
 
@@ -240,11 +286,14 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
     }
   };
 
+  const orderedServerConfigs = [...serverConfigs].sort(
+    (serverA, serverB) => Number(serverB.current) - Number(serverA.current),
+  );
   const formVisible = isAddingNew || editingId !== null;
 
   return (
-    <SettingsPage>
-      {formVisible ? (
+    <SettingsPage hideScrollIndicator>
+        {formVisible ? (
         <>
           <SettingsSection
             title={editingId ? 'Edit server' : 'Add server'}
@@ -262,10 +311,9 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
             />
           </SettingsSection>
           {!editingId ? (
-            <SettingsSection title="Playback">
+            <SettingsSection title="Playback" footer="Use this server for playback.">
               <SettingsRow
-                title="Make active server"
-                detail="Use this server for playback"
+                title="Set as Current"
                 trailing={
                   <NativeSwitch
                     value={isCurrent}
@@ -277,26 +325,40 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
             </SettingsSection>
           ) : null}
           <SettingsSection title="Actions">
-            <SettingsRow title="Save server" onPress={() => void saveServer()} />
-            <SettingsRow title="Cancel" onPress={cancelEditing} destructive isLast />
+            <SettingsRow
+              title="Save server"
+              leading={<MaterialIcons name="check-circle-outline" size={20} color="#30d158" />}
+              onPress={() => void saveServer()}
+            />
+            <SettingsRow
+              title="Cancel"
+              leading={<MaterialIcons name="close" size={20} color="#ff453a" />}
+              onPress={cancelEditing}
+              destructive
+              isLast
+            />
           </SettingsSection>
         </>
       ) : (
         <>
           <SettingsSection
-            title={`${serverName} servers`}
-            footer={`${serverConfigs.length} configured. Select a server to use for playback.`}
+            title="Refresh connections"
+            footer="Check whether configured servers are reachable."
           >
             <SettingsRow
-              title="Refresh connections"
-              detail="Check whether configured servers are reachable"
-              leading={<MaterialIcons name="refresh" size={20} color={colors.primary} />}
+              title="Refresh"
+              leading={<MaterialIcons name="refresh" size={20} color="#0a84ff" />}
               onPress={() => void checkAllConnections()}
+              isLast
             />
+          </SettingsSection>
+          <SettingsSection
+            title="Add server"
+            footer="Connect to another Stremio-compatible server."
+          >
             <SettingsRow
-              title="Add server"
-              detail="Connect to another Stremio-compatible server"
-              leading={<MaterialIcons name="add" size={20} color={colors.primary} />}
+              title="Add Server"
+              leading={<MaterialIcons name="add" size={20} color="#30d158" />}
               onPress={startAddingServer}
               isLast
             />
@@ -309,38 +371,51 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
                 isLast
               />
             </SettingsSection>
-          ) : serverConfigs.map((server) => (
+          ) : orderedServerConfigs.map((server) => (
             <SettingsSection
               key={server.serverId}
-              title={server.current ? 'Active server' : 'Server'}
+              title={server.current ? 'Current server' : 'Server'}
               footer={`${getConnectionLabel(server.serverId)}${isDefaultServer(server.serverId) ? ' · Built-in local server' : ''}`}
             >
               <SettingsRow
                 title={server.serverUrl}
-                detail={server.current ? 'Currently used for playback' : 'Not currently active'}
-                selected={server.current}
-                onPress={() => {
-                  if (!server.current) void setCurrentServer(server.serverId);
-                }}
+                leading={
+                  <MaterialIcons
+                    name={getConnectionIcon(server.serverId)}
+                    size={20}
+                    color={getConnectionColor(server.serverId)}
+                  />
+                }
+                trailing={server.current
+                  ? <MaterialCommunityIcons name="crown" size={20} color="#ffcc00" />
+                  : undefined}
+              />
+              <SettingsRow
+                title="Set as Current"
+                trailing={
+                  <NativeSwitch
+                    value={server.current}
+                    onValueChange={(isCurrentServer) => {
+                      if (isCurrentServer && !server.current) {
+                        void setCurrentServer(server.serverId);
+                      }
+                    }}
+                    seedColor="#30d158"
+                  />
+                }
               />
               <SettingsRow
                 title="Test connection"
-                leading={<MaterialIcons name="network-check" size={20} color={colors.primary} />}
+                leading={<MaterialIcons name="network-check" size={20} color="#0a84ff" />}
                 onPress={() => void refreshConnection(server)}
               />
               <SettingsRow
                 title="Edit server"
-                leading={<MaterialIcons name="edit" size={20} color={colors.primary} />}
+                leading={<MaterialIcons name="edit" size={20} color="#ff9f0a" />}
                 onPress={() => startEditingServer(server)}
+                isLast={server.current || isDefaultServer(server.serverId)}
               />
-              {!server.current ? (
-                <SettingsRow
-                  title="Set as active"
-                  leading={<MaterialIcons name="check-circle-outline" size={20} color={colors.primary} />}
-                  onPress={() => void setCurrentServer(server.serverId)}
-                />
-              ) : null}
-              {!isDefaultServer(server.serverId) ? (
+              {!server.current && !isDefaultServer(server.serverId) ? (
                 <SettingsRow
                   title="Delete server"
                   leading={<MaterialIcons name="delete-outline" size={20} color="#ff453a" />}
@@ -352,7 +427,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
             </SettingsSection>
           ))}
         </>
-      )}
+        )}
     </SettingsPage>
   );
 };

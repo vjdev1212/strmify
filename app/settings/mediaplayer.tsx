@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ActivityIndicator } from 'react-native';
 import { StatusBar, View } from '@/components/Themed';
 import { SettingsPage, SettingsRow, SettingsSection } from '@/components/NativeSettings';
-import { NativeSelect } from '@/components/native-ui-controls';
+import NativeFieldSelect from '@/components/native-field-select';
 import { getOriginalPlatform, showAlert } from '@/utils/platform';
 import { Players } from '@/utils/MediaPlayer';
 import { StorageKeys, storageService } from '@/utils/StorageService';
@@ -124,15 +124,12 @@ export default function MediaPlayerConfigScreen() {
       ) : (
         <SettingsPage>
           <SettingsSection title="Default Player" footer="Choose which player to use when opening a stream. The selection is used for future playback.">
-            <View style={{ paddingHorizontal: 16, paddingVertical: 8 }}>
-              <NativeSelect
-                selectedValue={selectedPlayer ?? players[0]?.name ?? ''}
-                onValueChange={setSelectedPlayer}
-                options={players.map((player) => ({ label: player.name, value: player.name }))}
-                enabled={players.length > 0}
-                style={{ width: '100%', height: 48 }}
-              />
-            </View>
+            <NativeFieldSelect
+              selectedValue={selectedPlayer ?? players[0]?.name ?? ''}
+              onValueChange={setSelectedPlayer}
+              options={players.map((player) => ({ label: player.name, value: player.name }))}
+              enabled={players.length > 0}
+            />
           </SettingsSection>
           <SettingsSection title="Actions">
             <SettingsRow

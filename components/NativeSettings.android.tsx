@@ -7,6 +7,7 @@ interface SettingsPageProps {
   children: ReactNode;
   refreshControl?: ReactElement;
   onRefresh?: () => Promise<void>;
+  hideScrollIndicator?: boolean;
 }
 
 export function SettingsPage({ children, onRefresh }: SettingsPageProps) {
@@ -27,7 +28,7 @@ export function SettingsPage({ children, onRefresh }: SettingsPageProps) {
 }
 
 interface SettingsSectionProps {
-  title: string;
+  title?: string;
   footer?: string;
   children: ReactNode;
 }

@@ -42,19 +42,21 @@ export default function ContactScreen() {
     <View style={{ flex: 1, backgroundColor: systemDarkBackground }}>
       <StatusBar />
       <SettingsPage>
-        <SettingsSection title="Contact" footer="Your feedback helps improve Strmify.">
-          {contactActions.map((action, index) => (
+        {contactActions.map((action, index) => (
+          <SettingsSection
+            key={action.title}
+            title={index === 0 ? 'Contact' : undefined}
+            footer={action.detail}
+          >
             <SettingsRow
-              key={action.title}
               title={action.title}
-              detail={action.detail}
               onPress={() => openContact(action.url)}
-              isLast={index === contactActions.length - 1}
+              isLast
               leading={<Ionicons name={action.icon} size={20} color={colors.primary} />}
               trailing={<Ionicons name="open-outline" size={17} color={colors.textDim} />}
             />
-          ))}
-        </SettingsSection>
+          </SettingsSection>
+        ))}
       </SettingsPage>
     </View>
   );

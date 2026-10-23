@@ -1,23 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { StorageKeys, storageService } from '@/utils/StorageService';
 import { showAlert } from '@/utils/platform';
-import { MenuView } from '@expo/ui/community/menu';
-import type { MenuAction } from '@expo/ui/community/menu';
-import { WebMenu } from '@/components/WebMenuView';
 import { SUBTITLE_LANGUAGES } from '@/utils/Subtitles';
 import { useTheme } from '@/context/ThemeContext';
 import { View, Text } from '@/components/Themed';
-import { NativeButton, NativeSelect, NativeTextInput } from '@/components/native-ui-controls';
+import { NativeTextInput } from '@/components/native-ui-controls';
 import { SettingsPage, SettingsRow, SettingsSection } from '@/components/NativeSettings';
+import NativeFieldSelect from '@/components/native-field-select';
 import { systemDarkBackground } from '@/constants/theme';
 
 const OpenSubtitlesConfigScreen: React.FC = () => {
     const { colors } = useTheme();
+    const languagePickerPlaceholder = '__select_language__';
     const [apiKey, setApiKey] = useState('');
     const [useDefaultKey, setUseDefaultKey] = useState(true);
     const [selectedLanguages, setSelectedLanguages] = useState<string[]>(['en']);
+    const [languagePickerValue, setLanguagePickerValue] = useState(languagePickerPlaceholder);
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [showApiKey, setShowApiKey] = useState(false);
@@ -37,16 +37,6 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
             }
         } catch (error) { console.error('Failed to load saved config:', error); }
         finally { setIsLoading(false); }
-    };
-
-    const toggleLanguage = (languageCode: string) => {
-        setSelectedLanguages(prev => {
-            if (prev.includes(languageCode)) {
-                if (prev.length === 1) { showAlert('Error', 'You must have at least one language selected'); return prev; }
-                return prev.filter(code => code !== languageCode);
-            }
-            return [...prev, languageCode];
-        });
     };
 
     const removeLanguage = (languageCode: string) => {
@@ -87,115 +77,89 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
 
     const getLanguageName = (code: string) => SUBTITLE_LANGUAGES.find(l => l.code === code)?.name || code;
 
-    const buildLanguageMenuActions = (): MenuAction[] => SUBTITLE_LANGUAGES.map(lang => ({
-        id: `lang-${lang.code}`,
-        title: lang.name,
-        state: selectedLanguages.includes(lang.code) ? ('on' as const) : undefined,
-        titleColor: selectedLanguages.includes(lang.code) ? '#007AFF' : '#FFFFFF'
-    }));
-
-    const handleLanguageMenuAction = (event: { nativeEvent: { event: string } }) => {
-        toggleLanguage(event.nativeEvent.event.replace('lang-', ''));
-    };
-
-    const webMenuActions = SUBTITLE_LANGUAGES.map(lang => ({
-        title: lang.name,
-        systemIcon: selectedLanguages.includes(lang.code) ? 'checkmark' : undefined,
-        state: selectedLanguages.includes(lang.code) ? 'on' : 'off',
-    }));
-
-    const renderLanguageMenu = () => {
-        const btn = (
-            <TouchableOpacity style={[styles.menuButton, { backgroundColor: colors.primarySurface, borderColor: colors.primaryBorder }]}>
-                <Ionicons name="language-outline" size={20} color={colors.textMuted} />
-                <Text style={[styles.menuButtonText, { color: colors.textMuted }]}>Add Language</Text>
-                <Ionicons name="chevron-down-outline" size={20} color={colors.textMuted} />
-            </TouchableOpacity>
-        );
-        if (Platform.OS === 'web') {
-            return <WebMenu title="Select Languages" actions={webMenuActions as any} onPressAction={(action: any) => { const language = SUBTITLE_LANGUAGES.find(l => l.name === action.title); if (language) toggleLanguage(language.code); }}>{btn}</WebMenu>;
+    const handleLanguageSelection = (languageCode: string) => {
+        if (languageCode !== languagePickerPlaceholder) {
+            setSelectedLanguages((current) => current.includes(languageCode)
+                ? current
+                : [...current, languageCode]);
         }
-        return <MenuView actions={buildLanguageMenuActions()} onPressAction={handleLanguageMenuAction} colorScheme="dark" shouldOpenOnLongPress={false}>{btn}</MenuView>;
+        setLanguagePickerValue(languagePickerPlaceholder);
     };
 
     return (
-        <View style={[styles.container, { backgroundColor: systemDarkBackground }]}>
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardAvoid}>
+        <View style={{ flex: 1, backgroundColor: systemDarkBackground }}>
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
                 <SettingsPage>
                     {isLoading ? (
-                        <View style={styles.loadingContainer}>
+                        <View style={{ alignItems: 'center', padding: 20, gap: 10 }}>
                             <ActivityIndicator size="large" color={colors.primary} />
-                            <Text style={[styles.loadingText, { color: colors.textMuted }]}>Loading configuration...</Text>
+                            <Text style={{ color: colors.textMuted }}>Loading configuration...</Text>
                         </View>
                     ) : (
                         <>
-                            <SettingsSection title="API Key" footer={useDefaultKey ? 'Configure subtitle search preferences. The default API key is rate-limited.' : 'Configure subtitle search preferences. API keys are stored on this device.'}>
-                                <View style={styles.fieldContent}>
-                                    <Text style={[styles.fieldLabel, { color: colors.text }]}>Key Type</Text>
-                                    <NativeSelect
-                                        selectedValue={useDefaultKey ? 'default' : 'custom'}
-                                        onValueChange={(value) => {
-                                            if ((value === 'default') !== useDefaultKey) toggleApiKeyMode();
-                                        }}
-                                        options={[
-                                            { label: 'Default', value: 'default' },
-                                            { label: 'Custom API Key', value: 'custom' },
-                                        ]}
-                                        style={styles.nativeControl}
-                                    />
-                                    {!useDefaultKey ? (
-                                        <View style={styles.passwordContainer}>
-                                            <NativeTextInput
-                                                style={{ flex: 1 }}
-                                                inputStyle={{ width: '100%', padding: 12, paddingRight: 48, backgroundColor: colors.primarySurface }}
-                                                textStyle={{ color: colors.text }}
-                                                seedColor={colors.primary}
-                                                accessibilityLabel="OpenSubtitles API key"
-                                                value={apiKey}
-                                                onChangeText={setApiKey}
-                                                placeholder="Enter your API key"
-                                                placeholderTextColor={colors.textDim}
-                                                secureTextEntry={!showApiKey}
-                                                autoCapitalize="none"
-                                                autoCorrect={false}
-                                            />
-                                            <NativeButton
-                                                variant="text"
-                                                style={styles.eyeButton}
-                                                onPress={() => setShowApiKey(!showApiKey)}
-                                                accessibilityLabel={showApiKey ? 'Hide API key' : 'Show API key'}
-                                                seedColor={colors.primary}
-                                            >
-                                                <Ionicons name={showApiKey ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.textMuted} />
-                                            </NativeButton>
-                                        </View>
-                                    ) : null}
-                                </View>
+                            <SettingsSection
+                                title="API Key Type"
+                                footer={useDefaultKey ? 'The default API key is rate-limited.' : 'Custom API keys are stored on this device.'}
+                            >
+                                <NativeFieldSelect
+                                    label="Key Type"
+                                    selectedValue={useDefaultKey ? 'default' : 'custom'}
+                                    onValueChange={(value) => {
+                                        if ((value === 'default') !== useDefaultKey) toggleApiKeyMode();
+                                    }}
+                                    options={[
+                                        { label: 'Default', value: 'default' },
+                                        { label: 'Custom API Key', value: 'custom' },
+                                    ]}
+                                />
                             </SettingsSection>
 
+                            {!useDefaultKey ? (
+                                <SettingsSection title="Custom API Key">
+                                    <NativeTextInput
+                                        accessibilityLabel="OpenSubtitles API key"
+                                        value={apiKey}
+                                        onChangeText={setApiKey}
+                                        placeholder="Enter your API key"
+                                        placeholderTextColor={colors.textDim}
+                                        secureTextEntry={!showApiKey}
+                                        autoCapitalize="none"
+                                        autoCorrect={false}
+                                    />
+                                    <SettingsRow
+                                        title={showApiKey ? 'Hide API key' : 'Show API key'}
+                                        leading={<Ionicons name={showApiKey ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.primary} />}
+                                        onPress={() => setShowApiKey((visible) => !visible)}
+                                        isLast
+                                    />
+                                </SettingsSection>
+                            ) : null}
+
                             <SettingsSection title="Preferred Languages" footer="Languages are searched in the order shown. Keep at least one language selected.">
-                                <View style={styles.languageContent}>
-                                    {renderLanguageMenu()}
-                                    {selectedLanguages.map((code, index) => (
-                                        <SettingsRow
-                                            key={code}
-                                            title={getLanguageName(code)}
-                                            detail={`Priority ${index + 1}`}
-                                            isLast={index === selectedLanguages.length - 1}
-                                            leading={<Text style={{ color: colors.textMuted }}>{index + 1}</Text>}
-                                            trailing={selectedLanguages.length > 1 ? (
-                                                <NativeButton
-                                                    variant="text"
-                                                    onPress={() => removeLanguage(code)}
-                                                    accessibilityLabel={`Remove ${getLanguageName(code)}`}
-                                                    seedColor={colors.primary}
-                                                >
-                                                    <Ionicons name="remove-circle-outline" size={20} color={colors.textDim} />
-                                                </NativeButton>
-                                            ) : null}
-                                        />
-                                    ))}
-                                </View>
+                                <NativeFieldSelect
+                                    label="Add Language"
+                                    selectedValue={languagePickerValue}
+                                    onValueChange={handleLanguageSelection}
+                                    options={[
+                                        { label: 'Language', value: languagePickerPlaceholder },
+                                        ...SUBTITLE_LANGUAGES
+                                            .filter((language) => !selectedLanguages.includes(language.code))
+                                            .map((language) => ({ label: language.name, value: language.code })),
+                                    ]}
+                                    enabled={selectedLanguages.length < SUBTITLE_LANGUAGES.length}
+                                />
+                                {selectedLanguages.map((code, index) => (
+                                    <SettingsRow
+                                        key={code}
+                                        title={getLanguageName(code)}
+                                        leading={<Text style={{ color: colors.textMuted }}>{index + 1}</Text>}
+                                        trailing={selectedLanguages.length > 1 ? (
+                                            <Ionicons name="remove-circle-outline" size={20} color={colors.textDim} />
+                                        ) : null}
+                                        onPress={selectedLanguages.length > 1 ? () => removeLanguage(code) : undefined}
+                                        isLast={index === selectedLanguages.length - 1}
+                                    />
+                                ))}
                             </SettingsSection>
 
                             <SettingsSection title="Actions">
@@ -222,30 +186,5 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
         </View>
     );
 };
-
-const styles = StyleSheet.create({
-    container: { flex: 1 },
-    keyboardAvoid: { flex: 1 },
-    loadingContainer: { alignItems: 'center', padding: 20, gap: 10 },
-    loadingText: { fontSize: 14 },
-    fieldContent: { padding: 16, gap: 10 },
-    fieldLabel: { fontSize: 15, fontWeight: '500' },
-    nativeControl: { width: '100%' },
-    passwordContainer: { position: 'relative' },
-    eyeButton: { position: 'absolute', right: 8, top: 6, padding: 4 },
-    languageContent: { paddingVertical: 8 },
-    menuButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        minHeight: 48,
-        paddingHorizontal: 16,
-        gap: 10,
-    },
-    menuButtonText: {
-        flex: 1,
-        fontSize: 16,
-        fontWeight: '500',
-    },
-});
 
 export default OpenSubtitlesConfigScreen;

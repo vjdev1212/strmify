@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
-import { StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { MaterialIcons } from '@expo/vector-icons';
+import { Button, FieldGroup, Host, RNHostView, Row, Text as NativeText, TextInput, useNativeState } from '@expo/ui';
 import { router } from 'expo-router';
-import { NativeTextInput, NativeButton } from '@/components/native-ui-controls';
 import { StatusBar, View } from '@/components/Themed';
-import { SettingsPage, SettingsSection } from '@/components/NativeSettings';
 import { useTheme } from '@/context/ThemeContext';
 import { systemDarkBackground } from '@/constants/theme';
 import { StorageKeys, storageService } from '@/utils/StorageService';
@@ -16,9 +15,14 @@ export default function AddAddonScreen() {
   const { colors } = useTheme();
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
+  const nativeUrl = useNativeState(url);
 
-  const addAddon = async () => {
-    const manifestUrl = url.trim().replace(/^stremio:\/\//i, 'https://');
+  useEffect(() => {
+    nativeUrl.set(url);
+  }, [nativeUrl, url]);
+
+  const addAddon = async (enteredUrl = url) => {
+    const manifestUrl = enteredUrl.trim().replace(/^stremio:\/\//i, 'https://');
     if (!manifestUrl) {
       showAlert('Manifest URL required', 'Enter the add-on manifest URL to continue.');
       return;
@@ -56,50 +60,49 @@ export default function AddAddonScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: systemDarkBackground }]}>
+    <View style={{ flex: 1, backgroundColor: systemDarkBackground }}>
       <StatusBar />
-      <SettingsPage>
-        <SettingsSection
-          title="Manifest URL"
-          footer={loading
-            ? 'Adding add-on…'
-            : 'Paste the add-on URL ending in manifest.json. Stremio links are supported.'}
-        >
-          <View style={styles.inputContent}>
-            <NativeTextInput
-              style={{ width: '100%' }}
-              inputStyle={{
-                width: '100%',
-                paddingVertical: 12,
-                paddingHorizontal: 14,
-                backgroundColor: colors.primarySurface,
+      <Host style={{ flex: 1 }} colorScheme="dark" seedColor={colors.primary}>
+        <FieldGroup>
+          <FieldGroup.Section title="Manifest URL">
+            <TextInput
+              value={nativeUrl}
+              onChangeText={(value) => {
+                nativeUrl.set(value);
+                setUrl(value);
               }}
-              textStyle={{ color: colors.text, fontSize: 16 }}
-              seedColor={colors.primary}
-              accessibilityLabel="Manifest URL"
               placeholder="https://example.com/manifest.json"
               placeholderTextColor={colors.textDim}
-              value={url}
-              onChangeText={setUrl}
               autoCapitalize="none"
+              autoCorrect={false}
               keyboardType="url"
-              onSubmitEditing={addAddon}
+              onSubmitEditing={(submittedUrl) => void addAddon(submittedUrl)}
               returnKeyType="go"
             />
-          </View>
-          <NativeButton
-            label="Add Addon"
-            onPress={addAddon}
-            disabled={loading}
-            seedColor={colors.primary}
-          />
-        </SettingsSection>
-      </SettingsPage>
+            <FieldGroup.SectionFooter>
+              <NativeText>
+                {loading
+                  ? 'Adding add-on…'
+                  : 'Paste an add-on URL ending in manifest.json. Stremio links are supported.'}
+              </NativeText>
+            </FieldGroup.SectionFooter>
+          </FieldGroup.Section>
+          <FieldGroup.Section>
+            <Button
+              onPress={addAddon}
+              disabled={loading}
+              variant="filled"
+            >
+              <Row alignment="center" spacing={6}>
+                <RNHostView matchContents>
+                  <MaterialIcons name="add" size={20} color={colors.primary} />
+                </RNHostView>
+                <NativeText>{loading ? 'Adding add-on…' : 'Add add-on'}</NativeText>
+              </Row>
+            </Button>
+          </FieldGroup.Section>
+        </FieldGroup>
+      </Host>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  inputContent: { padding: 12 },
-});

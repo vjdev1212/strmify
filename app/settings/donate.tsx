@@ -24,10 +24,12 @@ export default function DonateScreen() {
     <View style={{ flex: 1, backgroundColor: systemDarkBackground }}>
       <StatusBar />
       <SettingsPage>
-        <SettingsSection title="Support" footer="Contributions help keep this project maintained and improving.">
+        <SettingsSection
+          title="Support"
+          footer="Contributions help keep this project maintained and improving."
+        >
           <SettingsRow
             title="Buy Me a Coffee"
-            detail="Open the support page in your browser"
             onPress={openDonationPage}
             isLast
             leading={<Ionicons name="cafe-outline" size={20} color={colors.primary} />}

@@ -30,19 +30,21 @@ export default function DownloadsScreen() {
     <View style={{ flex: 1, backgroundColor: systemDarkBackground }}>
       <StatusBar />
       <SettingsPage>
-        <SettingsSection title="Install Strmify" footer="Choose a source to install or update Strmify.">
-          {resources.map((resource, index) => (
+        {resources.map((resource, index) => (
+          <SettingsSection
+            key={resource.title}
+            title={index === 0 ? 'Install Strmify' : undefined}
+            footer={`${index === 0 ? 'Choose a source to install or update Strmify. ' : ''}${resource.detail}.`}
+          >
             <SettingsRow
-              key={resource.title}
               title={resource.title}
-              detail={resource.detail}
               onPress={() => openResource(resource.url)}
-              isLast={index === resources.length - 1}
+              isLast
               leading={<Ionicons name={resource.icon} size={20} color={colors.primary} />}
               trailing={<Ionicons name="open-outline" size={17} color={colors.textDim} />}
             />
-          ))}
-        </SettingsSection>
+          </SettingsSection>
+        ))}
       </SettingsPage>
     </View>
   );

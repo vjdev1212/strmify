@@ -30,7 +30,7 @@ export default function DisclaimerScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: systemDarkBackground }}>
       <StatusBar />
-      <SettingsPage>
+      <SettingsPage hideScrollIndicator>
         <SettingsSection title="About this app" footer="The developer assumes no responsibility for how users choose to use third-party add-ons or external content sources.">
           <Text style={[styles.summary, { color: colors.text }]}>
             Strmify is a dashboard interface for movie and TV show information. It does not host, store, or distribute content.

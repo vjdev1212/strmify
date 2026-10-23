@@ -1,6 +1,5 @@
-import React from 'react';
 import { Platform } from 'react-native';
-import { NativeTabs } from 'expo-router/unstable-native-tabs';
+import { NativeTabs } from 'expo-router/native-tabs';
 import { useTheme } from '@/context/ThemeContext';
 
 export default function TabLayout() {
@@ -15,7 +14,7 @@ export default function TabLayout() {
         <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf="house" drawable="ic_home" />
       </NativeTabs.Trigger>
-      
+
       <NativeTabs.Trigger name="search" role={Platform.OS === 'ios' ? 'search' : undefined}>
         {Platform.OS !== 'ios' && <NativeTabs.Trigger.Label>Search</NativeTabs.Trigger.Label>}
         {Platform.OS !== 'ios' && (

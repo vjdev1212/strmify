@@ -8,9 +8,10 @@ interface SettingsPageProps {
   children: ReactNode;
   refreshControl?: ReactElement;
   onRefresh?: () => Promise<void>;
+  hideScrollIndicator?: boolean;
 }
 
-export function SettingsPage({ children, refreshControl, onRefresh }: SettingsPageProps) {
+export function SettingsPage({ children, refreshControl, onRefresh, hideScrollIndicator = false }: SettingsPageProps) {
   const { colors } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -28,7 +29,7 @@ export function SettingsPage({ children, refreshControl, onRefresh }: SettingsPa
     <ScrollView
       contentInsetAdjustmentBehavior="automatic"
       keyboardShouldPersistTaps="handled"
-      showsVerticalScrollIndicator={false}
+      showsVerticalScrollIndicator={!hideScrollIndicator}
       refreshControl={refreshControl ?? (onRefresh ? (
         <RefreshControl
           refreshing={refreshing}
@@ -49,7 +50,7 @@ export function SettingsPage({ children, refreshControl, onRefresh }: SettingsPa
 }
 
 interface SettingsSectionProps {
-  title: string;
+  title?: string;
   footer?: string;
   children: ReactNode;
 }
@@ -57,7 +58,7 @@ interface SettingsSectionProps {
 export function SettingsSection({ title, footer, children }: SettingsSectionProps) {
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+      {title ? <Text style={styles.sectionTitle}>{title}</Text> : null}
       <View style={styles.group}>{children}</View>
       {footer ? (
         <Text style={styles.footer}>{footer}</Text>
