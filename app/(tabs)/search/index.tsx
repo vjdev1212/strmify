@@ -226,7 +226,7 @@ const SearchScreen = () => {
               >
                 <Text style={[
                   styles.filterLabel,
-                  { color: selected ? '#FFFFFF' : colors.textMuted },
+                  { color: selected ? '#000000' : colors.textMuted },
                 ]}>
                   {filter.label}
                 </Text>
@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#1C1C1E',
   },
   selectedFilterButton: {
-    backgroundColor: '#38383A',
+    backgroundColor: '#ffffff',
   },
   filterLabel: {
     fontSize: 14,

@@ -1,26 +1,8 @@
 import type { ReactElement, ReactNode } from 'react';
 import { Children, isValidElement } from 'react';
 import { View } from 'react-native';
-import { Host } from '@expo/ui';
-import {
-  Button,
-  HStack,
-  List,
-  RNHostView,
-  Section,
-  Spacer,
-  Text as NativeText,
-  VStack,
-} from '@expo/ui/swift-ui';
-import {
-  background,
-  buttonStyle,
-  disabled as disabledModifier,
-  foregroundColor,
-  listStyle,
-  refreshable,
-  scrollContentBackground,
-} from '@expo/ui/swift-ui/modifiers';
+import { FieldGroup, Host, ListItem, RNHostView, Text as NativeText } from '@expo/ui';
+import { refreshable } from '@expo/ui/swift-ui/modifiers';
 
 interface SettingsPageProps {
   children: ReactNode;
@@ -31,16 +13,9 @@ interface SettingsPageProps {
 export function SettingsPage({ children, onRefresh }: SettingsPageProps) {
   return (
     <Host style={{ flex: 1 }} colorScheme="dark">
-      <List
-        modifiers={[
-          listStyle('insetGrouped'),
-          scrollContentBackground('hidden'),
-          background('#000000'),
-          ...(onRefresh ? [refreshable(onRefresh)] : []),
-        ]}
-      >
+      <FieldGroup modifiers={onRefresh ? [refreshable(onRefresh)] : []}>
         {children}
-      </List>
+      </FieldGroup>
     </Host>
   );
 }
@@ -64,12 +39,12 @@ export function SettingsSection({ title, footer, children }: SettingsSectionProp
   });
 
   return (
-    <Section
+    <FieldGroup.Section
       title={title}
-      footer={footer ? <NativeText>{footer}</NativeText> : undefined}
     >
       {sectionChildren}
-    </Section>
+      {footer ? <FieldGroup.SectionFooter><NativeText>{footer}</NativeText></FieldGroup.SectionFooter> : null}
+    </FieldGroup.Section>
   );
 }
 
@@ -93,52 +68,38 @@ export function SettingsRow({
   trailing,
   onPress,
   destructive = false,
-  accessibilityLabel,
   disabled = false,
 }: SettingsRowProps) {
-  const label = (
-    <HStack spacing={12} alignment="center">
-      {leading ? (
+  return (
+    <ListItem
+      onPress={disabled ? undefined : onPress}
+      leading={leading ? (
         <RNHostView matchContents>
           <View>{leading}</View>
         </RNHostView>
-      ) : null}
-      <VStack alignment="leading" spacing={3}>
-        <NativeText modifiers={destructive ? [foregroundColor('#ff453a')] : undefined}>
-          {title}
-        </NativeText>
-        {detail ? (
-          <NativeText modifiers={[foregroundColor('#8e8e93')]}>{detail}</NativeText>
-        ) : null}
-      </VStack>
-      <Spacer />
-      {trailing ? (
+      ) : undefined}
+      trailing={trailing ? (
         <RNHostView matchContents>
           <View>{trailing}</View>
         </RNHostView>
-      ) : null}
-    </HStack>
-  );
-
-  if (!onPress) return label;
-
-  return (
-    <Button
-      onPress={onPress}
-      modifiers={[
-        buttonStyle('plain'),
-        ...(disabled ? [disabledModifier(true)] : []),
-      ]}
+      ) : undefined}
+      supportingText={detail}
     >
-      {label}
-    </Button>
+      <NativeText
+        textStyle={{
+          color: destructive ? '#ff453a' : disabled ? '#8e8e93' : undefined,
+        }}
+      >
+        {title}
+      </NativeText>
+    </ListItem>
   );
 }
 
 export function SettingsTitle({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
-    <Section title={title}>
+    <FieldGroup.Section title={title}>
       {subtitle ? <NativeText>{subtitle}</NativeText> : null}
-    </Section>
+    </FieldGroup.Section>
   );
 }

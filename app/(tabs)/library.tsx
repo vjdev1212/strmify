@@ -261,15 +261,15 @@ const LibraryScreen: React.FC = () => {
         style={[
           styles.categoryButton,
           {
-            backgroundColor: isActive ? colors.primary : colors.primarySurface,
-            borderColor: isActive ? colors.primary : colors.primaryBorder,
+            backgroundColor: isActive ? '#ffffff' : colors.primarySurface,
+            borderColor: isActive ? '#ffffff' : colors.primaryBorder,
           },
         ]}
         onPress={() => setActiveCategory(category)}
         seedColor={colors.primary}
       >
-        <Ionicons name={icon as any} size={18} color={isActive ? colors.text : colors.textMuted} />
-        <Text style={[styles.categoryButtonText, { color: isActive ? colors.text : colors.textMuted, fontWeight: isActive ? '600' : '500' }]}>
+        <Ionicons name={icon as any} size={18} color={isActive ? '#000000' : colors.textMuted} />
+        <Text style={[styles.categoryButtonText, { color: isActive ? '#000000' : colors.textMuted, fontWeight: isActive ? '600' : '500' }]}>
           {label}
         </Text>
       </NativeButton>

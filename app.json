@@ -12,11 +12,6 @@
       "web"
     ],
     "userInterfaceStyle": "dark",
-    "splash": {
-      "image": "assets/images/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#000000"
-    },
     "ios": {
       "icon": "assets/images/icon.png",
       "supportsTablet": true,

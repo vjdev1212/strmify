@@ -37,11 +37,11 @@ const AddonItem = React.memo(({
     return (
         <NativeButton
             variant="text"
-            style={[styles.addonItem, { backgroundColor: isSelected ? colors.primary : colors.primarySurface, borderColor: isSelected ? colors.primary : colors.primaryBorder }]}
+            style={[styles.addonItem, { backgroundColor: isSelected ? '#ffffff' : colors.primarySurface, borderColor: isSelected ? '#ffffff' : colors.primaryBorder }]}
             onPress={() => onPress(item)}
             seedColor={colors.primary}
         >
-            <Text style={[styles.addonName, { color: isSelected ? colors.text : colors.textMuted }]} numberOfLines={1}>{item.name}</Text>
+            <Text style={[styles.addonName, { color: isSelected ? '#000000' : colors.textMuted }]} numberOfLines={1}>{item.name}</Text>
         </NativeButton>
     );
 });

@@ -17,7 +17,6 @@ import { isHapticsSupported } from '@/utils/platform';
 import { CatalogUrl, MovieGneres, TvGneres } from '@/constants/Tmdb';
 import BlurGradientBackground from '@/components/BlurGradientBackground';
 import { useTheme } from '@/context/ThemeContext';
-import NativeStackList from '@/components/native-stack-list';
 import { NativeButton } from '@/components/native-ui-controls';
 
 export default function HomeScreen() {
@@ -116,43 +115,37 @@ export default function HomeScreen() {
         />
         <View style={styles.contentContainer}>
           <View style={styles.filtersContainer}>
-            <NativeStackList
-              data={filters}
-              axis="horizontal"
-              spacing={15}
-              scrollable={false}
-              keyExtractor={(item) => item.key}
-              renderItem={(item) => (
-                <NativeButton
-                  variant="text"
+            {filters.map((item) => (
+              <NativeButton
+                key={item.key}
+                variant="text"
+                style={[
+                  styles.filterButton,
+                  {
+                    backgroundColor: filter === item.key ? '#ffffff' : colors.primaryCard,
+                    borderColor: filter === item.key ? '#ffffff' : colors.primaryBorder,
+                  },
+                ]}
+                onPress={() => handleFilterChange(item.key as 'all' | 'movies' | 'series')}
+                seedColor={colors.primary}
+              >
+                <Ionicons
+                  name={item.icon as any}
+                  size={18}
+                  color={filter === item.key ? '#000000' : colors.textMuted}
+                  style={styles.filterIcon}
+                />
+                <Text
                   style={[
-                    styles.filterButton,
-                    {
-                      backgroundColor: filter === item.key ? colors.primary : colors.primaryCard,
-                      borderColor: filter === item.key ? colors.primary : colors.primaryBorder,
-                    },
+                    styles.filterButtonText,
+                    { color: filter === item.key ? '#000000' : colors.textMuted },
+                    filter === item.key && styles.filterButtonTextActive,
                   ]}
-                  onPress={() => handleFilterChange(item.key as 'all' | 'movies' | 'series')}
-                  seedColor={colors.primary}
                 >
-                  <Ionicons
-                    name={item.icon as any}
-                    size={18}
-                    color={filter === item.key ? colors.text : colors.textMuted}
-                    style={styles.filterIcon}
-                  />
-                  <Text
-                    style={[
-                      styles.filterButtonText,
-                      { color: filter === item.key ? colors.text : colors.textMuted },
-                      filter === item.key && styles.filterButtonTextActive,
-                    ]}
-                  >
-                    {item.label}
-                  </Text>
-                </NativeButton>
-              )}
-            />
+                  {item.label}
+                </Text>
+              </NativeButton>
+            ))}
           </View>
 
           {activeLists.map((list) => (
@@ -175,14 +168,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   filtersContainer: {
+    flexDirection: 'row',
     paddingVertical: 12,
-    paddingHorizontal: 5,
+    paddingHorizontal: 16,
   },
   filterButton: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 10,
     paddingHorizontal: 18,
+    marginRight: 15,
     borderRadius: 20,
     borderWidth: 1,
   },
