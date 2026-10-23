@@ -10,7 +10,6 @@ import { isHapticsSupported } from '@/utils/platform';
 type SettingsRoute =
   | '/settings/addons'
   | '/settings/mediaplayer'
-  | '/settings/theme'
   | '/settings/stremioserver'
   | '/settings/opensubtitles'
   | '/settings/downloads'
@@ -24,7 +23,6 @@ const settingsSections: { title: string; items: { title: string; route: Settings
     items: [
       { title: 'Add-ons', route: '/settings/addons' },
       { title: 'Media Player', route: '/settings/mediaplayer' },
-      { title: 'Appearance', route: '/settings/theme' },
     ],
   },
   {

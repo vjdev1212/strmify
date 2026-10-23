@@ -14,7 +14,6 @@ export const StorageKeys = {
     WATCH_HISTORY_KEY: 'STRMIFY_WATCH_HISTORY_KEY',
     SUBTITLE_LANGUAGES_KEY: 'STRMIFY_SUBTITLE_LANGUAGES_KEY',
     LIBRARY_KEY: 'STRMIFY_LIBRARY_KEY',
-    THEME_KEY: 'STRMIFY_THEME_KEY', 
 } as const;
 
 export const storageService = {

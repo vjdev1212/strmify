@@ -6,7 +6,7 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { View, StyleSheet } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { AppThemeProvider, useTheme } from '@/context/ThemeContext';
+import { useTheme } from '@/context/ThemeContext';
 import BlurGradientBackground from '@/components/BlurGradientBackground';
 
 export { ErrorBoundary } from 'expo-router';
@@ -28,17 +28,10 @@ export default function RootLayout() {
 
     if (!loaded) return null;
 
-    // ✅ Provider wraps everything OUTSIDE RootLayoutNav
-    // so useTheme() works inside RootLayoutNav
-    return (
-        <AppThemeProvider>
-            <RootLayoutNav />
-        </AppThemeProvider>
-    );
+    return <RootLayoutNav />;
 }
 
 function RootLayoutNav() {
-    // ✅ Now works — this component is a child of AppThemeProvider
     const { colors } = useTheme();
 
     const HeaderBackground = () => (
@@ -51,7 +44,6 @@ function RootLayoutNav() {
         <View style={{ flex: 1, backgroundColor: 'transparent' }} />
     );
 
-    // ✅ contentStyle uses colors.background — fixes web stacking layer issue
     const screenOptions = {
         headerShown: true,
         headerTransparent: true,
@@ -65,7 +57,6 @@ function RootLayoutNav() {
     };
 
     return (
-        // ✅ Root View also gets themed background — prevents white flash on web
         <View style={[styles.container, { backgroundColor: colors.background }]}>
             <BlurGradientBackground />
             <Stack
@@ -86,7 +77,6 @@ function RootLayoutNav() {
                         headerTintColor: colors.text,
                         headerBackTitle: '',
                         title: 'Home',
-                        // ✅ Tabs stay transparent so root BlurGradientBackground shows through
                         contentStyle: { backgroundColor: 'transparent' },
                     }}
                 />
@@ -105,7 +95,6 @@ function RootLayoutNav() {
                 <Stack.Screen name="settings/addons" options={{ ...screenOptions, title: 'Add-ons', headerTitle: 'Add-ons' }} />
                 <Stack.Screen name="settings/add" options={{ ...screenOptions, title: 'Add Add-on', headerTitle: 'Add Add-on' }} />
                 <Stack.Screen name="settings/stremioserver" options={{ ...screenOptions, title: 'Stremio', headerTitle: 'Stremio' }} />
-                <Stack.Screen name="settings/theme" options={{ ...screenOptions, title: 'Appearance', headerTitle: 'Appearance' }} />
                 <Stack.Screen name="settings/opensubtitles" options={{ ...screenOptions, title: 'OpenSubtitles', headerTitle: 'OpenSubtitles' }} />
                 <Stack.Screen name="settings/contact" options={{ ...screenOptions, title: 'Contact', headerTitle: 'Contact' }} />
                 <Stack.Screen name="settings/disclaimer" options={{ ...screenOptions, title: 'Disclaimer', headerTitle: 'Disclaimer' }} />
