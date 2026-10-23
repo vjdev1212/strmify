@@ -3,13 +3,13 @@ import {
     View,
     Dimensions,
     StyleSheet,
-    ImageBackground,
     Pressable,
 } from 'react-native';
 import type { ScaledSize } from 'react-native';
 import { ActivityIndicator, Text } from '@/components/Themed';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
+import Animated, { cubicBezier, useReducedMotion } from 'react-native-reanimated';
 import { getYear } from '@/utils/Date';
 import { useTheme } from '@/context/ThemeContext';
 import NativePager from '@/components/native-pager';
@@ -44,6 +44,7 @@ export default function AppleTVCarousel({
     topInset = 0,
 }: AppleTVCarouselProps) {
     const { colors } = useTheme();
+    const reducedMotion = useReducedMotion();
     const [activeIndex, setActiveIndex] = useState(0);
     const [data, setData] = useState<CarouselItem[]>([]);
     const [loading, setLoading] = useState(true);
@@ -194,17 +195,40 @@ export default function AppleTVCarousel({
                         if (!didSwipeRef.current) handleItemPress(item);
                     }}
                 >
-                    <ImageBackground
-                        key={`${item.id}-${index}`}
-                        source={{ uri: item.backdropUrl || item.posterUrl }}
-                        style={styles.backdropImage}
-                        resizeMode="cover"
-                    >
+                    <View style={styles.backdropImage}>
+                        <Animated.Image
+                            key={`${item.id}-${index}`}
+                            source={{ uri: item.backdropUrl || item.posterUrl }}
+                            style={[
+                                StyleSheet.absoluteFill,
+                                {
+                                    opacity: activeIndex === index ? 1 : 0,
+                                    transform: [{ scale: activeIndex === index || reducedMotion ? 1 : 1.04 }],
+                                    transitionProperty: ['opacity', 'transform'],
+                                    transitionDuration: reducedMotion ? '120ms' : '260ms',
+                                    transitionTimingFunction: cubicBezier(0.23, 1, 0.32, 1),
+                                },
+                            ]}
+                            resizeMode="cover"
+                        />
                         <LinearGradient
                             colors={colors.gradientOverlay as any}
                             style={styles.gradient}
                         />
-                        <View style={[styles.contentContainer, { paddingHorizontal: dims.contentPadding, paddingBottom: dims.bottomPadding, flexDirection: 'row' }]}>
+                        <Animated.View
+                            style={[
+                                styles.contentContainer,
+                                {
+                                    paddingHorizontal: dims.contentPadding,
+                                    paddingBottom: dims.bottomPadding,
+                                    flexDirection: 'row',
+                                    opacity: activeIndex === index ? 1 : 0,
+                                    transitionProperty: 'opacity',
+                                    transitionDuration: reducedMotion ? '120ms' : '180ms',
+                                    transitionTimingFunction: cubicBezier(0.23, 1, 0.32, 1),
+                                },
+                            ]}
+                        >
                             <View style={[styles.textContainer, { flex: 1 }]}>
                                 <Text style={[styles.title, { fontSize: dims.titleSize, color: colors.text }]} numberOfLines={1}>
                                     {item.title}
@@ -225,12 +249,12 @@ export default function AppleTVCarousel({
                                     </View>
                                 </View>
                             </View>
-                        </View>
-                    </ImageBackground>
+                        </Animated.View>
+                    </View>
                 </Pressable>
             </View>
         );
-    }, [colors.gradientOverlay, colors.primaryBorder, colors.primaryMuted, colors.text, colors.textMuted, dimensions.isLandscape, handleItemPress, responsiveDims, topInset]);
+    }, [activeIndex, colors.gradientOverlay, colors.primaryBorder, colors.primaryMuted, colors.text, colors.textMuted, dimensions.isLandscape, handleItemPress, reducedMotion, responsiveDims, topInset]);
 
     const renderPaginationDot = useCallback((index: number) => (
         <Pressable
@@ -283,7 +307,7 @@ const styles = StyleSheet.create({
     container: { position: 'relative' },
     carouselItem: { marginBottom: 10 },
     carouselTouchable: { flex: 1 },
-    backdropImage: { flex: 1, justifyContent: 'flex-end' },
+    backdropImage: { flex: 1, justifyContent: 'flex-end', overflow: 'hidden' },
     gradient: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 },
     contentContainer: { alignItems: 'flex-end', zIndex: 1 },
     textContainer: { justifyContent: 'flex-end', paddingBottom: 10 },

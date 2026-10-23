@@ -9,6 +9,7 @@ export interface NativeStackListProps<T> {
   spacing?: number;
   horizontalContentInset?: number;
   scrollable?: boolean;
+  nativeItems?: boolean;
   keyExtractor: (item: T, index: number) => string;
   renderItem: (item: T, index: number) => ReactNode;
   style?: StyleProp<ViewStyle>;

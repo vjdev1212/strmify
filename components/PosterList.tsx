@@ -16,6 +16,7 @@ import { DefaultPosterImgXml } from '@/utils/Svg';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/context/ThemeContext';
 import { NativeButton } from '@/components/native-ui-controls';
+import PosterArtwork from '@/components/PosterArtwork';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -68,18 +69,20 @@ const PosterItem = React.memo(({
       style={{ width: posterWidth, height: cardHeight, flexShrink: 0 }}
       seedColor={colors.primary}
     >
-      {!imgError ? (
-        <Image
-          source={{ uri: item.poster }}
-          onError={() => setImgError(true)}
-          style={[styles.posterImage, { width: posterWidth, height: posterHeight }]}
-          resizeMode="cover"
-        />
-      ) : (
-        <View style={[styles.posterImage, { width: posterWidth, height: posterHeight, justifyContent: 'center', alignItems: 'center' }]}>
-          <SvgXml xml={DefaultPosterImgXml} />
-        </View>
-      )}
+      <PosterArtwork style={{ width: posterWidth, height: posterHeight }}>
+        {!imgError ? (
+          <Image
+            source={{ uri: item.poster }}
+            onError={() => setImgError(true)}
+            style={{ width: posterWidth, height: posterHeight }}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={{ width: posterWidth, height: posterHeight, justifyContent: 'center', alignItems: 'center' }}>
+            <SvgXml xml={DefaultPosterImgXml} />
+          </View>
+        )}
+      </PosterArtwork>
       <Text numberOfLines={1} style={[styles.posterTitle, { width: posterWidth, color: colors.text }]}>{item.name}</Text>
       <Text style={[styles.posterYear, { color: colors.textMuted }]}>{year}</Text>
     </NativeButton>
@@ -93,7 +96,7 @@ const SkeletonPoster = React.memo(({ posterWidth, posterHeight, cardHeight, bgCo
   bgColor: string;
 }) => (
   <RNView style={{ width: posterWidth, height: cardHeight, flexShrink: 0 }}>
-    <RNView style={[styles.posterImage, { width: posterWidth, height: posterHeight, backgroundColor: bgColor }]} />
+  <PosterArtwork style={{ width: posterWidth, height: posterHeight, backgroundColor: bgColor }} />
   </RNView>
 ));
 
@@ -127,7 +130,7 @@ const PosterList = ({
     if (shortSide < 1440) return isPortrait ? 7 : 9;
     return isPortrait ? 7 : 10;
   }, [isPortrait, shortSide]);
-  const spacing = 10;
+  const spacing = 14;
   const containerMargin = 15;
 
   const posterWidth = useMemo(() => {
@@ -258,7 +261,6 @@ const styles = StyleSheet.create({
   seeAllButton: { flexDirection: 'row', alignItems: 'center', paddingVertical: 4, paddingHorizontal: 4 },
   seeAllText: { fontSize: 15, fontWeight: '500', letterSpacing: -0.1 },
   chevronIcon: { marginLeft: 2 },
-  posterImage: { borderRadius: 6, overflow: 'hidden' },
   posterTitle: { height: 20, marginTop: 10, fontSize: 14, fontWeight: '500', letterSpacing: -0.2, lineHeight: 20 },
   posterYear: { height: 16, marginTop: 4, fontSize: 12, fontWeight: '500', letterSpacing: -0.1, lineHeight: 16 },
 });

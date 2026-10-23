@@ -14,6 +14,7 @@ import * as Haptics from 'expo-haptics';
 import { useTheme } from '@/context/ThemeContext';
 import NativeStackList from '@/components/native-stack-list';
 import { NativeButton } from '@/components/native-ui-controls';
+import PosterArtwork from '@/components/PosterArtwork';
 
 export interface WatchHistoryItem {
   title: string;
@@ -207,7 +208,9 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
                 }}
               >
                 <View style={[styles.imageContainer, { height: CARD_HEIGHT, backgroundColor: colors.background }]}>
-                  <Image source={{ uri: item.artwork }} style={styles.backdrop} resizeMode="cover" />
+                  <PosterArtwork style={styles.artworkFrame} borderRadius={12}>
+                    <Image source={{ uri: item.artwork }} style={styles.backdrop} resizeMode="cover" />
+                  </PosterArtwork>
                   <TouchableOpacity
                     style={styles.removeButton}
                     onPress={(e) => { e.stopPropagation(); removeHistoryItem(item, itemKey); }}
@@ -248,6 +251,7 @@ const styles = StyleSheet.create({
   scrollContent: { marginVertical: 10 },
   card: { backgroundColor: 'transparent', borderRadius: 12 },
   imageContainer: { width: '100%', position: 'relative', borderRadius: 12, overflow: 'hidden' },
+  artworkFrame: { width: '100%', height: '100%' },
   backdrop: { width: '100%', height: '100%' },
   removeButton: { position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: 16, padding: 6 },
   positionBadge: { position: 'absolute', bottom: 8, left: 8, backgroundColor: 'rgba(0,0,0,0.7)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },

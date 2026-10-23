@@ -21,6 +21,7 @@ import * as Haptics from 'expo-haptics';
 import { useTheme } from '@/context/ThemeContext';
 import NativeStackList from '@/components/native-stack-list';
 import { NativeButton } from '@/components/native-ui-controls';
+import PosterArtwork from '@/components/PosterArtwork';
 
 type CategoryType = 'all' | 'movies' | 'tv';
 
@@ -181,11 +182,13 @@ const LibraryScreen: React.FC = () => {
           }}
         >
           <View style={[styles.imageContainer, { height: CARD_HEIGHT, backgroundColor: colors.background }]}>
-            <Image
-              source={{ uri: item.backdrop || item.poster }}
-              style={styles.backdrop}
-              resizeMode="cover"
-            />
+            <PosterArtwork style={styles.artworkFrame} borderRadius={10}>
+              <Image
+                source={{ uri: item.backdrop || item.poster }}
+                style={styles.backdrop}
+                resizeMode="cover"
+              />
+            </PosterArtwork>
             {item.watched && (
               <View style={styles.watchedBadge}>
                 <Ionicons name="checkmark-circle" size={20} color="#4ade80" />
@@ -390,6 +393,7 @@ const styles = StyleSheet.create({
   sectionCount: { fontSize: 14, opacity: 0.5, fontWeight: '500' },
   card: { backgroundColor: 'transparent', borderRadius: 10 },
   imageContainer: { width: '100%', position: 'relative', borderRadius: 10, overflow: 'hidden' },
+  artworkFrame: { width: '100%', height: '100%' },
   backdrop: { width: '100%', height: '100%' },
   watchedBadge: { position: 'absolute', top: 8, left: 8, backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: 16, padding: 4 },
   watchButton: { position: 'absolute', top: 8, left: 8, backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: 16, padding: 6 },

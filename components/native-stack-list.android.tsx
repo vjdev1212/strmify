@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import { Host, RNHostView, ScrollView, Row, Column } from '@expo/ui';
 import { View as RNView } from 'react-native';
 import type { NativeStackListProps } from './native-stack-list.types';
@@ -8,18 +9,22 @@ export default function NativeStackList<T>({
   spacing = 0,
   horizontalContentInset = 0,
   scrollable = true,
+  nativeItems = false,
   keyExtractor,
   renderItem,
   style,
 }: NativeStackListProps<T>) {
-  const items = data.map((item, index) => (
-    <RNHostView
-      key={keyExtractor(item, index)}
-      matchContents={axis === 'vertical' ? { vertical: true } : true}
-    >
-      <>{renderItem(item, index)}</>
-    </RNHostView>
-  ));
+  const items = data.map((item, index) => {
+    const key = keyExtractor(item, index);
+    const content = renderItem(item, index);
+    return nativeItems ? (
+      <Fragment key={key}>{content}</Fragment>
+    ) : (
+      <RNHostView key={key} matchContents={axis === 'vertical' ? { vertical: true } : true}>
+        <>{content}</>
+      </RNHostView>
+    );
+  });
 
   const insetSpacerWidth = Math.max(0, horizontalContentInset - spacing);
   const leadingInset = axis === 'horizontal' && horizontalContentInset > 0 ? (

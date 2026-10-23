@@ -6,11 +6,14 @@ import {
     Share,
     StyleSheet,
     useWindowDimensions,
+    View as RNView,
 } from 'react-native';
 import { MenuView, type MenuAction } from '@expo/ui/community/menu';
+import { Button as NativeButton, Column as NativeColumn, RNHostView, Row as NativeRow, Text as NativeText } from '@expo/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { ActivityIndicator, StatusBar, Text, View } from '@/components/Themed';
 import { WebMenu } from '@/components/WebMenuView';
+import PosterArtwork from '@/components/PosterArtwork';
 import { useRouter } from 'expo-router';
 import { getYear } from '@/utils/Date';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -94,7 +97,7 @@ const WEB_MENU_ACTIONS = MEDIA_MENU_ACTIONS.map(({ id, title }) => ({
 const ROW_HORIZONTAL_PADDING = 16;
 const POSTER_WIDTH = 88;
 const POSTER_TEXT_GAP = 16;
-const MENU_ACTION_WIDTH = 40;
+const MENU_ACTION_WIDTH = 56;
 
 const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath }) => {
     const { colors } = useTheme();
@@ -186,8 +189,6 @@ const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath }) => {
     }, [detailsPath, openDetails]);
 
     const renderItem = useCallback((item: MediaGridItem) => {
-        let pressStart: { x: number; y: number } | undefined;
-        let movedWhilePressed = false;
         const metadata = item.genres.length > 0
             ? item.genres.join(', ')
             : [item.year?.split('–')[0], item.imdbRating ? `★ ${item.imdbRating}` : undefined]
@@ -204,69 +205,68 @@ const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath }) => {
             </Pressable>
         );
 
+        const menu = Platform.OS === 'web' ? (
+            <WebMenu
+                title={item.name}
+                actions={WEB_MENU_ACTIONS}
+                onPressAction={(actionId) => void handleMenuAction(actionId, item)}
+            >
+                {menuButton}
+            </WebMenu>
+        ) : (
+            <MenuView
+                title={item.name}
+                actions={MEDIA_MENU_ACTIONS}
+                shouldOpenOnLongPress={false}
+                colorScheme="dark"
+                onPressAction={({ nativeEvent }) => void handleMenuAction(nativeEvent.event, item)}
+            >
+                {menuButton}
+            </MenuView>
+        );
+
         return (
-            <View style={[styles.rowContainer, { width: rowWidth, borderBottomColor: 'rgba(255,255,255,0.12)' }]}>
-                <Pressable
-                    style={[styles.mediaButton, { width: mediaButtonWidth }]}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Open ${item.name}`}
-                    onPressIn={({ nativeEvent }) => {
-                        pressStart = { x: nativeEvent.pageX, y: nativeEvent.pageY };
-                        movedWhilePressed = false;
-                    }}
-                    onPressMove={({ nativeEvent }) => {
-                        if (
-                            pressStart &&
-                            (Math.abs(nativeEvent.pageX - pressStart.x) > 10 ||
-                                Math.abs(nativeEvent.pageY - pressStart.y) > 10)
-                        ) {
-                            movedWhilePressed = true;
-                        }
-                    }}
-                    onPress={() => {
-                        if (!movedWhilePressed) openDetails(item);
-                    }}
+            <NativeColumn style={{ width: rowWidth }}>
+                <NativeRow
+                    alignment="center"
+                    spacing={POSTER_TEXT_GAP}
+                    style={{ width: rowWidth, paddingHorizontal: ROW_HORIZONTAL_PADDING, paddingVertical: 12 }}
                 >
-                    <Image
-                        source={{ uri: item.poster }}
-                        style={[styles.poster, { backgroundColor: colors.backgroundOverlay }]}
-                        resizeMode="cover"
-                    />
-                    <View style={[styles.mediaInfo, { width: mediaInfoWidth }]}>
-                        <Text style={styles.mediaTitle}>
-                            {item.name}
-                        </Text>
-                        {metadata.length > 0 && (
-                            <Text style={[styles.mediaMetadata, { color: colors.textMuted }]}>
-                                {metadata}
-                            </Text>
-                        )}
-                    </View>
-                </Pressable>
-                {Platform.OS === 'web' ? (
-                    <View style={styles.menuActionSlot}>
-                        <WebMenu
-                            title={item.name}
-                            actions={WEB_MENU_ACTIONS}
-                            onPressAction={(actionId) => void handleMenuAction(actionId, item)}
-                        >
-                            {menuButton}
-                        </WebMenu>
-                    </View>
-                ) : (
-                    <View style={styles.menuActionSlot}>
-                        <MenuView
-                            title={item.name}
-                            actions={MEDIA_MENU_ACTIONS}
-                            shouldOpenOnLongPress={false}
-                            colorScheme="dark"
-                            onPressAction={({ nativeEvent }) => void handleMenuAction(nativeEvent.event, item)}
-                        >
-                            {menuButton}
-                        </MenuView>
-                    </View>
-                )}
-            </View>
+                    <NativeButton
+                        variant="text"
+                        onPress={() => openDetails(item)}
+                        style={{ width: mediaButtonWidth }}
+                    >
+                        <NativeRow alignment="center" spacing={POSTER_TEXT_GAP}>
+                            <RNHostView matchContents>
+                                <PosterArtwork style={styles.posterFrame}>
+                                    <Image
+                                        source={{ uri: item.poster }}
+                                        style={[styles.poster, { backgroundColor: colors.backgroundOverlay }]}
+                                        resizeMode="cover"
+                                    />
+                                </PosterArtwork>
+                            </RNHostView>
+                            <NativeColumn alignment="start" spacing={7} style={{ width: mediaInfoWidth }}>
+                                <NativeText textStyle={styles.mediaTitle}>
+                                    {item.name}
+                                </NativeText>
+                                {metadata.length > 0 && (
+                                    <NativeText textStyle={{ ...styles.mediaMetadata, color: colors.textMuted }}>
+                                        {metadata}
+                                    </NativeText>
+                                )}
+                            </NativeColumn>
+                        </NativeRow>
+                    </NativeButton>
+                    <RNHostView matchContents>
+                        <RNView style={styles.menuActionSlot}>{menu}</RNView>
+                    </RNHostView>
+                </NativeRow>
+                <RNHostView matchContents>
+                    <RNView style={[styles.divider, { width: rowWidth }]} />
+                </RNHostView>
+            </NativeColumn>
         );
     }, [
         colors.backgroundOverlay,
@@ -294,6 +294,7 @@ const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath }) => {
                 <NativeStackList
                     data={data}
                     axis="vertical"
+                    nativeItems
                     keyExtractor={(item) => String(item.tmdbid)}
                     renderItem={renderItem}
                     style={styles.listContent}
@@ -306,30 +307,13 @@ const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath }) => {
 const styles = StyleSheet.create({
     container: { flex: 1 },
     listContent: { flex: 1, paddingTop: 8, paddingBottom: 24 },
-    rowContainer: {
-        minHeight: 156,
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-    },
-    mediaButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 16,
-        paddingVertical: 10,
-    },
     poster: {
         width: 88,
         height: 132,
-        flexShrink: 0,
-        borderRadius: 5,
     },
-    mediaInfo: {
-        minWidth: 0,
-        flexShrink: 1,
-        justifyContent: 'center',
-        gap: 7,
+    posterFrame: {
+        width: 88,
+        height: 132,
     },
     mediaTitle: {
         fontSize: 17,
@@ -340,6 +324,10 @@ const styles = StyleSheet.create({
         fontSize: 14,
         lineHeight: 19,
     },
+    divider: {
+        height: StyleSheet.hairlineWidth,
+        backgroundColor: 'rgba(255,255,255,0.12)',
+    },
     menuButton: {
         width: 40,
         minWidth: 40,
@@ -348,8 +336,8 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     menuActionSlot: {
-        width: 40,
-        minWidth: 40,
+        width: MENU_ACTION_WIDTH,
+        minWidth: MENU_ACTION_WIDTH,
         flexShrink: 0,
         alignItems: 'center',
         justifyContent: 'center',
