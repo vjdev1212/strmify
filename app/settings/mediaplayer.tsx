@@ -8,6 +8,7 @@ import { getOriginalPlatform, showAlert } from '@/utils/platform';
 import { Players } from '@/utils/MediaPlayer';
 import { StorageKeys, storageService } from '@/utils/StorageService';
 import { useTheme } from '@/context/ThemeContext';
+import { systemDarkBackground } from '@/constants/theme';
 
 interface PlayerConfig {
   name: string;
@@ -114,7 +115,7 @@ export default function MediaPlayerConfigScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <View style={{ flex: 1, backgroundColor: systemDarkBackground }}>
       <StatusBar />
       {loading ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -129,7 +130,7 @@ export default function MediaPlayerConfigScreen() {
                 onValueChange={setSelectedPlayer}
                 options={players.map((player) => ({ label: player.name, value: player.name }))}
                 enabled={players.length > 0}
-                style={{ width: '100%' }}
+                style={{ width: '100%', height: 48 }}
               />
             </View>
           </SettingsSection>

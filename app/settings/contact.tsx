@@ -5,6 +5,7 @@ import { StatusBar, View } from '@/components/Themed';
 import { SettingsPage, SettingsRow, SettingsSection } from '@/components/NativeSettings';
 import { showAlert } from '@/utils/platform';
 import { useTheme } from '@/context/ThemeContext';
+import { systemDarkBackground } from '@/constants/theme';
 
 const contactActions = [
   {
@@ -38,7 +39,7 @@ export default function ContactScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <View style={{ flex: 1, backgroundColor: systemDarkBackground }}>
       <StatusBar />
       <SettingsPage>
         <SettingsSection title="Contact" footer="Your feedback helps improve Strmify.">

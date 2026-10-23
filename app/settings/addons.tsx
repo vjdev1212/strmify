@@ -1,21 +1,31 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Image, Platform, Share } from 'react-native';
+import { Platform, Pressable, Share } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { MenuView, type MenuAction } from '@expo/ui/community/menu';
 import { StatusBar, View } from '@/components/Themed';
 import { SettingsPage, SettingsRow, SettingsSection } from '@/components/NativeSettings';
+import { WebMenu } from '@/components/WebMenuView';
 import { showAlert } from '@/utils/platform';
 import { StorageKeys, storageService } from '@/utils/StorageService';
 import { useTheme } from '@/context/ThemeContext';
+import { systemDarkBackground } from '@/constants/theme';
 
 const ADDONS_KEY = StorageKeys.ADDONS_KEY;
 const defaultAddonLogo = 'https://i.ibb.co/fSJ42PJ/addon.png';
+const addonMenuActions: MenuAction[] = [
+  { id: 'update', title: 'Check for updates' },
+  { id: 'share', title: 'Share install link' },
+  { id: 'configure', title: 'Open add-on settings' },
+  { id: 'remove', title: 'Remove add-on', attributes: { destructive: true } },
+];
 
 const AddonsScreen = () => {
   const { colors } = useTheme();
   const [addons, setAddons] = useState<any[]>([]);
   const [updatingAddonId, setUpdatingAddonId] = useState<string | null>(null);
+  const [expandedAddonId, setExpandedAddonId] = useState<string | null>(null);
 
   const fetchAddons = useCallback(async () => {
     try {
@@ -122,79 +132,104 @@ const AddonsScreen = () => {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <View style={{ flex: 1, backgroundColor: systemDarkBackground }}>
       <StatusBar />
       <SettingsPage onRefresh={onRefresh}>
-        <SettingsSection title="Manage" footer="Add-ons provide the sources used to discover streams.">
-          <SettingsRow
-            title="Add Add-on"
-            detail="Install using a manifest URL"
-            onPress={() => router.push('/settings/add')}
-            isLast
-            leading={<Ionicons name="add-circle-outline" size={20} color={colors.primary} />}
-            trailing={<Ionicons name="chevron-forward" size={17} color={colors.textDim} />}
-          />
-        </SettingsSection>
-        {addons.length ? addons.map((addon) => {
-          const configurable = Boolean(addon.behaviorHints?.configurable);
-          const isUpdating = updatingAddonId === addon.id;
-          return (
-            <SettingsSection
-              key={addon.id}
-              title={addon.name || 'Unnamed Add-on'}
-              footer={[addon.version ? `Version ${addon.version}` : null, addon.types?.join(' · ')].filter(Boolean).join(' · ')}
-            >
+        <SettingsRow
+          title="Add Addon"
+          onPress={() => router.push('/settings/add')}
+          isLast
+        />
+        <SettingsSection
+          title={`Installed add-ons (${addons.length})`}
+        >
+          {addons.length ? addons.flatMap((addon) => {
+            const isUpdating = updatingAddonId === addon.id;
+            const isExpanded = expandedAddonId === addon.id;
+            const availableActions = addonMenuActions.filter((action) => {
+              if ((action.id === 'update' || action.id === 'share') && !addon.manifestUrl) return false;
+              if (action.id === 'configure' && !addon.behaviorHints?.configurable) return false;
+              return true;
+            });
+            const handleAction = (actionId: string) => {
+              if (actionId === 'update' && addon.manifestUrl && !isUpdating) {
+                void updateAddonManifest(addon.id, addon.manifestUrl);
+              } else if (actionId === 'share' && addon.manifestUrl) {
+                void shareManifestUrl(addon.manifestUrl);
+              } else if (actionId === 'configure' && addon.baseUrl) {
+                void openConfiguration(addon.baseUrl);
+              } else if (actionId === 'remove') {
+                confirmRemove(addon);
+              }
+            };
+            const menuTrigger = (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Actions for ${addon.name || 'add-on'}`}
+                hitSlop={10}
+                onPress={Platform.OS === 'web' ? (event) => event.stopPropagation() : undefined}
+                style={{ padding: 8 }}
+              >
+                <Ionicons name="ellipsis-horizontal" size={20} color={colors.textDim} />
+              </Pressable>
+            );
+            const actionButton = Platform.OS === 'web' ? (
+              <WebMenu
+                title={addon.name || 'Add-on actions'}
+                actions={availableActions.map(({ id, title }) => ({ id: id ?? title, title }))}
+                onPressAction={handleAction}
+              >
+                {menuTrigger}
+              </WebMenu>
+            ) : (
+              <MenuView
+                title={addon.name || 'Add-on actions'}
+                actions={availableActions}
+                onPressAction={({ nativeEvent }) => handleAction(nativeEvent.event)}
+                colorScheme="dark"
+                shouldOpenOnLongPress={false}
+              >
+                {menuTrigger}
+              </MenuView>
+            );
+            const categories = addon.types?.join(' · ');
+
+            return [
               <SettingsRow
-                title={addon.name || 'Add-on'}
-                detail={addon.description || 'Installed source'}
-                leading={
-                  <Image
-                    source={{ uri: addon.logo || defaultAddonLogo }}
-                    style={{ width: 36, height: 36, borderRadius: 8, backgroundColor: colors.primarySurface }}
-                  />
+                key={`${addon.id}-summary`}
+                title={`${addon.name || 'Unnamed add-on'}${addon.version ? ` · ${addon.version}` : ''}`}
+                onPress={() => setExpandedAddonId(isExpanded ? null : addon.id)}
+                accessibilityLabel={`${isExpanded ? 'Hide' : 'Show'} details for ${addon.name || 'add-on'}`}
+                trailing={
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    {actionButton}
+                    <Ionicons
+                      name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                      size={16}
+                      color={colors.textDim}
+                    />
+                  </View>
                 }
-              />
-              {addon.manifestUrl ? (
-                <SettingsRow
-                  title={isUpdating ? 'Updating…' : 'Update Add-on'}
-                  onPress={() => updateAddonManifest(addon.id, addon.manifestUrl)}
-                  disabled={isUpdating}
-                  leading={<Ionicons name="refresh-outline" size={20} color={colors.primary} />}
-                />
-              ) : null}
-              {addon.manifestUrl ? (
-                <SettingsRow
-                  title="Share Manifest URL"
-                  onPress={() => shareManifestUrl(addon.manifestUrl)}
-                  leading={<Ionicons name="share-outline" size={20} color={colors.primary} />}
-                />
-              ) : null}
-              {configurable ? (
-                <SettingsRow
-                  title="Configure"
-                  onPress={() => openConfiguration(addon.baseUrl)}
-                  leading={<Ionicons name="settings-outline" size={20} color={colors.primary} />}
-                />
-              ) : null}
-              <SettingsRow
-                title="Remove Add-on"
-                onPress={() => confirmRemove(addon)}
-                destructive
-                isLast
-                leading={<Ionicons name="trash-outline" size={20} color="#ff453a" />}
-              />
-            </SettingsSection>
-          );
-        }) : (
-          <SettingsSection title="Installed Add-ons" footer="Add an add-on to start finding available streams.">
+              />,
+              isExpanded ? (
+                  <SettingsRow
+                    key={`${addon.id}-details`}
+                    title={addon.description || 'No description available.'}
+                    detail={categories || undefined}
+                    detailColor="#8e8e93"
+                    isLast
+                  />
+                ) : null,
+            ];
+          }) : (
             <SettingsRow
-              title="No Add-ons Installed"
-              detail="Your installed add-ons will appear here."
+              title="No add-ons yet"
+              detail="Add-ons you install will appear here."
               isLast
               leading={<Ionicons name="cube-outline" size={20} color={colors.textMuted} />}
             />
-          </SettingsSection>
-        )}
+          )}
+        </SettingsSection>
       </SettingsPage>
     </View>
   );

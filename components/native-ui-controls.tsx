@@ -106,6 +106,7 @@ export function NativeSelect<T extends string | number>({
       <Picker
         selectedValue={selectedValue}
         onValueChange={onValueChange}
+        appearance="menu"
         enabled={enabled}
       >
         {options.map((option) => (

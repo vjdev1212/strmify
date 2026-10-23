@@ -5,6 +5,7 @@ import { StatusBar, View } from '@/components/Themed';
 import { SettingsPage, SettingsRow, SettingsSection } from '@/components/NativeSettings';
 import { showAlert } from '@/utils/platform';
 import { useTheme } from '@/context/ThemeContext';
+import { systemDarkBackground } from '@/constants/theme';
 
 const resources = [
   { title: 'Google Play Store', detail: 'Download for Android devices', icon: 'logo-google-playstore' as const, url: 'https://play.google.com/store/apps/details?id=com.vijayyuvi.strmify' },
@@ -26,7 +27,7 @@ export default function DownloadsScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <View style={{ flex: 1, backgroundColor: systemDarkBackground }}>
       <StatusBar />
       <SettingsPage>
         <SettingsSection title="Install Strmify" footer="Choose a source to install or update Strmify.">

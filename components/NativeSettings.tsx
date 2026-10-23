@@ -77,6 +77,8 @@ interface SettingsRowProps {
   accessibilityLabel?: string;
   selected?: boolean;
   disabled?: boolean;
+  detailSameFont?: boolean;
+  detailColor?: string;
 }
 
 export function SettingsRow({
@@ -90,6 +92,8 @@ export function SettingsRow({
   accessibilityLabel,
   selected,
   disabled = false,
+  detailSameFont = false,
+  detailColor,
 }: SettingsRowProps) {
   const { colors } = useTheme();
   const content = (
@@ -97,7 +101,14 @@ export function SettingsRow({
       {leading ? <View style={styles.leading}>{leading}</View> : null}
       <View style={styles.rowText}>
         <Text style={[styles.rowTitle, { color: destructive ? '#ff453a' : colors.text }]}>{title}</Text>
-        {detail ? <Text style={[styles.rowDetail, { color: colors.textMuted }]}>{detail}</Text> : null}
+        {detail ? (
+          <Text style={[
+            detailSameFont ? styles.rowTitle : styles.rowDetail,
+            { color: detailColor ?? colors.textMuted },
+          ]}>
+            {detail}
+          </Text>
+        ) : null}
       </View>
       {trailing ? <View style={styles.trailing}>{trailing}</View> : null}
     </>

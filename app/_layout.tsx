@@ -4,15 +4,16 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
-import { View, StyleSheet } from 'react-native';
+import { Appearance, View, StyleSheet } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '@/context/ThemeContext';
 import BlurGradientBackground from '@/components/BlurGradientBackground';
+import { systemDarkBackground } from '@/constants/theme';
 
 export { ErrorBoundary } from 'expo-router';
 
 export const unstable_settings = {
-    initialRouteName: '(tabs)',
+    anchor: '(tabs)',
 };
 
 SplashScreen.preventAutoHideAsync();
@@ -24,6 +25,7 @@ export default function RootLayout() {
     });
 
     useEffect(() => { if (error) throw error; }, [error]);
+    useEffect(() => { Appearance.setColorScheme('dark'); }, []);
     useEffect(() => { if (loaded) SplashScreen.hideAsync(); }, [loaded]);
 
     if (!loaded) return null;
@@ -46,14 +48,16 @@ function RootLayoutNav() {
 
     const screenOptions = {
         headerShown: true,
-        headerTransparent: true,
-        headerBackground: InvisibleHeaderBackground,
+        headerTransparent: false,
+        headerUserInterfaceStyle: 'dark' as const,
+        headerBackButtonDisplayMode: 'minimal' as const,
+        headerBackground: HeaderBackground,
         headerTitle: '',
         headerTintColor: colors.text,
         headerBackTitle: '',
         headerShadowVisible: false,
-        headerStyle: { backgroundColor: 'transparent' },
-        contentStyle: { backgroundColor: colors.background },
+        headerStyle: { backgroundColor: colors.background },
+        contentStyle: { backgroundColor: systemDarkBackground },
     };
 
     return (
@@ -61,9 +65,14 @@ function RootLayoutNav() {
             <BlurGradientBackground />
             <Stack
                 screenOptions={{
-                    headerStyle: styles.glassHeader,
+                    headerUserInterfaceStyle: 'dark',
+                    headerBackButtonDisplayMode: 'minimal',
+                    headerBackTitle: '',
+                    headerTintColor: colors.text,
+                    headerTransparent: false,
+                    headerStyle: { backgroundColor: colors.background },
                     headerBackground: HeaderBackground,
-                    contentStyle: { backgroundColor: 'transparent' },
+                    contentStyle: { backgroundColor: systemDarkBackground },
                 }}
             >
                 <Stack.Screen
@@ -89,7 +98,7 @@ function RootLayoutNav() {
                     name="stream/player"
                     options={{
                         headerShown: false,
-                        contentStyle: { backgroundColor: '#000000' },
+                        contentStyle: { backgroundColor: systemDarkBackground },
                     }}
                 />
                 <Stack.Screen name="settings/addons" options={{ ...screenOptions, title: 'Add-ons', headerTitle: 'Add-ons' }} />
@@ -109,13 +118,6 @@ function RootLayoutNav() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-    },
-    glassHeader: {
-        backgroundColor: 'transparent',
-        elevation: 0,
-        shadowOpacity: 0,
-        borderBottomWidth: 1,
-        borderBottomColor: 'rgba(255, 255, 255, 0.1)',
     },
     headerBlur: {
         flex: 1,

@@ -63,6 +63,8 @@ interface SettingsRowProps {
   accessibilityLabel?: string;
   selected?: boolean;
   disabled?: boolean;
+  detailSameFont?: boolean;
+  detailColor?: string;
 }
 
 export function SettingsRow({
@@ -73,7 +75,14 @@ export function SettingsRow({
   onPress,
   destructive = false,
   disabled = false,
+  detailSameFont = false,
+  detailColor,
 }: SettingsRowProps) {
+  const detailTextStyle = {
+    ...(detailSameFont ? { fontSize: 16 as const, fontWeight: '400' as const } : {}),
+    ...(detailColor ? { color: detailColor } : {}),
+  };
+
   return (
     <ListItem
       onPress={disabled ? undefined : onPress}
@@ -87,7 +96,11 @@ export function SettingsRow({
           <View>{trailing}</View>
         </RNHostView>
       ) : undefined}
-      supportingText={detail}
+      supportingText={detail ? (
+        detailSameFont || detailColor
+          ? <NativeText textStyle={detailTextStyle}>{detail}</NativeText>
+          : detail
+      ) : undefined}
     >
       <NativeText
         textStyle={{

@@ -1,12 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, ScrollView, Animated, ActivityIndicator } from 'react-native';
-import { View, Text } from '@/components/Themed';
-import { confirmAction, showAlert } from '@/utils/platform';
+import React, { useEffect, useState } from 'react';
 import { MaterialIcons } from '@expo/vector-icons';
-import { StorageKeys, storageService } from '@/utils/StorageService';
+import { NativeSwitch, NativeTextInput } from '@/components/native-ui-controls';
+import { SettingsPage, SettingsRow, SettingsSection } from '@/components/NativeSettings';
 import { useTheme } from '@/context/ThemeContext';
-import { NativeButton, NativeSwitch, NativeTextInput } from '@/components/native-ui-controls';
-import NativeStackList from '@/components/native-stack-list';
+import { confirmAction, showAlert } from '@/utils/platform';
+import { StorageKeys, storageService } from '@/utils/StorageService';
 
 interface ServerConfigProps {
   serverName: string;
@@ -22,9 +20,7 @@ export interface ServerConfig {
   current: boolean;
 }
 
-interface ConnectionStatus {
-  [serverId: string]: 'checking' | 'connected' | 'disconnected' | 'error';
-}
+type ConnectionStatus = Record<string, 'checking' | 'connected' | 'disconnected' | 'error' | undefined>;
 
 const SERVERS_KEY = StorageKeys.SERVERS_KEY;
 const DEFAULT_SERVER_ID = 'default-localhost';
@@ -42,433 +38,323 @@ const getDefaultServer = (serverType: string, serverName: string): ServerConfig 
 
 const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverType, defaultUrl }) => {
   const { colors } = useTheme();
-  const [serverUrl, setServerUrl] = useState<string>(defaultUrl);
-  const [isCurrent, setIsCurrent] = useState<boolean>(false);
+  const [serverUrl, setServerUrl] = useState(defaultUrl);
+  const [isCurrent, setIsCurrent] = useState(false);
   const [serverConfigs, setServerConfigs] = useState<ServerConfig[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [isAddingNew, setIsAddingNew] = useState<boolean>(false);
-  const [selectedServerId, setSelectedServerId] = useState<string | null>(null);
-  const [inlineEditingId, setInlineEditingId] = useState<string | null>(null);
-  const [inlineEditValue, setInlineEditValue] = useState<string>('');
-  const [animatedValues, setAnimatedValues] = useState<{ [key: string]: { rotation: Animated.Value, height: Animated.Value } }>({});
+  const [isAddingNew, setIsAddingNew] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({});
-
-  useEffect(() => { ensureDefaultServerExists(); }, [serverType]);
-
-  useEffect(() => {
-    const newAnimatedValues: { [key: string]: { rotation: Animated.Value, height: Animated.Value } } = {};
-    serverConfigs.forEach(server => {
-      newAnimatedValues[server.serverId] = { rotation: new Animated.Value(0), height: new Animated.Value(0) };
-    });
-    setAnimatedValues(newAnimatedValues);
-  }, [serverConfigs]);
-
-  useEffect(() => {
-    if (serverConfigs.length > 0) checkAllConnections();
-  }, [serverConfigs]);
-
-  const ensureDefaultServerExists = async () => {
-    try {
-      const savedConfigs = storageService.getItem(SERVERS_KEY);
-      const allServers: ServerConfig[] = savedConfigs ? JSON.parse(savedConfigs) : [];
-      const serversOfType = allServers.filter(s => s.serverType === serverType);
-      const defaultExists = serversOfType.some(s => s.serverId === DEFAULT_SERVER_ID);
-      if (!defaultExists) {
-        const defaultServer = getDefaultServer(serverType, serverName);
-        defaultServer.current = !serversOfType.some(s => s.current);
-        storageService.setItem(SERVERS_KEY, JSON.stringify([...allServers, defaultServer]));
-      }
-      await loadServers();
-    } catch (error) {
-      console.error('Error ensuring default server:', error);
-    }
-  };
 
   const loadServers = async () => {
     try {
       const savedConfigs = storageService.getItem(SERVERS_KEY);
       const servers: ServerConfig[] = savedConfigs ? JSON.parse(savedConfigs) : [];
-      const filtered = servers.filter(s => s.serverType === serverType);
-      setServerConfigs(filtered);
-      if (filtered.length === 0) { setServerUrl(defaultUrl); setIsCurrent(true); setIsAddingNew(true); }
+      setServerConfigs(servers.filter((server) => server.serverType === serverType));
     } catch (error) {
-      console.error('Error loading settings:', error);
+      console.error('Error loading server settings:', error);
+      showAlert('Error', 'Failed to load server configuration.');
     }
   };
 
-  const checkServerConnection = async (server: ServerConfig): Promise<'connected' | 'disconnected' | 'error'> => {
+  useEffect(() => {
+    const ensureDefaultServerExists = async () => {
+      try {
+        const savedConfigs = storageService.getItem(SERVERS_KEY);
+        const allServers: ServerConfig[] = savedConfigs ? JSON.parse(savedConfigs) : [];
+        const serversOfType = allServers.filter((server) => server.serverType === serverType);
+        if (!serversOfType.some((server) => server.serverId === DEFAULT_SERVER_ID)) {
+          const defaultServer = getDefaultServer(serverType, serverName);
+          defaultServer.current = !serversOfType.some((server) => server.current);
+          storageService.setItem(SERVERS_KEY, JSON.stringify([...allServers, defaultServer]));
+        }
+        await loadServers();
+      } catch (error) {
+        console.error('Error ensuring default server:', error);
+        showAlert('Error', 'Failed to initialize server settings.');
+      }
+    };
+
+    void ensureDefaultServerExists();
+  }, [serverName, serverType]);
+
+  const checkServerConnection = async (
+    server: ServerConfig,
+  ): Promise<Exclude<ConnectionStatus[string], 'checking' | undefined>> => {
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
-      const response = await fetch(server.serverUrl, { method: 'HEAD', signal: controller.signal, headers: { 'Accept': '*/*' } });
-      clearTimeout(timeoutId);
-      return (response.ok || response.status < 500) ? 'connected' : 'disconnected';
+      timeoutId = setTimeout(() => controller.abort(), 5000);
+      const response = await fetch(server.serverUrl, {
+        method: 'HEAD',
+        signal: controller.signal,
+        headers: { Accept: '*/*' },
+      });
+      return response.ok || response.status < 500 ? 'connected' : 'disconnected';
     } catch (error) {
-      return (error instanceof Error && error.name === 'AbortError') ? 'disconnected' : 'error';
+      return error instanceof Error && error.name === 'AbortError' ? 'disconnected' : 'error';
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId);
     }
   };
 
   const checkAllConnections = async () => {
-    const checking: ConnectionStatus = {};
-    serverConfigs.forEach(s => { checking[s.serverId] = 'checking'; });
-    setConnectionStatus(checking);
-    const results = await Promise.all(serverConfigs.map(async s => ({ serverId: s.serverId, status: await checkServerConnection(s) })));
-    const final: ConnectionStatus = {};
-    results.forEach(({ serverId, status }) => { final[serverId] = status; });
-    setConnectionStatus(final);
+    if (serverConfigs.length === 0) return;
+    setConnectionStatus(Object.fromEntries(serverConfigs.map((server) => [server.serverId, 'checking'])));
+    const results = await Promise.all(
+      serverConfigs.map(async (server) => [server.serverId, await checkServerConnection(server)] as const),
+    );
+    setConnectionStatus(Object.fromEntries(results));
   };
 
-  const refreshConnection = async (serverId: string) => {
-    const server = serverConfigs.find(s => s.serverId === serverId);
-    if (!server) return;
-    setConnectionStatus(prev => ({ ...prev, [serverId]: 'checking' }));
+  useEffect(() => {
+    if (serverConfigs.length > 0) void checkAllConnections();
+  }, [serverConfigs]);
+
+  const refreshConnection = async (server: ServerConfig) => {
+    setConnectionStatus((current) => ({ ...current, [server.serverId]: 'checking' }));
     const status = await checkServerConnection(server);
-    setConnectionStatus(prev => ({ ...prev, [serverId]: status }));
+    setConnectionStatus((current) => ({ ...current, [server.serverId]: status }));
   };
 
-  const renderConnectionIndicator = (serverId: string) => {
-    const status = connectionStatus[serverId];
-    if (status === 'checking') return <ActivityIndicator size="small" color={colors.textDim} />;
-    const dotColor = status === 'connected' ? '#30D158' : status === 'disconnected' || status === 'error' ? '#FF453A' : colors.textDim;
-    return <View style={[styles.dot, { backgroundColor: dotColor }]} />;
+  const getConnectionLabel = (serverId: string) => {
+    switch (connectionStatus[serverId]) {
+      case 'checking':
+        return 'Checking connection…';
+      case 'connected':
+        return 'Connected';
+      case 'disconnected':
+        return 'Not responding';
+      case 'error':
+        return 'Connection error';
+      default:
+        return 'Connection not checked';
+    }
   };
 
-  const isValidUrl = (url: string) => { try { new URL(url); return true; } catch { return false; } };
+  const saveServer = async () => {
+    const trimmedUrl = serverUrl.trim();
+    try {
+      new URL(trimmedUrl);
+    } catch {
+      showAlert('Error', 'Please enter a valid server URL.');
+      return;
+    }
 
-  const handleSave = async () => {
-    if (!serverUrl.trim() || !isValidUrl(serverUrl)) { showAlert('Error', 'Please enter a valid server URL.'); return; }
     try {
       const savedConfigs = storageService.getItem(SERVERS_KEY);
       const allServers: ServerConfig[] = savedConfigs ? JSON.parse(savedConfigs) : [];
-      const base = isCurrent ? allServers.map(s => s.serverType === serverType ? { ...s, current: false } : s) : allServers;
-      let updated: ServerConfig[];
-      if (editingId) {
-        const config = { serverId: editingId, serverType, serverName, serverUrl: serverUrl.trim(), current: isCurrent };
-        updated = base.map(s => s.serverId === editingId ? config : s);
-      } else {
-        updated = [...base, { serverId: `${serverType}-${Date.now()}`, serverType, serverName, serverUrl: serverUrl.trim(), current: isCurrent }];
-      }
+      const base = isCurrent
+        ? allServers.map((server) => server.serverType === serverType ? { ...server, current: false } : server)
+        : allServers;
+      const updated = editingId
+        ? base.map((server) => server.serverId === editingId
+          ? { ...server, serverUrl: trimmedUrl, current: isCurrent }
+          : server)
+        : [
+          ...base,
+          {
+            serverId: `${serverType}-${Date.now()}`,
+            serverType,
+            serverName,
+            serverUrl: trimmedUrl,
+            current: isCurrent,
+          },
+        ];
+
       storageService.setItem(SERVERS_KEY, JSON.stringify(updated));
-      setEditingId(null); setIsAddingNew(false); setServerUrl(defaultUrl); setIsCurrent(false); setSelectedServerId(null); setInlineEditingId(null);
+      setEditingId(null);
+      setIsAddingNew(false);
+      setServerUrl(defaultUrl);
+      setIsCurrent(false);
       await loadServers();
       showAlert('Success', `${serverName} server configuration saved.`);
-    } catch { showAlert('Error', 'Failed to save configuration.'); }
-  };
-
-  const handleAddNew = () => { setEditingId(null); setServerUrl(defaultUrl); setIsCurrent(serverConfigs.length === 0); setIsAddingNew(true); setSelectedServerId(null); setInlineEditingId(null); };
-  const handleCancel = () => { setEditingId(null); setIsAddingNew(false); setServerUrl(defaultUrl); setIsCurrent(false); setSelectedServerId(null); setInlineEditingId(null); };
-  const toggleCurrent = useCallback(() => setIsCurrent(prev => !prev), []);
-
-  const startInlineEdit = (server: ServerConfig) => {
-    setInlineEditingId(server.serverId); setInlineEditValue(server.serverUrl); setSelectedServerId(null);
-    if (animatedValues[server.serverId]) {
-      const { rotation, height } = animatedValues[server.serverId];
-      Animated.parallel([
-        Animated.timing(rotation, { toValue: 0, duration: 200, useNativeDriver: true }),
-        Animated.timing(height, { toValue: 0, duration: 200, useNativeDriver: false }),
-      ]).start();
+    } catch (error) {
+      console.error('Error saving server configuration:', error);
+      showAlert('Error', 'Failed to save server configuration.');
     }
   };
 
-  const cancelInlineEdit = () => { setInlineEditingId(null); setInlineEditValue(''); };
-
-  const toggleServerSelection = (serverId: string) => {
-    const isSelected = selectedServerId === serverId;
-    setSelectedServerId(isSelected ? null : serverId);
-    setInlineEditingId(null);
-    if (animatedValues[serverId]) {
-      const { rotation, height } = animatedValues[serverId];
-      Animated.parallel([
-        Animated.timing(rotation, { toValue: isSelected ? 0 : 1, duration: 200, useNativeDriver: true }),
-        Animated.timing(height, { toValue: isSelected ? 0 : 48, duration: 200, useNativeDriver: false }),
-      ]).start();
-    }
+  const startAddingServer = () => {
+    setEditingId(null);
+    setServerUrl(defaultUrl);
+    setIsCurrent(!serverConfigs.some((server) => server.current));
+    setIsAddingNew(true);
   };
 
-  const saveInlineEdit = async () => {
-    if (!inlineEditValue.trim() || !isValidUrl(inlineEditValue)) { showAlert('Error', 'Please enter a valid server URL.'); return; }
+  const startEditingServer = (server: ServerConfig) => {
+    setEditingId(server.serverId);
+    setServerUrl(server.serverUrl);
+    setIsCurrent(server.current);
+    setIsAddingNew(false);
+  };
+
+  const cancelEditing = () => {
+    setEditingId(null);
+    setIsAddingNew(false);
+    setServerUrl(defaultUrl);
+    setIsCurrent(false);
+  };
+
+  const setCurrentServer = async (serverId: string) => {
     try {
       const savedConfigs = storageService.getItem(SERVERS_KEY);
       const allServers: ServerConfig[] = savedConfigs ? JSON.parse(savedConfigs) : [];
-      storageService.setItem(SERVERS_KEY, JSON.stringify(allServers.map(s => s.serverId === inlineEditingId ? { ...s, serverUrl: inlineEditValue.trim() } : s)));
-      setInlineEditingId(null); setInlineEditValue('');
+      const updated = allServers.map((server) => (
+        server.serverType === serverType
+          ? { ...server, current: server.serverId === serverId }
+          : server
+      ));
+      storageService.setItem(SERVERS_KEY, JSON.stringify(updated));
       await loadServers();
-      showAlert('Success', 'Server URL updated successfully.');
-    } catch { showAlert('Error', 'Failed to update server URL.'); }
+    } catch (error) {
+      console.error('Error changing current server:', error);
+      showAlert('Error', 'Failed to change the active server.');
+    }
   };
 
-  const handleDelete = async (serverId: string) => {
-    if (isDefaultServer(serverId)) { showAlert('Info', 'The default local server cannot be removed.'); return; }
-    if (serverConfigs.find(s => s.serverId === serverId)?.current) { showAlert('Error', 'Cannot delete the current server.'); return; }
-    if (!await confirmAction('Delete Server', 'Are you sure you want to delete this server configuration?', 'Delete')) return;
+  const deleteServer = async (server: ServerConfig) => {
+    if (isDefaultServer(server.serverId)) {
+      showAlert('Info', 'The default local server cannot be removed.');
+      return;
+    }
+    if (server.current) {
+      showAlert('Error', 'Cannot delete the active server. Set another server as active first.');
+      return;
+    }
+    if (!await confirmAction('Delete Server', 'Are you sure you want to delete this server configuration?', 'Delete')) {
+      return;
+    }
+
     try {
       const savedConfigs = storageService.getItem(SERVERS_KEY);
       const allServers: ServerConfig[] = savedConfigs ? JSON.parse(savedConfigs) : [];
-      storageService.setItem(SERVERS_KEY, JSON.stringify(allServers.filter(s => s.serverId !== serverId)));
-      setSelectedServerId(null);
+      storageService.setItem(
+        SERVERS_KEY,
+        JSON.stringify(allServers.filter((savedServer) => savedServer.serverId !== server.serverId)),
+      );
       await loadServers();
       showAlert('Success', 'Server configuration deleted.');
-    } catch { showAlert('Error', 'Failed to delete configuration.'); }
+    } catch (error) {
+      console.error('Error deleting server configuration:', error);
+      showAlert('Error', 'Failed to delete server configuration.');
+    }
   };
 
-  const handleSetAsCurrent = async (serverId: string) => {
-    try {
-      const savedConfigs = storageService.getItem(SERVERS_KEY);
-      const allServers: ServerConfig[] = savedConfigs ? JSON.parse(savedConfigs) : [];
-      storageService.setItem(SERVERS_KEY, JSON.stringify(allServers.map(s => s.serverType === serverType ? { ...s, current: s.serverId === serverId } : s)));
-      await loadServers();
-      setSelectedServerId(null);
-      if (animatedValues[serverId]) {
-        const { rotation, height } = animatedValues[serverId];
-        Animated.parallel([
-          Animated.timing(rotation, { toValue: 0, duration: 200, useNativeDriver: true }),
-          Animated.timing(height, { toValue: 0, duration: 200, useNativeDriver: false }),
-        ]).start();
-      }
-    } catch { showAlert('Error', 'Failed to update current server.'); }
-  };
+  const formVisible = isAddingNew || editingId !== null;
 
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={styles.content}
-      contentInsetAdjustmentBehavior="automatic"
-      keyboardShouldPersistTaps="handled"
-      showsVerticalScrollIndicator={false}
-    >
-      {(editingId || isAddingNew) && (
-        <View style={styles.section}>
-          <View style={[styles.card, { backgroundColor: colors.primarySurface }]}>
-            <View style={styles.formGroup}>
-              <View style={styles.formRow}>
-                <View style={styles.formLabel}>
-                  <Text style={[styles.labelText, { color: colors.text }]}>Current Server</Text>
-                  <Text style={[styles.labelHint, { color: colors.textDim }]}>Set as active</Text>
-                </View>
-                <NativeSwitch
-                  value={isCurrent}
-                  onValueChange={toggleCurrent}
-                  seedColor={colors.primary}
-                />
-              </View>
-            </View>
-            <View style={styles.formGroup}>
-              <Text style={[styles.inputLabel, { color: colors.textMuted }]}>Server URL</Text>
-              <NativeTextInput
-                style={{ width: '100%' }}
-                inputStyle={{
-                  width: '100%',
-                  paddingVertical: 12,
-                  paddingHorizontal: 14,
-                  borderRadius: 8,
-                  backgroundColor: colors.primarySurface,
-                }}
-                textStyle={{ fontSize: 15, color: colors.text }}
-                seedColor={colors.primary}
-                accessibilityLabel={`${serverName} server URL`}
-                value={serverUrl}
-                onChangeText={setServerUrl}
-                placeholder="https://example.com"
-                placeholderTextColor={colors.textDim}
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-            </View>
-            <View style={styles.buttonRow}>
-              <NativeButton style={styles.btnCancel} onPress={handleCancel} label="Cancel" variant="outlined" seedColor={colors.primary} />
-              <NativeButton style={styles.btnSave} onPress={handleSave} label="Save" seedColor={colors.primary} />
-            </View>
-          </View>
-        </View>
-      )}
-
-      {!editingId && !isAddingNew && (
-        <View style={styles.section}>
-          <View style={styles.headerRow}>
-            <View>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Servers</Text>
-              <Text style={[styles.sectionCount, { color: colors.textDim }]}>{serverConfigs.length} configured</Text>
-            </View>
-            <View style={styles.headerActions}>
-              <NativeButton
-                variant="text"
-                style={[styles.iconBtn, { backgroundColor: colors.primarySurface }]}
-                onPress={checkAllConnections}
-                disabled={Object.values(connectionStatus).some(s => s === 'checking')}
-                seedColor={colors.primary}
-              >
-                <MaterialIcons name="refresh" size={20} color={Object.values(connectionStatus).some(s => s === 'checking') ? colors.textDim : colors.primary} />
-              </NativeButton>
-              <NativeButton variant="text" style={[styles.addBtn, { backgroundColor: colors.primary }]} onPress={handleAddNew} seedColor={colors.primary}>
-                <MaterialIcons name="add" size={18} color={colors.text} />
-                <Text style={[styles.btnText, { color: colors.text }]}>Add</Text>
-              </NativeButton>
-            </View>
-          </View>
-
-          {serverConfigs.length > 0 ? (
-            <NativeStackList
-              data={serverConfigs}
-              axis="vertical"
-              spacing={10}
-              scrollable={false}
-              keyExtractor={(item) => item.serverId}
-              renderItem={(item) => (
-                <View style={[styles.card, { backgroundColor: colors.primarySurface }]}>
-                  {inlineEditingId === item.serverId ? (
-                    <View>
-                      <View style={styles.formGroup}>
-                        <Text style={[styles.inputLabel, { color: colors.textMuted }]}>Server URL</Text>
-                        <NativeTextInput
-                          style={{ width: '100%' }}
-                          inputStyle={{
-                            width: '100%',
-                            paddingVertical: 12,
-                            paddingHorizontal: 14,
-                            borderRadius: 8,
-                            backgroundColor: colors.primarySurface,
-                          }}
-                          textStyle={{ fontSize: 15, color: colors.text }}
-                          seedColor={colors.primary}
-                          accessibilityLabel={`${serverName} server URL`}
-                          value={inlineEditValue}
-                          onChangeText={setInlineEditValue}
-                          placeholder="https://example.com"
-                          placeholderTextColor={colors.textDim}
-                          autoCapitalize="none"
-                          autoCorrect={false}
-                          autoFocus
-                        />
-                      </View>
-                      <View style={styles.buttonRow}>
-                        <NativeButton style={styles.btnCancel} onPress={cancelInlineEdit} label="Cancel" variant="outlined" seedColor={colors.primary} />
-                        <NativeButton style={styles.btnSave} onPress={saveInlineEdit} label="Save" seedColor={colors.primary} />
-                      </View>
-                    </View>
-                  ) : (
-                    <>
-                      <NativeButton variant="text" style={styles.serverItem} onPress={() => toggleServerSelection(item.serverId)} seedColor={colors.primary}>
-                        <View style={styles.serverMain}>
-                          <View style={styles.statusIndicator}>{renderConnectionIndicator(item.serverId)}</View>
-                          <View style={styles.serverDetails}>
-                            <View style={styles.serverNameRow}>
-                              <Text style={[styles.serverUrl, { color: colors.text }]} numberOfLines={1}>{item.serverUrl}</Text>
-                              {isDefaultServer(item.serverId) && (
-                                <View style={[styles.defaultBadge, { backgroundColor: colors.primaryBorder }]}>
-                                  <Text style={[styles.defaultBadgeText, { color: colors.textMuted }]}>built-in</Text>
-                                </View>
-                              )}
-                            </View>
-                            <Text style={[styles.serverStatus, { color: colors.textMuted }]}>
-                              {connectionStatus[item.serverId] === 'checking' ? 'Checking connection' :
-                                connectionStatus[item.serverId] === 'connected' ? 'Connected' :
-                                  connectionStatus[item.serverId] === 'disconnected' ? 'Disconnected' : 'Connection error'}
-                            </Text>
-                          </View>
-                        </View>
-                        <View style={styles.serverEnd}>
-                          {item.current ? (
-                            <MaterialIcons name="check-circle" size={18} color="#30D158" />
-                          ) : (
-                            <Animated.View style={{
-                              transform: [{
-                                rotate: animatedValues[item.serverId]?.rotation.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '90deg'] }) || '0deg'
-                              }]
-                            }}>
-                              <MaterialIcons name="chevron-right" size={22} color={colors.textDim} />
-                            </Animated.View>
-                          )}
-                        </View>
-                      </NativeButton>
-
-                      {selectedServerId === item.serverId && (
-                        <Animated.View style={[styles.actionBar, { backgroundColor: colors.backgroundCard, height: animatedValues[item.serverId]?.height || 48, opacity: animatedValues[item.serverId]?.height.interpolate({ inputRange: [0, 48], outputRange: [0, 1] }) || 1 }]}>
-                          <NativeButton variant="text" style={styles.actionBtn} onPress={() => refreshConnection(item.serverId)} seedColor={colors.primary}>
-                            <MaterialIcons name="wifi-tethering" size={16} color={colors.primary} />
-                            <Text style={[styles.actionBtnText, { color: colors.primary }]}>Test</Text>
-                          </NativeButton>
-                          {!isDefaultServer(item.serverId) && (
-                            <NativeButton variant="text" style={styles.actionBtn} onPress={() => startInlineEdit(item)} seedColor={colors.primary}>
-                              <MaterialIcons name="edit" size={16} color={colors.primary} />
-                              <Text style={[styles.actionBtnText, { color: colors.primary }]}>Edit</Text>
-                            </NativeButton>
-                          )}
-                          {!item.current && (
-                            <NativeButton variant="text" style={styles.actionBtn} onPress={() => handleSetAsCurrent(item.serverId)} seedColor={colors.primary}>
-                              <MaterialIcons name="check-circle-outline" size={16} color="#30D158" />
-                              <Text style={[styles.actionBtnText, { color: '#30D158' }]}>Activate</Text>
-                            </NativeButton>
-                          )}
-                          {!isDefaultServer(item.serverId) && (
-                            <NativeButton variant="text" style={[styles.actionBtn, item.current && styles.disabledBtn]} onPress={() => handleDelete(item.serverId)} disabled={item.current} seedColor={colors.primary}>
-                              <MaterialIcons name="delete-outline" size={16} color={item.current ? colors.textDim : '#FF453A'} />
-                              <Text style={[styles.actionBtnText, { color: item.current ? colors.textDim : '#FF453A' }]}>Delete</Text>
-                            </NativeButton>
-                          )}
-                        </Animated.View>
-                      )}
-                    </>
-                  )}
-                </View>
-              )}
+    <SettingsPage>
+      {formVisible ? (
+        <>
+          <SettingsSection
+            title={editingId ? 'Edit server' : 'Add server'}
+            footer="Enter the base URL for your Stremio-compatible server."
+          >
+            <NativeTextInput
+              accessibilityLabel={`${serverName} server URL`}
+              value={serverUrl}
+              onChangeText={setServerUrl}
+              placeholder="https://example.com"
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="url"
+              returnKeyType="done"
             />
-          ) : (
-            <View style={[styles.emptyState, { backgroundColor: colors.primarySurface }]}>
-              <MaterialIcons name="dns" size={40} color={colors.textDim} />
-              <Text style={[styles.emptyTitle, { color: colors.text }]}>No servers configured</Text>
-              <Text style={[styles.emptyText, { color: colors.textDim }]}>Add your first server to get started</Text>
-              <NativeButton variant="text" style={[styles.emptyBtn, { backgroundColor: colors.primary }]} onPress={handleAddNew} seedColor={colors.primary}>
-                <Text style={[styles.btnText, { color: colors.text }]}>Add Server</Text>
-              </NativeButton>
-            </View>
-          )}
-        </View>
+          </SettingsSection>
+          {!editingId ? (
+            <SettingsSection title="Playback">
+              <SettingsRow
+                title="Make active server"
+                detail="Use this server for playback"
+                trailing={
+                  <NativeSwitch
+                    value={isCurrent}
+                    onValueChange={setIsCurrent}
+                    seedColor={colors.primary}
+                  />
+                }
+              />
+            </SettingsSection>
+          ) : null}
+          <SettingsSection title="Actions">
+            <SettingsRow title="Save server" onPress={() => void saveServer()} />
+            <SettingsRow title="Cancel" onPress={cancelEditing} destructive isLast />
+          </SettingsSection>
+        </>
+      ) : (
+        <>
+          <SettingsSection
+            title={`${serverName} servers`}
+            footer={`${serverConfigs.length} configured. Select a server to use for playback.`}
+          >
+            <SettingsRow
+              title="Refresh connections"
+              detail="Check whether configured servers are reachable"
+              leading={<MaterialIcons name="refresh" size={20} color={colors.primary} />}
+              onPress={() => void checkAllConnections()}
+            />
+            <SettingsRow
+              title="Add server"
+              detail="Connect to another Stremio-compatible server"
+              leading={<MaterialIcons name="add" size={20} color={colors.primary} />}
+              onPress={startAddingServer}
+              isLast
+            />
+          </SettingsSection>
+          {serverConfigs.length === 0 ? (
+            <SettingsSection title="Servers">
+              <SettingsRow
+                title="No servers configured"
+                detail="Add a server URL to connect to your Stremio-compatible service."
+                isLast
+              />
+            </SettingsSection>
+          ) : serverConfigs.map((server) => (
+            <SettingsSection
+              key={server.serverId}
+              title={server.current ? 'Active server' : 'Server'}
+              footer={`${getConnectionLabel(server.serverId)}${isDefaultServer(server.serverId) ? ' · Built-in local server' : ''}`}
+            >
+              <SettingsRow
+                title={server.serverUrl}
+                detail={server.current ? 'Currently used for playback' : 'Not currently active'}
+                selected={server.current}
+                onPress={() => {
+                  if (!server.current) void setCurrentServer(server.serverId);
+                }}
+              />
+              <SettingsRow
+                title="Test connection"
+                leading={<MaterialIcons name="network-check" size={20} color={colors.primary} />}
+                onPress={() => void refreshConnection(server)}
+              />
+              <SettingsRow
+                title="Edit server"
+                leading={<MaterialIcons name="edit" size={20} color={colors.primary} />}
+                onPress={() => startEditingServer(server)}
+              />
+              {!server.current ? (
+                <SettingsRow
+                  title="Set as active"
+                  leading={<MaterialIcons name="check-circle-outline" size={20} color={colors.primary} />}
+                  onPress={() => void setCurrentServer(server.serverId)}
+                />
+              ) : null}
+              {!isDefaultServer(server.serverId) ? (
+                <SettingsRow
+                  title="Delete server"
+                  leading={<MaterialIcons name="delete-outline" size={20} color="#ff453a" />}
+                  onPress={() => void deleteServer(server)}
+                  destructive
+                  isLast
+                />
+              ) : null}
+            </SettingsSection>
+          ))}
+        </>
       )}
-    </ScrollView>
+    </SettingsPage>
   );
 };
-
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  content: { width: '100%', maxWidth: 780, alignSelf: 'center', paddingHorizontal: 20, paddingTop: 12, paddingBottom: 40 },
-  section: { paddingHorizontal: 0, marginBottom: 24 },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  sectionTitle: { fontSize: 20, fontWeight: '600' },
-  sectionCount: { fontSize: 14, marginTop: 2 },
-  headerActions: { flexDirection: 'row', gap: 10, alignItems: 'center' },
-  iconBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 9, borderRadius: 18 },
-  serverList: { gap: 10 },
-  card: { borderRadius: 12, overflow: 'hidden' },
-  formGroup: { padding: 16 },
-  formRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  formLabel: { flex: 1 },
-  labelText: { fontSize: 16, fontWeight: '500' },
-  labelHint: { fontSize: 13, marginTop: 2 },
-  inputLabel: { fontSize: 13, fontWeight: '500', marginBottom: 8 },
-  buttonRow: { flexDirection: 'row', padding: 16, gap: 10 },
-  btnCancel: { flex: 1, paddingVertical: 13, borderRadius: 8, alignItems: 'center' },
-  btnSave: { flex: 1, paddingVertical: 13, borderRadius: 8, alignItems: 'center' },
-  btnText: { fontSize: 15, fontWeight: '500' },
-  serverItem: { flexDirection: 'row', alignItems: 'center', padding: 16 },
-  serverMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 14 },
-  serverEnd: { marginLeft: 12 },
-  statusIndicator: { width: 20, height: 20, alignItems: 'center', justifyContent: 'center' },
-  dot: { width: 8, height: 8, borderRadius: 4 },
-  serverDetails: { flex: 1 },
-  serverNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
-  serverUrl: { fontSize: 15, fontWeight: '500', flexShrink: 1 },
-  defaultBadge: { borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 },
-  defaultBadgeText: { fontSize: 11, fontWeight: '500' },
-  serverStatus: { fontSize: 13 },
-  actionBar: { flexDirection: 'row', paddingHorizontal: 12, alignItems: 'center', justifyContent: 'space-around', overflow: 'hidden' },
-  actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 10, paddingHorizontal: 10 },
-  actionBtnText: { fontSize: 14, fontWeight: '500' },
-  disabledBtn: { opacity: 0.4 },
-  emptyState: { borderRadius: 12, paddingVertical: 56, paddingHorizontal: 24, alignItems: 'center' },
-  emptyTitle: { fontSize: 17, fontWeight: '600', marginTop: 16, marginBottom: 6 },
-  emptyText: { fontSize: 14, marginBottom: 24, textAlign: 'center' },
-  emptyBtn: { paddingHorizontal: 20, paddingVertical: 11, borderRadius: 8 },
-});
 
 export default ServerConfiguration;

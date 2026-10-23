@@ -5,6 +5,7 @@ import { StatusBar, View } from '@/components/Themed';
 import { SettingsPage, SettingsRow, SettingsSection } from '@/components/NativeSettings';
 import { showAlert } from '@/utils/platform';
 import { useTheme } from '@/context/ThemeContext';
+import { systemDarkBackground } from '@/constants/theme';
 
 export default function DonateScreen() {
   const { colors } = useTheme();
@@ -20,7 +21,7 @@ export default function DonateScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <View style={{ flex: 1, backgroundColor: systemDarkBackground }}>
       <StatusBar />
       <SettingsPage>
         <SettingsSection title="Support" footer="Contributions help keep this project maintained and improving.">

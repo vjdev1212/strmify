@@ -1,11 +1,12 @@
 import ServerConfiguration from '@/components/ServerConfig';
 import { StatusBar, View } from '@/components/Themed';
 import { useTheme } from '@/context/ThemeContext';
+import { systemDarkBackground } from '@/constants/theme';
 
 const StremioServerScreen = () => {
     const { colors } = useTheme();
     return (
-        <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <View style={{ flex: 1, backgroundColor: systemDarkBackground }}>
             <StatusBar />
             <ServerConfiguration
                 serverName="Stremio"

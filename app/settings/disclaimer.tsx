@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { StatusBar, Text } from '@/components/Themed';
 import { SettingsPage, SettingsSection } from '@/components/NativeSettings';
 import { useTheme } from '@/context/ThemeContext';
+import { systemDarkBackground } from '@/constants/theme';
 
 const sections = [
   {
@@ -27,7 +28,7 @@ export default function DisclaimerScreen() {
   const { colors } = useTheme();
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <View style={{ flex: 1, backgroundColor: systemDarkBackground }}>
       <StatusBar />
       <SettingsPage>
         <SettingsSection title="About this app" footer="The developer assumes no responsibility for how users choose to use third-party add-ons or external content sources.">

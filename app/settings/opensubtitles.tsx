@@ -11,6 +11,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { View, Text } from '@/components/Themed';
 import { NativeButton, NativeSelect, NativeTextInput } from '@/components/native-ui-controls';
 import { SettingsPage, SettingsRow, SettingsSection } from '@/components/NativeSettings';
+import { systemDarkBackground } from '@/constants/theme';
 
 const OpenSubtitlesConfigScreen: React.FC = () => {
     const { colors } = useTheme();
@@ -118,7 +119,7 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
     };
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={[styles.container, { backgroundColor: systemDarkBackground }]}>
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardAvoid}>
                 <SettingsPage>
                     {isLoading ? (
