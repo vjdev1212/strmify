@@ -72,7 +72,7 @@ export default function SettingsHome() {
           Settings
         </Text>
       </View>
-      <SettingsPage>
+      <SettingsPage hideScrollIndicator>
         {settingsSections.map((section) => (
           <SettingsSection key={section.title} title={section.title}>
             {section.items.map((item, index) => (

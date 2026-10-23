@@ -2,6 +2,7 @@ import type { ReactElement, ReactNode } from 'react';
 import { Children, isValidElement } from 'react';
 import { View } from 'react-native';
 import { FieldGroup, Host, ListItem, RNHostView, Text as NativeText } from '@expo/ui';
+import { fillMaxWidth } from '@expo/ui/jetpack-compose/modifiers';
 
 interface SettingsPageProps {
   children: ReactNode;
@@ -86,6 +87,7 @@ export function SettingsRow({
 
   return (
     <ListItem
+      modifiers={[fillMaxWidth()]}
       onPress={disabled ? undefined : onPress}
       leading={leading ? (
         <RNHostView matchContents>

@@ -2,8 +2,9 @@ import type { ReactElement, ReactNode } from 'react';
 import { Children, isValidElement } from 'react';
 import { View } from 'react-native';
 import { FieldGroup, Host, ListItem, RNHostView, Text as NativeText } from '@expo/ui';
+import { HStack, Spacer, VStack } from '@expo/ui/swift-ui';
 import NativeFieldSelect from '@/components/native-field-select';
-import { refreshable, scrollIndicators } from '@expo/ui/swift-ui/modifiers';
+import { contentShape, frame, onTapGesture, refreshable, scrollIndicators, shapes } from '@expo/ui/swift-ui/modifiers';
 
 interface SettingsPageProps {
   children: ReactNode;
@@ -17,7 +18,7 @@ export function SettingsPage({ children, onRefresh, hideScrollIndicator = false 
     <Host style={{ flex: 1 }} colorScheme="dark">
       <FieldGroup modifiers={[
         ...(onRefresh ? [refreshable(onRefresh)] : []),
-        ...(hideScrollIndicator ? [scrollIndicators('hidden')] : []),
+        ...(hideScrollIndicator ? [scrollIndicators('never', 'vertical')] : []),
       ]}>
         {children}
       </FieldGroup>
@@ -79,38 +80,65 @@ export function SettingsRow({
   detailSameFont = false,
   detailColor,
 }: SettingsRowProps) {
-  const detailTextStyle = {
-    ...(detailSameFont ? { fontSize: 16 as const, fontWeight: '400' as const } : {}),
-    ...(detailColor ? { color: detailColor } : {}),
-  };
+  const leadingContent = leading ? (
+    <RNHostView matchContents>
+      <View>{leading}</View>
+    </RNHostView>
+  ) : null;
+  const trailingContent = trailing ? (
+    <RNHostView matchContents>
+      <View>{trailing}</View>
+    </RNHostView>
+  ) : null;
+  const titleContent = (
+    <NativeText
+      textStyle={{
+        color: destructive ? '#ff453a' : disabled ? '#8e8e93' : undefined,
+      }}
+    >
+      {title}
+    </NativeText>
+  );
+  const detailContent = detail ? (
+    <NativeText textStyle={{
+      fontSize: detailSameFont ? 16 : 13,
+      ...(detailSameFont ? { fontWeight: '400' as const } : {}),
+      color: detailColor ?? '#8e8e93',
+    }}>
+      {detail}
+    </NativeText>
+  ) : null;
+
+  if (!onPress || disabled) {
+    return (
+      <ListItem
+        leading={leadingContent}
+        trailing={trailingContent}
+        supportingText={detailContent}
+      >
+        {titleContent}
+      </ListItem>
+    );
+  }
 
   return (
-    <ListItem
-      onPress={disabled ? undefined : onPress}
-      leading={leading ? (
-        <RNHostView matchContents>
-          <View>{leading}</View>
-        </RNHostView>
-      ) : undefined}
-      trailing={trailing ? (
-        <RNHostView matchContents>
-          <View>{trailing}</View>
-        </RNHostView>
-      ) : undefined}
-      supportingText={detail ? (
-        detailSameFont || detailColor
-          ? <NativeText textStyle={detailTextStyle}>{detail}</NativeText>
-          : detail
-      ) : undefined}
+    <HStack
+      spacing={12}
+      alignment="center"
+      modifiers={[
+        frame({ maxWidth: Infinity }),
+        contentShape(shapes.rectangle()),
+        onTapGesture(onPress),
+      ]}
     >
-      <NativeText
-        textStyle={{
-          color: destructive ? '#ff453a' : disabled ? '#8e8e93' : undefined,
-        }}
-      >
-        {title}
-      </NativeText>
-    </ListItem>
+      {leadingContent}
+      <VStack alignment="leading" spacing={2}>
+        {titleContent}
+        {detailContent}
+      </VStack>
+      <Spacer />
+      {trailingContent}
+    </HStack>
   );
 }
 
