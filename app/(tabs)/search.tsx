@@ -1,4 +1,4 @@
-import { Text, ActivityIndicator, TextInput, View, StatusBar } from '@/components/Themed';
+import { Text, ActivityIndicator, View, StatusBar } from '@/components/Themed';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { ScrollView, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,6 +9,7 @@ import PosterList from '@/components/PosterList';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BlurGradientBackground from '@/components/BlurGradientBackground';
 import { useTheme } from '@/context/ThemeContext';
+import { NativeTextInput } from '@/components/native-ui-controls';
 
 const TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -67,13 +68,17 @@ const SearchScreen = () => {
           <View style={styles.searchIconContainer}>
             <Ionicons name="search-outline" size={20} color={colors.textDim} />
           </View>
-          <TextInput
-            style={[styles.searchInput, { color: colors.text }]}
+          <NativeTextInput
+            style={{ flex: 1 }}
+            inputStyle={{ width: '100%' }}
+            textStyle={{ fontSize: 17, color: colors.text }}
+            seedColor={colors.primary}
+            accessibilityLabel="Search movies or series"
             placeholder="Search movies or series..."
             placeholderTextColor={colors.textDim}
             value={query}
             onChangeText={handleTextChange}
-            submitBehavior="blurAndSubmit"
+            returnKeyType="search"
             autoCorrect={false}
             autoCapitalize="none"
           />
@@ -123,7 +128,6 @@ const styles = StyleSheet.create({
   searchSection: { paddingHorizontal: 16, paddingBottom: 20 },
   searchInputContainer: { maxWidth: 780, width: '100%', margin: 'auto', flexDirection: 'row', alignItems: 'center', borderRadius: 12, height: 48, paddingHorizontal: 16, borderWidth: StyleSheet.hairlineWidth },
   searchIconContainer: { marginRight: 10 },
-  searchInput: { flex: 1, fontSize: 17, fontWeight: '400', letterSpacing: -0.2, outline: 'none' },
   clearButton: { marginLeft: 8, padding: 2 },
   clearIconContainer: { justifyContent: 'center', alignItems: 'center' },
   loadingContainer: { paddingVertical: 40, alignItems: 'center' },

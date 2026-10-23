@@ -1,7 +1,6 @@
 import { Colors, AppColors } from '@/constants/theme';
 import { storageService, StorageKeys } from '@/utils/StorageService';
 import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
-import { StyleSheet } from 'react-native';
 
 export type SavedTheme = {
     presetId: string;
@@ -84,9 +83,9 @@ export const AppThemeProvider = ({ children }: { children: React.ReactNode }) =>
 
 export const useTheme = () => useContext(ThemeContext);
 
-export function useThemedStyles<T extends StyleSheet.NamedStyles<T>>(
+export function useThemedStyles<T>(
     factory: (colors: AppColors) => T,
 ): T {
     const { colors } = useTheme();
-    return useMemo(() => StyleSheet.create(factory(colors)), [colors]);
+    return useMemo(() => factory(colors), [colors]);
 }

@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { StorageKeys, storageService } from '@/utils/StorageService';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { showAlert } from '@/utils/platform';
-import { MenuView, MenuAction } from '@react-native-menu/menu';
+import { MenuView } from '@expo/ui/community/menu';
+import type { MenuAction } from '@expo/ui/community/menu';
 import { WebMenu } from '@/components/WebMenuView';
 import { SUBTITLE_LANGUAGES } from '@/utils/Subtitles';
 import BottomSpacing from '@/components/BottomSpacing';
 import { useTheme } from '@/context/ThemeContext';
 import { View, Text } from '@/components/Themed';
+import { NativeButton, NativeTextInput } from '@/components/native-ui-controls';
 
 const OpenSubtitlesConfigScreen: React.FC = () => {
     const { colors } = useTheme();
@@ -113,7 +115,7 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
         if (Platform.OS === 'web') {
             return <WebMenu title="Select Languages" actions={webMenuActions as any} onPressAction={(action: any) => { const language = SUBTITLE_LANGUAGES.find(l => l.name === action.title); if (language) toggleLanguage(language.code); }}>{btn}</WebMenu>;
         }
-        return <MenuView actions={buildLanguageMenuActions()} onPressAction={handleLanguageMenuAction} themeVariant='dark' shouldOpenOnLongPress={false}>{btn}</MenuView>;
+        return <MenuView actions={buildLanguageMenuActions()} onPressAction={handleLanguageMenuAction} colorScheme="dark" shouldOpenOnLongPress={false}>{btn}</MenuView>;
     };
 
     if (isLoading) {
@@ -160,8 +162,18 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
                             {!useDefaultKey && (
                                 <>
                                     <View style={styles.passwordContainer}>
-                                        <TextInput
-                                            style={[styles.input, styles.passwordInput, { backgroundColor: colors.primarySurface, color: colors.text }]}
+                                        <NativeTextInput
+                                            style={{ flex: 1 }}
+                                            inputStyle={{
+                                                width: '100%',
+                                                borderRadius: 8,
+                                                padding: 12,
+                                                paddingRight: 50,
+                                                backgroundColor: colors.primarySurface,
+                                            }}
+                                            textStyle={{ color: colors.text }}
+                                            seedColor={colors.primary}
+                                            accessibilityLabel="OpenSubtitles API key"
                                             value={apiKey}
                                             onChangeText={setApiKey}
                                             placeholder="Enter your OpenSubtitles API key"
@@ -169,7 +181,6 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
                                             secureTextEntry={!showApiKey}
                                             autoCapitalize="none"
                                             autoCorrect={false}
-                                            submitBehavior='blurAndSubmit'
                                         />
                                         <TouchableOpacity style={styles.eyeButton} onPress={() => setShowApiKey(!showApiKey)}>
                                             <Ionicons name={showApiKey ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.textMuted} />
@@ -212,24 +223,22 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
                         </View>
 
                         <View style={styles.buttonGroup}>
-                            <TouchableOpacity
-                                style={[styles.button, { backgroundColor: colors.primaryBorder }]}
+                            <NativeButton
+                                style={styles.button}
                                 onPress={clearConfiguration}
                                 disabled={isSaving}
-                            >
-                                <Ionicons name="trash-outline" size={16} color="#FFF" />
-                                <Text style={[styles.buttonText, { color: colors.text }]}>Clear</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.button, { backgroundColor: (!useDefaultKey && !apiKey.trim()) ? colors.primaryBorder : colors.primary }]}
+                                variant="outlined"
+                                label="Clear"
+                                seedColor={colors.primary}
+                            />
+                            <NativeButton
+                                style={styles.button}
                                 onPress={saveConfiguration}
                                 disabled={isSaving || (!useDefaultKey && !apiKey.trim())}
-                            >
-                                {isSaving
-                                    ? <ActivityIndicator size="small" color="#FFF" />
-                                    : <><Ionicons name="save-outline" size={16} color="#FFF" /><Text style={[styles.buttonText, { color: colors.text }]}>Save</Text></>
-                                }
-                            </TouchableOpacity>
+                                variant="filled"
+                                label={isSaving ? 'Saving…' : 'Save'}
+                                seedColor={colors.primary}
+                            />
                         </View>
                     </View>
                     <BottomSpacing space={50} />
@@ -325,15 +334,8 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '500',
     },
-    input: {
-        borderRadius: 8,
-        padding: 12,
-    },
     passwordContainer: {
         position: 'relative',
-    },
-    passwordInput: {
-        paddingRight: 50,
     },
     eyeButton: {
         position: 'absolute',
@@ -418,10 +420,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         borderRadius: 25,
         gap: 6,
-    },
-    buttonText: {
-        fontSize: 14,
-        fontWeight: '600',
     },
 });
 

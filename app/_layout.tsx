@@ -6,7 +6,6 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { View, StyleSheet } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { ActionSheetProvider } from '@expo/react-native-action-sheet';
 import { AppThemeProvider, useTheme } from '@/context/ThemeContext';
 import BlurGradientBackground from '@/components/BlurGradientBackground';
 
@@ -69,53 +68,51 @@ function RootLayoutNav() {
         // ✅ Root View also gets themed background — prevents white flash on web
         <View style={[styles.container, { backgroundColor: colors.background }]}>
             <BlurGradientBackground />
-            <ActionSheetProvider>
-                <Stack
-                    screenOptions={{
-                        headerStyle: styles.glassHeader,
-                        headerBackground: HeaderBackground,
+            <Stack
+                screenOptions={{
+                    headerStyle: styles.glassHeader,
+                    headerBackground: HeaderBackground,
+                    contentStyle: { backgroundColor: 'transparent' },
+                }}
+            >
+                <Stack.Screen
+                    name="(tabs)"
+                    options={{
+                        headerShown: false,
+                        headerTransparent: true,
+                        headerBackground: InvisibleHeaderBackground,
+                        headerShadowVisible: false,
+                        headerTitle: '',
+                        headerTintColor: colors.text,
+                        headerBackTitle: '',
+                        title: 'Home',
+                        // ✅ Tabs stay transparent so root BlurGradientBackground shows through
                         contentStyle: { backgroundColor: 'transparent' },
                     }}
-                >
-                    <Stack.Screen
-                        name="(tabs)"
-                        options={{
-                            headerShown: false,
-                            headerTransparent: true,
-                            headerBackground: InvisibleHeaderBackground,
-                            headerShadowVisible: false,
-                            headerTitle: '',
-                            headerTintColor: colors.text,
-                            headerBackTitle: '',
-                            title: 'Home',
-                            // ✅ Tabs stay transparent so root BlurGradientBackground shows through
-                            contentStyle: { backgroundColor: 'transparent' },
-                        }}
-                    />
-                    <Stack.Screen name="movie/details" options={screenOptions} />
-                    <Stack.Screen name="movie/list" options={screenOptions} />
-                    <Stack.Screen name="series/details" options={screenOptions} />
-                    <Stack.Screen name="series/list" options={screenOptions} />
-                    <Stack.Screen name="stream/list" options={screenOptions} />
-                    <Stack.Screen
-                        name="stream/player"
-                        options={{
-                            headerShown: false,
-                            contentStyle: { backgroundColor: '#000000' },
-                        }}
-                    />
-                    <Stack.Screen name="settings/addons" options={screenOptions} />
-                    <Stack.Screen name="settings/add" options={screenOptions} />
-                    <Stack.Screen name="settings/stremioserver" options={screenOptions} />
-                    <Stack.Screen name="settings/theme" options={screenOptions} />
-                    <Stack.Screen name="settings/opensubtitles" options={screenOptions} />
-                    <Stack.Screen name="settings/contact" options={screenOptions} />
-                    <Stack.Screen name="settings/disclaimer" options={screenOptions} />
-                    <Stack.Screen name="settings/donate" options={screenOptions} />
-                    <Stack.Screen name="settings/downloads" options={screenOptions} />
-                    <Stack.Screen name="settings/mediaplayer" options={screenOptions} />
-                </Stack>
-            </ActionSheetProvider>
+                />
+                <Stack.Screen name="movie/details" options={screenOptions} />
+                <Stack.Screen name="movie/list" options={screenOptions} />
+                <Stack.Screen name="series/details" options={screenOptions} />
+                <Stack.Screen name="series/list" options={screenOptions} />
+                <Stack.Screen name="stream/list" options={screenOptions} />
+                <Stack.Screen
+                    name="stream/player"
+                    options={{
+                        headerShown: false,
+                        contentStyle: { backgroundColor: '#000000' },
+                    }}
+                />
+                <Stack.Screen name="settings/addons" options={screenOptions} />
+                <Stack.Screen name="settings/add" options={screenOptions} />
+                <Stack.Screen name="settings/stremioserver" options={screenOptions} />
+                <Stack.Screen name="settings/theme" options={screenOptions} />
+                <Stack.Screen name="settings/opensubtitles" options={screenOptions} />
+                <Stack.Screen name="settings/contact" options={screenOptions} />
+                <Stack.Screen name="settings/disclaimer" options={screenOptions} />
+                <Stack.Screen name="settings/donate" options={screenOptions} />
+                <Stack.Screen name="settings/downloads" options={screenOptions} />
+                <Stack.Screen name="settings/mediaplayer" options={screenOptions} />
+            </Stack>
         </View>
     );
 }

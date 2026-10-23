@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { StyleSheet, ActivityIndicator, Pressable, Image, ScrollView } from 'react-native';
-import { Text, View, TextInput, StatusBar } from '@/components/Themed';
+import { StyleSheet, ActivityIndicator, Image, ScrollView } from 'react-native';
+import { Text, View, StatusBar } from '@/components/Themed';
 import { router } from 'expo-router';
 import { showAlert } from '@/utils/platform';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StorageKeys, storageService } from '@/utils/StorageService';
 import { useTheme } from '@/context/ThemeContext';
+import { NativeButton, NativeTextInput } from '@/components/native-ui-controls';
 
 const defaultAddonLogo = 'https://i.ibb.co/fSJ42PJ/addon.png';
 const ADDONS_KEY = StorageKeys.ADDONS_KEY;
@@ -69,8 +70,20 @@ export default function AddAddonScreen() {
             <View style={styles.inputSection}>
                 <Text style={[styles.inputLabel, { color: colors.text }]}>Manifest URL</Text>
                 <View style={styles.inputWrapper}>
-                    <TextInput
-                        style={[styles.input, { backgroundColor: colors.primarySurface, borderColor: colors.primaryBorder, color: colors.text }]}
+                    <NativeTextInput
+                        style={{ width: '100%' }}
+                        inputStyle={{
+                            width: '100%',
+                            height: 44,
+                            borderRadius: 12,
+                            borderWidth: 1,
+                            paddingHorizontal: 16,
+                            backgroundColor: colors.primarySurface,
+                            borderColor: colors.primaryBorder,
+                        }}
+                        textStyle={{ color: colors.text, fontSize: 15 }}
+                        seedColor={colors.primary}
+                        accessibilityLabel="Addon manifest URL"
                         placeholder="https://example.com/manifest.json"
                         placeholderTextColor={colors.textDim}
                         value={url}
@@ -79,7 +92,6 @@ export default function AddAddonScreen() {
                         keyboardType="url"
                         onSubmitEditing={fetchManifest}
                         returnKeyType="go"
-                        submitBehavior="blurAndSubmit"
                     />
                 </View>
             </View>
@@ -122,9 +134,12 @@ export default function AddAddonScreen() {
                                 </View>
                             </View>
                         )}
-                        <Pressable style={[styles.addButton, { backgroundColor: colors.primary }]} onPress={addAddon}>
-                            <Text style={[styles.addButtonText, { color: colors.text }]}>Install Addon</Text>
-                        </Pressable>
+                        <NativeButton
+                            style={styles.addButton}
+                            onPress={addAddon}
+                            label="Install Addon"
+                            seedColor={colors.primary}
+                        />
                     </View>
                 )}
             </ScrollView>
@@ -140,7 +155,6 @@ const styles = StyleSheet.create({
     inputSection: { paddingHorizontal: 24, paddingVertical: 24 },
     inputWrapper: { width: '100%' },
     inputLabel: { fontSize: 14, fontWeight: '600', marginBottom: 12, letterSpacing: 0.5 },
-    input: { width: '100%', height: 44, borderRadius: 12, paddingHorizontal: 16, fontSize: 15, borderWidth: 1 },
     loadingContainer: { alignItems: 'center', paddingVertical: 40 },
     loadingText: { marginTop: 16, fontSize: 16 },
     scrollView: { flex: 1 },
@@ -161,5 +175,4 @@ const styles = StyleSheet.create({
     typeTag: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
     typeText: { fontSize: 14, fontWeight: '500' },
     addButton: { paddingVertical: 14, paddingHorizontal: 26, borderRadius: 12, alignItems: 'center', alignSelf: 'center', minWidth: 140 },
-    addButtonText: { fontSize: 16, fontWeight: '500', letterSpacing: 0.5 },
 });

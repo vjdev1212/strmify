@@ -4,7 +4,8 @@ import { Text, View } from './Themed';
 import { formatDate } from '@/utils/Date';
 import { SvgXml } from 'react-native-svg';
 import { DefaultEpisodeThumbnailImgXml } from '@/utils/Svg';
-import { MenuView, MenuComponentRef } from '@react-native-menu/menu';
+import { MenuView } from '@expo/ui/community/menu';
+import type { MenuComponentRef } from '@expo/ui/community/menu';
 import CustomContextMenu from './ContextMenu';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/context/ThemeContext';
@@ -151,7 +152,7 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
             <CustomContextMenu visible={webMenuVisible} onClose={() => setWebMenuVisible(false)} items={webMenuItems} selectedItem={selectedSeason} onItemSelect={handleWebContextMenuItemSelect} anchorPosition={anchorPosition} />
           </>
         ) : (
-          <MenuView ref={menuRef} onPressAction={handleMenuPress} actions={menuActions} shouldOpenOnLongPress={false} themeVariant='dark'>
+          <MenuView ref={menuRef} onPressAction={handleMenuPress} actions={menuActions} shouldOpenOnLongPress={false} colorScheme="dark">
             <TouchableOpacity style={styles.seasonDropdownButton}>
               <Text style={[styles.seasonDropdownText, { color: colors.text }]}>{getCurrentSeasonText()}</Text>
               <Ionicons name='chevron-expand' size={24} color={colors.text} />

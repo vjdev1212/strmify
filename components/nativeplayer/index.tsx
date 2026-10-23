@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState, useCallback, useMemo } from "react"
 import { TouchableOpacity, Animated, Platform } from "react-native";
 import Video, { OnLoadData, OnProgressData, VideoRef, OnBufferData, ResizeMode, SelectedTrack, OnPlaybackStateChangedData } from "react-native-video";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import { MenuComponentRef, MenuView } from '@react-native-menu/menu';
+import { MenuView } from '@expo/ui/community/menu';
+import type { MenuComponentRef } from '@expo/ui/community/menu';
 import { WebMenu } from "@/components/WebMenuView";
 import { styles } from "../coreplayer/styles";
 import {
@@ -793,7 +794,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                                     onPressAction={Platform.OS === 'web' ? handleWebAction : handleNativeAction}
                                     actions={streamActions}
                                     shouldOpenOnLongPress={false}
-                                    themeVariant="dark"
+                                    colorScheme="dark"
                                     onOpenMenu={handleMenuOpen}
                                     onCloseMenu={handleMenuClose}
                                 >
@@ -820,7 +821,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                                     onPressAction={Platform.OS === 'web' ? handleWebAction : handleNativeAction}
                                     actions={audioActions}
                                     shouldOpenOnLongPress={false}
-                                    themeVariant="dark"
+                                    colorScheme="dark"
                                     onOpenMenu={handleMenuOpen}
                                     onCloseMenu={handleMenuClose}
                                 >
@@ -840,7 +841,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                                     onPressAction={Platform.OS === 'web' ? handleWebAction : handleNativeAction}
                                     actions={subtitleActions}
                                     shouldOpenOnLongPress={false}
-                                    themeVariant="dark"
+                                    colorScheme="dark"
                                     onOpenMenu={handleMenuOpen}
                                     onCloseMenu={handleMenuClose}
                                 >
@@ -859,7 +860,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                                 onPressAction={Platform.OS === 'web' ? handleWebAction : handleNativeAction}
                                 actions={settingsActions}
                                 shouldOpenOnLongPress={false}
-                                themeVariant="dark"
+                                colorScheme="dark"
                                 onOpenMenu={handleMenuOpen}
                                 onCloseMenu={handleMenuClose}
                             >

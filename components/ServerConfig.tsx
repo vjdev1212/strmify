@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, Switch, TextInput, Pressable, ScrollView, Animated, ActivityIndicator } from 'react-native';
+import { StyleSheet, Pressable, ScrollView, Animated, ActivityIndicator } from 'react-native';
 import { View, Text } from '@/components/Themed';
 import { confirmAction, showAlert } from '@/utils/platform';
 import { MaterialIcons } from '@expo/vector-icons';
 import { StorageKeys, storageService } from '@/utils/StorageService';
 import { useTheme } from '@/context/ThemeContext';
+import { NativeButton, NativeSwitch, NativeTextInput } from '@/components/native-ui-controls';
 
 interface ServerConfigProps {
   serverName: string;
@@ -242,19 +243,27 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
                   <Text style={[styles.labelText, { color: colors.text }]}>Current Server</Text>
                   <Text style={[styles.labelHint, { color: colors.textDim }]}>Set as active</Text>
                 </View>
-                <Switch
+                <NativeSwitch
                   value={isCurrent}
                   onValueChange={toggleCurrent}
-                  trackColor={{ false: colors.primaryBorder, true: colors.primary }}
-                  thumbColor={colors.text}
-                  ios_backgroundColor={colors.primaryBorder}
+                  seedColor={colors.primary}
                 />
               </View>
             </View>
             <View style={styles.formGroup}>
               <Text style={[styles.inputLabel, { color: colors.textMuted }]}>Server URL</Text>
-              <TextInput
-                style={[styles.input, { color: colors.text, backgroundColor: colors.primarySurface }]}
+              <NativeTextInput
+                style={{ width: '100%' }}
+                inputStyle={{
+                  width: '100%',
+                  paddingVertical: 12,
+                  paddingHorizontal: 14,
+                  borderRadius: 8,
+                  backgroundColor: colors.primarySurface,
+                }}
+                textStyle={{ fontSize: 15, color: colors.text }}
+                seedColor={colors.primary}
+                accessibilityLabel={`${serverName} server URL`}
                 value={serverUrl}
                 onChangeText={setServerUrl}
                 placeholder="https://example.com"
@@ -264,12 +273,8 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
               />
             </View>
             <View style={styles.buttonRow}>
-              <Pressable style={[styles.btnCancel, { backgroundColor: colors.primarySurface }]} onPress={handleCancel}>
-                <Text style={[styles.btnText, { color: colors.text }]}>Cancel</Text>
-              </Pressable>
-              <Pressable style={[styles.btnSave, { backgroundColor: colors.primary }]} onPress={handleSave}>
-                <Text style={[styles.btnText, { color: colors.text }]}>Save</Text>
-              </Pressable>
+              <NativeButton style={styles.btnCancel} onPress={handleCancel} label="Cancel" variant="outlined" seedColor={colors.primary} />
+              <NativeButton style={styles.btnSave} onPress={handleSave} label="Save" seedColor={colors.primary} />
             </View>
           </View>
         </View>
@@ -305,8 +310,18 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
                     <View>
                       <View style={styles.formGroup}>
                         <Text style={[styles.inputLabel, { color: colors.textMuted }]}>Server URL</Text>
-                        <TextInput
-                          style={[styles.input, { color: colors.text, backgroundColor: colors.primarySurface }]}
+                        <NativeTextInput
+                          style={{ width: '100%' }}
+                          inputStyle={{
+                            width: '100%',
+                            paddingVertical: 12,
+                            paddingHorizontal: 14,
+                            borderRadius: 8,
+                            backgroundColor: colors.primarySurface,
+                          }}
+                          textStyle={{ fontSize: 15, color: colors.text }}
+                          seedColor={colors.primary}
+                          accessibilityLabel={`${serverName} server URL`}
                           value={inlineEditValue}
                           onChangeText={setInlineEditValue}
                           placeholder="https://example.com"
@@ -317,12 +332,8 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
                         />
                       </View>
                       <View style={styles.buttonRow}>
-                        <Pressable style={[styles.btnCancel, { backgroundColor: colors.primarySurface }]} onPress={cancelInlineEdit}>
-                          <Text style={[styles.btnText, { color: colors.text }]}>Cancel</Text>
-                        </Pressable>
-                        <Pressable style={[styles.btnSave, { backgroundColor: colors.primary }]} onPress={saveInlineEdit}>
-                          <Text style={[styles.btnText, { color: colors.text }]}>Save</Text>
-                        </Pressable>
+                        <NativeButton style={styles.btnCancel} onPress={cancelInlineEdit} label="Cancel" variant="outlined" seedColor={colors.primary} />
+                        <NativeButton style={styles.btnSave} onPress={saveInlineEdit} label="Save" seedColor={colors.primary} />
                       </View>
                     </View>
                   ) : (
@@ -428,7 +439,6 @@ const styles = StyleSheet.create({
   labelText: { fontSize: 16, fontWeight: '500' },
   labelHint: { fontSize: 13, marginTop: 2 },
   inputLabel: { fontSize: 13, fontWeight: '500', marginBottom: 8 },
-  input: { fontSize: 15, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 8 },
   buttonRow: { flexDirection: 'row', padding: 16, gap: 10 },
   btnCancel: { flex: 1, paddingVertical: 13, borderRadius: 8, alignItems: 'center' },
   btnSave: { flex: 1, paddingVertical: 13, borderRadius: 8, alignItems: 'center' },

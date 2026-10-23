@@ -2,16 +2,13 @@ workflows:
   strmify-ios-build:
     name: Strmify iOS Build
     environment:
-      node: latest
+      node: 22
       xcode: latest
       groups:
         - EXPO
     scripts:
       - name: Install dependencies
-        script: npm install --force
-      
-      - name: Install Expo CLI
-        script: npm install -g @expo/cli@latest --force
+        script: npm ci
       
       - name: Check Expo CLI version
         script: npx expo --version
@@ -31,21 +28,16 @@ workflows:
             echo "APP_NAME=Strmify" >> $CM_ENV
           fi
       
-      - name: Fix expo-updates
-        script: |
-          mkdir -p node_modules/expo-updates/scripts
-          cat > node_modules/expo-updates/scripts/create-manifest-ios.sh << 'EOF2'
-          #!/bin/bash
-          mkdir -p "${DERIVED_FILE_DIR}" 2>/dev/null || true
-          touch "${DERIVED_FILE_DIR}/EXUpdates.generated.m" 2>/dev/null || true
-          exit 0
-          EOF2
-          chmod +x node_modules/expo-updates/scripts/create-manifest-ios.sh
-      
       - name: Clean and generate iOS project
         script: |
           rm -rf ios android
           npx expo prebuild --clean --platform ios
+
+      - name: Configure Node for Xcode scripts
+        script: |
+          NODE_BINARY="$(command -v node)"
+          "$NODE_BINARY" --version
+          printf 'export NODE_BINARY="%s"\n' "$NODE_BINARY" > ios/.xcode.env.local
 
       - name: Install iOS dependencies
         script: |
@@ -118,16 +110,13 @@ workflows:
   strmify-ios-dev:
     name: Strmify iOS Development Build
     environment:
-      node: latest
+      node: 22
       xcode: latest
       groups:
         - EXPO
     scripts:
       - name: Install dependencies
-        script: npm install --force
-
-      - name: Install Expo CLI
-        script: npm install -g @expo/cli@latest --force
+        script: npm ci
 
       - name: Extract app version from app.json
         script: |
@@ -148,6 +137,12 @@ workflows:
         script: |
           rm -rf ios android
           npx expo prebuild --clean --platform ios
+
+      - name: Configure Node for Xcode scripts
+        script: |
+          NODE_BINARY="$(command -v node)"
+          "$NODE_BINARY" --version
+          printf 'export NODE_BINARY="%s"\n' "$NODE_BINARY" > ios/.xcode.env.local
 
       - name: Install iOS dependencies
         script: |
@@ -205,14 +200,14 @@ workflows:
   strmify-android-build:
     name: Strmify Android Build
     environment:
-      node: latest
+      node: 22
       java: latest
       groups:
         - EXPO
         - ANDROID_KEYSTORE
     scripts:
       - name: Install dependencies
-        script: npm install --force
+        script: npm ci
 
       - name: Extract app version from app.json
         script: |
@@ -232,7 +227,6 @@ workflows:
       - name: Clean and generate Android project
         script: |
           rm -rf ios android
-          npm install -g @expo/cli@latest --force
           npx expo prebuild --platform android
 
       - name: Setup Android keystore
@@ -307,13 +301,13 @@ workflows:
   strmify-android-dev:
     name: Strmify Android Development Build
     environment:
-      node: latest
+      node: 22
       java: latest
       groups:
         - EXPO
     scripts:
       - name: Install dependencies
-        script: npm install --force
+        script: npm ci
 
       - name: Extract app version from app.json
         script: |
@@ -333,7 +327,6 @@ workflows:
       - name: Clean and generate Android project
         script: |
           rm -rf ios android
-          npm install -g @expo/cli@latest --force
           npx expo prebuild --platform android
 
       - name: Build Android debug APK

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
+import type { ScrollViewInstance } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, StatusBar, Text, View } from '../../components/Themed';
 import MediaContentDescription from '@/components/MediaContentDescription';
@@ -27,7 +28,7 @@ const MovieDetails = () => {
   const [trailerKey, setTrailerKey] = useState<string | null>(null);
   const { width, height } = useWindowDimensions();
   const isPortrait = height > width;
-  const ref = useRef<ScrollView | null>(null);
+  const ref = useRef<ScrollViewInstance | null>(null);
   const { colors } = useTheme();
 
   useEffect(() => {

@@ -7,6 +7,7 @@ import {
     StyleSheet,
     ImageBackground,
 } from 'react-native';
+import type { ScaledSize } from 'react-native';
 import { ActivityIndicator, Text } from '@/components/Themed';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
@@ -53,7 +54,7 @@ export default function AppleTVCarousel({
     const autoPlayRef = useRef<any>(null);
 
     useEffect(() => {
-        const subscription = Dimensions.addEventListener('change', ({ window }) => {
+        const subscription = Dimensions.addEventListener('change', ({ window }: { window: ScaledSize }) => {
             setDimensions({ width: window.width, height: window.height, isLandscape: window.width > window.height });
         });
         return () => subscription?.remove();
