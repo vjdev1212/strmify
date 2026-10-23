@@ -1,10 +1,22 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Image, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+    Image,
+    Platform,
+    Pressable,
+    Share,
+    StyleSheet,
+    useWindowDimensions,
+} from 'react-native';
+import { MenuView, type MenuAction } from '@expo/ui/community/menu';
+import { Ionicons } from '@expo/vector-icons';
 import { ActivityIndicator, StatusBar, Text, View } from '@/components/Themed';
+import { WebMenu } from '@/components/WebMenuView';
 import { useRouter } from 'expo-router';
 import { getYear } from '@/utils/Date';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
+import { libraryService } from '@/utils/LibraryService';
+import { showAlert } from '@/utils/platform';
 import NativeStackList from '@/components/native-stack-list';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
@@ -15,7 +27,6 @@ interface MediaGridProps {
 }
 
 interface MediaGridItem {
-    id?: number;
     tmdbid: number;
     name: string;
     year: string;
@@ -23,45 +34,84 @@ interface MediaGridItem {
     background: string;
     imdbRating?: string;
     imdbid?: string;
+    genres: string[];
 }
+
+interface TMDBMediaItem {
+    id: number;
+    title?: string;
+    name?: string;
+    poster_path?: string | null;
+    backdrop_path?: string | null;
+    release_date?: string;
+    first_air_date?: string;
+    vote_average?: number;
+    imdb_id?: string;
+    genre_ids?: number[];
+}
+
+const GENRE_NAMES: Record<number, string> = {
+    12: 'Adventure',
+    14: 'Fantasy',
+    16: 'Animation',
+    18: 'Drama',
+    27: 'Horror',
+    28: 'Action',
+    35: 'Comedy',
+    36: 'History',
+    37: 'Western',
+    53: 'Thriller',
+    80: 'Crime',
+    99: 'Documentary',
+    10402: 'Music',
+    9648: 'Mystery',
+    10749: 'Romance',
+    10751: 'Family',
+    10752: 'War',
+    10759: 'Action & Adventure',
+    10762: 'Kids',
+    10763: 'News',
+    10764: 'Reality',
+    10765: 'Sci-Fi & Fantasy',
+    10766: 'Soap',
+    10767: 'Talk',
+    10768: 'War & Politics',
+    10770: 'TV Movie',
+    878: 'Science Fiction',
+};
+
+const MEDIA_MENU_ACTIONS: MenuAction[] = [
+    { id: 'open', title: 'Go to Show', image: 'arrow.up.right' },
+    { id: 'watchlist', title: 'Add to Watchlist', image: 'bookmark' },
+    { id: 'share', title: 'Share Show', image: 'square.and.arrow.up' },
+];
+
+const WEB_MENU_ACTIONS = MEDIA_MENU_ACTIONS.map(({ id, title }) => ({
+    id: id ?? title,
+    title,
+}));
+
+const ROW_HORIZONTAL_PADDING = 16;
+const POSTER_WIDTH = 88;
+const POSTER_TEXT_GAP = 16;
+const MENU_ACTION_WIDTH = 40;
 
 const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath }) => {
     const { colors } = useTheme();
     const router = useRouter();
+    const { width } = useWindowDimensions();
+    const insets = useSafeAreaInsets();
     const [data, setData] = useState<MediaGridItem[]>([]);
     const [loading, setLoading] = useState(true);
-    const touchStartRef = React.useRef<{ pageX: number; pageY: number } | null>(null);
-    const didScrollRef = React.useRef(false);
-
-    const { width, height } = useWindowDimensions();
-    const isPortrait = height >= width;
-    const shortSide = Math.min(width, height);
-    const isMobile = shortSide < 580;
-    const isTablet = shortSide >= 580 && shortSide < 1024;
-    const isLaptop = shortSide >= 1024 && shortSide < 1440;
-    const isDesktop = shortSide >= 1440;
-
-    const numColumns = useMemo(() => {
-        if (isMobile) return isPortrait ? 3 : 5;
-        if (isTablet) return isPortrait ? 5 : 8;
-        if (isLaptop) return isPortrait ? 6 : 9;
-        if (isDesktop) return isPortrait ? 7 : 10;
-        return 5;
-    }, [isDesktop, isLaptop, isMobile, isPortrait, isTablet]);
-    const spacing = isMobile ? 10 : 14;
-    const horizontalPadding = 12;
-    const itemWidth = Math.max(
+    const rowWidth = Math.max(0, width - insets.left - insets.right);
+    const mediaButtonWidth = Math.max(
         0,
-        (width - horizontalPadding * 2 - spacing * (numColumns - 1)) / numColumns,
+        rowWidth - ROW_HORIZONTAL_PADDING * 2 - MENU_ACTION_WIDTH,
     );
-    const posterHeight = itemWidth * 1.5;
-    const rows = useMemo(() => {
-        const result: MediaGridItem[][] = [];
-        for (let index = 0; index < data.length; index += numColumns) {
-            result.push(data.slice(index, index + numColumns));
-        }
-        return result;
-    }, [data, numColumns]);
+    const mediaInfoWidth = Math.max(
+        0,
+        mediaButtonWidth - POSTER_WIDTH - POSTER_TEXT_GAP,
+    );
 
     useEffect(() => {
         const fetchData = async () => {
@@ -71,15 +121,18 @@ const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath }) => {
                 const result = await response.json();
                 if (result?.results) {
                     setData(result.results
-                        .filter((item: any) => item.poster_path && item.backdrop_path)
-                        .map((item: any) => ({
+                        .filter((item: TMDBMediaItem) => item.poster_path && item.backdrop_path)
+                        .map((item: TMDBMediaItem) => ({
                             tmdbid: item.id,
-                            name: item.title || item.name,
-                            year: getYear(item.release_date || item.first_air_date),
-                            poster: `https://image.tmdb.org/t/p/w780${item.poster_path}`,
+                            name: item.title || item.name || '',
+                            year: getYear(item.release_date || item.first_air_date || ''),
+                            poster: `https://image.tmdb.org/t/p/w342${item.poster_path}`,
                             background: `https://image.tmdb.org/t/p/w1280${item.backdrop_path}`,
                             imdbRating: item.vote_average?.toFixed(1),
                             imdbid: item.imdb_id,
+                            genres: (item.genre_ids ?? [])
+                                .map((genreId) => GENRE_NAMES[genreId])
+                                .filter((genre): genre is string => Boolean(genre)),
                         })));
                 }
             } catch (error) {
@@ -91,67 +144,159 @@ const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath }) => {
         fetchData();
     }, [apiUrl]);
 
-    const renderItem = useCallback((item: MediaGridItem, index: number) => {
-        const year = item.year?.split('–')[0] || item.year;
-        return (
-            <Pressable
-                key={`${item.tmdbid}-${index}`}
-                style={[styles.posterContainer, { width: itemWidth, flexShrink: 0 }]}
-                accessibilityRole="button"
-                accessibilityLabel={`Open ${item.name}`}
-                onTouchStart={(event) => {
-                    touchStartRef.current = {
-                        pageX: event.nativeEvent.pageX,
-                        pageY: event.nativeEvent.pageY,
-                    };
-                    didScrollRef.current = false;
-                }}
-                onTouchMove={(event) => {
-                    const start = touchStartRef.current;
-                    if (!start) return;
+    const openDetails = useCallback((item: MediaGridItem) => {
+        router.push({ pathname: detailsPath, params: { tmdbid: item.tmdbid } });
+    }, [detailsPath, router]);
 
-                    const { pageX, pageY } = event.nativeEvent;
-                    if (Math.abs(pageX - start.pageX) > 10 || Math.abs(pageY - start.pageY) > 10) {
-                        didScrollRef.current = true;
-                    }
-                }}
-                onPress={() => {
-                    if (!didScrollRef.current) {
-                        router.push({ pathname: detailsPath, params: { tmdbid: item.tmdbid || item.id } });
-                    }
-                }}
+    const handleMenuAction = useCallback(async (actionId: string, item: MediaGridItem) => {
+        if (actionId === 'open') {
+            openDetails(item);
+            return;
+        }
+
+        if (actionId === 'watchlist') {
+            const type = detailsPath === '/movie/details' ? 'movie' : 'series';
+            const added = await libraryService.addToLibrary({
+                id: `${type}-${item.tmdbid}`,
+                tmdbid: String(item.tmdbid),
+                type,
+                title: item.name,
+                poster: item.poster,
+                backdrop: item.background,
+                year: item.year,
+                rating: item.imdbRating,
+                genres: item.genres,
+            });
+            if (!added) {
+                showAlert('Watchlist', 'This title could not be added. It may already be in your watchlist.');
+            }
+            return;
+        }
+
+        if (actionId === 'share') {
+            const type = detailsPath === '/movie/details' ? 'movie' : 'tv';
+            const url = `https://www.themoviedb.org/${type}/${item.tmdbid}`;
+            try {
+                await Share.share({ message: `${item.name}\n${url}`, url });
+            } catch (error) {
+                console.error('Error sharing title:', error);
+                showAlert('Share', 'Unable to share this title.');
+            }
+        }
+    }, [detailsPath, openDetails]);
+
+    const renderItem = useCallback((item: MediaGridItem) => {
+        let pressStart: { x: number; y: number } | undefined;
+        let movedWhilePressed = false;
+        const metadata = item.genres.length > 0
+            ? item.genres.join(', ')
+            : [item.year?.split('–')[0], item.imdbRating ? `★ ${item.imdbRating}` : undefined]
+                .filter(Boolean)
+                .join(' · ');
+        const menuButton = (
+            <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`More actions for ${item.name}`}
+                hitSlop={10}
+                style={styles.menuButton}
             >
-                <View style={[styles.imageContainer, { width: itemWidth, height: posterHeight, backgroundColor: colors.background }]}>
-                    <Image source={{ uri: item.poster }} style={styles.posterImage} resizeMode="cover" />
-                </View>
-                <View style={styles.infoContainer}>
-                    <Text numberOfLines={1} ellipsizeMode="tail" style={styles.posterTitle}>{item.name}</Text>
-                    <Text style={[styles.posterYear, { color: colors.textMuted }]}>{year}</Text>
-                </View>
+                <Ionicons name="ellipsis-horizontal" size={21} color={colors.textMuted} />
             </Pressable>
         );
-    }, [colors.background, colors.textMuted, detailsPath, itemWidth, posterHeight, router]);
+
+        return (
+            <View style={[styles.rowContainer, { width: rowWidth, borderBottomColor: 'rgba(255,255,255,0.12)' }]}>
+                <Pressable
+                    style={[styles.mediaButton, { width: mediaButtonWidth }]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Open ${item.name}`}
+                    onPressIn={({ nativeEvent }) => {
+                        pressStart = { x: nativeEvent.pageX, y: nativeEvent.pageY };
+                        movedWhilePressed = false;
+                    }}
+                    onPressMove={({ nativeEvent }) => {
+                        if (
+                            pressStart &&
+                            (Math.abs(nativeEvent.pageX - pressStart.x) > 10 ||
+                                Math.abs(nativeEvent.pageY - pressStart.y) > 10)
+                        ) {
+                            movedWhilePressed = true;
+                        }
+                    }}
+                    onPress={() => {
+                        if (!movedWhilePressed) openDetails(item);
+                    }}
+                >
+                    <Image
+                        source={{ uri: item.poster }}
+                        style={[styles.poster, { backgroundColor: colors.backgroundOverlay }]}
+                        resizeMode="cover"
+                    />
+                    <View style={[styles.mediaInfo, { width: mediaInfoWidth }]}>
+                        <Text style={styles.mediaTitle}>
+                            {item.name}
+                        </Text>
+                        {metadata.length > 0 && (
+                            <Text style={[styles.mediaMetadata, { color: colors.textMuted }]}>
+                                {metadata}
+                            </Text>
+                        )}
+                    </View>
+                </Pressable>
+                {Platform.OS === 'web' ? (
+                    <View style={styles.menuActionSlot}>
+                        <WebMenu
+                            title={item.name}
+                            actions={WEB_MENU_ACTIONS}
+                            onPressAction={(actionId) => void handleMenuAction(actionId, item)}
+                        >
+                            {menuButton}
+                        </WebMenu>
+                    </View>
+                ) : (
+                    <View style={styles.menuActionSlot}>
+                        <MenuView
+                            title={item.name}
+                            actions={MEDIA_MENU_ACTIONS}
+                            shouldOpenOnLongPress={false}
+                            colorScheme="dark"
+                            onPressAction={({ nativeEvent }) => void handleMenuAction(nativeEvent.event, item)}
+                        >
+                            {menuButton}
+                        </MenuView>
+                    </View>
+                )}
+            </View>
+        );
+    }, [
+        colors.backgroundOverlay,
+        colors.textMuted,
+        handleMenuAction,
+        mediaButtonWidth,
+        mediaInfoWidth,
+        openDetails,
+        rowWidth,
+    ]);
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView edges={['left', 'right', 'bottom']} style={styles.container}>
             <StatusBar />
             {loading ? (
                 <View style={styles.centeredContainer}>
                     <ActivityIndicator size="large" color={colors.primary} />
                     <Text style={styles.loadingText}>Loading content...</Text>
                 </View>
+            ) : data.length === 0 ? (
+                <View style={styles.centeredContainer}>
+                    <Text style={styles.loadingText}>No titles found.</Text>
+                </View>
             ) : (
                 <NativeStackList
-                    data={rows}
+                    data={data}
                     axis="vertical"
-                    spacing={0}
-                    keyExtractor={(row, index) => `${row[0]?.tmdbid ?? index}-${index}`}
-                    renderItem={(row, rowIndex) => (
-                        <View style={[styles.gridRow, { width, gap: spacing }]}>
-                            {row.map((item, columnIndex) => renderItem(item, rowIndex * numColumns + columnIndex))}
-                        </View>
-                    )}
-                    style={[styles.listContent, styles.listContainer]}
+                    keyExtractor={(item) => String(item.tmdbid)}
+                    renderItem={renderItem}
+                    style={styles.listContent}
                 />
             )}
         </SafeAreaView>
@@ -159,16 +304,56 @@ const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath }) => {
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, marginTop: 30 },
-    listContent: { paddingTop: 8 },
-    listContainer: { flex: 1, paddingBottom: 30 },
-    gridRow: { flexDirection: 'row', paddingHorizontal: 12 },
-    posterContainer: { marginBottom: 24 },
-    imageContainer: { position: 'relative', borderRadius: 5, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 8 },
-    posterImage: { width: '100%', height: '100%' },
-    infoContainer: { marginTop: 10, paddingHorizontal: 2, gap: 4 },
-    posterTitle: { fontSize: 14, fontWeight: '500', lineHeight: 18 },
-    posterYear: { fontSize: 12, fontWeight: '500' },
+    container: { flex: 1 },
+    listContent: { flex: 1, paddingTop: 8, paddingBottom: 24 },
+    rowContainer: {
+        minHeight: 156,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+    },
+    mediaButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 16,
+        paddingVertical: 10,
+    },
+    poster: {
+        width: 88,
+        height: 132,
+        flexShrink: 0,
+        borderRadius: 5,
+    },
+    mediaInfo: {
+        minWidth: 0,
+        flexShrink: 1,
+        justifyContent: 'center',
+        gap: 7,
+    },
+    mediaTitle: {
+        fontSize: 17,
+        fontWeight: '600',
+        lineHeight: 22,
+    },
+    mediaMetadata: {
+        fontSize: 14,
+        lineHeight: 19,
+    },
+    menuButton: {
+        width: 40,
+        minWidth: 40,
+        minHeight: 48,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    menuActionSlot: {
+        width: 40,
+        minWidth: 40,
+        flexShrink: 0,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
     centeredContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, gap: 16 },
     loadingText: { fontSize: 16, textAlign: 'center', opacity: 0.7 },
 });

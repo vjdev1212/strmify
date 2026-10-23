@@ -1,8 +1,7 @@
 import React, { useMemo } from "react";
-import { StyleSheet, Image, useWindowDimensions } from "react-native";
+import { StyleSheet, Image, ScrollView, useWindowDimensions } from "react-native";
 import { View, Text } from "./Themed";
 import { useTheme } from '@/context/ThemeContext';
-import NativeStackList from '@/components/native-stack-list';
 
 const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/h632";
 
@@ -68,14 +67,14 @@ const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
       <View style={[styles.headerContainer, { paddingHorizontal: containerMargin }]}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Cast & Crew</Text>
       </View>
-      <NativeStackList
-        data={castItems}
-        axis="horizontal"
-        spacing={spacing}
-        keyExtractor={(item) => item.uniqueKey}
-        style={[styles.scrollContent, { paddingHorizontal: containerMargin }]}
-        renderItem={(item) => (
-          <View style={[styles.avatarContainer, { width: avatarSize + 20 }]}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={{ height: avatarSize + 60 }}
+        contentContainerStyle={[styles.scrollContent, { paddingHorizontal: containerMargin, gap: spacing }]}
+      >
+        {castItems.map((item) => (
+          <View key={item.uniqueKey} style={[styles.avatarContainer, { width: avatarSize + 20 }]}>
             <View style={styles.avatarWrapper}>
               {item.hasImage ? (
                 <Image source={{ uri: item.imageUri! }} style={[styles.avatar, { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 }]} />
@@ -91,8 +90,8 @@ const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
               <Text style={[styles.character, { color: colors.textMuted, fontSize: Math.max(11, avatarSize * 0.1) }]} numberOfLines={1} ellipsizeMode="tail">{item.displayCharacter}</Text>
             </View>
           </View>
-        )}
-      />
+        ))}
+      </ScrollView>
     </View>
   );
 };
@@ -101,7 +100,7 @@ const styles = StyleSheet.create({
   container: { paddingVertical: 15 },
   headerContainer: { marginBottom: 16 },
   sectionTitle: { fontSize: 18, fontWeight: '500', letterSpacing: 0.5 },
-  scrollContent: {},
+  scrollContent: { flexDirection: 'row' },
   avatarContainer: { alignItems: "center", paddingVertical: 8 },
   avatarWrapper: { position: 'relative', marginBottom: 12 },
   avatar: {},

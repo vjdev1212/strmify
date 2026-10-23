@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import {
   Image,
+  ScrollView as RNScrollView,
   StyleSheet,
   useWindowDimensions,
   View as RNView,
@@ -14,7 +15,6 @@ import { isHapticsSupported } from '@/utils/platform';
 import { DefaultPosterImgXml } from '@/utils/Svg';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/context/ThemeContext';
-import NativeStackList from '@/components/native-stack-list';
 import { NativeButton } from '@/components/native-ui-controls';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
@@ -139,7 +139,7 @@ const PosterList = ({
   const posterHeight = posterWidth * 1.5;
   const posterCardHeight = posterHeight + 58;
   const listContentStyle = useMemo(
-    () => ({ paddingRight: 4, height: posterCardHeight + 10 }),
+    () => ({ height: posterCardHeight + 10 }),
     [posterCardHeight],
   );
 
@@ -188,27 +188,8 @@ const PosterList = ({
 
   const handleSeeAllPress = useCallback(async () => {
     if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push({ pathname: `/${type}/list`, params: { apiUrl } });
-  }, [apiUrl, hapticsEnabled, type]);
-
-  const renderSkeletonPoster = useCallback((_item: number) => (
-    <SkeletonPoster
-      posterWidth={posterWidth}
-      posterHeight={posterHeight}
-      cardHeight={posterCardHeight}
-      bgColor={colors.backgroundOverlay}
-    />
-  ), [colors.backgroundOverlay, posterCardHeight, posterHeight, posterWidth]);
-
-  const renderPosterItem = useCallback((item: PosterItemData) => (
-    <PosterItem
-      item={item}
-      posterWidth={posterWidth}
-      posterHeight={posterHeight}
-      cardHeight={posterCardHeight}
-      type={type}
-    />
-  ), [posterCardHeight, posterHeight, posterWidth, type]);
+    router.push({ pathname: `/${type}/list`, params: { apiUrl, title } });
+  }, [apiUrl, hapticsEnabled, title, type]);
 
   if (loading) {
     return (
@@ -216,15 +197,22 @@ const PosterList = ({
         <RNView style={[styles.header, compact && styles.compactHeader]}>
           <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
         </RNView>
-        <RNView style={listContentStyle}>
-          <NativeStackList
-            data={SKELETON_DATA}
-            axis="horizontal"
-            spacing={spacing}
-            renderItem={renderSkeletonPoster}
-            keyExtractor={(_, index) => `skeleton-${index}`}
-          />
-        </RNView>
+        <RNScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={listContentStyle}
+          contentContainerStyle={{ flexDirection: 'row', gap: spacing, paddingRight: 4 }}
+        >
+          {SKELETON_DATA.map((item, index) => (
+            <SkeletonPoster
+              key={`skeleton-${index}`}
+              posterWidth={posterWidth}
+              posterHeight={posterHeight}
+              cardHeight={posterCardHeight}
+              bgColor={colors.backgroundOverlay}
+            />
+          ))}
+        </RNScrollView>
       </RNView>
     );
   }
@@ -240,15 +228,23 @@ const PosterList = ({
           <Ionicons name="chevron-forward" size={16} color={colors.textMuted} style={styles.chevronIcon} />
         </NativeButton>
       </RNView>
-      <RNView style={listContentStyle}>
-        <NativeStackList
-          data={data}
-          axis="horizontal"
-          spacing={spacing}
-          renderItem={renderPosterItem}
-          keyExtractor={(item, index) => `${item.tmdbid}-${index}`}
-        />
-      </RNView>
+      <RNScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={listContentStyle}
+        contentContainerStyle={{ flexDirection: 'row', gap: spacing, paddingRight: 4 }}
+      >
+        {data.map((item, index) => (
+          <PosterItem
+            key={`${item.tmdbid}-${index}`}
+            item={item}
+            posterWidth={posterWidth}
+            posterHeight={posterHeight}
+            cardHeight={posterCardHeight}
+            type={type}
+          />
+        ))}
+      </RNScrollView>
     </RNView>
   );
 };

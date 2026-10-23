@@ -13,7 +13,10 @@ export default function NativeStackList<T>({
   style,
 }: NativeStackListProps<T>) {
   const items = data.map((item, index) => (
-    <RNHostView key={keyExtractor(item, index)} matchContents>
+    <RNHostView
+      key={keyExtractor(item, index)}
+      matchContents={axis === 'vertical' ? { vertical: true } : true}
+    >
       <>{renderItem(item, index)}</>
     </RNHostView>
   ));
@@ -35,7 +38,11 @@ export default function NativeStackList<T>({
     : <Column spacing={spacing}>{items}</Column>;
 
   return (
-    <Host matchContents={!scrollable} style={[{ width: '100%' }, style]}>
+    <Host
+      matchContents={!scrollable}
+      useViewportSizeMeasurement={scrollable && axis === 'vertical'}
+      style={[{ width: '100%', flex: scrollable && axis === 'vertical' ? 1 : undefined }, style]}
+    >
       {scrollable ? (
         <ScrollView direction={axis} showsIndicators={false}>{stack}</ScrollView>
       ) : stack}

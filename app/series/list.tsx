@@ -1,15 +1,16 @@
 import React from 'react';
-import { useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
 import MediaGrid from '@/components/MediaGrid';
 
 const SeriesList = () => {
-  const { apiUrl } = useLocalSearchParams();
+  const { apiUrl, title } = useLocalSearchParams<{ apiUrl?: string; title?: string }>();
+  const pageTitle = title || 'TV Shows';
 
   return (
-    <MediaGrid 
-      apiUrl={apiUrl as string} 
-      detailsPath="/series/details" 
-    />
+    <>
+      <Stack.Screen options={{ title: pageTitle, headerTitleAlign: 'center', headerTransparent: false }} />
+      <MediaGrid apiUrl={apiUrl ?? ''} detailsPath="/series/details" />
+    </>
   );
 };
 

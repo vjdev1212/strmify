@@ -4,7 +4,6 @@ import { Text, View } from './Themed';
 import { formatDate } from '@/utils/Date';
 import { FontAwesome } from '@expo/vector-icons';
 import { useTheme } from '@/context/ThemeContext';
-import NativeStackList from '@/components/native-stack-list';
 
 interface Language { english_name: string; }
 interface MediaContentDetailsListProps {
@@ -83,13 +82,14 @@ const MediaContentDetailsList: React.FC<MediaContentDetailsListProps> = ({
       <View style={[styles.headerContainer, { paddingHorizontal: containerMargin }]}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Information</Text>
       </View>
-      <NativeStackList
-        data={tableData}
-        axis="vertical"
-        scrollable={false}
-        keyExtractor={(item) => item.key}
-        renderItem={(item, index) => renderTableRow(item.label, item.value, item.key, index === tableData.length - 1)}
-      />
+      <View>
+        {tableData.map((item, index) => renderTableRow(
+          item.label,
+          item.value,
+          item.key,
+          index === tableData.length - 1,
+        ))}
+      </View>
     </View>
   );
 };

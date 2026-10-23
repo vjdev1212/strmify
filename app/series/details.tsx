@@ -217,7 +217,12 @@ const SeriesDetails = () => {
   }
 
   return (
-    <ScrollView showsVerticalScrollIndicator={false} style={styles.container} ref={ref}>
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      removeClippedSubviews={false}
+      style={styles.container}
+      ref={ref}
+    >
       <StatusBar />
       <View style={[styles.rootContainer, {
         flexDirection: isPortrait ? 'column' : 'row-reverse',
