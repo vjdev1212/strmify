@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Platform, Pressable, Share } from 'react-native';
-import { Button, Host, RNHostView, Row, Text as NativeText } from '@expo/ui';
 import * as WebBrowser from 'expo-web-browser';
 import { router } from 'expo-router';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
@@ -135,17 +134,15 @@ const AddonsScreen = () => {
   return (
     <View style={{ flex: 1, backgroundColor: systemDarkBackground }}>
       <StatusBar />
-      <Host matchContents colorScheme="dark" seedColor="#30d158">
-        <Button onPress={() => router.push('/settings/add')} variant="filled">
-          <Row alignment="center" spacing={6}>
-            <RNHostView matchContents>
-              <MaterialIcons name="add" size={20} color="#30d158" />
-            </RNHostView>
-            <NativeText>Add Addon</NativeText>
-          </Row>
-        </Button>
-      </Host>
       <SettingsPage onRefresh={onRefresh}>
+        <SettingsSection title="Manage add-ons">
+          <SettingsRow
+            title="Add new Addon"
+            leading={<MaterialIcons name="add" size={20} color="#30d158" />}
+            onPress={() => router.push('/settings/add')}
+            isLast
+          />
+        </SettingsSection>
         <SettingsSection
           title={`Installed add-ons (${addons.length})`}
         >

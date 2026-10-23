@@ -32,7 +32,7 @@ export default function DonateScreen() {
             title="Buy Me a Coffee"
             onPress={openDonationPage}
             isLast
-            leading={<Ionicons name="cafe-outline" size={20} color={colors.primary} />}
+            leading={<Ionicons name="cafe-outline" size={20} color="#C97A40" />}
             trailing={<Ionicons name="open-outline" size={17} color={colors.textDim} />}
           />
         </SettingsSection>

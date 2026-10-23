@@ -8,10 +8,10 @@ import { useTheme } from '@/context/ThemeContext';
 import { systemDarkBackground } from '@/constants/theme';
 
 const resources = [
-  { title: 'Google Play Store', detail: 'Download for Android devices', icon: 'logo-google-playstore' as const, url: 'https://play.google.com/store/apps/details?id=com.vijayyuvi.strmify' },
-  { title: 'Manual IPA Install', detail: 'Direct download for sideloading', icon: 'logo-apple' as const, url: 'https://github.com/vjdev1212/strmify/releases' },
-  { title: 'SideStore Source', detail: 'Install through SideStore', icon: 'cloud-download-outline' as const, url: 'sidestore://source?url=https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/sources/sidestore-source.json' },
-  { title: 'AltStore Source', detail: 'Install through AltStore', icon: 'cloud-download-outline' as const, url: 'altstore://source?url=https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/sources/sidestore-source.json' },
+  { title: 'Google Play Store', detail: 'Download for Android devices', icon: 'logo-google-playstore' as const, iconColor: '#34A853', url: 'https://play.google.com/store/apps/details?id=com.vijayyuvi.strmify' },
+  { title: 'Manual IPA Install', detail: 'Direct download for sideloading', icon: 'logo-apple' as const, iconColor: '#FFFFFF', url: 'https://github.com/vjdev1212/strmify/releases' },
+  { title: 'SideStore Source', detail: 'Install through SideStore', icon: 'cloud-download-outline' as const, iconColor: '#5E5CE6', url: 'sidestore://source?url=https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/sources/sidestore-source.json' },
+  { title: 'AltStore Source', detail: 'Install through AltStore', icon: 'cloud-download-outline' as const, iconColor: '#0A84FF', url: 'altstore://source?url=https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/sources/sidestore-source.json' },
 ];
 
 export default function DownloadsScreen() {
@@ -40,7 +40,7 @@ export default function DownloadsScreen() {
               title={resource.title}
               onPress={() => openResource(resource.url)}
               isLast
-              leading={<Ionicons name={resource.icon} size={20} color={colors.primary} />}
+              leading={<Ionicons name={resource.icon} size={20} color={resource.iconColor} />}
               trailing={<Ionicons name="open-outline" size={17} color={colors.textDim} />}
             />
           </SettingsSection>

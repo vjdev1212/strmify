@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { MaterialIcons } from '@expo/vector-icons';
-import { Button, FieldGroup, Host, RNHostView, Row, Text as NativeText, TextInput, useNativeState } from '@expo/ui';
+import { FieldGroup, Host, ListItem, RNHostView, Text as NativeText, TextInput, useNativeState } from '@expo/ui';
 import { router } from 'expo-router';
 import { StatusBar, View } from '@/components/Themed';
 import { useTheme } from '@/context/ThemeContext';
@@ -88,18 +88,26 @@ export default function AddAddonScreen() {
             </FieldGroup.SectionFooter>
           </FieldGroup.Section>
           <FieldGroup.Section>
-            <Button
-              onPress={addAddon}
-              disabled={loading}
-              variant="filled"
-            >
-              <Row alignment="center" spacing={6}>
+            <ListItem
+              onPress={loading ? undefined : () => void addAddon()}
+              leading={
                 <RNHostView matchContents>
-                  <MaterialIcons name="add" size={20} color={colors.primary} />
+                  <MaterialIcons name="save" size={20} color="#30d158" />
                 </RNHostView>
-                <NativeText>{loading ? 'Adding add-on…' : 'Add add-on'}</NativeText>
-              </Row>
-            </Button>
+              }
+            >
+              <NativeText>Submit</NativeText>
+            </ListItem>
+            <ListItem
+              onPress={loading ? undefined : () => router.back()}
+              leading={
+                <RNHostView matchContents>
+                  <MaterialIcons name="cancel" size={20} color="#ff453a" />
+                </RNHostView>
+              }
+            >
+              <NativeText>Cancel</NativeText>
+            </ListItem>
           </FieldGroup.Section>
         </FieldGroup>
       </Host>

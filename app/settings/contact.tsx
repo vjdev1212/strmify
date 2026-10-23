@@ -12,12 +12,14 @@ const contactActions = [
     title: 'Feedback',
     detail: 'Share a suggestion or general feedback',
     icon: 'chatbubble-ellipses-outline' as const,
+    iconColor: '#0A84FF',
     url: process.env.EXPO_PUBLIC_FEEDBACK_URL ?? '',
   },
   {
     title: 'Report a Bug',
     detail: 'Let us know when something is not working',
     icon: 'bug-outline' as const,
+    iconColor: '#FF453A',
     url: process.env.EXPO_PUBLIC_REPORT_BUG_URL ?? '',
   },
 ];
@@ -52,7 +54,7 @@ export default function ContactScreen() {
               title={action.title}
               onPress={() => openContact(action.url)}
               isLast
-              leading={<Ionicons name={action.icon} size={20} color={colors.primary} />}
+              leading={<Ionicons name={action.icon} size={20} color={action.iconColor} />}
               trailing={<Ionicons name="open-outline" size={17} color={colors.textDim} />}
             />
           </SettingsSection>
