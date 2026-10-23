@@ -1,9 +1,7 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import {
-  FlatList,
   Image,
   StyleSheet,
-  Pressable,
   useWindowDimensions,
   View as RNView,
 } from 'react-native';
@@ -16,6 +14,8 @@ import { isHapticsSupported } from '@/utils/platform';
 import { DefaultPosterImgXml } from '@/utils/Svg';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/context/ThemeContext';
+import NativeStackList from '@/components/native-stack-list';
+import { NativeButton } from '@/components/native-ui-controls';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -49,7 +49,6 @@ const PosterItem = React.memo(({
 }) => {
   const { colors } = useTheme();
   const [imgError, setImgError] = useState(false);
-  const [isPressed, setIsPressed] = useState(false);
   const [hapticsEnabled, setHapticsEnabled] = useState(false);
   const year = item.year?.split('–')[0] || item.year;
 
@@ -62,15 +61,12 @@ const PosterItem = React.memo(({
     router.push({ pathname: `/${type}/details`, params: { tmdbid: item.tmdbid } });
   }, [hapticsEnabled, item.tmdbid, type]);
 
-  const handlePressIn = useCallback(() => setIsPressed(true), []);
-  const handlePressOut = useCallback(() => setIsPressed(false), []);
-
   return (
-    <Pressable
+    <NativeButton
+      variant="text"
       onPress={handlePress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      style={[styles.posterContainer, { width: posterWidth, marginRight: spacing }, isPressed && styles.posterPressed]}
+      style={[styles.posterContainer, { width: posterWidth, marginRight: spacing }]}
+      seedColor={colors.primary}
     >
       {!imgError ? (
         <Image
@@ -86,7 +82,7 @@ const PosterItem = React.memo(({
       )}
       <Text numberOfLines={1} style={[styles.posterTitle, { width: posterWidth, color: colors.text }]}>{item.name}</Text>
       <Text style={[styles.posterYear, { color: colors.textMuted }]}>{year}</Text>
-    </Pressable>
+    </NativeButton>
   );
 });
 
@@ -126,7 +122,10 @@ const PosterList = ({ apiUrl, title, type }: { apiUrl: string; title: string; ty
   }, [width, postersPerScreen]);
 
   const posterHeight = posterWidth * 1.5;
-  const listContentStyle = useMemo(() => ({ paddingRight: 4 }), []);
+  const listContentStyle = useMemo(
+    () => ({ paddingRight: 4, height: posterHeight + 58 }),
+    [posterHeight],
+  );
 
   useEffect(() => {
     const fetchData = async () => {
@@ -176,16 +175,13 @@ const PosterList = ({ apiUrl, title, type }: { apiUrl: string; title: string; ty
     router.push({ pathname: `/${type}/list`, params: { apiUrl } });
   }, [apiUrl, hapticsEnabled, type]);
 
-  const renderSkeletonPoster = useCallback(() => (
+  const renderSkeletonPoster = useCallback((_item: number) => (
     <SkeletonPoster posterWidth={posterWidth} posterHeight={posterHeight} spacing={spacing} bgColor={colors.backgroundOverlay} />
   ), [colors.backgroundOverlay, posterHeight, posterWidth]);
 
-  const renderPosterItem = useCallback(({ item }: { item: PosterItemData }) => (
+  const renderPosterItem = useCallback((item: PosterItemData) => (
     <PosterItem item={item} posterWidth={posterWidth} posterHeight={posterHeight} type={type} spacing={spacing} />
   ), [posterHeight, posterWidth, type]);
-
-  const keyExtractor = useCallback((item: PosterItemData, index: number) => `${item.tmdbid}-${index}`, []);
-  const skeletonKeyExtractor = useCallback((_: number, index: number) => `skeleton-${index}`, []);
 
   if (loading) {
     return (
@@ -193,13 +189,12 @@ const PosterList = ({ apiUrl, title, type }: { apiUrl: string; title: string; ty
         <RNView style={styles.header}>
           <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
         </RNView>
-        <FlatList
+        <NativeStackList
           data={SKELETON_DATA}
-          horizontal
+          axis="horizontal"
           renderItem={renderSkeletonPoster}
-          keyExtractor={skeletonKeyExtractor}
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={listContentStyle}
+          keyExtractor={(_, index) => `skeleton-${index}`}
+          style={listContentStyle}
         />
       </RNView>
     );
@@ -211,21 +206,17 @@ const PosterList = ({ apiUrl, title, type }: { apiUrl: string; title: string; ty
     <RNView style={styles.container}>
       <RNView style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
-        <Pressable onPress={handleSeeAllPress} style={styles.seeAllButton}>
+        <NativeButton variant="text" onPress={handleSeeAllPress} style={styles.seeAllButton} seedColor={colors.primary}>
           <Text style={[styles.seeAllText, { color: colors.textMuted }]}>See All</Text>
           <Ionicons name="chevron-forward" size={16} color={colors.textMuted} style={styles.chevronIcon} />
-        </Pressable>
+        </NativeButton>
       </RNView>
-      <FlatList
+      <NativeStackList
         data={data}
-        horizontal
+        axis="horizontal"
         renderItem={renderPosterItem}
-        keyExtractor={keyExtractor}
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={listContentStyle}
-        initialNumToRender={postersPerScreen}
-        maxToRenderPerBatch={postersPerScreen}
-        windowSize={3}
+        keyExtractor={(item, index) => `${item.tmdbid}-${index}`}
+        style={listContentStyle}
       />
     </RNView>
   );
@@ -239,7 +230,6 @@ const styles = StyleSheet.create({
   seeAllText: { fontSize: 15, fontWeight: '500', letterSpacing: -0.1 },
   chevronIcon: { marginLeft: 2 },
   posterContainer: { marginBottom: 10 },
-  posterPressed: { opacity: 0.7 },
   posterImage: { borderRadius: 6, overflow: 'hidden' },
   posterTitle: { marginTop: 10, fontSize: 14, fontWeight: '500', letterSpacing: -0.2, lineHeight: 20 },
   posterYear: { marginTop: 4, fontSize: 12, fontWeight: '500', letterSpacing: -0.1 },

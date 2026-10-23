@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { StyleSheet, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { libraryService, LibraryItem } from '@/utils/LibraryService';
 import * as Haptics from 'expo-haptics';
 import { isHapticsSupported } from '@/utils/platform';
 import { useTheme } from '@/context/ThemeContext';
+import { NativeButton } from '@/components/native-ui-controls';
 
 interface LibraryButtonProps {
     item: Omit<LibraryItem, 'timestamp'>;
@@ -41,7 +42,8 @@ const LibraryButton: React.FC<LibraryButtonProps> = ({ item, size = 28, color = 
     };
 
     return (
-        <TouchableOpacity
+        <NativeButton
+            variant="text"
             onPress={handlePress}
             style={[
                 styles.button,
@@ -49,12 +51,13 @@ const LibraryButton: React.FC<LibraryButtonProps> = ({ item, size = 28, color = 
                 isInLibrary && { backgroundColor: colors.primaryMuted, opacity: 0.5 },
             ]}
             disabled={loading}
+            seedColor={colors.primary}
         >
             {loading
                 ? <ActivityIndicator size="small" color={color} />
                 : <Ionicons name={isInLibrary ? 'bookmark' : 'bookmark-outline'} size={size} color={color} />
             }
-        </TouchableOpacity>
+        </NativeButton>
     );
 };
 

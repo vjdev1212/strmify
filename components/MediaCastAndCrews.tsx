@@ -1,7 +1,8 @@
 import React, { useMemo } from "react";
-import { StyleSheet, ScrollView, Image, Pressable, useWindowDimensions } from "react-native";
+import { StyleSheet, Image, useWindowDimensions } from "react-native";
 import { View, Text } from "./Themed";
 import { useTheme } from '@/context/ThemeContext';
+import NativeStackList from '@/components/native-stack-list';
 
 const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/h632";
 
@@ -67,17 +68,14 @@ const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
       <View style={[styles.headerContainer, { paddingHorizontal: containerMargin }]}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Cast & Crew</Text>
       </View>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={[styles.scrollContent, { paddingRight: containerMargin }]}
-        style={[styles.scrollView, { paddingLeft: containerMargin }]}
-      >
-        {castItems.map((item, index) => (
-          <Pressable
-            key={item.uniqueKey}
-            style={[styles.avatarContainer, { width: avatarSize + 20, marginRight: index === castItems.length - 1 ? 0 : spacing }]}
-          >
+      <NativeStackList
+        data={castItems}
+        axis="horizontal"
+        spacing={spacing}
+        keyExtractor={(item) => item.uniqueKey}
+        style={[styles.scrollContent, { paddingHorizontal: containerMargin }]}
+        renderItem={(item) => (
+          <View style={[styles.avatarContainer, { width: avatarSize + 20 }]}>
             <View style={styles.avatarWrapper}>
               {item.hasImage ? (
                 <Image source={{ uri: item.imageUri! }} style={[styles.avatar, { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 }]} />
@@ -92,9 +90,9 @@ const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
               <Text style={[styles.name, { color: colors.text, fontSize: Math.max(13, avatarSize * 0.12) }]} numberOfLines={1} ellipsizeMode="tail">{item.name}</Text>
               <Text style={[styles.character, { color: colors.textMuted, fontSize: Math.max(11, avatarSize * 0.1) }]} numberOfLines={1} ellipsizeMode="tail">{item.displayCharacter}</Text>
             </View>
-          </Pressable>
-        ))}
-      </ScrollView>
+          </View>
+        )}
+      />
     </View>
   );
 };
@@ -103,7 +101,6 @@ const styles = StyleSheet.create({
   container: { paddingVertical: 15 },
   headerContainer: { marginBottom: 16 },
   sectionTitle: { fontSize: 18, fontWeight: '500', letterSpacing: 0.5 },
-  scrollView: {},
   scrollContent: {},
   avatarContainer: { alignItems: "center", paddingVertical: 8 },
   avatarWrapper: { position: 'relative', marginBottom: 12 },

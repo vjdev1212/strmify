@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, Animated, ActivityIndicator, Image, Platform, PanResponder, Dimensions } from 'react-native';
+import { View, Text, Animated, ActivityIndicator, Image, Platform, PanResponder, Dimensions } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { NativeButton } from '@/components/native-ui-controls';
 import NativeProgressSlider from './native-progress-slider';
 import { showAlert } from '@/utils/platform';
 import { parseSubtitleFile } from './subtitle';
@@ -583,11 +584,11 @@ export const CenterControls: React.FC<{
 
     return (
         <View style={styles.centerControls}>
-            <TouchableOpacity style={[styles.skipButton]} onPress={onSkipBackward}>
+            <NativeButton variant="text" style={styles.skipButton} onPress={onSkipBackward} accessibilityLabel="Skip backward" seedColor="#ffffff">
                 <GlassView glassEffectStyle="clear" style={styles.glassIcon}>
                     <MaterialIcons name="replay-10" size={36} color={"#ffffff"} />
                 </GlassView>
-            </TouchableOpacity>
+            </NativeButton>
 
             {isBuffering ? (
                 <GlassView glassEffectStyle="clear" style={styles.glassIcon}>
@@ -597,17 +598,17 @@ export const CenterControls: React.FC<{
                 </GlassView>
             ) : (
                 <GlassView glassEffectStyle="clear" style={styles.glassIcon}>
-                    <TouchableOpacity style={styles.playButton} onPress={onPlayPause}>
+                    <NativeButton variant="text" style={styles.playButton} onPress={onPlayPause} accessibilityLabel={isPlaying ? 'Pause' : 'Play'} seedColor="#ffffff">
                         <Ionicons name={isPlaying ? "pause" : "play"} size={60} color="#ffffff" />
-                    </TouchableOpacity>
+                    </NativeButton>
                 </GlassView>
             )}
 
-            <TouchableOpacity style={[styles.skipButton]} onPress={onSkipForward}>
+            <NativeButton variant="text" style={styles.skipButton} onPress={onSkipForward} accessibilityLabel="Skip forward" seedColor="#ffffff">
                 <GlassView glassEffectStyle="clear" style={styles.glassIcon}>
                     <MaterialIcons name="forward-30" size={36} color={"#ffffff"} />
                 </GlassView>
-            </TouchableOpacity>
+            </NativeButton>
         </View>
     );
 };

@@ -11,7 +11,8 @@ import { SUBTITLE_LANGUAGES } from '@/utils/Subtitles';
 import BottomSpacing from '@/components/BottomSpacing';
 import { useTheme } from '@/context/ThemeContext';
 import { View, Text } from '@/components/Themed';
-import { NativeButton, NativeTextInput } from '@/components/native-ui-controls';
+import { NativeButton, NativeSelect, NativeTextInput } from '@/components/native-ui-controls';
+import NativeStackList from '@/components/native-stack-list';
 
 const OpenSubtitlesConfigScreen: React.FC = () => {
     const { colors } = useTheme();
@@ -149,16 +150,17 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
                     <View style={styles.form}>
                         <View style={styles.inputGroup}>
                             <Text style={[styles.label, { color: colors.text }]}>API Key</Text>
-                            <TouchableOpacity style={[styles.toggleContainer, { backgroundColor: colors.primarySurface, borderColor: colors.primaryBorder }]} onPress={toggleApiKeyMode}>
-                                {[true, false].map((isDefault) => (
-                                    <View key={String(isDefault)} style={styles.toggleOption}>
-                                        <View style={[styles.radioButton, { borderColor: colors.textDim }, (isDefault ? useDefaultKey : !useDefaultKey) && { borderColor: colors.primary }]}>
-                                            {(isDefault ? useDefaultKey : !useDefaultKey) && <View style={[styles.radioButtonInner, { backgroundColor: colors.primary }]} />}
-                                        </View>
-                                        <Text style={[styles.toggleText, { color: colors.text }]}>{isDefault ? 'Default' : 'Custom API Key'}</Text>
-                                    </View>
-                                ))}
-                            </TouchableOpacity>
+                            <NativeSelect
+                                selectedValue={useDefaultKey ? 'default' : 'custom'}
+                                onValueChange={(value) => {
+                                    if ((value === 'default') !== useDefaultKey) toggleApiKeyMode();
+                                }}
+                                options={[
+                                    { label: 'Default', value: 'default' },
+                                    { label: 'Custom API Key', value: 'custom' },
+                                ]}
+                                style={styles.toggleContainer}
+                            />
                             {!useDefaultKey && (
                                 <>
                                     <View style={styles.passwordContainer}>
@@ -182,9 +184,15 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
                                             autoCapitalize="none"
                                             autoCorrect={false}
                                         />
-                                        <TouchableOpacity style={styles.eyeButton} onPress={() => setShowApiKey(!showApiKey)}>
+                                        <NativeButton
+                                            variant="text"
+                                            style={styles.eyeButton}
+                                            onPress={() => setShowApiKey(!showApiKey)}
+                                            accessibilityLabel={showApiKey ? 'Hide API key' : 'Show API key'}
+                                            seedColor={colors.primary}
+                                        >
                                             <Ionicons name={showApiKey ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.textMuted} />
-                                        </TouchableOpacity>
+                                        </NativeButton>
                                     </View>
                                     <Text style={styles.helpText}>Get your API key from OpenSubtitles.com account settings</Text>
                                 </>
@@ -204,21 +212,33 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
                             </Text>
                             {renderLanguageMenu()}
                             {selectedLanguages.length > 0 && (
-                                <View style={styles.selectedLanguagesContainer}>
-                                    {selectedLanguages.map((code, index) => (
-                                        <View key={code} style={[styles.selectedLanguageChip, { backgroundColor: colors.primarySurface }]}>
+                                <NativeStackList
+                                    data={selectedLanguages}
+                                    axis="vertical"
+                                    spacing={8}
+                                    scrollable={false}
+                                    keyExtractor={(code) => code}
+                                    style={styles.selectedLanguagesContainer}
+                                    renderItem={(code, index) => (
+                                        <View style={[styles.selectedLanguageChip, { backgroundColor: colors.primarySurface }]}>
                                             <View style={[styles.languageBadge, { backgroundColor: colors.textDim }]}>
                                                 <Text style={[styles.languageBadgeText, { color: colors.text }]}>{index + 1}</Text>
                                             </View>
                                             <Text style={[styles.selectedLanguageText, { color: colors.text }]}>{getLanguageName(code)}</Text>
                                             {selectedLanguages.length > 1 && (
-                                                <TouchableOpacity onPress={() => removeLanguage(code)} style={styles.removeButton}>
+                                                <NativeButton
+                                                    variant="text"
+                                                    onPress={() => removeLanguage(code)}
+                                                    style={styles.removeButton}
+                                                    accessibilityLabel={`Remove ${getLanguageName(code)}`}
+                                                    seedColor={colors.primary}
+                                                >
                                                     <Ionicons name="close-circle" size={18} color={colors.textDim} />
-                                                </TouchableOpacity>
+                                                </NativeButton>
                                             )}
                                         </View>
-                                    ))}
-                                </View>
+                                    )}
+                                />
                             )}
                         </View>
 

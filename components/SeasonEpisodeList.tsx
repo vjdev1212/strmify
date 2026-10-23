@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { StyleSheet, Pressable, useWindowDimensions, Animated, TouchableOpacity, Platform, ScrollView } from 'react-native';
+import { StyleSheet, Pressable, useWindowDimensions, Animated, TouchableOpacity, Platform } from 'react-native';
 import { Text, View } from './Themed';
 import { formatDate } from '@/utils/Date';
 import { SvgXml } from 'react-native-svg';
@@ -9,6 +9,7 @@ import type { MenuComponentRef } from '@expo/ui/community/menu';
 import CustomContextMenu from './ContextMenu';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/context/ThemeContext';
+import NativeStackList from '@/components/native-stack-list';
 
 interface Episode {
   name: string; title: string; season: number; episode: number;
@@ -160,12 +161,20 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
           </MenuView>
         )}
       </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.episodeScrollContent} style={styles.episodeScrollView}>
-        {groupedEpisodes[selectedSeason]?.length > 0
-          ? groupedEpisodes[selectedSeason].map((ep, i) => renderEpisodeItem(ep, i))
-          : <View style={styles.noEpisodesContainer}><Text style={[styles.noEpisodesText, { color: colors.textMuted }]}>No episodes available for {getCurrentSeasonText()}</Text></View>
-        }
-      </ScrollView>
+      {groupedEpisodes[selectedSeason]?.length > 0 ? (
+        <NativeStackList
+          data={groupedEpisodes[selectedSeason]}
+          axis="horizontal"
+          spacing={CARD_GAP}
+          keyExtractor={(episode, index) => `episode-${episode.season}-${episode.episode || episode.number}-${index}`}
+          renderItem={renderEpisodeItem}
+          style={styles.episodeScrollView}
+        />
+      ) : (
+        <View style={styles.noEpisodesContainer}>
+          <Text style={[styles.noEpisodesText, { color: colors.textMuted }]}>No episodes available for {getCurrentSeasonText()}</Text>
+        </View>
+      )}
     </View>
   );
 };
@@ -177,7 +186,7 @@ const styles = StyleSheet.create({
   seasonDropdownText: { fontSize: 20, fontWeight: '500', letterSpacing: 0.3, flex: 1 },
   seasonDropdownArrow: { fontSize: 18, fontWeight: '600' },
   episodeScrollView: { flex: 1 },
-  episodeScrollContent: { paddingHorizontal: 20, paddingVertical: 12, gap: CARD_GAP },
+  episodeScrollContent: { paddingHorizontal: 20, paddingVertical: 12 },
   episodeContainer: { marginRight: CARD_GAP },
   episodePressable: { borderRadius: 12, overflow: 'hidden' },
   episodeCard: { backgroundColor: 'transparent', padding: 0 },

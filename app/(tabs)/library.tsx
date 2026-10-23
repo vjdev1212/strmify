@@ -6,7 +6,6 @@ import {
   StyleSheet,
   Animated,
   RefreshControl,
-  FlatList,
   useWindowDimensions,
 } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
@@ -19,6 +18,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomSpacing from '@/components/BottomSpacing';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '@/context/ThemeContext';
+import NativeStackList from '@/components/native-stack-list';
+import { NativeButton } from '@/components/native-ui-controls';
 
 type CategoryType = 'all' | 'movies' | 'tv';
 
@@ -143,7 +144,7 @@ const LibraryScreen: React.FC = () => {
     });
   };
 
-  const renderLibraryItem = ({ item, index }: { item: LibraryItem; index: number }) => {
+  const renderLibraryItem = (item: LibraryItem, index: number) => {
     const itemKey = `${item.tmdbid}-${item.type}-${index}`;
     const animValue = getAnimatedValue(itemKey);
 
@@ -215,14 +216,13 @@ const LibraryScreen: React.FC = () => {
             {items.length} {items.length === 1 ? 'item' : 'items'}
           </Text>
         </View>
-        <FlatList
+        <NativeStackList
           data={items}
+          axis="horizontal"
+          spacing={CARD_SPACING}
           renderItem={renderLibraryItem}
           keyExtractor={(item, index) => `${item.tmdbid}-${item.type}-${index}`}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={[styles.flatListContent, { gap: CARD_SPACING }]}
-          decelerationRate="normal"
+          style={styles.flatListContent}
         />
       </View>
     );
@@ -231,7 +231,8 @@ const LibraryScreen: React.FC = () => {
   const renderCategoryButton = (category: CategoryType, label: string, icon: string) => {
     const isActive = activeCategory === category;
     return (
-      <TouchableOpacity
+      <NativeButton
+        variant="text"
         style={[
           styles.categoryButton,
           {
@@ -240,13 +241,13 @@ const LibraryScreen: React.FC = () => {
           },
         ]}
         onPress={() => setActiveCategory(category)}
-        activeOpacity={0.7}
+        seedColor={colors.primary}
       >
         <Ionicons name={icon as any} size={18} color={isActive ? colors.text : colors.textMuted} />
         <Text style={[styles.categoryButtonText, { color: isActive ? colors.text : colors.textMuted, fontWeight: isActive ? '600' : '500' }]}>
           {label}
         </Text>
-      </TouchableOpacity>
+      </NativeButton>
     );
   };
 

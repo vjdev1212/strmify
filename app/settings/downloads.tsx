@@ -1,9 +1,11 @@
 import BottomSpacing from '@/components/BottomSpacing';
 import { StatusBar, View, Text } from '@/components/Themed';
 import React from 'react';
-import { TouchableOpacity, StyleSheet, Linking, ScrollView } from 'react-native';
+import { StyleSheet, Linking, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
+import NativeStackList from '@/components/native-stack-list';
+import { NativeButton } from '@/components/native-ui-controls';
 
 const resources = [
   { id: 1, title: 'Google Play Store', subtitle: 'Download for Android Devices', icon: '📱', url: 'https://play.google.com/store/apps/details?id=com.vijayyuvi.strmify' },
@@ -30,12 +32,19 @@ const DownloadsScreen = () => {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
       >
-        <View style={styles.resourcesContainer}>
-          {resources.map((resource) => (
-            <TouchableOpacity
-              key={resource.id}
+        <NativeStackList
+          data={resources}
+          axis="vertical"
+          spacing={20}
+          scrollable={false}
+          keyExtractor={(resource) => String(resource.id)}
+          style={styles.resourcesContainer}
+          renderItem={(resource) => (
+            <NativeButton
+              variant="text"
               style={[styles.resourceCard, { backgroundColor: colors.primarySurface, borderColor: colors.primaryBorder }]}
               onPress={() => handlePress(resource.url)}
+              seedColor={colors.primary}
             >
               <View style={styles.cardContent}>
                 <View style={styles.iconContainer}>
@@ -51,9 +60,9 @@ const DownloadsScreen = () => {
                   </View>
                 </View>
               </View>
-            </TouchableOpacity>
-          ))}
-        </View>
+            </NativeButton>
+          )}
+        />
         <BottomSpacing space={50} />
       </ScrollView>
     </SafeAreaView>
@@ -97,7 +106,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
     justifyContent: 'center',
-    gap: 20,
   },
   resourceCard: {
     borderRadius: 12,

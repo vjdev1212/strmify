@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, Pressable, ScrollView, Animated, ActivityIndicator } from 'react-native';
+import { StyleSheet, ScrollView, Animated, ActivityIndicator } from 'react-native';
 import { View, Text } from '@/components/Themed';
 import { confirmAction, showAlert } from '@/utils/platform';
 import { MaterialIcons } from '@expo/vector-icons';
 import { StorageKeys, storageService } from '@/utils/StorageService';
 import { useTheme } from '@/context/ThemeContext';
 import { NativeButton, NativeSwitch, NativeTextInput } from '@/components/native-ui-controls';
+import NativeStackList from '@/components/native-stack-list';
 
 interface ServerConfigProps {
   serverName: string;
@@ -288,24 +289,31 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
               <Text style={[styles.sectionCount, { color: colors.textDim }]}>{serverConfigs.length} configured</Text>
             </View>
             <View style={styles.headerActions}>
-              <Pressable
+              <NativeButton
+                variant="text"
                 style={[styles.iconBtn, { backgroundColor: colors.primarySurface }]}
                 onPress={checkAllConnections}
                 disabled={Object.values(connectionStatus).some(s => s === 'checking')}
+                seedColor={colors.primary}
               >
                 <MaterialIcons name="refresh" size={20} color={Object.values(connectionStatus).some(s => s === 'checking') ? colors.textDim : colors.primary} />
-              </Pressable>
-              <Pressable style={[styles.addBtn, { backgroundColor: colors.primary }]} onPress={handleAddNew}>
+              </NativeButton>
+              <NativeButton variant="text" style={[styles.addBtn, { backgroundColor: colors.primary }]} onPress={handleAddNew} seedColor={colors.primary}>
                 <MaterialIcons name="add" size={18} color={colors.text} />
                 <Text style={[styles.btnText, { color: colors.text }]}>Add</Text>
-              </Pressable>
+              </NativeButton>
             </View>
           </View>
 
           {serverConfigs.length > 0 ? (
-            <View style={styles.serverList}>
-              {serverConfigs.map((item) => (
-                <View key={item.serverId} style={[styles.card, { backgroundColor: colors.primarySurface }]}>
+            <NativeStackList
+              data={serverConfigs}
+              axis="vertical"
+              spacing={10}
+              scrollable={false}
+              keyExtractor={(item) => item.serverId}
+              renderItem={(item) => (
+                <View style={[styles.card, { backgroundColor: colors.primarySurface }]}>
                   {inlineEditingId === item.serverId ? (
                     <View>
                       <View style={styles.formGroup}>
@@ -338,7 +346,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
                     </View>
                   ) : (
                     <>
-                      <Pressable style={styles.serverItem} onPress={() => toggleServerSelection(item.serverId)}>
+                      <NativeButton variant="text" style={styles.serverItem} onPress={() => toggleServerSelection(item.serverId)} seedColor={colors.primary}>
                         <View style={styles.serverMain}>
                           <View style={styles.statusIndicator}>{renderConnectionIndicator(item.serverId)}</View>
                           <View style={styles.serverDetails}>
@@ -370,47 +378,47 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
                             </Animated.View>
                           )}
                         </View>
-                      </Pressable>
+                      </NativeButton>
 
                       {selectedServerId === item.serverId && (
                         <Animated.View style={[styles.actionBar, { backgroundColor: colors.backgroundCard, height: animatedValues[item.serverId]?.height || 48, opacity: animatedValues[item.serverId]?.height.interpolate({ inputRange: [0, 48], outputRange: [0, 1] }) || 1 }]}>
-                          <Pressable style={styles.actionBtn} onPress={() => refreshConnection(item.serverId)}>
+                          <NativeButton variant="text" style={styles.actionBtn} onPress={() => refreshConnection(item.serverId)} seedColor={colors.primary}>
                             <MaterialIcons name="wifi-tethering" size={16} color={colors.primary} />
                             <Text style={[styles.actionBtnText, { color: colors.primary }]}>Test</Text>
-                          </Pressable>
+                          </NativeButton>
                           {!isDefaultServer(item.serverId) && (
-                            <Pressable style={styles.actionBtn} onPress={() => startInlineEdit(item)}>
+                            <NativeButton variant="text" style={styles.actionBtn} onPress={() => startInlineEdit(item)} seedColor={colors.primary}>
                               <MaterialIcons name="edit" size={16} color={colors.primary} />
                               <Text style={[styles.actionBtnText, { color: colors.primary }]}>Edit</Text>
-                            </Pressable>
+                            </NativeButton>
                           )}
                           {!item.current && (
-                            <Pressable style={styles.actionBtn} onPress={() => handleSetAsCurrent(item.serverId)}>
+                            <NativeButton variant="text" style={styles.actionBtn} onPress={() => handleSetAsCurrent(item.serverId)} seedColor={colors.primary}>
                               <MaterialIcons name="check-circle-outline" size={16} color="#30D158" />
                               <Text style={[styles.actionBtnText, { color: '#30D158' }]}>Activate</Text>
-                            </Pressable>
+                            </NativeButton>
                           )}
                           {!isDefaultServer(item.serverId) && (
-                            <Pressable style={[styles.actionBtn, item.current && styles.disabledBtn]} onPress={() => handleDelete(item.serverId)} disabled={item.current}>
+                            <NativeButton variant="text" style={[styles.actionBtn, item.current && styles.disabledBtn]} onPress={() => handleDelete(item.serverId)} disabled={item.current} seedColor={colors.primary}>
                               <MaterialIcons name="delete-outline" size={16} color={item.current ? colors.textDim : '#FF453A'} />
                               <Text style={[styles.actionBtnText, { color: item.current ? colors.textDim : '#FF453A' }]}>Delete</Text>
-                            </Pressable>
+                            </NativeButton>
                           )}
                         </Animated.View>
                       )}
                     </>
                   )}
                 </View>
-              ))}
-            </View>
+              )}
+            />
           ) : (
             <View style={[styles.emptyState, { backgroundColor: colors.primarySurface }]}>
               <MaterialIcons name="dns" size={40} color={colors.textDim} />
               <Text style={[styles.emptyTitle, { color: colors.text }]}>No servers configured</Text>
               <Text style={[styles.emptyText, { color: colors.textDim }]}>Add your first server to get started</Text>
-              <Pressable style={[styles.emptyBtn, { backgroundColor: colors.primary }]} onPress={handleAddNew}>
+              <NativeButton variant="text" style={[styles.emptyBtn, { backgroundColor: colors.primary }]} onPress={handleAddNew} seedColor={colors.primary}>
                 <Text style={[styles.btnText, { color: colors.text }]}>Add Server</Text>
-              </Pressable>
+              </NativeButton>
             </View>
           )}
         </View>

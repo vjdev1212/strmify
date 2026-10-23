@@ -1,10 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   StyleSheet,
   View,
   ScrollView,
-  Pressable,
-  Animated,
   Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,6 +13,7 @@ import * as Haptics from 'expo-haptics';
 import { isHapticsSupported } from '@/utils/platform';
 import BottomSpacing from '@/components/BottomSpacing';
 import { useTheme } from '@/context/ThemeContext';
+import { NativeButton } from '@/components/native-ui-controls';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -51,24 +50,17 @@ const PresetCard = ({
   isSelected: boolean;
   onPress: () => void;
 }) => {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-
-  const handlePressIn = () =>
-    Animated.spring(scaleAnim, { toValue: 0.95, useNativeDriver: true, speed: 30 }).start();
-  const handlePressOut = () =>
-    Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, speed: 20 }).start();
-
   const primaryAlpha20 = preset.primary + '33';
   const primaryAlpha60 = preset.primary + '99';
 
   return (
-    <Pressable
+    <NativeButton
+      variant="text"
       onPress={onPress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
       style={styles.presetCardWrapper}
+      seedColor={preset.primary}
     >
-      <Animated.View
+      <View
         style={[
           styles.presetCard,
           {
@@ -76,7 +68,6 @@ const PresetCard = ({
             borderColor: isSelected ? preset.primary : 'rgba(255,255,255,0.08)',
             borderWidth: isSelected ? 1.5 : 1,
           },
-          { transform: [{ scale: scaleAnim }] },
         ]}
       >
         <View style={styles.presetPreview}>
@@ -108,8 +99,8 @@ const PresetCard = ({
             </View>
           )}
         </View>
-      </Animated.View>
-    </Pressable>
+      </View>
+    </NativeButton>
   );
 };
 
@@ -179,16 +170,14 @@ const ThemeColorScreen = () => {
           </View>
 
           <View style={styles.buttonSection}>
-            <Pressable
-              style={({ pressed }) => [
-                styles.applyButton,
-                { backgroundColor: selectedAccent, opacity: pressed ? 0.85 : 1 },
-              ]}
+            <NativeButton
+              style={[styles.applyButton, { backgroundColor: selectedAccent }]}
               onPress={handleApply}
+              seedColor={selectedAccent}
             >
               <Ionicons name="checkmark-circle" size={20} color={colors.text} />
               <Text style={[styles.applyText, { color: colors.text }]}>Apply Theme</Text>
-            </Pressable>
+            </NativeButton>
             <BottomSpacing space={30} />
           </View>
         </ScrollView>

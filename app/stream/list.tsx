@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { StyleSheet, Pressable, View as RNView, ScrollView } from 'react-native';
+import { StyleSheet, View as RNView } from 'react-native';
 import { ActivityIndicator, Card, StatusBar, Text, View } from '@/components/Themed';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { showAlert } from '@/utils/platform';
@@ -9,6 +9,8 @@ import BottomSpacing from '@/components/BottomSpacing';
 import { extractQuality, extractSize, getStreamType } from '@/utils/StreamItem';
 import { StorageKeys, storageService } from '@/utils/StorageService';
 import { useTheme } from '@/context/ThemeContext';
+import NativeStackList from '@/components/native-stack-list';
+import { NativeButton } from '@/components/native-ui-controls';
 
 interface Stream { name: string; title?: string; url?: string; embed?: string; infoHash?: string; magnet?: string; magnetLink?: string; description?: string; }
 interface Addon { name: string; url?: string; streamBaseUrl?: string; types?: string[]; }
@@ -33,12 +35,14 @@ const AddonItem = React.memo(({
     if (!item.types?.includes(type)) return null;
     const isSelected = item.name === selectedAddonName;
     return (
-        <Pressable
-            style={({ pressed }) => [styles.addonItem, { backgroundColor: isSelected ? colors.primary : colors.primarySurface, borderColor: isSelected ? colors.primary : colors.primaryBorder }, pressed && styles.addonItemPressed]}
+        <NativeButton
+            variant="text"
+            style={[styles.addonItem, { backgroundColor: isSelected ? colors.primary : colors.primarySurface, borderColor: isSelected ? colors.primary : colors.primaryBorder }]}
             onPress={() => onPress(item)}
+            seedColor={colors.primary}
         >
             <Text style={[styles.addonName, { color: isSelected ? colors.text : colors.textMuted }]} numberOfLines={1}>{item.name}</Text>
-        </Pressable>
+        </NativeButton>
     );
 });
 
@@ -58,7 +62,7 @@ const StreamItem = React.memo(({
     const size = extractSize(description || title || '');
     const streamType = getStreamType(item);
     return (
-        <Pressable onPress={() => onPress(item, index)} style={({ pressed }) => [styles.streamContainer, pressed && styles.streamContainerPressed]}>
+        <NativeButton variant="text" onPress={() => onPress(item, index)} style={styles.streamContainer} seedColor={colors.primary}>
             <Card style={[styles.streamItem, { borderColor: colors.primaryBorder, backgroundColor: colors.primaryCard }]}>
                 <RNView style={styles.streamHeader}>
                     <Text style={[styles.streamName, { color: colors.text }]} numberOfLines={2}>{name}</Text>
@@ -70,7 +74,7 @@ const StreamItem = React.memo(({
                     <Text style={[styles.streamType, { color: colors.textDim }]}>{streamType}</Text>
                 </RNView>
             </Card>
-        </Pressable>
+        </NativeButton>
     );
 });
 
@@ -161,34 +165,37 @@ const StreamListScreen = () => {
             <StatusBar />
             {loading && addons.length === 0 ? renderLoadingState('Loading addons...') : addons.length > 0 ? (
                 <View style={[styles.addonSection, { borderColor: colors.primaryBorder }]}>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.addonListContainer}>
-                        {addons.map((item, index) => (
+                    <NativeStackList
+                        data={addons}
+                        axis="horizontal"
+                        spacing={10}
+                        keyExtractor={(item, index) => `${item.name}-${index}`}
+                        renderItem={(item) => (
                             <AddonItem
-                                key={`${item.name}-${index}`}
                                 item={item}
                                 type={type}
                                 selectedAddonName={selectedAddon?.name}
                                 colors={colors}
                                 onPress={handleAddonPress}
                             />
-                        ))}
-                    </ScrollView>
+                        )}
+                        style={styles.addonListContainer}
+                    />
                 </View>
             ) : renderEmptyState('alert-circle', 'No addons configured. Please add addons in settings.')}
             {loading && addons.length > 0 ? renderLoadingState('Loading streams...') : (
-                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer}>
-                    <View style={styles.streamsContainer}>
-                        {streams.length > 0 ? streams.map((item, index) => (
-                            <StreamItem
-                                key={`${item.name}-${index}`}
-                                item={item}
-                                index={index}
-                                colors={colors}
-                                onPress={handleStreamSelected}
-                            />
-                        )) : addons.length > 0 && renderEmptyState('video-off', 'No streams available')}
-                    </View>
-                </ScrollView>
+                streams.length > 0 ? (
+                    <NativeStackList
+                        data={streams}
+                        axis="vertical"
+                        spacing={12}
+                        keyExtractor={(item, index) => `${item.name}-${index}`}
+                        renderItem={(item, index) => (
+                            <StreamItem item={item} index={index} colors={colors} onPress={handleStreamSelected} />
+                        )}
+                        style={styles.scrollContainer}
+                    />
+                ) : addons.length > 0 ? renderEmptyState('video-off', 'No streams available') : null
             )}
             <BottomSpacing space={30} />
         </SafeAreaView>
@@ -197,13 +204,12 @@ const StreamListScreen = () => {
 
 const styles = StyleSheet.create({
     container: { flex: 1, marginTop: 40 },
-    scrollContainer: { paddingBottom: 20, maxWidth: 700, margin: 'auto', width: '100%' },
+    scrollContainer: { flex: 1, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 20, maxWidth: 700, margin: 'auto', width: '100%' },
     addonSection: { borderBottomWidth: StyleSheet.hairlineWidth, paddingVertical: 16 },
-    addonListContainer: { paddingHorizontal: 16, gap: 10 },
+    addonListContainer: { paddingHorizontal: 16 },
     addonItem: { borderRadius: 20, paddingVertical: 10, paddingHorizontal: 18, borderWidth: StyleSheet.hairlineWidth },
     addonItemPressed: { opacity: 0.7 },
     addonName: { fontSize: 14, fontWeight: '500', letterSpacing: -0.2 },
-    streamsContainer: { paddingHorizontal: 16, paddingTop: 16, gap: 12 },
     streamContainer: { borderRadius: 14 },
     streamContainerPressed: { opacity: 0.7 },
     streamItem: { borderRadius: 14, padding: 16, borderWidth: StyleSheet.hairlineWidth },

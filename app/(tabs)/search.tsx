@@ -1,6 +1,6 @@
 import { Text, ActivityIndicator, View, StatusBar } from '@/components/Themed';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { ScrollView, Pressable, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { isHapticsSupported } from '@/utils/platform';
@@ -9,7 +9,7 @@ import PosterList from '@/components/PosterList';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BlurGradientBackground from '@/components/BlurGradientBackground';
 import { useTheme } from '@/context/ThemeContext';
-import { NativeTextInput } from '@/components/native-ui-controls';
+import { NativeButton, NativeTextInput } from '@/components/native-ui-controls';
 
 const TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -83,11 +83,17 @@ const SearchScreen = () => {
             autoCapitalize="none"
           />
           {query.length > 0 && (
-            <Pressable onPress={clearSearch} style={styles.clearButton}>
+            <NativeButton
+              variant="text"
+              onPress={clearSearch}
+              style={styles.clearButton}
+              accessibilityLabel="Clear search"
+              seedColor={colors.primary}
+            >
               <View style={styles.clearIconContainer}>
                 <Ionicons name="close-circle" size={20} color={colors.textDim} />
               </View>
-            </Pressable>
+            </NativeButton>
           )}
         </View>
       </View>

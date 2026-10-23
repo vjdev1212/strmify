@@ -4,8 +4,6 @@ import {
   ScrollView,
   StyleSheet,
   View,
-  FlatList,
-  TouchableOpacity
 } from 'react-native';
 import { StatusBar, Text } from '@/components/Themed';
 import PosterList from '@/components/PosterList';
@@ -17,6 +15,8 @@ import { isHapticsSupported } from '@/utils/platform';
 import { CatalogUrl, MovieGneres, TvGneres } from '@/constants/Tmdb';
 import BlurGradientBackground from '@/components/BlurGradientBackground';
 import { useTheme } from '@/context/ThemeContext';
+import NativeStackList from '@/components/native-stack-list';
+import { NativeButton } from '@/components/native-ui-controls';
 
 const LazyPosterList = ({
   apiUrl,
@@ -132,14 +132,15 @@ export default function HomeScreen() {
         />
         <View style={styles.contentContainer}>
           <View style={styles.filtersContainer}>
-            <FlatList
+            <NativeStackList
               data={filters}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.filterRow}
+              axis="horizontal"
+              spacing={15}
+              style={styles.filterRow}
               keyExtractor={(item) => item.key}
-              renderItem={({ item }) => (
-                <TouchableOpacity
+              renderItem={(item) => (
+                <NativeButton
+                  variant="text"
                   style={[
                     styles.filterButton,
                     {
@@ -148,7 +149,7 @@ export default function HomeScreen() {
                     },
                   ]}
                   onPress={() => handleFilterChange(item.key as 'all' | 'movies' | 'series')}
-                  activeOpacity={0.7}
+                  seedColor={colors.primary}
                 >
                   <Ionicons
                     name={item.icon as any}
@@ -165,7 +166,7 @@ export default function HomeScreen() {
                   >
                     {item.label}
                   </Text>
-                </TouchableOpacity>
+                </NativeButton>
               )}
             />
           </View>
@@ -196,7 +197,6 @@ const styles = StyleSheet.create({
   },
   filterRow: {
     paddingHorizontal: 10,
-    gap: 15,
   },
   filterButton: {
     flexDirection: 'row',

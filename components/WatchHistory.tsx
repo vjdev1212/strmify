@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  ScrollView,
   TouchableOpacity,
   Image,
   StyleSheet,
@@ -12,6 +11,8 @@ import { StorageKeys, storageService } from '@/utils/StorageService';
 import { View, Text } from './Themed';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '@/context/ThemeContext';
+import NativeStackList from '@/components/native-stack-list';
+import { NativeButton } from '@/components/native-ui-controls';
 
 export interface WatchHistoryItem {
   title: string;
@@ -157,23 +158,23 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
           <Ionicons name="play-circle-outline" size={22} color={colors.text} />
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Continue Watching</Text>
         </View>
-        <TouchableOpacity onPress={clearAllHistory} activeOpacity={0.7} style={styles.clearAllButton}>
+        <NativeButton variant="text" onPress={clearAllHistory} style={styles.clearAllButton} seedColor={colors.primary}>
           <Ionicons name="trash-outline" size={14} color="#ff6b6b" />
           <Text style={styles.clearAllText}>Clear All</Text>
-        </TouchableOpacity>
+        </NativeButton>
       </View>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={[styles.scrollContent, { gap: CARD_SPACING }]}
-        decelerationRate="normal"
-      >
-        {history.map((item, index) => {
+      <NativeStackList
+        data={history}
+        axis="horizontal"
+        spacing={CARD_SPACING}
+        keyExtractor={(item, index) => `${item.videoUrl}-${item.timestamp}-${index}`}
+        style={styles.scrollContent}
+        renderItem={(item, index) => {
           const itemKey = `${item.videoUrl}-${item.timestamp}-${index}`;
           const animValue = getAnimatedValue(itemKey);
           return (
-            <Animated.View key={itemKey} style={[{ width: CARD_WIDTH }, { opacity: animValue, transform: [{ scale: animValue }] }]}>
+            <Animated.View style={[{ width: CARD_WIDTH }, { opacity: animValue, transform: [{ scale: animValue }] }]}>
               <TouchableOpacity style={styles.card} onPress={() => onItemSelect(item)} activeOpacity={0.8}>
                 <View style={[styles.imageContainer, { height: CARD_HEIGHT, backgroundColor: colors.background }]}>
                   <Image source={{ uri: item.artwork }} style={styles.backdrop} resizeMode="cover" />
@@ -201,8 +202,8 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
               </TouchableOpacity>
             </Animated.View>
           );
-        })}
-      </ScrollView>
+        }}
+      />
     </View >
   );
 };

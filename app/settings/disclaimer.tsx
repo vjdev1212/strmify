@@ -5,9 +5,16 @@ import { Ionicons } from '@expo/vector-icons';
 import BottomSpacing from '@/components/BottomSpacing';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
+import NativeStackList from '@/components/native-stack-list';
 
 const DisclaimerScreen = () => {
     const { colors } = useTheme();
+    const sections = [
+        { header: '📱 Application Purpose', text: 'This app is only a dashboard that provides movie and TV show information. All content access is provided through third-party addons and external sources that users choose to install and use.' },
+        { header: '⚖️ Legal Notice', text: 'Users are solely responsible for ensuring their use of any third-party addons or external content sources complies with applicable laws and regulations in their jurisdiction, including copyright laws and licensing agreements.' },
+        { header: '🚫 Not Endorsed', text: 'The developer does not endorse, encourage, or support:\n• Accessing pirated or illegally distributed content\n• Using torrents for copyrighted material\n• Any activities that violate copyright laws\n• Illegal streaming or downloading of content' },
+        { header: '🛡️ Developer Responsibility', text: 'The developer of this application:\n• Is not responsible for user actions or content accessed through addons\n• Does not provide, control, or moderate third-party content sources\n• Will not be held liable for any legal consequences resulting from user actions\n• Has no control over addon functionality or content sources' },
+    ];
 
     return (
         <SafeAreaView style={styles.container}>
@@ -29,17 +36,18 @@ const DisclaimerScreen = () => {
                     <Text style={[styles.disclaimerText, { color: colors.textMuted }]}>
                         This application serves solely as a dashboard interface for movies and TV shows information and does not host, store, or distribute any content.
                     </Text>
-                    {[
-                        { header: '📱 Application Purpose', text: 'This app is only a dashboard that provides movie and TV show information. All content access is provided through third-party addons and external sources that users choose to install and use.' },
-                        { header: '⚖️ Legal Notice', text: 'Users are solely responsible for ensuring their use of any third-party addons or external content sources complies with applicable laws and regulations in their jurisdiction, including copyright laws and licensing agreements.' },
-                        { header: '🚫 Not Endorsed', text: 'The developer does not endorse, encourage, or support:\n• Accessing pirated or illegally distributed content\n• Using torrents for copyrighted material\n• Any activities that violate copyright laws\n• Illegal streaming or downloading of content' },
-                        { header: '🛡️ Developer Responsibility', text: 'The developer of this application:\n• Is not responsible for user actions or content accessed through addons\n• Does not provide, control, or moderate third-party content sources\n• Will not be held liable for any legal consequences resulting from user actions\n• Has no control over addon functionality or content sources' },
-                    ].map((section, i) => (
-                        <View key={i} style={[styles.section, { backgroundColor: colors.primarySurface, borderLeftColor: colors.primary }]}>
+                    <NativeStackList
+                        data={sections}
+                        axis="vertical"
+                        scrollable={false}
+                        keyExtractor={(section) => section.header}
+                        renderItem={(section) => (
+                        <View style={[styles.section, { backgroundColor: colors.primarySurface, borderLeftColor: colors.primary }]}>
                             <Text style={[styles.sectionHeader, { color: colors.text }]}>{section.header}</Text>
                             <Text style={[styles.sectionText, { color: colors.textMuted }]}>{section.text}</Text>
                         </View>
-                    ))}
+                        )}
+                    />
                     <View style={[styles.warningBox, { backgroundColor: colors.primarySurface, borderColor: colors.primary }]}>
                         <Ionicons name="alert-circle" size={24} color={colors.primary} />
                         <Text style={[styles.warningText, { color: colors.textMuted }]}>

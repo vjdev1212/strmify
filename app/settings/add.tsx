@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StorageKeys, storageService } from '@/utils/StorageService';
 import { useTheme } from '@/context/ThemeContext';
 import { NativeButton, NativeTextInput } from '@/components/native-ui-controls';
+import NativeStackList from '@/components/native-stack-list';
 
 const defaultAddonLogo = 'https://i.ibb.co/fSJ42PJ/addon.png';
 const ADDONS_KEY = StorageKeys.ADDONS_KEY;
@@ -125,13 +126,17 @@ export default function AddAddonScreen() {
                         {manifestData.types?.length > 0 && (
                             <View style={styles.typesContainer}>
                                 <Text style={[styles.typesLabel, { color: colors.text }]}>Supported Types</Text>
-                                <View style={styles.typesWrapper}>
-                                    {manifestData.types.map((type: string, index: number) => (
-                                        <View key={index} style={[styles.typeTag, { backgroundColor: colors.primarySurface, borderColor: colors.primaryBorder }]}>
+                                <NativeStackList
+                                    data={manifestData.types}
+                                    axis="horizontal"
+                                    spacing={8}
+                                    keyExtractor={(type: string, index) => `${type}-${index}`}
+                                    renderItem={(type: string) => (
+                                        <View style={[styles.typeTag, { backgroundColor: colors.primarySurface, borderColor: colors.primaryBorder }]}>
                                             <Text style={[styles.typeText, { color: colors.textDim }]}>{type}</Text>
                                         </View>
-                                    ))}
-                                </View>
+                                    )}
+                                />
                             </View>
                         )}
                         <NativeButton
@@ -171,7 +176,6 @@ const styles = StyleSheet.create({
     description: { fontSize: 16, lineHeight: 24 },
     typesContainer: { marginBottom: 32 },
     typesLabel: { fontSize: 16, fontWeight: '600', marginBottom: 12 },
-    typesWrapper: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
     typeTag: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
     typeText: { fontSize: 14, fontWeight: '500' },
     addButton: { paddingVertical: 14, paddingHorizontal: 26, borderRadius: 12, alignItems: 'center', alignSelf: 'center', minWidth: 140 },

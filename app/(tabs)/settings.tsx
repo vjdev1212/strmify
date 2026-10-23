@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Pressable, View, ScrollView } from 'react-native';
+import { StyleSheet, View, ScrollView } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { StatusBar, Text } from '@/components/Themed';
 import { useRouter } from 'expo-router';
@@ -10,6 +10,8 @@ import BottomSpacing from '@/components/BottomSpacing';
 import Constants from 'expo-constants';
 import BlurGradientBackground from '@/components/BlurGradientBackground';
 import { useTheme } from '@/context/ThemeContext';
+import NativeStackList from '@/components/native-stack-list';
+import { NativeButton } from '@/components/native-ui-controls';
 
 const SettingsScreen = () => {
   const router = useRouter();
@@ -52,7 +54,8 @@ const SettingsScreen = () => {
     isLast?: boolean
   }) => {
     return (
-      <Pressable
+      <NativeButton
+        variant="text"
         style={[
           styles.settingItem,
           {
@@ -64,6 +67,7 @@ const SettingsScreen = () => {
           }
         ]}
         onPress={onPress}
+        seedColor={colors.primary}
       >
         <View style={styles.leftContent}>
           <View style={[styles.iconContainer, { backgroundColor: colors.primarySurface }]}>
@@ -73,7 +77,7 @@ const SettingsScreen = () => {
         </View>
         <MaterialIcons name="chevron-right" size={22} color={colors.textDim} />
         {!isLast && <View style={styles.separator} />}
-      </Pressable>
+      </NativeButton>
     );
   };
 
@@ -85,18 +89,22 @@ const SettingsScreen = () => {
   const renderSection = (title: string, list: typeof General) => (
     <View style={styles.section}>
       <Text style={[styles.sectionHeader, { color: colors.textMuted }]}>{title}</Text>
-      <View style={styles.settingsGroup}>
-        {list.map((item, index) => (
+      <NativeStackList
+        data={list}
+        axis="vertical"
+        scrollable={false}
+        keyExtractor={(item) => item.route}
+        style={styles.settingsGroup}
+        renderItem={(item, index) => (
           <SettingItem
-            key={index}
             title={item.title}
             icon={item.icon}
             onPress={() => onSettingsItemPress(item)}
             isFirst={index === 0}
             isLast={index === list.length - 1}
           />
-        ))}
-      </View>
+        )}
+      />
     </View>
   );
 

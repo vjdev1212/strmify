@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Pressable, Image, ScrollView, View, Platform, RefreshControl, Dimensions, ActivityIndicator, Share } from 'react-native';
+import { StyleSheet, Image, ScrollView, View, Platform, RefreshControl, Dimensions, ActivityIndicator, Share } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { StatusBar, Text } from '@/components/Themed';
 import { router } from 'expo-router';
@@ -8,6 +8,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StorageKeys, storageService } from '@/utils/StorageService';
 import { useTheme } from '@/context/ThemeContext';
+import NativeStackList from '@/components/native-stack-list';
+import { NativeButton } from '@/components/native-ui-controls';
 
 const ADDONS_KEY = StorageKeys.ADDONS_KEY;
 const defaultAddonLogo = 'https://i.ibb.co/fSJ42PJ/addon.png';
@@ -96,19 +98,20 @@ const AddonsScreen = () => {
         {item.description && <View style={styles.cardBody}><Text style={[styles.addonDescription, { color: colors.textMuted }]} numberOfLines={3}>{item.description}</Text></View>}
         <View style={styles.cardActions}>
           {hasManifestUrl && (
-            <Pressable style={({ pressed }) => [styles.actionButton, { backgroundColor: colors.primarySurface }, pressed && styles.actionButtonPressed]} onPress={() => updateAddonManifest(item.id, item.manifestUrl)} disabled={isUpdating}>
+            <NativeButton variant="text" style={[styles.actionButton, { backgroundColor: colors.primarySurface }]} onPress={() => updateAddonManifest(item.id, item.manifestUrl)} disabled={isUpdating} seedColor={colors.primary}>
               {isUpdating ? <ActivityIndicator size="small" color="#ffffff" /> : <Ionicons name="refresh" size={18} color="#ffffff" />}
-            </Pressable>
+            </NativeButton>
           )}
-          <Pressable style={({ pressed }) => [styles.actionButton, { backgroundColor: colors.primarySurface }, pressed && styles.actionButtonPressed]} onPress={() => shareManifestUrl(item.manifestUrl)}>
+            <NativeButton variant="text" style={[styles.actionButton, { backgroundColor: colors.primarySurface }]} onPress={() => shareManifestUrl(item.manifestUrl)} seedColor={colors.primary}>
             <Ionicons name="share-outline" size={18} color="#ffffff" />
-          </Pressable>
-          <Pressable style={({ pressed }) => [styles.actionButton, { backgroundColor: colors.primarySurface }, !configurable && { backgroundColor: colors.primaryFaint }, pressed && configurable && styles.actionButtonPressed]} onPress={() => openConfiguration(item.baseUrl)} disabled={!configurable}>
+            </NativeButton>
+            <NativeButton variant="text" style={[styles.actionButton, { backgroundColor: colors.primarySurface }, !configurable && { backgroundColor: colors.primaryFaint }]} onPress={() => openConfiguration(item.baseUrl)} disabled={!configurable} seedColor={colors.primary}>
             <Ionicons name="settings-outline" size={18} color={configurable ? "#ffffff" : '#555555'} />
-          </Pressable>
-          <Pressable
-            style={({ pressed }) => [styles.actionButton, styles.removeButton, pressed && styles.removeButtonPressed]}
-            onPress={() => {
+            </NativeButton>
+            <NativeButton
+              variant="text"
+              style={[styles.actionButton, styles.removeButton]}
+              onPress={() => {
               const message = `Remove "${item.name}"?`;
               if (Platform.OS === 'ios' || Platform.OS === 'android') {
                 showAlert('Remove Addon', message, [{ text: 'Cancel', style: 'cancel' }, { text: 'Remove', style: 'destructive', onPress: () => removeAddon(item.id) }]);
@@ -116,9 +119,10 @@ const AddonsScreen = () => {
                 if (window.confirm(message)) removeAddon(item.id);
               }
             }}
+            seedColor={colors.primary}
           >
             <Ionicons name="trash-outline" size={18} color="#ff4757" />
-          </Pressable>
+          </NativeButton>
         </View>
       </View>
     );
@@ -129,10 +133,10 @@ const AddonsScreen = () => {
       <StatusBar />
       <View style={[styles.header, { borderBottomColor: colors.primaryBorder }]}>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Addons</Text>
-        <Pressable style={({ pressed }) => [styles.addButton, { backgroundColor: colors.primary }, pressed && styles.addButtonPressed]} onPress={() => router.push('/settings/add')}>
+        <NativeButton variant="text" style={[styles.addButton, { backgroundColor: colors.primary }]} onPress={() => router.push('/settings/add')} seedColor={colors.primary}>
           <Ionicons name="add" size={20} color="#ffffff" />
           <Text style={[styles.addButtonText, { color: colors.text }]}>Add</Text>
-        </Pressable>
+        </NativeButton>
       </View>
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -140,7 +144,15 @@ const AddonsScreen = () => {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} progressBackgroundColor={colors.background} />}
       >
         {addons.length > 0 ? (
-          <View style={styles.addonList}>{addons.map((item) => renderAddonCard(item))}</View>
+          <NativeStackList
+            data={addons}
+            axis="vertical"
+            spacing={16}
+            scrollable={false}
+            keyExtractor={(item) => item.id}
+            renderItem={(item) => renderAddonCard(item)}
+            style={styles.addonList}
+          />
         ) : (
           <View style={styles.emptyState}>
             <View style={[styles.emptyIconContainer, { backgroundColor: colors.primarySurface }]}>
@@ -148,10 +160,10 @@ const AddonsScreen = () => {
             </View>
             <Text style={[styles.emptyStateTitle, { color: colors.text }]}>No Addons</Text>
             <Text style={[styles.emptyStateText, { color: colors.textDim }]}>Get started by adding your first addon</Text>
-            <Pressable style={({ pressed }) => [styles.emptyActionButton, { backgroundColor: colors.primarySurface, borderColor: colors.primaryBorder }, pressed && styles.emptyActionButtonPressed]} onPress={() => router.push('/settings/add')}>
+            <NativeButton variant="text" style={[styles.emptyActionButton, { backgroundColor: colors.primarySurface, borderColor: colors.primaryBorder }]} onPress={() => router.push('/settings/add')} seedColor={colors.primary}>
               <Ionicons name="add-circle-outline" size={20} color={colors.primary} />
               <Text style={[styles.emptyActionText, { color: colors.primary }]}>Add Addon</Text>
-            </Pressable>
+            </NativeButton>
           </View>
         )}
       </ScrollView>
@@ -168,7 +180,7 @@ const styles = StyleSheet.create({
   addButtonText: { fontSize: 14, fontWeight: '500', letterSpacing: -0.2 },
   contentContainer: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 },
   emptyContentContainer: { flex: 1, justifyContent: 'center' },
-  addonList: { flex: 1, gap: 16 },
+  addonList: { flex: 1 },
   addonCard: { borderRadius: 16, padding: 16, borderWidth: StyleSheet.hairlineWidth },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 12 },
   addonLogo: { width: 56, height: 56, borderRadius: 14, marginRight: 14 },

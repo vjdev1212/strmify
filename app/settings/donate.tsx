@@ -1,9 +1,10 @@
 import React from 'react';
-import { StyleSheet, Pressable, Linking, ScrollView, View } from 'react-native';
+import { StyleSheet, Linking, ScrollView, View } from 'react-native';
 import { Text, StatusBar } from '@/components/Themed';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
+import { NativeButton } from '@/components/native-ui-controls';
 
 const DonateScreen = () => {
     const { colors } = useTheme();
@@ -26,13 +27,13 @@ const DonateScreen = () => {
                         <Text style={[styles.subtitle, { color: colors.textMuted }]}>Your support helps keep this project alive and enables continuous improvements. Every contribution makes a difference!</Text>
                     </View>
                     <View style={styles.donationSection}>
-                        <Pressable style={({ pressed }) => [styles.donateButton, { backgroundColor: colors.primaryDark }, pressed && styles.donateButtonPressed]} onPress={handleDonate}>
+                        <NativeButton variant="filled" style={[styles.donateButton, { backgroundColor: colors.primaryDark }]} onPress={handleDonate} seedColor={colors.primaryDark}>
                             <View style={styles.buttonContent}>
                                 <Ionicons name="cafe" size={24} color="#fff" />
                                 <Text style={[styles.donateText, { color: colors.text }]}>Buy Me a Coffee</Text>
                                 <Ionicons name="arrow-forward" size={20} color="#fff" style={styles.arrowIcon} />
                             </View>
-                        </Pressable>
+                        </NativeButton>
                         <Text style={[styles.supportText, { color: colors.textMuted }]}>Thank you for supporting this project! ☕</Text>
                     </View>
                 </View>
@@ -51,7 +52,6 @@ const styles = StyleSheet.create({
     subtitle: { fontSize: 16, textAlign: 'center', lineHeight: 24, paddingHorizontal: 20 },    
     donationSection: { alignItems: 'center' },
     donateButton: { borderRadius: 25, paddingVertical: 15, paddingHorizontal: 26, marginBottom: 16, minWidth: 200 },
-    donateButtonPressed: { transform: [{ scale: 0.96 }] },
     buttonContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
     donateText: { fontSize: 18, fontWeight: '500', marginLeft: 12, marginRight: 8 },
     arrowIcon: { opacity: 0.8 },

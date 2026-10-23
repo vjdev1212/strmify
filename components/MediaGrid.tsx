@@ -1,11 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, Image, StyleSheet, Pressable, useWindowDimensions } from 'react-native';
+import { Image, StyleSheet, useWindowDimensions } from 'react-native';
 import { ActivityIndicator, StatusBar, Text, View } from '@/components/Themed';
 import { useRouter } from 'expo-router';
 import { getYear } from '@/utils/Date';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomSpacing from './BottomSpacing';
 import { useTheme } from '@/context/ThemeContext';
+import NativeStackList from '@/components/native-stack-list';
+import { NativeButton } from '@/components/native-ui-controls';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -47,8 +49,13 @@ const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath }) => {
         return 5;
     }, [isDesktop, isLaptop, isMobile, isPortrait, isTablet]);
     const spacing = isMobile ? 10 : 14;
-    const columnWrapperStyle = useMemo(() => ({ paddingHorizontal: spacing / 2 }), [spacing]);
-    const listContentStyle = useMemo(() => [styles.listContent, { paddingBottom: 30 }], []);
+    const rows = useMemo(() => {
+        const result: MediaGridItem[][] = [];
+        for (let index = 0; index < data.length; index += numColumns) {
+            result.push(data.slice(index, index + numColumns));
+        }
+        return result;
+    }, [data, numColumns]);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -78,12 +85,15 @@ const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath }) => {
         fetchData();
     }, [apiUrl]);
 
-    const renderItem = useCallback(({ item }: { item: MediaGridItem }) => {
+    const renderItem = useCallback((item: MediaGridItem, index: number) => {
         const year = item.year?.split('–')[0] || item.year;
         return (
-            <Pressable
-                style={({ pressed }) => [styles.posterContainer, { flexBasis: `${100 / numColumns}%`, paddingHorizontal: spacing / 2, opacity: pressed ? 0.7 : 1 }]}
+            <NativeButton
+                variant="text"
+                key={`${item.tmdbid}-${index}`}
+                style={[styles.posterContainer, { flexBasis: `${100 / numColumns}%`, paddingHorizontal: spacing / 2 }]}
                 onPress={() => router.push({ pathname: detailsPath, params: { tmdbid: item.tmdbid || item.id } })}
+                seedColor={colors.primary}
             >
                 <View style={[styles.imageContainer, { backgroundColor: colors.background }]}>
                     <Image source={{ uri: item.poster }} style={styles.posterImage} resizeMode="cover" />
@@ -92,11 +102,9 @@ const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath }) => {
                     <Text numberOfLines={1} ellipsizeMode="tail" style={styles.posterTitle}>{item.name}</Text>
                     <Text style={[styles.posterYear, { color: colors.textMuted }]}>{year}</Text>
                 </View>
-            </Pressable>
+            </NativeButton>
         );
     }, [colors.background, colors.textMuted, detailsPath, numColumns, router, spacing]);
-
-    const keyExtractor = useCallback((item: MediaGridItem, index: number) => `${item.tmdbid}-${index}`, []);
 
     return (
         <SafeAreaView style={styles.container}>
@@ -107,15 +115,17 @@ const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath }) => {
                     <Text style={styles.loadingText}>Loading content...</Text>
                 </View>
             ) : (
-                <FlatList
-                    data={data}
-                    renderItem={renderItem}
-                    keyExtractor={keyExtractor}
-                    numColumns={numColumns}
-                    key={numColumns}
-                    columnWrapperStyle={columnWrapperStyle}
-                    contentContainerStyle={listContentStyle}
-                    showsVerticalScrollIndicator={false}
+                <NativeStackList
+                    data={rows}
+                    axis="vertical"
+                    spacing={0}
+                    keyExtractor={(row, index) => `${row[0]?.tmdbid ?? index}-${index}`}
+                    renderItem={(row, rowIndex) => (
+                        <View style={styles.gridRow}>
+                            {row.map((item, columnIndex) => renderItem(item, rowIndex * numColumns + columnIndex))}
+                        </View>
+                    )}
+                    style={[styles.listContent, styles.listContainer]}
                 />
             )}
         </SafeAreaView>
@@ -125,6 +135,8 @@ const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath }) => {
 const styles = StyleSheet.create({
     container: { flex: 1, marginTop: 30 },
     listContent: { paddingTop: 8 },
+    listContainer: { flex: 1, paddingBottom: 30 },
+    gridRow: { flexDirection: 'row', paddingHorizontal: 5 },
     posterContainer: { marginBottom: 24 },
     imageContainer: { position: 'relative', width: '100%', aspectRatio: 2 / 3, borderRadius: 5, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 8 },
     posterImage: { width: '100%', height: '100%' },

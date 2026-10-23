@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, ScrollView, Pressable } from 'react-native';
+import { StyleSheet, ScrollView } from 'react-native';
 import { Text, View, StatusBar } from '@/components/Themed';
 import { MaterialIcons } from '@expo/vector-icons';
 import { getOriginalPlatform, showAlert } from '@/utils/platform';
@@ -10,6 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StorageKeys, storageService } from '@/utils/StorageService';
 import { useTheme } from '@/context/ThemeContext';
+import { NativeButton, NativeSelect } from '@/components/native-ui-controls';
 
 interface PlayerConfig {
     name: string;
@@ -176,66 +177,32 @@ const MediaPlayerConfigScreen = () => {
                     showsVerticalScrollIndicator={false}
                     contentContainerStyle={styles.scrollContent}
                 >
-                    <View style={styles.playersSection}>
-                        {players.map((player, index) => (
-                            <Pressable
-                                key={player.name}
-                                style={({ pressed }) => [
-                                    styles.playerRow,
-                                    { borderBottomColor: colors.primaryBorder },
-                                    index === players.length - 1 && styles.lastRow,
-                                    pressed && styles.playerRowPressed,
-                                ]}
-                                onPress={() => handlePlayerSelect(player.name)}
-                            >
-                                <View style={styles.radioButton}>
-                                    <View style={[
-                                        styles.radioButtonOuter,
-                                        { borderColor: colors.borderStrong },
-                                        selectedPlayer === player.name && {
-                                            borderColor: colors.primary,
-                                            backgroundColor: colors.primarySurface,
-                                        },
-                                    ]}>
-                                        {selectedPlayer === player.name && (
-                                            <View style={[
-                                                styles.radioButtonInner,
-                                                { backgroundColor: colors.primary },
-                                            ]} />
-                                        )}
-                                    </View>
-                                </View>
-                                <Text style={[styles.playerName, { color: colors.text }]}>
-                                    {player.name}
-                                </Text>
-                            </Pressable>
-                        ))}
-                    </View>
-
-
+                    <NativeSelect
+                        selectedValue={selectedPlayer ?? players[0]?.name ?? ''}
+                        onValueChange={handlePlayerSelect}
+                        options={players.map((player) => ({ label: player.name, value: player.name }))}
+                        enabled={players.length > 0}
+                        style={styles.playerSelect}
+                    />
 
                     <View style={styles.buttonSection}>
-                        <Pressable
-                            style={({ pressed }) => [
-                                styles.button,
-                                { backgroundColor: colors.primarySurface, borderWidth: 1, borderColor: colors.primaryBorder },
-                                pressed && styles.buttonPressed,
-                            ]}
+                        <NativeButton
+                            style={[styles.button, { backgroundColor: colors.primarySurface, borderWidth: 1, borderColor: colors.primaryBorder }]}
                             onPress={resetToDefault}
+                            label="Reset"
+                            variant="outlined"
+                            seedColor={colors.primary}
                         >
                             <MaterialIcons name="refresh" size={20} color={colors.text} />
                             <Text style={[styles.buttonText, { color: colors.text }]}>Reset</Text>
-                        </Pressable>
+                        </NativeButton>
 
-                        <Pressable
-                            style={({ pressed }) => [
-                                styles.button,
-                                { backgroundColor: colors.primary },
-                                pressed && styles.buttonPressed,
-                                saving && styles.buttonDisabled,
-                            ]}
+                        <NativeButton
+                            style={[styles.button, { backgroundColor: colors.primary }, saving && styles.buttonDisabled]}
                             onPress={savePlayerConfig}
                             disabled={saving}
+                            label={saving ? 'Saving...' : 'Save'}
+                            seedColor={colors.primary}
                         >
                             <MaterialIcons
                                 name={saving ? 'hourglass-empty' : 'save'}
@@ -245,7 +212,7 @@ const MediaPlayerConfigScreen = () => {
                             <Text style={[styles.buttonText, { color: colors.text }]}>
                                 {saving ? 'Saving...' : 'Save'}
                             </Text>
-                        </Pressable>
+                        </NativeButton>
                     </View>
                 </ScrollView>
             </View>
@@ -296,42 +263,9 @@ const styles = StyleSheet.create({
         lineHeight: 20,
         fontWeight: '400',
     },
-    playersSection: {
+    playerSelect: {
+        width: '100%',
         marginBottom: 24,
-    },
-    playerRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 16,
-        paddingHorizontal: 4,
-        borderBottomWidth: 1,
-    },
-    lastRow: {
-        borderBottomWidth: 0,
-    },
-    playerRowPressed: {
-        opacity: 0.6,
-    },
-    radioButton: {
-        marginRight: 16,
-    },
-    radioButtonOuter: {
-        width: 20,
-        height: 20,
-        borderRadius: 10,
-        borderWidth: 2,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    radioButtonInner: {
-        width: 10,
-        height: 10,
-        borderRadius: 5,
-    },
-    playerName: {
-        fontSize: 16,
-        fontWeight: '500',
-        letterSpacing: -0.2,
     },
     playbackSection: {
         marginBottom: 32,

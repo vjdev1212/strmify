@@ -1,9 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     View,
-    FlatList,
     Dimensions,
-    TouchableOpacity,
     StyleSheet,
     ImageBackground,
 } from 'react-native';
@@ -13,6 +11,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { getYear } from '@/utils/Date';
 import { useTheme } from '@/context/ThemeContext';
+import NativePager from '@/components/native-pager';
+import { NativeButton } from '@/components/native-ui-controls';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -50,7 +50,6 @@ export default function AppleTVCarousel({
         return { width, height, isLandscape: width > height };
     });
 
-    const flatListRef = useRef<FlatList>(null);
     const autoPlayRef = useRef<any>(null);
 
     useEffect(() => {
@@ -133,9 +132,7 @@ export default function AppleTVCarousel({
         if (autoPlay && data.length > 1) {
             autoPlayRef.current = setInterval(() => {
                 setActiveIndex((prevIndex) => {
-                    const nextIndex = (prevIndex + 1) % data.length;
-                    flatListRef.current?.scrollToIndex({ index: nextIndex, animated: true });
-                    return nextIndex;
+                    return (prevIndex + 1) % data.length;
                 });
             }, autoPlayInterval);
         }
@@ -144,11 +141,9 @@ export default function AppleTVCarousel({
         };
     }, [autoPlay, autoPlayInterval, data.length]);
 
-    const handleScroll = useCallback((event: any) => {
-        const scrollPosition = event.nativeEvent.contentOffset.x;
-        const index = Math.round(scrollPosition / responsiveDims.itemWidth);
+    const handleIndexChange = useCallback((index: number) => {
         if (index !== activeIndex && index >= 0 && index < data.length) setActiveIndex(index);
-    }, [activeIndex, data.length, responsiveDims.itemWidth]);
+    }, [activeIndex, data.length]);
 
     const handleItemPress = useCallback((item: CarouselItem) => {
         if (autoPlayRef.current) { clearInterval(autoPlayRef.current); autoPlayRef.current = null; }
@@ -156,18 +151,17 @@ export default function AppleTVCarousel({
     }, [onItemPress]);
 
     const scrollToIndex = useCallback((index: number) => {
-        if (flatListRef.current && index >= 0 && index < data.length) {
-            flatListRef.current.scrollToIndex({ index, animated: true, viewPosition: 0 });
+        if (index >= 0 && index < data.length) {
             setActiveIndex(index);
             if (autoPlayRef.current) { clearInterval(autoPlayRef.current); autoPlayRef.current = null; }
         }
     }, [data.length]);
 
-    const renderCarouselItem = useCallback(({ item, index }: { item: CarouselItem; index: number }) => {
+    const renderCarouselItem = useCallback((item: CarouselItem, index: number) => {
         const dims = responsiveDims;
         return (
             <View style={[styles.carouselItem, { width: dims.itemWidth, height: dims.carouselHeight }]}>
-                <TouchableOpacity style={styles.carouselTouchable} onPress={() => handleItemPress(item)} activeOpacity={0.9}>
+                <NativeButton variant="text" style={styles.carouselTouchable} onPress={() => handleItemPress(item)} seedColor={colors.primary}>
                     <ImageBackground
                         key={`${item.id}-${index}`}
                         source={{ uri: item.backdropUrl || item.posterUrl }}
@@ -201,13 +195,14 @@ export default function AppleTVCarousel({
                             </View>
                         </View>
                     </ImageBackground>
-                </TouchableOpacity>
+                </NativeButton>
             </View>
         );
     }, [colors.gradientOverlay, colors.primaryBorder, colors.primaryMuted, colors.text, colors.textMuted, dimensions.isLandscape, handleItemPress, responsiveDims]);
 
     const renderPaginationDot = useCallback((index: number) => (
-        <TouchableOpacity
+        <NativeButton
+            variant="text"
             key={`dot-${index}`}
             style={[
                 styles.paginationDot,
@@ -215,14 +210,9 @@ export default function AppleTVCarousel({
                 activeIndex === index && { backgroundColor: colors.primary, width: 12 },
             ]}
             onPress={() => scrollToIndex(index)}
+            seedColor={colors.primary}
         />
     ), [activeIndex, colors.primary, colors.primaryMuted, scrollToIndex]);
-
-    const getItemLayout = useCallback((_: ArrayLike<CarouselItem> | null | undefined, index: number) => ({
-        length: responsiveDims.itemWidth,
-        offset: responsiveDims.itemWidth * index,
-        index,
-    }), [responsiveDims.itemWidth]);
 
     if (loading || !data.length) {
         return (
@@ -234,24 +224,13 @@ export default function AppleTVCarousel({
 
     return (
         <View style={[styles.container, { height: responsiveDims.carouselHeight, backgroundColor: colors.backgroundOverlay }]}>
-            <FlatList
-                ref={flatListRef}
+            <NativePager
                 data={data}
-                renderItem={renderCarouselItem}
+                renderPage={renderCarouselItem}
                 keyExtractor={(item, index) => `${item.id}-${index}`}
-                horizontal
-                pagingEnabled
-                showsHorizontalScrollIndicator={false}
-                onMomentumScrollEnd={handleScroll}
-                decelerationRate="fast"
-                snapToInterval={responsiveDims.itemWidth}
-                snapToAlignment="start"
+                activeIndex={activeIndex}
+                onIndexChange={handleIndexChange}
                 style={styles.carousel}
-                removeClippedSubviews={false}
-                initialNumToRender={3}
-                maxToRenderPerBatch={3}
-                windowSize={5}
-                getItemLayout={getItemLayout}
             />
             {data.length > 1 && (
                 <View style={[styles.paginationContainer, { bottom: dimensions.isLandscape ? 15 : 20, left: dimensions.isLandscape ? 35 : 20 }]}>

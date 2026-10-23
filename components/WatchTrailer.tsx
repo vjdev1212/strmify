@@ -1,9 +1,10 @@
 import React from 'react';
-import { TouchableOpacity, StyleSheet, Linking } from 'react-native';
+import { StyleSheet, Linking } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { isHapticsSupported, showAlert } from '@/utils/platform';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/context/ThemeContext';
+import { NativeButton } from '@/components/native-ui-controls';
 
 interface WatchTrailerButtonProps {
     trailerKey: string | null;
@@ -35,7 +36,8 @@ const WatchTrailerButton: React.FC<WatchTrailerButtonProps> = ({
     };
 
     return (
-        <TouchableOpacity
+        <NativeButton
+            variant="text"
             style={[
                 styles.button,
                 {
@@ -46,13 +48,14 @@ const WatchTrailerButton: React.FC<WatchTrailerButtonProps> = ({
             ]}
             onPress={handleTrailerPress}
             disabled={!trailerKey}
+            seedColor={colors.primary}
         >
             <Ionicons
                 name="film-outline"
                 size={size}
                 color={trailerKey ? colors.text : colors.textDim}
             />
-        </TouchableOpacity>
+        </NativeButton>
     );
 };
 

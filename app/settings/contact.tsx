@@ -1,9 +1,11 @@
 import React from 'react';
-import { StyleSheet, Pressable, Linking, ScrollView } from 'react-native';
+import { StyleSheet, Linking, ScrollView } from 'react-native';
 import { AntDesign, Ionicons } from '@expo/vector-icons';
 import { View, Text, StatusBar } from '@/components/Themed';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
+import NativeStackList from '@/components/native-stack-list';
+import { NativeButton } from '@/components/native-ui-controls';
 
 type IconLibrary = 'AntDesign' | 'Ionicons';
 interface ContactItem { type: string; value: string; icon: string; iconLibrary: IconLibrary; action: () => Promise<void>; }
@@ -39,16 +41,21 @@ const ContactScreen = () => {
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
-                <View style={styles.contactList}>
-                    {contactInfo.map((item, index) => (
-                        <Pressable
-                            key={index}
-                            style={({ pressed }) => [
+                <NativeStackList
+                    data={contactInfo}
+                    axis="vertical"
+                    scrollable={false}
+                    keyExtractor={(_, index) => String(index)}
+                    style={styles.contactList}
+                    renderItem={(item, index) => (
+                        <NativeButton
+                            variant="text"
+                            style={[
                                 styles.contactItem,
                                 { backgroundColor: colors.primarySurface, borderColor: colors.primaryBorder },
-                                pressed && { backgroundColor: colors.backgroundMid, transform: [{ scale: 0.98 }] },
                             ]}
                             onPress={item.action}
+                            seedColor={colors.primary}
                         >
                             <View style={[styles.iconContainer, { backgroundColor: colors.primarySurface }]}>
                                 {renderIcon(item)}
@@ -60,9 +67,9 @@ const ContactScreen = () => {
                             <View style={styles.arrowContainer}>
                                 <AntDesign name="right" size={16} color={colors.textDim} />
                             </View>
-                        </Pressable>
-                    ))}
-                </View>
+                        </NativeButton>
+                    )}
+                />
             </ScrollView>
         </SafeAreaView>
     );

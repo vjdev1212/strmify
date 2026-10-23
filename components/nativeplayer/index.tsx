@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useCallback, useMemo } from "react"
 import { TouchableOpacity, Animated, Platform } from "react-native";
 import Video, { OnLoadData, OnProgressData, VideoRef, OnBufferData, ResizeMode, SelectedTrack, OnPlaybackStateChangedData } from "react-native-video";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { NativeButton } from "@/components/native-ui-controls";
 import { MenuView } from '@expo/ui/community/menu';
 import type { MenuComponentRef } from '@expo/ui/community/menu';
 import { WebMenu } from "@/components/WebMenuView";
@@ -764,9 +765,9 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
             {uiState.showControls && (
                 <Animated.View style={[styles.controlsOverlay, { opacity: controlsOpacity }]} pointerEvents="box-none">
                     <View style={styles.topControls}>
-                        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+                        <NativeButton variant="text" style={styles.backButton} onPress={handleBack} accessibilityLabel="Go back" seedColor="#ffffff">
                             <Ionicons name="chevron-back" size={28} color="white" />
-                        </TouchableOpacity>
+                        </NativeButton>
 
                         <View style={styles.titleContainer}>
                             <Text style={styles.titleText} numberOfLines={1}>{title}</Text>
@@ -774,16 +775,16 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
                         <GlassView glassEffectStyle="clear" style={styles.topRightControls}>
                             {canUsePictureInPicture && playerState.isReady && (
-                                <TouchableOpacity style={styles.controlButton} onPress={handlePictureInPicture}>
+                                <NativeButton variant="text" style={styles.controlButton} onPress={handlePictureInPicture} accessibilityLabel="Picture in picture" seedColor="#ffffff">
                                     <MaterialIcons name="picture-in-picture-alt" size={22} color="white" />
-                                </TouchableOpacity>
+                                </NativeButton>
                             )}
 
                             {/* KSPlayer fallback button */}
                             {Platform.OS === 'ios' && onForceSwitchToKSPlayer && (
-                                <TouchableOpacity style={styles.controlButton} onPress={onForceSwitchToKSPlayer}>
+                                <NativeButton variant="text" style={styles.controlButton} onPress={onForceSwitchToKSPlayer} accessibilityLabel="Switch video player" seedColor="#ffffff">
                                     <MaterialIcons name="switch-video" size={22} color="white" />
-                                </TouchableOpacity>
+                                </NativeButton>
                             )}
 
                             {streams.length > 1 && (
@@ -806,12 +807,12 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                                 </MenuWrapper>
                             )}
 
-                            <TouchableOpacity style={styles.controlButton} onPress={handleMuteToggle}>
+                            <NativeButton variant="text" style={styles.controlButton} onPress={handleMuteToggle} accessibilityLabel={settings.isMuted ? "Unmute" : "Mute"} seedColor="#ffffff">
                                 <Ionicons name={settings.isMuted ? "volume-mute" : "volume-high"} size={24} color="white" />
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.controlButton} onPress={cycleContentFit}>
+                            </NativeButton>
+                            <NativeButton variant="text" style={styles.controlButton} onPress={cycleContentFit} accessibilityLabel="Change video aspect ratio" seedColor="#ffffff">
                                 <MaterialIcons name={getContentFitIcon()} size={24} color="white" />
-                            </TouchableOpacity>
+                            </NativeButton>
 
                             {availableAudioTracks.length > 0 && (
                                 <MenuWrapper
