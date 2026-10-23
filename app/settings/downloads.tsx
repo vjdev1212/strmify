@@ -1,157 +1,48 @@
-import BottomSpacing from '@/components/BottomSpacing';
-import { StatusBar, View, Text } from '@/components/Themed';
 import React from 'react';
-import { StyleSheet, Linking, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Linking } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { StatusBar, View } from '@/components/Themed';
+import { SettingsPage, SettingsRow, SettingsSection } from '@/components/NativeSettings';
+import { showAlert } from '@/utils/platform';
 import { useTheme } from '@/context/ThemeContext';
-import NativeStackList from '@/components/native-stack-list';
-import { NativeButton } from '@/components/native-ui-controls';
 
 const resources = [
-  { id: 1, title: 'Google Play Store', subtitle: 'Download for Android Devices', icon: '📱', url: 'https://play.google.com/store/apps/details?id=com.vijayyuvi.strmify' },
-  { id: 2, title: 'Manual IPA Install', subtitle: 'Direct download for sideloading', icon: '🍎', url: 'https://github.com/vjdev1212/strmify/releases' },
-  { id: 3, title: 'SideStore Source', subtitle: 'One-click install via SideStore', icon: '📦', url: 'sidestore://source?url=https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/sources/sidestore-source.json' },
-  { id: 4, title: 'AltStore Source', subtitle: 'One-click install via AltStore', icon: '🔄', url: 'altstore://source?url=https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/sources/sidestore-source.json' },
+  { title: 'Google Play Store', detail: 'Download for Android devices', icon: 'logo-google-playstore' as const, url: 'https://play.google.com/store/apps/details?id=com.vijayyuvi.strmify' },
+  { title: 'Manual IPA Install', detail: 'Direct download for sideloading', icon: 'logo-apple' as const, url: 'https://github.com/vjdev1212/strmify/releases' },
+  { title: 'SideStore Source', detail: 'Install through SideStore', icon: 'cloud-download-outline' as const, url: 'sidestore://source?url=https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/sources/sidestore-source.json' },
+  { title: 'AltStore Source', detail: 'Install through AltStore', icon: 'cloud-download-outline' as const, url: 'altstore://source?url=https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/sources/sidestore-source.json' },
 ];
 
-const DownloadsScreen = () => {
+export default function DownloadsScreen() {
   const { colors } = useTheme();
-  const handlePress = async (url: string) => { try { await Linking.openURL(url); } catch (error) { console.error("Error opening URL:", error); } };
+
+  const openResource = async (url: string) => {
+    try {
+      await Linking.openURL(url);
+    } catch (error) {
+      console.error('Error opening download resource:', error);
+      showAlert('Unable to Open Link', 'The selected download link could not be opened on this device.');
+    }
+  };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <StatusBar />
-
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>Downloads</Text>
-        <Text style={[styles.subtitle, { color: colors.textMuted }]}>Choose your preferred platform</Text>
-      </View>
-
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-      >
-        <NativeStackList
-          data={resources}
-          axis="vertical"
-          spacing={20}
-          scrollable={false}
-          keyExtractor={(resource) => String(resource.id)}
-          style={styles.resourcesContainer}
-          renderItem={(resource) => (
-            <NativeButton
-              variant="text"
-              style={[styles.resourceCard, { backgroundColor: colors.primarySurface, borderColor: colors.primaryBorder }]}
-              onPress={() => handlePress(resource.url)}
-              seedColor={colors.primary}
-            >
-              <View style={styles.cardContent}>
-                <View style={styles.iconContainer}>
-                  <Text style={styles.icon}>{resource.icon}</Text>
-                </View>
-                <View style={styles.textContainer}>
-                  <Text style={[styles.resourceTitle, { color: colors.text }]}>{resource.title}</Text>
-                  <Text style={[styles.resourceSubtitle, { color: colors.textMuted }]}>{resource.subtitle}</Text>
-                </View>
-                <View style={styles.arrowContainer}>
-                  <View style={[styles.arrowButton, { backgroundColor: colors.primarySurface, borderColor: colors.primaryBorder }]}>
-                    <Text style={[styles.arrow, { color: colors.text }]}>→</Text>
-                  </View>
-                </View>
-              </View>
-            </NativeButton>
-          )}
-        />
-        <BottomSpacing space={50} />
-      </ScrollView>
-    </SafeAreaView>
+      <SettingsPage>
+        <SettingsSection title="Install Strmify" footer="Choose a source to install or update Strmify.">
+          {resources.map((resource, index) => (
+            <SettingsRow
+              key={resource.title}
+              title={resource.title}
+              detail={resource.detail}
+              onPress={() => openResource(resource.url)}
+              isLast={index === resources.length - 1}
+              leading={<Ionicons name={resource.icon} size={20} color={colors.primary} />}
+              trailing={<Ionicons name="open-outline" size={17} color={colors.textDim} />}
+            />
+          ))}
+        </SettingsSection>
+      </SettingsPage>
+    </View>
   );
-};
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    maxWidth: 780,
-    width: '100%',
-    alignSelf: 'center',
-  },
-  header: {
-    paddingHorizontal: 24,
-    paddingTop: 50,
-    paddingBottom: 20,
-    alignItems: 'flex-start',
-  },
-  title: {
-    fontSize: 34,
-    fontWeight: '600',
-    marginBottom: 8,
-    letterSpacing: -1,
-    textAlign: 'left',
-  },
-  subtitle: {
-    fontSize: 16,
-    fontWeight: '400',
-    textAlign: 'left',
-    lineHeight: 22,
-  },
-  scrollView: {
-    flex: 1,
-    backgroundColor: 'transparent',
-  },
-  scrollContent: {
-    paddingBottom: 40,
-  },
-  resourcesContainer: {
-    flex: 1,
-    paddingHorizontal: 20,
-    justifyContent: 'center',
-  },
-  resourceCard: {
-    borderRadius: 12,
-    overflow: 'hidden',
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  cardContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-  },
-  iconContainer: {
-    width: 30,
-    height: 60,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 15,
-  },
-  icon: { fontSize: 28 },
-  textContainer: { flex: 1 },
-  resourceTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 6,
-  },
-  resourceSubtitle: {
-    fontSize: 15,
-    fontWeight: '400',
-    lineHeight: 20,
-    paddingRight: 5,
-  },
-  arrowContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  arrowButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-  },
-  arrow: { fontSize: 20, fontWeight: '600' },
-});
-
-export default DownloadsScreen;
+}

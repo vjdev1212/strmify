@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { StyleSheet, Pressable, useWindowDimensions, Animated, TouchableOpacity, Platform } from 'react-native';
+import { StyleSheet, Pressable, useWindowDimensions, Animated, TouchableOpacity, Platform, ScrollView } from 'react-native';
 import { Text, View } from './Themed';
 import { formatDate } from '@/utils/Date';
 import { SvgXml } from 'react-native-svg';
@@ -9,7 +9,6 @@ import type { MenuComponentRef } from '@expo/ui/community/menu';
 import CustomContextMenu from './ContextMenu';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/context/ThemeContext';
-import NativeStackList from '@/components/native-stack-list';
 
 interface Episode {
   name: string; title: string; season: number; episode: number;
@@ -62,7 +61,7 @@ const EpisodeItem: React.FC<EpisodeItemProps> = React.memo(({ item, onEpisodeSel
   };
 
   return (
-    <Animated.View style={[styles.episodeContainer, { width: cardWidth, transform: [{ scale: scaleAnim }] }]}>
+    <Animated.View style={{ width: cardWidth, transform: [{ scale: scaleAnim }] }}>
       <Pressable onPress={handlePress} onPressIn={handlePressIn} onPressOut={handlePressOut} style={styles.episodePressable}>
         <View style={styles.episodeCard}>
           <View style={styles.thumbnailContainer}>{renderThumbnail()}</View>
@@ -162,14 +161,15 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
         )}
       </View>
       {groupedEpisodes[selectedSeason]?.length > 0 ? (
-        <NativeStackList
-          data={groupedEpisodes[selectedSeason]}
-          axis="horizontal"
-          spacing={CARD_GAP}
-          keyExtractor={(episode, index) => `episode-${episode.season}-${episode.episode || episode.number}-${index}`}
-          renderItem={renderEpisodeItem}
+        <ScrollView
+          horizontal
+          nestedScrollEnabled
+          showsHorizontalScrollIndicator={false}
           style={styles.episodeScrollView}
-        />
+          contentContainerStyle={styles.episodeScrollContent}
+        >
+          {groupedEpisodes[selectedSeason].map(renderEpisodeItem)}
+        </ScrollView>
       ) : (
         <View style={styles.noEpisodesContainer}>
           <Text style={[styles.noEpisodesText, { color: colors.textMuted }]}>No episodes available for {getCurrentSeasonText()}</Text>
@@ -180,14 +180,13 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: 'transparent', marginBottom: 20 },
+  container: { backgroundColor: 'transparent', marginBottom: 20 },
   seasonListContainer: { paddingVertical: 8, paddingHorizontal: 20, backgroundColor: 'transparent' },
   seasonDropdownButton: { paddingTop: 10, paddingHorizontal: 5, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-evenly', width: 150, maxWidth: 130 },
   seasonDropdownText: { fontSize: 20, fontWeight: '500', letterSpacing: 0.3, flex: 1 },
   seasonDropdownArrow: { fontSize: 18, fontWeight: '600' },
-  episodeScrollView: { flex: 1 },
-  episodeScrollContent: { paddingHorizontal: 20, paddingVertical: 12 },
-  episodeContainer: { marginRight: CARD_GAP },
+  episodeScrollView: { width: '100%' },
+  episodeScrollContent: { paddingHorizontal: 20, paddingVertical: 12, gap: CARD_GAP },
   episodePressable: { borderRadius: 12, overflow: 'hidden' },
   episodeCard: { backgroundColor: 'transparent', padding: 0 },
   thumbnailContainer: { width: '100%', position: 'relative', borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 6, elevation: 3 },

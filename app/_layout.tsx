@@ -102,16 +102,16 @@ function RootLayoutNav() {
                         contentStyle: { backgroundColor: '#000000' },
                     }}
                 />
-                <Stack.Screen name="settings/addons" options={screenOptions} />
-                <Stack.Screen name="settings/add" options={screenOptions} />
-                <Stack.Screen name="settings/stremioserver" options={screenOptions} />
-                <Stack.Screen name="settings/theme" options={screenOptions} />
-                <Stack.Screen name="settings/opensubtitles" options={screenOptions} />
-                <Stack.Screen name="settings/contact" options={screenOptions} />
-                <Stack.Screen name="settings/disclaimer" options={screenOptions} />
-                <Stack.Screen name="settings/donate" options={screenOptions} />
-                <Stack.Screen name="settings/downloads" options={screenOptions} />
-                <Stack.Screen name="settings/mediaplayer" options={screenOptions} />
+                <Stack.Screen name="settings/addons" options={{ ...screenOptions, title: 'Add-ons', headerTitle: 'Add-ons' }} />
+                <Stack.Screen name="settings/add" options={{ ...screenOptions, title: 'Add Add-on', headerTitle: 'Add Add-on' }} />
+                <Stack.Screen name="settings/stremioserver" options={{ ...screenOptions, title: 'Stremio', headerTitle: 'Stremio' }} />
+                <Stack.Screen name="settings/theme" options={{ ...screenOptions, title: 'Appearance', headerTitle: 'Appearance' }} />
+                <Stack.Screen name="settings/opensubtitles" options={{ ...screenOptions, title: 'OpenSubtitles', headerTitle: 'OpenSubtitles' }} />
+                <Stack.Screen name="settings/contact" options={{ ...screenOptions, title: 'Contact', headerTitle: 'Contact' }} />
+                <Stack.Screen name="settings/disclaimer" options={{ ...screenOptions, title: 'Disclaimer', headerTitle: 'Disclaimer' }} />
+                <Stack.Screen name="settings/donate" options={{ ...screenOptions, title: 'Support Strmify', headerTitle: 'Support Strmify' }} />
+                <Stack.Screen name="settings/downloads" options={{ ...screenOptions, title: 'Downloads', headerTitle: 'Downloads' }} />
+                <Stack.Screen name="settings/mediaplayer" options={{ ...screenOptions, title: 'Media Player', headerTitle: 'Media Player' }} />
             </Stack>
         </View>
     );

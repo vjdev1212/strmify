@@ -1,150 +1,60 @@
 import React from 'react';
-import { StyleSheet, Linking, ScrollView } from 'react-native';
-import { AntDesign, Ionicons } from '@expo/vector-icons';
-import { View, Text, StatusBar } from '@/components/Themed';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Linking } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { StatusBar, View } from '@/components/Themed';
+import { SettingsPage, SettingsRow, SettingsSection } from '@/components/NativeSettings';
+import { showAlert } from '@/utils/platform';
 import { useTheme } from '@/context/ThemeContext';
-import NativeStackList from '@/components/native-stack-list';
-import { NativeButton } from '@/components/native-ui-controls';
 
-type IconLibrary = 'AntDesign' | 'Ionicons';
-interface ContactItem { type: string; value: string; icon: string; iconLibrary: IconLibrary; action: () => Promise<void>; }
+const contactActions = [
+  {
+    title: 'Feedback',
+    detail: 'Share a suggestion or general feedback',
+    icon: 'chatbubble-ellipses-outline' as const,
+    url: process.env.EXPO_PUBLIC_FEEDBACK_URL ?? '',
+  },
+  {
+    title: 'Report a Bug',
+    detail: 'Let us know when something is not working',
+    icon: 'bug-outline' as const,
+    url: process.env.EXPO_PUBLIC_REPORT_BUG_URL ?? '',
+  },
+];
 
-const ContactScreen = () => {
-    const { colors } = useTheme();
-    const feedbackUrl = process.env.EXPO_PUBLIC_FEEDBACK_URL || '';
-    const reportBugUrl = process.env.EXPO_PUBLIC_REPORT_BUG_URL || '';
+export default function ContactScreen() {
+  const { colors } = useTheme();
 
-    const contactInfo: ContactItem[] = [
-        { type: 'Feedback', value: 'Submit your feedback', icon: 'form', iconLibrary: 'AntDesign', action: async () => Linking.openURL(feedbackUrl) },
-        { type: 'Report Bug', value: 'Found a Bug? Report here', icon: 'bug-outline', iconLibrary: 'Ionicons', action: async () => Linking.openURL(reportBugUrl) },
-    ];
+  const openContact = async (url: string) => {
+    if (!url) {
+      showAlert('Link Unavailable', 'This contact link has not been configured.');
+      return;
+    }
+    try {
+      await Linking.openURL(url);
+    } catch (error) {
+      console.error('Failed to open contact link:', error);
+      showAlert('Unable to Open Link', 'Please try again later.');
+    }
+  };
 
-    const renderIcon = (item: ContactItem) => {
-        const props = { name: item.icon as any, size: 24, color: colors.primary };
-        return item.iconLibrary === 'Ionicons' ? <Ionicons {...props} /> : <AntDesign {...props} />;
-    };
-
-    return (
-        <SafeAreaView style={styles.container}>
-            <StatusBar />
-
-            {/* ✅ Fixed header */}
-            <View style={styles.headerContainer}>
-                <Text style={[styles.title, { color: colors.text }]}>Get in Touch</Text>
-                <Text style={[styles.subtitle, { color: colors.textMuted }]}>Your input makes the app better</Text>
-            </View>
-
-            {/* ✅ Only content scrolls */}
-            <ScrollView
-                style={styles.scrollContainer}
-                contentContainerStyle={styles.scrollContent}
-                showsVerticalScrollIndicator={false}
-            >
-                <NativeStackList
-                    data={contactInfo}
-                    axis="vertical"
-                    scrollable={false}
-                    keyExtractor={(_, index) => String(index)}
-                    style={styles.contactList}
-                    renderItem={(item, index) => (
-                        <NativeButton
-                            variant="text"
-                            style={[
-                                styles.contactItem,
-                                { backgroundColor: colors.primarySurface, borderColor: colors.primaryBorder },
-                            ]}
-                            onPress={item.action}
-                            seedColor={colors.primary}
-                        >
-                            <View style={[styles.iconContainer, { backgroundColor: colors.primarySurface }]}>
-                                {renderIcon(item)}
-                            </View>
-                            <View style={styles.contentContainer}>
-                                <Text style={[styles.type, { color: colors.text }]}>{item.type}</Text>
-                                <Text style={[styles.value, { color: colors.textMuted }]}>{item.value}</Text>
-                            </View>
-                            <View style={styles.arrowContainer}>
-                                <AntDesign name="right" size={16} color={colors.textDim} />
-                            </View>
-                        </NativeButton>
-                    )}
-                />
-            </ScrollView>
-        </SafeAreaView>
-    );
-};
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        width: '100%',
-        maxWidth: 780,
-        alignSelf: 'center',
-    },
-    headerContainer: {
-        alignItems: 'flex-start',
-        paddingHorizontal: 20,
-        paddingTop: 50,
-        paddingBottom: 20,
-    },
-    title: {
-        fontSize: 28,
-        fontWeight: '700',
-        marginBottom: 8,
-        textAlign: 'left',
-    },
-    subtitle: {
-        fontSize: 16,
-        textAlign: 'left',
-        fontWeight: '400',
-    },
-    scrollContainer: {
-        flex: 1,
-        backgroundColor: 'transparent',
-    },
-    scrollContent: {
-        paddingHorizontal: 20,
-        paddingBottom: 40,
-    },
-    contactList: {
-        backgroundColor: 'transparent',
-    },
-    contactItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderRadius: 16,
-        paddingVertical: 15,
-        paddingHorizontal: 20,
-        marginBottom: 20,
-        borderWidth: StyleSheet.hairlineWidth,
-    },
-    iconContainer: {
-        width: 48,
-        height: 48,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: 16,
-    },
-    contentContainer: {
-        flex: 1,
-        backgroundColor: 'transparent',
-    },
-    type: {
-        fontSize: 17,
-        fontWeight: '500',
-        marginBottom: 4,
-    },
-    value: {
-        fontSize: 14,
-        fontWeight: '400',
-        lineHeight: 20,
-    },
-    arrowContainer: {
-        backgroundColor: 'transparent',
-        marginLeft: 8,
-    },
-});
-
-export default ContactScreen;
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <StatusBar />
+      <SettingsPage>
+        <SettingsSection title="Contact" footer="Your feedback helps improve Strmify.">
+          {contactActions.map((action, index) => (
+            <SettingsRow
+              key={action.title}
+              title={action.title}
+              detail={action.detail}
+              onPress={() => openContact(action.url)}
+              isLast={index === contactActions.length - 1}
+              leading={<Ionicons name={action.icon} size={20} color={colors.primary} />}
+              trailing={<Ionicons name="open-outline" size={17} color={colors.textDim} />}
+            />
+          ))}
+        </SettingsSection>
+      </SettingsPage>
+    </View>
+  );
+}

@@ -25,11 +25,13 @@ import NativeStackList from '@/components/native-stack-list';
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
 interface MediaGridProps {
-    apiUrl: string;
+    apiUrl?: string;
     detailsPath: '/movie/details' | '/series/details';
+    items?: MediaGridItem[];
+    compact?: boolean;
 }
 
-interface MediaGridItem {
+export interface MediaGridItem {
     tmdbid: number;
     name: string;
     year: string;
@@ -38,6 +40,8 @@ interface MediaGridItem {
     imdbRating?: string;
     imdbid?: string;
     genres: string[];
+    type?: 'movie' | 'series';
+    popularity?: number;
 }
 
 interface TMDBMediaItem {
@@ -53,7 +57,7 @@ interface TMDBMediaItem {
     genre_ids?: number[];
 }
 
-const GENRE_NAMES: Record<number, string> = {
+export const GENRE_NAMES: Record<number, string> = {
     12: 'Adventure',
     14: 'Fantasy',
     16: 'Animation',
@@ -99,7 +103,7 @@ const POSTER_WIDTH = 88;
 const POSTER_TEXT_GAP = 16;
 const MENU_ACTION_WIDTH = 56;
 
-const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath }) => {
+const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath, items, compact = false }) => {
     const { colors } = useTheme();
     const router = useRouter();
     const { width } = useWindowDimensions();
@@ -107,16 +111,26 @@ const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath }) => {
     const [data, setData] = useState<MediaGridItem[]>([]);
     const [loading, setLoading] = useState(true);
     const rowWidth = Math.max(0, width - insets.left - insets.right);
+    const posterWidth = compact ? 64 : POSTER_WIDTH;
+    const posterHeight = compact ? 96 : 132;
+    const posterTextGap = compact ? 12 : POSTER_TEXT_GAP;
+    const rowHorizontalPadding = compact ? 24 : ROW_HORIZONTAL_PADDING;
+    const menuActionWidth = compact ? 40 : MENU_ACTION_WIDTH;
     const mediaButtonWidth = Math.max(
         0,
-        rowWidth - ROW_HORIZONTAL_PADDING * 2 - MENU_ACTION_WIDTH,
+        rowWidth - rowHorizontalPadding * 2 - menuActionWidth,
     );
     const mediaInfoWidth = Math.max(
         0,
-        mediaButtonWidth - POSTER_WIDTH - POSTER_TEXT_GAP,
+        mediaButtonWidth - posterWidth - posterTextGap,
     );
 
     useEffect(() => {
+        if (items !== undefined) return;
+        if (!apiUrl) {
+            setLoading(false);
+            return;
+        }
         const fetchData = async () => {
             try {
                 const separator = apiUrl.includes('?') ? '&' : '?';
@@ -133,6 +147,7 @@ const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath }) => {
                             background: `https://image.tmdb.org/t/p/w1280${item.backdrop_path}`,
                             imdbRating: item.vote_average?.toFixed(1),
                             imdbid: item.imdb_id,
+                            type: detailsPath === '/movie/details' ? 'movie' : 'series',
                             genres: (item.genre_ids ?? [])
                                 .map((genreId) => GENRE_NAMES[genreId])
                                 .filter((genre): genre is string => Boolean(genre)),
@@ -145,10 +160,14 @@ const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath }) => {
             }
         };
         fetchData();
-    }, [apiUrl]);
+    }, [apiUrl, detailsPath, items]);
 
     const openDetails = useCallback((item: MediaGridItem) => {
-        router.push({ pathname: detailsPath, params: { tmdbid: item.tmdbid } });
+        const type = item.type ?? (detailsPath === '/movie/details' ? 'movie' : 'series');
+        router.push({
+            pathname: type === 'movie' ? '/movie/details' : '/series/details',
+            params: { tmdbid: item.tmdbid },
+        });
     }, [detailsPath, router]);
 
     const handleMenuAction = useCallback(async (actionId: string, item: MediaGridItem) => {
@@ -158,7 +177,7 @@ const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath }) => {
         }
 
         if (actionId === 'watchlist') {
-            const type = detailsPath === '/movie/details' ? 'movie' : 'series';
+            const type = item.type ?? (detailsPath === '/movie/details' ? 'movie' : 'series');
             const added = await libraryService.addToLibrary({
                 id: `${type}-${item.tmdbid}`,
                 tmdbid: String(item.tmdbid),
@@ -177,7 +196,9 @@ const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath }) => {
         }
 
         if (actionId === 'share') {
-            const type = detailsPath === '/movie/details' ? 'movie' : 'tv';
+            const type = (item.type ?? (detailsPath === '/movie/details' ? 'movie' : 'series')) === 'movie'
+                ? 'movie'
+                : 'tv';
             const url = `https://www.themoviedb.org/${type}/${item.tmdbid}`;
             try {
                 await Share.share({ message: `${item.name}\n${url}`, url });
@@ -189,11 +210,18 @@ const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath }) => {
     }, [detailsPath, openDetails]);
 
     const renderItem = useCallback((item: MediaGridItem) => {
-        const metadata = item.genres.length > 0
-            ? item.genres.join(', ')
+        const genreMetadata = item.genres.length > 0
+            ? item.genres.join(' · ')
             : [item.year?.split('–')[0], item.imdbRating ? `★ ${item.imdbRating}` : undefined]
                 .filter(Boolean)
                 .join(' · ');
+        const metadata = compact
+            ? [
+                item.type === 'series' ? 'TV Show' : 'Movie',
+                genreMetadata,
+                item.year?.split('–')[0],
+            ].filter(Boolean).join(' · ')
+            : genreMetadata;
         const menuButton = (
             <Pressable
                 accessibilityRole="button"
@@ -229,30 +257,48 @@ const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath }) => {
             <NativeColumn style={{ width: rowWidth }}>
                 <NativeRow
                     alignment="center"
-                    spacing={POSTER_TEXT_GAP}
-                    style={{ width: rowWidth, paddingHorizontal: ROW_HORIZONTAL_PADDING, paddingVertical: 12 }}
+                    spacing={posterTextGap}
+                    style={{ width: rowWidth, paddingHorizontal: rowHorizontalPadding, paddingVertical: compact ? 10 : 12 }}
                 >
                     <NativeButton
                         variant="text"
                         onPress={() => openDetails(item)}
                         style={{ width: mediaButtonWidth }}
                     >
-                        <NativeRow alignment="center" spacing={POSTER_TEXT_GAP}>
+                        <NativeRow alignment="center" spacing={posterTextGap}>
                             <RNHostView matchContents>
-                                <PosterArtwork style={styles.posterFrame}>
-                                    <Image
-                                        source={{ uri: item.poster }}
-                                        style={[styles.poster, { backgroundColor: colors.backgroundOverlay }]}
-                                        resizeMode="cover"
-                                    />
+                                <PosterArtwork style={[
+                                    styles.posterFrame,
+                                    { width: posterWidth, height: posterHeight },
+                                ]}>
+                                    {item.poster ? (
+                                        <Image
+                                            source={{ uri: item.poster }}
+                                            style={[
+                                                styles.poster,
+                                                { width: posterWidth, height: posterHeight, backgroundColor: colors.backgroundOverlay },
+                                            ]}
+                                            resizeMode="cover"
+                                        />
+                                    ) : (
+                                        <RNView style={[
+                                            styles.posterPlaceholder,
+                                            { width: posterWidth, height: posterHeight, backgroundColor: colors.backgroundOverlay },
+                                        ]}>
+                                            <Ionicons name="film-outline" size={compact ? 20 : 30} color={colors.textDim} />
+                                        </RNView>
+                                    )}
                                 </PosterArtwork>
                             </RNHostView>
-                            <NativeColumn alignment="start" spacing={7} style={{ width: mediaInfoWidth }}>
-                                <NativeText textStyle={styles.mediaTitle}>
+                            <NativeColumn alignment="start" spacing={compact ? 3 : 7} style={{ width: mediaInfoWidth }}>
+                                <NativeText textStyle={compact ? styles.compactMediaTitle : styles.mediaTitle}>
                                     {item.name}
                                 </NativeText>
                                 {metadata.length > 0 && (
-                                    <NativeText textStyle={{ ...styles.mediaMetadata, color: colors.textMuted }}>
+                                    <NativeText textStyle={{
+                                        ...(compact ? styles.compactMediaMetadata : styles.mediaMetadata),
+                                        color: colors.textMuted,
+                                    }}>
                                         {metadata}
                                     </NativeText>
                                 )}
@@ -260,39 +306,50 @@ const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath }) => {
                         </NativeRow>
                     </NativeButton>
                     <RNHostView matchContents>
-                        <RNView style={styles.menuActionSlot}>{menu}</RNView>
+                        <RNView style={[styles.menuActionSlot, { width: menuActionWidth, minWidth: menuActionWidth }]}>{menu}</RNView>
                     </RNHostView>
                 </NativeRow>
                 <RNHostView matchContents>
-                    <RNView style={[styles.divider, { width: rowWidth }]} />
+                    <RNView style={[
+                        styles.divider,
+                        compact
+                            ? { width: rowWidth - rowHorizontalPadding * 2, marginHorizontal: rowHorizontalPadding }
+                            : { width: rowWidth },
+                    ]} />
                 </RNHostView>
             </NativeColumn>
         );
     }, [
         colors.backgroundOverlay,
         colors.textMuted,
+        compact,
         handleMenuAction,
         mediaButtonWidth,
         mediaInfoWidth,
+        menuActionWidth,
         openDetails,
+        posterHeight,
+        posterTextGap,
+        posterWidth,
+        rowHorizontalPadding,
         rowWidth,
     ]);
 
     return (
         <SafeAreaView edges={['left', 'right', 'bottom']} style={styles.container}>
             <StatusBar />
-            {loading ? (
+            {items === undefined && loading ? (
                 <View style={styles.centeredContainer}>
                     <ActivityIndicator size="large" color={colors.primary} />
                     <Text style={styles.loadingText}>Loading content...</Text>
                 </View>
-            ) : data.length === 0 ? (
+            ) : (items ?? data).length === 0 ? (
                 <View style={styles.centeredContainer}>
                     <Text style={styles.loadingText}>No titles found.</Text>
                 </View>
             ) : (
                 <NativeStackList
-                    data={data}
+                    data={items ?? data}
                     axis="vertical"
                     nativeItems
                     keyExtractor={(item) => String(item.tmdbid)}
@@ -320,9 +377,18 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         lineHeight: 22,
     },
+    compactMediaTitle: {
+        fontSize: 16,
+        fontWeight: '500',
+        lineHeight: 20,
+    },
     mediaMetadata: {
         fontSize: 14,
         lineHeight: 19,
+    },
+    compactMediaMetadata: {
+        fontSize: 13,
+        lineHeight: 17,
     },
     divider: {
         height: StyleSheet.hairlineWidth,
@@ -336,9 +402,11 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     menuActionSlot: {
-        width: MENU_ACTION_WIDTH,
-        minWidth: MENU_ACTION_WIDTH,
         flexShrink: 0,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    posterPlaceholder: {
         alignItems: 'center',
         justifyContent: 'center',
     },

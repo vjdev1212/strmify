@@ -229,12 +229,13 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
   };
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>{serverName}</Text>
-        <Text style={[styles.subtitle, { color: colors.textMuted }]}>Manage server connections</Text>
-      </View>
-
+    <ScrollView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      contentContainerStyle={styles.content}
+      contentInsetAdjustmentBehavior="automatic"
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+    >
       {(editingId || isAddingNew) && (
         <View style={styles.section}>
           <View style={[styles.card, { backgroundColor: colors.primarySurface }]}>
@@ -429,10 +430,8 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 28 },
-  title: { fontSize: 32, fontWeight: '600', marginBottom: 6 },
-  subtitle: { fontSize: 15 },
-  section: { paddingHorizontal: 20, marginBottom: 24 },
+  content: { width: '100%', maxWidth: 780, alignSelf: 'center', paddingHorizontal: 20, paddingTop: 12, paddingBottom: 40 },
+  section: { paddingHorizontal: 0, marginBottom: 24 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   sectionTitle: { fontSize: 20, fontWeight: '600' },
   sectionCount: { fontSize: 14, marginTop: 2 },
