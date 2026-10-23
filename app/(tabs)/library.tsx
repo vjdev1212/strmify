@@ -216,14 +216,15 @@ const LibraryScreen: React.FC = () => {
             {items.length} {items.length === 1 ? 'item' : 'items'}
           </Text>
         </View>
-        <NativeStackList
-          data={items}
-          axis="horizontal"
-          spacing={CARD_SPACING}
-          renderItem={renderLibraryItem}
-          keyExtractor={(item, index) => `${item.tmdbid}-${item.type}-${index}`}
-          style={styles.flatListContent}
-        />
+        <View style={styles.posterListInset}>
+          <NativeStackList
+            data={items}
+            axis="horizontal"
+            spacing={CARD_SPACING}
+            renderItem={renderLibraryItem}
+            keyExtractor={(item, index) => `${item.tmdbid}-${item.type}-${index}`}
+          />
+        </View>
       </View>
     );
   };
@@ -366,7 +367,7 @@ const styles = StyleSheet.create({
   sectionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   sectionTitle: { fontSize: 18, fontWeight: '600' },
   sectionCount: { fontSize: 14, opacity: 0.5, fontWeight: '500' },
-  flatListContent: { paddingHorizontal: 16 },
+  posterListInset: { paddingHorizontal: 16 },
   card: { backgroundColor: 'transparent', borderRadius: 10 },
   imageContainer: { width: '100%', position: 'relative', borderRadius: 10, overflow: 'hidden' },
   backdrop: { width: '100%', height: '100%' },

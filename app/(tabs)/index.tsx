@@ -4,7 +4,9 @@ import {
   ScrollView,
   StyleSheet,
   View,
+  Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar, Text } from '@/components/Themed';
 import PosterList from '@/components/PosterList';
 import BottomSpacing from '@/components/BottomSpacing';
@@ -44,6 +46,7 @@ const LazyPosterList = ({
 
 export default function HomeScreen() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const [filter, setFilter] = useState<'all' | 'movies' | 'series'>('all');
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -129,6 +132,7 @@ export default function HomeScreen() {
           onItemPress={handleCarouselItemPress}
           autoPlay={true}
           autoPlayInterval={6000}
+          topInset={Platform.OS === 'ios' ? insets.top : 0}
         />
         <View style={styles.contentContainer}>
           <View style={styles.filtersContainer}>

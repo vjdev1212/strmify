@@ -164,17 +164,22 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
         </NativeButton>
       </View>
 
-      <NativeStackList
-        data={history}
-        axis="horizontal"
-        spacing={CARD_SPACING}
-        keyExtractor={(item, index) => `${item.videoUrl}-${item.timestamp}-${index}`}
-        style={styles.scrollContent}
-        renderItem={(item, index) => {
+      <View style={styles.scrollContent}>
+        <NativeStackList
+          data={history}
+          axis="horizontal"
+          spacing={CARD_SPACING}
+          keyExtractor={(item, index) => `${item.videoUrl}-${item.timestamp}-${index}`}
+          renderItem={(item, index) => {
           const itemKey = `${item.videoUrl}-${item.timestamp}-${index}`;
           const animValue = getAnimatedValue(itemKey);
           return (
-            <Animated.View style={[{ width: CARD_WIDTH }, { opacity: animValue, transform: [{ scale: animValue }] }]}>
+            <Animated.View
+              style={[
+                { width: CARD_WIDTH },
+                { opacity: animValue, transform: [{ scale: animValue }] },
+              ]}
+            >
               <TouchableOpacity style={styles.card} onPress={() => onItemSelect(item)} activeOpacity={0.8}>
                 <View style={[styles.imageContainer, { height: CARD_HEIGHT, backgroundColor: colors.background }]}>
                   <Image source={{ uri: item.artwork }} style={styles.backdrop} resizeMode="cover" />
@@ -202,8 +207,9 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
               </TouchableOpacity>
             </Animated.View>
           );
-        }}
-      />
+          }}
+        />
+      </View>
     </View >
   );
 };

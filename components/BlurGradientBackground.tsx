@@ -31,11 +31,6 @@ export default function BlurGradientBackground({
                 {
                     overflow: 'hidden',
                     borderRadius,
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 8 },
-                    shadowOpacity: 0.5,
-                    shadowRadius: 24,
-                    elevation: 12,
                 },
             ]}
         >           

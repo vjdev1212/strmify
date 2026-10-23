@@ -1,13 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Image, StyleSheet, useWindowDimensions } from 'react-native';
+import { Image, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
 import { ActivityIndicator, StatusBar, Text, View } from '@/components/Themed';
 import { useRouter } from 'expo-router';
 import { getYear } from '@/utils/Date';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import BottomSpacing from './BottomSpacing';
 import { useTheme } from '@/context/ThemeContext';
 import NativeStackList from '@/components/native-stack-list';
-import { NativeButton } from '@/components/native-ui-controls';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -32,6 +30,8 @@ const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath }) => {
     const router = useRouter();
     const [data, setData] = useState<MediaGridItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const touchStartRef = React.useRef<{ pageX: number; pageY: number } | null>(null);
+    const didScrollRef = React.useRef(false);
 
     const { width, height } = useWindowDimensions();
     const isPortrait = height >= width;
@@ -49,6 +49,12 @@ const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath }) => {
         return 5;
     }, [isDesktop, isLaptop, isMobile, isPortrait, isTablet]);
     const spacing = isMobile ? 10 : 14;
+    const horizontalPadding = 5;
+    const itemWidth = Math.max(
+        0,
+        (width - horizontalPadding * 2 - spacing * (numColumns - 1)) / numColumns,
+    );
+    const posterHeight = itemWidth * 1.5;
     const rows = useMemo(() => {
         const result: MediaGridItem[][] = [];
         for (let index = 0; index < data.length; index += numColumns) {
@@ -88,23 +94,43 @@ const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath }) => {
     const renderItem = useCallback((item: MediaGridItem, index: number) => {
         const year = item.year?.split('–')[0] || item.year;
         return (
-            <NativeButton
-                variant="text"
+            <Pressable
                 key={`${item.tmdbid}-${index}`}
-                style={[styles.posterContainer, { flexBasis: `${100 / numColumns}%`, paddingHorizontal: spacing / 2 }]}
-                onPress={() => router.push({ pathname: detailsPath, params: { tmdbid: item.tmdbid || item.id } })}
-                seedColor={colors.primary}
+                style={[styles.posterContainer, { width: itemWidth, flexShrink: 0 }]}
+                accessibilityRole="button"
+                accessibilityLabel={`Open ${item.name}`}
+                onTouchStart={(event) => {
+                    touchStartRef.current = {
+                        pageX: event.nativeEvent.pageX,
+                        pageY: event.nativeEvent.pageY,
+                    };
+                    didScrollRef.current = false;
+                }}
+                onTouchMove={(event) => {
+                    const start = touchStartRef.current;
+                    if (!start) return;
+
+                    const { pageX, pageY } = event.nativeEvent;
+                    if (Math.abs(pageX - start.pageX) > 10 || Math.abs(pageY - start.pageY) > 10) {
+                        didScrollRef.current = true;
+                    }
+                }}
+                onPress={() => {
+                    if (!didScrollRef.current) {
+                        router.push({ pathname: detailsPath, params: { tmdbid: item.tmdbid || item.id } });
+                    }
+                }}
             >
-                <View style={[styles.imageContainer, { backgroundColor: colors.background }]}>
+                <View style={[styles.imageContainer, { width: itemWidth, height: posterHeight, backgroundColor: colors.background }]}>
                     <Image source={{ uri: item.poster }} style={styles.posterImage} resizeMode="cover" />
                 </View>
                 <View style={styles.infoContainer}>
                     <Text numberOfLines={1} ellipsizeMode="tail" style={styles.posterTitle}>{item.name}</Text>
                     <Text style={[styles.posterYear, { color: colors.textMuted }]}>{year}</Text>
                 </View>
-            </NativeButton>
+            </Pressable>
         );
-    }, [colors.background, colors.textMuted, detailsPath, numColumns, router, spacing]);
+    }, [colors.background, colors.textMuted, detailsPath, itemWidth, posterHeight, router]);
 
     return (
         <SafeAreaView style={styles.container}>
@@ -121,7 +147,7 @@ const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath }) => {
                     spacing={0}
                     keyExtractor={(row, index) => `${row[0]?.tmdbid ?? index}-${index}`}
                     renderItem={(row, rowIndex) => (
-                        <View style={styles.gridRow}>
+                        <View style={[styles.gridRow, { width, gap: spacing }]}>
                             {row.map((item, columnIndex) => renderItem(item, rowIndex * numColumns + columnIndex))}
                         </View>
                     )}
@@ -138,7 +164,7 @@ const styles = StyleSheet.create({
     listContainer: { flex: 1, paddingBottom: 30 },
     gridRow: { flexDirection: 'row', paddingHorizontal: 5 },
     posterContainer: { marginBottom: 24 },
-    imageContainer: { position: 'relative', width: '100%', aspectRatio: 2 / 3, borderRadius: 5, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 8 },
+    imageContainer: { position: 'relative', borderRadius: 5, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 8 },
     posterImage: { width: '100%', height: '100%' },
     infoContainer: { marginTop: 10, paddingHorizontal: 2, gap: 4 },
     posterTitle: { fontSize: 14, fontWeight: '500', lineHeight: 18 },

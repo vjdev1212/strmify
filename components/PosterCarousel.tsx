@@ -4,6 +4,7 @@ import {
     Dimensions,
     StyleSheet,
     ImageBackground,
+    Pressable,
 } from 'react-native';
 import type { ScaledSize } from 'react-native';
 import { ActivityIndicator, Text } from '@/components/Themed';
@@ -33,18 +34,22 @@ interface AppleTVCarouselProps {
     onItemPress?: (item: CarouselItem) => void;
     autoPlay?: boolean;
     autoPlayInterval?: number;
+    topInset?: number;
 }
 
 export default function AppleTVCarousel({
     filter = 'all',
     onItemPress,
     autoPlay = true,
-    autoPlayInterval = 5000
+    autoPlayInterval = 5000,
+    topInset = 0,
 }: AppleTVCarouselProps) {
     const { colors } = useTheme();
     const [activeIndex, setActiveIndex] = useState(0);
     const [data, setData] = useState<CarouselItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const touchStartRef = useRef<{ pageX: number; pageY: number } | null>(null);
+    const didSwipeRef = useRef(false);
     const [dimensions, setDimensions] = useState(() => {
         const { width, height } = Dimensions.get('window');
         return { width, height, isLandscape: width > height };
@@ -74,6 +79,11 @@ export default function AppleTVCarousel({
             bottomPadding: isLandscape ? 40 : 40,
         };
     }, [dimensions]);
+    const carouselHeight = responsiveDims.carouselHeight + topInset;
+    const carouselFrameStyle = {
+        height: carouselHeight,
+        marginTop: -topInset,
+    };
 
     useEffect(() => {
         const fetchCarouselData = async () => {
@@ -160,8 +170,31 @@ export default function AppleTVCarousel({
     const renderCarouselItem = useCallback((item: CarouselItem, index: number) => {
         const dims = responsiveDims;
         return (
-            <View style={[styles.carouselItem, { width: dims.itemWidth, height: dims.carouselHeight }]}>
-                <NativeButton variant="text" style={styles.carouselTouchable} onPress={() => handleItemPress(item)} seedColor={colors.primary}>
+            <View style={[styles.carouselItem, { width: dims.itemWidth, height: dims.carouselHeight + topInset }]}>
+                <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Open ${item.title}`}
+                    style={styles.carouselTouchable}
+                    onTouchStart={(event) => {
+                        touchStartRef.current = {
+                            pageX: event.nativeEvent.pageX,
+                            pageY: event.nativeEvent.pageY,
+                        };
+                        didSwipeRef.current = false;
+                    }}
+                    onTouchMove={(event) => {
+                        const start = touchStartRef.current;
+                        if (!start) return;
+
+                        const { pageX, pageY } = event.nativeEvent;
+                        if (Math.abs(pageX - start.pageX) > 10 || Math.abs(pageY - start.pageY) > 10) {
+                            didSwipeRef.current = true;
+                        }
+                    }}
+                    onPress={() => {
+                        if (!didSwipeRef.current) handleItemPress(item);
+                    }}
+                >
                     <ImageBackground
                         key={`${item.id}-${index}`}
                         source={{ uri: item.backdropUrl || item.posterUrl }}
@@ -195,10 +228,10 @@ export default function AppleTVCarousel({
                             </View>
                         </View>
                     </ImageBackground>
-                </NativeButton>
+                </Pressable>
             </View>
         );
-    }, [colors.gradientOverlay, colors.primaryBorder, colors.primaryMuted, colors.text, colors.textMuted, dimensions.isLandscape, handleItemPress, responsiveDims]);
+    }, [colors.gradientOverlay, colors.primaryBorder, colors.primaryMuted, colors.text, colors.textMuted, dimensions.isLandscape, handleItemPress, responsiveDims, topInset]);
 
     const renderPaginationDot = useCallback((index: number) => (
         <NativeButton
@@ -216,24 +249,24 @@ export default function AppleTVCarousel({
 
     if (loading || !data.length) {
         return (
-            <View style={[styles.container, styles.loadingContainer, { height: responsiveDims.carouselHeight, backgroundColor: colors.backgroundOverlay }]}>
+            <View style={[styles.container, styles.loadingContainer, carouselFrameStyle, { backgroundColor: colors.backgroundOverlay }]}>
                 <ActivityIndicator color={colors.primary} />
             </View>
         );
     }
 
     return (
-        <View style={[styles.container, { height: responsiveDims.carouselHeight, backgroundColor: colors.backgroundOverlay }]}>
+        <View style={[styles.container, carouselFrameStyle, { backgroundColor: colors.backgroundOverlay }]}>
             <NativePager
                 data={data}
                 renderPage={renderCarouselItem}
                 keyExtractor={(item, index) => `${item.id}-${index}`}
                 activeIndex={activeIndex}
                 onIndexChange={handleIndexChange}
-                style={styles.carousel}
+                style={{ width: responsiveDims.screenWidth, height: carouselHeight }}
             />
             {data.length > 1 && (
-                <View style={[styles.paginationContainer, { bottom: dimensions.isLandscape ? 15 : 20, left: dimensions.isLandscape ? 35 : 20 }]}>
+                <View style={styles.paginationContainer}>
                     <BlurView intensity={20} style={styles.paginationBlur}>
                         <View style={styles.paginationDots}>
                             {data.map((_, index) => renderPaginationDot(index))}
@@ -247,7 +280,6 @@ export default function AppleTVCarousel({
 
 const styles = StyleSheet.create({
     container: { position: 'relative' },
-    carousel: { flex: 1 },
     carouselItem: { marginBottom: 10 },
     carouselTouchable: { flex: 1 },
     backdropImage: { flex: 1, justifyContent: 'flex-end' },
@@ -261,8 +293,8 @@ const styles = StyleSheet.create({
     typeIndicator: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1 },
     typeText: { fontWeight: '600', letterSpacing: 1 },
     loadingContainer: { justifyContent: 'center', alignItems: 'center' },
-    paginationContainer: { position: 'absolute', borderRadius: 20, overflow: 'hidden' },
-    paginationBlur: { paddingHorizontal: 8, paddingVertical: 8 },
+    paginationContainer: { position: 'absolute', left: 0, right: 0, bottom: 12, alignItems: 'center' },
+    paginationBlur: { borderRadius: 20, overflow: 'hidden', paddingHorizontal: 8, paddingVertical: 8 },
     paginationDots: { flexDirection: 'row', alignItems: 'center' },
     paginationDot: { width: 8, height: 8, borderRadius: 4, marginHorizontal: 4 },
 });

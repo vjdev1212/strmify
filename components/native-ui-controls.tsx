@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
 import type { ReactNode } from 'react';
+import { Pressable } from 'react-native';
 import type { StyleProp, ViewStyle } from 'react-native';
 import {
   Button,
   Host,
   Picker,
-  RNHostView,
   Switch,
   TextInput,
   useNativeState,
@@ -38,6 +38,20 @@ export function NativeButton({
   accessibilityLabel,
   seedColor = '#007aff',
 }: NativeButtonProps) {
+  if (children) {
+    return (
+      <Pressable
+        style={style}
+        onPress={onPress}
+        disabled={disabled}
+        accessibilityLabel={accessibilityLabel}
+        accessibilityRole="button"
+      >
+        {children}
+      </Pressable>
+    );
+  }
+
   return (
     <Host
       matchContents
@@ -53,11 +67,6 @@ export function NativeButton({
         onPress={onPress}
         disabled={disabled}
       >
-        {children ? (
-          <RNHostView matchContents>
-            <>{children}</>
-          </RNHostView>
-        ) : undefined}
       </Button>
     </Host>
   );

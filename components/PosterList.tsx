@@ -38,14 +38,14 @@ const PosterItem = React.memo(({
   item,
   posterWidth,
   posterHeight,
+  cardHeight,
   type,
-  spacing,
 }: {
   item: PosterItemData;
   posterWidth: number;
   posterHeight: number;
+  cardHeight: number;
   type: 'movie' | 'series';
-  spacing: number;
 }) => {
   const { colors } = useTheme();
   const [imgError, setImgError] = useState(false);
@@ -65,7 +65,7 @@ const PosterItem = React.memo(({
     <NativeButton
       variant="text"
       onPress={handlePress}
-      style={[styles.posterContainer, { width: posterWidth, marginRight: spacing }]}
+      style={{ width: posterWidth, height: cardHeight, flexShrink: 0 }}
       seedColor={colors.primary}
     >
       {!imgError ? (
@@ -86,8 +86,13 @@ const PosterItem = React.memo(({
   );
 });
 
-const SkeletonPoster = React.memo(({ posterWidth, posterHeight, spacing, bgColor }: { posterWidth: number; posterHeight: number; spacing: number; bgColor: string }) => (
-  <RNView style={[styles.posterContainer, { width: posterWidth, marginRight: spacing }]}>
+const SkeletonPoster = React.memo(({ posterWidth, posterHeight, cardHeight, bgColor }: {
+  posterWidth: number;
+  posterHeight: number;
+  cardHeight: number;
+  bgColor: string;
+}) => (
+  <RNView style={{ width: posterWidth, height: cardHeight, flexShrink: 0 }}>
     <RNView style={[styles.posterImage, { width: posterWidth, height: posterHeight, backgroundColor: bgColor }]} />
   </RNView>
 ));
@@ -122,9 +127,10 @@ const PosterList = ({ apiUrl, title, type }: { apiUrl: string; title: string; ty
   }, [width, postersPerScreen]);
 
   const posterHeight = posterWidth * 1.5;
+  const posterCardHeight = posterHeight + 58;
   const listContentStyle = useMemo(
-    () => ({ paddingRight: 4, height: posterHeight + 58 }),
-    [posterHeight],
+    () => ({ paddingRight: 4, height: posterCardHeight + 10 }),
+    [posterCardHeight],
   );
 
   useEffect(() => {
@@ -176,12 +182,23 @@ const PosterList = ({ apiUrl, title, type }: { apiUrl: string; title: string; ty
   }, [apiUrl, hapticsEnabled, type]);
 
   const renderSkeletonPoster = useCallback((_item: number) => (
-    <SkeletonPoster posterWidth={posterWidth} posterHeight={posterHeight} spacing={spacing} bgColor={colors.backgroundOverlay} />
-  ), [colors.backgroundOverlay, posterHeight, posterWidth]);
+    <SkeletonPoster
+      posterWidth={posterWidth}
+      posterHeight={posterHeight}
+      cardHeight={posterCardHeight}
+      bgColor={colors.backgroundOverlay}
+    />
+  ), [colors.backgroundOverlay, posterCardHeight, posterHeight, posterWidth]);
 
   const renderPosterItem = useCallback((item: PosterItemData) => (
-    <PosterItem item={item} posterWidth={posterWidth} posterHeight={posterHeight} type={type} spacing={spacing} />
-  ), [posterHeight, posterWidth, type]);
+    <PosterItem
+      item={item}
+      posterWidth={posterWidth}
+      posterHeight={posterHeight}
+      cardHeight={posterCardHeight}
+      type={type}
+    />
+  ), [posterCardHeight, posterHeight, posterWidth, type]);
 
   if (loading) {
     return (
@@ -189,13 +206,15 @@ const PosterList = ({ apiUrl, title, type }: { apiUrl: string; title: string; ty
         <RNView style={styles.header}>
           <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
         </RNView>
-        <NativeStackList
-          data={SKELETON_DATA}
-          axis="horizontal"
-          renderItem={renderSkeletonPoster}
-          keyExtractor={(_, index) => `skeleton-${index}`}
-          style={listContentStyle}
-        />
+        <RNView style={listContentStyle}>
+          <NativeStackList
+            data={SKELETON_DATA}
+            axis="horizontal"
+            spacing={spacing}
+            renderItem={renderSkeletonPoster}
+            keyExtractor={(_, index) => `skeleton-${index}`}
+          />
+        </RNView>
       </RNView>
     );
   }
@@ -211,13 +230,15 @@ const PosterList = ({ apiUrl, title, type }: { apiUrl: string; title: string; ty
           <Ionicons name="chevron-forward" size={16} color={colors.textMuted} style={styles.chevronIcon} />
         </NativeButton>
       </RNView>
-      <NativeStackList
-        data={data}
-        axis="horizontal"
-        renderItem={renderPosterItem}
-        keyExtractor={(item, index) => `${item.tmdbid}-${index}`}
-        style={listContentStyle}
-      />
+      <RNView style={listContentStyle}>
+        <NativeStackList
+          data={data}
+          axis="horizontal"
+          spacing={spacing}
+          renderItem={renderPosterItem}
+          keyExtractor={(item, index) => `${item.tmdbid}-${index}`}
+        />
+      </RNView>
     </RNView>
   );
 };
@@ -229,10 +250,9 @@ const styles = StyleSheet.create({
   seeAllButton: { flexDirection: 'row', alignItems: 'center', paddingVertical: 4, paddingHorizontal: 4 },
   seeAllText: { fontSize: 15, fontWeight: '500', letterSpacing: -0.1 },
   chevronIcon: { marginLeft: 2 },
-  posterContainer: { marginBottom: 10 },
   posterImage: { borderRadius: 6, overflow: 'hidden' },
-  posterTitle: { marginTop: 10, fontSize: 14, fontWeight: '500', letterSpacing: -0.2, lineHeight: 20 },
-  posterYear: { marginTop: 4, fontSize: 12, fontWeight: '500', letterSpacing: -0.1 },
+  posterTitle: { height: 20, marginTop: 10, fontSize: 14, fontWeight: '500', letterSpacing: -0.2, lineHeight: 20 },
+  posterYear: { height: 16, marginTop: 4, fontSize: 12, fontWeight: '500', letterSpacing: -0.1, lineHeight: 16 },
 });
 
 export default PosterList;
