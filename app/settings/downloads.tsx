@@ -34,7 +34,7 @@ export default function DownloadsScreen() {
           <SettingsSection
             key={resource.title}
             title={index === 0 ? 'Install Strmify' : undefined}
-            footer={`${index === 0 ? 'Choose a source to install or update Strmify. ' : ''}${resource.detail}.`}
+            footer={`${resource.detail}.`}
           >
             <SettingsRow
               title={resource.title}

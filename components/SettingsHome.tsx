@@ -21,33 +21,33 @@ type SettingsRoute =
 
 const settingsSections: {
   title: string;
-  items: { title: string; route: SettingsRoute; icon: React.ComponentProps<typeof Ionicons>['name'] }[];
+  items: { title: string; route: SettingsRoute; icon: React.ComponentProps<typeof Ionicons>['name']; iconColor: string }[];
 }[] = [
   {
     title: 'General',
     items: [
-      { title: 'Add-ons', route: '/settings/addons', icon: 'extension-puzzle-outline' },
-      { title: 'Media Player', route: '/settings/mediaplayer', icon: 'play-circle-outline' },
+      { title: 'Add-ons', route: '/settings/addons', icon: 'extension-puzzle-outline', iconColor: '#FF9F0A' },
+      { title: 'Media Player', route: '/settings/mediaplayer', icon: 'play-circle-outline', iconColor: '#30D158' },
     ],
   },
   {
     title: 'Integrations',
     items: [
-      { title: 'Stremio', route: '/settings/stremioserver', icon: 'server-outline' },
-      { title: 'OpenSubtitles', route: '/settings/opensubtitles', icon: 'chatbox-ellipses-outline' },
+      { title: 'Stremio', route: '/settings/stremioserver', icon: 'server-outline', iconColor: '#0A84FF' },
+      { title: 'OpenSubtitles', route: '/settings/opensubtitles', icon: 'chatbox-ellipses-outline', iconColor: '#BF5AF2' },
     ],
   },
   {
     title: 'Resources',
-    items: [{ title: 'Downloads', route: '/settings/downloads', icon: 'download-outline' }],
+    items: [{ title: 'Downloads', route: '/settings/downloads', icon: 'download-outline', iconColor: '#64D2FF' }],
   },
   ...(process.env.EXPO_PUBLIC_SHOW_CONTACT === 'true'
     ? [{
       title: 'About',
       items: [
-        { title: 'Contact', route: '/settings/contact' as const, icon: 'mail-outline' as const },
-        { title: 'Disclaimer', route: '/settings/disclaimer' as const, icon: 'information-circle-outline' as const },
-        { title: 'Donate', route: '/settings/donate' as const, icon: 'heart-outline' as const },
+        { title: 'Contact', route: '/settings/contact' as const, icon: 'mail-outline' as const, iconColor: '#64D2FF' },
+        { title: 'Disclaimer', route: '/settings/disclaimer' as const, icon: 'information-circle-outline' as const, iconColor: '#FFD60A' },
+        { title: 'Donate', route: '/settings/donate' as const, icon: 'heart-outline' as const, iconColor: '#FF453A' },
       ],
     }]
     : []),
@@ -79,7 +79,7 @@ export default function SettingsHome() {
               <SettingsRow
                 key={item.route}
                 title={item.title}
-                leading={<Ionicons name={item.icon} size={20} color={colors.primary} />}
+                leading={<Ionicons name={item.icon} size={20} color={item.iconColor} />}
                 onPress={() => openSettings(item.route)}
                 isLast={index === section.items.length - 1}
               />
