@@ -48,15 +48,15 @@ function RootLayoutNav() {
 
     const screenOptions = {
         headerShown: true,
-        headerTransparent: false,
+        headerTransparent: true,
         headerUserInterfaceStyle: 'dark' as const,
         headerBackButtonDisplayMode: 'minimal' as const,
-        headerBackground: HeaderBackground,
+        headerBackground: InvisibleHeaderBackground,
         headerTitle: '',
         headerTintColor: colors.text,
         headerBackTitle: '',
         headerShadowVisible: false,
-        headerStyle: { backgroundColor: colors.background },
+        headerStyle: { backgroundColor: 'transparent' },
         contentStyle: { backgroundColor: systemDarkBackground },
     };
 
@@ -70,8 +70,8 @@ function RootLayoutNav() {
                     headerBackTitle: '',
                     headerTintColor: colors.text,
                     headerTransparent: false,
-                    headerStyle: { backgroundColor: colors.background },
-                    headerBackground: HeaderBackground,
+                    headerStyle: { backgroundColor: 'transparent' },
+                    headerBackground: InvisibleHeaderBackground,
                     contentStyle: { backgroundColor: systemDarkBackground },
                 }}
             >
@@ -89,9 +89,17 @@ function RootLayoutNav() {
                         contentStyle: { backgroundColor: 'transparent' },
                     }}
                 />
-                <Stack.Screen name="movie/details" options={screenOptions} />
+                <Stack.Screen name="movie/details" options={{
+                    ...screenOptions,
+                    headerBackground: InvisibleHeaderBackground,
+                    headerStyle: { backgroundColor: 'transparent' }
+                }} />
                 <Stack.Screen name="movie/list" options={screenOptions} />
-                <Stack.Screen name="series/details" options={screenOptions} />
+                <Stack.Screen name="series/details" options={{
+                    ...screenOptions,
+                    headerBackground: InvisibleHeaderBackground,
+                    headerStyle: { backgroundColor: 'transparent' }
+                }} />
                 <Stack.Screen name="series/list" options={screenOptions} />
                 <Stack.Screen name="stream/list" options={screenOptions} />
                 <Stack.Screen
