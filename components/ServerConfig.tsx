@@ -309,11 +309,9 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
               keyboardType="url"
               returnKeyType="done"
             />
-          </SettingsSection>
-          {!editingId ? (
-            <SettingsSection title="Playback" footer="Use this server for playback.">
+            {!editingId ? (
               <SettingsRow
-                title="Set as Current"
+                title="Set as current"
                 trailing={
                   <NativeSwitch
                     value={isCurrent}
@@ -321,9 +319,10 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
                     seedColor={colors.primary}
                   />
                 }
+                isLast
               />
-            </SettingsSection>
-          ) : null}
+            ) : null}
+          </SettingsSection>
           <SettingsSection title="Actions">
             <SettingsRow
               title="Save server"
