@@ -1,6 +1,23 @@
-const { withXcodeProject, withDangerousMod } = require('@expo/config-plugins');
+const { withXcodeProject, withDangerousMod } = require('expo/config-plugins');
 const path = require('path');
 const fs = require('fs');
+
+const KSPLAYER_REPO = 'https://github.com/kingslay/KSPlayer.git';
+const KSPLAYER_COMMIT = 'bdfa2da39bb18865b317c4ffd08cdef5f8efc043';
+const FFMPEGKIT_REPO = 'https://github.com/kingslay/FFmpegKit.git';
+const FFMPEGKIT_COMMIT = 'c32be9bfb628042737ad3ef622e930c5c7b15954';
+
+const PODS_BEGIN = '# >>> withKSPlayer pods';
+const PODS_END = '# <<< withKSPlayer pods';
+const POST_BEGIN = '# >>> withKSPlayer post_install';
+const POST_END = '# <<< withKSPlayer post_install';
+
+const escapeRe = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const stripBlock = (text, begin, end) =>
+  text.replace(
+    new RegExp(`[ \\t]*${escapeRe(begin)}[\\s\\S]*?${escapeRe(end)}[ \\t]*\\n?`, 'g'),
+    ''
+  );
 
 // ─── 1. Add KSPlayer pods to Podfile ─────────────────────────────────────────
 
@@ -8,7 +25,8 @@ const withKSPlayerPod = (config) => {
   return withDangerousMod(config, [
     'ios',
     async (mod) => {
-      const podfilePath = path.join(mod.modRequest.platformProjectRoot, 'Podfile');
+      const iosRoot = mod.modRequest.platformProjectRoot;
+      const podfilePath = path.join(iosRoot, 'Podfile');
 
       if (!fs.existsSync(podfilePath)) {
         console.warn('[withKSPlayer] Podfile not found at:', podfilePath);
@@ -17,56 +35,69 @@ const withKSPlayerPod = (config) => {
 
       let podfile = fs.readFileSync(podfilePath, 'utf8');
 
-      if (podfile.includes('kingslay/KSPlayer') && podfile.includes('DisplayCriteria')) {
-        console.log('[withKSPlayer] KSPlayer pods already present, skipping');
-        return mod;
-      }
-
-      // KSPlayer requires use_frameworks! but React Native needs static linking.
-      // use_frameworks! :linkage => :static satisfies both — confirmed by tapframe/KSPNUVIO.
-      const ksplayerPods = `
-  # KSPlayer — iOS video player with FFmpeg/AVPlayer support
-  pod 'KSPlayer', :git => 'https://github.com/kingslay/KSPlayer.git', :branch => 'main'
-  pod 'DisplayCriteria', :git => 'https://github.com/kingslay/KSPlayer.git', :branch => 'main', :modular_headers => true
-  pod 'FFmpegKit', :git => 'https://github.com/kingslay/FFmpegKit.git', :branch => 'main', :modular_headers => true
-  pod 'Libass', :git => 'https://github.com/kingslay/FFmpegKit.git', :branch => 'main', :modular_headers => true
-`;
-
-      if (!podfile.includes('use_react_native!')) {
+      if (!/^[ \t]*use_react_native!/m.test(podfile)) {
         console.warn('[withKSPlayer] Could not find use_react_native! in Podfile — pods not added');
         return mod;
       }
 
-      const useFrameworks = podfile.includes('use_frameworks!') ? '' : "\n  use_frameworks! :linkage => :static\n";
+      podfile = stripBlock(podfile, PODS_BEGIN, PODS_END);
+      podfile = stripBlock(podfile, POST_BEGIN, POST_END);
+      podfile = podfile.replace(
+        /^[ \t]*pod '(?:KSPlayer|DisplayCriteria|FFmpegKit|Libass)'.*\n/gm,
+        ''
+      );
+
+      let linkageLine = '';
+      if (podfile.includes('ios.useFrameworks')) {
+        const propertiesPath = path.join(iosRoot, 'Podfile.properties.json');
+        const properties = fs.existsSync(propertiesPath)
+          ? JSON.parse(fs.readFileSync(propertiesPath, 'utf8'))
+          : {};
+
+        if (properties['ios.useFrameworks'] !== 'static') {
+          properties['ios.useFrameworks'] = 'static';
+          fs.writeFileSync(propertiesPath, JSON.stringify(properties, null, 2) + '\n', 'utf8');
+          console.log('[withKSPlayer] Set ios.useFrameworks = static in Podfile.properties.json');
+        }
+      } else if (!/^[ \t]*use_frameworks!(?![^\n]*\bif\b)/m.test(podfile)) {
+        linkageLine = "  use_frameworks! :linkage => :static\n";
+        console.log('[withKSPlayer] Added use_frameworks! :linkage => :static');
+      }
+
+      const podsBlock =
+        `  ${PODS_BEGIN}\n` +
+        `  pod 'KSPlayer', :git => '${KSPLAYER_REPO}', :commit => '${KSPLAYER_COMMIT}'\n` +
+        `  pod 'DisplayCriteria', :git => '${KSPLAYER_REPO}', :commit => '${KSPLAYER_COMMIT}', :modular_headers => true\n` +
+        `  pod 'FFmpegKit', :git => '${FFMPEGKIT_REPO}', :commit => '${FFMPEGKIT_COMMIT}', :modular_headers => true\n` +
+        `  pod 'Libass', :git => '${FFMPEGKIT_REPO}', :commit => '${FFMPEGKIT_COMMIT}', :modular_headers => true\n` +
+        `  ${PODS_END}\n\n`;
 
       podfile = podfile.replace(
-        /(\s*use_react_native!)/,
-        `${useFrameworks}${ksplayerPods}$1`
+        /^[ \t]*use_react_native!/m,
+        (match) => `${linkageLine}${podsBlock}${match}`
       );
-      console.log('[withKSPlayer] Added use_frameworks! :linkage => :static and KSPlayer pods');
+      console.log('[withKSPlayer] Added KSPlayer pods (pinned)');
 
-      // ── post_install: merge RN static linkage fix into existing block ─────────
-      const ksplayerPostInstallCode = `
-  # [withKSPlayer] Allow non-modular includes — needed for KSPlayer Swift/ObjC interop
-  # when use_frameworks! :linkage => :static is active
-  installer.pods_project.targets.each do |target|
-    target.build_configurations.each do |config|
-      config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
-    end
-  end
-`;
+      const postInstallCode =
+        `    ${POST_BEGIN}\n` +
+        `    # Allow non-modular includes — needed for KSPlayer Swift/ObjC interop\n` +
+        `    # when use_frameworks! :linkage => :static is active\n` +
+        `    installer.pods_project.targets.each do |target|\n` +
+        `      target.build_configurations.each do |build_config|\n` +
+        `        build_config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'\n` +
+        `      end\n` +
+        `    end\n` +
+        `    ${POST_END}\n`;
 
-      if (!podfile.includes('[withKSPlayer] Force React Native targets')) {
-        if (podfile.includes('post_install do |installer|')) {
-          podfile = podfile.replace(
-            'post_install do |installer|',
-            `post_install do |installer|\n${ksplayerPostInstallCode}`
-          );
-          console.log('[withKSPlayer] Merged static linkage patch into existing post_install');
-        } else {
-          podfile = podfile + `\npost_install do |installer|\n${ksplayerPostInstallCode}end\n`;
-          console.log('[withKSPlayer] Added new post_install block');
-        }
+      if (/post_install do \|installer\|\n/.test(podfile)) {
+        podfile = podfile.replace(
+          /post_install do \|installer\|\n/,
+          (match) => `${match}${postInstallCode}`
+        );
+        console.log('[withKSPlayer] Merged patch into existing post_install');
+      } else {
+        podfile += `\npost_install do |installer|\n${postInstallCode}end\n`;
+        console.log('[withKSPlayer] Added new post_install block');
       }
 
       fs.writeFileSync(podfilePath, podfile, 'utf8');

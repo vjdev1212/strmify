@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { StyleSheet, Pressable, LayoutAnimation } from 'react-native';
+import { StyleSheet, LayoutAnimation } from 'react-native';
 import { Text, View } from './Themed';
 import { useTheme } from '@/context/ThemeContext';
+import { NativeButton } from '@/components/native-ui-controls';
 
 interface MediaContentDescriptionProps { description: string; }
 
@@ -25,12 +26,12 @@ const MediaContentDescription: React.FC<MediaContentDescriptionProps> = ({ descr
 
   return (
     <View style={styles.container}>
-      <Pressable onPress={toggleExpand}>
+      <NativeButton variant="text" onPress={toggleExpand} seedColor={colors.primary}>
         <Text style={styles.description} numberOfLines={expanded ? undefined : 3}>{description}</Text>
         {description.split(' ').length > 20 && (
           <Text style={[styles.moreText, { color: colors.textMuted }]}>{expanded ? 'LESS' : 'MORE'}</Text>
         )}
-      </Pressable>
+      </NativeButton>
     </View>
   );
 };

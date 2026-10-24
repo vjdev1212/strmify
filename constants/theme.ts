@@ -1,5 +1,14 @@
+import { Color } from 'expo-router';
+import { Platform } from 'react-native';
+
 const PRIMARY = '#777777';
 const BACKGROUND = '#0a0a0a';
+
+export const systemDarkBackground = Platform.select({
+    ios: Color.ios.systemBackground,
+    android: Color.android.dynamic.surface,
+    default: BACKGROUND,
+})!;
 
 export type AppColors = {
     primary: string;

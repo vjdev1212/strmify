@@ -82,7 +82,14 @@ const MediaContentDetailsList: React.FC<MediaContentDetailsListProps> = ({
       <View style={[styles.headerContainer, { paddingHorizontal: containerMargin }]}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Information</Text>
       </View>
-      {tableData.map((item, index) => renderTableRow(item.label, item.value, item.key, index === tableData.length - 1))}
+      <View>
+        {tableData.map((item, index) => renderTableRow(
+          item.label,
+          item.value,
+          item.key,
+          index === tableData.length - 1,
+        ))}
+      </View>
     </View>
   );
 };

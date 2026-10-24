@@ -4,16 +4,16 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
-import { View, StyleSheet } from 'react-native';
+import { Appearance, View, StyleSheet } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { ActionSheetProvider } from '@expo/react-native-action-sheet';
-import { AppThemeProvider, useTheme } from '@/context/ThemeContext';
+import { useTheme } from '@/context/ThemeContext';
 import BlurGradientBackground from '@/components/BlurGradientBackground';
+import { systemDarkBackground } from '@/constants/theme';
 
 export { ErrorBoundary } from 'expo-router';
 
 export const unstable_settings = {
-    initialRouteName: '(tabs)',
+    anchor: '(tabs)',
 };
 
 SplashScreen.preventAutoHideAsync();
@@ -25,21 +25,15 @@ export default function RootLayout() {
     });
 
     useEffect(() => { if (error) throw error; }, [error]);
+    useEffect(() => { Appearance.setColorScheme('dark'); }, []);
     useEffect(() => { if (loaded) SplashScreen.hideAsync(); }, [loaded]);
 
     if (!loaded) return null;
 
-    // ✅ Provider wraps everything OUTSIDE RootLayoutNav
-    // so useTheme() works inside RootLayoutNav
-    return (
-        <AppThemeProvider>
-            <RootLayoutNav />
-        </AppThemeProvider>
-    );
+    return <RootLayoutNav />;
 }
 
 function RootLayoutNav() {
-    // ✅ Now works — this component is a child of AppThemeProvider
     const { colors } = useTheme();
 
     const HeaderBackground = () => (
@@ -52,70 +46,79 @@ function RootLayoutNav() {
         <View style={{ flex: 1, backgroundColor: 'transparent' }} />
     );
 
-    // ✅ contentStyle uses colors.background — fixes web stacking layer issue
     const screenOptions = {
         headerShown: true,
         headerTransparent: true,
+        headerUserInterfaceStyle: 'dark' as const,
+        headerBackButtonDisplayMode: 'minimal' as const,
         headerBackground: InvisibleHeaderBackground,
         headerTitle: '',
         headerTintColor: colors.text,
         headerBackTitle: '',
         headerShadowVisible: false,
         headerStyle: { backgroundColor: 'transparent' },
-        contentStyle: { backgroundColor: colors.background },
+        contentStyle: { backgroundColor: systemDarkBackground },
     };
 
     return (
-        // ✅ Root View also gets themed background — prevents white flash on web
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={[styles.container, { backgroundColor: systemDarkBackground }]}>
             <BlurGradientBackground />
-            <ActionSheetProvider>
-                <Stack
-                    screenOptions={{
-                        headerStyle: styles.glassHeader,
-                        headerBackground: HeaderBackground,
+            <Stack
+                screenOptions={{
+                    headerUserInterfaceStyle: 'dark',
+                    headerBackButtonDisplayMode: 'minimal',
+                    headerBackTitle: '',
+                    headerTintColor: colors.text,
+                    headerTransparent: false,
+                    headerStyle: { backgroundColor: 'transparent' },
+                    headerBackground: InvisibleHeaderBackground,
+                    contentStyle: { backgroundColor: systemDarkBackground },
+                }}
+            >
+                <Stack.Screen
+                    name="(tabs)"
+                    options={{
+                        headerShown: false,
+                        headerTransparent: true,
+                        headerBackground: InvisibleHeaderBackground,
+                        headerShadowVisible: false,
+                        headerTitle: '',
+                        headerTintColor: colors.text,
+                        headerBackTitle: '',
+                        title: 'Home',
                         contentStyle: { backgroundColor: 'transparent' },
                     }}
-                >
-                    <Stack.Screen
-                        name="(tabs)"
-                        options={{
-                            headerShown: false,
-                            headerTransparent: true,
-                            headerBackground: InvisibleHeaderBackground,
-                            headerShadowVisible: false,
-                            headerTitle: '',
-                            headerTintColor: colors.text,
-                            headerBackTitle: '',
-                            title: 'Home',
-                            // ✅ Tabs stay transparent so root BlurGradientBackground shows through
-                            contentStyle: { backgroundColor: 'transparent' },
-                        }}
-                    />
-                    <Stack.Screen name="movie/details" options={screenOptions} />
-                    <Stack.Screen name="movie/list" options={screenOptions} />
-                    <Stack.Screen name="series/details" options={screenOptions} />
-                    <Stack.Screen name="series/list" options={screenOptions} />
-                    <Stack.Screen name="stream/list" options={screenOptions} />
-                    <Stack.Screen
-                        name="stream/player"
-                        options={{
-                            headerShown: false,
-                            contentStyle: { backgroundColor: '#000000' },
-                        }}
-                    />
-                    <Stack.Screen name="settings/addons" options={screenOptions} />
-                    <Stack.Screen name="settings/add" options={screenOptions} />
-                    <Stack.Screen name="settings/stremioserver" options={screenOptions} />
-                    <Stack.Screen name="settings/theme" options={screenOptions} />
-                    <Stack.Screen name="settings/opensubtitles" options={screenOptions} />
-                    <Stack.Screen name="settings/contact" options={screenOptions} />
-                    <Stack.Screen name="settings/disclaimer" options={screenOptions} />
-                    <Stack.Screen name="settings/donate" options={screenOptions} />
-                    <Stack.Screen name="settings/downloads" options={screenOptions} />
-                    <Stack.Screen name="settings/mediaplayer" options={screenOptions} />
-                </Stack>
-            </ActionSheetProvider>
+                />
+                <Stack.Screen name="movie/details" options={{
+                    ...screenOptions,
+                    headerBackground: InvisibleHeaderBackground,
+                    headerStyle: { backgroundColor: 'transparent' }
+                }} />
+                <Stack.Screen name="movie/list" options={screenOptions} />
+                <Stack.Screen name="series/details" options={{
+                    ...screenOptions,
+                    headerBackground: InvisibleHeaderBackground,
+                    headerStyle: { backgroundColor: 'transparent' }
+                }} />
+                <Stack.Screen name="series/list" options={screenOptions} />
+                <Stack.Screen name="stream/list" options={screenOptions} />
+                <Stack.Screen
+                    name="stream/player"
+                    options={{
+                        headerShown: false,
+                        contentStyle: { backgroundColor: systemDarkBackground },
+                    }}
+                />
+                <Stack.Screen name="settings/addons" options={{ ...screenOptions, title: 'Add-ons', headerTitle: 'Add-ons' }} />
+                <Stack.Screen name="settings/add" options={{ ...screenOptions, title: 'Add Add-on', headerTitle: 'Add Add-on' }} />
+                <Stack.Screen name="settings/stremioserver" options={{ ...screenOptions, title: 'Stremio', headerTitle: 'Stremio' }} />
+                <Stack.Screen name="settings/opensubtitles" options={{ ...screenOptions, title: 'OpenSubtitles', headerTitle: 'OpenSubtitles' }} />
+                <Stack.Screen name="settings/contact" options={{ ...screenOptions, title: 'Contact', headerTitle: 'Contact' }} />
+                <Stack.Screen name="settings/disclaimer" options={{ ...screenOptions, title: 'Disclaimer', headerTitle: 'Disclaimer' }} />
+                <Stack.Screen name="settings/donate" options={{ ...screenOptions, title: 'Support Strmify', headerTitle: 'Support Strmify' }} />
+                <Stack.Screen name="settings/downloads" options={{ ...screenOptions, title: 'Downloads', headerTitle: 'Downloads' }} />
+                <Stack.Screen name="settings/mediaplayer" options={{ ...screenOptions, title: 'Media Player', headerTitle: 'Media Player' }} />
+            </Stack>
         </View>
     );
 }
@@ -123,13 +126,6 @@ function RootLayoutNav() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-    },
-    glassHeader: {
-        backgroundColor: 'transparent',
-        elevation: 0,
-        shadowOpacity: 0,
-        borderBottomWidth: 1,
-        borderBottomColor: 'rgba(255, 255, 255, 0.1)',
     },
     headerBlur: {
         flex: 1,

@@ -38,7 +38,7 @@ const styles = StyleSheet.create({
   posterContainer: { position: 'relative', width: '100%', overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
   shadowContainer: { width: '100%', height: '100%', backgroundColor: 'transparent' },
   poster: { width: '100%', height: '100%' },
-  loaderContainer: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.2)' },
+  loaderContainer: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.2)' },
 });
 
 export default MediaContentPoster;

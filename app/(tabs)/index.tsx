@@ -4,9 +4,9 @@ import {
   ScrollView,
   StyleSheet,
   View,
-  FlatList,
-  TouchableOpacity
+  Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar, Text } from '@/components/Themed';
 import PosterList from '@/components/PosterList';
 import BottomSpacing from '@/components/BottomSpacing';
@@ -17,33 +17,11 @@ import { isHapticsSupported } from '@/utils/platform';
 import { CatalogUrl, MovieGneres, TvGneres } from '@/constants/Tmdb';
 import BlurGradientBackground from '@/components/BlurGradientBackground';
 import { useTheme } from '@/context/ThemeContext';
-
-const LazyPosterList = ({
-  apiUrl,
-  title,
-  type,
-  index
-}: {
-  apiUrl: string;
-  title: string;
-  type: 'movie' | 'series';
-  index: number;
-}) => {
-  const [shouldLoad, setShouldLoad] = useState(index < 2);
-
-  return (
-    <View onLayout={() => { if (!shouldLoad) setShouldLoad(true); }}>
-      {shouldLoad ? (
-        <PosterList apiUrl={apiUrl} title={title} type={type} />
-      ) : (
-        <View style={{ height: 280, marginBottom: 20 }} />
-      )}
-    </View>
-  );
-};
+import { NativeButton } from '@/components/native-ui-controls';
 
 export default function HomeScreen() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const [filter, setFilter] = useState<'all' | 'movies' | 'series'>('all');
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -123,60 +101,59 @@ export default function HomeScreen() {
     <View style={styles.container}>
       <StatusBar />
       <BlurGradientBackground />
-      <ScrollView showsVerticalScrollIndicator={false} key={filter}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        removeClippedSubviews={false}
+        key={filter}
+      >
         <AppleTVCarousel
           filter={filter}
           onItemPress={handleCarouselItemPress}
           autoPlay={true}
           autoPlayInterval={6000}
+          topInset={Platform.OS === 'ios' ? insets.top : 0}
         />
         <View style={styles.contentContainer}>
           <View style={styles.filtersContainer}>
-            <FlatList
-              data={filters}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.filterRow}
-              keyExtractor={(item) => item.key}
-              renderItem={({ item }) => (
-                <TouchableOpacity
+            {filters.map((item) => (
+              <NativeButton
+                key={item.key}
+                variant="text"
+                style={[
+                  styles.filterButton,
+                  {
+                    backgroundColor: filter === item.key ? '#ffffff' : colors.primaryCard,
+                    borderColor: filter === item.key ? '#ffffff' : colors.primaryBorder,
+                  },
+                ]}
+                onPress={() => handleFilterChange(item.key as 'all' | 'movies' | 'series')}
+                seedColor={colors.primary}
+              >
+                <Ionicons
+                  name={item.icon as any}
+                  size={18}
+                  color={filter === item.key ? '#000000' : colors.textMuted}
+                  style={styles.filterIcon}
+                />
+                <Text
                   style={[
-                    styles.filterButton,
-                    {
-                      backgroundColor: filter === item.key ? colors.primary : colors.primaryCard,
-                      borderColor: filter === item.key ? colors.primary : colors.primaryBorder,
-                    },
+                    styles.filterButtonText,
+                    { color: filter === item.key ? '#000000' : colors.textMuted },
+                    filter === item.key && styles.filterButtonTextActive,
                   ]}
-                  onPress={() => handleFilterChange(item.key as 'all' | 'movies' | 'series')}
-                  activeOpacity={0.7}
                 >
-                  <Ionicons
-                    name={item.icon as any}
-                    size={18}
-                    color={filter === item.key ? colors.text : colors.textMuted}
-                    style={styles.filterIcon}
-                  />
-                  <Text
-                    style={[
-                      styles.filterButtonText,
-                      { color: filter === item.key ? colors.text : colors.textMuted },
-                      filter === item.key && styles.filterButtonTextActive,
-                    ]}
-                  >
-                    {item.label}
-                  </Text>
-                </TouchableOpacity>
-              )}
-            />
+                  {item.label}
+                </Text>
+              </NativeButton>
+            ))}
           </View>
 
-          {activeLists.map((list, i) => (
-            <LazyPosterList
-              key={`${filter}-${i}`}
+          {activeLists.map((list) => (
+            <PosterList
+              key={`${filter}-${list.apiUrl}`}
               apiUrl={list.apiUrl}
               title={list.title}
               type={list.type as 'movie' | 'series'}
-              index={i}
             />
           ))}
         </View>
@@ -191,18 +168,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   filtersContainer: {
+    flexDirection: 'row',
     paddingVertical: 12,
-    paddingHorizontal: 5,
-  },
-  filterRow: {
-    paddingHorizontal: 10,
-    gap: 15,
+    paddingHorizontal: 16,
   },
   filterButton: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 10,
     paddingHorizontal: 18,
+    marginRight: 15,
     borderRadius: 20,
     borderWidth: 1,
   },

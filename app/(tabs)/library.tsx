@@ -1,12 +1,12 @@
 import React, { useState, useCallback, useRef } from 'react';
 import {
   ScrollView,
+  Pressable,
   TouchableOpacity,
   Image,
   StyleSheet,
   Animated,
   RefreshControl,
-  FlatList,
   useWindowDimensions,
 } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
@@ -19,6 +19,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomSpacing from '@/components/BottomSpacing';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '@/context/ThemeContext';
+import NativeStackList from '@/components/native-stack-list';
+import { NativeButton } from '@/components/native-ui-controls';
+import PosterArtwork from '@/components/PosterArtwork';
 
 type CategoryType = 'all' | 'movies' | 'tv';
 
@@ -35,6 +38,8 @@ const LibraryScreen: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<CategoryType>('all');
 
   const animatedValues = useRef(new Map<string, Animated.Value>()).current;
+  const touchStartRef = useRef<{ pageX: number; pageY: number } | null>(null);
+  const didScrollRef = useRef(false);
 
   const { width, height } = useWindowDimensions();
   const isPortrait = height > width;
@@ -143,7 +148,7 @@ const LibraryScreen: React.FC = () => {
     });
   };
 
-  const renderLibraryItem = ({ item, index }: { item: LibraryItem; index: number }) => {
+  const renderLibraryItem = (item: LibraryItem, index: number) => {
     const itemKey = `${item.tmdbid}-${item.type}-${index}`;
     const animValue = getAnimatedValue(itemKey);
 
@@ -154,17 +159,39 @@ const LibraryScreen: React.FC = () => {
           { opacity: animValue, transform: [{ scale: animValue }] },
         ]}
       >
-        <TouchableOpacity
+        <Pressable
           style={styles.card}
-          onPress={() => handleItemPress(item)}
-          activeOpacity={0.8}
+          onTouchStart={(event) => {
+            touchStartRef.current = {
+              pageX: event.nativeEvent.pageX,
+              pageY: event.nativeEvent.pageY,
+            };
+            didScrollRef.current = false;
+          }}
+          onTouchMove={(event) => {
+            const start = touchStartRef.current;
+            if (!start) return;
+
+            const { pageX, pageY } = event.nativeEvent;
+            if (Math.abs(pageX - start.pageX) > 10 || Math.abs(pageY - start.pageY) > 10) {
+              didScrollRef.current = true;
+            }
+          }}
+          onPress={() => {
+            if (!didScrollRef.current) handleItemPress(item);
+          }}
         >
           <View style={[styles.imageContainer, { height: CARD_HEIGHT, backgroundColor: colors.background }]}>
-            <Image
-              source={{ uri: item.backdrop || item.poster }}
-              style={styles.backdrop}
-              resizeMode="cover"
-            />
+            <PosterArtwork key={item.backdrop || item.poster} style={styles.artworkFrame} borderRadius={10}>
+              {(onImageLoad) => (
+                <Image
+                  source={{ uri: item.backdrop || item.poster }}
+                  onLoad={onImageLoad}
+                  style={styles.backdrop}
+                  resizeMode="cover"
+                />
+              )}
+            </PosterArtwork>
             {item.watched && (
               <View style={styles.watchedBadge}>
                 <Ionicons name="checkmark-circle" size={20} color="#4ade80" />
@@ -197,7 +224,7 @@ const LibraryScreen: React.FC = () => {
               )}
             </View>
           </View>
-        </TouchableOpacity>
+        </Pressable>
       </Animated.View>
     );
   };
@@ -215,15 +242,16 @@ const LibraryScreen: React.FC = () => {
             {items.length} {items.length === 1 ? 'item' : 'items'}
           </Text>
         </View>
-        <FlatList
-          data={items}
-          renderItem={renderLibraryItem}
-          keyExtractor={(item, index) => `${item.tmdbid}-${item.type}-${index}`}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={[styles.flatListContent, { gap: CARD_SPACING }]}
-          decelerationRate="normal"
-        />
+        <View style={{ height: CARD_HEIGHT + 62 }}>
+          <NativeStackList
+            data={items}
+            axis="horizontal"
+            spacing={CARD_SPACING}
+            horizontalContentInset={CARD_SPACING}
+            renderItem={renderLibraryItem}
+            keyExtractor={(item, index) => `${item.tmdbid}-${item.type}-${index}`}
+          />
+        </View>
       </View>
     );
   };
@@ -231,22 +259,23 @@ const LibraryScreen: React.FC = () => {
   const renderCategoryButton = (category: CategoryType, label: string, icon: string) => {
     const isActive = activeCategory === category;
     return (
-      <TouchableOpacity
+      <NativeButton
+        variant="text"
         style={[
           styles.categoryButton,
           {
-            backgroundColor: isActive ? colors.primary : colors.primarySurface,
-            borderColor: isActive ? colors.primary : colors.primaryBorder,
+            backgroundColor: isActive ? '#ffffff' : colors.primarySurface,
+            borderColor: isActive ? '#ffffff' : colors.primaryBorder,
           },
         ]}
         onPress={() => setActiveCategory(category)}
-        activeOpacity={0.7}
+        seedColor={colors.primary}
       >
-        <Ionicons name={icon as any} size={18} color={isActive ? colors.text : colors.textMuted} />
-        <Text style={[styles.categoryButtonText, { color: isActive ? colors.text : colors.textMuted, fontWeight: isActive ? '600' : '500' }]}>
+        <Ionicons name={icon as any} size={18} color={isActive ? '#000000' : colors.textMuted} />
+        <Text style={[styles.categoryButtonText, { color: isActive ? '#000000' : colors.textMuted, fontWeight: isActive ? '600' : '500' }]}>
           {label}
         </Text>
-      </TouchableOpacity>
+      </NativeButton>
     );
   };
 
@@ -311,7 +340,7 @@ const LibraryScreen: React.FC = () => {
           </View>
         ) : (
           <>
-            {renderSection('Unwatched', unwatched, 'eye-outline')}
+            {renderSection('Watchlists', unwatched, 'eye-outline')}
             {renderSection('Watched', watched, 'checkmark-circle-outline')}
           </>
         )}
@@ -360,14 +389,14 @@ const styles = StyleSheet.create({
   categoryContainer: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 12, gap: 10 },
   categoryButton: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 18, borderRadius: 20, borderWidth: 1, gap: 8 },
   categoryButtonText: { fontSize: 15 },
-  section: { marginTop: 24, marginBottom: 10 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 12 },
+  section: { marginTop: 12, marginBottom: 0 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 8 },
   sectionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   sectionTitle: { fontSize: 18, fontWeight: '600' },
   sectionCount: { fontSize: 14, opacity: 0.5, fontWeight: '500' },
-  flatListContent: { paddingHorizontal: 16 },
   card: { backgroundColor: 'transparent', borderRadius: 10 },
   imageContainer: { width: '100%', position: 'relative', borderRadius: 10, overflow: 'hidden' },
+  artworkFrame: { width: '100%', height: '100%' },
   backdrop: { width: '100%', height: '100%' },
   watchedBadge: { position: 'absolute', top: 8, left: 8, backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: 16, padding: 4 },
   watchButton: { position: 'absolute', top: 8, left: 8, backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: 16, padding: 6 },

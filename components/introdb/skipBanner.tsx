@@ -1,6 +1,7 @@
 import { SegmentType, SkipResult } from "@/clients/introDb";
 import React, { useEffect, useRef } from "react";
-import { TouchableOpacity, StyleSheet, Text, Animated } from "react-native";
+import { StyleSheet, Text, Animated } from "react-native";
+import { NativeButton } from "@/components/native-ui-controls";
 
 const SEGMENT_LABELS: Record<SegmentType, string> = {
     recap: "Skip Recap",
@@ -68,14 +69,15 @@ export const SkipBanner: React.FC<SkipBannerProps> = ({ activeSegment, onSkip })
             ]}
             pointerEvents={activeSegment ? "box-none" : "none"}
         >
-            <TouchableOpacity
+            <NativeButton
+                variant="text"
                 style={styles.button}
                 onPress={onSkip}
-                activeOpacity={0.8}
+                seedColor="#ffffff"
             >
                 <Text style={styles.label}>{label}</Text>
                 <Text style={styles.arrow}>{"›"}</Text>
-            </TouchableOpacity>
+            </NativeButton>
         </Animated.View>
     );
 };

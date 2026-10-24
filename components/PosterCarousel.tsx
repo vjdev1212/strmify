@@ -1,17 +1,18 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     View,
-    FlatList,
     Dimensions,
-    TouchableOpacity,
     StyleSheet,
-    ImageBackground,
+    Pressable,
 } from 'react-native';
+import type { ScaledSize } from 'react-native';
 import { ActivityIndicator, Text } from '@/components/Themed';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
+import Animated, { cubicBezier, useReducedMotion } from 'react-native-reanimated';
 import { getYear } from '@/utils/Date';
 import { useTheme } from '@/context/ThemeContext';
+import NativePager from '@/components/native-pager';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -32,28 +33,32 @@ interface AppleTVCarouselProps {
     onItemPress?: (item: CarouselItem) => void;
     autoPlay?: boolean;
     autoPlayInterval?: number;
+    topInset?: number;
 }
 
 export default function AppleTVCarousel({
     filter = 'all',
     onItemPress,
     autoPlay = true,
-    autoPlayInterval = 5000
+    autoPlayInterval = 5000,
+    topInset = 0,
 }: AppleTVCarouselProps) {
     const { colors } = useTheme();
+    const reducedMotion = useReducedMotion();
     const [activeIndex, setActiveIndex] = useState(0);
     const [data, setData] = useState<CarouselItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const touchStartRef = useRef<{ pageX: number; pageY: number } | null>(null);
+    const didSwipeRef = useRef(false);
     const [dimensions, setDimensions] = useState(() => {
         const { width, height } = Dimensions.get('window');
         return { width, height, isLandscape: width > height };
     });
 
-    const flatListRef = useRef<FlatList>(null);
     const autoPlayRef = useRef<any>(null);
 
     useEffect(() => {
-        const subscription = Dimensions.addEventListener('change', ({ window }) => {
+        const subscription = Dimensions.addEventListener('change', ({ window }: { window: ScaledSize }) => {
             setDimensions({ width: window.width, height: window.height, isLandscape: window.width > window.height });
         });
         return () => subscription?.remove();
@@ -74,6 +79,11 @@ export default function AppleTVCarousel({
             bottomPadding: isLandscape ? 40 : 40,
         };
     }, [dimensions]);
+    const carouselHeight = responsiveDims.carouselHeight + topInset;
+    const carouselFrameStyle = {
+        height: carouselHeight,
+        marginTop: -topInset,
+    };
 
     useEffect(() => {
         const fetchCarouselData = async () => {
@@ -132,9 +142,7 @@ export default function AppleTVCarousel({
         if (autoPlay && data.length > 1) {
             autoPlayRef.current = setInterval(() => {
                 setActiveIndex((prevIndex) => {
-                    const nextIndex = (prevIndex + 1) % data.length;
-                    flatListRef.current?.scrollToIndex({ index: nextIndex, animated: true });
-                    return nextIndex;
+                    return (prevIndex + 1) % data.length;
                 });
             }, autoPlayInterval);
         }
@@ -143,11 +151,9 @@ export default function AppleTVCarousel({
         };
     }, [autoPlay, autoPlayInterval, data.length]);
 
-    const handleScroll = useCallback((event: any) => {
-        const scrollPosition = event.nativeEvent.contentOffset.x;
-        const index = Math.round(scrollPosition / responsiveDims.itemWidth);
+    const handleIndexChange = useCallback((index: number) => {
         if (index !== activeIndex && index >= 0 && index < data.length) setActiveIndex(index);
-    }, [activeIndex, data.length, responsiveDims.itemWidth]);
+    }, [activeIndex, data.length]);
 
     const handleItemPress = useCallback((item: CarouselItem) => {
         if (autoPlayRef.current) { clearInterval(autoPlayRef.current); autoPlayRef.current = null; }
@@ -155,29 +161,74 @@ export default function AppleTVCarousel({
     }, [onItemPress]);
 
     const scrollToIndex = useCallback((index: number) => {
-        if (flatListRef.current && index >= 0 && index < data.length) {
-            flatListRef.current.scrollToIndex({ index, animated: true, viewPosition: 0 });
+        if (index >= 0 && index < data.length) {
             setActiveIndex(index);
             if (autoPlayRef.current) { clearInterval(autoPlayRef.current); autoPlayRef.current = null; }
         }
     }, [data.length]);
 
-    const renderCarouselItem = useCallback(({ item, index }: { item: CarouselItem; index: number }) => {
+    const renderCarouselItem = useCallback((item: CarouselItem, index: number) => {
         const dims = responsiveDims;
         return (
-            <View style={[styles.carouselItem, { width: dims.itemWidth, height: dims.carouselHeight }]}>
-                <TouchableOpacity style={styles.carouselTouchable} onPress={() => handleItemPress(item)} activeOpacity={0.9}>
-                    <ImageBackground
-                        key={`${item.id}-${index}`}
-                        source={{ uri: item.backdropUrl || item.posterUrl }}
-                        style={styles.backdropImage}
-                        resizeMode="cover"
-                    >
+            <View style={[styles.carouselItem, { width: dims.itemWidth, height: dims.carouselHeight + topInset }]}>
+                <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Open ${item.title}`}
+                    style={styles.carouselTouchable}
+                    onTouchStart={(event) => {
+                        touchStartRef.current = {
+                            pageX: event.nativeEvent.pageX,
+                            pageY: event.nativeEvent.pageY,
+                        };
+                        didSwipeRef.current = false;
+                    }}
+                    onTouchMove={(event) => {
+                        const start = touchStartRef.current;
+                        if (!start) return;
+
+                        const { pageX, pageY } = event.nativeEvent;
+                        if (Math.abs(pageX - start.pageX) > 10 || Math.abs(pageY - start.pageY) > 10) {
+                            didSwipeRef.current = true;
+                        }
+                    }}
+                    onPress={() => {
+                        if (!didSwipeRef.current) handleItemPress(item);
+                    }}
+                >
+                    <View style={styles.backdropImage}>
+                        <Animated.Image
+                            key={`${item.id}-${index}`}
+                            source={{ uri: item.backdropUrl || item.posterUrl }}
+                            style={[
+                                StyleSheet.absoluteFill,
+                                {
+                                    opacity: activeIndex === index ? 1 : 0,
+                                    transform: [{ scale: activeIndex === index || reducedMotion ? 1 : 1.04 }],
+                                    transitionProperty: ['opacity', 'transform'],
+                                    transitionDuration: reducedMotion ? '120ms' : '260ms',
+                                    transitionTimingFunction: cubicBezier(0.23, 1, 0.32, 1),
+                                },
+                            ]}
+                            resizeMode="cover"
+                        />
                         <LinearGradient
                             colors={colors.gradientOverlay as any}
                             style={styles.gradient}
                         />
-                        <View style={[styles.contentContainer, { paddingHorizontal: dims.contentPadding, paddingBottom: dims.bottomPadding, flexDirection: 'row' }]}>
+                        <Animated.View
+                            style={[
+                                styles.contentContainer,
+                                {
+                                    paddingHorizontal: dims.contentPadding,
+                                    paddingBottom: dims.bottomPadding,
+                                    flexDirection: 'row',
+                                    opacity: activeIndex === index ? 1 : 0,
+                                    transitionProperty: 'opacity',
+                                    transitionDuration: reducedMotion ? '120ms' : '180ms',
+                                    transitionTimingFunction: cubicBezier(0.23, 1, 0.32, 1),
+                                },
+                            ]}
+                        >
                             <View style={[styles.textContainer, { flex: 1 }]}>
                                 <Text style={[styles.title, { fontSize: dims.titleSize, color: colors.text }]} numberOfLines={1}>
                                     {item.title}
@@ -198,16 +249,20 @@ export default function AppleTVCarousel({
                                     </View>
                                 </View>
                             </View>
-                        </View>
-                    </ImageBackground>
-                </TouchableOpacity>
+                        </Animated.View>
+                    </View>
+                </Pressable>
             </View>
         );
-    }, [colors.gradientOverlay, colors.primaryBorder, colors.primaryMuted, colors.text, colors.textMuted, dimensions.isLandscape, handleItemPress, responsiveDims]);
+    }, [activeIndex, colors.gradientOverlay, colors.primaryBorder, colors.primaryMuted, colors.text, colors.textMuted, dimensions.isLandscape, handleItemPress, reducedMotion, responsiveDims, topInset]);
 
     const renderPaginationDot = useCallback((index: number) => (
-        <TouchableOpacity
+        <Pressable
             key={`dot-${index}`}
+            accessibilityRole="button"
+            accessibilityLabel={`Go to slide ${index + 1}`}
+            accessibilityState={{ selected: activeIndex === index }}
+            hitSlop={8}
             style={[
                 styles.paginationDot,
                 { backgroundColor: colors.primaryMuted },
@@ -217,43 +272,26 @@ export default function AppleTVCarousel({
         />
     ), [activeIndex, colors.primary, colors.primaryMuted, scrollToIndex]);
 
-    const getItemLayout = useCallback((_: ArrayLike<CarouselItem> | null | undefined, index: number) => ({
-        length: responsiveDims.itemWidth,
-        offset: responsiveDims.itemWidth * index,
-        index,
-    }), [responsiveDims.itemWidth]);
-
     if (loading || !data.length) {
         return (
-            <View style={[styles.container, styles.loadingContainer, { height: responsiveDims.carouselHeight, backgroundColor: colors.backgroundOverlay }]}>
+            <View style={[styles.container, styles.loadingContainer, carouselFrameStyle, { backgroundColor: colors.backgroundOverlay }]}>
                 <ActivityIndicator color={colors.primary} />
             </View>
         );
     }
 
     return (
-        <View style={[styles.container, { height: responsiveDims.carouselHeight, backgroundColor: colors.backgroundOverlay }]}>
-            <FlatList
-                ref={flatListRef}
+        <View style={[styles.container, carouselFrameStyle, { backgroundColor: colors.backgroundOverlay }]}>
+            <NativePager
                 data={data}
-                renderItem={renderCarouselItem}
+                renderPage={renderCarouselItem}
                 keyExtractor={(item, index) => `${item.id}-${index}`}
-                horizontal
-                pagingEnabled
-                showsHorizontalScrollIndicator={false}
-                onMomentumScrollEnd={handleScroll}
-                decelerationRate="fast"
-                snapToInterval={responsiveDims.itemWidth}
-                snapToAlignment="start"
-                style={styles.carousel}
-                removeClippedSubviews={false}
-                initialNumToRender={3}
-                maxToRenderPerBatch={3}
-                windowSize={5}
-                getItemLayout={getItemLayout}
+                activeIndex={activeIndex}
+                onIndexChange={handleIndexChange}
+                style={{ width: responsiveDims.screenWidth, height: carouselHeight }}
             />
             {data.length > 1 && (
-                <View style={[styles.paginationContainer, { bottom: dimensions.isLandscape ? 15 : 20, left: dimensions.isLandscape ? 35 : 20 }]}>
+                <View style={styles.paginationContainer}>
                     <BlurView intensity={20} style={styles.paginationBlur}>
                         <View style={styles.paginationDots}>
                             {data.map((_, index) => renderPaginationDot(index))}
@@ -267,10 +305,9 @@ export default function AppleTVCarousel({
 
 const styles = StyleSheet.create({
     container: { position: 'relative' },
-    carousel: { flex: 1 },
     carouselItem: { marginBottom: 10 },
     carouselTouchable: { flex: 1 },
-    backdropImage: { flex: 1, justifyContent: 'flex-end' },
+    backdropImage: { flex: 1, justifyContent: 'flex-end', overflow: 'hidden' },
     gradient: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 },
     contentContainer: { alignItems: 'flex-end', zIndex: 1 },
     textContainer: { justifyContent: 'flex-end', paddingBottom: 10 },
@@ -281,8 +318,8 @@ const styles = StyleSheet.create({
     typeIndicator: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1 },
     typeText: { fontWeight: '600', letterSpacing: 1 },
     loadingContainer: { justifyContent: 'center', alignItems: 'center' },
-    paginationContainer: { position: 'absolute', borderRadius: 20, overflow: 'hidden' },
-    paginationBlur: { paddingHorizontal: 8, paddingVertical: 8 },
+    paginationContainer: { position: 'absolute', zIndex: 2, left: 0, right: 0, bottom: 12, alignItems: 'center' },
+    paginationBlur: { borderRadius: 20, overflow: 'hidden', paddingHorizontal: 8, paddingVertical: 8 },
     paginationDots: { flexDirection: 'row', alignItems: 'center' },
     paginationDot: { width: 8, height: 8, borderRadius: 4, marginHorizontal: 4 },
 });

@@ -5,14 +5,21 @@ import {
   View as DefaultView,
   Platform
 } from 'react-native';
+import type {
+  ActivityIndicatorProps as RNActivityIndicatorProps,
+  TextInputProps as RNTextInputProps,
+  TextProps as RNTextProps,
+  ViewProps as RNViewProps,
+} from 'react-native';
+import type { ComponentProps } from 'react';
 import { StatusBar as DefaultStatusBar } from 'expo-status-bar';
 import { useTheme } from '@/context/ThemeContext';
 
-export type TextProps = DefaultText['props'];
-export type TextInputProps = DefaultTextInput['props'];
-export type ViewProps = DefaultView['props'];
-export type StatusBarProps = React.ComponentProps<typeof DefaultStatusBar>;
-export type ActivityIndicatorProps = DefaultActivityIndicator['props'];
+export type TextProps = RNTextProps;
+export type TextInputProps = RNTextInputProps;
+export type ViewProps = RNViewProps;
+export type StatusBarProps = ComponentProps<typeof DefaultStatusBar>;
+export type ActivityIndicatorProps = RNActivityIndicatorProps;
 
 export function Text(props: TextProps) {
   const { style, ...otherProps } = props;
@@ -39,7 +46,7 @@ export function View(props: ViewProps) {
 }
 
 export function StatusBar(props: StatusBarProps) {
-  return <DefaultStatusBar {...props} style="light" translucent backgroundColor="transparent" />;
+  return <DefaultStatusBar {...props} style="light" />;
 }
 
 export function Card(props: ViewProps) {

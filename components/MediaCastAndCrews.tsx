@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { StyleSheet, ScrollView, Image, Pressable, useWindowDimensions } from "react-native";
+import { StyleSheet, Image, ScrollView, useWindowDimensions } from "react-native";
 import { View, Text } from "./Themed";
 import { useTheme } from '@/context/ThemeContext';
 
@@ -70,14 +70,11 @@ const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={[styles.scrollContent, { paddingRight: containerMargin }]}
-        style={[styles.scrollView, { paddingLeft: containerMargin }]}
+        style={{ height: avatarSize + 60 }}
+        contentContainerStyle={[styles.scrollContent, { paddingHorizontal: containerMargin, gap: spacing }]}
       >
-        {castItems.map((item, index) => (
-          <Pressable
-            key={item.uniqueKey}
-            style={[styles.avatarContainer, { width: avatarSize + 20, marginRight: index === castItems.length - 1 ? 0 : spacing }]}
-          >
+        {castItems.map((item) => (
+          <View key={item.uniqueKey} style={[styles.avatarContainer, { width: avatarSize + 20 }]}>
             <View style={styles.avatarWrapper}>
               {item.hasImage ? (
                 <Image source={{ uri: item.imageUri! }} style={[styles.avatar, { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 }]} />
@@ -92,7 +89,7 @@ const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
               <Text style={[styles.name, { color: colors.text, fontSize: Math.max(13, avatarSize * 0.12) }]} numberOfLines={1} ellipsizeMode="tail">{item.name}</Text>
               <Text style={[styles.character, { color: colors.textMuted, fontSize: Math.max(11, avatarSize * 0.1) }]} numberOfLines={1} ellipsizeMode="tail">{item.displayCharacter}</Text>
             </View>
-          </Pressable>
+          </View>
         ))}
       </ScrollView>
     </View>
@@ -103,8 +100,7 @@ const styles = StyleSheet.create({
   container: { paddingVertical: 15 },
   headerContainer: { marginBottom: 16 },
   sectionTitle: { fontSize: 18, fontWeight: '500', letterSpacing: 0.5 },
-  scrollView: {},
-  scrollContent: {},
+  scrollContent: { flexDirection: 'row' },
   avatarContainer: { alignItems: "center", paddingVertical: 8 },
   avatarWrapper: { position: 'relative', marginBottom: 12 },
   avatar: {},

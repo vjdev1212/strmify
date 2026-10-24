@@ -1,9 +1,8 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import {
-  FlatList,
   Image,
+  ScrollView as RNScrollView,
   StyleSheet,
-  Pressable,
   useWindowDimensions,
   View as RNView,
 } from 'react-native';
@@ -16,6 +15,8 @@ import { isHapticsSupported } from '@/utils/platform';
 import { DefaultPosterImgXml } from '@/utils/Svg';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/context/ThemeContext';
+import { NativeButton } from '@/components/native-ui-controls';
+import PosterArtwork from '@/components/PosterArtwork';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -38,18 +39,17 @@ const PosterItem = React.memo(({
   item,
   posterWidth,
   posterHeight,
+  cardHeight,
   type,
-  spacing,
 }: {
   item: PosterItemData;
   posterWidth: number;
   posterHeight: number;
+  cardHeight: number;
   type: 'movie' | 'series';
-  spacing: number;
 }) => {
   const { colors } = useTheme();
   const [imgError, setImgError] = useState(false);
-  const [isPressed, setIsPressed] = useState(false);
   const [hapticsEnabled, setHapticsEnabled] = useState(false);
   const year = item.year?.split('–')[0] || item.year;
 
@@ -62,41 +62,56 @@ const PosterItem = React.memo(({
     router.push({ pathname: `/${type}/details`, params: { tmdbid: item.tmdbid } });
   }, [hapticsEnabled, item.tmdbid, type]);
 
-  const handlePressIn = useCallback(() => setIsPressed(true), []);
-  const handlePressOut = useCallback(() => setIsPressed(false), []);
-
   return (
-    <Pressable
+    <NativeButton
+      variant="text"
       onPress={handlePress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      style={[styles.posterContainer, { width: posterWidth, marginRight: spacing }, isPressed && styles.posterPressed]}
+      style={{ width: posterWidth, height: cardHeight, flexShrink: 0 }}
+      seedColor={colors.primary}
     >
-      {!imgError ? (
-        <Image
-          source={{ uri: item.poster }}
-          onError={() => setImgError(true)}
-          style={[styles.posterImage, { width: posterWidth, height: posterHeight }]}
-          resizeMode="cover"
-        />
-      ) : (
-        <View style={[styles.posterImage, { width: posterWidth, height: posterHeight, justifyContent: 'center', alignItems: 'center' }]}>
-          <SvgXml xml={DefaultPosterImgXml} />
-        </View>
-      )}
+      <PosterArtwork key={item.poster} style={{ width: posterWidth, height: posterHeight }}>
+        {(onImageLoad) => !imgError ? (
+          <Image
+            source={{ uri: item.poster }}
+            onLoad={onImageLoad}
+            onError={() => setImgError(true)}
+            style={{ width: posterWidth, height: posterHeight }}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={{ width: posterWidth, height: posterHeight, justifyContent: 'center', alignItems: 'center' }}>
+            <SvgXml xml={DefaultPosterImgXml} />
+          </View>
+        )}
+      </PosterArtwork>
       <Text numberOfLines={1} style={[styles.posterTitle, { width: posterWidth, color: colors.text }]}>{item.name}</Text>
       <Text style={[styles.posterYear, { color: colors.textMuted }]}>{year}</Text>
-    </Pressable>
+    </NativeButton>
   );
 });
 
-const SkeletonPoster = React.memo(({ posterWidth, posterHeight, spacing, bgColor }: { posterWidth: number; posterHeight: number; spacing: number; bgColor: string }) => (
-  <RNView style={[styles.posterContainer, { width: posterWidth, marginRight: spacing }]}>
-    <RNView style={[styles.posterImage, { width: posterWidth, height: posterHeight, backgroundColor: bgColor }]} />
+const SkeletonPoster = React.memo(({ posterWidth, posterHeight, cardHeight, bgColor }: {
+  posterWidth: number;
+  posterHeight: number;
+  cardHeight: number;
+  bgColor: string;
+}) => (
+  <RNView style={{ width: posterWidth, height: cardHeight, flexShrink: 0 }}>
+  <PosterArtwork style={{ width: posterWidth, height: posterHeight, backgroundColor: bgColor }} />
   </RNView>
 ));
 
-const PosterList = ({ apiUrl, title, type }: { apiUrl: string; title: string; type: 'movie' | 'series' }) => {
+const PosterList = ({
+  apiUrl,
+  title,
+  type,
+  compact = false,
+}: {
+  apiUrl: string;
+  title: string;
+  type: 'movie' | 'series';
+  compact?: boolean;
+}) => {
   const { colors } = useTheme();
   const { width, height } = useWindowDimensions();
   const shortSide = Math.min(width, height);
@@ -116,7 +131,7 @@ const PosterList = ({ apiUrl, title, type }: { apiUrl: string; title: string; ty
     if (shortSide < 1440) return isPortrait ? 7 : 9;
     return isPortrait ? 7 : 10;
   }, [isPortrait, shortSide]);
-  const spacing = 10;
+  const spacing = 14;
   const containerMargin = 15;
 
   const posterWidth = useMemo(() => {
@@ -126,7 +141,11 @@ const PosterList = ({ apiUrl, title, type }: { apiUrl: string; title: string; ty
   }, [width, postersPerScreen]);
 
   const posterHeight = posterWidth * 1.5;
-  const listContentStyle = useMemo(() => ({ paddingRight: 4 }), []);
+  const posterCardHeight = posterHeight + 58;
+  const listContentStyle = useMemo(
+    () => ({ height: posterCardHeight + 10 }),
+    [posterCardHeight],
+  );
 
   useEffect(() => {
     const fetchData = async () => {
@@ -173,34 +192,31 @@ const PosterList = ({ apiUrl, title, type }: { apiUrl: string; title: string; ty
 
   const handleSeeAllPress = useCallback(async () => {
     if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push({ pathname: `/${type}/list`, params: { apiUrl } });
-  }, [apiUrl, hapticsEnabled, type]);
-
-  const renderSkeletonPoster = useCallback(() => (
-    <SkeletonPoster posterWidth={posterWidth} posterHeight={posterHeight} spacing={spacing} bgColor={colors.backgroundOverlay} />
-  ), [colors.backgroundOverlay, posterHeight, posterWidth]);
-
-  const renderPosterItem = useCallback(({ item }: { item: PosterItemData }) => (
-    <PosterItem item={item} posterWidth={posterWidth} posterHeight={posterHeight} type={type} spacing={spacing} />
-  ), [posterHeight, posterWidth, type]);
-
-  const keyExtractor = useCallback((item: PosterItemData, index: number) => `${item.tmdbid}-${index}`, []);
-  const skeletonKeyExtractor = useCallback((_: number, index: number) => `skeleton-${index}`, []);
+    router.push({ pathname: `/${type}/list`, params: { apiUrl, title } });
+  }, [apiUrl, hapticsEnabled, title, type]);
 
   if (loading) {
     return (
-      <RNView style={styles.container}>
-        <RNView style={styles.header}>
+      <RNView style={[styles.container, compact && styles.compactContainer]}>
+        <RNView style={[styles.header, compact && styles.compactHeader]}>
           <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
         </RNView>
-        <FlatList
-          data={SKELETON_DATA}
+        <RNScrollView
           horizontal
-          renderItem={renderSkeletonPoster}
-          keyExtractor={skeletonKeyExtractor}
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={listContentStyle}
-        />
+          style={listContentStyle}
+          contentContainerStyle={{ flexDirection: 'row', gap: spacing, paddingRight: 4 }}
+        >
+          {SKELETON_DATA.map((item, index) => (
+            <SkeletonPoster
+              key={`skeleton-${index}`}
+              posterWidth={posterWidth}
+              posterHeight={posterHeight}
+              cardHeight={posterCardHeight}
+              bgColor={colors.backgroundOverlay}
+            />
+          ))}
+        </RNScrollView>
       </RNView>
     );
   }
@@ -208,41 +224,46 @@ const PosterList = ({ apiUrl, title, type }: { apiUrl: string; title: string; ty
   if (!data || data.length === 0) return null;
 
   return (
-    <RNView style={styles.container}>
-      <RNView style={styles.header}>
+    <RNView style={[styles.container, compact && styles.compactContainer]}>
+      <RNView style={[styles.header, compact && styles.compactHeader]}>
         <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
-        <Pressable onPress={handleSeeAllPress} style={styles.seeAllButton}>
+        <NativeButton variant="text" onPress={handleSeeAllPress} style={styles.seeAllButton} seedColor={colors.primary}>
           <Text style={[styles.seeAllText, { color: colors.textMuted }]}>See All</Text>
           <Ionicons name="chevron-forward" size={16} color={colors.textMuted} style={styles.chevronIcon} />
-        </Pressable>
+        </NativeButton>
       </RNView>
-      <FlatList
-        data={data}
+      <RNScrollView
         horizontal
-        renderItem={renderPosterItem}
-        keyExtractor={keyExtractor}
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={listContentStyle}
-        initialNumToRender={postersPerScreen}
-        maxToRenderPerBatch={postersPerScreen}
-        windowSize={3}
-      />
+        style={listContentStyle}
+        contentContainerStyle={{ flexDirection: 'row', gap: spacing, paddingRight: 4 }}
+      >
+        {data.map((item, index) => (
+          <PosterItem
+            key={`${item.tmdbid}-${index}`}
+            item={item}
+            posterWidth={posterWidth}
+            posterHeight={posterHeight}
+            cardHeight={posterCardHeight}
+            type={type}
+          />
+        ))}
+      </RNScrollView>
     </RNView>
   );
 };
 
 const styles = StyleSheet.create({
   container: { paddingTop: 10, marginBottom: 20, marginHorizontal: 15 },
+  compactContainer: { paddingTop: 4, marginBottom: 4 },
   header: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 5, alignItems: 'center', marginBottom: 16 },
+  compactHeader: { marginBottom: 8 },
   title: { fontSize: 18, fontWeight: '500', letterSpacing: 0.2 },
   seeAllButton: { flexDirection: 'row', alignItems: 'center', paddingVertical: 4, paddingHorizontal: 4 },
   seeAllText: { fontSize: 15, fontWeight: '500', letterSpacing: -0.1 },
   chevronIcon: { marginLeft: 2 },
-  posterContainer: { marginBottom: 10 },
-  posterPressed: { opacity: 0.7 },
-  posterImage: { borderRadius: 6, overflow: 'hidden' },
-  posterTitle: { marginTop: 10, fontSize: 14, fontWeight: '500', letterSpacing: -0.2, lineHeight: 20 },
-  posterYear: { marginTop: 4, fontSize: 12, fontWeight: '500', letterSpacing: -0.1 },
+  posterTitle: { height: 20, marginTop: 10, fontSize: 14, fontWeight: '500', letterSpacing: -0.2, lineHeight: 20 },
+  posterYear: { height: 16, marginTop: 4, fontSize: 12, fontWeight: '500', letterSpacing: -0.1, lineHeight: 16 },
 });
 
 export default PosterList;

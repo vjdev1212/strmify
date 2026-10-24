@@ -1,13 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { Text } from './Themed';
+import { NativeButton } from '@/components/native-ui-controls';
 
 const PlayButton = ({ onPress }: { onPress: () => void }) => (
-  <Pressable style={styles.button} onPress={onPress}>
+  <NativeButton variant="filled" style={styles.button} onPress={onPress} seedColor="#ffffff">
     <Ionicons name="play-outline" size={24} color="#000000" style={styles.icon} />
     <Text style={styles.text}>Watch Now</Text>
-  </Pressable>
+  </NativeButton>
 );
 
 const styles = StyleSheet.create({

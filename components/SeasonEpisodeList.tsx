@@ -4,7 +4,8 @@ import { Text, View } from './Themed';
 import { formatDate } from '@/utils/Date';
 import { SvgXml } from 'react-native-svg';
 import { DefaultEpisodeThumbnailImgXml } from '@/utils/Svg';
-import { MenuView, MenuComponentRef } from '@react-native-menu/menu';
+import { MenuView } from '@expo/ui/community/menu';
+import type { MenuComponentRef } from '@expo/ui/community/menu';
 import CustomContextMenu from './ContextMenu';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/context/ThemeContext';
@@ -60,10 +61,10 @@ const EpisodeItem: React.FC<EpisodeItemProps> = React.memo(({ item, onEpisodeSel
   };
 
   return (
-    <Animated.View style={[styles.episodeContainer, { width: cardWidth, transform: [{ scale: scaleAnim }] }]}>
+    <Animated.View style={{ width: cardWidth, transform: [{ scale: scaleAnim }] }}>
       <Pressable onPress={handlePress} onPressIn={handlePressIn} onPressOut={handlePressOut} style={styles.episodePressable}>
         <View style={styles.episodeCard}>
-          <View style={styles.thumbnailContainer}>{renderThumbnail()}</View>
+          <View style={[styles.thumbnailContainer, { backgroundColor: colors.background }]}>{renderThumbnail()}</View>
           <View style={styles.episodeInfo}>
             <Text style={[styles.episodeTitle, { color: colors.text }]} numberOfLines={2}>{computedValues.episodeTitle}</Text>
             <Text style={[styles.episodeAired, { color: colors.textMuted }]}>{computedValues.episodeAired}</Text>
@@ -151,7 +152,7 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
             <CustomContextMenu visible={webMenuVisible} onClose={() => setWebMenuVisible(false)} items={webMenuItems} selectedItem={selectedSeason} onItemSelect={handleWebContextMenuItemSelect} anchorPosition={anchorPosition} />
           </>
         ) : (
-          <MenuView ref={menuRef} onPressAction={handleMenuPress} actions={menuActions} shouldOpenOnLongPress={false} themeVariant='dark'>
+          <MenuView ref={menuRef} onPressAction={handleMenuPress} actions={menuActions} shouldOpenOnLongPress={false} colorScheme="dark">
             <TouchableOpacity style={styles.seasonDropdownButton}>
               <Text style={[styles.seasonDropdownText, { color: colors.text }]}>{getCurrentSeasonText()}</Text>
               <Ionicons name='chevron-expand' size={24} color={colors.text} />
@@ -159,25 +160,33 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
           </MenuView>
         )}
       </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.episodeScrollContent} style={styles.episodeScrollView}>
-        {groupedEpisodes[selectedSeason]?.length > 0
-          ? groupedEpisodes[selectedSeason].map((ep, i) => renderEpisodeItem(ep, i))
-          : <View style={styles.noEpisodesContainer}><Text style={[styles.noEpisodesText, { color: colors.textMuted }]}>No episodes available for {getCurrentSeasonText()}</Text></View>
-        }
-      </ScrollView>
+      {groupedEpisodes[selectedSeason]?.length > 0 ? (
+        <ScrollView
+          horizontal
+          nestedScrollEnabled
+          showsHorizontalScrollIndicator={false}
+          style={styles.episodeScrollView}
+          contentContainerStyle={styles.episodeScrollContent}
+        >
+          {groupedEpisodes[selectedSeason].map(renderEpisodeItem)}
+        </ScrollView>
+      ) : (
+        <View style={styles.noEpisodesContainer}>
+          <Text style={[styles.noEpisodesText, { color: colors.textMuted }]}>No episodes available for {getCurrentSeasonText()}</Text>
+        </View>
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: 'transparent', marginBottom: 20 },
+  container: { backgroundColor: 'transparent', marginBottom: 20 },
   seasonListContainer: { paddingVertical: 8, paddingHorizontal: 20, backgroundColor: 'transparent' },
   seasonDropdownButton: { paddingTop: 10, paddingHorizontal: 5, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-evenly', width: 150, maxWidth: 130 },
   seasonDropdownText: { fontSize: 20, fontWeight: '500', letterSpacing: 0.3, flex: 1 },
   seasonDropdownArrow: { fontSize: 18, fontWeight: '600' },
-  episodeScrollView: { flex: 1 },
+  episodeScrollView: { width: '100%' },
   episodeScrollContent: { paddingHorizontal: 20, paddingVertical: 12, gap: CARD_GAP },
-  episodeContainer: { marginRight: CARD_GAP },
   episodePressable: { borderRadius: 12, overflow: 'hidden' },
   episodeCard: { backgroundColor: 'transparent', padding: 0 },
   thumbnailContainer: { width: '100%', position: 'relative', borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 6, elevation: 3 },

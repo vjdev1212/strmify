@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
+import type { ScrollViewInstance } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, StatusBar, Text, View } from '../../components/Themed';
 import MediaContentDescription from '@/components/MediaContentDescription';
@@ -28,7 +29,7 @@ const SeriesDetails = () => {
   const [trailerKey, setTrailerKey] = useState<string | null>(null);
   const { width, height } = useWindowDimensions();
   const isPortrait = height > width;
-  const ref = useRef<ScrollView | null>(null);
+  const ref = useRef<ScrollViewInstance | null>(null);
   const [season, setSeason] = useState<number>(1);
   const [episode, setEpisode] = useState<number>(1);
   const { colors } = useTheme();
@@ -216,7 +217,12 @@ const SeriesDetails = () => {
   }
 
   return (
-    <ScrollView showsVerticalScrollIndicator={false} style={styles.container} ref={ref}>
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      removeClippedSubviews={false}
+      style={styles.container}
+      ref={ref}
+    >
       <StatusBar />
       <View style={[styles.rootContainer, {
         flexDirection: isPortrait ? 'column' : 'row-reverse',

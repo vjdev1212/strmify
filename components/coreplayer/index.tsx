@@ -1,14 +1,15 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, Animated, ActivityIndicator, Image, Platform, PanResponder, Dimensions } from 'react-native';
+import { View, Text, Animated, ActivityIndicator, Image, Platform, PanResponder, Dimensions } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import Slider from '@react-native-assets/slider';
+import { NativeButton } from '@/components/native-ui-controls';
+import NativeProgressSlider from './native-progress-slider';
 import { showAlert } from '@/utils/platform';
 import { parseSubtitleFile } from './subtitle';
 import { styles } from './styles';
 import { formatTime } from './utils';
 import { MediaPlayerProps } from './models';
 import { extractAudioCodec, extractHDR, extractQuality, extractSize, extractSource, extractVideoCodec } from '@/utils/StreamItem';
-import { MenuAction } from '@react-native-menu/menu';
+import type { MenuAction } from '@expo/ui/community/menu';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { ResizeMode } from 'react-native-video';
@@ -343,24 +344,21 @@ export const buildSubtitleActions = (
 
     const offAction: MenuAction = {
         id: 'subtitle-track-off',
-        title: 'Off',
-        subtitle: 'No subtitles',
+        title: 'Off · No subtitles',
         state: noneSelected ? ('on' as const) : undefined,
         titleColor: noneSelected ? '#007AFF' : '#FFFFFF',
     };
 
     const embeddedActions: MenuAction[] = availableEmbeddedTracks.map((track, i) => ({
         id: `subtitle-track-embedded-${i}`,
-        title: track.label || track.name || `Track ${i + 1}`,
-        subtitle: track.language ? track.language.toUpperCase() : 'Embedded',
+        title: `${track.label || track.name || `Track ${i + 1}`} · ${track.language ? track.language.toUpperCase() : 'Embedded'}`,
         state: selectedEmbeddedIndex === i ? ('on' as const) : undefined,
         titleColor: selectedEmbeddedIndex === i ? '#007AFF' : '#FFFFFF',
     }));
 
     const customActions: MenuAction[] = subtitles.map((sub, i) => ({
         id: `subtitle-track-custom-${i}`,
-        title: sub.label,
-        subtitle: sub.language ? `OpenSubtitles · ${sub.language.toUpperCase()}` : 'OpenSubtitles',
+        title: `${sub.label} · ${sub.language ? `OpenSubtitles · ${sub.language.toUpperCase()}` : 'OpenSubtitles'}`,
         state: selectedCustomIndex === i && selectedEmbeddedIndex === -1 ? ('on' as const) : undefined,
         titleColor: selectedCustomIndex === i && selectedEmbeddedIndex === -1 ? '#007AFF' : '#FFFFFF',
     }));
@@ -415,8 +413,7 @@ export const buildSubtitleActionsLegacy = (
     const customActions: MenuAction[] = useCustomSubtitles
         ? subtitles.map((sub, i) => ({
             id: `subtitle-track-${i}`,
-            title: sub.label,
-            subtitle: sub.language ? `OpenSubtitles · ${sub.language.toUpperCase()}` : 'OpenSubtitles',
+            title: `${sub.label} · ${sub.language ? `OpenSubtitles · ${sub.language.toUpperCase()}` : 'OpenSubtitles'}`,
             state: selectedIndex === i && selectedTextTrackId === -1 ? ('on' as const) : undefined,
             titleColor: selectedIndex === i && selectedTextTrackId === -1 ? '#007AFF' : '#FFFFFF',
         }))
@@ -426,8 +423,7 @@ export const buildSubtitleActionsLegacy = (
         const offsetIndex = subtitles.length + i;
         return {
             id: `subtitle-track-${offsetIndex}`,
-            title: track.label || track.name || `Track ${i + 1}`,
-            subtitle: track.language ? track.language.toUpperCase() : undefined,
+            title: `${track.label || track.name || `Track ${i + 1}`}${track.language ? ` · ${track.language.toUpperCase()}` : ''}`,
             state: selectedTextTrackId === i ? ('on' as const) : undefined,
             titleColor: selectedTextTrackId === i ? '#007AFF' : '#FFFFFF',
         };
@@ -487,8 +483,7 @@ export const buildStreamActions = (streams: Stream[], currentIndex: number): Men
 
         return {
             id: `stream-${index}`,
-            title: displayName,
-            subtitle: name,
+            title: `${displayName} · ${name}`,
             titleColor: '#ffffff',
             image: Platform.select({ ios: 'play.circle', default: undefined }),
             imageColor: '#ffffff',
@@ -589,11 +584,11 @@ export const CenterControls: React.FC<{
 
     return (
         <View style={styles.centerControls}>
-            <TouchableOpacity style={[styles.skipButton]} onPress={onSkipBackward}>
+            <NativeButton variant="text" style={styles.skipButton} onPress={onSkipBackward} accessibilityLabel="Skip backward" seedColor="#ffffff">
                 <GlassView glassEffectStyle="clear" style={styles.glassIcon}>
                     <MaterialIcons name="replay-10" size={36} color={"#ffffff"} />
                 </GlassView>
-            </TouchableOpacity>
+            </NativeButton>
 
             {isBuffering ? (
                 <GlassView glassEffectStyle="clear" style={styles.glassIcon}>
@@ -603,17 +598,17 @@ export const CenterControls: React.FC<{
                 </GlassView>
             ) : (
                 <GlassView glassEffectStyle="clear" style={styles.glassIcon}>
-                    <TouchableOpacity style={styles.playButton} onPress={onPlayPause}>
+                    <NativeButton variant="text" style={styles.playButton} onPress={onPlayPause} accessibilityLabel={isPlaying ? 'Pause' : 'Play'} seedColor="#ffffff">
                         <Ionicons name={isPlaying ? "pause" : "play"} size={60} color="#ffffff" />
-                    </TouchableOpacity>
+                    </NativeButton>
                 </GlassView>
             )}
 
-            <TouchableOpacity style={[styles.skipButton]} onPress={onSkipForward}>
+            <NativeButton variant="text" style={styles.skipButton} onPress={onSkipForward} accessibilityLabel="Skip forward" seedColor="#ffffff">
                 <GlassView glassEffectStyle="clear" style={styles.glassIcon}>
                     <MaterialIcons name="forward-30" size={36} color={"#ffffff"} />
                 </GlassView>
-            </TouchableOpacity>
+            </NativeButton>
         </View>
     );
 };
@@ -636,20 +631,12 @@ export const ProgressBar: React.FC<{
                 <GlassView glassEffectStyle="clear" style={styles.glassContainer}>
                     <View style={styles.sliderRow}>
                         <Text style={styles.timeText}>{formatTime(currentTime)}</Text>
-                        <Slider
-                            style={styles.progressSlider}
-                            minimumValue={0}
-                            maximumValue={1}
+                        <NativeProgressSlider
                             value={sliderValue}
+                            isReady={isReady}
                             onValueChange={onValueChange}
                             onSlidingStart={onSlidingStart}
                             onSlidingComplete={onSlidingComplete}
-                            minimumTrackTintColor={colors.primary}
-                            maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
-                            thumbTintColor="#fff"
-                            thumbSize={20}
-                            trackHeight={5}
-                            enabled={isReady}
                         />
                         <Text style={styles.timeText}>{formatTime(duration)}</Text>
                     </View>
