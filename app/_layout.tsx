@@ -61,7 +61,7 @@ function RootLayoutNav() {
     };
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={[styles.container, { backgroundColor: systemDarkBackground }]}>
             <BlurGradientBackground />
             <Stack
                 screenOptions={{

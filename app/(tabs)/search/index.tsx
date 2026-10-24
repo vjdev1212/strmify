@@ -6,6 +6,7 @@ import { Stack } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Keyboard, Platform, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { systemDarkBackground } from '@/constants/theme';
 
 const TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 const SEARCH_ACCENT = '#0A84FF';
@@ -145,7 +146,10 @@ const SearchScreen = () => {
   const showFilters = Boolean(trimmedQuery) && !loading && !error && !keyboardVisible;
 
   return (
-    <SafeAreaView edges={['left', 'right', 'bottom']} style={styles.container}>
+    <SafeAreaView
+      edges={['left', 'right', 'bottom']}
+      style={[styles.container, { backgroundColor: systemDarkBackground }]}
+    >
       <StatusBar />
       <Stack.Screen
         options={{
@@ -153,7 +157,7 @@ const SearchScreen = () => {
           headerBackVisible: false,
           headerTransparent: false,
           headerShadowVisible: false,
-          headerStyle: { backgroundColor: '#000000' },
+          headerStyle: { backgroundColor: systemDarkBackground },
           headerUserInterfaceStyle: 'dark',
           headerTintColor: colors.text,
           headerTitle: 'Search',
@@ -279,7 +283,6 @@ const SearchScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000000',
   },
   webSearchHeader: {
     paddingHorizontal: 18,

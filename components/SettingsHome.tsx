@@ -8,6 +8,7 @@ import { Text, View } from '@/components/Themed';
 import { SettingsPage, SettingsRow, SettingsSection } from '@/components/NativeSettings';
 import { useTheme } from '@/context/ThemeContext';
 import { isHapticsSupported } from '@/utils/platform';
+import { systemDarkBackground } from '@/constants/theme';
 
 type SettingsRoute =
   | '/settings/addons'
@@ -66,7 +67,7 @@ export default function SettingsHome() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: systemDarkBackground }} edges={['top']}>
       <View style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 10 }}>
         <Text style={{ color: colors.text, fontSize: 32, fontWeight: '700', letterSpacing: 0.5 }}>
           Settings

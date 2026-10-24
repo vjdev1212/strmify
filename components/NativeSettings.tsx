@@ -1,8 +1,9 @@
 import type { ReactElement, ReactNode } from 'react';
 import { useState } from 'react';
-import { Platform, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/Themed';
 import { useTheme } from '@/context/ThemeContext';
+import { systemDarkBackground } from '@/constants/theme';
 
 interface SettingsPageProps {
   children: ReactNode;
@@ -40,7 +41,7 @@ export function SettingsPage({ children, refreshControl, onRefresh, hideScrollIn
         />
       ) : undefined)}
       style={[styles.page, {
-        backgroundColor: Platform.select({ ios: '#000000', default: colors.background }),
+        backgroundColor: systemDarkBackground,
       }]}
       contentContainerStyle={styles.pageContent}
     >

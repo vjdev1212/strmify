@@ -17,6 +17,7 @@ import {
 import { Text as AppText, View } from '@/components/Themed';
 import { useTheme } from '@/context/ThemeContext';
 import { isHapticsSupported } from '@/utils/platform';
+import { systemDarkBackground } from '@/constants/theme';
 
 type SettingsRoute =
   | '/settings/addons'
@@ -80,7 +81,7 @@ export default function SettingsHome() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: systemDarkBackground }} edges={['top']}>
       <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12, backgroundColor: 'transparent' }}>
         <AppText style={{ color: colors.text, fontSize: 30, fontWeight: '700', letterSpacing: -0.3 }}>
           Settings
@@ -90,7 +91,7 @@ export default function SettingsHome() {
         <List modifiers={[
           listStyle('insetGrouped'),
           scrollContentBackground('hidden'),
-          background(colors.background),
+          background(systemDarkBackground),
           scrollIndicators('never', 'vertical'),
         ]}>
           {settingsSections.map((section) => (
