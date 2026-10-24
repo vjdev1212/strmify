@@ -2,13 +2,16 @@ workflows:
   strmify-ios-build:
     name: Strmify iOS Build
     environment:
-      node: 22
+      node: 18
       xcode: latest
       groups:
         - EXPO
     scripts:
       - name: Install dependencies
-        script: npm ci
+        script: npm install --force
+      
+      - name: Install Expo CLI
+        script: npm install -g @expo/cli@latest --force
       
       - name: Check Expo CLI version
         script: npx expo --version
@@ -110,13 +113,16 @@ workflows:
   strmify-ios-dev:
     name: Strmify iOS Development Build
     environment:
-      node: 22
+      node: 18
       xcode: latest
       groups:
         - EXPO
     scripts:
       - name: Install dependencies
-        script: npm ci
+        script: npm install --force
+
+      - name: Install Expo CLI
+        script: npm install -g @expo/cli@latest --force
 
       - name: Extract app version from app.json
         script: |
@@ -200,14 +206,17 @@ workflows:
   strmify-android-build:
     name: Strmify Android Build
     environment:
-      node: 22
+      node: 18
       java: latest
       groups:
         - EXPO
         - ANDROID_KEYSTORE
     scripts:
       - name: Install dependencies
-        script: npm ci
+        script: npm install --force
+      
+      - name: Install Expo CLI
+        script: npm install -g @expo/cli@latest --force
 
       - name: Extract app version from app.json
         script: |
@@ -301,13 +310,16 @@ workflows:
   strmify-android-dev:
     name: Strmify Android Development Build
     environment:
-      node: 22
+      node: 18
       java: latest
       groups:
         - EXPO
     scripts:
       - name: Install dependencies
-        script: npm ci
+        script: npm install --force
+      
+      - name: Install Expo CLI
+        script: npm install -g @expo/cli@latest --force
 
       - name: Extract app version from app.json
         script: |
