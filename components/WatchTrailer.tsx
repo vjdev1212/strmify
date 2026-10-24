@@ -51,7 +51,7 @@ const WatchTrailerButton: React.FC<WatchTrailerButtonProps> = ({
             seedColor={colors.primary}
         >
             <Ionicons
-                name="film-outline"
+                name="logo-youtube"
                 size={size}
                 color={trailerKey ? colors.text : colors.textDim}
             />

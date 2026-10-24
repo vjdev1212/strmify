@@ -1,16 +1,18 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { StyleSheet, View as RNView } from 'react-native';
-import { ActivityIndicator, Card, StatusBar, Text, View } from '@/components/Themed';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Pressable, ScrollView, StyleSheet, View as RNView, useWindowDimensions } from 'react-native';
+import type { ScrollViewInstance } from 'react-native';
+import { Share } from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import { MenuView } from '@expo/ui/community/menu';
+import * as Clipboard from 'expo-clipboard';
+import { ActivityIndicator, StatusBar, Text, View } from '@/components/Themed';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { showAlert } from '@/utils/platform';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Feather } from '@expo/vector-icons';
-import BottomSpacing from '@/components/BottomSpacing';
 import { extractQuality, extractSize, getStreamType } from '@/utils/StreamItem';
 import { StorageKeys, storageService } from '@/utils/StorageService';
 import { useTheme } from '@/context/ThemeContext';
-import NativeStackList from '@/components/native-stack-list';
-import { NativeButton } from '@/components/native-ui-controls';
+import { systemDarkBackground } from '@/constants/theme';
 
 interface Stream { name: string; title?: string; url?: string; embed?: string; infoHash?: string; magnet?: string; magnetLink?: string; description?: string; }
 interface Addon { name: string; url?: string; streamBaseUrl?: string; types?: string[]; }
@@ -19,74 +21,147 @@ type ThemeColors = ReturnType<typeof useTheme>['colors'];
 
 const ADDONS_KEY = StorageKeys.ADDONS_KEY;
 
+const getStreamHash = (stream: Stream): string | undefined => {
+    const candidates = [stream.infoHash, stream.magnet, stream.magnetLink, stream.url];
+    for (const candidate of candidates) {
+        if (!candidate) continue;
+        const directHash = candidate.trim();
+        const magnetHash = directHash.match(/xt=urn:btih:([a-f\d]{40}|[a-z\d]{32})/i)?.[1];
+        if (magnetHash) return magnetHash;
+        if (/^[a-f\d]{40}$/i.test(directHash) || /^[a-z\d]{32}$/i.test(directHash)) return directHash;
+    }
+    return undefined;
+};
+
+const getStreamUrl = (stream: Stream): string | undefined => stream.url || stream.embed;
+
 const AddonItem = React.memo(({
     item,
-    type,
-    selectedAddonName,
-    colors,
+    isSelected,
     onPress,
 }: {
     item: Addon;
-    type: string;
-    selectedAddonName?: string;
-    colors: ThemeColors;
+    isSelected: boolean;
     onPress: (item: Addon) => void;
-}) => {
-    if (!item.types?.includes(type)) return null;
-    const isSelected = item.name === selectedAddonName;
-    return (
-        <NativeButton
-            variant="text"
-            style={[styles.addonItem, { backgroundColor: isSelected ? '#ffffff' : colors.primarySurface, borderColor: isSelected ? '#ffffff' : colors.primaryBorder }]}
-            onPress={() => onPress(item)}
-            seedColor={colors.primary}
-        >
-            <Text style={[styles.addonName, { color: isSelected ? '#000000' : colors.textMuted }]} numberOfLines={1}>{item.name}</Text>
-        </NativeButton>
-    );
-});
+}) => (
+    <Pressable
+        onPress={() => onPress(item)}
+        accessibilityRole="button"
+        accessibilityState={{ selected: isSelected }}
+        style={[styles.addonItem, isSelected && styles.selectedAddonItem]}
+    >
+        <Text style={[
+            styles.addonName,
+            { color: isSelected ? '#FFFFFF' : '#D0D0D0', fontWeight: isSelected ? '600' : '400' },
+        ]} numberOfLines={1}>
+            {item.name}
+        </Text>
+    </Pressable>
+));
 
 const StreamItem = React.memo(({
     item,
     index,
     colors,
-    onPress,
+    cardWidth,
+    isLast,
+    onOpen,
+    onCopy,
+    onShare,
 }: {
     item: Stream;
     index: number;
     colors: ThemeColors;
-    onPress: (stream: Stream, index: number) => void;
+    cardWidth: number;
+    isLast: boolean;
+    onOpen: () => void;
+    onCopy: (stream: Stream) => void;
+    onShare: (stream: Stream) => void;
 }) => {
     const { name, title, description } = item;
     const quality = extractQuality(name, title);
     const size = extractSize(description || title || '');
     const streamType = getStreamType(item);
+    const hash = getStreamHash(item);
+    const url = getStreamUrl(item);
+    const isUrlOnly = Boolean(url && !hash && !item.magnet && !item.magnetLink);
+    const actions = [
+        { id: 'open', title: 'Open', image: 'play.fill' as const },
+        ...(hash || url ? [{ id: 'copy', title: hash ? 'Copy Hash' : 'Copy Url', image: 'doc.on.doc' as const }] : []),
+        ...(isUrlOnly ? [{ id: 'share', title: 'Share', image: 'square.and.arrow.up' as const }] : []),
+    ];
     return (
-        <NativeButton variant="text" onPress={() => onPress(item, index)} style={styles.streamContainer} seedColor={colors.primary}>
-            <Card style={[styles.streamItem, { borderColor: colors.primaryBorder, backgroundColor: colors.primaryCard }]}>
+        <RNView
+            style={[
+                styles.streamItemContainer,
+                { width: cardWidth },
+            ]}
+        >
+            <Pressable
+                onPress={onOpen}
+                accessibilityRole="button"
+                accessibilityLabel={`Open ${name}`}
+                style={styles.streamItem}
+            >
                 <RNView style={styles.streamHeader}>
                     <Text style={[styles.streamName, { color: colors.text }]} numberOfLines={2}>{name}</Text>
-                    {quality && <RNView style={[styles.qualityBadge, { backgroundColor: colors.primaryMuted, borderColor: colors.primaryBorder }]}><Text style={[styles.qualityText, { color: colors.text }]}>{quality}</Text></RNView>}
+                    {quality ? (
+                        <RNView style={[styles.qualityBadge, { backgroundColor: colors.primaryMuted, borderColor: colors.primaryBorder }]}>
+                            <Text style={[styles.qualityText, { color: colors.text }]}>{quality}</Text>
+                        </RNView>
+                    ) : null}
                 </RNView>
-                {(title || description) && <Text style={[styles.streamDescription, { color: colors.textMuted }]}>{title || description}</Text>}
+                {(title || description) ? (
+                    <Text style={[styles.streamDescription, { color: colors.textMuted }]}>{title || description}</Text>
+                ) : null}
                 <RNView style={styles.streamFooter}>
-                    {size && <RNView style={[styles.sizeBadge, { backgroundColor: colors.primarySurface }]}><Text style={[styles.streamSize, { color: colors.textMuted }]}>{size}</Text></RNView>}
+                    {size ? (
+                        <RNView style={[styles.sizeBadge, { backgroundColor: colors.primarySurface }]}>
+                            <Text style={[styles.streamSize, { color: colors.textMuted }]}>{size}</Text>
+                        </RNView>
+                    ) : null}
                     <Text style={[styles.streamType, { color: colors.textDim }]}>{streamType}</Text>
                 </RNView>
-            </Card>
-        </NativeButton>
+                {!isLast ? <RNView style={[styles.streamDivider, { backgroundColor: colors.border }]} /> : null}
+            </Pressable>
+            <MenuView
+                title="Stream Actions"
+                actions={actions}
+                onPressAction={({ nativeEvent }) => {
+                    if (nativeEvent.event === 'open') onOpen();
+                    if (nativeEvent.event === 'copy') onCopy(item);
+                    if (nativeEvent.event === 'share') onShare(item);
+                }}
+                style={styles.actionMenu}
+            >
+                <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Stream actions"
+                    hitSlop={8}
+                    style={styles.actionButton}
+                    onPress={(event) => event.stopPropagation()}
+                >
+                    <Feather name="more-vertical" size={20} color={colors.textMuted} />
+                </Pressable>
+            </MenuView>
+        </RNView>
     );
 });
 
 const StreamListScreen = () => {
     const { colors } = useTheme();
-    const { imdbid, type, name, title, season, episode } = useLocalSearchParams<{ imdbid: string; type: string; name: string; title: string; season?: string; episode?: string; }>();
+    const { width: screenWidth } = useWindowDimensions();
+    const [pagerWidth, setPagerWidth] = useState(screenWidth);
+    const { imdbid, type, title, season, episode } = useLocalSearchParams<{ imdbid: string; type: string; name: string; title: string; season?: string; episode?: string; }>();
     const [addons, setAddons] = useState<Addon[]>([]);
     const [selectedAddon, setSelectedAddon] = useState<Addon | null>(null);
+    const [selectedAddonIndex, setSelectedAddonIndex] = useState(0);
     const [streams, setStreams] = useState<Stream[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const abortControllerRef = useRef<AbortController | null>(null);
     const currentAddonRef = useRef<string>('');
+    const selectedAddonIndexRef = useRef(0);
+    const streamsPagerRef = useRef<ScrollViewInstance>(null);
     const router = useRouter();
 
     const fetchAddons = useCallback(async (): Promise<void> => {
@@ -101,6 +176,8 @@ const StreamListScreen = () => {
             setAddons(filteredAddons);
             if (filteredAddons.length > 0) {
                 const firstAddon = filteredAddons[0];
+                selectedAddonIndexRef.current = 0;
+                setSelectedAddonIndex(0);
                 setSelectedAddon(firstAddon);
                 currentAddonRef.current = firstAddon.name;
                 await fetchStreams(firstAddon);
@@ -132,89 +209,177 @@ const StreamListScreen = () => {
     useEffect(() => { fetchAddons(); }, [fetchAddons]);
     useEffect(() => () => { if (abortControllerRef.current) abortControllerRef.current.abort(); }, []);
 
-    const handleAddonPress = useCallback(async (item: Addon): Promise<void> => {
-        currentAddonRef.current = item.name; setSelectedAddon(item); await fetchStreams(item);
-    }, [fetchStreams]);
+    const selectAddon = useCallback((index: number) => {
+        const addon = addons[index];
+        if (!addon || selectedAddonIndexRef.current === index) return;
+        selectedAddonIndexRef.current = index;
+        setSelectedAddonIndex(index);
+        setSelectedAddon(addon);
+        currentAddonRef.current = addon.name;
+        void fetchStreams(addon);
+    }, [addons, fetchStreams]);
+
+    const handleAddonPress = useCallback((item: Addon) => {
+        const index = addons.findIndex((addon) => addon.name === item.name);
+        if (index < 0) return;
+        selectAddon(index);
+        streamsPagerRef.current?.scrollTo({ x: index * pagerWidth, animated: true });
+    }, [addons, pagerWidth, selectAddon]);
+
+    const handleStreamsPagerEnd = useCallback((offsetX: number) => {
+        const index = Math.min(
+            addons.length - 1,
+            Math.max(0, Math.round(offsetX / pagerWidth)),
+        );
+        selectAddon(index);
+    }, [addons.length, pagerWidth, selectAddon]);
 
     const handleStreamSelected = useCallback(async (stream: Stream, index: number): Promise<void> => {
         router.push({ pathname: '/stream/player', params: { streams: JSON.stringify(streams), selectedStreamIndex: index.toString(), title, imdbid, type, season, episode } });
     }, [streams, router, imdbid, type, season, episode]);
 
+    const handleCopyStreamValue = useCallback(async (stream: Stream): Promise<void> => {
+        const hash = getStreamHash(stream);
+        const value = hash || getStreamUrl(stream);
+        if (!value) {
+            showAlert('Copy', 'This stream does not have a hash or URL to copy.');
+            return;
+        }
+        try {
+            await Clipboard.setStringAsync(value);
+            showAlert('Copied', hash ? 'Stream hash copied.' : 'Stream URL copied.');
+        } catch (error) {
+            console.error('Failed to copy stream value:', error);
+            showAlert('Copy', 'Unable to copy the stream value.');
+        }
+    }, []);
+
+    const handleShareStreamUrl = useCallback(async (stream: Stream): Promise<void> => {
+        const url = getStreamUrl(stream);
+        if (!url || getStreamHash(stream) || stream.magnet || stream.magnetLink) {
+            showAlert('Share', 'This stream does not have a shareable URL.');
+            return;
+        }
+        try {
+            await Share.share({ message: url, url });
+        } catch (error) {
+            console.error('Failed to share stream URL:', error);
+            showAlert('Share', 'Unable to share the stream URL.');
+        }
+    }, []);
+
     const renderLoadingState = (message: string) => (
-        <RNView style={styles.loadingContainer}>
-            <View style={styles.centeredContainer}>
-                <ActivityIndicator size="large" style={styles.activityIndicator} color={colors.primary} />
-                <Text style={[styles.loadingText, { color: colors.textDim }]}>{message}</Text>
-            </View>
-        </RNView>
+        <View style={styles.stateContainer}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={{ color: colors.textDim, fontSize: 14 }}>{message}</Text>
+        </View>
     );
 
-    const renderEmptyState = (icon: string, message: string) => (
-        <RNView style={styles.emptyContainer}>
-            <View style={styles.emptyContent}>
-                <RNView style={[styles.emptyIconContainer, { backgroundColor: colors.primarySurface }]}>
-                    <Feather name={icon as any} color={colors.primary} size={40} />
-                </RNView>
-                <Text style={[styles.emptyText, { color: colors.textDim }]}>{message}</Text>
-            </View>
-        </RNView>
+    const renderEmptyState = (message: string, icon?: React.ComponentProps<typeof Feather>['name']) => (
+        <View style={styles.stateContainer}>
+            {icon ? <Feather name={icon} size={36} color={colors.textDim} /> : null}
+            <Text style={{ color: colors.text, fontSize: 17, fontWeight: '600', textAlign: 'center' }}>
+                {message}
+            </Text>
+        </View>
     );
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
             <StatusBar />
-            {loading && addons.length === 0 ? renderLoadingState('Loading addons...') : addons.length > 0 ? (
-                <View style={[styles.addonSection, { borderColor: colors.primaryBorder }]}>
-                    <NativeStackList
-                        data={addons}
-                        axis="horizontal"
-                        spacing={10}
-                        keyExtractor={(item, index) => `${item.name}-${index}`}
-                        renderItem={(item) => (
-                            <AddonItem
-                                item={item}
-                                type={type}
-                                selectedAddonName={selectedAddon?.name}
-                                colors={colors}
-                                onPress={handleAddonPress}
-                            />
-                        )}
-                        style={styles.addonListContainer}
-                    />
-                </View>
-            ) : renderEmptyState('alert-circle', 'No addons configured. Please add addons in settings.')}
-            {loading && addons.length > 0 ? renderLoadingState('Loading streams...') : (
-                streams.length > 0 ? (
-                    <NativeStackList
-                        data={streams}
-                        axis="vertical"
-                        spacing={12}
-                        keyExtractor={(item, index) => `${item.name}-${index}`}
-                        renderItem={(item, index) => (
-                            <StreamItem item={item} index={index} colors={colors} onPress={handleStreamSelected} />
-                        )}
-                        style={styles.scrollContainer}
-                    />
-                ) : addons.length > 0 ? renderEmptyState('video-off', 'No streams available') : null
-            )}
-            <BottomSpacing space={30} />
+            <Stack.Screen options={{
+                title,
+                headerTitle: title,
+                headerTitleAlign: 'center',
+                headerTransparent: false,
+                headerBackground: () => (
+                    <RNView style={{ flex: 1, backgroundColor: systemDarkBackground }} />
+                ),
+                headerShadowVisible: false,
+            }} />
+            {loading && addons.length === 0 ? renderLoadingState('Loading add-ons…') : addons.length > 0 ? (
+                <>
+                    <View style={styles.sourceSection}>
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.addonList}
+                        >
+                            {addons.map((item, index) => (
+                                <AddonItem
+                                    key={`${item.name}-${index}`}
+                                    item={item}
+                                    isSelected={item.name === selectedAddon?.name}
+                                    onPress={handleAddonPress}
+                                />
+                            ))}
+                        </ScrollView>
+                    </View>
+                    <ScrollView
+                        ref={streamsPagerRef}
+                        horizontal
+                        pagingEnabled
+                        nestedScrollEnabled
+                        directionalLockEnabled
+                        showsHorizontalScrollIndicator={false}
+                        onLayout={(event) => setPagerWidth(event.nativeEvent.layout.width)}
+                        onMomentumScrollEnd={(event) => handleStreamsPagerEnd(event.nativeEvent.contentOffset.x)}
+                        style={styles.streamsPager}
+                        contentContainerStyle={styles.streamsPagerContent}
+                    >
+                        {addons.map((addon, index) => (
+                            <View key={`${addon.name}-${index}`} style={[styles.streamsPage, { width: pagerWidth }]}>
+                                {index === selectedAddonIndex ? (
+                                    loading ? renderLoadingState('Loading streams…') : streams.length > 0 ? (
+                                        <ScrollView
+                                            nestedScrollEnabled
+                                            showsVerticalScrollIndicator={false}
+                                            style={styles.scrollContainer}
+                                            contentContainerStyle={styles.streamsContent}
+                                        >
+                                            {streams.map((item, streamIndex) => (
+                                                <StreamItem
+                                                    key={`${item.name}-${streamIndex}`}
+                                                    item={item}
+                                                    index={streamIndex}
+                                                    colors={colors}
+                                                    cardWidth={pagerWidth}
+                                                    isLast={streamIndex === streams.length - 1}
+                                                    onOpen={() => void handleStreamSelected(item, streamIndex)}
+                                                    onCopy={handleCopyStreamValue}
+                                                    onShare={handleShareStreamUrl}
+                                                />
+                                            ))}
+                                        </ScrollView>
+                                    ) : renderEmptyState('No streams available from this add-on.', 'inbox')
+                                ) : null}
+                            </View>
+                        ))}
+                    </ScrollView>
+                </>
+            ) : renderEmptyState('No add-ons configured. Add an add-on in Settings to browse streams.')}
         </SafeAreaView>
     );
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, marginTop: 40 },
-    scrollContainer: { flex: 1, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 20, maxWidth: 700, margin: 'auto', width: '100%' },
-    addonSection: { borderBottomWidth: StyleSheet.hairlineWidth, paddingVertical: 16 },
-    addonListContainer: { paddingHorizontal: 16 },
-    addonItem: { borderRadius: 20, paddingVertical: 10, paddingHorizontal: 18, borderWidth: StyleSheet.hairlineWidth },
-    addonItemPressed: { opacity: 0.7 },
-    addonName: { fontSize: 14, fontWeight: '500', letterSpacing: -0.2 },
-    streamContainer: { borderRadius: 14 },
-    streamContainerPressed: { opacity: 0.7 },
-    streamItem: { borderRadius: 14, padding: 16, borderWidth: StyleSheet.hairlineWidth },
-    streamHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8, gap: 10 },
-    streamName: { fontSize: 16, fontWeight: '500', flex: 1, lineHeight: 22, letterSpacing: -0.3 },
+    container: { flex: 1 },
+    sourceSection: { width: '100%', paddingVertical: 8, borderBottomWidth: StyleSheet.hairlineWidth },
+    addonList: { alignItems: 'center', gap: 20, paddingHorizontal: 16 },
+    addonItem: { minHeight: 40, justifyContent: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' },
+    selectedAddonItem: { borderBottomColor: '#0A84FF' },
+    addonName: { fontSize: 15, fontWeight: '500' },
+    streamsPager: { flex: 1 },
+    streamsPagerContent: { flexGrow: 1 },
+    streamsPage: { flex: 1 },
+    scrollContainer: { flex: 1, alignSelf: 'stretch', width: '100%' },
+    streamsContent: { paddingTop: 8, paddingBottom: 64 },
+    streamItemContainer: { position: 'relative', paddingHorizontal: 16, paddingVertical: 8 },
+    streamItem: { width: '100%', paddingRight: 40 },
+    streamHeader: { flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'flex-start', marginBottom: 8, gap: 10 },
+    actionMenu: { position: 'absolute', top: 4, right: 16, zIndex: 1 },
+    actionButton: { minWidth: 32, minHeight: 32, justifyContent: 'center', alignItems: 'center' },
+    streamName: { fontSize: 16, fontWeight: '500', flexShrink: 1, lineHeight: 22, letterSpacing: -0.3 },
     qualityBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, borderWidth: StyleSheet.hairlineWidth },
     qualityText: { fontSize: 12, fontWeight: '500', letterSpacing: 0.2 },
     streamDescription: { fontSize: 13, lineHeight: 19, marginBottom: 12 },
@@ -222,14 +387,8 @@ const styles = StyleSheet.create({
     sizeBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
     streamSize: { fontSize: 11, fontWeight: '500', letterSpacing: 0.3 },
     streamType: { fontSize: 11, textTransform: 'uppercase', fontWeight: '500', letterSpacing: 0.8 },
-    loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    activityIndicator: { marginBottom: 10 },
-    loadingText: { fontSize: 14, marginTop: 10, fontWeight: '500' },
-    centeredContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
-    emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    emptyContent: { alignItems: 'center', paddingHorizontal: 40 },
-    emptyIconContainer: { width: 80, height: 80, borderRadius: 40, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
-    emptyText: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
+    streamDivider: { height: 2, width: '100%', marginVertical: 8 },
+    stateContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 12 },
 });
 
 export default StreamListScreen;
