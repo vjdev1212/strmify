@@ -2,9 +2,9 @@ import type { ReactElement, ReactNode } from 'react';
 import { Children, isValidElement } from 'react';
 import { View } from 'react-native';
 import { FieldGroup, Host, ListItem, RNHostView, Text as NativeText } from '@expo/ui';
-import { HStack, Spacer, VStack } from '@expo/ui/swift-ui';
+import { List as NativeList } from '@expo/ui/swift-ui';
 import NativeFieldSelect from '@/components/native-field-select';
-import { contentShape, frame, onTapGesture, refreshable, scrollIndicators, shapes } from '@expo/ui/swift-ui/modifiers';
+import { listStyle, refreshable, scrollIndicators } from '@expo/ui/swift-ui/modifiers';
 
 interface SettingsPageProps {
   children: ReactNode;
@@ -14,14 +14,22 @@ interface SettingsPageProps {
 }
 
 export function SettingsPage({ children, onRefresh, hideScrollIndicator = false }: SettingsPageProps) {
+  const modifiers = [
+    ...(onRefresh ? [refreshable(onRefresh)] : []),
+    ...(hideScrollIndicator ? [listStyle('insetGrouped'), scrollIndicators('never', 'vertical')] : []),
+  ];
+
   return (
     <Host style={{ flex: 1 }} colorScheme="dark">
-      <FieldGroup modifiers={[
-        ...(onRefresh ? [refreshable(onRefresh)] : []),
-        ...(hideScrollIndicator ? [scrollIndicators('never', 'vertical')] : []),
-      ]}>
-        {children}
-      </FieldGroup>
+      {hideScrollIndicator ? (
+        <NativeList modifiers={modifiers}>
+          {children}
+        </NativeList>
+      ) : (
+        <FieldGroup modifiers={modifiers}>
+          {children}
+        </FieldGroup>
+      )}
     </Host>
   );
 }
@@ -99,46 +107,27 @@ export function SettingsRow({
       {title}
     </NativeText>
   );
-  const detailContent = detail ? (
-    <NativeText textStyle={{
-      fontSize: detailSameFont ? 16 : 13,
-      ...(detailSameFont ? { fontWeight: '400' as const } : {}),
-      color: detailColor ?? '#8e8e93',
-    }}>
-      {detail}
-    </NativeText>
-  ) : null;
-
-  if (!onPress || disabled) {
-    return (
-      <ListItem
-        leading={leadingContent}
-        trailing={trailingContent}
-        supportingText={detailContent}
-      >
-        {titleContent}
-      </ListItem>
-    );
-  }
+  const detailContent = detail && (detailSameFont || detailColor)
+    ? (
+      <NativeText textStyle={{
+        fontSize: detailSameFont ? 16 : 13,
+        ...(detailSameFont ? { fontWeight: '400' as const } : {}),
+        color: detailColor ?? '#8e8e93',
+      }}>
+        {detail}
+      </NativeText>
+    )
+    : detail;
 
   return (
-    <HStack
-      spacing={12}
-      alignment="center"
-      modifiers={[
-        frame({ maxWidth: Infinity }),
-        contentShape(shapes.rectangle()),
-        onTapGesture(onPress),
-      ]}
+    <ListItem
+      onPress={disabled ? undefined : onPress}
+      leading={leadingContent}
+      trailing={trailingContent}
+      supportingText={detailContent}
     >
-      {leadingContent}
-      <VStack alignment="leading" spacing={2}>
-        {titleContent}
-        {detailContent}
-      </VStack>
-      <Spacer />
-      {trailingContent}
-    </HStack>
+      {titleContent}
+    </ListItem>
   );
 }
 

@@ -64,7 +64,7 @@ const EpisodeItem: React.FC<EpisodeItemProps> = React.memo(({ item, onEpisodeSel
     <Animated.View style={{ width: cardWidth, transform: [{ scale: scaleAnim }] }}>
       <Pressable onPress={handlePress} onPressIn={handlePressIn} onPressOut={handlePressOut} style={styles.episodePressable}>
         <View style={styles.episodeCard}>
-          <View style={styles.thumbnailContainer}>{renderThumbnail()}</View>
+          <View style={[styles.thumbnailContainer, { backgroundColor: colors.background }]}>{renderThumbnail()}</View>
           <View style={styles.episodeInfo}>
             <Text style={[styles.episodeTitle, { color: colors.text }]} numberOfLines={2}>{computedValues.episodeTitle}</Text>
             <Text style={[styles.episodeAired, { color: colors.textMuted }]}>{computedValues.episodeAired}</Text>

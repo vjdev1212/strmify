@@ -184,6 +184,7 @@ const styles = StyleSheet.create({
     color: '#8e8e93',
   },
   row: {
+    width: '100%',
     minHeight: 64,
     flexDirection: 'row',
     alignItems: 'center',

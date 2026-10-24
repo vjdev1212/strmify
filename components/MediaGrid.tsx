@@ -267,13 +267,14 @@ const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath, items, compa
                     >
                         <NativeRow alignment="center" spacing={posterTextGap}>
                             <RNHostView matchContents>
-                                <PosterArtwork style={[
+                                <PosterArtwork key={item.poster ?? 'placeholder'} style={[
                                     styles.posterFrame,
                                     { width: posterWidth, height: posterHeight },
                                 ]}>
-                                    {item.poster ? (
+                                    {(onImageLoad) => item.poster ? (
                                         <Image
                                             source={{ uri: item.poster }}
+                                            onLoad={onImageLoad}
                                             style={[
                                                 styles.poster,
                                                 { width: posterWidth, height: posterHeight, backgroundColor: colors.backgroundOverlay },

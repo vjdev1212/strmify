@@ -69,10 +69,11 @@ const PosterItem = React.memo(({
       style={{ width: posterWidth, height: cardHeight, flexShrink: 0 }}
       seedColor={colors.primary}
     >
-      <PosterArtwork style={{ width: posterWidth, height: posterHeight }}>
-        {!imgError ? (
+      <PosterArtwork key={item.poster} style={{ width: posterWidth, height: posterHeight }}>
+        {(onImageLoad) => !imgError ? (
           <Image
             source={{ uri: item.poster }}
+            onLoad={onImageLoad}
             onError={() => setImgError(true)}
             style={{ width: posterWidth, height: posterHeight }}
             resizeMode="cover"

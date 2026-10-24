@@ -182,12 +182,15 @@ const LibraryScreen: React.FC = () => {
           }}
         >
           <View style={[styles.imageContainer, { height: CARD_HEIGHT, backgroundColor: colors.background }]}>
-            <PosterArtwork style={styles.artworkFrame} borderRadius={10}>
-              <Image
-                source={{ uri: item.backdrop || item.poster }}
-                style={styles.backdrop}
-                resizeMode="cover"
-              />
+            <PosterArtwork key={item.backdrop || item.poster} style={styles.artworkFrame} borderRadius={10}>
+              {(onImageLoad) => (
+                <Image
+                  source={{ uri: item.backdrop || item.poster }}
+                  onLoad={onImageLoad}
+                  style={styles.backdrop}
+                  resizeMode="cover"
+                />
+              )}
             </PosterArtwork>
             {item.watched && (
               <View style={styles.watchedBadge}>
