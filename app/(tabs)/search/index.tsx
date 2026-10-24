@@ -152,6 +152,7 @@ const SearchScreen = () => {
           headerShown: Platform.OS !== 'web',
           headerBackVisible: false,
           headerTransparent: false,
+          headerShadowVisible: false,
           headerStyle: { backgroundColor: '#000000' },
           headerUserInterfaceStyle: 'dark',
           headerTintColor: colors.text,

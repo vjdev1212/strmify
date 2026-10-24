@@ -78,6 +78,7 @@ interface SettingsRowProps {
   accessibilityLabel?: string;
   selected?: boolean;
   disabled?: boolean;
+  titleColor?: string;
   detailSameFont?: boolean;
   detailColor?: string;
 }
@@ -93,6 +94,7 @@ export function SettingsRow({
   accessibilityLabel,
   selected,
   disabled = false,
+  titleColor,
   detailSameFont = false,
   detailColor,
 }: SettingsRowProps) {
@@ -101,7 +103,7 @@ export function SettingsRow({
     <>
       {leading ? <View style={styles.leading}>{leading}</View> : null}
       <View style={styles.rowText}>
-        <Text style={[styles.rowTitle, { color: destructive ? '#ff453a' : colors.text }]}>{title}</Text>
+        <Text style={[styles.rowTitle, { color: destructive ? '#ff453a' : titleColor ?? colors.text }]}>{title}</Text>
         {detail ? (
           <Text style={[
             detailSameFont ? styles.rowTitle : styles.rowDetail,

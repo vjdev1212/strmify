@@ -73,6 +73,7 @@ interface SettingsRowProps {
   accessibilityLabel?: string;
   selected?: boolean;
   disabled?: boolean;
+  titleColor?: string;
   detailSameFont?: boolean;
   detailColor?: string;
 }
@@ -85,6 +86,7 @@ export function SettingsRow({
   onPress,
   destructive = false,
   disabled = false,
+  titleColor,
   detailSameFont = false,
   detailColor,
 }: SettingsRowProps) {
@@ -101,7 +103,7 @@ export function SettingsRow({
   const titleContent = (
     <NativeText
       textStyle={{
-        color: destructive ? '#ff453a' : disabled ? '#8e8e93' : undefined,
+        color: destructive ? '#ff453a' : disabled ? '#8e8e93' : titleColor,
       }}
     >
       {title}
