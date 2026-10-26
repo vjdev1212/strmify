@@ -288,15 +288,15 @@ const StreamListScreen = () => {
     const renderNoAddonsState = () => (
         <View style={styles.noAddonsStateContainer}>
             <RNView style={styles.noAddonsMessage}>
+                <RNView style={[styles.emptyStateIcon, { backgroundColor: colors.primarySurface }]}>
+                    <Feather name="box" size={36} color={colors.primary} />
+                </RNView>
                 <Text style={{ color: colors.text, fontSize: 17, fontWeight: '600', lineHeight: 22, textAlign: 'center' }}>
                     No add-ons configured
                 </Text>
                 <Text style={{ color: colors.textMuted, fontSize: 14, lineHeight: 18, textAlign: 'center' }}>
                     Add an add-on to browse streams.
                 </Text>
-                <RNView style={[styles.emptyStateIcon, { backgroundColor: colors.primarySurface }]}>
-                    <Feather name="box" size={36} color={colors.primary} />
-                </RNView>
                 <NativeButton
                     variant="filled"
                     onPress={() => router.push('/settings/add')}
@@ -416,39 +416,25 @@ const styles = StyleSheet.create({
     streamDivider: { height: 2, width: '100%', marginVertical: 8 },
     stateContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 12 },
     noAddonsStateContainer: {
-        position: 'absolute',
-        top: 0,
-        bottom: 0,
-        left: 0,
-        right: 0,
+        flex: 1,
+        width: '100%',
+        alignSelf: 'stretch',
         alignItems: 'center',
         justifyContent: 'center',
-        pointerEvents: 'box-none',
     },
     noAddonsMessage: {
-        position: 'absolute',
-        top: '50%',
-        left: 24,
-        right: 24,
         alignItems: 'center',
-        gap: 4,
-        transform: [{ translateY: -22 }],
+        gap: 8,
     },
     emptyStateIcon: {
-        position: 'absolute',
-        bottom: '100%',
-        left: '50%',
         width: 72,
         height: 72,
         borderRadius: 36,
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 20,
-        transform: [{ translateX: -36 }],
+        marginBottom: -4,
     },
     addAddonButton: {
-        position: 'absolute',
-        top: '100%',
         paddingVertical: 12,
         paddingHorizontal: 20,
         borderRadius: 25,
@@ -458,7 +444,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'center',
         backgroundColor: '#ffffff',
-        marginTop: 28,
+        marginTop: 12,
     },
     addAddonButtonText: { color: '#000000', fontSize: 16, fontWeight: '500' },
     addAddonButtonIcon: { marginRight: 8 },
