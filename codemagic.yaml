@@ -33,14 +33,14 @@ workflows:
       
       - name: Clean and generate iOS project
         script: |
-          rm -rf ios android
+          rm -rf ios android .expo
           npx expo prebuild --clean --platform ios
 
       - name: Configure Node for Xcode scripts
         script: |
           NODE_BINARY="$(command -v node)"
           "$NODE_BINARY" --version
-          printf 'export NODE_BINARY="%s"\n' "$NODE_BINARY" > ios/.xcode.env.local
+          printf 'export NODE_BINARY="%s"\nexport NODE_OPTIONS="--require=%s/scripts/node18-polyfills.cjs"\n' "$NODE_BINARY" "$CM_BUILD_DIR" > ios/.xcode.env.local
 
       - name: Install iOS dependencies
         script: |
@@ -124,6 +124,9 @@ workflows:
       - name: Install Expo CLI
         script: npm install -g @expo/cli@latest --force
 
+      - name: Check Expo CLI version
+        script: npx expo --version
+
       - name: Extract app version from app.json
         script: |
           if [ -f "app.json" ]; then
@@ -141,14 +144,14 @@ workflows:
 
       - name: Clean and generate iOS project
         script: |
-          rm -rf ios android
+          rm -rf ios android .expo
           npx expo prebuild --clean --platform ios
 
       - name: Configure Node for Xcode scripts
         script: |
           NODE_BINARY="$(command -v node)"
           "$NODE_BINARY" --version
-          printf 'export NODE_BINARY="%s"\n' "$NODE_BINARY" > ios/.xcode.env.local
+          printf 'export NODE_BINARY="%s"\nexport NODE_OPTIONS="--require=%s/scripts/node18-polyfills.cjs"\n' "$NODE_BINARY" "$CM_BUILD_DIR" > ios/.xcode.env.local
 
       - name: Install iOS dependencies
         script: |
@@ -165,8 +168,12 @@ workflows:
         script: |
           cd ios
           WORKSPACE=$(find . -name "*.xcworkspace" -maxdepth 1 | head -1)
-          SCHEME_NAME=$(basename "$WORKSPACE" .xcworkspace)
+          if [ -z "$WORKSPACE" ]; then
+            echo "❌ No .xcworkspace found"
+            exit 1
+          fi
 
+          SCHEME_NAME=$(basename "$WORKSPACE" .xcworkspace)
           echo "📱 Building development scheme: $SCHEME_NAME"
 
           xcodebuild -workspace "$WORKSPACE" \
@@ -182,7 +189,7 @@ workflows:
             SWIFT_VERSION=5.0
 
           mkdir -p build/Payload
-          cp -r build/$SCHEME_NAME-dev.xcarchive/Products/Applications/*.app build/Payload/
+          cp -r "build/$SCHEME_NAME-dev.xcarchive/Products/Applications/"*.app build/Payload/
 
           APP_BUNDLE=$(ls build/Payload/ | head -1)
           IPA_NAME="${APP_NAME}_Dev_v${APP_VERSION}"
@@ -235,7 +242,7 @@ workflows:
 
       - name: Clean and generate Android project
         script: |
-          rm -rf ios android
+          rm -rf ios android .expo
           npx expo prebuild --platform android
 
       - name: Setup Android keystore
@@ -254,7 +261,6 @@ workflows:
           if [ "$UNSIGNED_BUILD" = "true" ]; then
             echo "📦 Building unsigned release APK"
             ./gradlew assembleRelease -x configureCMakeRelease -Pandroid.overridePathCheck=true
-            BUILD_OUTPUT="app/build/outputs/apk/release"
           else
             echo "📦 Building signed release APK"
             ./gradlew assembleRelease \
@@ -264,9 +270,9 @@ workflows:
               -Pandroid.injected.signing.store.password=$KEYSTORE_PASSWORD \
               -Pandroid.injected.signing.key.alias=$KEYSTORE_ALIAS \
               -Pandroid.injected.signing.key.password=$KEYSTORE_KEY_PASSWORD
-            BUILD_OUTPUT="app/build/outputs/apk/release"
           fi
 
+          BUILD_OUTPUT="app/build/outputs/apk/release"
           if [ -f "$BUILD_OUTPUT/app-release.apk" ]; then
             APK_NAME="${APP_NAME}_v${APP_VERSION}_release.apk"
             cp "$BUILD_OUTPUT/app-release.apk" "../$APK_NAME"
@@ -338,7 +344,7 @@ workflows:
 
       - name: Clean and generate Android project
         script: |
-          rm -rf ios android
+          rm -rf ios android .expo
           npx expo prebuild --platform android
 
       - name: Build Android debug APK
