@@ -709,7 +709,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                         <GlassView glassEffectStyle="clear" style={styles.topRightControls}>
                             {canUsePictureInPicture && playerState.isReady && (
                                 <NativeButton variant="text" style={styles.controlButton} onPress={handlePictureInPicture} accessibilityLabel="Picture in picture" seedColor="#ffffff">
-                                    <MaterialIcons name="picture-in-picture-alt" size={22} color="white" />
+                                    <MaterialIcons name="picture-in-picture-alt" size={24} color="white" />
                                 </NativeButton>
                             )}
 

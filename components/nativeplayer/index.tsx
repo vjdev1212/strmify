@@ -776,14 +776,14 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                         <GlassView glassEffectStyle="clear" style={styles.topRightControls}>
                             {canUsePictureInPicture && playerState.isReady && (
                                 <NativeButton variant="text" style={styles.controlButton} onPress={handlePictureInPicture} accessibilityLabel="Picture in picture" seedColor="#ffffff">
-                                    <MaterialIcons name="picture-in-picture-alt" size={22} color="white" />
+                                    <MaterialIcons name="picture-in-picture-alt" size={24} color="white" />
                                 </NativeButton>
                             )}
 
                             {/* KSPlayer fallback button */}
                             {Platform.OS === 'ios' && onForceSwitchToKSPlayer && (
                                 <NativeButton variant="text" style={styles.controlButton} onPress={onForceSwitchToKSPlayer} accessibilityLabel="Switch video player" seedColor="#ffffff">
-                                    <MaterialIcons name="switch-video" size={22} color="white" />
+                                    <MaterialIcons name="switch-video" size={24} color="white" />
                                 </NativeButton>
                             )}
 

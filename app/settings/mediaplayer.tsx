@@ -136,7 +136,7 @@ export default function MediaPlayerConfigScreen() {
               title={saving ? 'Saving…' : 'Save Player'}
               onPress={savePlayerConfig}
               disabled={saving || !selectedPlayer}
-              leading={<Ionicons name="checkmark-circle-outline" size={20} color={colors.primary} />}
+              leading={<Ionicons name="checkmark-circle-outline" size={20} color="#0A84FF" />}
             />
             <SettingsRow
               title="Reset to Default"
