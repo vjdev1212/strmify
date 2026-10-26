@@ -258,6 +258,7 @@ const SearchScreen = () => {
             compact
             detailsPath="/movie/details"
             items={filteredResults}
+            safeAreaEdges={['left', 'right']}
           />
         ) : trimmedQuery ? (
           <View style={styles.statusContainer}>
