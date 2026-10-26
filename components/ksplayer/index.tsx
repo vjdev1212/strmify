@@ -709,7 +709,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                         <GlassView glassEffectStyle="clear" style={styles.topRightControls}>
                             {canUsePictureInPicture && playerState.isReady && (
                                 <NativeButton variant="text" style={styles.controlButton} onPress={handlePictureInPicture} accessibilityLabel="Picture in picture" seedColor="#ffffff">
-                                    <MaterialIcons name="picture-in-picture-alt" size={22} color="white" />
+                                    <MaterialIcons name="picture-in-picture-alt" size={24} color="white" />
                                 </NativeButton>
                             )}
 
@@ -816,19 +816,17 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                     />
 
                     {/* Bottom progress bar */}
-                    <View style={styles.bottomControls}>
-                        <ProgressBar
-                            currentTime={displayTime}
-                            duration={playerState.duration}
-                            sliderValue={sliderValue}
-                            isReady={playerState.isReady}
-                            onValueChange={handleSliderChange}
-                            onSlidingStart={handleSliderStart}
-                            onSlidingComplete={handleSliderComplete}
-                            showSpeed={settings.playbackSpeed !== 1.0}
-                            playbackSpeed={settings.playbackSpeed}
-                        />
-                    </View>
+                    <ProgressBar
+                        currentTime={displayTime}
+                        duration={playerState.duration}
+                        sliderValue={sliderValue}
+                        isReady={playerState.isReady}
+                        onValueChange={handleSliderChange}
+                        onSlidingStart={handleSliderStart}
+                        onSlidingComplete={handleSliderComplete}
+                        showSpeed={settings.playbackSpeed !== 1.0}
+                        playbackSpeed={settings.playbackSpeed}
+                    />
                 </Animated.View>
             )}
         </View>

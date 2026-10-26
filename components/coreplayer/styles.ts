@@ -63,7 +63,11 @@ export const styles = StyleSheet.create({
     },
 
     backButton: {
-        padding: 8,
+        width: 48,
+        height: 48,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginLeft: 8,
         marginRight: 8,
     },
 
@@ -81,14 +85,18 @@ export const styles = StyleSheet.create({
     topRightControls: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginRight: 10,
-        borderRadius: 25,
-        padding: 5
+        gap: 4,
+        borderRadius: 100,
+        marginRight: 8,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
     },
 
     controlButton: {
-        padding: 8,
-        marginLeft: 12,
+        width: 44,
+        height: 44,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 
     // Center Controls
@@ -126,11 +134,11 @@ export const styles = StyleSheet.create({
     // Bottom Controls
     bottomControls: {
         position: 'absolute',
-        bottom: 0,
+        bottom: 6,
         left: 0,
         right: 0,
         paddingTop: 20,
-        marginHorizontal: '3%',
+        marginHorizontal: '6%',
         zIndex: 100,
     },
 

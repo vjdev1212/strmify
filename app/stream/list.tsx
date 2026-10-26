@@ -2,12 +2,14 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { Pressable, ScrollView, StyleSheet, View as RNView, useWindowDimensions } from 'react-native';
 import type { ScrollViewInstance } from 'react-native';
 import { Share } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { MenuView } from '@expo/ui/community/menu';
 import * as Clipboard from 'expo-clipboard';
+import { NativeButton } from '@/components/native-ui-controls';
 import { ActivityIndicator, StatusBar, Text, View } from '@/components/Themed';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { showAlert } from '@/utils/platform';
+import { isHapticsSupported, showAlert } from '@/utils/platform';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { extractQuality, extractSize, getStreamType } from '@/utils/StreamItem';
 import { StorageKeys, storageService } from '@/utils/StorageService';
@@ -20,6 +22,13 @@ interface StreamResponse { streams?: Stream[]; }
 type ThemeColors = ReturnType<typeof useTheme>['colors'];
 
 const ADDONS_KEY = StorageKeys.ADDONS_KEY;
+
+const triggerActionHaptic = () => {
+    if (!isHapticsSupported()) return;
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch((error: unknown) => {
+        console.warn('Unable to trigger stream action haptic:', error);
+    });
+};
 
 const getStreamHash = (stream: Stream): string | undefined => {
     const candidates = [stream.infoHash, stream.magnet, stream.magnetLink, stream.url];
@@ -82,6 +91,11 @@ const StreamItem = React.memo(({
     const quality = extractQuality(name, title);
     const size = extractSize(description || title || '');
     const streamType = getStreamType(item);
+    const streamTypeIcon = streamType === 'Embed'
+        ? 'code'
+        : streamType === 'Direct'
+            ? 'link'
+            : 'help-circle';
     const hash = getStreamHash(item);
     const url = getStreamUrl(item);
     const isUrlOnly = Boolean(url && !hash && !item.magnet && !item.magnetLink);
@@ -104,9 +118,13 @@ const StreamItem = React.memo(({
                 style={styles.streamItem}
             >
                 <RNView style={styles.streamHeader}>
-                    <Text style={[styles.streamName, { color: colors.text }]} numberOfLines={2}>{name}</Text>
+                    <RNView style={styles.streamTitleLabel}>
+                        <Feather name="film" size={15} color={colors.textMuted} style={styles.streamTitleIcon} />
+                        <Text style={[styles.streamName, { color: colors.text }]} numberOfLines={2}>{name}</Text>
+                    </RNView>
                     {quality ? (
                         <RNView style={[styles.qualityBadge, { backgroundColor: colors.primaryMuted, borderColor: colors.primaryBorder }]}>
+                            <Feather name="tv" size={13} color={colors.text} />
                             <Text style={[styles.qualityText, { color: colors.text }]}>{quality}</Text>
                         </RNView>
                     ) : null}
@@ -116,13 +134,20 @@ const StreamItem = React.memo(({
                 ) : null}
                 <RNView style={styles.streamFooter}>
                     {size ? (
-                        <RNView style={[styles.sizeBadge, { backgroundColor: colors.primarySurface }]}>
+                        <RNView style={styles.sizeBadge}>
+                            <Feather name="hard-drive" size={12} color={colors.textMuted} />
                             <Text style={[styles.streamSize, { color: colors.textMuted }]}>{size}</Text>
                         </RNView>
                     ) : null}
-                    <Text style={[styles.streamType, { color: colors.textDim }]}>{streamType}</Text>
+                    <RNView style={styles.streamTypeLabel}>
+                        {streamType === 'Torrent' ? (
+                            <Ionicons name="magnet-outline" size={13} color={colors.textDim} />
+                        ) : (
+                            <Feather name={streamTypeIcon} size={13} color={colors.textDim} />
+                        )}
+                        <Text style={[styles.streamType, { color: colors.textDim }]}>{streamType}</Text>
+                    </RNView>
                 </RNView>
-                {!isLast ? <RNView style={[styles.streamDivider, { backgroundColor: colors.border }]} /> : null}
             </Pressable>
             <MenuView
                 title="Stream Actions"
@@ -139,11 +164,13 @@ const StreamItem = React.memo(({
                     accessibilityLabel="Stream actions"
                     hitSlop={8}
                     style={styles.actionButton}
+                    onPressIn={triggerActionHaptic}
                     onPress={(event) => event.stopPropagation()}
                 >
                     <Feather name="more-vertical" size={20} color={colors.textMuted} />
                 </Pressable>
             </MenuView>
+            {!isLast ? <RNView style={[styles.streamDivider, { backgroundColor: colors.border }]} /> : null}
         </RNView>
     );
 });
@@ -212,6 +239,7 @@ const StreamListScreen = () => {
     const selectAddon = useCallback((index: number) => {
         const addon = addons[index];
         if (!addon || selectedAddonIndexRef.current === index) return;
+        triggerActionHaptic();
         selectedAddonIndexRef.current = index;
         setSelectedAddonIndex(index);
         setSelectedAddon(addon);
@@ -235,10 +263,12 @@ const StreamListScreen = () => {
     }, [addons.length, pagerWidth, selectAddon]);
 
     const handleStreamSelected = useCallback(async (stream: Stream, index: number): Promise<void> => {
+        triggerActionHaptic();
         router.push({ pathname: '/stream/player', params: { streams: JSON.stringify(streams), selectedStreamIndex: index.toString(), title, imdbid, type, season, episode } });
     }, [streams, router, imdbid, type, season, episode]);
 
     const handleCopyStreamValue = useCallback(async (stream: Stream): Promise<void> => {
+        triggerActionHaptic();
         const hash = getStreamHash(stream);
         const value = hash || getStreamUrl(stream);
         if (!value) {
@@ -255,6 +285,7 @@ const StreamListScreen = () => {
     }, []);
 
     const handleShareStreamUrl = useCallback(async (stream: Stream): Promise<void> => {
+        triggerActionHaptic();
         const url = getStreamUrl(stream);
         if (!url || getStreamHash(stream) || stream.magnet || stream.magnetLink) {
             showAlert('Share', 'This stream does not have a shareable URL.');
@@ -281,6 +312,34 @@ const StreamListScreen = () => {
             <Text style={{ color: colors.text, fontSize: 17, fontWeight: '600', textAlign: 'center' }}>
                 {message}
             </Text>
+        </View>
+    );
+
+    const renderNoAddonsState = () => (
+        <View style={styles.noAddonsStateContainer}>
+            <RNView style={styles.noAddonsMessage}>
+                <RNView style={[styles.emptyStateIcon, { backgroundColor: colors.primarySurface }]}>
+                    <Feather name="box" size={36} color={colors.primary} />
+                </RNView>
+                <Text style={{ color: colors.text, fontSize: 17, fontWeight: '600', lineHeight: 22, textAlign: 'center' }}>
+                    No add-ons configured
+                </Text>
+                <Text style={{ color: colors.textMuted, fontSize: 14, lineHeight: 18, textAlign: 'center' }}>
+                    Add an add-on to browse streams.
+                </Text>
+                <NativeButton
+                    variant="filled"
+                    onPress={() => {
+                        triggerActionHaptic();
+                        router.push('/settings/add');
+                    }}
+                    seedColor="#ffffff"
+                    style={styles.addAddonButton}
+                >
+                    <Ionicons name="add-outline" size={24} color="#000000" style={styles.addAddonButtonIcon} />
+                    <Text style={styles.addAddonButtonText}>Add an add-on</Text>
+                </NativeButton>
+            </RNView>
         </View>
     );
 
@@ -357,7 +416,7 @@ const StreamListScreen = () => {
                         ))}
                     </ScrollView>
                 </>
-            ) : renderEmptyState('No add-ons configured. Add an add-on in Settings to browse streams.')}
+            ) : renderNoAddonsState()}
         </SafeAreaView>
     );
 };
@@ -374,21 +433,57 @@ const styles = StyleSheet.create({
     streamsPage: { flex: 1 },
     scrollContainer: { flex: 1, alignSelf: 'stretch', width: '100%' },
     streamsContent: { paddingTop: 8, paddingBottom: 64 },
-    streamItemContainer: { position: 'relative', paddingHorizontal: 16, paddingVertical: 8 },
+    streamItemContainer: { position: 'relative', paddingLeft: 24, paddingRight: 20, paddingVertical: 8 },
     streamItem: { width: '100%', paddingRight: 40 },
     streamHeader: { flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'flex-start', marginBottom: 8, gap: 10 },
     actionMenu: { position: 'absolute', top: 4, right: 16, zIndex: 1 },
     actionButton: { minWidth: 32, minHeight: 32, justifyContent: 'center', alignItems: 'center' },
+    streamTitleLabel: { flexShrink: 1, minWidth: 0, flexDirection: 'row', alignItems: 'flex-start', gap: 7 },
+    streamTitleIcon: { marginTop: 3 },
     streamName: { fontSize: 16, fontWeight: '500', flexShrink: 1, lineHeight: 22, letterSpacing: -0.3 },
-    qualityBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, borderWidth: StyleSheet.hairlineWidth },
+    qualityBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, borderWidth: StyleSheet.hairlineWidth },
     qualityText: { fontSize: 12, fontWeight: '500', letterSpacing: 0.2 },
     streamDescription: { fontSize: 13, lineHeight: 19, marginBottom: 12 },
     streamFooter: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-    sizeBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+    streamTypeLabel: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+    sizeBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
     streamSize: { fontSize: 11, fontWeight: '500', letterSpacing: 0.3 },
     streamType: { fontSize: 11, textTransform: 'uppercase', fontWeight: '500', letterSpacing: 0.8 },
     streamDivider: { height: 2, width: '100%', marginVertical: 8 },
     stateContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 12 },
+    noAddonsStateContainer: {
+        flex: 1,
+        width: '100%',
+        alignSelf: 'stretch',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    noAddonsMessage: {
+        alignItems: 'center',
+        gap: 8,
+    },
+    emptyStateIcon: {
+        width: 72,
+        height: 72,
+        borderRadius: 36,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: -4,
+    },
+    addAddonButton: {
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        borderRadius: 25,
+        minWidth: 150,
+        alignItems: 'center',
+        alignSelf: 'center',
+        flexDirection: 'row',
+        justifyContent: 'center',
+        backgroundColor: '#ffffff',
+        marginTop: 12,
+    },
+    addAddonButtonText: { color: '#000000', fontSize: 16, fontWeight: '500' },
+    addAddonButtonIcon: { marginRight: 8 },
 });
 
 export default StreamListScreen;

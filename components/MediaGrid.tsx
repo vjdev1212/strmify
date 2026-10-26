@@ -16,7 +16,7 @@ import { WebMenu } from '@/components/WebMenuView';
 import PosterArtwork from '@/components/PosterArtwork';
 import { useRouter } from 'expo-router';
 import { getYear } from '@/utils/Date';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets, type Edge } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
 import { libraryService } from '@/utils/LibraryService';
 import { showAlert } from '@/utils/platform';
@@ -29,6 +29,7 @@ interface MediaGridProps {
     detailsPath: '/movie/details' | '/series/details';
     items?: MediaGridItem[];
     compact?: boolean;
+    safeAreaEdges?: Edge[];
 }
 
 export interface MediaGridItem {
@@ -103,7 +104,13 @@ const POSTER_WIDTH = 88;
 const POSTER_TEXT_GAP = 16;
 const MENU_ACTION_WIDTH = 56;
 
-const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath, items, compact = false }) => {
+const MediaGrid: React.FC<MediaGridProps> = ({
+    apiUrl,
+    detailsPath,
+    items,
+    compact = false,
+    safeAreaEdges = ['left', 'right', 'bottom'],
+}) => {
     const { colors } = useTheme();
     const router = useRouter();
     const { width } = useWindowDimensions();
@@ -337,7 +344,7 @@ const MediaGrid: React.FC<MediaGridProps> = ({ apiUrl, detailsPath, items, compa
     ]);
 
     return (
-        <SafeAreaView edges={['left', 'right', 'bottom']} style={styles.container}>
+        <SafeAreaView edges={safeAreaEdges} style={styles.container}>
             <StatusBar />
             {items === undefined && loading ? (
                 <View style={styles.centeredContainer}>
