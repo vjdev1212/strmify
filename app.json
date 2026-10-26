@@ -39,6 +39,14 @@
       "favicon": "assets/images/favicon.png"
     },
     "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#000000"
+        }
+      ],
       "./plugins/withKSPlayer",
       [
         "react-native-video",
