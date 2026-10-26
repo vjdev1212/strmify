@@ -126,7 +126,7 @@ export const styles = StyleSheet.create({
     // Bottom Controls
     bottomControls: {
         position: 'absolute',
-        bottom: 0,
+        bottom: 12,
         left: 0,
         right: 0,
         paddingTop: 20,

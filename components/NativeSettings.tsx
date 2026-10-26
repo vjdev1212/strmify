@@ -1,4 +1,4 @@
-import type { ReactElement, ReactNode } from 'react';
+import { Children, type ReactElement, type ReactNode } from 'react';
 import { useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/Themed';
@@ -57,10 +57,14 @@ interface SettingsSectionProps {
 }
 
 export function SettingsSection({ title, footer, children }: SettingsSectionProps) {
+  const sectionChildren = Children.toArray(children);
+
   return (
     <View style={styles.section}>
       {title ? <Text style={styles.sectionTitle}>{title}</Text> : null}
-      <View style={styles.group}>{children}</View>
+      {sectionChildren.length > 0 ? (
+        <View style={styles.group}>{sectionChildren}</View>
+      ) : null}
       {footer ? (
         <Text style={styles.footer}>{footer}</Text>
       ) : null}

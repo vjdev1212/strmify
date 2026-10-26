@@ -143,78 +143,77 @@ const AddonsScreen = () => {
             isLast
           />
         </SettingsSection>
-        <SettingsSection
-          title={`Installed add-ons (${addons.length})`}
-        >
-          {addons.length ? addons.flatMap((addon) => {
-            const isUpdating = updatingAddonId === addon.id;
-            const isExpanded = expandedAddonId === addon.id;
-            const availableActions = addonMenuActions.filter((action) => {
-              if ((action.id === 'update' || action.id === 'share') && !addon.manifestUrl) return false;
-              if (action.id === 'configure' && !addon.behaviorHints?.configurable) return false;
-              return true;
-            });
-            const handleAction = (actionId: string) => {
-              if (actionId === 'update' && addon.manifestUrl && !isUpdating) {
-                void updateAddonManifest(addon.id, addon.manifestUrl);
-              } else if (actionId === 'share' && addon.manifestUrl) {
-                void shareManifestUrl(addon.manifestUrl);
-              } else if (actionId === 'configure' && addon.baseUrl) {
-                void openConfiguration(addon.baseUrl);
-              } else if (actionId === 'remove') {
-                confirmRemove(addon);
-              }
-            };
-            const menuTrigger = (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Actions for ${addon.name || 'add-on'}`}
-                hitSlop={10}
-                onPress={Platform.OS === 'web' ? (event) => event.stopPropagation() : undefined}
-                style={{ padding: 8 }}
-              >
-                <Ionicons name="ellipsis-horizontal" size={20} color={colors.textDim} />
-              </Pressable>
-            );
-            const actionButton = Platform.OS === 'web' ? (
-              <WebMenu
-                title={addon.name || 'Add-on actions'}
-                actions={availableActions.map(({ id, title }) => ({ id: id ?? title, title }))}
-                onPressAction={handleAction}
-              >
-                {menuTrigger}
-              </WebMenu>
-            ) : (
-              <MenuView
-                title={addon.name || 'Add-on actions'}
-                actions={availableActions}
-                onPressAction={({ nativeEvent }) => handleAction(nativeEvent.event)}
-                colorScheme="dark"
-                shouldOpenOnLongPress={false}
-              >
-                {menuTrigger}
-              </MenuView>
-            );
-            const categories = addon.types?.join(' · ');
-
-            return [
-              <SettingsRow
-                key={`${addon.id}-summary`}
-                title={`${addon.name || 'Unnamed add-on'}${addon.version ? ` · ${addon.version}` : ''}`}
-                onPress={() => setExpandedAddonId(isExpanded ? null : addon.id)}
-                accessibilityLabel={`${isExpanded ? 'Hide' : 'Show'} details for ${addon.name || 'add-on'}`}
-                trailing={
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    {actionButton}
-                    <Ionicons
-                      name={isExpanded ? 'chevron-up' : 'chevron-down'}
-                      size={16}
-                      color={colors.textDim}
-                    />
-                  </View>
+        {addons.length > 0 ? (
+          <SettingsSection title={`Installed add-ons (${addons.length})`}>
+            {addons.flatMap((addon) => {
+              const isUpdating = updatingAddonId === addon.id;
+              const isExpanded = expandedAddonId === addon.id;
+              const availableActions = addonMenuActions.filter((action) => {
+                if ((action.id === 'update' || action.id === 'share') && !addon.manifestUrl) return false;
+                if (action.id === 'configure' && !addon.behaviorHints?.configurable) return false;
+                return true;
+              });
+              const handleAction = (actionId: string) => {
+                if (actionId === 'update' && addon.manifestUrl && !isUpdating) {
+                  void updateAddonManifest(addon.id, addon.manifestUrl);
+                } else if (actionId === 'share' && addon.manifestUrl) {
+                  void shareManifestUrl(addon.manifestUrl);
+                } else if (actionId === 'configure' && addon.baseUrl) {
+                  void openConfiguration(addon.baseUrl);
+                } else if (actionId === 'remove') {
+                  confirmRemove(addon);
                 }
-              />,
-              isExpanded ? (
+              };
+              const menuTrigger = (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Actions for ${addon.name || 'add-on'}`}
+                  hitSlop={10}
+                  onPress={Platform.OS === 'web' ? (event) => event.stopPropagation() : undefined}
+                  style={{ padding: 8 }}
+                >
+                  <Ionicons name="ellipsis-horizontal" size={20} color={colors.textDim} />
+                </Pressable>
+              );
+              const actionButton = Platform.OS === 'web' ? (
+                <WebMenu
+                  title={addon.name || 'Add-on actions'}
+                  actions={availableActions.map(({ id, title }) => ({ id: id ?? title, title }))}
+                  onPressAction={handleAction}
+                >
+                  {menuTrigger}
+                </WebMenu>
+              ) : (
+                <MenuView
+                  title={addon.name || 'Add-on actions'}
+                  actions={availableActions}
+                  onPressAction={({ nativeEvent }) => handleAction(nativeEvent.event)}
+                  colorScheme="dark"
+                  shouldOpenOnLongPress={false}
+                >
+                  {menuTrigger}
+                </MenuView>
+              );
+              const categories = addon.types?.join(' · ');
+
+              return [
+                <SettingsRow
+                  key={`${addon.id}-summary`}
+                  title={`${addon.name || 'Unnamed add-on'}${addon.version ? ` · ${addon.version}` : ''}`}
+                  onPress={() => setExpandedAddonId(isExpanded ? null : addon.id)}
+                  accessibilityLabel={`${isExpanded ? 'Hide' : 'Show'} details for ${addon.name || 'add-on'}`}
+                  trailing={
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      {actionButton}
+                      <Ionicons
+                        name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                        size={16}
+                        color={colors.textDim}
+                      />
+                    </View>
+                  }
+                />,
+                isExpanded ? (
                   <SettingsRow
                     key={`${addon.id}-details`}
                     title={addon.description || 'No description available.'}
@@ -223,16 +222,14 @@ const AddonsScreen = () => {
                     isLast
                   />
                 ) : null,
-            ];
-          }) : (
-            <SettingsRow
-              title="No add-ons yet"
-              detail="Add-ons you install will appear here."
-              isLast
-              leading={<Ionicons name="cube-outline" size={20} color={colors.textMuted} />}
-            />
-          )}
-        </SettingsSection>
+              ];
+            })}
+          </SettingsSection>
+        ) : (
+          <SettingsSection footer="No add-ons yet. Add-ons you install will appear here.">
+            {null}
+          </SettingsSection>
+        )}
       </SettingsPage>
     </View>
   );

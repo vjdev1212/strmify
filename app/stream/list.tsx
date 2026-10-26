@@ -2,9 +2,10 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { Pressable, ScrollView, StyleSheet, View as RNView, useWindowDimensions } from 'react-native';
 import type { ScrollViewInstance } from 'react-native';
 import { Share } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
 import { MenuView } from '@expo/ui/community/menu';
 import * as Clipboard from 'expo-clipboard';
+import { NativeButton } from '@/components/native-ui-controls';
 import { ActivityIndicator, StatusBar, Text, View } from '@/components/Themed';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { showAlert } from '@/utils/platform';
@@ -284,6 +285,31 @@ const StreamListScreen = () => {
         </View>
     );
 
+    const renderNoAddonsState = () => (
+        <View style={styles.noAddonsStateContainer}>
+            <RNView style={styles.noAddonsMessage}>
+                <Text style={{ color: colors.text, fontSize: 17, fontWeight: '600', lineHeight: 22, textAlign: 'center' }}>
+                    No add-ons configured
+                </Text>
+                <Text style={{ color: colors.textMuted, fontSize: 14, lineHeight: 18, textAlign: 'center' }}>
+                    Add an add-on to browse streams.
+                </Text>
+                <RNView style={[styles.emptyStateIcon, { backgroundColor: colors.primarySurface }]}>
+                    <Feather name="box" size={36} color={colors.primary} />
+                </RNView>
+                <NativeButton
+                    variant="filled"
+                    onPress={() => router.push('/settings/add')}
+                    seedColor="#ffffff"
+                    style={styles.addAddonButton}
+                >
+                    <Ionicons name="add-outline" size={24} color="#000000" style={styles.addAddonButtonIcon} />
+                    <Text style={styles.addAddonButtonText}>Add an add-on</Text>
+                </NativeButton>
+            </RNView>
+        </View>
+    );
+
     return (
         <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
             <StatusBar />
@@ -357,7 +383,7 @@ const StreamListScreen = () => {
                         ))}
                     </ScrollView>
                 </>
-            ) : renderEmptyState('No add-ons configured. Add an add-on in Settings to browse streams.')}
+            ) : renderNoAddonsState()}
         </SafeAreaView>
     );
 };
@@ -389,6 +415,53 @@ const styles = StyleSheet.create({
     streamType: { fontSize: 11, textTransform: 'uppercase', fontWeight: '500', letterSpacing: 0.8 },
     streamDivider: { height: 2, width: '100%', marginVertical: 8 },
     stateContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 12 },
+    noAddonsStateContainer: {
+        position: 'absolute',
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0,
+        alignItems: 'center',
+        justifyContent: 'center',
+        pointerEvents: 'box-none',
+    },
+    noAddonsMessage: {
+        position: 'absolute',
+        top: '50%',
+        left: 24,
+        right: 24,
+        alignItems: 'center',
+        gap: 4,
+        transform: [{ translateY: -22 }],
+    },
+    emptyStateIcon: {
+        position: 'absolute',
+        bottom: '100%',
+        left: '50%',
+        width: 72,
+        height: 72,
+        borderRadius: 36,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 20,
+        transform: [{ translateX: -36 }],
+    },
+    addAddonButton: {
+        position: 'absolute',
+        top: '100%',
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        borderRadius: 25,
+        minWidth: 150,
+        alignItems: 'center',
+        alignSelf: 'center',
+        flexDirection: 'row',
+        justifyContent: 'center',
+        backgroundColor: '#ffffff',
+        marginTop: 28,
+    },
+    addAddonButtonText: { color: '#000000', fontSize: 16, fontWeight: '500' },
+    addAddonButtonIcon: { marginRight: 8 },
 });
 
 export default StreamListScreen;

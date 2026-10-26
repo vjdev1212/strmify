@@ -883,19 +883,17 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                         onSkipForward={handleSkipForward}
                     />
 
-                    <View style={styles.bottomControls}>
-                        <ProgressBar
-                            currentTime={displayTime}
-                            duration={playerState.duration}
-                            sliderValue={sliderValue}
-                            isReady={playerState.isReady}
-                            onValueChange={handleSliderChange}
-                            onSlidingStart={handleSliderStart}
-                            onSlidingComplete={handleSliderComplete}
-                            showSpeed={settings.playbackSpeed !== 1.0}
-                            playbackSpeed={settings.playbackSpeed}
-                        />
-                    </View>
+                    <ProgressBar
+                        currentTime={displayTime}
+                        duration={playerState.duration}
+                        sliderValue={sliderValue}
+                        isReady={playerState.isReady}
+                        onValueChange={handleSliderChange}
+                        onSlidingStart={handleSliderStart}
+                        onSlidingComplete={handleSliderComplete}
+                        showSpeed={settings.playbackSpeed !== 1.0}
+                        playbackSpeed={settings.playbackSpeed}
+                    />
                 </Animated.View>
             )}
         </View>
