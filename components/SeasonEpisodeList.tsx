@@ -203,4 +203,4 @@ const styles = StyleSheet.create({
   thumbnailWrapper: { position: 'relative', overflow: 'hidden' },
 });
 
-export default SeasonEpisodeList;
+export default React.memo(SeasonEpisodeList);

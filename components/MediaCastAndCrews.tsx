@@ -1,9 +1,9 @@
-import React, { useMemo } from "react";
-import { StyleSheet, Image, ScrollView, useWindowDimensions } from "react-native";
+import React, { useCallback, useMemo } from "react";
+import { StyleSheet, Image, FlatList, useWindowDimensions } from "react-native";
 import { View, Text } from "./Themed";
 import { useTheme } from '@/context/ThemeContext';
 
-const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/h632";
+const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w342";
 
 const getInitials = (name: string): string => {
   if (!name) return "?";
@@ -20,6 +20,48 @@ interface CastMember {
 interface MediaCastAndCrewsProps {
   cast: CastMember[];
 }
+
+interface CastListItemProps {
+  item: {
+    uniqueKey: string;
+    name: string;
+    hasImage: boolean;
+    imageUri: string | null;
+    initials: string | null;
+    displayCharacter: string;
+  };
+  avatarSize: number;
+  textColor: string;
+  mutedTextColor: string;
+  cardColor: string;
+  borderColor: string;
+}
+
+const CastListItem = React.memo(({
+  item,
+  avatarSize,
+  textColor,
+  mutedTextColor,
+  cardColor,
+  borderColor,
+}: CastListItemProps) => (
+  <View style={[styles.avatarContainer, { width: avatarSize + 20 }]}>
+    <View style={styles.avatarWrapper}>
+      {item.hasImage ? (
+        <Image source={{ uri: item.imageUri! }} style={[styles.avatar, { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 }]} />
+      ) : (
+        <View style={[styles.placeholderAvatar, { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2, backgroundColor: cardColor, borderColor }]}>
+          <Text style={[styles.initials, { color: textColor, fontSize: avatarSize * 0.3 }]}>{item.initials}</Text>
+        </View>
+      )}
+      <View style={[styles.avatarBorder, { width: avatarSize + 4, height: avatarSize + 4, borderRadius: (avatarSize + 4) / 2 }]} />
+    </View>
+    <View style={styles.textContainer}>
+      <Text style={[styles.name, { color: textColor, fontSize: Math.max(13, avatarSize * 0.12) }]} numberOfLines={1} ellipsizeMode="tail">{item.name}</Text>
+      <Text style={[styles.character, { color: mutedTextColor, fontSize: Math.max(11, avatarSize * 0.1) }]} numberOfLines={1} ellipsizeMode="tail">{item.displayCharacter}</Text>
+    </View>
+  </View>
+));
 
 const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
   const { colors } = useTheme();
@@ -60,6 +102,17 @@ const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
     };
   }), [cast]);
 
+  const renderCastItem = useCallback(({ item }: { item: (typeof castItems)[number] }) => (
+    <CastListItem
+      item={item}
+      avatarSize={avatarSize}
+      textColor={colors.text}
+      mutedTextColor={colors.textMuted}
+      cardColor={colors.backgroundCard}
+      borderColor={colors.border}
+    />
+  ), [avatarSize, colors.backgroundCard, colors.border, colors.text, colors.textMuted]);
+
   if (cast.length === 0) return null;
 
   return (
@@ -67,31 +120,18 @@ const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
       <View style={[styles.headerContainer, { paddingHorizontal: containerMargin }]}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Cast & Crew</Text>
       </View>
-      <ScrollView
+      <FlatList
         horizontal
+        data={castItems}
+        keyExtractor={(item) => item.uniqueKey}
+        initialNumToRender={Math.min(castPerScreen + 2, castItems.length)}
+        maxToRenderPerBatch={castPerScreen}
+        windowSize={3}
         showsHorizontalScrollIndicator={false}
         style={{ height: avatarSize + 60 }}
         contentContainerStyle={[styles.scrollContent, { paddingHorizontal: containerMargin, gap: spacing }]}
-      >
-        {castItems.map((item) => (
-          <View key={item.uniqueKey} style={[styles.avatarContainer, { width: avatarSize + 20 }]}>
-            <View style={styles.avatarWrapper}>
-              {item.hasImage ? (
-                <Image source={{ uri: item.imageUri! }} style={[styles.avatar, { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 }]} />
-              ) : (
-                <View style={[styles.placeholderAvatar, { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2, backgroundColor: colors.backgroundCard, borderColor: colors.border }]}>
-                  <Text style={[styles.initials, { color: colors.text, fontSize: avatarSize * 0.3 }]}>{item.initials}</Text>
-                </View>
-              )}
-              <View style={[styles.avatarBorder, { width: avatarSize + 4, height: avatarSize + 4, borderRadius: (avatarSize + 4) / 2 }]} />
-            </View>
-            <View style={styles.textContainer}>
-              <Text style={[styles.name, { color: colors.text, fontSize: Math.max(13, avatarSize * 0.12) }]} numberOfLines={1} ellipsizeMode="tail">{item.name}</Text>
-              <Text style={[styles.character, { color: colors.textMuted, fontSize: Math.max(11, avatarSize * 0.1) }]} numberOfLines={1} ellipsizeMode="tail">{item.displayCharacter}</Text>
-            </View>
-          </View>
-        ))}
-      </ScrollView>
+        renderItem={renderCastItem}
+      />
     </View>
   );
 };
@@ -112,4 +152,4 @@ const styles = StyleSheet.create({
   character: { textAlign: "center", lineHeight: 14, opacity: 0.7 },
 });
 
-export default MediaCastAndCrews;
+export default React.memo(MediaCastAndCrews);

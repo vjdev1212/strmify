@@ -23,7 +23,7 @@ const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 const posterCache = new Map<string, PosterItemData[]>();
 const CACHE_DURATION = 5 * 60 * 1000;
 const cacheTimestamps = new Map<string, number>();
-const POSTER_IMAGE_SIZE = 'w780';
+const POSTER_IMAGE_SIZE = 'w500';
 const SKELETON_DATA = [1, 2, 3, 4, 5];
 
 interface PosterItemData {
@@ -50,17 +50,12 @@ const PosterItem = React.memo(({
 }) => {
   const { colors } = useTheme();
   const [imgError, setImgError] = useState(false);
-  const [hapticsEnabled, setHapticsEnabled] = useState(false);
   const year = item.year?.split('–')[0] || item.year;
 
-  useEffect(() => {
-    setHapticsEnabled(isHapticsSupported());
-  }, []);
-
-  const handlePress = useCallback(async () => {
-    if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  const handlePress = useCallback(() => {
+    if (isHapticsSupported()) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push({ pathname: `/${type}/details`, params: { tmdbid: item.tmdbid } });
-  }, [hapticsEnabled, item.tmdbid, type]);
+  }, [item.tmdbid, type]);
 
   return (
     <NativeButton
@@ -116,11 +111,6 @@ const PosterList = ({
   const { width, height } = useWindowDimensions();
   const shortSide = Math.min(width, height);
   const isPortrait = height >= width;
-  const [hapticsEnabled, setHapticsEnabled] = useState(false);
-
-  useEffect(() => {
-    setHapticsEnabled(isHapticsSupported());
-  }, []);
 
   const [data, setData] = useState<PosterItemData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -190,10 +180,10 @@ const PosterList = ({
     fetchData();
   }, [apiUrl]);
 
-  const handleSeeAllPress = useCallback(async () => {
-    if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  const handleSeeAllPress = useCallback(() => {
+    if (isHapticsSupported()) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push({ pathname: `/${type}/list`, params: { apiUrl, title } });
-  }, [apiUrl, hapticsEnabled, title, type]);
+  }, [apiUrl, title, type]);
 
   if (loading) {
     return (
@@ -266,4 +256,4 @@ const styles = StyleSheet.create({
   posterYear: { height: 16, marginTop: 4, fontSize: 12, fontWeight: '500', letterSpacing: -0.1, lineHeight: 16 },
 });
 
-export default PosterList;
+export default React.memo(PosterList);
