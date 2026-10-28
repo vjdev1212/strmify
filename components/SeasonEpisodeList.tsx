@@ -9,6 +9,7 @@ import type { MenuComponentRef } from '@expo/ui/community/menu';
 import CustomContextMenu from './ContextMenu';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/context/ThemeContext';
+import { radius, spacing, typography } from '@/constants/theme';
 
 interface Episode {
   name: string; title: string; season: number; episode: number;
@@ -21,7 +22,7 @@ interface EpisodeItemProps { item: Episode; onEpisodeSelect: (season: number, ep
 const ANIMATION_DURATION = 100;
 const IMAGE_LOAD_DELAY = 100;
 const THUMBNAIL_ASPECT_RATIO = 16 / 9;
-const CARD_GAP = 16;
+const CARD_GAP = spacing.md;
 
 const getCardWidth = (screenWidth: number, screenHeight: number) => screenHeight > screenWidth ? 210 : 240;
 
@@ -180,27 +181,27 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
 };
 
 const styles = StyleSheet.create({
-  container: { backgroundColor: 'transparent', marginBottom: 20 },
-  seasonListContainer: { paddingVertical: 8, paddingHorizontal: 20, backgroundColor: 'transparent' },
-  seasonDropdownButton: { paddingTop: 10, paddingHorizontal: 5, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-evenly', width: 150, maxWidth: 130 },
-  seasonDropdownText: { fontSize: 20, fontWeight: '500', letterSpacing: 0.3, flex: 1 },
-  seasonDropdownArrow: { fontSize: 18, fontWeight: '600' },
+  container: { backgroundColor: 'transparent', marginBottom: spacing.lg },
+  seasonListContainer: { paddingVertical: spacing.sm, paddingHorizontal: spacing.lg, backgroundColor: 'transparent' },
+  seasonDropdownButton: { minHeight: 40, paddingHorizontal: spacing.sm, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-evenly', width: 150, maxWidth: 150, borderRadius: radius.capsule, backgroundColor: '#1C1C1E' },
+  seasonDropdownText: { ...typography.headline, flex: 1 },
+  seasonDropdownArrow: { ...typography.subhead, fontWeight: '600' },
   episodeScrollView: { width: '100%' },
-  episodeScrollContent: { paddingHorizontal: 20, paddingVertical: 12, gap: CARD_GAP },
-  episodePressable: { borderRadius: 12, overflow: 'hidden' },
+  episodeScrollContent: { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, gap: CARD_GAP },
+  episodePressable: { borderRadius: radius.md, overflow: 'hidden' },
   episodeCard: { backgroundColor: 'transparent', padding: 0 },
-  thumbnailContainer: { width: '100%', position: 'relative', borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 6, elevation: 3 },
-  episodeInfo: { paddingTop: 10, paddingHorizontal: 4, gap: 4, backgroundColor: 'transparent' },
+  thumbnailContainer: { width: '100%', position: 'relative', borderRadius: radius.md, overflow: 'hidden', borderWidth: 1, borderColor: '#38383A', boxShadow: '0 2px 6px rgba(0, 0, 0, 0.16)' },
+  episodeInfo: { paddingTop: spacing.sm, paddingHorizontal: spacing.xs, gap: spacing.xs, backgroundColor: 'transparent' },
   thumbnailPlaceHolder: { justifyContent: 'center', alignItems: 'center' },
   thumbnail: { width: '100%' },
-  episodeTitle: { fontSize: 14, fontWeight: '500', lineHeight: 18 },
-  episodeAired: { fontSize: 12, fontWeight: '400', letterSpacing: 0.1 },
+  episodeTitle: { ...typography.subhead, fontWeight: '600' },
+  episodeAired: { ...typography.caption },
   skeletonBackground: { opacity: 1 },
-  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 40 },
-  emptyText: { fontSize: 16, textAlign: 'center' },
-  noEpisodesContainer: { paddingVertical: 40, alignItems: 'center' },
-  noEpisodesText: { fontSize: 14, textAlign: 'center' },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: spacing.xxl },
+  emptyText: { ...typography.body, textAlign: 'center' },
+  noEpisodesContainer: { paddingVertical: spacing.xxl, alignItems: 'center' },
+  noEpisodesText: { ...typography.subhead, textAlign: 'center' },
   thumbnailWrapper: { position: 'relative', overflow: 'hidden' },
 });
 
-export default SeasonEpisodeList;
+export default React.memo(SeasonEpisodeList);

@@ -4,6 +4,7 @@ import { Text, View } from './Themed';
 import { formatDate } from '@/utils/Date';
 import { FontAwesome } from '@expo/vector-icons';
 import { useTheme } from '@/context/ThemeContext';
+import { spacing, typography } from '@/constants/theme';
 
 interface Language { english_name: string; }
 interface MediaContentDetailsListProps {
@@ -20,7 +21,7 @@ const UNKNOWN_TEXT = 'Unknown';
 const NOT_RATED_TEXT = 'Not Rated';
 const STAR_COLOR = '#E6BD37';
 const STAR_SIZE = 14;
-const containerMargin = 15;
+const containerMargin = spacing.md;
 
 const countryCodeToName = (code: string) => {
   try { return new Intl.DisplayNames(['en'], { type: 'region' }).of(code.toUpperCase()) || code; }
@@ -95,14 +96,14 @@ const MediaContentDetailsList: React.FC<MediaContentDetailsListProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: { paddingHorizontal: 5, marginVertical: 20 },
-  headerContainer: { marginBottom: 16 },
-  sectionTitle: { fontSize: 20, fontWeight: '500', letterSpacing: 0.5 },
-  tableRow: { flexDirection: 'row', marginHorizontal: 20, paddingVertical: 10, alignItems: 'center' },
-  labelCell: { width: 120, paddingRight: 16, justifyContent: 'center' },
+  container: { paddingHorizontal: spacing.xs, marginVertical: spacing.lg },
+  headerContainer: { marginBottom: spacing.md },
+  sectionTitle: { ...typography.title },
+  tableRow: { flexDirection: 'row', marginHorizontal: spacing.lg, paddingVertical: spacing.sm, alignItems: 'center' },
+  labelCell: { width: 120, paddingRight: spacing.md, justifyContent: 'center' },
   valueCell: { flex: 1, justifyContent: 'center' },
-  label: { fontSize: 14, fontWeight: '500' },
-  value: { fontSize: 14, lineHeight: 20 },
+  label: { ...typography.subhead, fontWeight: '500' },
+  value: { ...typography.subhead },
   ratingContainer: { flexDirection: 'row', alignItems: 'center' },
   starWrapper: { marginLeft: 8, paddingTop: 1 },
 });

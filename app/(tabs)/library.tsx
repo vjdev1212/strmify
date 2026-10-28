@@ -22,6 +22,7 @@ import { useTheme } from '@/context/ThemeContext';
 import NativeStackList from '@/components/native-stack-list';
 import { NativeButton } from '@/components/native-ui-controls';
 import PosterArtwork from '@/components/PosterArtwork';
+import { radius, spacing, systemDarkBackground, typography } from '@/constants/theme';
 
 type CategoryType = 'all' | 'movies' | 'tv';
 
@@ -264,8 +265,8 @@ const LibraryScreen: React.FC = () => {
         style={[
           styles.categoryButton,
           {
-            backgroundColor: isActive ? '#ffffff' : colors.primarySurface,
-            borderColor: isActive ? '#ffffff' : colors.primaryBorder,
+            backgroundColor: isActive ? colors.text : colors.primaryCard,
+            borderColor: isActive ? colors.text : colors.border,
           },
         ]}
         onPress={() => setActiveCategory(category)}
@@ -383,19 +384,19 @@ const LibraryScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { paddingHorizontal: 16, paddingTop: 20, paddingBottom: 10 },
-  headerTitle: { fontSize: 32, fontWeight: '700', letterSpacing: 0.5, marginBottom: 4 },
-  headerSubtitle: { fontSize: 14, opacity: 0.6 },
-  categoryContainer: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 12, gap: 10 },
-  categoryButton: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 18, borderRadius: 20, borderWidth: 1, gap: 8 },
-  categoryButtonText: { fontSize: 15 },
-  section: { marginTop: 12, marginBottom: 0 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 8 },
-  sectionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  sectionTitle: { fontSize: 18, fontWeight: '600' },
-  sectionCount: { fontSize: 14, opacity: 0.5, fontWeight: '500' },
-  card: { backgroundColor: 'transparent', borderRadius: 10 },
-  imageContainer: { width: '100%', position: 'relative', borderRadius: 10, overflow: 'hidden' },
+  header: { paddingHorizontal: spacing.md, paddingTop: spacing.lg, paddingBottom: spacing.sm },
+  headerTitle: { ...typography.largeTitle, marginBottom: spacing.xs },
+  headerSubtitle: { ...typography.caption, color: '#8E8E93' },
+  categoryContainer: { flexDirection: 'row', paddingHorizontal: spacing.md, paddingVertical: spacing.sm, gap: spacing.sm },
+  categoryButton: { flexDirection: 'row', alignItems: 'center', minHeight: 40, paddingVertical: spacing.sm, paddingHorizontal: spacing.md, borderRadius: radius.capsule, borderWidth: 1, gap: spacing.sm },
+  categoryButtonText: { ...typography.subhead },
+  section: { marginTop: spacing.sm, marginBottom: 0 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.md, marginBottom: spacing.sm },
+  sectionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  sectionTitle: { ...typography.headline },
+  sectionCount: { ...typography.caption, color: '#8E8E93', fontWeight: '500' },
+  card: { backgroundColor: 'transparent', borderRadius: radius.md },
+  imageContainer: { width: '100%', position: 'relative', borderRadius: radius.md, overflow: 'hidden' },
   artworkFrame: { width: '100%', height: '100%' },
   backdrop: { width: '100%', height: '100%' },
   watchedBadge: { position: 'absolute', top: 8, left: 8, backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: 16, padding: 4 },

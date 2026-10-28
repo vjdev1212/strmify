@@ -1,7 +1,7 @@
-import { router, useFocusEffect } from 'expo-router';
+import { router } from 'expo-router';
 import React, { useState, useMemo, useCallback } from 'react';
 import {
-  ScrollView,
+  FlatList,
   StyleSheet,
   View,
   Platform,
@@ -18,18 +18,12 @@ import { CatalogUrl, MovieGneres, TvGneres } from '@/constants/Tmdb';
 import BlurGradientBackground from '@/components/BlurGradientBackground';
 import { useTheme } from '@/context/ThemeContext';
 import { NativeButton } from '@/components/native-ui-controls';
+import { radius, spacing, typography } from '@/constants/theme';
 
 export default function HomeScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [filter, setFilter] = useState<'all' | 'movies' | 'series'>('all');
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  useFocusEffect(
-    useCallback(() => {
-      setRefreshKey(prev => prev + 1);
-    }, [])
-  );
 
   const filters = [
     { key: 'all', label: 'All', icon: 'albums-outline' },
@@ -87,78 +81,88 @@ export default function HomeScreen() {
     return [];
   }, [filter, allLists, movieLists, seriesLists]);
 
-  const handleFilterChange = async (newFilter: 'all' | 'movies' | 'series') => {
+  const handleFilterChange = useCallback(async (newFilter: 'all' | 'movies' | 'series') => {
     if (await isHapticsSupported()) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setFilter(newFilter);
-  };
+  }, []);
 
-  const handleCarouselItemPress = (item: any) => {
+  const handleCarouselItemPress = useCallback((item: any) => {
     const type = item.type == 'movie' ? 'movie' : 'series';
     router.push({ pathname: `/${type}/details`, params: { tmdbid: item.tmdbid } });
-  };
+  }, []);
+
+  const renderCatalogList = useCallback(({ item }: { item: (typeof activeLists)[number] }) => (
+    <PosterList
+      apiUrl={item.apiUrl}
+      title={item.title}
+      type={item.type as 'movie' | 'series'}
+    />
+  ), []);
+
+  const listHeader = (
+    <>
+      <AppleTVCarousel
+        filter={filter}
+        onItemPress={handleCarouselItemPress}
+        autoPlay={true}
+        autoPlayInterval={6000}
+        topInset={Platform.OS === 'ios' ? insets.top : 0}
+      />
+      <View style={styles.contentContainer}>
+        <View style={styles.filtersContainer}>
+          {filters.map((item) => (
+            <NativeButton
+              key={item.key}
+              variant="text"
+              style={[
+                styles.filterButton,
+                {
+                backgroundColor: filter === item.key ? colors.text : colors.primaryCard,
+                borderColor: filter === item.key ? colors.text : colors.border,
+                },
+              ]}
+              onPress={() => handleFilterChange(item.key as 'all' | 'movies' | 'series')}
+              seedColor={colors.primary}
+            >
+              <Ionicons
+                name={item.icon as any}
+                size={18}
+                color={filter === item.key ? '#000000' : colors.textMuted}
+                style={styles.filterIcon}
+              />
+              <Text
+                style={[
+                  styles.filterButtonText,
+                  { color: filter === item.key ? '#000000' : colors.textMuted },
+                  filter === item.key && styles.filterButtonTextActive,
+                ]}
+              >
+                {item.label}
+              </Text>
+            </NativeButton>
+          ))}
+        </View>
+      </View>
+    </>
+  );
 
   return (
     <View style={styles.container}>
       <StatusBar />
       <BlurGradientBackground />
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        removeClippedSubviews={false}
+      <FlatList
         key={filter}
-      >
-        <AppleTVCarousel
-          filter={filter}
-          onItemPress={handleCarouselItemPress}
-          autoPlay={true}
-          autoPlayInterval={6000}
-          topInset={Platform.OS === 'ios' ? insets.top : 0}
-        />
-        <View style={styles.contentContainer}>
-          <View style={styles.filtersContainer}>
-            {filters.map((item) => (
-              <NativeButton
-                key={item.key}
-                variant="text"
-                style={[
-                  styles.filterButton,
-                  {
-                    backgroundColor: filter === item.key ? '#ffffff' : colors.primaryCard,
-                    borderColor: filter === item.key ? '#ffffff' : colors.primaryBorder,
-                  },
-                ]}
-                onPress={() => handleFilterChange(item.key as 'all' | 'movies' | 'series')}
-                seedColor={colors.primary}
-              >
-                <Ionicons
-                  name={item.icon as any}
-                  size={18}
-                  color={filter === item.key ? '#000000' : colors.textMuted}
-                  style={styles.filterIcon}
-                />
-                <Text
-                  style={[
-                    styles.filterButtonText,
-                    { color: filter === item.key ? '#000000' : colors.textMuted },
-                    filter === item.key && styles.filterButtonTextActive,
-                  ]}
-                >
-                  {item.label}
-                </Text>
-              </NativeButton>
-            ))}
-          </View>
-
-          {activeLists.map((list) => (
-            <PosterList
-              key={`${filter}-${list.apiUrl}`}
-              apiUrl={list.apiUrl}
-              title={list.title}
-              type={list.type as 'movie' | 'series'}
-            />
-          ))}
-        </View>
-        <BottomSpacing space={50} />
-      </ScrollView>
+        data={activeLists}
+        keyExtractor={(item) => `${filter}-${item.apiUrl}`}
+        renderItem={renderCatalogList}
+        ListHeaderComponent={listHeader}
+        ListFooterComponent={<BottomSpacing space={50} />}
+        initialNumToRender={2}
+        maxToRenderPerBatch={2}
+        windowSize={5}
+        removeClippedSubviews={false}
+        showsVerticalScrollIndicator={false}
+      />
     </View>
   );
 }
@@ -169,30 +173,30 @@ const styles = StyleSheet.create({
   },
   filtersContainer: {
     flexDirection: 'row',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    gap: spacing.sm,
   },
   filterButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 18,
-    marginRight: 15,
-    borderRadius: 20,
+    minHeight: 40,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.capsule,
     borderWidth: 1,
   },
   filterIcon: {
     marginRight: 6,
   },
   filterButtonText: {
-    fontSize: 15,
-    fontWeight: '500',
-    letterSpacing: -0.2,
+    ...typography.subhead,
+    fontWeight: '600',
   },
   filterButtonTextActive: {
     fontWeight: '600',
   },
   contentContainer: {
-    marginTop: 16,
+    marginTop: spacing.sm,
   },
 });

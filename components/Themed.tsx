@@ -24,7 +24,9 @@ export type ActivityIndicatorProps = RNActivityIndicatorProps;
 export function Text(props: TextProps) {
   const { style, ...otherProps } = props;
   const { colors } = useTheme();
-  const webFontStyle = Platform.OS === 'web' ? { fontFamily: 'SF Pro Display, -apple-system, BlinkMacSystemFont, sans-serif' } : {};
+  const webFontStyle = Platform.OS === 'web'
+    ? { fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif' }
+    : {};
   return <DefaultText style={[webFontStyle, { color: colors.text }, style]} {...otherProps} />;
 }
 

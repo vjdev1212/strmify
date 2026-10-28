@@ -6,6 +6,7 @@ import * as Haptics from 'expo-haptics';
 import { isHapticsSupported } from '@/utils/platform';
 import { useTheme } from '@/context/ThemeContext';
 import { NativeButton } from '@/components/native-ui-controls';
+import { radius } from '@/constants/theme';
 
 interface LibraryButtonProps {
     item: Omit<LibraryItem, 'timestamp'>;
@@ -62,7 +63,7 @@ const LibraryButton: React.FC<LibraryButtonProps> = ({ item, size = 28, color = 
 };
 
 const styles = StyleSheet.create({
-    button: { width: 50, height: 50, borderRadius: 25, justifyContent: 'center', alignItems: 'center', borderWidth: 2 },
+    button: { width: 50, height: 50, borderRadius: radius.capsule, justifyContent: 'center', alignItems: 'center', borderWidth: 1 },
 });
 
 export default LibraryButton;

@@ -16,6 +16,7 @@ import WatchTrailerButton from '@/components/WatchTrailer';
 import LibraryButton from '@/components/LibraryButton';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '@/context/ThemeContext';
+import { spacing, typography } from '@/constants/theme';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -39,9 +40,11 @@ const MovieDetails = () => {
         );
         const result = await response.json();
         if (result) {
-          const externalIds = await getExternalIds();
-          const castAndCrews = await getCastandCrew();
-          const trailer = await getTrailer();
+          const [externalIds, castAndCrews, trailer] = await Promise.all([
+            getExternalIds(),
+            getCastandCrew(),
+            getTrailer(),
+          ]);
           setCast(castAndCrews);
           setImdbId(externalIds.imdb_id);
           setTrailerKey(trailer);
@@ -49,8 +52,8 @@ const MovieDetails = () => {
           const movie = result;
           const movieData = {
             name: movie.title,
-            background: `https://image.tmdb.org/t/p/${isPortrait ? 'w1280' : 'original'}${movie.backdrop_path}`,
-            poster: `https://image.tmdb.org/t/p/w780${movie.poster_path}`,
+            background: `https://image.tmdb.org/t/p/w1280${movie.backdrop_path}`,
+            poster: `https://image.tmdb.org/t/p/w500${movie.poster_path}`,
             logo: logo,
             genre: movie.genres.map((genre: any) => genre.name),
             released: movie.release_date,
@@ -258,9 +261,10 @@ const styles = StyleSheet.create({
   },
   buttonsContainer: {
     flexDirection: 'row',
-    gap: 20,
+    gap: spacing.sm,
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
   },
   activityIndicator: {
     marginBottom: 10
@@ -269,14 +273,14 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: spacing.lg,
   },
   centeredText: {
-    fontSize: 18,
+    ...typography.headline,
     textAlign: 'center',
   },
   castContainer: {
-    marginHorizontal: '1%'
+    marginHorizontal: spacing.sm,
   },
   recommendationsContainer: {
   },

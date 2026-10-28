@@ -8,7 +8,7 @@ const MoviesList = () => {
 
   return (
     <>
-      <Stack.Screen options={{ title: pageTitle, headerTitle: pageTitle, headerTitleAlign: 'center', headerTransparent: false }} />
+      <Stack.Screen options={{ title: pageTitle, headerTitle: pageTitle, headerTitleAlign: 'left', headerTransparent: true, headerShadowVisible: false }} />
       <MediaGrid apiUrl={apiUrl ?? ''} detailsPath="/movie/details" />
     </>
   );

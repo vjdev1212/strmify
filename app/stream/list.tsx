@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { extractQuality, extractSize, getStreamType } from '@/utils/StreamItem';
 import { StorageKeys, storageService } from '@/utils/StorageService';
 import { useTheme } from '@/context/ThemeContext';
-import { systemDarkBackground } from '@/constants/theme';
+import { radius, spacing, systemDarkBackground, typography } from '@/constants/theme';
 
 interface Stream { name: string; title?: string; url?: string; embed?: string; infoHash?: string; magnet?: string; magnetLink?: string; description?: string; }
 interface Addon { name: string; url?: string; streamBaseUrl?: string; types?: string[]; }
@@ -424,33 +424,33 @@ const StreamListScreen = () => {
 const styles = StyleSheet.create({
     container: { flex: 1 },
     sourceSection: { width: '100%', paddingVertical: 8, borderBottomWidth: StyleSheet.hairlineWidth },
-    addonList: { alignItems: 'center', gap: 20, paddingHorizontal: 16 },
-    addonItem: { minHeight: 40, justifyContent: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' },
+    addonList: { alignItems: 'center', gap: spacing.lg, paddingHorizontal: spacing.md },
+    addonItem: { minHeight: 44, justifyContent: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' },
     selectedAddonItem: { borderBottomColor: '#0A84FF' },
-    addonName: { fontSize: 15, fontWeight: '500' },
+    addonName: { ...typography.subhead, fontWeight: '600' },
     streamsPager: { flex: 1 },
     streamsPagerContent: { flexGrow: 1 },
     streamsPage: { flex: 1 },
     scrollContainer: { flex: 1, alignSelf: 'stretch', width: '100%' },
     streamsContent: { paddingTop: 8, paddingBottom: 64 },
-    streamItemContainer: { position: 'relative', paddingLeft: 24, paddingRight: 20, paddingVertical: 8 },
-    streamItem: { width: '100%', paddingRight: 40 },
-    streamHeader: { flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'flex-start', marginBottom: 8, gap: 10 },
-    actionMenu: { position: 'absolute', top: 4, right: 16, zIndex: 1 },
+    streamItemContainer: { position: 'relative', paddingLeft: spacing.lg, paddingRight: spacing.md, paddingVertical: spacing.sm },
+    streamItem: { width: '100%', paddingRight: spacing.xl },
+    streamHeader: { flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'flex-start', marginBottom: spacing.sm, gap: spacing.sm },
+    actionMenu: { position: 'absolute', top: spacing.xs, right: spacing.md, zIndex: 1 },
     actionButton: { minWidth: 32, minHeight: 32, justifyContent: 'center', alignItems: 'center' },
     streamTitleLabel: { flexShrink: 1, minWidth: 0, flexDirection: 'row', alignItems: 'flex-start', gap: 7 },
     streamTitleIcon: { marginTop: 3 },
-    streamName: { fontSize: 16, fontWeight: '500', flexShrink: 1, lineHeight: 22, letterSpacing: -0.3 },
-    qualityBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, borderWidth: StyleSheet.hairlineWidth },
-    qualityText: { fontSize: 12, fontWeight: '500', letterSpacing: 0.2 },
-    streamDescription: { fontSize: 13, lineHeight: 19, marginBottom: 12 },
+    streamName: { ...typography.headline, flexShrink: 1 },
+    qualityBadge: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, borderRadius: radius.sm, borderWidth: StyleSheet.hairlineWidth },
+    qualityText: { ...typography.caption, fontWeight: '600' },
+    streamDescription: { ...typography.caption, marginBottom: spacing.md },
     streamFooter: { flexDirection: 'row', alignItems: 'center', gap: 10 },
     streamTypeLabel: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-    sizeBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-    streamSize: { fontSize: 11, fontWeight: '500', letterSpacing: 0.3 },
-    streamType: { fontSize: 11, textTransform: 'uppercase', fontWeight: '500', letterSpacing: 0.8 },
-    streamDivider: { height: 2, width: '100%', marginVertical: 8 },
-    stateContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 12 },
+    sizeBadge: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, borderRadius: radius.sm },
+    streamSize: { ...typography.caption, fontWeight: '500' },
+    streamType: { ...typography.caption, textTransform: 'uppercase', fontWeight: '600', letterSpacing: 0.8 },
+    streamDivider: { height: StyleSheet.hairlineWidth, width: '100%', marginVertical: spacing.sm },
+    stateContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.lg, gap: spacing.sm },
     noAddonsStateContainer: {
         flex: 1,
         width: '100%',
@@ -465,15 +465,15 @@ const styles = StyleSheet.create({
     emptyStateIcon: {
         width: 72,
         height: 72,
-        borderRadius: 36,
+        borderRadius: radius.capsule,
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: -4,
     },
     addAddonButton: {
-        paddingVertical: 12,
-        paddingHorizontal: 20,
-        borderRadius: 25,
+        paddingVertical: spacing.sm,
+        paddingHorizontal: spacing.lg,
+        borderRadius: radius.capsule,
         minWidth: 150,
         alignItems: 'center',
         alignSelf: 'center',
@@ -482,7 +482,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#ffffff',
         marginTop: 12,
     },
-    addAddonButtonText: { color: '#000000', fontSize: 16, fontWeight: '500' },
+    addAddonButtonText: { color: '#000000', ...typography.headline },
     addAddonButtonIcon: { marginRight: 8 },
 });
 

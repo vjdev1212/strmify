@@ -21,6 +21,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { libraryService } from '@/utils/LibraryService';
 import { showAlert } from '@/utils/platform';
 import NativeStackList from '@/components/native-stack-list';
+import { spacing, typography } from '@/constants/theme';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -371,7 +372,7 @@ const MediaGrid: React.FC<MediaGridProps> = ({
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    listContent: { flex: 1, paddingTop: 8, paddingBottom: 24 },
+    listContent: { flex: 1, paddingTop: spacing.sm, paddingBottom: spacing.lg },
     poster: {
         width: 88,
         height: 132,
@@ -381,22 +382,16 @@ const styles = StyleSheet.create({
         height: 132,
     },
     mediaTitle: {
-        fontSize: 17,
-        fontWeight: '600',
-        lineHeight: 22,
+        ...typography.headline,
     },
     compactMediaTitle: {
-        fontSize: 16,
-        fontWeight: '500',
-        lineHeight: 20,
+        ...typography.body,
     },
     mediaMetadata: {
-        fontSize: 14,
-        lineHeight: 19,
+        ...typography.subhead,
     },
     compactMediaMetadata: {
-        fontSize: 13,
-        lineHeight: 17,
+        ...typography.caption,
     },
     divider: {
         height: StyleSheet.hairlineWidth,
@@ -418,8 +413,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
-    centeredContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, gap: 16 },
-    loadingText: { fontSize: 16, textAlign: 'center', opacity: 0.7 },
+    centeredContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.lg, gap: spacing.md },
+    loadingText: { ...typography.body, textAlign: 'center', opacity: 0.7 },
 });
 
 export default MediaGrid;

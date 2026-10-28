@@ -1,7 +1,8 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { StyleSheet, Animated, ActivityIndicator, Platform } from 'react-native';
+import { StyleSheet, Animated, ActivityIndicator } from 'react-native';
 import { View } from './Themed';
 import { useTheme } from '@/context/ThemeContext';
+import { radius } from '@/constants/theme';
 
 interface MediaContentPosterProps { background: string; isPortrait: boolean; }
 
@@ -17,7 +18,7 @@ const MediaContentPoster: React.FC<MediaContentPosterProps> = ({ background, isP
 
   return (
     <View style={[styles.posterContainer, { aspectRatio: isPortrait ? 1 / 1 : 16 / 9 }]}>
-      <Animated.View style={[styles.shadowContainer, { borderRadius: isPortrait ? 0 : 10, ...Platform.select({ ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.44, shadowRadius: 10.32 }, android: { elevation: 16 } }) }]}>
+      <Animated.View style={[styles.shadowContainer, { borderRadius: isPortrait ? 0 : radius.md }]}>
         {isLoading && (
           <Animated.View style={styles.loaderContainer}>
             <ActivityIndicator color={colors.primary} />
@@ -26,7 +27,7 @@ const MediaContentPoster: React.FC<MediaContentPosterProps> = ({ background, isP
         <Animated.Image
           resizeMode={isPortrait ? 'cover' : 'contain'}
           source={{ uri: background }}
-          style={[styles.poster, { opacity: fadeAnim, borderRadius: isPortrait ? 0 : 10 }]}
+          style={[styles.poster, { opacity: fadeAnim, borderRadius: isPortrait ? 0 : radius.md }]}
           onLoad={startAnimations}
         />
       </Animated.View>
@@ -36,7 +37,7 @@ const MediaContentPoster: React.FC<MediaContentPosterProps> = ({ background, isP
 
 const styles = StyleSheet.create({
   posterContainer: { position: 'relative', width: '100%', overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
-  shadowContainer: { width: '100%', height: '100%', backgroundColor: 'transparent' },
+  shadowContainer: { width: '100%', height: '100%', backgroundColor: 'transparent', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.24)' },
   poster: { width: '100%', height: '100%' },
   loaderContainer: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.2)' },
 });

@@ -3,6 +3,7 @@ import { StyleSheet } from 'react-native';
 import { Text, View } from './Themed';
 import { getYear } from '@/utils/Date';
 import { MaterialIcons, FontAwesome, Feather } from '@expo/vector-icons';
+import { radius, spacing, typography } from '@/constants/theme';
 
 // Type definitions
 interface MediaContentHeaderProps {
@@ -183,23 +184,23 @@ const MediaContentHeader: React.FC<MediaContentHeaderProps> = ({
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
   },
   genreContainer: {
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    marginBottom: 16
+    borderRadius: radius.capsule,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.md
   },
   genre: {
-    fontSize: 15,
+    ...typography.subhead,
     textAlign: 'center',
     color: HEADER_TEXT_COLOR,
     letterSpacing: 0.5,
   },
   infoWrapper: {
-    borderRadius: 16,
-    paddingHorizontal: 15,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
   },
   infoContainer: {
     flexDirection: 'row',
@@ -213,16 +214,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   ratingItem: {
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    marginHorizontal: 2,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    marginHorizontal: spacing.xs,
   },
   icon: {
     marginRight: 6,
   },
   infoText: {
-    fontSize: 15,
+    ...typography.subhead,
     color: HEADER_TEXT_COLOR,
     letterSpacing: 0.3,
   },

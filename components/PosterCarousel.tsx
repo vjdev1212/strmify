@@ -88,7 +88,6 @@ export default function AppleTVCarousel({
     useEffect(() => {
         const fetchCarouselData = async () => {
             try {
-                const { isLandscape } = dimensions;
                 setLoading(true);
                 const promises: Promise<any>[] = [];
 
@@ -116,7 +115,7 @@ export default function AppleTVCarousel({
                                 title: item.title || item.name,
                                 subtitle: item.overview,
                                 posterUrl: `https://image.tmdb.org/t/p/w780${item.poster_path}`,
-                                backdropUrl: `https://image.tmdb.org/t/p/${isLandscape ? 'original' : 'w1280'}${item.backdrop_path}`,
+                                backdropUrl: `https://image.tmdb.org/t/p/w1280${item.backdrop_path}`,
                                 type,
                                 year: getYear(item.release_date || item.first_air_date),
                                 rating: item.vote_average?.toFixed(1) || '0.0',
@@ -196,21 +195,23 @@ export default function AppleTVCarousel({
                     }}
                 >
                     <View style={styles.backdropImage}>
-                        <Animated.Image
-                            key={`${item.id}-${index}`}
-                            source={{ uri: item.backdropUrl || item.posterUrl }}
-                            style={[
-                                StyleSheet.absoluteFill,
-                                {
-                                    opacity: activeIndex === index ? 1 : 0,
-                                    transform: [{ scale: activeIndex === index || reducedMotion ? 1 : 1.04 }],
-                                    transitionProperty: ['opacity', 'transform'],
-                                    transitionDuration: reducedMotion ? '120ms' : '260ms',
-                                    transitionTimingFunction: cubicBezier(0.23, 1, 0.32, 1),
-                                },
-                            ]}
-                            resizeMode="cover"
-                        />
+                        {(Math.abs(activeIndex - index) <= 1 || Math.abs(activeIndex - index) >= data.length - 1) && (
+                            <Animated.Image
+                                key={`${item.id}-${index}`}
+                                source={{ uri: item.backdropUrl || item.posterUrl }}
+                                style={[
+                                    StyleSheet.absoluteFill,
+                                    {
+                                        opacity: activeIndex === index ? 1 : 0,
+                                        transform: [{ scale: activeIndex === index || reducedMotion ? 1 : 1.04 }],
+                                        transitionProperty: ['opacity', 'transform'],
+                                        transitionDuration: reducedMotion ? '120ms' : '260ms',
+                                        transitionTimingFunction: cubicBezier(0.23, 1, 0.32, 1),
+                                    },
+                                ]}
+                                resizeMode="cover"
+                            />
+                        )}
                         <LinearGradient
                             colors={colors.gradientOverlay as any}
                             style={styles.gradient}

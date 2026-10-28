@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
 import type { ScrollViewInstance } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -17,6 +17,7 @@ import WatchTrailerButton from '@/components/WatchTrailer';
 import LibraryButton from '@/components/LibraryButton';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '@/context/ThemeContext';
+import { spacing, typography } from '@/constants/theme';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -42,33 +43,33 @@ const SeriesDetails = () => {
         );
         const result = await response.json();
         if (result) {
-          const externalIds = await getExternalIds();
-          const castAndCrews = await getCastandCrew();
-          const trailer = await getTrailer();
-          setCast(castAndCrews);
-          setImdbId(externalIds.imdb_id);
-          setTrailerKey(trailer);
-          const logo = `https://images.metahub.space/logo/medium/${externalIds.imdb_id}/img`;
-
           const seasonPromises = result.seasons.map(async (season: any) => {
             const episodes = await getEpisodes(season.season_number);
             return episodes.episodes.map((episode: any) => ({
               season: season.season_number,
               episode: episode.episode_number,
               number: episode.episode_number,
-              thumbnail: `https://image.tmdb.org/t/p/w1280/${episode.still_path}`,
+              thumbnail: `https://image.tmdb.org/t/p/w500/${episode.still_path}`,
               name: episode.name,
               firstAired: episode.air_date,
               overview: episode.overview,
             }));
           });
 
-          const videosArray = (await Promise.all(seasonPromises)).flat();
+          const [[externalIds, castAndCrews, trailer], videosBySeason] = await Promise.all([
+            Promise.all([getExternalIds(), getCastandCrew(), getTrailer()]),
+            Promise.all(seasonPromises),
+          ]);
+          setCast(castAndCrews);
+          setImdbId(externalIds.imdb_id);
+          setTrailerKey(trailer);
+          const logo = `https://images.metahub.space/logo/medium/${externalIds.imdb_id}/img`;
+          const videosArray = videosBySeason.flat();
 
           const seriesData = {
             name: result.name,
-            background: `https://image.tmdb.org/t/p/${isPortrait ? 'w1280' : 'original'}${result.backdrop_path}`,
-            poster: `https://image.tmdb.org/t/p/w780${result.poster_path}`,
+            background: `https://image.tmdb.org/t/p/w1280${result.backdrop_path}`,
+            poster: `https://image.tmdb.org/t/p/w500${result.poster_path}`,
             logo: logo,
             genre: result.genres.map((genre: any) => genre.name),
             released: result.first_air_date,
@@ -160,6 +161,24 @@ const SeriesDetails = () => {
     }
   };
 
+  const handleEpisodeSelect = useCallback((selectedSeason: number, selectedEpisode: number) => {
+    if (!data) return;
+    setSeason(selectedSeason);
+    setEpisode(selectedEpisode);
+    router.push({
+      pathname: '/stream/list',
+      params: {
+        imdbid,
+        tmdbid,
+        type: 'series',
+        name: data.name,
+        title: `${data.name} S${String(selectedSeason).padStart(2, '0')}E${String(selectedEpisode).padStart(2, '0')}`,
+        season: selectedSeason,
+        episode: selectedEpisode,
+      },
+    });
+  }, [data, imdbid, tmdbid]);
+
   if (loading) {
     return (
       <View style={styles.centeredContainer}>
@@ -175,25 +194,6 @@ const SeriesDetails = () => {
       </View>
     );
   }
-
-  const handleEpisodeSelect = (season: number, episode: number) => {
-    setSeason(season);
-    setEpisode(episode);
-    router.push({
-      pathname: '/stream/list',
-      params: {
-        imdbid:
-          imdbid,
-        tmdbid:
-          tmdbid,
-        type: 'series',
-        name: data.name,
-        title: getFormattedName(data, season, episode),
-        season: season,
-        episode: episode
-      },
-    });
-  };
 
   const handlePlayPress = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -323,9 +323,10 @@ const styles = StyleSheet.create({
   },
   buttonsContainer: {
     flexDirection: 'row',
-    gap: 20,
+    gap: spacing.sm,
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
   },
   activityIndicator: {
     marginBottom: 10,
@@ -334,14 +335,14 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: spacing.lg,
   },
   centeredText: {
-    fontSize: 18,
+    ...typography.headline,
     textAlign: 'center',
   },
   castContainer: {
-    marginHorizontal: '1%'
+    marginHorizontal: spacing.sm,
   },
   recommendationsContainer: {
   },

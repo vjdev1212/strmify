@@ -5,7 +5,7 @@ import { DarkTheme, ThemeProvider } from 'expo-router/react-navigation';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
-import { Appearance, View, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '@/context/ThemeContext';
 import BlurGradientBackground from '@/components/BlurGradientBackground';
@@ -26,7 +26,6 @@ export default function RootLayout() {
     });
 
     useEffect(() => { if (error) throw error; }, [error]);
-    useEffect(() => { Appearance.setColorScheme('dark'); }, []);
     useEffect(() => { if (loaded) SplashScreen.hideAsync(); }, [loaded]);
 
     if (!loaded) return null;
@@ -147,51 +146,37 @@ const styles = StyleSheet.create({
 
 export const globalGlassStyles = StyleSheet.create({
     glassContainer: {
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        backgroundColor: 'rgba(28, 28, 30, 0.92)',
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.15)',
-        borderRadius: 15,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.3,
-        shadowRadius: 20,
-        elevation: 8,
+        borderColor: '#38383A',
+        borderRadius: 20,
+        borderCurve: 'continuous',
+        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.28)',
     },
     glassCard: {
-        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        backgroundColor: '#1C1C1E',
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.12)',
-        borderRadius: 12,
+        borderColor: '#38383A',
+        borderRadius: 14,
+        borderCurve: 'continuous',
         padding: 16,
-        margin: 8,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 10,
-        elevation: 4,
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.18)',
     },
     glassButton: {
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        backgroundColor: '#2C2C2E',
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.2)',
-        borderRadius: 25,
+        borderColor: '#48484A',
+        borderRadius: 999,
         paddingVertical: 12,
         paddingHorizontal: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 10,
-        elevation: 5,
     },
     glassOverlay: {
         backgroundColor: 'rgba(0, 0, 0, 0.3)',
-        borderRadius: 10,
+        borderRadius: 14,
+        borderCurve: 'continuous',
         padding: 12,
     },
     glassText: {
         color: '#ffffff',
-        textShadowColor: 'rgba(0, 0, 0, 0.5)',
-        textShadowOffset: { width: 1, height: 1 },
-        textShadowRadius: 3,
     },
 });
