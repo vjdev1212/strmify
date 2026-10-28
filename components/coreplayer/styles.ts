@@ -1,4 +1,4 @@
-import { Colors, radius, spacing, typography } from "@/constants/theme";
+import { Colors } from "@/constants/theme";
 import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
@@ -36,16 +36,16 @@ export const styles = StyleSheet.create({
 
     //Glass Effect
     glassIcon: {
-        padding: spacing.sm,
-        borderRadius: radius.capsule
+        padding: 12,
+        borderRadius: 100
     },
     glassSlider: {
         borderRadius: 100
     },
     glassTime: {
-        paddingHorizontal: spacing.sm,
-        paddingVertical: spacing.sm,
-        borderRadius: radius.capsule
+        paddingHorizontal: 10,
+        paddingVertical: 8,
+        borderRadius: 100
     },
 
     // Top Controls
@@ -56,15 +56,15 @@ export const styles = StyleSheet.create({
         right: 0,
         flexDirection: 'row',
         alignItems: 'center',
-        paddingTop: spacing.lg,
-        paddingHorizontal: spacing.md,
-        paddingBottom: spacing.lg,
+        paddingTop: 20,
+        paddingHorizontal: '3%',
+        paddingBottom: 20,
         zIndex: 100
     },
 
     backButton: {
-        width: 44,
-        height: 44,
+        width: 48,
+        height: 48,
         alignItems: 'center',
         justifyContent: 'center',
         marginLeft: 8,
@@ -78,17 +78,18 @@ export const styles = StyleSheet.create({
 
     titleText: {
         color: 'white',
-        ...typography.headline,
+        fontSize: 18,
+        fontWeight: 500,
     },
 
     topRightControls: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: spacing.xs,
-        borderRadius: radius.capsule,
-        marginRight: spacing.sm,
-        paddingHorizontal: spacing.sm,
-        paddingVertical: spacing.xs,
+        gap: 4,
+        borderRadius: 100,
+        marginRight: 8,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
     },
 
     controlButton: {
@@ -113,8 +114,8 @@ export const styles = StyleSheet.create({
     },
 
     skipButton: {
-        marginHorizontal: spacing.lg,
-        borderRadius: radius.capsule,
+        marginHorizontal: 30,
+        borderRadius: 25,
     },
 
     playButton: {
@@ -122,8 +123,8 @@ export const styles = StyleSheet.create({
     },
 
     bufferingButton: {
-        padding: spacing.sm,
-        borderRadius: radius.capsule,
+        padding: 12,
+        borderRadius: 100,
     },
 
     disabledButton: {
@@ -136,28 +137,28 @@ export const styles = StyleSheet.create({
         bottom: 6,
         left: 0,
         right: 0,
-        paddingTop: spacing.lg,
-        marginHorizontal: spacing.md,
+        paddingTop: 20,
+        marginHorizontal: '5%',
         zIndex: 100,
     },
 
     // Progress Bar
     progressContainerWithMargin: {
-        marginBottom: spacing.md,
-        paddingVertical: spacing.sm,
+        marginBottom: 15,
+        paddingVertical: 10,
     },
 
     glassContainer: {
-        paddingHorizontal: spacing.sm,
-        paddingVertical: spacing.sm,
-        borderRadius: radius.capsule
+        paddingHorizontal: 10,
+        paddingVertical: 10,
+        borderRadius: 100
     },
 
     sliderRow: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        gap: spacing.sm,
+        gap: 12,
     },
 
     progressSlider: {
@@ -168,16 +169,16 @@ export const styles = StyleSheet.create({
 
     timeText: {
         color: 'white',
-        ...typography.caption,
-        marginHorizontal: spacing.xs,
-        fontWeight: '600',
+        fontSize: 14,
+        marginHorizontal: 5,
+        fontWeight: '500',
     },
 
     speedText: {
         color: Colors.text,
-        ...typography.caption,
-        fontWeight: '600',
-        marginLeft: spacing.sm,
+        fontSize: 14,
+        fontWeight: '500',
+        marginLeft: 12,
     },
 
     // Buffering
@@ -196,8 +197,8 @@ export const styles = StyleSheet.create({
     bufferingText: {
         color: 'white',
         fontSize: 16,
-        marginTop: spacing.sm,
-        fontWeight: '600',
+        marginTop: 8,
+        fontWeight: 500,
     },
 
     // Content Fit Label
@@ -205,9 +206,9 @@ export const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        paddingHorizontal: spacing.lg,
-        paddingVertical: spacing.sm,
-        borderRadius: radius.capsule,
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+        borderRadius: 25,
     },
 
     contentFitLabelText: {
@@ -433,7 +434,7 @@ export const styles = StyleSheet.create({
     settingOptionText: {
         color: 'white',
         fontSize: 16,
-        fontWeight: '500',
+        fontWeight: 500,
     },
 
     speedOptionsGrid: {
@@ -462,7 +463,7 @@ export const styles = StyleSheet.create({
     speedOptionText: {
         color: 'white',
         fontSize: 14,
-        fontWeight: '500',
+        fontWeight: 500,
     },
 
     speedOptionTextSelected: {
