@@ -16,6 +16,7 @@ import WatchTrailerButton from '@/components/WatchTrailer';
 import LibraryButton from '@/components/LibraryButton';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '@/context/ThemeContext';
+import { spacing, typography } from '@/constants/theme';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -260,9 +261,10 @@ const styles = StyleSheet.create({
   },
   buttonsContainer: {
     flexDirection: 'row',
-    gap: 20,
+    gap: spacing.sm,
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
   },
   activityIndicator: {
     marginBottom: 10
@@ -271,14 +273,14 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: spacing.lg,
   },
   centeredText: {
-    fontSize: 18,
+    ...typography.headline,
     textAlign: 'center',
   },
   castContainer: {
-    marginHorizontal: '1%'
+    marginHorizontal: spacing.sm,
   },
   recommendationsContainer: {
   },

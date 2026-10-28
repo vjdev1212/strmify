@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/context/ThemeContext';
 import { NativeButton } from '@/components/native-ui-controls';
 import PosterArtwork from '@/components/PosterArtwork';
+import { radius, spacing, typography } from '@/constants/theme';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -121,11 +122,11 @@ const PosterList = ({
     if (shortSide < 1440) return isPortrait ? 7 : 9;
     return isPortrait ? 7 : 10;
   }, [isPortrait, shortSide]);
-  const spacing = 14;
-  const containerMargin = 15;
+  const posterGap = spacing.sm + 4;
+  const containerMargin = spacing.md;
 
   const posterWidth = useMemo(() => {
-    const totalSpacing = spacing * (postersPerScreen - 1);
+    const totalSpacing = posterGap * (postersPerScreen - 1);
     const totalMargins = containerMargin * 2;
     return (width - totalSpacing - totalMargins) / postersPerScreen;
   }, [width, postersPerScreen]);
@@ -195,7 +196,7 @@ const PosterList = ({
           horizontal
           showsHorizontalScrollIndicator={false}
           style={listContentStyle}
-          contentContainerStyle={{ flexDirection: 'row', gap: spacing, paddingRight: 4 }}
+          contentContainerStyle={{ flexDirection: 'row', gap: posterGap, paddingRight: spacing.md }}
         >
           {SKELETON_DATA.map((item, index) => (
             <SkeletonPoster
@@ -226,7 +227,7 @@ const PosterList = ({
         horizontal
         showsHorizontalScrollIndicator={false}
         style={listContentStyle}
-        contentContainerStyle={{ flexDirection: 'row', gap: spacing, paddingRight: 4 }}
+        contentContainerStyle={{ flexDirection: 'row', gap: posterGap, paddingRight: spacing.md }}
       >
         {data.map((item, index) => (
           <PosterItem
@@ -244,16 +245,16 @@ const PosterList = ({
 };
 
 const styles = StyleSheet.create({
-  container: { paddingTop: 10, marginBottom: 20, marginHorizontal: 15 },
-  compactContainer: { paddingTop: 4, marginBottom: 4 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 5, alignItems: 'center', marginBottom: 16 },
+  container: { paddingTop: spacing.sm, marginBottom: spacing.lg, marginHorizontal: spacing.md },
+  compactContainer: { paddingTop: spacing.xs, marginBottom: spacing.xs },
+  header: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: spacing.xs, alignItems: 'center', marginBottom: spacing.md },
   compactHeader: { marginBottom: 8 },
-  title: { fontSize: 18, fontWeight: '500', letterSpacing: 0.2 },
+  title: { ...typography.headline },
   seeAllButton: { flexDirection: 'row', alignItems: 'center', paddingVertical: 4, paddingHorizontal: 4 },
   seeAllText: { fontSize: 15, fontWeight: '500', letterSpacing: -0.1 },
   chevronIcon: { marginLeft: 2 },
-  posterTitle: { height: 20, marginTop: 10, fontSize: 14, fontWeight: '500', letterSpacing: -0.2, lineHeight: 20 },
-  posterYear: { height: 16, marginTop: 4, fontSize: 12, fontWeight: '500', letterSpacing: -0.1, lineHeight: 16 },
+  posterTitle: { height: 20, marginTop: spacing.sm, ...typography.caption, fontWeight: '600' },
+  posterYear: { height: 18, marginTop: spacing.xs, ...typography.caption, color: '#8E8E93' },
 });
 
 export default React.memo(PosterList);

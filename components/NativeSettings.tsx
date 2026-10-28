@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/Themed';
 import { useTheme } from '@/context/ThemeContext';
-import { systemDarkBackground } from '@/constants/theme';
+import { radius, spacing, systemDarkBackground, typography } from '@/constants/theme';
 
 interface SettingsPageProps {
   children: ReactNode;
@@ -138,7 +138,10 @@ export function SettingsRow({
       accessibilityState={selected === undefined ? undefined : { checked: selected }}
       onPress={onPress}
       disabled={disabled}
-      style={rowStyle}
+      style={({ pressed }) => [
+        rowStyle,
+        pressed && styles.pressedRow,
+      ]}
     >
       {content}
     </Pressable>
@@ -164,49 +167,51 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 780,
     alignSelf: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 40,
-    gap: 28,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xl,
+    gap: spacing.lg,
   },
   section: {
-    gap: 10,
+    gap: spacing.sm,
   },
   sectionTitle: {
-    fontSize: 15,
+    ...typography.subhead,
     fontWeight: '600',
-    letterSpacing: -0.2,
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.md,
     color: '#8e8e93',
   },
   group: {
-    backgroundColor: '#1c1c1e',
-    borderRadius: 27,
+    backgroundColor: '#1C1C1E',
+    borderRadius: radius.lg,
+    borderCurve: 'continuous',
     overflow: 'hidden',
   },
   footer: {
-    fontSize: 13,
-    lineHeight: 18,
-    paddingHorizontal: 16,
+    ...typography.caption,
+    paddingHorizontal: spacing.md,
     color: '#8e8e93',
   },
   row: {
     width: '100%',
-    minHeight: 64,
+    minHeight: 60,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    gap: 12,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    gap: spacing.sm,
   },
   rowWithSeparator: {
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: '#38383a',
-    marginLeft: 20,
+    marginLeft: spacing.md,
     paddingLeft: 0,
   },
   disabledRow: {
     opacity: 0.5,
+  },
+  pressedRow: {
+    backgroundColor: '#2C2C2E',
   },
   leading: {
     alignItems: 'center',
@@ -214,32 +219,27 @@ const styles = StyleSheet.create({
   },
   rowText: {
     flex: 1,
-    gap: 3,
+    gap: spacing.xs,
   },
   rowTitle: {
-    fontSize: 17,
-    fontWeight: '400',
+    ...typography.body,
   },
   rowDetail: {
-    fontSize: 13,
-    lineHeight: 18,
+    ...typography.caption,
   },
   trailing: {
     alignItems: 'center',
     justifyContent: 'center',
   },
   titleBlock: {
-    gap: 6,
-    paddingHorizontal: 16,
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
     paddingBottom: 4,
   },
   title: {
-    fontSize: 34,
-    fontWeight: '700',
-    letterSpacing: 0.3,
+    ...typography.largeTitle,
   },
   subtitle: {
-    fontSize: 15,
-    lineHeight: 20,
+    ...typography.subhead,
   },
 });

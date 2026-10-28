@@ -3,6 +3,7 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import { Text } from './Themed';
 import { NativeButton } from '@/components/native-ui-controls';
+import { radius, spacing, typography } from '@/constants/theme';
 
 const PlayButton = ({ onPress }: { onPress: () => void }) => (
   <NativeButton variant="filled" style={styles.button} onPress={onPress} seedColor="#ffffff">
@@ -13,21 +14,21 @@ const PlayButton = ({ onPress }: { onPress: () => void }) => (
 
 const styles = StyleSheet.create({
   button: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 25,
-    minWidth: 150,
+    minHeight: 50,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radius.capsule,
+    minWidth: 156,
     alignItems: 'center',
-    marginVertical: 20,
+    marginVertical: spacing.md,
     alignSelf: 'center',
     flexDirection: 'row',
     justifyContent: 'center',
-    backgroundColor: '#ffffff',    
+    backgroundColor: '#FFFFFF',
   },
   text: {
+    ...typography.headline,
     color: '#000000',
-    fontSize: 16,
-    fontWeight: '500'
   },
   icon: {
     marginRight: 8,

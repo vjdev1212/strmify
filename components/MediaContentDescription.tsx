@@ -3,11 +3,12 @@ import { StyleSheet, LayoutAnimation } from 'react-native';
 import { Text, View } from './Themed';
 import { useTheme } from '@/context/ThemeContext';
 import { NativeButton } from '@/components/native-ui-controls';
+import { spacing, typography } from '@/constants/theme';
 
 interface MediaContentDescriptionProps { description: string; }
 
 const animationConfig = {
-  duration: 5000,
+  duration: 220,
   update: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
   create: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
   delete: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
@@ -37,9 +38,9 @@ const MediaContentDescription: React.FC<MediaContentDescriptionProps> = ({ descr
 };
 
 const styles = StyleSheet.create({
-  container: { justifyContent: 'center', minHeight: 10, paddingBottom: 10 },
-  description: { fontSize: 14, lineHeight: 22, paddingHorizontal: 20, marginTop: 10 },
-  moreText: { fontSize: 13, marginTop: 5, paddingHorizontal: 20 },
+  container: { justifyContent: 'center', minHeight: 10, paddingBottom: spacing.sm },
+  description: { ...typography.subhead, paddingHorizontal: spacing.lg, marginTop: spacing.sm },
+  moreText: { ...typography.caption, marginTop: spacing.xs, paddingHorizontal: spacing.lg, textTransform: 'uppercase' },
 });
 
 export default MediaContentDescription;

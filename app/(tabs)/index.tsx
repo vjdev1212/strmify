@@ -18,6 +18,7 @@ import { CatalogUrl, MovieGneres, TvGneres } from '@/constants/Tmdb';
 import BlurGradientBackground from '@/components/BlurGradientBackground';
 import { useTheme } from '@/context/ThemeContext';
 import { NativeButton } from '@/components/native-ui-controls';
+import { radius, spacing, typography } from '@/constants/theme';
 
 export default function HomeScreen() {
   const { colors } = useTheme();
@@ -116,8 +117,8 @@ export default function HomeScreen() {
               style={[
                 styles.filterButton,
                 {
-                  backgroundColor: filter === item.key ? '#ffffff' : colors.primaryCard,
-                  borderColor: filter === item.key ? '#ffffff' : colors.primaryBorder,
+                backgroundColor: filter === item.key ? colors.text : colors.primaryCard,
+                borderColor: filter === item.key ? colors.text : colors.border,
                 },
               ]}
               onPress={() => handleFilterChange(item.key as 'all' | 'movies' | 'series')}
@@ -172,30 +173,30 @@ const styles = StyleSheet.create({
   },
   filtersContainer: {
     flexDirection: 'row',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    gap: spacing.sm,
   },
   filterButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 18,
-    marginRight: 15,
-    borderRadius: 20,
+    minHeight: 40,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.capsule,
     borderWidth: 1,
   },
   filterIcon: {
     marginRight: 6,
   },
   filterButtonText: {
-    fontSize: 15,
-    fontWeight: '500',
-    letterSpacing: -0.2,
+    ...typography.subhead,
+    fontWeight: '600',
   },
   filterButtonTextActive: {
     fontWeight: '600',
   },
   contentContainer: {
-    marginTop: 16,
+    marginTop: spacing.sm,
   },
 });

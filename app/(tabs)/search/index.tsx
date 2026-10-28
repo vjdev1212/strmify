@@ -6,10 +6,9 @@ import { Stack } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Keyboard, Platform, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { systemDarkBackground } from '@/constants/theme';
+import { radius, spacing, systemDarkBackground, typography } from '@/constants/theme';
 
 const TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
-const SEARCH_ACCENT = '#0A84FF';
 type SearchFilter = 'all' | 'movie' | 'series';
 
 interface TMDBSearchItem {
@@ -244,13 +243,13 @@ const SearchScreen = () => {
       <View style={styles.resultsContainer}>
         {loading ? (
           <View style={styles.statusContainer}>
-            <ActivityIndicator size="large" color={SEARCH_ACCENT} />
+            <ActivityIndicator size="large" color={colors.primary} />
           </View>
         ) : error ? (
           <View style={styles.statusContainer}>
             <Text style={[styles.statusText, { color: colors.textMuted }]}>{error}</Text>
             <Pressable accessibilityRole="button" onPress={() => setRetryCount((count) => count + 1)}>
-              <Text style={[styles.retryText, { color: SEARCH_ACCENT }]}>Try again</Text>
+              <Text style={[styles.retryText, { color: colors.primary }]}>Try again</Text>
             </Pressable>
           </View>
         ) : trimmedQuery && filteredResults.length > 0 ? (
@@ -286,17 +285,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   webSearchHeader: {
-    paddingHorizontal: 18,
-    paddingTop: 8,
-    paddingBottom: 12,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.sm,
   },
   webSearchField: {
     height: 44,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    paddingHorizontal: 13,
-    borderRadius: 24,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.capsule,
     backgroundColor: '#1C1C1E',
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: '#38383A',
@@ -309,24 +308,24 @@ const styles = StyleSheet.create({
   },
   filterBar: {
     flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: 18,
-    paddingTop: 12,
-    paddingBottom: 8,
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.sm,
   },
   filterButton: {
-    minHeight: 34,
+    minHeight: 36,
     justifyContent: 'center',
-    paddingHorizontal: 16,
-    borderRadius: 18,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.capsule,
     backgroundColor: '#1C1C1E',
   },
   selectedFilterButton: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#FFFFFF',
   },
   filterLabel: {
-    fontSize: 14,
-    fontWeight: '500',
+    ...typography.subhead,
+    fontWeight: '600',
   },
   resultsContainer: {
     flex: 1,
@@ -340,8 +339,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     textAlign: 'center',
-    fontSize: 19,
-    fontWeight: '500',
+    ...typography.title,
   },
   retryText: {
     fontSize: 16,

@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 import { NativeTabs } from 'expo-router/native-tabs';
 import { useTheme } from '@/context/ThemeContext';
-import { systemDarkBackground } from '@/constants/theme';
+import { Colors, systemDarkBackground } from '@/constants/theme';
 
 export default function TabLayout() {
   const { colors } = useTheme();
@@ -11,6 +11,7 @@ export default function TabLayout() {
     <NativeTabs
       minimizeBehavior="onScrollDown"
       tintColor={colors.primary}
+      backgroundColor={Colors.background}
     >
       <NativeTabs.Trigger name="index" contentStyle={tabContentStyle}>
         <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>

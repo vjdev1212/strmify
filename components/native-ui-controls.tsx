@@ -41,7 +41,10 @@ export function NativeButton({
   if (children) {
     return (
       <Pressable
-        style={style}
+        style={({ pressed }) => [
+          style,
+          pressed && { opacity: 0.72, transform: [{ scale: 0.98 }] },
+        ]}
         onPress={onPress}
         disabled={disabled}
         accessibilityLabel={accessibilityLabel}
