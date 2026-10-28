@@ -164,7 +164,7 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
 
                             <SettingsSection title="Actions">
                                 <SettingsRow
-                                    title="Save Configuration"
+                                    title="Save"
                                     detail={isSaving ? 'Saving…' : undefined}
                                     onPress={saveConfiguration}
                                     disabled={isSaving || (!useDefaultKey && !apiKey.trim())}
@@ -172,7 +172,7 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
                                     leading={<Ionicons name="checkmark-circle-outline" size={20} color="#0A84FF" />}
                                 />
                                 <SettingsRow
-                                    title="Clear Configuration"
+                                    title="Reset"
                                     onPress={clearConfiguration}
                                     disabled={isSaving}
                                     destructive

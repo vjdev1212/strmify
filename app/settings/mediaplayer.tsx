@@ -133,13 +133,14 @@ export default function MediaPlayerConfigScreen() {
           </SettingsSection>
           <SettingsSection title="Actions">
             <SettingsRow
-              title={saving ? 'Saving…' : 'Save Player'}
+              title={saving ? 'Saving…' : 'Save'}
+              titleColor="#0A84FF"
               onPress={savePlayerConfig}
               disabled={saving || !selectedPlayer}
               leading={<Ionicons name="checkmark-circle-outline" size={20} color="#0A84FF" />}
             />
             <SettingsRow
-              title="Reset to Default"
+              title="Reset"
               onPress={resetToDefault}
               destructive
               isLast

@@ -3,7 +3,8 @@ import { Platform, Pressable, Share } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { router } from 'expo-router';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { MenuView, type MenuAction } from '@expo/ui/community/menu';
+import type { MenuAction } from '@expo/ui/community/menu';
+import AddonActionMenu from '@/components/addon-action-menu';
 import { StatusBar, View } from '@/components/Themed';
 import { SettingsPage, SettingsRow, SettingsSection } from '@/components/NativeSettings';
 import { WebMenu } from '@/components/WebMenuView';
@@ -14,6 +15,12 @@ import { systemDarkBackground } from '@/constants/theme';
 
 const ADDONS_KEY = StorageKeys.ADDONS_KEY;
 const defaultAddonLogo = 'https://i.ibb.co/fSJ42PJ/addon.png';
+const addonActionIcons = {
+  update: Platform.OS === 'android' ? require('@/assets/icons/addon-refresh.xml') : 'arrow.clockwise',
+  share: Platform.OS === 'android' ? require('@/assets/icons/addon-share.xml') : 'square.and.arrow.up',
+  configure: Platform.OS === 'android' ? require('@/assets/icons/addon-settings.xml') : 'gearshape',
+  remove: Platform.OS === 'android' ? require('@/assets/icons/addon-remove.xml') : 'trash',
+} satisfies Record<string, NonNullable<MenuAction['image']>>;
 interface InstalledAddon {
   id: string;
   name?: string;
@@ -26,10 +33,10 @@ interface InstalledAddon {
 }
 
 const addonMenuActions: MenuAction[] = [
-  { id: 'update', title: 'Check for updates' },
-  { id: 'share', title: 'Share install link' },
-  { id: 'configure', title: 'Open add-on settings' },
-  { id: 'remove', title: 'Remove add-on', attributes: { destructive: true } },
+  { id: 'update', title: 'Update', image: addonActionIcons.update },
+  { id: 'share', title: 'Share', image: addonActionIcons.share },
+  { id: 'configure', title: 'Configure', image: addonActionIcons.configure },
+  { id: 'remove', title: 'Uninstall', image: addonActionIcons.remove, attributes: { destructive: true } },
 ];
 
 const AddonsScreen = () => {
@@ -147,7 +154,7 @@ const AddonsScreen = () => {
 
   const shareManifestUrl = async (url: string) => {
     try {
-      await Share.share({ message: url, url });
+      await Share.share(Platform.OS === 'ios' ? { url } : { message: url });
     } catch (error) {
       console.error('Failed to share add-on URL:', error);
       showAlert('Error', 'Failed to share the URL.');
@@ -190,7 +197,10 @@ const AddonsScreen = () => {
                 ) return false;
                 if (action.id === 'configure' && !addon.behaviorHints?.configurable) return false;
                 return true;
-              });
+              }).map((action) => ({
+                ...action,
+                imageColor: action.id === 'remove' ? undefined : colors.text,
+              }));
               const handleAction = (actionId: string) => {
                 if (actionId === 'update' && typeof addon.manifestUrl === 'string' && !isUpdating) {
                   void updateAddonManifest(addon.id, addon.manifestUrl);
@@ -216,21 +226,31 @@ const AddonsScreen = () => {
               const actionButton = Platform.OS === 'web' ? (
                 <WebMenu
                   title={addon.name || 'Add-on actions'}
-                  actions={availableActions.map(({ id, title }) => ({ id: id ?? title, title }))}
+                  actions={availableActions.map(({ id, title }) => ({
+                    id: id ?? title,
+                    title,
+                    icon: id === 'update'
+                      ? 'refresh-outline'
+                      : id === 'share'
+                        ? 'share-outline'
+                        : id === 'configure'
+                          ? 'settings-outline'
+                          : 'trash-outline',
+                    titleColor: id === 'remove' ? '#ff453a' : undefined,
+                    iconColor: id === 'remove' ? '#ff453a' : undefined,
+                  }))}
                   onPressAction={handleAction}
                 >
                   {menuTrigger}
                 </WebMenu>
               ) : (
-                <MenuView
+                <AddonActionMenu
                   title={addon.name || 'Add-on actions'}
                   actions={availableActions}
-                  onPressAction={({ nativeEvent }) => handleAction(nativeEvent.event)}
-                  colorScheme="dark"
-                  shouldOpenOnLongPress={false}
+                  onPressAction={handleAction}
                 >
                   {menuTrigger}
-                </MenuView>
+                </AddonActionMenu>
               );
               const categories = addon.types?.join(' · ');
 
