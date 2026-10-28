@@ -21,7 +21,7 @@ const UNKNOWN_TEXT = 'Unknown';
 const NOT_RATED_TEXT = 'Not Rated';
 const STAR_COLOR = '#E6BD37';
 const STAR_SIZE = 14;
-const containerMargin = spacing.md;
+const containerMargin = spacing.mdLg;
 
 const countryCodeToName = (code: string) => {
   try { return new Intl.DisplayNames(['en'], { type: 'region' }).of(code.toUpperCase()) || code; }
@@ -96,10 +96,10 @@ const MediaContentDetailsList: React.FC<MediaContentDetailsListProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: { paddingHorizontal: spacing.xs, marginVertical: spacing.md },
+  container: { marginVertical: spacing.md },
   headerContainer: { marginBottom: spacing.md },
   sectionTitle: { ...typography.headline },
-  tableRow: { flexDirection: 'row', marginHorizontal: spacing.md, paddingVertical: spacing.sm, alignItems: 'center' },
+  tableRow: { flexDirection: 'row', marginHorizontal: spacing.mdLg, paddingVertical: spacing.sm, alignItems: 'center' },
   labelCell: { width: 120, paddingRight: spacing.md, justifyContent: 'center' },
   valueCell: { flex: 1, justifyContent: 'center' },
   label: { ...typography.subhead, fontWeight: '500' },

@@ -2,7 +2,7 @@ import React, { useCallback, useMemo } from "react";
 import { StyleSheet, Image, FlatList, useWindowDimensions } from "react-native";
 import { View, Text } from "./Themed";
 import { useTheme } from '@/context/ThemeContext';
-import { spacing as themeSpacing } from '@/constants/theme';
+import { spacing as themeSpacing, typography } from '@/constants/theme';
 
 const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w342";
 
@@ -79,7 +79,7 @@ const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
 
   const castPerScreen = getCastPerScreen();
   const spacing = 16;
-  const containerMargin = themeSpacing.md;
+  const containerMargin = themeSpacing.mdLg;
 
   const avatarSize = useMemo(() => {
     const totalSpacing = spacing * (castPerScreen - 1);
@@ -140,7 +140,7 @@ const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
 const styles = StyleSheet.create({
   container: { paddingVertical: themeSpacing.sm },
   headerContainer: { marginBottom: themeSpacing.md },
-  sectionTitle: { fontSize: 18, fontWeight: '500', letterSpacing: 0.5 },
+  sectionTitle: { ...typography.headline },
   scrollContent: { flexDirection: 'row' },
   avatarContainer: { alignItems: "center", paddingVertical: 8 },
   avatarWrapper: { position: 'relative', marginBottom: 12 },

@@ -109,7 +109,7 @@ export function SettingsRow({
       {leading ? <View style={styles.leading}>{leading}</View> : null}
       <View style={styles.rowText}>
         <Text style={[styles.rowTitle, { color: destructive ? '#ff453a' : titleColor ?? colors.text }]}>{title}</Text>
-        {detail ? (
+        {typeof detail === 'string' && detail ? (
           <Text style={[
             detailSameFont ? styles.rowTitle : styles.rowDetail,
             { color: detailColor ?? colors.textMuted },

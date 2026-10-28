@@ -184,12 +184,12 @@ const MediaContentHeader: React.FC<MediaContentHeaderProps> = ({
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.mdLg,
     paddingVertical: spacing.md,
   },
   genreContainer: {
     borderRadius: radius.capsule,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.mdLg,
     marginBottom: spacing.md
   },
   genre: {
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
   },
   infoWrapper: {
     borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.mdLg,
   },
   infoContainer: {
     flexDirection: 'row',

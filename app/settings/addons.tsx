@@ -14,6 +14,17 @@ import { systemDarkBackground } from '@/constants/theme';
 
 const ADDONS_KEY = StorageKeys.ADDONS_KEY;
 const defaultAddonLogo = 'https://i.ibb.co/fSJ42PJ/addon.png';
+interface InstalledAddon {
+  id: string;
+  name?: string;
+  description?: string;
+  version?: string;
+  manifestUrl?: string;
+  baseUrl?: string;
+  types?: string[];
+  behaviorHints?: { configurable?: boolean };
+}
+
 const addonMenuActions: MenuAction[] = [
   { id: 'update', title: 'Check for updates' },
   { id: 'share', title: 'Share install link' },
@@ -23,7 +34,7 @@ const addonMenuActions: MenuAction[] = [
 
 const AddonsScreen = () => {
   const { colors } = useTheme();
-  const [addons, setAddons] = useState<any[]>([]);
+  const [addons, setAddons] = useState<InstalledAddon[]>([]);
   const [updatingAddonId, setUpdatingAddonId] = useState<string | null>(null);
   const [expandedAddonId, setExpandedAddonId] = useState<string | null>(null);
 
@@ -31,8 +42,31 @@ const AddonsScreen = () => {
     try {
       const storedAddons = storageService.getItem(ADDONS_KEY);
       if (storedAddons) {
-        const parsed = JSON.parse(storedAddons);
-        setAddons(Object.keys(parsed).map((key) => ({ id: key, ...parsed[key] })));
+        const parsed: unknown = JSON.parse(storedAddons);
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+          throw new Error('Stored add-on data must be an object.');
+        }
+
+        const entries = Object.entries(parsed);
+        setAddons(entries.flatMap(([id, value]) => {
+          if (!value || typeof value !== 'object' || Array.isArray(value)) return [];
+          const addon = value as Record<string, unknown>;
+          const behaviorHints = addon.behaviorHints;
+          return [{
+            id,
+            name: typeof addon.name === 'string' ? addon.name : undefined,
+            description: typeof addon.description === 'string' ? addon.description : undefined,
+            version: typeof addon.version === 'string' ? addon.version : undefined,
+            manifestUrl: typeof addon.manifestUrl === 'string' ? addon.manifestUrl : undefined,
+            baseUrl: typeof addon.baseUrl === 'string' ? addon.baseUrl : undefined,
+            types: Array.isArray(addon.types)
+              ? addon.types.filter((type): type is string => typeof type === 'string')
+              : undefined,
+            behaviorHints: behaviorHints && typeof behaviorHints === 'object' && !Array.isArray(behaviorHints)
+              ? { configurable: (behaviorHints as Record<string, unknown>).configurable === true }
+              : undefined,
+          }];
+        }));
       } else {
         setAddons([]);
       }
@@ -63,13 +97,14 @@ const AddonsScreen = () => {
       const response = await fetch(manifestUrl);
       if (!response.ok) throw new Error(`Failed to fetch add-on: ${response.status}`);
       const manifestData = await response.json();
+      const addonLogo = typeof manifestData?.logo === 'string' ? manifestData.logo : '';
       const updatedAddon = {
         ...manifestData,
         id: addonId,
         manifestUrl,
         baseUrl: getBaseUrl(manifestUrl),
         streamBaseUrl: manifestUrl.replace('/manifest.json', ''),
-        logo: manifestData?.logo?.match(/\.(png|jpg|jpeg)$/i) ? manifestData.logo : defaultAddonLogo,
+        logo: /\.(png|jpg|jpeg)$/i.test(addonLogo) ? addonLogo : defaultAddonLogo,
       };
       const storedAddons = storageService.getItem(ADDONS_KEY);
       const addonsObject = storedAddons ? JSON.parse(storedAddons) : {};
@@ -119,7 +154,7 @@ const AddonsScreen = () => {
     }
   };
 
-  const confirmRemove = (addon: any) => {
+  const confirmRemove = (addon: InstalledAddon) => {
     const message = `Remove "${addon.name}"?`;
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
       showAlert('Remove Add-on', message, [
@@ -149,16 +184,19 @@ const AddonsScreen = () => {
               const isUpdating = updatingAddonId === addon.id;
               const isExpanded = expandedAddonId === addon.id;
               const availableActions = addonMenuActions.filter((action) => {
-                if ((action.id === 'update' || action.id === 'share') && !addon.manifestUrl) return false;
+                if (
+                  (action.id === 'update' || action.id === 'share') &&
+                  (typeof addon.manifestUrl !== 'string' || !addon.manifestUrl)
+                ) return false;
                 if (action.id === 'configure' && !addon.behaviorHints?.configurable) return false;
                 return true;
               });
               const handleAction = (actionId: string) => {
-                if (actionId === 'update' && addon.manifestUrl && !isUpdating) {
+                if (actionId === 'update' && typeof addon.manifestUrl === 'string' && !isUpdating) {
                   void updateAddonManifest(addon.id, addon.manifestUrl);
-                } else if (actionId === 'share' && addon.manifestUrl) {
+                } else if (actionId === 'share' && typeof addon.manifestUrl === 'string') {
                   void shareManifestUrl(addon.manifestUrl);
-                } else if (actionId === 'configure' && addon.baseUrl) {
+                } else if (actionId === 'configure' && typeof addon.baseUrl === 'string') {
                   void openConfiguration(addon.baseUrl);
                 } else if (actionId === 'remove') {
                   confirmRemove(addon);

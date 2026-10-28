@@ -10,6 +10,7 @@ import CustomContextMenu from './ContextMenu';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/context/ThemeContext';
 import { radius, spacing, typography } from '@/constants/theme';
+import PosterArtwork from '@/components/PosterArtwork';
 
 interface Episode {
   name: string; title: string; season: number; episode: number;
@@ -19,8 +20,6 @@ interface Episode {
 interface SeasonEpisodeListProps { videos: Episode[]; onEpisodeSelect: (season: number, episode: number) => void; }
 interface EpisodeItemProps { item: Episode; onEpisodeSelect: (season: number, episode: number) => void; cardWidth: number; }
 
-const ANIMATION_DURATION = 100;
-const IMAGE_LOAD_DELAY = 100;
 const THUMBNAIL_ASPECT_RATIO = 16 / 9;
 const CARD_GAP = spacing.md;
 
@@ -29,7 +28,6 @@ const getCardWidth = (screenWidth: number, screenHeight: number) => screenHeight
 const EpisodeItem: React.FC<EpisodeItemProps> = React.memo(({ item, onEpisodeSelect, cardWidth }) => {
   const { colors } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
-  const [fadeAnim] = useState(() => new Animated.Value(0));
   const [imgError, setImgError] = useState(false);
   const [scaleAnim] = useState(() => new Animated.Value(1));
 
@@ -38,34 +36,48 @@ const EpisodeItem: React.FC<EpisodeItemProps> = React.memo(({ item, onEpisodeSel
     episodeAired: formatDate(item.firstAired) || formatDate(item.released),
   }), [item]);
 
-  const handleImageError = useCallback(() => setImgError(true), []);
+  const handleImageLoad = useCallback((onImageLoad: () => void) => {
+    setIsLoading(false);
+    onImageLoad();
+  }, []);
+  const handleImageError = useCallback(() => {
+    setImgError(true);
+    setIsLoading(false);
+  }, []);
   const handlePress = useCallback(() => onEpisodeSelect(item.season, item.number), [onEpisodeSelect, item.season, item.number]);
   const handlePressIn = useCallback(() => Animated.spring(scaleAnim, { toValue: 0.96, useNativeDriver: true }).start(), [scaleAnim]);
   const handlePressOut = useCallback(() => Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true }).start(), [scaleAnim]);
-
-  useEffect(() => {
-    const t = setTimeout(() => {
-      setIsLoading(false);
-      Animated.timing(fadeAnim, { toValue: 1, duration: ANIMATION_DURATION, useNativeDriver: true }).start();
-    }, IMAGE_LOAD_DELAY);
-    return () => clearTimeout(t);
-  }, [fadeAnim]);
-
-  useEffect(() => { setImgError(false); }, [item.thumbnail]);
-
-  const thumbnailBase = { aspectRatio: THUMBNAIL_ASPECT_RATIO, backgroundColor: colors.background };
-
-  const renderThumbnail = () => {
-    if (isLoading) return <View style={styles.thumbnailWrapper}><View style={[styles.skeletonBackground, thumbnailBase]} /></View>;
-    if (!imgError) return <View style={styles.thumbnailWrapper}><Animated.Image source={{ uri: item.thumbnail }} onError={handleImageError} style={[styles.thumbnail, thumbnailBase, { opacity: fadeAnim }]} /></View>;
-    return <View style={styles.thumbnailWrapper}><View style={[styles.thumbnailPlaceHolder, thumbnailBase]}><SvgXml xml={DefaultEpisodeThumbnailImgXml} width="40%" height="40%" /></View></View>;
-  };
 
   return (
     <Animated.View style={{ width: cardWidth, transform: [{ scale: scaleAnim }] }}>
       <Pressable onPress={handlePress} onPressIn={handlePressIn} onPressOut={handlePressOut} style={styles.episodePressable}>
         <View style={styles.episodeCard}>
-          <View style={[styles.thumbnailContainer, { backgroundColor: colors.background }]}>{renderThumbnail()}</View>
+          <PosterArtwork
+            key={item.thumbnail}
+            style={[styles.thumbnailArtwork, { backgroundColor: colors.background }]}
+          >
+            {(onImageLoad) => (
+              <>
+                {!imgError && (
+                  <Animated.Image
+                    source={{ uri: item.thumbnail }}
+                    onLoad={() => handleImageLoad(onImageLoad)}
+                    onError={handleImageError}
+                    style={styles.thumbnail}
+                    resizeMode="cover"
+                  />
+                )}
+                {isLoading && (
+                  <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.skeletonBackground, { backgroundColor: colors.background }]} />
+                )}
+                {imgError && (
+                  <View style={[StyleSheet.absoluteFill, styles.thumbnailPlaceHolder, { backgroundColor: colors.background }]}>
+                    <SvgXml xml={DefaultEpisodeThumbnailImgXml} width="40%" height="40%" />
+                  </View>
+                )}
+              </>
+            )}
+          </PosterArtwork>
           <View style={styles.episodeInfo}>
             <Text style={[styles.episodeTitle, { color: colors.text }]} numberOfLines={2}>{computedValues.episodeTitle}</Text>
             <Text style={[styles.episodeAired, { color: colors.textMuted }]}>{computedValues.episodeAired}</Text>
@@ -125,7 +137,7 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
   }, []);
   const handleWebContextMenuItemSelect = useCallback((item: any) => handleSeasonSelect(item.value || item.id), [handleSeasonSelect]);
   const renderEpisodeItem = useCallback((episode: Episode, index: number) => (
-    <EpisodeItem key={`episode-${episode.season}-${episode.episode || episode.number}-${index}`} item={episode} onEpisodeSelect={onEpisodeSelect} cardWidth={cardWidth} />
+    <EpisodeItem key={`episode-${episode.season}-${episode.episode || episode.number}-${episode.thumbnail}-${index}`} item={episode} onEpisodeSelect={onEpisodeSelect} cardWidth={cardWidth} />
   ), [onEpisodeSelect, cardWidth]);
 
   useEffect(() => {
@@ -182,18 +194,18 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
 
 const styles = StyleSheet.create({
   container: { backgroundColor: 'transparent', marginBottom: spacing.md },
-  seasonListContainer: { paddingVertical: spacing.sm, paddingHorizontal: spacing.md, backgroundColor: 'transparent' },
-  seasonDropdownButton: { minHeight: 40, paddingHorizontal: spacing.sm, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-evenly', width: 150, maxWidth: 150, borderRadius: radius.capsule, backgroundColor: 'transparent' },
+  seasonListContainer: { paddingVertical: spacing.sm, paddingHorizontal: spacing.mdLg, backgroundColor: 'transparent' },
+  seasonDropdownButton: { minHeight: 40, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: spacing.sm, width: 150, maxWidth: 150, borderRadius: radius.capsule, backgroundColor: 'transparent' },
   seasonDropdownText: { ...typography.headline, flex: 1 },
   seasonDropdownArrow: { ...typography.subhead, fontWeight: '600' },
   episodeScrollView: { width: '100%' },
-  episodeScrollContent: { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, gap: CARD_GAP },
+  episodeScrollContent: { paddingHorizontal: spacing.mdLg, paddingVertical: spacing.sm, gap: CARD_GAP },
   episodePressable: { borderRadius: radius.md, overflow: 'hidden' },
   episodeCard: { backgroundColor: 'transparent', padding: 0 },
-  thumbnailContainer: { width: '100%', position: 'relative', borderRadius: radius.md, overflow: 'hidden', borderWidth: 1, borderColor: '#38383A', boxShadow: '0 2px 6px rgba(0, 0, 0, 0.16)' },
+  thumbnailArtwork: { width: '100%', aspectRatio: THUMBNAIL_ASPECT_RATIO },
   episodeInfo: { paddingTop: spacing.sm, paddingHorizontal: spacing.xs, gap: spacing.xs, backgroundColor: 'transparent' },
   thumbnailPlaceHolder: { justifyContent: 'center', alignItems: 'center' },
-  thumbnail: { width: '100%' },
+  thumbnail: StyleSheet.absoluteFill,
   episodeTitle: { ...typography.subhead, fontWeight: '600' },
   episodeAired: { ...typography.caption },
   skeletonBackground: { opacity: 1 },
@@ -201,7 +213,6 @@ const styles = StyleSheet.create({
   emptyText: { ...typography.body, textAlign: 'center' },
   noEpisodesContainer: { paddingVertical: spacing.xxl, alignItems: 'center' },
   noEpisodesText: { ...typography.subhead, textAlign: 'center' },
-  thumbnailWrapper: { position: 'relative', overflow: 'hidden' },
 });
 
 export default React.memo(SeasonEpisodeList);
