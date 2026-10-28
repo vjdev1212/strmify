@@ -44,6 +44,10 @@
         {
           "image": "./assets/images/splash.png",
           "resizeMode": "contain",
+          "imageWidth": 380,
+          "android": {
+            "imageWidth": 280
+          },
           "backgroundColor": "#000000"
         }
       ],

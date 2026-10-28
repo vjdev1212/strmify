@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     View,
-    Dimensions,
     StyleSheet,
     Pressable,
+    useWindowDimensions,
 } from 'react-native';
-import type { ScaledSize } from 'react-native';
+import type { LayoutChangeEvent } from 'react-native';
 import { ActivityIndicator, Text } from '@/components/Themed';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
@@ -48,29 +48,19 @@ export default function AppleTVCarousel({
     const [activeIndex, setActiveIndex] = useState(0);
     const [data, setData] = useState<CarouselItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const [carouselWidth, setCarouselWidth] = useState(0);
     const touchStartRef = useRef<{ pageX: number; pageY: number } | null>(null);
     const didSwipeRef = useRef(false);
-    const [dimensions, setDimensions] = useState(() => {
-        const { width, height } = Dimensions.get('window');
-        return { width, height, isLandscape: width > height };
-    });
+    const { width, height } = useWindowDimensions();
+    const isLandscape = width > height;
 
     const autoPlayRef = useRef<any>(null);
 
-    useEffect(() => {
-        const subscription = Dimensions.addEventListener('change', ({ window }: { window: ScaledSize }) => {
-            setDimensions({ width: window.width, height: window.height, isLandscape: window.width > window.height });
-        });
-        return () => subscription?.remove();
-    }, []);
-
     const responsiveDims = useMemo(() => {
-        const { width, height, isLandscape } = dimensions;
         return {
             screenWidth: width,
             screenHeight: height,
             carouselHeight: isLandscape ? height * 0.9 : height * 0.5,
-            itemWidth: width,
             posterWidth: isLandscape ? 180 : 120,
             posterHeight: isLandscape ? 270 : 120,
             titleSize: isLandscape ? 28 : 26,
@@ -78,12 +68,18 @@ export default function AppleTVCarousel({
             contentPadding: isLandscape ? 40 : 20,
             bottomPadding: isLandscape ? 40 : 40,
         };
-    }, [dimensions]);
+    }, [width, height, isLandscape]);
     const carouselHeight = responsiveDims.carouselHeight + topInset;
+    const itemWidth = carouselWidth || responsiveDims.screenWidth;
     const carouselFrameStyle = {
+        width: '100%' as const,
         height: carouselHeight,
         marginTop: -topInset,
     };
+    const handleCarouselLayout = useCallback((event: LayoutChangeEvent) => {
+        const width = event.nativeEvent.layout.width;
+        setCarouselWidth((currentWidth) => currentWidth === width ? currentWidth : width);
+    }, []);
 
     useEffect(() => {
         const fetchCarouselData = async () => {
@@ -169,7 +165,7 @@ export default function AppleTVCarousel({
     const renderCarouselItem = useCallback((item: CarouselItem, index: number) => {
         const dims = responsiveDims;
         return (
-            <View style={[styles.carouselItem, { width: dims.itemWidth, height: dims.carouselHeight + topInset }]}>
+            <View style={[styles.carouselItem, { width: itemWidth, height: dims.carouselHeight + topInset }]}>
                 <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={`Open ${item.title}`}
@@ -239,12 +235,12 @@ export default function AppleTVCarousel({
                                         {item.subtitle}
                                     </Text>
                                 )}
-                                <View style={[styles.metaContainer, { flexDirection: 'row', alignItems: dimensions.isLandscape ? 'flex-start' : 'center', gap: dimensions.isLandscape ? 8 : 0 }]}>
-                                    <Text style={[styles.metaText, { fontSize: dimensions.isLandscape ? 12 : 14, color: colors.text }]}>
+                                <View style={[styles.metaContainer, { flexDirection: 'row', alignItems: isLandscape ? 'flex-start' : 'center', gap: isLandscape ? 8 : 0 }]}>
+                                    <Text style={[styles.metaText, { fontSize: isLandscape ? 12 : 14, color: colors.text }]}>
                                         ★ {item.rating}   {item.year}
                                     </Text>
                                     <View style={[styles.typeIndicator, { backgroundColor: colors.primaryMuted, borderColor: colors.primaryBorder }]}>
-                                        <Text style={[styles.typeText, { fontSize: dimensions.isLandscape ? 10 : 12, color: colors.text }]}>
+                                        <Text style={[styles.typeText, { fontSize: isLandscape ? 10 : 12, color: colors.text }]}>
                                             {item.type === 'movie' ? 'MOVIE' : 'SERIES'}
                                         </Text>
                                     </View>
@@ -255,7 +251,7 @@ export default function AppleTVCarousel({
                 </Pressable>
             </View>
         );
-    }, [activeIndex, colors.gradientOverlay, colors.primaryBorder, colors.primaryMuted, colors.text, colors.textMuted, dimensions.isLandscape, handleItemPress, reducedMotion, responsiveDims, topInset]);
+    }, [activeIndex, colors.gradientOverlay, colors.primaryBorder, colors.primaryMuted, colors.text, colors.textMuted, isLandscape, handleItemPress, itemWidth, reducedMotion, responsiveDims, topInset]);
 
     const renderPaginationDot = useCallback((index: number) => (
         <Pressable
@@ -275,21 +271,27 @@ export default function AppleTVCarousel({
 
     if (loading || !data.length) {
         return (
-            <View style={[styles.container, styles.loadingContainer, carouselFrameStyle, { backgroundColor: colors.backgroundOverlay }]}>
+            <View
+                onLayout={handleCarouselLayout}
+                style={[styles.container, styles.loadingContainer, carouselFrameStyle, { backgroundColor: colors.backgroundOverlay }]}
+            >
                 <ActivityIndicator color={colors.primary} />
             </View>
         );
     }
 
     return (
-        <View style={[styles.container, carouselFrameStyle, { backgroundColor: colors.backgroundOverlay }]}>
+        <View
+            onLayout={handleCarouselLayout}
+            style={[styles.container, carouselFrameStyle, { backgroundColor: colors.backgroundOverlay }]}
+        >
             <NativePager
                 data={data}
                 renderPage={renderCarouselItem}
                 keyExtractor={(item, index) => `${item.id}-${index}`}
                 activeIndex={activeIndex}
                 onIndexChange={handleIndexChange}
-                style={{ width: responsiveDims.screenWidth, height: carouselHeight }}
+                style={{ width: itemWidth, height: carouselHeight }}
             />
             {data.length > 1 && (
                 <View style={styles.paginationContainer}>

@@ -82,6 +82,30 @@ export const styles = StyleSheet.create({
         fontWeight: 500,
     },
 
+    playerLoadingOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 110,
+    },
+
+    playerLoadingContent: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 24,
+        pointerEvents: 'none',
+    },
+
+    playerLoadingMessage: {
+        marginTop: 20,
+        fontSize: 16,
+        fontWeight: '500',
+        textAlign: 'center',
+    },
+
     topRightControls: {
         flexDirection: 'row',
         alignItems: 'center',

@@ -26,10 +26,10 @@ import {
     buildStreamActions,
     calculateSliderValues,
     ArtworkBackground,
-    WaitingLobby,
     SubtitleDisplay,
     CenterControls,
     ProgressBar,
+    PlayerLoadingScreen,
     SubtitleSource,
     SubtitlePosition,
     ErrorDisplay,
@@ -40,21 +40,35 @@ import { GlassView } from 'expo-glass-effect';
 import { SkipBanner } from "../introdb/skipBanner";
 import { useIntroDB } from "../introdb/useIntroDb";
 import { isPictureInPictureSupported } from "@/utils/MediaPlayer";
+import type { PlaybackSettings } from "../coreplayer/models";
 
 // Menu wrapper component - uses WebMenu on web, MenuView on native
 const MenuWrapper: React.FC<any> = (props) => {
     if (Platform.OS === 'web') {
         return <WebMenu {...props} />;
     }
-    return <MenuView {...props} />;
+    return (
+        <View
+            collapsable={false}
+            onTouchStartCapture={props.onOpenMenu}
+            style={props.style}
+        >
+            <MenuView
+                {...props}
+                style={undefined}
+            />
+        </View>
+    );
 };
 
 
 export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     videoUrl,
     title,
+    isLoadingStream = false,
+    loadingMessage,
     back: onBack,
-    resumePositionSeconds = 0,
+    resumePlaybackSettings,
     pictureInPictureEnabled = true,
     artwork,
     subtitles = [],
@@ -73,6 +87,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     const isHideControlsScheduled = useRef(false);
     const wasPlayingBeforeSeek = useRef(false);
     const lastKnownTimeRef = useRef<number>(0);
+    const restoredResumeKeyRef = useRef<string | null>(null);
     const hasReportedErrorRef = useRef(false);
     const seekTimeoutRef = useRef<any>(null);
     const progressUpdateTimerRef = useRef<any>(null);
@@ -81,7 +96,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     const playerState = usePlayerState();
     const subtitleState = useSubtitleState();
     const uiState = useUIState();
-    const settings = useEnhancedPlayerSettings();
+    const settings = useEnhancedPlayerSettings(resumePlaybackSettings);
     const timers = useTimers();
     const animations = usePlayerAnimations();
 
@@ -94,45 +109,77 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     const setTimer = timers.setTimer;
     const clearAllTimers = timers.clearAllTimers;
 
+    useEffect(() => {
+        if (isLoadingStream) {
+            playerState.setIsReady(false);
+            playerState.setIsBuffering(true);
+            restoredResumeKeyRef.current = null;
+        }
+    }, [isLoadingStream, playerState.setIsReady, playerState.setIsBuffering]);
+
     const audioMenuRef = useRef<MenuComponentRef>(null);
     const subtitleMenuRef = useRef<MenuComponentRef>(null);
     const settingsMenuRef = useRef<MenuComponentRef>(null);
     const streamMenuRef = useRef<MenuComponentRef>(null);
 
     // Local state
-    const [contentFit, setContentFit] = useState<ResizeMode>(ResizeMode.COVER);
+    const [contentFit, setContentFit] = useState<ResizeMode>(
+        resumePlaybackSettings?.contentFit === 'contain'
+            ? ResizeMode.CONTAIN
+            : resumePlaybackSettings?.contentFit === 'stretch'
+                ? ResizeMode.STRETCH
+                : ResizeMode.COVER
+    );
     const [showContentFitLabel, setShowContentFitLabel] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
     const [videoError, setVideoError] = useState<string | null>(null);
     const [availableAudioTracks, setAvailableAudioTracks] = useState<any[]>([]);
     const [availableTextTracks, setAvailableTextTracks] = useState<any[]>([]);
-    const [selectedAudioTrack, setSelectedAudioTrack] = useState<number>(-1);
-    const [selectedTextTrack, setSelectedTextTrack] = useState<number>(-1);
-    const [useEmbeddedSubtitles, setUseEmbeddedSubtitles] = useState(false);
+    const [selectedAudioTrack, setSelectedAudioTrack] = useState<number>(
+        resumePlaybackSettings?.audioTrackIndex ?? -1
+    );
+    const [selectedTextTrack, setSelectedTextTrack] = useState<number>(
+        resumePlaybackSettings?.subtitleMode === 'embedded' ? resumePlaybackSettings.subtitleIndex : -1
+    );
+    const [useEmbeddedSubtitles, setUseEmbeddedSubtitles] = useState(
+        resumePlaybackSettings?.subtitleMode === 'embedded'
+    );
+
+    const playbackSettings = useMemo<PlaybackSettings>(() => ({
+        isMuted: settings.isMuted,
+        playbackSpeed: settings.playbackSpeed,
+        contentFit: contentFit === ResizeMode.CONTAIN
+            ? 'contain'
+            : contentFit === ResizeMode.STRETCH
+                ? 'stretch'
+                : 'cover',
+        audioTrackIndex: selectedAudioTrack,
+        subtitleMode: useEmbeddedSubtitles
+            ? 'embedded'
+            : settings.selectedSubtitle >= 0
+                ? 'custom'
+                : 'off',
+        subtitleIndex: useEmbeddedSubtitles ? selectedTextTrack : settings.selectedSubtitle,
+        subtitlePosition: settings.subtitlePosition,
+        subtitleDelay: settings.subtitleDelay
+    }), [
+        settings.isMuted,
+        settings.playbackSpeed,
+        settings.selectedSubtitle,
+        settings.subtitlePosition,
+        settings.subtitleDelay,
+        contentFit,
+        selectedAudioTrack,
+        useEmbeddedSubtitles,
+        selectedTextTrack
+    ]);
+    const playbackSettingsRef = useRef(playbackSettings);
+    playbackSettingsRef.current = playbackSettings;
+    const resumePositionSeconds = resumePlaybackSettings?.positionSeconds ?? 0;
 
     const useCustomSubtitles = subtitles.length > 0 && !useEmbeddedSubtitles;
     const canUsePictureInPicture =
         pictureInPictureEnabled && isPictureInPictureSupported();
-
-    // Restore playback position
-    useEffect(() => {
-        if (!playerState.isReady || playerState.duration <= 0 || resumePositionSeconds <= 0) {
-            return;
-        }
-
-        const currentTime = Math.min(resumePositionSeconds, playerState.duration);
-        isSeeking.current = true;
-        wasPlayingBeforeSeek.current = false;
-
-        videoRef.current?.seek(currentTime);
-        playerState.setCurrentTime(currentTime);
-        lastKnownTimeRef.current = currentTime;
-
-        const timeoutId = setTimeout(() => {
-            isSeeking.current = false;
-        }, 300);
-        return () => clearTimeout(timeoutId);
-    }, [playerState.isReady, playerState.duration, resumePositionSeconds]);
 
     const showControlsTemporarily = useCallback(() => {
         setShowControls(true);
@@ -144,7 +191,9 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         if (shouldAutoHideControls.current) {
             isHideControlsScheduled.current = true;
             setTimer('hideControls', () => {
-                hideControls(setShowControls, controlsOpacity);
+                if (shouldAutoHideControls.current) {
+                    hideControls(setShowControls, controlsOpacity);
+                }
                 isHideControlsScheduled.current = false;
             }, CONSTANTS.CONTROLS_AUTO_HIDE_DELAY);
         }
@@ -160,7 +209,8 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
             if (updateProgress) {
                 updateProgress({
                     positionSeconds: lastKnownTimeRef.current,
-                    durationSeconds: playerState.duration
+                    durationSeconds: playerState.duration,
+                    playbackSettings: playbackSettingsRef.current
                 });
             }
             clearAllTimers();
@@ -245,7 +295,8 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
             if (lastKnownTimeRef.current > 0 && playerState.duration > 0) {
                 updateProgress({
                     positionSeconds: lastKnownTimeRef.current,
-                    durationSeconds: playerState.duration
+                    durationSeconds: playerState.duration,
+                    playbackSettings: playbackSettingsRef.current
                 });
             }
         }, 1 * 60 * 1000);
@@ -256,6 +307,17 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
             }
         };
     }, [playerState.isReady, playerState.duration, updateProgress]);
+
+    useEffect(() => {
+        if (!updateProgress || !playerState.isReady || playerState.currentTime <= 1 || playerState.duration <= 0) {
+            return;
+        }
+        updateProgress({
+            positionSeconds: lastKnownTimeRef.current,
+            durationSeconds: playerState.duration,
+            playbackSettings
+        });
+    }, [playbackSettings, playerState.isReady, playerState.duration, updateProgress]);
 
     // Auto-hide controls when playback starts
     useEffect(() => {
@@ -291,23 +353,46 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
         Animated.timing(bufferOpacity, { toValue: 0, duration: 200, useNativeDriver: true }).start();
 
+        const resumeKey = `${videoUrl}:${resumePositionSeconds}`;
+        if (
+            resumePositionSeconds > 0 &&
+            data.duration > 0 &&
+            Number.isFinite(data.duration) &&
+            restoredResumeKeyRef.current !== resumeKey
+        ) {
+            const resumeTime = Math.min(resumePositionSeconds, data.duration);
+            restoredResumeKeyRef.current = resumeKey;
+            isSeeking.current = true;
+            wasPlayingBeforeSeek.current = false;
+            videoRef.current?.seek(resumeTime);
+            playerState.setCurrentTime(resumeTime);
+            lastKnownTimeRef.current = resumeTime;
+            if (seekTimeoutRef.current) clearTimeout(seekTimeoutRef.current);
+            seekTimeoutRef.current = setTimeout(() => {
+                isSeeking.current = false;
+            }, 500);
+        }
+
         if (data.audioTracks && Array.isArray(data.audioTracks) && data.audioTracks.length > 0) {
             setAvailableAudioTracks(data.audioTracks);
-            if (selectedAudioTrack === -1) {
+            if (selectedAudioTrack < 0 || selectedAudioTrack >= data.audioTracks.length) {
                 setSelectedAudioTrack(0);
                 settings.setSelectedAudioTrack(0);
             }
         }
-
         if (data.textTracks && Array.isArray(data.textTracks) && data.textTracks.length > 0) {
             setAvailableTextTracks(data.textTracks);
+            if (useEmbeddedSubtitles && selectedTextTrack >= data.textTracks.length) {
+                setSelectedTextTrack(-1);
+                setUseEmbeddedSubtitles(false);
+            }
         }
-    }, [bufferOpacity, playerState, selectedAudioTrack, settings]);
+    }, [bufferOpacity, playerState, selectedAudioTrack, selectedTextTrack, useEmbeddedSubtitles, settings, videoUrl, resumePositionSeconds]);
 
     const handleAudioTracks = useCallback((data: { audioTracks: any[] }) => {
         if (data.audioTracks && Array.isArray(data.audioTracks) && data.audioTracks.length > 0) {
             setAvailableAudioTracks(data.audioTracks);
-            if (selectedAudioTrack === -1) {
+            if (selectedAudioTrack < 0 || selectedAudioTrack >= data.audioTracks.length) {
                 setSelectedAudioTrack(0);
                 settings.setSelectedAudioTrack(0);
             }
@@ -317,8 +402,12 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     const handleTextTracks = useCallback((data: { textTracks: any[] }) => {
         if (data.textTracks && Array.isArray(data.textTracks) && data.textTracks.length > 0) {
             setAvailableTextTracks(data.textTracks);
+            if (useEmbeddedSubtitles && selectedTextTrack >= data.textTracks.length) {
+                setSelectedTextTrack(-1);
+                setUseEmbeddedSubtitles(false);
+            }
         }
-    }, []);
+    }, [selectedTextTrack, useEmbeddedSubtitles]);
 
     const handleProgress = useCallback((data: OnProgressData) => {
         if (!playerState.isDragging && !isSeeking.current) {
@@ -445,6 +534,12 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     }, [contentFit, showControlsTemporarily, showContentFitLabelTemporarily]);
 
     const handleOverlayPress = useCallback(() => {
+        if (!shouldAutoHideControls.current) {
+            shouldAutoHideControls.current = true;
+            showControlsTemporarily();
+            return;
+        }
+
         if (uiState.showControls) {
             hideControls(setShowControls, controlsOpacity);
         } else {
@@ -612,6 +707,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
             message: '',
             positionSeconds: lastKnownTimeRef.current,
             durationSeconds: playerState.duration,
+            playbackSettings: playbackSettingsRef.current,
             player: "native"
         });
     }, [playerState.duration, onBack]);
@@ -628,42 +724,50 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     }, [playerState]);
 
     // Unchanged — parses numeric ids from "subtitle-track-{N}" as before
-    const handleMenuAction = useCallback((id: string) => {
-        if (id.startsWith('speed-')) {
-            const speed = parseFloat(id.split('-')[1]);
-            if (!isNaN(speed)) handlePlaybackSpeedSelect(speed);
-        } else if (id === 'subtitle-track-off') {
-            handleSubtitleTrackSelect(-1);
-        } else if (id.startsWith('subtitle-track-')) {
-            const index = parseInt(id.split('subtitle-track-')[1]);
-            if (!isNaN(index)) handleSubtitleTrackSelect(index);
-        } else if (id.startsWith('position-')) {
-            const position = parseInt(id.split('-')[1]);
-            if (!isNaN(position)) handleSubtitlePositionSelect(position);
-        } else if (id.startsWith('delay_')) {
-            const delayMs = parseInt(id.replace('delay_', ''));
-            if (!isNaN(delayMs)) handleSubtitleDelaySelect(delayMs);
-        } else if (id.startsWith('audio-')) {
-            const index = parseInt(id.split('-')[1]);
-            if (!isNaN(index)) handleAudioSelect(index);
-        } else if (id.startsWith('stream-')) {
-            const index = parseInt(id.split('-')[1]);
-            if (!isNaN(index)) handleStreamSelect(index);
-        }
-    }, [handlePlaybackSpeedSelect, handleSubtitleTrackSelect, handleSubtitlePositionSelect, handleSubtitleDelaySelect, handleAudioSelect, handleStreamSelect, subtitles.length]);
-
-    const handleWebAction = useCallback((id: string) => handleMenuAction(id), [handleMenuAction]);
-    const handleNativeAction = useCallback(({ nativeEvent }: any) => handleMenuAction(nativeEvent.event), [handleMenuAction]);
-
     const handleMenuOpen = useCallback(() => {
         shouldAutoHideControls.current = false;
         clearTimer('hideControls');
-    }, [clearTimer]);
+        controlsOpacity.stopAnimation();
+        controlsOpacity.setValue(1);
+        setShowControls(true);
+    }, [clearTimer, controlsOpacity, setShowControls]);
 
     const handleMenuClose = useCallback(() => {
+        if (shouldAutoHideControls.current) return;
         shouldAutoHideControls.current = true;
         showControlsTemporarily();
     }, [showControlsTemporarily]);
+
+    const handleMenuAction = useCallback((id: string) => {
+        try {
+            if (id.startsWith('speed-')) {
+                const speed = parseFloat(id.split('-')[1]);
+                if (!isNaN(speed)) handlePlaybackSpeedSelect(speed);
+            } else if (id === 'subtitle-track-off') {
+                handleSubtitleTrackSelect(-1);
+            } else if (id.startsWith('subtitle-track-')) {
+                const index = parseInt(id.split('subtitle-track-')[1]);
+                if (!isNaN(index)) handleSubtitleTrackSelect(index);
+            } else if (id.startsWith('position-')) {
+                const position = parseInt(id.split('-')[1]);
+                if (!isNaN(position)) handleSubtitlePositionSelect(position);
+            } else if (id.startsWith('delay_')) {
+                const delayMs = parseInt(id.replace('delay_', ''));
+                if (!isNaN(delayMs)) handleSubtitleDelaySelect(delayMs);
+            } else if (id.startsWith('audio-')) {
+                const index = parseInt(id.split('-')[1]);
+                if (!isNaN(index)) handleAudioSelect(index);
+            } else if (id.startsWith('stream-')) {
+                const index = parseInt(id.split('-')[1]);
+                if (!isNaN(index)) handleStreamSelect(index);
+            }
+        } finally {
+            handleMenuClose();
+        }
+    }, [handlePlaybackSpeedSelect, handleSubtitleTrackSelect, handleSubtitlePositionSelect, handleSubtitleDelaySelect, handleAudioSelect, handleStreamSelect, handleMenuClose, subtitles.length]);
+
+    const handleWebAction = useCallback((id: string) => handleMenuAction(id), [handleMenuAction]);
+    const handleNativeAction = useCallback(({ nativeEvent }: any) => handleMenuAction(nativeEvent.event), [handleMenuAction]);
 
     const handleMuteToggle = useCallback(() => {
         settings.setIsMuted(!settings.isMuted);
@@ -706,46 +810,45 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
     return (
         <View style={styles.container}>
-            <Video
-                ref={videoRef}
-                source={videoSource}
-                style={styles.video}
-                paused={isPaused}
-                muted={settings.isMuted}
-                rate={settings.playbackSpeed}
-                resizeMode={contentFit}
-                onLoad={handleLoad}
-                onProgress={handleProgress}
-                onPlaybackStateChanged={handlePlaybackStateChanged}
-                onBuffer={handleBuffer}
-                onError={handleError}
-                onLoadStart={handleLoadStart}
-                onEnd={handleEnd}
-                onAudioTracks={handleAudioTracks}
-                onTextTracks={handleTextTracks}
-                progressUpdateInterval={250}
-                selectedAudioTrack={videoSelectedAudioTrack}
-                selectedTextTrack={videoSelectedTextTrack}
-                controls={false}
-                enterPictureInPictureOnLeave={pictureInPictureEnabled}
-                onRestoreUserInterfaceForPictureInPictureStop={handleRestorePictureInPicture}
-                playInBackground={false}
-                playWhenInactive={false}
-                allowsExternalPlayback={true}
-            />
+            {!isLoadingStream && videoUrl ? (
+                <Video
+                    ref={videoRef}
+                    source={videoSource}
+                    style={styles.video}
+                    paused={isPaused}
+                    muted={settings.isMuted}
+                    rate={settings.playbackSpeed}
+                    resizeMode={contentFit}
+                    onLoad={handleLoad}
+                    onProgress={handleProgress}
+                    onPlaybackStateChanged={handlePlaybackStateChanged}
+                    onBuffer={handleBuffer}
+                    onError={handleError}
+                    onLoadStart={handleLoadStart}
+                    onEnd={handleEnd}
+                    onAudioTracks={handleAudioTracks}
+                    onTextTracks={handleTextTracks}
+                    progressUpdateInterval={250}
+                    selectedAudioTrack={videoSelectedAudioTrack}
+                    selectedTextTrack={videoSelectedTextTrack}
+                    controls={false}
+                    enterPictureInPictureOnLeave={pictureInPictureEnabled}
+                    onRestoreUserInterfaceForPictureInPictureStop={handleRestorePictureInPicture}
+                    playInBackground={false}
+                    playWhenInactive={false}
+                    allowsExternalPlayback={true}
+                />
+            ) : null}
 
             <ArtworkBackground
                 artwork={artwork}
-                isBuffering={playerState.isBuffering}
-                hasStartedPlaying={playerState.isReady}
+                isBuffering={false}
+                hasStartedPlaying={!isLoadingStream && playerState.isReady}
             />
 
-            <WaitingLobby
-                hasStartedPlaying={playerState.isReady}
-                opacity={bufferOpacity}
-            />
-
-            <TouchableOpacity style={styles.touchArea} activeOpacity={1} onPress={handleOverlayPress} />
+            {!isLoadingStream && playerState.isReady ? (
+                <TouchableOpacity style={styles.touchArea} activeOpacity={1} onPress={handleOverlayPress} />
+            ) : null}
 
             {useCustomSubtitles && subtitleState.currentSubtitle && (
                 <SubtitleDisplay
@@ -762,7 +865,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                 />
             )}
 
-            {uiState.showControls && (
+            {!isLoadingStream && playerState.isReady && uiState.showControls && (
                 <Animated.View style={[styles.controlsOverlay, { opacity: controlsOpacity }]} pointerEvents="box-none">
                     <View style={styles.topControls}>
                         <NativeButton variant="text" style={styles.backButton} onPress={handleBack} accessibilityLabel="Go back" seedColor="#ffffff">
@@ -883,18 +986,28 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                         onSkipForward={handleSkipForward}
                     />
 
-                    <ProgressBar
-                        currentTime={displayTime}
-                        duration={playerState.duration}
-                        sliderValue={sliderValue}
-                        isReady={playerState.isReady}
-                        onValueChange={handleSliderChange}
-                        onSlidingStart={handleSliderStart}
-                        onSlidingComplete={handleSliderComplete}
-                        showSpeed={settings.playbackSpeed !== 1.0}
-                        playbackSpeed={settings.playbackSpeed}
-                    />
+                    {playerState.isReady && (
+                        <ProgressBar
+                            currentTime={displayTime}
+                            duration={playerState.duration}
+                            sliderValue={sliderValue}
+                            isReady={playerState.isReady}
+                            onValueChange={handleSliderChange}
+                            onSlidingStart={handleSliderStart}
+                            onSlidingComplete={handleSliderComplete}
+                            showSpeed={settings.playbackSpeed !== 1.0}
+                            playbackSpeed={settings.playbackSpeed}
+                        />
+                    )}
                 </Animated.View>
+            )}
+
+            {(isLoadingStream || !playerState.isReady) && (
+                <PlayerLoadingScreen
+                    title={title}
+                    message={loadingMessage}
+                    onBack={handleBack}
+                />
             )}
         </View>
     );

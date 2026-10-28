@@ -123,13 +123,13 @@ const PosterList = ({
     return isPortrait ? 7 : 10;
   }, [isPortrait, shortSide]);
   const posterGap = spacing.sm + 4;
-  const containerMargin = spacing.md;
+  const containerMargin = compact ? spacing.mdLg : spacing.md;
 
   const posterWidth = useMemo(() => {
     const totalSpacing = posterGap * (postersPerScreen - 1);
     const totalMargins = containerMargin * 2;
     return (width - totalSpacing - totalMargins) / postersPerScreen;
-  }, [width, postersPerScreen]);
+  }, [containerMargin, width, postersPerScreen]);
 
   const posterHeight = posterWidth * 1.5;
   const posterCardHeight = posterHeight + 58;
@@ -189,14 +189,14 @@ const PosterList = ({
   if (loading) {
     return (
       <RNView style={[styles.container, compact && styles.compactContainer]}>
-        <RNView style={[styles.header, compact && styles.compactHeader]}>
+        <RNView style={styles.header}>
           <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
         </RNView>
         <RNScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           style={listContentStyle}
-          contentContainerStyle={{ flexDirection: 'row', gap: posterGap, paddingRight: spacing.md }}
+          contentContainerStyle={{ flexDirection: 'row', gap: posterGap, paddingRight: containerMargin }}
         >
           {SKELETON_DATA.map((item, index) => (
             <SkeletonPoster
@@ -216,7 +216,7 @@ const PosterList = ({
 
   return (
     <RNView style={[styles.container, compact && styles.compactContainer]}>
-      <RNView style={[styles.header, compact && styles.compactHeader]}>
+      <RNView style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
         <NativeButton variant="text" onPress={handleSeeAllPress} style={styles.seeAllButton} seedColor={colors.primary}>
           <Text style={[styles.seeAllText, { color: colors.textMuted }]}>See All</Text>
@@ -227,7 +227,7 @@ const PosterList = ({
         horizontal
         showsHorizontalScrollIndicator={false}
         style={listContentStyle}
-        contentContainerStyle={{ flexDirection: 'row', gap: posterGap, paddingRight: spacing.md }}
+        contentContainerStyle={{ flexDirection: 'row', gap: posterGap, paddingRight: containerMargin }}
       >
         {data.map((item, index) => (
           <PosterItem
@@ -246,9 +246,8 @@ const PosterList = ({
 
 const styles = StyleSheet.create({
   container: { paddingTop: spacing.sm, marginBottom: spacing.lg, marginHorizontal: spacing.md },
-  compactContainer: { paddingTop: spacing.xs, marginBottom: spacing.xs },
-  header: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: spacing.xs, alignItems: 'center', marginBottom: spacing.md },
-  compactHeader: { marginBottom: 8 },
+  compactContainer: { paddingTop: spacing.xs, marginBottom: spacing.xs, marginHorizontal: spacing.mdLg },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md },
   title: { ...typography.headline },
   seeAllButton: { flexDirection: 'row', alignItems: 'center', paddingVertical: 4, paddingHorizontal: 4 },
   seeAllText: { fontSize: 15, fontWeight: '500', letterSpacing: -0.1 },

@@ -1,5 +1,5 @@
 import OpenSubtitlesClient, { SubtitleResult } from "@/clients/opensubtitles";
-import { Subtitle } from "@/components/coreplayer/models";
+import type { PlaybackSettings, Subtitle } from "@/components/coreplayer/models";
 import { StorageKeys, storageService } from "@/utils/StorageService";
 import {
   getPlatformSpecificPlayers,
@@ -8,16 +8,16 @@ import {
 import { showAlert } from "@/utils/platform";
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { Platform, Linking, ActivityIndicator, View, Text, StyleSheet, Image, StatusBar } from "react-native";
+import { Platform, Linking, View, Text, StyleSheet, StatusBar } from "react-native";
 import { ServerConfig } from "@/components/ServerConfig";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StreamingServerClient, TorrentFile } from "@/clients/stremio";
 import * as ScreenOrientation from 'expo-screen-orientation';
-import { useTheme } from '@/context/ThemeContext';
 
 interface PlaybackPositionEvent {
   positionSeconds: number;
   durationSeconds: number;
+  playbackSettings?: PlaybackSettings;
 }
 
 interface PlaybackErrorEvent {
@@ -29,6 +29,7 @@ interface BackEvent {
   code?: string;
   positionSeconds: number;
   durationSeconds: number;
+  playbackSettings?: PlaybackSettings;
   player: "native" | "ksplayer",
 }
 
@@ -40,6 +41,7 @@ interface WatchHistoryItem {
   season: string;
   episode: string;
   positionSeconds: number;
+  playbackSettings?: PlaybackSettings;
   artwork: string;
   timestamp: number;
 }
@@ -64,6 +66,70 @@ const parsePositiveNumberParam = (value: string | string[] | undefined): number 
   const rawValue = Array.isArray(value) ? value[0] : value;
   const parsedValue = Number(rawValue);
   return Number.isFinite(parsedValue) && parsedValue > 0 ? parsedValue : 0;
+};
+
+const isContentFit = (value: unknown): value is PlaybackSettings['contentFit'] =>
+  value === 'contain' || value === 'cover' || value === 'stretch';
+
+const isSubtitleMode = (value: unknown): value is PlaybackSettings['subtitleMode'] =>
+  value === 'off' || value === 'custom' || value === 'embedded';
+
+const parsePlaybackSettingsParam = (
+  value: string | string[] | undefined
+): PlaybackSettings | undefined => {
+  const rawValue = Array.isArray(value) ? value[0] : value;
+  if (!rawValue) return undefined;
+
+  try {
+    const parsed: unknown = JSON.parse(rawValue);
+    if (!parsed || typeof parsed !== 'object') {
+      throw new Error('Expected an object');
+    }
+    const value = parsed as Record<string, unknown>;
+    if (
+      typeof value.isMuted !== 'boolean' ||
+      typeof value.playbackSpeed !== 'number' ||
+      !Number.isFinite(value.playbackSpeed) ||
+      value.playbackSpeed <= 0 ||
+      value.playbackSpeed > 2 ||
+      !isContentFit(value.contentFit) ||
+      typeof value.audioTrackIndex !== 'number' ||
+      !Number.isInteger(value.audioTrackIndex) ||
+      value.audioTrackIndex < -1 ||
+      !isSubtitleMode(value.subtitleMode) ||
+      typeof value.subtitleIndex !== 'number' ||
+      !Number.isInteger(value.subtitleIndex) ||
+      value.subtitleIndex < -1 ||
+      typeof value.subtitlePosition !== 'number' ||
+      !Number.isFinite(value.subtitlePosition) ||
+      typeof value.subtitleDelay !== 'number' ||
+      !Number.isFinite(value.subtitleDelay) ||
+      (
+        value.positionSeconds !== undefined &&
+        (
+          typeof value.positionSeconds !== 'number' ||
+          !Number.isFinite(value.positionSeconds) ||
+          value.positionSeconds < 0
+        )
+      )
+    ) {
+      throw new Error('Invalid playback settings');
+    }
+    return {
+      positionSeconds: typeof value.positionSeconds === 'number' ? value.positionSeconds : undefined,
+      isMuted: value.isMuted,
+      playbackSpeed: value.playbackSpeed,
+      contentFit: value.contentFit,
+      audioTrackIndex: value.audioTrackIndex,
+      subtitleMode: value.subtitleMode,
+      subtitleIndex: value.subtitleIndex,
+      subtitlePosition: value.subtitlePosition,
+      subtitleDelay: value.subtitleDelay
+    };
+  } catch (error) {
+    console.warn('Ignoring invalid playback settings in continue watching:', error);
+    return undefined;
+  }
 };
 const SERVERS_KEY = StorageKeys.SERVERS_KEY;
 const SUBTITLE_LANGUAGES_KEY = StorageKeys.SUBTITLE_LANGUAGES_KEY;
@@ -124,7 +190,6 @@ function pickEpisodeFileIdx(
 
 const MediaPlayerScreen: React.FC = () => {
   const router = useRouter();
-  const { colors } = useTheme();
 
   const {
     streams: streamsParam,
@@ -135,13 +200,31 @@ const MediaPlayerScreen: React.FC = () => {
     type,
     season,
     episode,
-    positionSeconds: watchHistoryPositionSeconds
+    positionSeconds: watchHistoryPositionSeconds,
+    playbackSettings: playbackSettingsParam
   } = useLocalSearchParams();
 
   const [subtitles, setSubtitles] = useState<Subtitle[]>([]);
   const [isLoadingSubtitles, setIsLoadingSubtitles] = useState(true);
   const [openSubtitlesClient, setOpenSubtitlesClient] = useState<OpenSubtitlesClient | null>(null);
-  const resumePositionSeconds = parsePositiveNumberParam(watchHistoryPositionSeconds);
+  const parsedPlaybackSettings = parsePlaybackSettingsParam(playbackSettingsParam);
+  const resumePositionSeconds =
+    parsedPlaybackSettings?.positionSeconds ?? parsePositiveNumberParam(watchHistoryPositionSeconds);
+  const resumePlaybackSettings = parsedPlaybackSettings
+    ? { ...parsedPlaybackSettings, positionSeconds: resumePositionSeconds }
+    : resumePositionSeconds > 0
+      ? {
+          positionSeconds: resumePositionSeconds,
+          isMuted: false,
+          playbackSpeed: 1,
+          contentFit: 'cover' as const,
+          audioTrackIndex: -1,
+          subtitleMode: 'off' as const,
+          subtitleIndex: -1,
+          subtitlePosition: 0,
+          subtitleDelay: 0
+        }
+      : undefined;
   const artwork = `https://images.metahub.space/background/medium/${imdbid}/img`;
 
   const [streams, setStreams] = useState<Stream[]>([]);
@@ -175,7 +258,7 @@ const MediaPlayerScreen: React.FC = () => {
           await ScreenOrientation.unlockAsync();
           await new Promise(r => setTimeout(r, 100));
           await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
-          navigation.setOptions({ gestureEnabled: false });
+          navigation.setOptions({ gestureEnabled: true });
           StatusBar.setHidden(true, 'slide');
         } catch (e) {
           console.warn('Orientation lock failed:', e);
@@ -672,19 +755,43 @@ const MediaPlayerScreen: React.FC = () => {
     }
   };
 
-  const saveToWatchHistory = ({ positionSeconds, durationSeconds }: PlaybackPositionEvent) => {
+  const saveToWatchHistory = ({ positionSeconds, durationSeconds, playbackSettings }: PlaybackPositionEvent) => {
     if (!Number.isFinite(positionSeconds) || !Number.isFinite(durationSeconds)) return;
 
     const elapsedSeconds = Math.max(0, Math.floor(positionSeconds));
     const totalSeconds = Math.max(0, Math.floor(durationSeconds));
-    if (elapsedSeconds <= 1 || totalSeconds <= 0) return;
+    if (totalSeconds <= 0) return;
 
     const savedPositionSeconds = Math.min(elapsedSeconds, totalSeconds);
-    const isCompleted = savedPositionSeconds >= totalSeconds * 0.95;
+    const savedPlaybackSettings = playbackSettings
+      ? { ...playbackSettings, positionSeconds: savedPositionSeconds }
+      : undefined;
 
     try {
       const existingHistoryJson = storageService.getItem(WATCH_HISTORY_KEY);
       let history: WatchHistoryItem[] = existingHistoryJson ? JSON.parse(existingHistoryJson) : [];
+      const existingIndex = history.findIndex(item =>
+        item.imdbid === imdbid && item.type === type && item.season === season && item.episode === episode
+      );
+
+      if (elapsedSeconds <= 1) {
+        if (playbackSettings && existingIndex !== -1) {
+          history[existingIndex] = {
+            ...history[existingIndex],
+            playbackSettings: {
+              ...playbackSettings,
+              positionSeconds:
+                history[existingIndex].playbackSettings?.positionSeconds ??
+                history[existingIndex].positionSeconds
+            },
+            timestamp: Date.now()
+          };
+          storageService.setItem(WATCH_HISTORY_KEY, JSON.stringify(history));
+        }
+        return;
+      }
+
+      const isCompleted = savedPositionSeconds >= totalSeconds * 0.95;
 
       if (isCompleted) {
         history = history.filter(item =>
@@ -698,6 +805,7 @@ const MediaPlayerScreen: React.FC = () => {
         title: title as string,
         videoUrl: videoUrl as string,
         positionSeconds: savedPositionSeconds,
+        playbackSettings: savedPlaybackSettings,
         artwork,
         imdbid: imdbid as string,
         type: type as string,
@@ -705,10 +813,6 @@ const MediaPlayerScreen: React.FC = () => {
         episode: episode as string,
         timestamp: Date.now()
       };
-
-      const existingIndex = history.findIndex(item =>
-        item.imdbid === imdbid && item.type === type && item.season === season && item.episode === episode
-      );
 
       if (existingIndex !== -1) {
         history[existingIndex] = {
@@ -720,6 +824,7 @@ const MediaPlayerScreen: React.FC = () => {
           season: season as string,
           episode: episode as string,
           positionSeconds: savedPositionSeconds,
+          playbackSettings: savedPlaybackSettings ?? history[existingIndex].playbackSettings,
           timestamp: Date.now()
         };
         const [updatedItem] = history.splice(existingIndex, 1);
@@ -756,32 +861,17 @@ const MediaPlayerScreen: React.FC = () => {
 
   const Player = getPlayer();
 
-  if (isLoadingStream) {
-    return (
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <View style={styles.loadingContainer}>
-          {artwork && (
-            <Image source={{ uri: artwork }} style={styles.backdropImage} />
-          )}
-          <View style={styles.loadingOverlay}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={[styles.loadingText, { color: colors.text }]}>
-              {statusText || 'Loading stream. Please wait...'}
-            </Text>
-          </View>
-        </View>
-      </GestureHandlerRootView>
-    );
-  }
-
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <Player
+        key={`${String(imdbid)}:${String(type)}:${String(season)}:${String(episode)}:${resumePositionSeconds}`}
         videoUrl={videoUrl}
+        isLoadingStream={isLoadingStream}
+        loadingMessage={statusText}
         isTorrent={isTorrent}
         title={title as string}
         back={handleBack}
-        resumePositionSeconds={resumePositionSeconds}
+        resumePlaybackSettings={resumePlaybackSettings}
         artwork={artwork as string}
         subtitles={subtitles}
         openSubtitlesClient={openSubtitlesClient}
@@ -810,27 +900,6 @@ const MediaPlayerScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  backdropImage: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-    opacity: 0.5,
-  },
-  loadingOverlay: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 20,
-    fontSize: 16,
-    fontWeight: '500',
-  },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',

@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.mdLg,
   },
   activityIndicator: {
     marginBottom: 10,

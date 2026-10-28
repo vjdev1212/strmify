@@ -39,8 +39,8 @@ const MediaContentDescription: React.FC<MediaContentDescriptionProps> = ({ descr
 
 const styles = StyleSheet.create({
   container: { justifyContent: 'center', minHeight: 10, paddingBottom: spacing.sm },
-  description: { ...typography.subhead, paddingHorizontal: spacing.lg, marginTop: spacing.sm },
-  moreText: { ...typography.caption, marginTop: spacing.xs, paddingHorizontal: spacing.lg, textTransform: 'uppercase' },
+  description: { ...typography.subhead, paddingHorizontal: spacing.mdLg, marginTop: spacing.sm },
+  moreText: { ...typography.caption, marginTop: spacing.xs, paddingHorizontal: spacing.mdLg, textTransform: 'uppercase' },
 });
 
 export default MediaContentDescription;

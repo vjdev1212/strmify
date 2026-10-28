@@ -7,7 +7,7 @@ import { showAlert } from '@/utils/platform';
 import { parseSubtitleFile } from './subtitle';
 import { styles } from './styles';
 import { formatTime } from './utils';
-import { MediaPlayerProps } from './models';
+import { MediaPlayerProps, PlaybackSettings } from './models';
 import { extractAudioCodec, extractHDR, extractQuality, extractSize, extractSource, extractVideoCodec } from '@/utils/StreamItem';
 import type { MenuAction } from '@expo/ui/community/menu';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -102,11 +102,13 @@ export const useUIState = () => {
     };
 };
 
-export const usePlayerSettings = () => {
-    const [isMuted, setIsMuted] = useState(false);
-    const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
-    const [selectedSubtitle, setSelectedSubtitle] = useState(-1);
-    const [selectedAudioTrack, setSelectedAudioTrack] = useState(-1);
+export const usePlayerSettings = (initialSettings?: PlaybackSettings) => {
+    const [isMuted, setIsMuted] = useState(initialSettings?.isMuted ?? false);
+    const [playbackSpeed, setPlaybackSpeed] = useState(initialSettings?.playbackSpeed ?? 1.0);
+    const [selectedSubtitle, setSelectedSubtitle] = useState(
+        initialSettings?.subtitleMode === 'custom' ? initialSettings.subtitleIndex : -1
+    );
+    const [selectedAudioTrack, setSelectedAudioTrack] = useState(initialSettings?.audioTrackIndex ?? -1);
 
     return {
         isMuted, setIsMuted,
@@ -116,10 +118,10 @@ export const usePlayerSettings = () => {
     };
 };
 
-export const useEnhancedPlayerSettings = () => {
-    const baseSettings = usePlayerSettings();
-    const [subtitleDelay, setSubtitleDelay] = useState(0);
-    const [subtitlePosition, setSubtitlePosition] = useState<number>(0);
+export const useEnhancedPlayerSettings = (initialSettings?: PlaybackSettings) => {
+    const baseSettings = usePlayerSettings(initialSettings);
+    const [subtitleDelay, setSubtitleDelay] = useState(initialSettings?.subtitleDelay ?? 0);
+    const [subtitlePosition, setSubtitlePosition] = useState<number>(initialSettings?.subtitlePosition ?? 0);
 
     return {
         ...baseSettings,
@@ -252,7 +254,9 @@ export const hideControls = (
         toValue: 0,
         duration: 300,
         useNativeDriver: true
-    }).start(() => setShowControls(false));
+    }).start(({ finished }) => {
+        if (finished) setShowControls(false);
+    });
 };
 
 export const calculateSliderValues = (
@@ -704,6 +708,39 @@ export const ErrorDisplay: React.FC<{
             <MaterialIcons name="error-outline" size={64} color="#ff6b6b" />
             <Text style={styles.errorTitle}>Playback Error</Text>
             <Text style={styles.errorText}>{error}</Text>
+        </View>
+    );
+};
+
+export const PlayerLoadingScreen: React.FC<{
+    title: string;
+    message?: string;
+    onBack: () => void;
+}> = ({ title, message, onBack }) => {
+    const { colors } = useTheme();
+
+    return (
+        <View style={styles.playerLoadingOverlay} pointerEvents="box-none">
+            <View style={styles.topControls}>
+                <NativeButton
+                    variant="text"
+                    style={styles.backButton}
+                    onPress={onBack}
+                    accessibilityLabel="Go back"
+                    seedColor="#ffffff"
+                >
+                    <Ionicons name="chevron-back" size={28} color="white" />
+                </NativeButton>
+                <View style={styles.titleContainer}>
+                    <Text style={styles.titleText} numberOfLines={1}>{title}</Text>
+                </View>
+            </View>
+            <View style={styles.playerLoadingContent}>
+                <ActivityIndicator size="large" color={colors.primary} />
+                <Text style={[styles.playerLoadingMessage, { color: colors.text }]}>
+                    {message || 'Loading stream. Please wait...'}
+                </Text>
+            </View>
         </View>
     );
 };
