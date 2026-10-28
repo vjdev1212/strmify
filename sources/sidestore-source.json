@@ -18,7 +18,7 @@
       "subtitle": "Strmify - Your streaming companion for discovering and watching content from multiple sources.",
       "localizedDescription": "Strmify is your streaming companion for discovering and streaming movies and TV shows through various add-on sources and third-party integrations. Find, search, and play content using your preferred media player.",
       "iconURL": "https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/assets/images/icon.png",
-      "downloadURL": "https://github.com/vjdev1212/strmify/releases/download/v1.14.0/Strmify_v1.14.0.ipa",
+      "downloadURL": "https://github.com/vjdev1212/strmify/releases/download/v1.15.0/Strmify_v1.15.0.ipa",
       "tintColor": "#535aff",
       "category": "entertainment",
       "screenshots": [
@@ -29,13 +29,21 @@
         "https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/Strmify-screenshots/iPhone/4-Search.png"
       ],
       "versions": [
+        {
+          "version": "1.15.0",
+          "date": "2026-10-28",
+          "localizedDescription": "1. Added screen for Cast & Crew. 2. Media Player issues addressed. 3. UI Improvements and Bug fixes.",
+          "downloadURL": "https://github.com/vjdev1212/strmify/releases/download/v1.15.0/Strmify_v1.15.0.ipa",
+          "size": 26843545,
+          "minOSVersion": "26.0"
+        },
          {
           "version": "1.14.0",
           "date": "2026-10-28",
           "localizedDescription": "1. Expo SDK updated to v58. 2. Major UI Improvements.",
           "downloadURL": "https://github.com/vjdev1212/strmify/releases/download/v1.14.0/Strmify_v1.14.0.ipa",
-          "size": 24117248,
-          "minOSVersion": "18.0"
+          "size": 26843545,
+          "minOSVersion": "26.0"
         },
         {
           "version": "1.13.0",
@@ -60,46 +68,6 @@
           "downloadURL": "https://github.com/vjdev1212/strmify/releases/download/v1.11.0/Strmify_v1.11.0.ipa",
           "size": 24117248,
           "minOSVersion": "18.0"
-        },
-        {
-          "version": "1.10.1",
-          "date": "2026-04-09",
-          "localizedDescription": "1. Fixed KSPlayer usability issues.",
-          "downloadURL": "https://github.com/vjdev1212/strmify/releases/download/v1.10.1/Strmify_v1.10.1.ipa",
-          "size": 24117248,
-          "minOSVersion": "18.0"
-        },
-        {
-          "version": "1.10.0",
-          "date": "2026-03-26",
-          "localizedDescription": "1. Fixed performance issues.\n2. Fixed themes colors issues.",
-          "downloadURL": "https://github.com/vjdev1212/strmify/releases/download/v1.10.0/Strmify_v1.10.0.ipa",
-          "size": 24117248,
-          "minOSVersion": "18.0"
-        },
-        {
-          "version": "1.9.1",
-          "date": "2026-03-15",
-          "localizedDescription": "1. Settings screens UI issues addressed.",
-          "downloadURL": "https://github.com/vjdev1212/strmify/releases/download/v1.9.1/Strmify_v1.9.1.ipa",
-          "size": 24117248,
-          "minOSVersion": "18.0"
-        },
-        {
-          "version": "1.9.0",
-          "date": "2026-03-14",
-          "localizedDescription": "1. Added support for themes. \n2. Fixed KSPlayer Audio issues. \n3. UI Improvements and Bug fixes.",
-          "downloadURL": "https://github.com/vjdev1212/strmify/releases/download/v1.9.0/Strmify_v1.9.0.ipa",
-          "size": 24117248,
-          "minOSVersion": "18.0"
-        },
-        {
-          "version": "1.8.0",
-          "date": "2026-02-24",
-          "localizedDescription": "1. Fixed KSPlayer Audio and Subtitle selection issues.",
-          "downloadURL": "https://github.com/vjdev1212/strmify/releases/download/v1.8.0/Strmify_v1.8.0.ipa",
-          "size": 24117248,
-          "minOSVersion": "18.0"
         }
       ],
       "appPermissions": {
@@ -110,9 +78,9 @@
   ],
   "news": [
     {
-      "title": "Strmify v1.14.0 Released",
-      "identifier": "strmify-v1.14.0-release",
-      "caption": "1. Expo SDK updated to v58. 2. Major UI Improvements.",
+      "title": "Strmify v1.15.0 Released",
+      "identifier": "strmify-v1.15.0-release",
+      "caption": "1. Added screen for Cast & Crew. 2. Media Player issues addressed. 3. UI Improvements and Bug fixes.",
       "date": "2026-10-28",
       "tintColor": "#535aff",
       "imageURL": "https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/assets/banners/Strmify-feature-graphic.png",
