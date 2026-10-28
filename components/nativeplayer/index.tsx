@@ -26,10 +26,10 @@ import {
     buildStreamActions,
     calculateSliderValues,
     ArtworkBackground,
-    WaitingLobby,
     SubtitleDisplay,
     CenterControls,
     ProgressBar,
+    PlayerLoadingScreen,
     SubtitleSource,
     SubtitlePosition,
     ErrorDisplay,
@@ -46,13 +46,26 @@ const MenuWrapper: React.FC<any> = (props) => {
     if (Platform.OS === 'web') {
         return <WebMenu {...props} />;
     }
-    return <MenuView {...props} />;
+    return (
+        <View
+            collapsable={false}
+            onTouchStartCapture={props.onOpenMenu}
+            style={props.style}
+        >
+            <MenuView
+                {...props}
+                style={undefined}
+            />
+        </View>
+    );
 };
 
 
 export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     videoUrl,
     title,
+    isLoadingStream = false,
+    loadingMessage,
     back: onBack,
     resumePositionSeconds = 0,
     pictureInPictureEnabled = true,
@@ -93,6 +106,13 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     const clearTimer = timers.clearTimer;
     const setTimer = timers.setTimer;
     const clearAllTimers = timers.clearAllTimers;
+
+    useEffect(() => {
+        if (isLoadingStream) {
+            playerState.setIsReady(false);
+            playerState.setIsBuffering(true);
+        }
+    }, [isLoadingStream, playerState.setIsReady, playerState.setIsBuffering]);
 
     const audioMenuRef = useRef<MenuComponentRef>(null);
     const subtitleMenuRef = useRef<MenuComponentRef>(null);
@@ -144,7 +164,9 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         if (shouldAutoHideControls.current) {
             isHideControlsScheduled.current = true;
             setTimer('hideControls', () => {
-                hideControls(setShowControls, controlsOpacity);
+                if (shouldAutoHideControls.current) {
+                    hideControls(setShowControls, controlsOpacity);
+                }
                 isHideControlsScheduled.current = false;
             }, CONSTANTS.CONTROLS_AUTO_HIDE_DELAY);
         }
@@ -445,6 +467,12 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     }, [contentFit, showControlsTemporarily, showContentFitLabelTemporarily]);
 
     const handleOverlayPress = useCallback(() => {
+        if (!shouldAutoHideControls.current) {
+            shouldAutoHideControls.current = true;
+            showControlsTemporarily();
+            return;
+        }
+
         if (uiState.showControls) {
             hideControls(setShowControls, controlsOpacity);
         } else {
@@ -628,42 +656,50 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     }, [playerState]);
 
     // Unchanged — parses numeric ids from "subtitle-track-{N}" as before
-    const handleMenuAction = useCallback((id: string) => {
-        if (id.startsWith('speed-')) {
-            const speed = parseFloat(id.split('-')[1]);
-            if (!isNaN(speed)) handlePlaybackSpeedSelect(speed);
-        } else if (id === 'subtitle-track-off') {
-            handleSubtitleTrackSelect(-1);
-        } else if (id.startsWith('subtitle-track-')) {
-            const index = parseInt(id.split('subtitle-track-')[1]);
-            if (!isNaN(index)) handleSubtitleTrackSelect(index);
-        } else if (id.startsWith('position-')) {
-            const position = parseInt(id.split('-')[1]);
-            if (!isNaN(position)) handleSubtitlePositionSelect(position);
-        } else if (id.startsWith('delay_')) {
-            const delayMs = parseInt(id.replace('delay_', ''));
-            if (!isNaN(delayMs)) handleSubtitleDelaySelect(delayMs);
-        } else if (id.startsWith('audio-')) {
-            const index = parseInt(id.split('-')[1]);
-            if (!isNaN(index)) handleAudioSelect(index);
-        } else if (id.startsWith('stream-')) {
-            const index = parseInt(id.split('-')[1]);
-            if (!isNaN(index)) handleStreamSelect(index);
-        }
-    }, [handlePlaybackSpeedSelect, handleSubtitleTrackSelect, handleSubtitlePositionSelect, handleSubtitleDelaySelect, handleAudioSelect, handleStreamSelect, subtitles.length]);
-
-    const handleWebAction = useCallback((id: string) => handleMenuAction(id), [handleMenuAction]);
-    const handleNativeAction = useCallback(({ nativeEvent }: any) => handleMenuAction(nativeEvent.event), [handleMenuAction]);
-
     const handleMenuOpen = useCallback(() => {
         shouldAutoHideControls.current = false;
         clearTimer('hideControls');
-    }, [clearTimer]);
+        controlsOpacity.stopAnimation();
+        controlsOpacity.setValue(1);
+        setShowControls(true);
+    }, [clearTimer, controlsOpacity, setShowControls]);
 
     const handleMenuClose = useCallback(() => {
+        if (shouldAutoHideControls.current) return;
         shouldAutoHideControls.current = true;
         showControlsTemporarily();
     }, [showControlsTemporarily]);
+
+    const handleMenuAction = useCallback((id: string) => {
+        try {
+            if (id.startsWith('speed-')) {
+                const speed = parseFloat(id.split('-')[1]);
+                if (!isNaN(speed)) handlePlaybackSpeedSelect(speed);
+            } else if (id === 'subtitle-track-off') {
+                handleSubtitleTrackSelect(-1);
+            } else if (id.startsWith('subtitle-track-')) {
+                const index = parseInt(id.split('subtitle-track-')[1]);
+                if (!isNaN(index)) handleSubtitleTrackSelect(index);
+            } else if (id.startsWith('position-')) {
+                const position = parseInt(id.split('-')[1]);
+                if (!isNaN(position)) handleSubtitlePositionSelect(position);
+            } else if (id.startsWith('delay_')) {
+                const delayMs = parseInt(id.replace('delay_', ''));
+                if (!isNaN(delayMs)) handleSubtitleDelaySelect(delayMs);
+            } else if (id.startsWith('audio-')) {
+                const index = parseInt(id.split('-')[1]);
+                if (!isNaN(index)) handleAudioSelect(index);
+            } else if (id.startsWith('stream-')) {
+                const index = parseInt(id.split('-')[1]);
+                if (!isNaN(index)) handleStreamSelect(index);
+            }
+        } finally {
+            handleMenuClose();
+        }
+    }, [handlePlaybackSpeedSelect, handleSubtitleTrackSelect, handleSubtitlePositionSelect, handleSubtitleDelaySelect, handleAudioSelect, handleStreamSelect, handleMenuClose, subtitles.length]);
+
+    const handleWebAction = useCallback((id: string) => handleMenuAction(id), [handleMenuAction]);
+    const handleNativeAction = useCallback(({ nativeEvent }: any) => handleMenuAction(nativeEvent.event), [handleMenuAction]);
 
     const handleMuteToggle = useCallback(() => {
         settings.setIsMuted(!settings.isMuted);
@@ -706,46 +742,45 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
     return (
         <View style={styles.container}>
-            <Video
-                ref={videoRef}
-                source={videoSource}
-                style={styles.video}
-                paused={isPaused}
-                muted={settings.isMuted}
-                rate={settings.playbackSpeed}
-                resizeMode={contentFit}
-                onLoad={handleLoad}
-                onProgress={handleProgress}
-                onPlaybackStateChanged={handlePlaybackStateChanged}
-                onBuffer={handleBuffer}
-                onError={handleError}
-                onLoadStart={handleLoadStart}
-                onEnd={handleEnd}
-                onAudioTracks={handleAudioTracks}
-                onTextTracks={handleTextTracks}
-                progressUpdateInterval={250}
-                selectedAudioTrack={videoSelectedAudioTrack}
-                selectedTextTrack={videoSelectedTextTrack}
-                controls={false}
-                enterPictureInPictureOnLeave={pictureInPictureEnabled}
-                onRestoreUserInterfaceForPictureInPictureStop={handleRestorePictureInPicture}
-                playInBackground={false}
-                playWhenInactive={false}
-                allowsExternalPlayback={true}
-            />
+            {!isLoadingStream && videoUrl ? (
+                <Video
+                    ref={videoRef}
+                    source={videoSource}
+                    style={styles.video}
+                    paused={isPaused}
+                    muted={settings.isMuted}
+                    rate={settings.playbackSpeed}
+                    resizeMode={contentFit}
+                    onLoad={handleLoad}
+                    onProgress={handleProgress}
+                    onPlaybackStateChanged={handlePlaybackStateChanged}
+                    onBuffer={handleBuffer}
+                    onError={handleError}
+                    onLoadStart={handleLoadStart}
+                    onEnd={handleEnd}
+                    onAudioTracks={handleAudioTracks}
+                    onTextTracks={handleTextTracks}
+                    progressUpdateInterval={250}
+                    selectedAudioTrack={videoSelectedAudioTrack}
+                    selectedTextTrack={videoSelectedTextTrack}
+                    controls={false}
+                    enterPictureInPictureOnLeave={pictureInPictureEnabled}
+                    onRestoreUserInterfaceForPictureInPictureStop={handleRestorePictureInPicture}
+                    playInBackground={false}
+                    playWhenInactive={false}
+                    allowsExternalPlayback={true}
+                />
+            ) : null}
 
             <ArtworkBackground
                 artwork={artwork}
-                isBuffering={playerState.isBuffering}
-                hasStartedPlaying={playerState.isReady}
+                isBuffering={false}
+                hasStartedPlaying={!isLoadingStream && playerState.isReady}
             />
 
-            <WaitingLobby
-                hasStartedPlaying={playerState.isReady}
-                opacity={bufferOpacity}
-            />
-
-            <TouchableOpacity style={styles.touchArea} activeOpacity={1} onPress={handleOverlayPress} />
+            {!isLoadingStream && playerState.isReady ? (
+                <TouchableOpacity style={styles.touchArea} activeOpacity={1} onPress={handleOverlayPress} />
+            ) : null}
 
             {useCustomSubtitles && subtitleState.currentSubtitle && (
                 <SubtitleDisplay
@@ -762,7 +797,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                 />
             )}
 
-            {uiState.showControls && (
+            {!isLoadingStream && playerState.isReady && uiState.showControls && (
                 <Animated.View style={[styles.controlsOverlay, { opacity: controlsOpacity }]} pointerEvents="box-none">
                     <View style={styles.topControls}>
                         <NativeButton variant="text" style={styles.backButton} onPress={handleBack} accessibilityLabel="Go back" seedColor="#ffffff">
@@ -883,18 +918,28 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                         onSkipForward={handleSkipForward}
                     />
 
-                    <ProgressBar
-                        currentTime={displayTime}
-                        duration={playerState.duration}
-                        sliderValue={sliderValue}
-                        isReady={playerState.isReady}
-                        onValueChange={handleSliderChange}
-                        onSlidingStart={handleSliderStart}
-                        onSlidingComplete={handleSliderComplete}
-                        showSpeed={settings.playbackSpeed !== 1.0}
-                        playbackSpeed={settings.playbackSpeed}
-                    />
+                    {playerState.isReady && (
+                        <ProgressBar
+                            currentTime={displayTime}
+                            duration={playerState.duration}
+                            sliderValue={sliderValue}
+                            isReady={playerState.isReady}
+                            onValueChange={handleSliderChange}
+                            onSlidingStart={handleSliderStart}
+                            onSlidingComplete={handleSliderComplete}
+                            showSpeed={settings.playbackSpeed !== 1.0}
+                            playbackSpeed={settings.playbackSpeed}
+                        />
+                    )}
                 </Animated.View>
+            )}
+
+            {(isLoadingStream || !playerState.isReady) && (
+                <PlayerLoadingScreen
+                    title={title}
+                    message={loadingMessage}
+                    onBack={handleBack}
+                />
             )}
         </View>
     );

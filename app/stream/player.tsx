@@ -8,12 +8,11 @@ import {
 import { showAlert } from "@/utils/platform";
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { Platform, Linking, ActivityIndicator, View, Text, StyleSheet, Image, StatusBar } from "react-native";
+import { Platform, Linking, View, Text, StyleSheet, StatusBar } from "react-native";
 import { ServerConfig } from "@/components/ServerConfig";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StreamingServerClient, TorrentFile } from "@/clients/stremio";
 import * as ScreenOrientation from 'expo-screen-orientation';
-import { useTheme } from '@/context/ThemeContext';
 
 interface PlaybackPositionEvent {
   positionSeconds: number;
@@ -124,7 +123,6 @@ function pickEpisodeFileIdx(
 
 const MediaPlayerScreen: React.FC = () => {
   const router = useRouter();
-  const { colors } = useTheme();
 
   const {
     streams: streamsParam,
@@ -175,7 +173,7 @@ const MediaPlayerScreen: React.FC = () => {
           await ScreenOrientation.unlockAsync();
           await new Promise(r => setTimeout(r, 100));
           await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
-          navigation.setOptions({ gestureEnabled: false });
+          navigation.setOptions({ gestureEnabled: true });
           StatusBar.setHidden(true, 'slide');
         } catch (e) {
           console.warn('Orientation lock failed:', e);
@@ -756,28 +754,12 @@ const MediaPlayerScreen: React.FC = () => {
 
   const Player = getPlayer();
 
-  if (isLoadingStream) {
-    return (
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <View style={styles.loadingContainer}>
-          {artwork && (
-            <Image source={{ uri: artwork }} style={styles.backdropImage} />
-          )}
-          <View style={styles.loadingOverlay}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={[styles.loadingText, { color: colors.text }]}>
-              {statusText || 'Loading stream. Please wait...'}
-            </Text>
-          </View>
-        </View>
-      </GestureHandlerRootView>
-    );
-  }
-
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <Player
         videoUrl={videoUrl}
+        isLoadingStream={isLoadingStream}
+        loadingMessage={statusText}
         isTorrent={isTorrent}
         title={title as string}
         back={handleBack}
@@ -810,27 +792,6 @@ const MediaPlayerScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  backdropImage: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-    opacity: 0.5,
-  },
-  loadingOverlay: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 20,
-    fontSize: 16,
-    fontWeight: '500',
-  },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',

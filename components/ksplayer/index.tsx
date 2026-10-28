@@ -25,10 +25,10 @@ import {
     buildStreamActions,
     calculateSliderValues,
     ArtworkBackground,
-    WaitingLobby,
     SubtitleDisplay,
     CenterControls,
     ProgressBar,
+    PlayerLoadingScreen,
     SubtitleSource,
     SubtitlePosition,
     ErrorDisplay,
@@ -46,12 +46,25 @@ const RNResizeMode = { COVER: 'cover', CONTAIN: 'contain', STRETCH: 'stretch' };
 
 const MenuWrapper: React.FC<any> = (props) => {
     if (Platform.OS === 'web') return <WebMenu {...props} />;
-    return <MenuView {...props} />;
+    return (
+        <View
+            collapsable={false}
+            onTouchStartCapture={props.onOpenMenu}
+            style={props.style}
+        >
+            <MenuView
+                {...props}
+                style={undefined}
+            />
+        </View>
+    );
 };
 
 export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     videoUrl,
     title,
+    isLoadingStream = false,
+    loadingMessage,
     back: onBack,
     resumePositionSeconds = 0,
     pictureInPictureEnabled = true,
@@ -89,6 +102,13 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     const clearTimer = timers.clearTimer;
     const setTimer = timers.setTimer;
     const clearAllTimers = timers.clearAllTimers;
+
+    useEffect(() => {
+        if (isLoadingStream) {
+            playerState.setIsReady(false);
+            playerState.setIsBuffering(true);
+        }
+    }, [isLoadingStream, playerState.setIsReady, playerState.setIsBuffering]);
 
     const audioMenuRef = useRef<MenuComponentRef>(null);
     const subtitleMenuRef = useRef<MenuComponentRef>(null);
@@ -139,7 +159,9 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         if (shouldAutoHideControls.current) {
             isHideControlsScheduled.current = true;
             setTimer('hideControls', () => {
-                hideControls(setShowControls, controlsOpacity);
+                if (shouldAutoHideControls.current) {
+                    hideControls(setShowControls, controlsOpacity);
+                }
                 isHideControlsScheduled.current = false;
             }, CONSTANTS.CONTROLS_AUTO_HIDE_DELAY);
         }
@@ -388,6 +410,12 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     }, [contentFit, showControlsTemporarily, showContentFitLabelTemporarily]);
 
     const handleOverlayPress = useCallback(() => {
+        if (!shouldAutoHideControls.current) {
+            shouldAutoHideControls.current = true;
+            showControlsTemporarily();
+            return;
+        }
+
         if (uiState.showControls) {
             hideControls(setShowControls, controlsOpacity);
         } else {
@@ -566,28 +594,46 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
     // ─── Unified menu action handler ──────────────────────────────────────────
 
+    const handleMenuOpen = useCallback(() => {
+        shouldAutoHideControls.current = false;
+        clearTimer('hideControls');
+        controlsOpacity.stopAnimation();
+        controlsOpacity.setValue(1);
+        setShowControls(true);
+    }, [clearTimer, controlsOpacity, setShowControls]);
+
+    const handleMenuClose = useCallback(() => {
+        if (shouldAutoHideControls.current) return;
+        shouldAutoHideControls.current = true;
+        showControlsTemporarily();
+    }, [showControlsTemporarily]);
+
     const handleMenuAction = useCallback((id: string) => {
-        if (id.startsWith('speed-')) {
-            const speed = parseFloat(id.split('-')[1]);
-            if (!isNaN(speed)) handlePlaybackSpeedSelect(speed);
-        } else if (id === 'subtitle-track-off') {
-            handleSubtitleTrackSelect('off');
-        } else if (id.startsWith('subtitle-track-custom-')) {
-            handleSubtitleTrackSelect(id.replace('subtitle-track-', ''));
-        } else if (id.startsWith('subtitle-track-embedded-')) {
-            handleSubtitleTrackSelect(id.replace('subtitle-track-', ''));
-        } else if (id.startsWith('position-')) {
-            const position = parseInt(id.split('-')[1]);
-            if (!isNaN(position)) handleSubtitlePositionSelect(position);
-        } else if (id.startsWith('delay_')) {
-            const delayMs = parseInt(id.replace('delay_', ''));
-            if (!isNaN(delayMs)) handleSubtitleDelaySelect(delayMs);
-        } else if (id.startsWith('audio-')) {
-            const index = parseInt(id.split('-')[1]);
-            if (!isNaN(index)) handleAudioSelect(index);
-        } else if (id.startsWith('stream-')) {
-            const index = parseInt(id.split('-')[1]);
-            if (!isNaN(index)) handleStreamSelect(index);
+        try {
+            if (id.startsWith('speed-')) {
+                const speed = parseFloat(id.split('-')[1]);
+                if (!isNaN(speed)) handlePlaybackSpeedSelect(speed);
+            } else if (id === 'subtitle-track-off') {
+                handleSubtitleTrackSelect('off');
+            } else if (id.startsWith('subtitle-track-custom-')) {
+                handleSubtitleTrackSelect(id.replace('subtitle-track-', ''));
+            } else if (id.startsWith('subtitle-track-embedded-')) {
+                handleSubtitleTrackSelect(id.replace('subtitle-track-', ''));
+            } else if (id.startsWith('position-')) {
+                const position = parseInt(id.split('-')[1]);
+                if (!isNaN(position)) handleSubtitlePositionSelect(position);
+            } else if (id.startsWith('delay_')) {
+                const delayMs = parseInt(id.replace('delay_', ''));
+                if (!isNaN(delayMs)) handleSubtitleDelaySelect(delayMs);
+            } else if (id.startsWith('audio-')) {
+                const index = parseInt(id.split('-')[1]);
+                if (!isNaN(index)) handleAudioSelect(index);
+            } else if (id.startsWith('stream-')) {
+                const index = parseInt(id.split('-')[1]);
+                if (!isNaN(index)) handleStreamSelect(index);
+            }
+        } finally {
+            handleMenuClose();
         }
     }, [
         handlePlaybackSpeedSelect,
@@ -595,21 +641,12 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         handleSubtitlePositionSelect,
         handleSubtitleDelaySelect,
         handleAudioSelect,
-        handleStreamSelect
+        handleStreamSelect,
+        handleMenuClose
     ]);
 
     const handleWebAction = useCallback((id: string) => handleMenuAction(id), [handleMenuAction]);
     const handleNativeAction = useCallback(({ nativeEvent }: any) => handleMenuAction(nativeEvent.event), [handleMenuAction]);
-
-    const handleMenuOpen = useCallback(() => {
-        shouldAutoHideControls.current = false;
-        clearTimer('hideControls');
-    }, [clearTimer]);
-
-    const handleMenuClose = useCallback(() => {
-        shouldAutoHideControls.current = true;
-        showControlsTemporarily();
-    }, [showControlsTemporarily]);
 
     const handleBack = useCallback(() => {
         onBack({
@@ -643,41 +680,42 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     return (
         <View style={styles.container}>
             {/* ── Video ─────────────────────────────────────────────────────── */}
-            <VideoComponent
-                ref={videoRef}
-                url={videoUrl}
-                headers={videoHeaders}
-                paused={isPaused}
-                muted={settings.isMuted}
-                rate={settings.playbackSpeed}
-                resizeMode={contentFit}
-                pictureInPictureEnabled={pictureInPictureEnabled}
-                style={styles.video}
-                onLoad={handleLoad}
-                onProgress={handleProgress}
-                onBuffer={handleBuffer}
-                onError={handleError}
-                onEnd={handleEnd}
-                onAudioTracks={handleAudioTracks}
-                onTextTracks={handleTextTracks}
-                onSubtitleText={handleSubtitleText}
-            />
+            {!isLoadingStream && videoUrl ? (
+                <VideoComponent
+                    ref={videoRef}
+                    url={videoUrl}
+                    headers={videoHeaders}
+                    paused={isPaused}
+                    muted={settings.isMuted}
+                    rate={settings.playbackSpeed}
+                    resizeMode={contentFit}
+                    pictureInPictureEnabled={pictureInPictureEnabled}
+                    style={styles.video}
+                    onLoad={handleLoad}
+                    onProgress={handleProgress}
+                    onBuffer={handleBuffer}
+                    onError={handleError}
+                    onEnd={handleEnd}
+                    onAudioTracks={handleAudioTracks}
+                    onTextTracks={handleTextTracks}
+                    onSubtitleText={handleSubtitleText}
+                />
+            ) : null}
 
             {/* ── Pre-play artwork ──────────────────────────────────────────── */}
             <ArtworkBackground
                 artwork={artwork}
-                isBuffering={playerState.isBuffering}
-                hasStartedPlaying={playerState.isReady}
+                isBuffering={false}
+                hasStartedPlaying={!isLoadingStream && playerState.isReady}
             />
 
-            {/* ── Buffering spinner ─────────────────────────────────────────── */}
-            <WaitingLobby hasStartedPlaying={playerState.isReady} opacity={bufferOpacity} />
-
-            <TouchableOpacity
-                style={styles.touchArea}
-                activeOpacity={1}
-                onPress={handleOverlayPress}
-            />
+            {!isLoadingStream && playerState.isReady ? (
+                <TouchableOpacity
+                    style={styles.touchArea}
+                    activeOpacity={1}
+                    onPress={handleOverlayPress}
+                />
+            ) : null}
 
             {!!displaySubtitleText && (
                 <SubtitleDisplay
@@ -691,7 +729,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
             )}
 
             {/* ── Controls overlay ──────────────────────────────────────────── */}
-            {uiState.showControls && (
+            {!isLoadingStream && playerState.isReady && uiState.showControls && (
                 <Animated.View
                     style={[styles.controlsOverlay, { opacity: controlsOpacity }]}
                     pointerEvents="box-none"
@@ -816,18 +854,28 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                     />
 
                     {/* Bottom progress bar */}
-                    <ProgressBar
-                        currentTime={displayTime}
-                        duration={playerState.duration}
-                        sliderValue={sliderValue}
-                        isReady={playerState.isReady}
-                        onValueChange={handleSliderChange}
-                        onSlidingStart={handleSliderStart}
-                        onSlidingComplete={handleSliderComplete}
-                        showSpeed={settings.playbackSpeed !== 1.0}
-                        playbackSpeed={settings.playbackSpeed}
-                    />
+                    {playerState.isReady && (
+                        <ProgressBar
+                            currentTime={displayTime}
+                            duration={playerState.duration}
+                            sliderValue={sliderValue}
+                            isReady={playerState.isReady}
+                            onValueChange={handleSliderChange}
+                            onSlidingStart={handleSliderStart}
+                            onSlidingComplete={handleSliderComplete}
+                            showSpeed={settings.playbackSpeed !== 1.0}
+                            playbackSpeed={settings.playbackSpeed}
+                        />
+                    )}
                 </Animated.View>
+            )}
+
+            {(isLoadingStream || !playerState.isReady) && (
+                <PlayerLoadingScreen
+                    title={title}
+                    message={loadingMessage}
+                    onBack={handleBack}
+                />
             )}
         </View>
     );
