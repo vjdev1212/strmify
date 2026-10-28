@@ -21,7 +21,7 @@ export default function PersonDetailsContentIOS(props: PersonDetailsContentProps
         </RNHostView>
       </ScrollView>
       <RNHostView matchContents>
-        <View style={{ padding: spacing.md }}>
+        <View style={{ padding: spacing.sm }}>
           <PersonDetailsCloseButton onPress={props.onClose} color={props.colors.text} />
         </View>
       </RNHostView>

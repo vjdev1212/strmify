@@ -1,6 +1,5 @@
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import {
   GlassView,
   isGlassEffectAPIAvailable,
@@ -21,7 +20,10 @@ export default function PersonDetailsCloseButton({ onPress, color }: PersonDetai
       style={styles.pressable}
       hitSlop={8}
     >
-      <Ionicons name="close" size={22} color={color} />
+      <View style={styles.closeIcon} accessibilityElementsHidden>
+        <View style={[styles.closeIconStroke, { backgroundColor: color, transform: [{ rotate: '45deg' }] }]} />
+        <View style={[styles.closeIconStroke, { backgroundColor: color, transform: [{ rotate: '-45deg' }] }]} />
+      </View>
     </Pressable>
   );
 
@@ -49,11 +51,13 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
+    borderCurve: 'continuous',
   },
   fallbackButton: {
     width: 48,
     height: 48,
     borderRadius: 24,
+    borderCurve: 'continuous',
     backgroundColor: 'rgba(20,20,20,0.72)',
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(255,255,255,0.2)',
@@ -62,5 +66,17 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  closeIcon: {
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeIconStroke: {
+    position: 'absolute',
+    width: 22,
+    height: 3,
+    borderRadius: 2,
   },
 });
