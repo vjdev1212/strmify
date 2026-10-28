@@ -123,8 +123,9 @@ export default function MediaPlayerConfigScreen() {
         </View>
       ) : (
         <SettingsPage>
-          <SettingsSection title="Default Player" footer="Choose which player to use when opening a stream. The selection is used for future playback.">
+          <SettingsSection footer="Choose which player to use when opening a stream. The selection is used for future playback.">
             <NativeFieldSelect
+              label="Default Player"
               selectedValue={selectedPlayer ?? players[0]?.name ?? ''}
               onValueChange={setSelectedPlayer}
               options={players.map((player) => ({ label: player.name, value: player.name }))}

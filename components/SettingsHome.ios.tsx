@@ -3,7 +3,17 @@ import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, FieldGroup, Host, Icon, List, Row, Spacer, Text } from '@expo/ui';
+import { Button, FieldGroup, Host, Icon, Row, Spacer, Text } from '@expo/ui';
+import { List } from '@expo/ui/swift-ui';
+import {
+  background,
+  contentShape,
+  frame,
+  listStyle,
+  scrollContentBackground,
+  scrollIndicators,
+  shapes,
+} from '@expo/ui/swift-ui/modifiers';
 import { Text as AppText, View } from '@/components/Themed';
 import { useTheme } from '@/context/ThemeContext';
 import { isHapticsSupported } from '@/utils/platform';
@@ -78,7 +88,12 @@ export default function SettingsHome() {
         </AppText>
       </View>
       <Host style={{ flex: 1 }} colorScheme="dark">
-        <List>
+        <List modifiers={[
+          listStyle('insetGrouped'),
+          scrollIndicators('never', 'vertical'),
+          scrollContentBackground('hidden'),
+          background(systemDarkBackground),
+        ]}>
           {settingsSections.map((section) => (
             <FieldGroup.Section key={section.title} title={section.title}>
               {section.items.map((item) => (
@@ -87,7 +102,14 @@ export default function SettingsHome() {
                   onPress={() => openSettings(item.route)}
                   variant="text"
                 >
-                  <Row spacing={12} alignment="center">
+                  <Row
+                    spacing={12}
+                    alignment="center"
+                    modifiers={[
+                      frame({ maxWidth: Infinity }),
+                      contentShape(shapes.rectangle()),
+                    ]}
+                  >
                     <Icon name={item.icon} size={20} color={item.iconColor} />
                     <Text>{item.title}</Text>
                     <Spacer flexible />

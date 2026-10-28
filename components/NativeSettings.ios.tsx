@@ -1,7 +1,17 @@
 import type { ReactElement, ReactNode } from 'react';
 import { Children, isValidElement } from 'react';
 import { Text as RNText, View } from 'react-native';
-import { FieldGroup, Host, List as NativeList, ListItem, RNHostView, Text as NativeText } from '@expo/ui';
+import { FieldGroup, Host, RNHostView, Text as NativeText } from '@expo/ui';
+import { Button, HStack, List as NativeList, Spacer, VStack } from '@expo/ui/swift-ui';
+import {
+  buttonStyle,
+  contentShape,
+  frame,
+  listStyle,
+  refreshable,
+  scrollIndicators,
+  shapes,
+} from '@expo/ui/swift-ui/modifiers';
 import NativeFieldSelect from '@/components/native-field-select';
 
 interface SettingsPageProps {
@@ -12,14 +22,19 @@ interface SettingsPageProps {
 }
 
 export function SettingsPage({ children, onRefresh, hideScrollIndicator = false }: SettingsPageProps) {
+  const scrollModifiers = [
+    scrollIndicators('never', 'vertical'),
+    ...(onRefresh ? [refreshable(onRefresh)] : []),
+  ];
+
   return (
     <Host style={{ flex: 1 }} colorScheme="dark">
       {hideScrollIndicator ? (
-        <NativeList onRefresh={onRefresh}>
+        <NativeList modifiers={[listStyle('insetGrouped'), ...scrollModifiers]}>
           {children}
         </NativeList>
       ) : (
-        <FieldGroup>
+        <FieldGroup modifiers={scrollModifiers}>
           {children}
         </FieldGroup>
       )}
@@ -109,28 +124,37 @@ export function SettingsRow({
   ) : (
     <NativeText textStyle={{ color: titleStyle.color }}>{title}</NativeText>
   );
-  const detailContent = detail && (detailSameFont || detailColor)
-    ? (
-      <NativeText textStyle={{
-        fontSize: detailSameFont ? 16 : 13,
-        ...(detailSameFont ? { fontWeight: '400' as const } : {}),
-        color: detailColor ?? '#8e8e93',
-      }}>
-        {detail}
-      </NativeText>
-    )
-    : detail;
+  const detailContent = detail ? (
+    <NativeText textStyle={{
+      fontSize: detailSameFont ? 16 : 13,
+      ...(detailSameFont ? { fontWeight: '400' as const } : {}),
+      color: detailColor ?? '#8e8e93',
+    }}>
+      {detail}
+    </NativeText>
+  ) : null;
 
-  return (
-    <ListItem
-      onPress={disabled ? undefined : onPress}
-      leading={leadingContent}
-      trailing={trailingContent}
-      supportingText={detailContent}
+  const rowContent = (
+    <HStack
+      spacing={12}
+      alignment="center"
+      modifiers={[frame({ maxWidth: Infinity }), contentShape(shapes.rectangle())]}
     >
-      {titleContent}
-    </ListItem>
+      {leadingContent}
+      <VStack alignment="leading" spacing={2}>
+        {titleContent}
+        {detailContent}
+      </VStack>
+      <Spacer />
+      {trailingContent}
+    </HStack>
   );
+
+  return onPress && !disabled ? (
+    <Button onPress={onPress} modifiers={[buttonStyle('plain')]}>
+      {rowContent}
+    </Button>
+  ) : rowContent;
 }
 
 export function SettingsTitle({ title, subtitle }: { title: string; subtitle?: string }) {
