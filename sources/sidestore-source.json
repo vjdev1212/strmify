@@ -31,7 +31,7 @@
       "versions": [
          {
           "version": "1.14.0",
-          "date": "2026-10-26",
+          "date": "2026-10-28",
           "localizedDescription": "1. Expo SDK updated to v58. 2. Major UI Improvements.",
           "downloadURL": "https://github.com/vjdev1212/strmify/releases/download/v1.14.0/Strmify_v1.14.0.ipa",
           "size": 24117248,
@@ -113,7 +113,7 @@
       "title": "Strmify v1.14.0 Released",
       "identifier": "strmify-v1.14.0-release",
       "caption": "1. Expo SDK updated to v58. 2. Major UI Improvements.",
-      "date": "2026-10-26",
+      "date": "2026-10-28",
       "tintColor": "#535aff",
       "imageURL": "https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/assets/banners/Strmify-feature-graphic.png",
       "notify": true,
