@@ -9,13 +9,6 @@ import { systemDarkBackground } from '@/constants/theme';
 
 const contactActions = [
   {
-    title: 'Feedback',
-    detail: 'Share a suggestion or general feedback',
-    icon: 'chatbubble-ellipses-outline' as const,
-    iconColor: '#0A84FF',
-    url: process.env.EXPO_PUBLIC_FEEDBACK_URL ?? '',
-  },
-  {
     title: 'Report a Bug',
     detail: 'Let us know when something is not working',
     icon: 'bug-outline' as const,
