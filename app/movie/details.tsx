@@ -230,10 +230,10 @@ const MovieDetails = () => {
         )
       }
       <View style={styles.recommendationsContainer}>
-        <PosterList apiUrl={`https://api.themoviedb.org/3/movie/${tmdbid}/recommendations`} title='Recommended' type='movie' />
+        <PosterList apiUrl={`https://api.themoviedb.org/3/movie/${tmdbid}/recommendations`} title='Recommended' type='movie' compact />
       </View>
       <View style={styles.recommendationsContainer}>
-        <PosterList apiUrl={`https://api.themoviedb.org/3/movie/${tmdbid}/similar`} title='Similar to this' type='movie' />
+        <PosterList apiUrl={`https://api.themoviedb.org/3/movie/${tmdbid}/similar`} title='Similar to this' type='movie' compact />
       </View>
       <BottomSpacing space={50} />
     </ScrollView>
@@ -280,7 +280,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   castContainer: {
-    marginHorizontal: spacing.sm,
+    marginHorizontal: 0,
   },
   recommendationsContainer: {
   },

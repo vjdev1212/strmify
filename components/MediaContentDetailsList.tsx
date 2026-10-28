@@ -56,7 +56,7 @@ const MediaContentDetailsList: React.FC<MediaContentDetailsListProps> = ({
       </View>
       <View style={styles.valueCell}>
         {typeof value === 'string'
-          ? <Text numberOfLines={2} style={[styles.value, { color: colors.textMuted }]}>{value}</Text>
+          ? <Text numberOfLines={2} style={[styles.value, { color: colors.text }]}>{value}</Text>
           : value}
       </View>
     </View>
@@ -64,7 +64,7 @@ const MediaContentDetailsList: React.FC<MediaContentDetailsListProps> = ({
 
   const renderRatingValue = () => (
     <View style={styles.ratingContainer}>
-      <Text style={[styles.value, { color: colors.textMuted }]}>{computedValues.ratingText}</Text>
+      <Text style={[styles.value, { color: colors.text }]}>{computedValues.ratingText}</Text>
       {computedValues.hasRating && <View style={styles.starWrapper}><FontAwesome name="star" size={STAR_SIZE} color={STAR_COLOR} /></View>}
     </View>
   );
@@ -96,10 +96,10 @@ const MediaContentDetailsList: React.FC<MediaContentDetailsListProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: { paddingHorizontal: spacing.xs, marginVertical: spacing.lg },
+  container: { paddingHorizontal: spacing.xs, marginVertical: spacing.md },
   headerContainer: { marginBottom: spacing.md },
-  sectionTitle: { ...typography.title },
-  tableRow: { flexDirection: 'row', marginHorizontal: spacing.lg, paddingVertical: spacing.sm, alignItems: 'center' },
+  sectionTitle: { ...typography.headline },
+  tableRow: { flexDirection: 'row', marginHorizontal: spacing.md, paddingVertical: spacing.sm, alignItems: 'center' },
   labelCell: { width: 120, paddingRight: spacing.md, justifyContent: 'center' },
   valueCell: { flex: 1, justifyContent: 'center' },
   label: { ...typography.subhead, fontWeight: '500' },

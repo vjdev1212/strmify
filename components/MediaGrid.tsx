@@ -237,7 +237,7 @@ const MediaGrid: React.FC<MediaGridProps> = ({
                 hitSlop={10}
                 style={styles.menuButton}
             >
-                <Ionicons name="ellipsis-horizontal" size={21} color={colors.textMuted} />
+                <Ionicons name="ellipsis-horizontal" size={21} color={colors.text} />
             </Pressable>
         );
 
@@ -264,7 +264,7 @@ const MediaGrid: React.FC<MediaGridProps> = ({
         return (
             <NativeColumn style={{ width: rowWidth }}>
                 <NativeRow
-                    alignment="center"
+                    alignment="start"
                     spacing={posterTextGap}
                     style={{ width: rowWidth, paddingHorizontal: rowHorizontalPadding, paddingVertical: compact ? 10 : 12 }}
                 >
@@ -273,7 +273,7 @@ const MediaGrid: React.FC<MediaGridProps> = ({
                         onPress={() => openDetails(item)}
                         style={{ width: mediaButtonWidth }}
                     >
-                        <NativeRow alignment="center" spacing={posterTextGap}>
+                        <NativeRow alignment="start" spacing={posterTextGap}>
                             <RNHostView matchContents>
                                 <PosterArtwork key={item.poster ?? 'placeholder'} style={[
                                     styles.posterFrame,
@@ -299,14 +299,14 @@ const MediaGrid: React.FC<MediaGridProps> = ({
                                     )}
                                 </PosterArtwork>
                             </RNHostView>
-                            <NativeColumn alignment="start" spacing={compact ? 3 : 7} style={{ width: mediaInfoWidth }}>
+                            <NativeColumn alignment="start" spacing={compact ? 3 : 7} style={{ width: mediaInfoWidth, paddingTop: spacing.xs }}>
                                 <NativeText textStyle={compact ? styles.compactMediaTitle : styles.mediaTitle}>
                                     {item.name}
                                 </NativeText>
                                 {metadata.length > 0 && (
                                     <NativeText textStyle={{
                                         ...(compact ? styles.compactMediaMetadata : styles.mediaMetadata),
-                                        color: colors.textMuted,
+                                        color: `${colors.text}CC`,
                                     }}>
                                         {metadata}
                                     </NativeText>

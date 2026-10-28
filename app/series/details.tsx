@@ -279,7 +279,7 @@ const SeriesDetails = () => {
         </View>
       </View>
       <View>
-        <View style={{ justifyContent: 'center', marginTop: 5 }}>
+        <View style={{ justifyContent: 'center' }}>
           <SeasonEpisodeList videos={data.videos} onEpisodeSelect={handleEpisodeSelect} />
         </View>
       </View>
@@ -292,10 +292,10 @@ const SeriesDetails = () => {
         )
       }
       <View style={styles.recommendationsContainer}>
-        <PosterList apiUrl={`https://api.themoviedb.org/3/tv/${tmdbid}/recommendations`} title='Recommended' type='series' />
+        <PosterList apiUrl={`https://api.themoviedb.org/3/tv/${tmdbid}/recommendations`} title='Recommended' type='series' compact />
       </View>
       <View style={styles.recommendationsContainer}>
-        <PosterList apiUrl={`https://api.themoviedb.org/3/tv/${tmdbid}/similar`} title='Similar to this' type='series' />
+        <PosterList apiUrl={`https://api.themoviedb.org/3/tv/${tmdbid}/similar`} title='Similar to this' type='series' compact />
       </View>
       <BottomSpacing space={50} />
     </ScrollView>
@@ -342,7 +342,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   castContainer: {
-    marginHorizontal: spacing.sm,
+    marginHorizontal: 0,
   },
   recommendationsContainer: {
   },

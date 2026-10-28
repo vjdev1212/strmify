@@ -181,9 +181,9 @@ const SeasonEpisodeList: React.FC<SeasonEpisodeListProps> = ({ videos, onEpisode
 };
 
 const styles = StyleSheet.create({
-  container: { backgroundColor: 'transparent', marginBottom: spacing.lg },
-  seasonListContainer: { paddingVertical: spacing.sm, paddingHorizontal: spacing.lg, backgroundColor: 'transparent' },
-  seasonDropdownButton: { minHeight: 40, paddingHorizontal: spacing.sm, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-evenly', width: 150, maxWidth: 150, borderRadius: radius.capsule, backgroundColor: '#1C1C1E' },
+  container: { backgroundColor: 'transparent', marginBottom: spacing.md },
+  seasonListContainer: { paddingVertical: spacing.sm, paddingHorizontal: spacing.md, backgroundColor: 'transparent' },
+  seasonDropdownButton: { minHeight: 40, paddingHorizontal: spacing.sm, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-evenly', width: 150, maxWidth: 150, borderRadius: radius.capsule, backgroundColor: 'transparent' },
   seasonDropdownText: { ...typography.headline, flex: 1 },
   seasonDropdownArrow: { ...typography.subhead, fontWeight: '600' },
   episodeScrollView: { width: '100%' },
