@@ -1,10 +1,18 @@
 import type { ReactElement, ReactNode } from 'react';
 import { Children, isValidElement } from 'react';
-import { View } from 'react-native';
-import { FieldGroup, Host, ListItem, RNHostView, Text as NativeText } from '@expo/ui';
-import { List as NativeList } from '@expo/ui/swift-ui';
+import { Text as RNText, View } from 'react-native';
+import { FieldGroup, Host, RNHostView, Text as NativeText } from '@expo/ui';
+import { Button, HStack, List as NativeList, Spacer, VStack } from '@expo/ui/swift-ui';
+import {
+  buttonStyle,
+  contentShape,
+  frame,
+  listStyle,
+  refreshable,
+  scrollIndicators,
+  shapes,
+} from '@expo/ui/swift-ui/modifiers';
 import NativeFieldSelect from '@/components/native-field-select';
-import { listStyle, refreshable, scrollIndicators } from '@expo/ui/swift-ui/modifiers';
 
 interface SettingsPageProps {
   children: ReactNode;
@@ -14,19 +22,19 @@ interface SettingsPageProps {
 }
 
 export function SettingsPage({ children, onRefresh, hideScrollIndicator = false }: SettingsPageProps) {
-  const modifiers = [
+  const scrollModifiers = [
+    scrollIndicators('never', 'vertical'),
     ...(onRefresh ? [refreshable(onRefresh)] : []),
-    ...(hideScrollIndicator ? [listStyle('insetGrouped'), scrollIndicators('never', 'vertical')] : []),
   ];
 
   return (
     <Host style={{ flex: 1 }} colorScheme="dark">
       {hideScrollIndicator ? (
-        <NativeList modifiers={modifiers}>
+        <NativeList modifiers={[listStyle('insetGrouped'), ...scrollModifiers]}>
           {children}
         </NativeList>
       ) : (
-        <FieldGroup modifiers={modifiers}>
+        <FieldGroup modifiers={scrollModifiers}>
           {children}
         </FieldGroup>
       )}
@@ -64,6 +72,7 @@ export function SettingsSection({ title, footer, children }: SettingsSectionProp
 
 interface SettingsRowProps {
   title: string;
+  titleAccessory?: ReactNode;
   detail?: string;
   leading?: ReactNode;
   trailing?: ReactNode;
@@ -80,6 +89,7 @@ interface SettingsRowProps {
 
 export function SettingsRow({
   title,
+  titleAccessory,
   detail,
   leading,
   trailing,
@@ -100,37 +110,51 @@ export function SettingsRow({
       <View>{trailing}</View>
     </RNHostView>
   ) : null;
-  const titleContent = (
-    <NativeText
-      textStyle={{
-        color: destructive ? '#ff453a' : disabled ? '#8e8e93' : titleColor,
-      }}
-    >
-      {title}
+  const titleStyle = {
+    color: destructive ? '#ff453a' : disabled ? '#8e8e93' : titleColor ?? '#f2f2f7',
+    fontSize: 17,
+  };
+  const titleContent = titleAccessory ? (
+    <RNHostView matchContents>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+        <RNText numberOfLines={1} style={titleStyle}>{title}</RNText>
+        {titleAccessory}
+      </View>
+    </RNHostView>
+  ) : (
+    <NativeText textStyle={{ color: titleStyle.color }}>{title}</NativeText>
+  );
+  const detailContent = detail ? (
+    <NativeText textStyle={{
+      fontSize: detailSameFont ? 16 : 13,
+      ...(detailSameFont ? { fontWeight: '400' as const } : {}),
+      color: detailColor ?? '#8e8e93',
+    }}>
+      {detail}
     </NativeText>
-  );
-  const detailContent = detail && (detailSameFont || detailColor)
-    ? (
-      <NativeText textStyle={{
-        fontSize: detailSameFont ? 16 : 13,
-        ...(detailSameFont ? { fontWeight: '400' as const } : {}),
-        color: detailColor ?? '#8e8e93',
-      }}>
-        {detail}
-      </NativeText>
-    )
-    : detail;
+  ) : null;
 
-  return (
-    <ListItem
-      onPress={disabled ? undefined : onPress}
-      leading={leadingContent}
-      trailing={trailingContent}
-      supportingText={detailContent}
+  const rowContent = (
+    <HStack
+      spacing={12}
+      alignment="center"
+      modifiers={[frame({ maxWidth: Infinity }), contentShape(shapes.rectangle())]}
     >
-      {titleContent}
-    </ListItem>
+      {leadingContent}
+      <VStack alignment="leading" spacing={2}>
+        {titleContent}
+        {detailContent}
+      </VStack>
+      <Spacer />
+      {trailingContent}
+    </HStack>
   );
+
+  return onPress && !disabled ? (
+    <Button onPress={onPress} modifiers={[buttonStyle('plain')]}>
+      {rowContent}
+    </Button>
+  ) : rowContent;
 }
 
 export function SettingsTitle({ title, subtitle }: { title: string; subtitle?: string }) {

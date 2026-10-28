@@ -1,8 +1,10 @@
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { StyleSheet, Image, FlatList, useWindowDimensions } from "react-native";
 import { View, Text } from "./Themed";
 import { useTheme } from '@/context/ThemeContext';
 import { spacing as themeSpacing, typography } from '@/constants/theme';
+import { NativeButton } from '@/components/native-ui-controls';
+import PersonDetailsScreen from '@/components/person-details-screen';
 
 const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w342";
 
@@ -24,6 +26,7 @@ interface MediaCastAndCrewsProps {
 
 interface CastListItemProps {
   item: {
+    id: number;
     uniqueKey: string;
     name: string;
     hasImage: boolean;
@@ -31,41 +34,54 @@ interface CastListItemProps {
     initials: string | null;
     displayCharacter: string;
   };
+  onSelectPerson: (personId: number) => void;
   avatarSize: number;
   textColor: string;
   mutedTextColor: string;
   cardColor: string;
   borderColor: string;
+  accentColor: string;
 }
 
 const CastListItem = React.memo(({
   item,
+  onSelectPerson,
   avatarSize,
   textColor,
   mutedTextColor,
   cardColor,
   borderColor,
+  accentColor,
 }: CastListItemProps) => (
-  <View style={[styles.avatarContainer, { width: avatarSize + 20 }]}>
-    <View style={styles.avatarWrapper}>
-      {item.hasImage ? (
-        <Image source={{ uri: item.imageUri! }} style={[styles.avatar, { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 }]} />
-      ) : (
-        <View style={[styles.placeholderAvatar, { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2, backgroundColor: cardColor, borderColor }]}>
-          <Text style={[styles.initials, { color: textColor, fontSize: avatarSize * 0.3 }]}>{item.initials}</Text>
-        </View>
-      )}
-      <View style={[styles.avatarBorder, { width: avatarSize + 4, height: avatarSize + 4, borderRadius: (avatarSize + 4) / 2 }]} />
+  <NativeButton
+    variant="text"
+    accessibilityLabel={`View ${item.name}'s profile`}
+    seedColor={accentColor}
+    onPress={() => onSelectPerson(item.id)}
+    style={[styles.avatarContainer, { width: avatarSize + 20 }]}
+  >
+    <View style={styles.avatarContent}>
+      <View style={styles.avatarWrapper}>
+        {item.hasImage ? (
+          <Image source={{ uri: item.imageUri! }} style={[styles.avatar, { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 }]} />
+        ) : (
+          <View style={[styles.placeholderAvatar, { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2, backgroundColor: cardColor, borderColor }]}>
+            <Text style={[styles.initials, { color: textColor, fontSize: avatarSize * 0.3 }]}>{item.initials}</Text>
+          </View>
+        )}
+        <View style={[styles.avatarBorder, { width: avatarSize + 4, height: avatarSize + 4, borderRadius: (avatarSize + 4) / 2 }]} />
+      </View>
+      <View style={styles.textContainer}>
+        <Text style={[styles.name, { color: textColor, fontSize: Math.max(13, avatarSize * 0.12) }]} numberOfLines={1} ellipsizeMode="tail">{item.name}</Text>
+        <Text style={[styles.character, { color: mutedTextColor, fontSize: Math.max(11, avatarSize * 0.1) }]} numberOfLines={1} ellipsizeMode="tail">{item.displayCharacter}</Text>
+      </View>
     </View>
-    <View style={styles.textContainer}>
-      <Text style={[styles.name, { color: textColor, fontSize: Math.max(13, avatarSize * 0.12) }]} numberOfLines={1} ellipsizeMode="tail">{item.name}</Text>
-      <Text style={[styles.character, { color: mutedTextColor, fontSize: Math.max(11, avatarSize * 0.1) }]} numberOfLines={1} ellipsizeMode="tail">{item.displayCharacter}</Text>
-    </View>
-  </View>
+  </NativeButton>
 ));
 
 const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
   const { colors } = useTheme();
+  const [selectedPersonId, setSelectedPersonId] = useState<number | null>(null);
   const { width, height } = useWindowDimensions();
   const isPortrait = height > width;
   const shortSide = Math.min(width, height);
@@ -106,34 +122,43 @@ const MediaCastAndCrews: React.FC<MediaCastAndCrewsProps> = ({ cast }) => {
   const renderCastItem = useCallback(({ item }: { item: (typeof castItems)[number] }) => (
     <CastListItem
       item={item}
+      onSelectPerson={setSelectedPersonId}
       avatarSize={avatarSize}
       textColor={colors.text}
       mutedTextColor={colors.textMuted}
       cardColor={colors.backgroundCard}
       borderColor={colors.border}
+      accentColor={colors.primary}
     />
-  ), [avatarSize, colors.backgroundCard, colors.border, colors.text, colors.textMuted]);
+  ), [avatarSize, colors.backgroundCard, colors.border, colors.primary, colors.text, colors.textMuted]);
 
   if (cast.length === 0) return null;
 
   return (
-    <View style={styles.container}>
-      <View style={[styles.headerContainer, { paddingHorizontal: containerMargin }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Cast & Crew</Text>
+    <>
+      <View style={styles.container}>
+        <View style={[styles.headerContainer, { paddingHorizontal: containerMargin }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Cast & Crew</Text>
+        </View>
+        <FlatList
+          horizontal
+          data={castItems}
+          keyExtractor={(item) => item.uniqueKey}
+          initialNumToRender={Math.min(castPerScreen + 2, castItems.length)}
+          maxToRenderPerBatch={castPerScreen}
+          windowSize={3}
+          showsHorizontalScrollIndicator={false}
+          style={{ height: avatarSize + 60 }}
+          contentContainerStyle={[styles.scrollContent, { paddingHorizontal: containerMargin, gap: spacing }]}
+          renderItem={renderCastItem}
+        />
       </View>
-      <FlatList
-        horizontal
-        data={castItems}
-        keyExtractor={(item) => item.uniqueKey}
-        initialNumToRender={Math.min(castPerScreen + 2, castItems.length)}
-        maxToRenderPerBatch={castPerScreen}
-        windowSize={3}
-        showsHorizontalScrollIndicator={false}
-        style={{ height: avatarSize + 60 }}
-        contentContainerStyle={[styles.scrollContent, { paddingHorizontal: containerMargin, gap: spacing }]}
-        renderItem={renderCastItem}
+      <PersonDetailsScreen
+        visible={selectedPersonId !== null}
+        personId={selectedPersonId}
+        onClose={() => setSelectedPersonId(null)}
       />
-    </View>
+    </>
   );
 };
 
@@ -142,7 +167,8 @@ const styles = StyleSheet.create({
   headerContainer: { marginBottom: themeSpacing.md },
   sectionTitle: { ...typography.headline },
   scrollContent: { flexDirection: 'row' },
-  avatarContainer: { alignItems: "center", paddingVertical: 8 },
+  avatarContainer: { paddingVertical: 8 },
+  avatarContent: { alignItems: 'center' },
   avatarWrapper: { position: 'relative', marginBottom: 12 },
   avatar: {},
   placeholderAvatar: { justifyContent: "center", alignItems: "center", borderWidth: 2, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 3.84, elevation: 5 },

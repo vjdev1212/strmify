@@ -3,16 +3,16 @@ import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Host } from '@expo/ui';
-import { List, Section, Text, Button, HStack, Spacer, Image } from '@expo/ui/swift-ui';
+import { Button, FieldGroup, Host, Icon, Row, Spacer, Text } from '@expo/ui';
+import { List } from '@expo/ui/swift-ui';
 import {
-  buttonStyle,
-  listStyle,
-  scrollContentBackground,
   background,
   contentShape,
-  shapes,
+  frame,
+  listStyle,
+  scrollContentBackground,
   scrollIndicators,
+  shapes,
 } from '@expo/ui/swift-ui/modifiers';
 import { Text as AppText, View } from '@/components/Themed';
 import { useTheme } from '@/context/ThemeContext';
@@ -34,7 +34,7 @@ const settingsSections: {
   items: {
     title: string;
     route: SettingsRoute;
-    icon: NonNullable<React.ComponentProps<typeof Image>['systemName']>;
+    icon: React.ComponentProps<typeof Icon>['name'];
     iconColor: string;
   }[];
 }[] = [
@@ -90,39 +90,42 @@ export default function SettingsHome() {
       <Host style={{ flex: 1 }} colorScheme="dark">
         <List modifiers={[
           listStyle('insetGrouped'),
+          scrollIndicators('never', 'vertical'),
           scrollContentBackground('hidden'),
           background(systemDarkBackground),
-          scrollIndicators('never', 'vertical'),
         ]}>
           {settingsSections.map((section) => (
-            <Section key={section.title} title={section.title}>
+            <FieldGroup.Section key={section.title} title={section.title}>
               {section.items.map((item) => (
                 <Button
                   key={item.route}
                   onPress={() => openSettings(item.route)}
-                  modifiers={[buttonStyle('plain')]}
+                  variant="text"
                 >
-                  <HStack
+                  <Row
                     spacing={12}
                     alignment="center"
-                    modifiers={[contentShape(shapes.rectangle())]}
+                    modifiers={[
+                      frame({ maxWidth: Infinity }),
+                      contentShape(shapes.rectangle()),
+                    ]}
                   >
-                    <Image systemName={item.icon} size={20} color={item.iconColor} />
+                    <Icon name={item.icon} size={20} color={item.iconColor} />
                     <Text>{item.title}</Text>
-                    <Spacer />
-                    <Image systemName="chevron.right" size={13} color="#8e8e93" />
-                  </HStack>
+                    <Spacer flexible />
+                    <Icon name="chevron.right" size={13} color="#8e8e93" />
+                  </Row>
                 </Button>
               ))}
-            </Section>
+            </FieldGroup.Section>
           ))}
-          <Section title="Strmify">
-            <HStack>
+          <FieldGroup.Section title="Strmify">
+            <Row>
               <Text>Version</Text>
-              <Spacer />
+              <Spacer flexible />
               <Text>{version}</Text>
-            </HStack>
-          </Section>
+            </Row>
+          </FieldGroup.Section>
         </List>
       </Host>
     </SafeAreaView>

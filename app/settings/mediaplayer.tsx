@@ -123,8 +123,9 @@ export default function MediaPlayerConfigScreen() {
         </View>
       ) : (
         <SettingsPage>
-          <SettingsSection title="Default Player" footer="Choose which player to use when opening a stream. The selection is used for future playback.">
+          <SettingsSection footer="Choose which player to use when opening a stream. The selection is used for future playback.">
             <NativeFieldSelect
+              label="Default Player"
               selectedValue={selectedPlayer ?? players[0]?.name ?? ''}
               onValueChange={setSelectedPlayer}
               options={players.map((player) => ({ label: player.name, value: player.name }))}
@@ -133,13 +134,14 @@ export default function MediaPlayerConfigScreen() {
           </SettingsSection>
           <SettingsSection title="Actions">
             <SettingsRow
-              title={saving ? 'Saving…' : 'Save Player'}
+              title={saving ? 'Saving…' : 'Save'}
+              titleColor="#0A84FF"
               onPress={savePlayerConfig}
               disabled={saving || !selectedPlayer}
               leading={<Ionicons name="checkmark-circle-outline" size={20} color="#0A84FF" />}
             />
             <SettingsRow
-              title="Reset to Default"
+              title="Reset"
               onPress={resetToDefault}
               destructive
               isLast

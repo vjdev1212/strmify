@@ -74,6 +74,8 @@ export function SettingsSection({ title, footer, children }: SettingsSectionProp
 
 interface SettingsRowProps {
   title: string;
+  titleContent?: ReactNode;
+  titleAccessory?: ReactNode;
   detail?: string;
   leading?: ReactNode;
   trailing?: ReactNode;
@@ -86,10 +88,13 @@ interface SettingsRowProps {
   titleColor?: string;
   detailSameFont?: boolean;
   detailColor?: string;
+  detailFontSize?: number;
 }
 
 export function SettingsRow({
   title,
+  titleContent,
+  titleAccessory,
   detail,
   leading,
   trailing,
@@ -102,17 +107,33 @@ export function SettingsRow({
   titleColor,
   detailSameFont = false,
   detailColor,
+  detailFontSize,
 }: SettingsRowProps) {
   const { colors } = useTheme();
   const content = (
     <>
       {leading ? <View style={styles.leading}>{leading}</View> : null}
       <View style={styles.rowText}>
-        <Text style={[styles.rowTitle, { color: destructive ? '#ff453a' : titleColor ?? colors.text }]}>{title}</Text>
+        {titleContent ? (
+          <View style={styles.rowTitleLine}>{titleContent}</View>
+        ) : title ? (
+          <View style={styles.rowTitleLine}>
+            <Text
+              numberOfLines={1}
+              style={[
+                styles.rowTitle,
+                { color: destructive ? '#ff453a' : titleColor ?? colors.text },
+              ]}
+            >
+              {title}
+            </Text>
+            {titleAccessory}
+          </View>
+        ) : null}
         {typeof detail === 'string' && detail ? (
           <Text style={[
             detailSameFont ? styles.rowTitle : styles.rowDetail,
-            { color: detailColor ?? colors.textMuted },
+            { color: detailColor ?? colors.textMuted, fontSize: detailFontSize },
           ]}>
             {detail}
           </Text>
@@ -221,8 +242,15 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: spacing.xs,
   },
+  rowTitleLine: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    flex: 1,
+  },
   rowTitle: {
     ...typography.body,
+    flexShrink: 1,
   },
   rowDetail: {
     ...typography.caption,

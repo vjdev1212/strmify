@@ -1,9 +1,12 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, Platform, StyleSheet, Animated } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 interface MenuAction {
     id: string;
     title: string;
+    icon?: React.ComponentProps<typeof Ionicons>['name'];
+    iconColor?: string;
     subtitle?: string;
     state?: 'on';
     titleColor?: string;
@@ -132,6 +135,14 @@ export const WebMenu: React.FC<WebMenuProps> = ({
                                     activeOpacity={0.6}
                                 >
                                     <View style={styles.menuItemContent}>
+                                        {action.icon ? (
+                                            <Ionicons
+                                                name={action.icon}
+                                                size={18}
+                                                color={action.iconColor || action.titleColor || '#FFFFFF'}
+                                                style={styles.menuItemIcon}
+                                            />
+                                        ) : null}
                                         <Text
                                             style={[
                                                 styles.menuItemTitle,
@@ -208,7 +219,11 @@ const styles = StyleSheet.create({
     },
     menuItemContent: {
         flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
     },
+    menuItemIcon: { width: 20 },
     menuItemTitle: {
         fontSize: 16,
         color: '#FFFFFF',

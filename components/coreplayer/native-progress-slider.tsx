@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Host } from '@expo/ui';
-import { Slider } from '@expo/ui/community/slider';
+import { Slider } from '@expo/ui';
 import { styles } from './styles';
 import type { NativeProgressSliderProps } from './native-progress-slider.types';
 
@@ -23,8 +23,8 @@ export default function NativeProgressSlider({
   return (
     <Host style={styles.progressSlider} colorScheme="dark" seedColor="#007aff">
       <Slider
-        minimumValue={0}
-        maximumValue={1}
+        min={0}
+        max={1}
         value={value}
         disabled={!isReady}
         onValueChange={(nextValue) => {
@@ -41,7 +41,6 @@ export default function NativeProgressSlider({
             finishTimer.current = null;
           }, 180);
         }}
-        style={styles.progressSlider}
       />
     </Host>
   );

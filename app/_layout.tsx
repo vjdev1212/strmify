@@ -9,6 +9,7 @@ import { View, StyleSheet } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '@/context/ThemeContext';
 import BlurGradientBackground from '@/components/BlurGradientBackground';
+import NativeAlertDialogHost from '@/components/NativeAlertDialogHost';
 import { Colors, systemDarkBackground } from '@/constants/theme';
 
 export { ErrorBoundary } from 'expo-router';
@@ -123,6 +124,7 @@ function RootLayoutNav() {
                     <Stack.Screen name="settings/downloads" options={{ ...screenOptions, title: 'Downloads', headerTitle: 'Downloads' }} />
                     <Stack.Screen name="settings/mediaplayer" options={{ ...screenOptions, title: 'Media Player', headerTitle: 'Media Player' }} />
                 </Stack>
+                <NativeAlertDialogHost />
             </View>
         </ThemeProvider>
     );

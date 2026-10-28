@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
+import { Platform, Pressable } from 'react-native';
+import { Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
+import { MenuView, type MenuAction } from '@expo/ui/community/menu';
 import { NativeSwitch, NativeTextInput } from '@/components/native-ui-controls';
+import { View } from '@/components/Themed';
 import { SettingsPage, SettingsRow, SettingsSection } from '@/components/NativeSettings';
+import { WebMenu } from '@/components/WebMenuView';
 import { useTheme } from '@/context/ThemeContext';
 import { confirmAction, showAlert } from '@/utils/platform';
 import { StorageKeys, storageService } from '@/utils/StorageService';
@@ -25,13 +29,14 @@ type ConnectionStatus = Record<string, 'checking' | 'connected' | 'disconnected'
 const SERVERS_KEY = StorageKeys.SERVERS_KEY;
 const DEFAULT_SERVER_ID = 'default-localhost';
 const DEFAULT_SERVER_URL = 'http://127.0.0.1:11470';
+const DEFAULT_SERVER_NAME = 'Local';
 
 const isDefaultServer = (serverId: string) => serverId === DEFAULT_SERVER_ID;
 
 const getDefaultServer = (serverType: string, serverName: string): ServerConfig => ({
   serverId: DEFAULT_SERVER_ID,
   serverType,
-  serverName,
+  serverName: DEFAULT_SERVER_NAME,
   serverUrl: DEFAULT_SERVER_URL,
   current: true,
 });
@@ -39,10 +44,12 @@ const getDefaultServer = (serverType: string, serverName: string): ServerConfig 
 const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverType, defaultUrl }) => {
   const { colors } = useTheme();
   const [serverUrl, setServerUrl] = useState(defaultUrl);
+  const [serverLabel, setServerLabel] = useState(`${serverName} Server`);
   const [isCurrent, setIsCurrent] = useState(false);
   const [serverConfigs, setServerConfigs] = useState<ServerConfig[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
+  const [expandedServerId, setExpandedServerId] = useState<string | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({});
 
   const loadServers = async () => {
@@ -70,6 +77,17 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
           allServers = [...allServers, defaultServer];
           serversOfType = [...serversOfType, defaultServer];
           hasChanges = true;
+        } else {
+          const defaultNameNeedsUpdate = allServers.some((server) => (
+            server.serverId === DEFAULT_SERVER_ID && server.serverName !== DEFAULT_SERVER_NAME
+          ));
+          allServers = allServers.map((server) => (
+            server.serverId === DEFAULT_SERVER_ID && server.serverName !== DEFAULT_SERVER_NAME
+              ? { ...server, serverName: DEFAULT_SERVER_NAME }
+              : server
+          ));
+          serversOfType = allServers.filter((server) => server.serverType === serverType);
+          hasChanges = defaultNameNeedsUpdate;
         }
 
         if (!serversOfType.some((server) => server.current)) {
@@ -178,6 +196,11 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
   };
 
   const saveServer = async () => {
+    const trimmedLabel = serverLabel.trim();
+    if (!trimmedLabel) {
+      showAlert('Error', 'Please enter a name for this server.');
+      return;
+    }
     const trimmedUrl = serverUrl.trim();
     try {
       new URL(trimmedUrl);
@@ -194,14 +217,14 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
         : allServers;
       const updated = editingId
         ? base.map((server) => server.serverId === editingId
-          ? { ...server, serverUrl: trimmedUrl, current: isCurrent }
+          ? { ...server, serverName: trimmedLabel, serverUrl: trimmedUrl, current: isCurrent }
           : server)
         : [
           ...base,
           {
             serverId: `${serverType}-${Date.now()}`,
             serverType,
-            serverName,
+            serverName: trimmedLabel,
             serverUrl: trimmedUrl,
             current: isCurrent,
           },
@@ -211,6 +234,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
       setEditingId(null);
       setIsAddingNew(false);
       setServerUrl(defaultUrl);
+      setServerLabel(`${serverName} Server`);
       setIsCurrent(false);
       await loadServers();
       showAlert('Success', `${serverName} server configuration saved.`);
@@ -223,12 +247,14 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
   const startAddingServer = () => {
     setEditingId(null);
     setServerUrl(defaultUrl);
+    setServerLabel(`${serverName} Server`);
     setIsCurrent(!serverConfigs.some((server) => server.current));
     setIsAddingNew(true);
   };
 
   const startEditingServer = (server: ServerConfig) => {
     setEditingId(server.serverId);
+    setServerLabel(isDefaultServer(server.serverId) ? DEFAULT_SERVER_NAME : server.serverName || `${serverName} Server`);
     setServerUrl(server.serverUrl);
     setIsCurrent(server.current);
     setIsAddingNew(false);
@@ -238,6 +264,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
     setEditingId(null);
     setIsAddingNew(false);
     setServerUrl(defaultUrl);
+    setServerLabel(`${serverName} Server`);
     setIsCurrent(false);
   };
 
@@ -267,10 +294,11 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
       showAlert('Error', 'Cannot delete the active server. Set another server as active first.');
       return;
     }
-    if (!await confirmAction('Delete Server', 'Are you sure you want to delete this server configuration?', 'Delete')) {
-      return;
-    }
+    if (!await confirmAction('Remove Server', 'Are you sure you want to remove this server configuration?', 'Remove')) return;
+    await removeServer(server);
+  };
 
+  const removeServer = async (server: ServerConfig) => {
     try {
       const savedConfigs = storageService.getItem(SERVERS_KEY);
       const allServers: ServerConfig[] = savedConfigs ? JSON.parse(savedConfigs) : [];
@@ -297,8 +325,17 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
         <>
           <SettingsSection
             title={editingId ? 'Edit server' : 'Add server'}
-            footer="Enter the base URL for your Stremio-compatible server."
+            footer="Name this server and enter its base URL."
           >
+            <NativeTextInput
+              accessibilityLabel={`${serverName} server name`}
+              value={serverLabel}
+              onChangeText={setServerLabel}
+              placeholder={`${serverName} Server`}
+              autoCapitalize="words"
+              autoCorrect={false}
+              returnKeyType="next"
+            />
             <NativeTextInput
               accessibilityLabel={`${serverName} server URL`}
               value={serverUrl}
@@ -370,14 +407,93 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
                 isLast
               />
             </SettingsSection>
-          ) : orderedServerConfigs.map((server) => (
-            <SettingsSection
-              key={server.serverId}
-              title={server.current ? 'Current server' : 'Server'}
-              footer={`${getConnectionLabel(server.serverId)}${isDefaultServer(server.serverId) ? ' · Built-in local server' : ''}`}
-            >
+          ) : orderedServerConfigs.map((server) => {
+            const serverActions: MenuAction[] = [
+              ...(!server.current
+                ? [{ id: 'set-current', title: 'Set as Default', image: 'checkmark.circle' } satisfies MenuAction]
+                : []),
+              { id: 'test', title: 'Test Connection', image: 'network' },
+              ...(!isDefaultServer(server.serverId)
+                ? [{ id: 'edit', title: 'Edit', image: 'pencil' } satisfies MenuAction]
+                : []),
+              ...(!server.current && !isDefaultServer(server.serverId)
+                ? [{ id: 'delete', title: 'Remove Server', image: 'trash', attributes: { destructive: true } } satisfies MenuAction]
+                : []),
+            ];
+            const handleServerAction = (actionId: string) => {
+              if (actionId === 'set-current') void setCurrentServer(server.serverId);
+              else if (actionId === 'edit' && !isDefaultServer(server.serverId)) startEditingServer(server);
+              else if (actionId === 'test') void refreshConnection(server);
+              else if (actionId === 'delete' && !isDefaultServer(server.serverId)) void deleteServer(server);
+            };
+            const isExpanded = expandedServerId === server.serverId;
+            const actionTrigger = (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Actions for ${server.serverName}`}
+                hitSlop={10}
+                onPress={(event) => event.stopPropagation()}
+                style={{ padding: 8 }}
+              >
+                <Ionicons name="ellipsis-horizontal" size={20} color={colors.textDim} />
+              </Pressable>
+            );
+            const actionsMenu = Platform.OS === 'web' ? (
+              <WebMenu
+                title={`${server.serverName} actions`}
+                actions={serverActions.map((action) => ({
+                  id: action.id ?? action.title,
+                  title: action.title,
+                  icon: action.id === 'set-current'
+                    ? 'checkmark-circle-outline'
+                    : action.id === 'edit'
+                      ? 'create-outline'
+                      : action.id === 'test'
+                        ? 'git-network-outline'
+                        : 'trash-outline',
+                  titleColor: action.id === 'delete' ? '#ff453a' : undefined,
+                  iconColor: action.id === 'delete' ? '#ff453a' : undefined,
+                }))}
+                onPressAction={handleServerAction}
+              >
+                {actionTrigger}
+              </WebMenu>
+            ) : (
+              <MenuView
+                title={`${server.serverName} actions`}
+                actions={serverActions}
+                onPressAction={({ nativeEvent }) => handleServerAction(nativeEvent.event)}
+                colorScheme="dark"
+                shouldOpenOnLongPress={false}
+              >
+                {actionTrigger}
+              </MenuView>
+            );
+
+            return (
+              <SettingsSection
+                key={server.serverId}
+                title={server.current ? 'Default server' : 'Server'}
+                footer={`${getConnectionLabel(server.serverId)}${isDefaultServer(server.serverId) ? ' · Built-in local server' : ''}`}
+              >
               <SettingsRow
-                title={server.serverUrl}
+                title={isDefaultServer(server.serverId) ? DEFAULT_SERVER_NAME : server.serverName || `${serverName} Server`}
+                onPress={() => setExpandedServerId(isExpanded ? null : server.serverId)}
+                accessibilityLabel={`${isExpanded ? 'Collapse' : 'Expand'} ${server.serverName} server details`}
+                isLast={!isExpanded}
+                titleAccessory={server.current
+                  ? <MaterialCommunityIcons name="crown" size={18} color="#ffcc00" />
+                  : undefined}
+                trailing={
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    {actionsMenu}
+                    <Ionicons
+                      name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                      size={16}
+                      color={colors.textDim}
+                    />
+                  </View>
+                }
                 leading={
                   <MaterialIcons
                     name={getConnectionIcon(server.serverId)}
@@ -385,46 +501,19 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
                     color={getConnectionColor(server.serverId)}
                   />
                 }
-                trailing={server.current
-                  ? <MaterialCommunityIcons name="crown" size={20} color="#ffcc00" />
-                  : undefined}
               />
-              <SettingsRow
-                title="Set as Current"
-                trailing={
-                  <NativeSwitch
-                    value={server.current}
-                    onValueChange={(isCurrentServer) => {
-                      if (isCurrentServer && !server.current) {
-                        void setCurrentServer(server.serverId);
-                      }
-                    }}
-                    seedColor="#30d158"
-                  />
-                }
-              />
-              <SettingsRow
-                title="Test connection"
-                leading={<MaterialIcons name="network-check" size={20} color="#0a84ff" />}
-                onPress={() => void refreshConnection(server)}
-              />
-              <SettingsRow
-                title="Edit server"
-                leading={<MaterialIcons name="edit" size={20} color="#ff9f0a" />}
-                onPress={() => startEditingServer(server)}
-                isLast={server.current || isDefaultServer(server.serverId)}
-              />
-              {!server.current && !isDefaultServer(server.serverId) ? (
+              {isExpanded ? (
                 <SettingsRow
-                  title="Delete server"
-                  leading={<MaterialIcons name="delete-outline" size={20} color="#ff453a" />}
-                  onPress={() => void deleteServer(server)}
-                  destructive
+                  title=""
+                  detail={server.serverUrl}
+                  detailSameFont={false}
+                  detailFontSize={12}
                   isLast
                 />
               ) : null}
-            </SettingsSection>
-          ))}
+              </SettingsSection>
+            );
+          })}
         </>
         )}
     </SettingsPage>
