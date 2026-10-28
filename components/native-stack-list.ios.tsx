@@ -1,6 +1,5 @@
 import { Fragment } from 'react';
-import { Host } from '@expo/ui';
-import { RNHostView, ScrollView, HStack, VStack } from '@expo/ui/swift-ui';
+import { Column, Host, RNHostView, Row, ScrollView } from '@expo/ui';
 import { View as RNView } from 'react-native';
 import type { NativeStackListProps } from './native-stack-list.types';
 
@@ -40,8 +39,8 @@ export default function NativeStackList<T>({
   ) : null;
 
   const stack = axis === 'horizontal'
-    ? <HStack spacing={spacing}>{leadingInset}{items}{trailingInset}</HStack>
-    : <VStack alignment="leading" spacing={spacing}>{items}</VStack>;
+    ? <Row spacing={spacing}>{leadingInset}{items}{trailingInset}</Row>
+    : <Column spacing={spacing} alignment="start">{items}</Column>;
 
   return (
     <Host
@@ -50,7 +49,7 @@ export default function NativeStackList<T>({
       style={[{ width: '100%', flex: scrollable && axis === 'vertical' ? 1 : undefined }, style]}
     >
       {scrollable ? (
-        <ScrollView axes={axis} showsIndicators={false}>{stack}</ScrollView>
+        <ScrollView direction={axis} showsIndicators={false}>{stack}</ScrollView>
       ) : stack}
     </Host>
   );

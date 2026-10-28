@@ -1,6 +1,6 @@
 import type { ReactElement, ReactNode } from 'react';
 import { Children, isValidElement } from 'react';
-import { View } from 'react-native';
+import { Text as RNText, View } from 'react-native';
 import { FieldGroup, Host, ListItem, RNHostView, Text as NativeText } from '@expo/ui';
 import { fillMaxWidth } from '@expo/ui/jetpack-compose/modifiers';
 
@@ -56,6 +56,7 @@ export function SettingsSection({ title, footer, children }: SettingsSectionProp
 
 interface SettingsRowProps {
   title: string;
+  titleAccessory?: ReactNode;
   detail?: string;
   leading?: ReactNode;
   trailing?: ReactNode;
@@ -72,6 +73,7 @@ interface SettingsRowProps {
 
 export function SettingsRow({
   title,
+  titleAccessory,
   detail,
   leading,
   trailing,
@@ -86,6 +88,31 @@ export function SettingsRow({
     ...(detailSameFont ? { fontSize: 16 as const, fontWeight: '400' as const } : {}),
     ...(detailColor ? { color: detailColor } : {}),
   };
+
+  const titleContent = titleAccessory ? (
+    <RNHostView matchContents>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+        <RNText
+          numberOfLines={1}
+          style={{
+            color: destructive ? '#ff453a' : disabled ? '#8e8e93' : titleColor ?? '#f2f2f7',
+            fontSize: 16,
+          }}
+        >
+          {title}
+        </RNText>
+        {titleAccessory}
+      </View>
+    </RNHostView>
+  ) : (
+    <NativeText
+      textStyle={{
+        color: destructive ? '#ff453a' : disabled ? '#8e8e93' : titleColor,
+      }}
+    >
+      {title}
+    </NativeText>
+  );
 
   return (
     <ListItem
@@ -107,13 +134,7 @@ export function SettingsRow({
           : detail
       ) : undefined}
     >
-      <NativeText
-        textStyle={{
-          color: destructive ? '#ff453a' : disabled ? '#8e8e93' : titleColor,
-        }}
-      >
-        {title}
-      </NativeText>
+      {titleContent}
     </ListItem>
   );
 }

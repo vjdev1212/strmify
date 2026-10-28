@@ -1,10 +1,8 @@
 import type { ReactElement, ReactNode } from 'react';
 import { Children, isValidElement } from 'react';
-import { View } from 'react-native';
-import { FieldGroup, Host, ListItem, RNHostView, Text as NativeText } from '@expo/ui';
-import { List as NativeList } from '@expo/ui/swift-ui';
+import { Text as RNText, View } from 'react-native';
+import { FieldGroup, Host, List as NativeList, ListItem, RNHostView, Text as NativeText } from '@expo/ui';
 import NativeFieldSelect from '@/components/native-field-select';
-import { listStyle, refreshable, scrollIndicators } from '@expo/ui/swift-ui/modifiers';
 
 interface SettingsPageProps {
   children: ReactNode;
@@ -14,19 +12,14 @@ interface SettingsPageProps {
 }
 
 export function SettingsPage({ children, onRefresh, hideScrollIndicator = false }: SettingsPageProps) {
-  const modifiers = [
-    ...(onRefresh ? [refreshable(onRefresh)] : []),
-    ...(hideScrollIndicator ? [listStyle('insetGrouped'), scrollIndicators('never', 'vertical')] : []),
-  ];
-
   return (
     <Host style={{ flex: 1 }} colorScheme="dark">
       {hideScrollIndicator ? (
-        <NativeList modifiers={modifiers}>
+        <NativeList onRefresh={onRefresh}>
           {children}
         </NativeList>
       ) : (
-        <FieldGroup modifiers={modifiers}>
+        <FieldGroup>
           {children}
         </FieldGroup>
       )}
@@ -64,6 +57,7 @@ export function SettingsSection({ title, footer, children }: SettingsSectionProp
 
 interface SettingsRowProps {
   title: string;
+  titleAccessory?: ReactNode;
   detail?: string;
   leading?: ReactNode;
   trailing?: ReactNode;
@@ -80,6 +74,7 @@ interface SettingsRowProps {
 
 export function SettingsRow({
   title,
+  titleAccessory,
   detail,
   leading,
   trailing,
@@ -100,14 +95,19 @@ export function SettingsRow({
       <View>{trailing}</View>
     </RNHostView>
   ) : null;
-  const titleContent = (
-    <NativeText
-      textStyle={{
-        color: destructive ? '#ff453a' : disabled ? '#8e8e93' : titleColor,
-      }}
-    >
-      {title}
-    </NativeText>
+  const titleStyle = {
+    color: destructive ? '#ff453a' : disabled ? '#8e8e93' : titleColor ?? '#f2f2f7',
+    fontSize: 17,
+  };
+  const titleContent = titleAccessory ? (
+    <RNHostView matchContents>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+        <RNText numberOfLines={1} style={titleStyle}>{title}</RNText>
+        {titleAccessory}
+      </View>
+    </RNHostView>
+  ) : (
+    <NativeText textStyle={{ color: titleStyle.color }}>{title}</NativeText>
   );
   const detailContent = detail && (detailSameFont || detailColor)
     ? (

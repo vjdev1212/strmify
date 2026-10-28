@@ -294,10 +294,11 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
       showAlert('Error', 'Cannot delete the active server. Set another server as active first.');
       return;
     }
-    if (!await confirmAction('Delete Server', 'Are you sure you want to delete this server configuration?', 'Delete')) {
-      return;
-    }
+    if (!await confirmAction('Remove Server', 'Are you sure you want to remove this server configuration?', 'Remove')) return;
+    await removeServer(server);
+  };
 
+  const removeServer = async (server: ServerConfig) => {
     try {
       const savedConfigs = storageService.getItem(SERVERS_KEY);
       const allServers: ServerConfig[] = savedConfigs ? JSON.parse(savedConfigs) : [];
@@ -409,14 +410,14 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
           ) : orderedServerConfigs.map((server) => {
             const serverActions: MenuAction[] = [
               ...(!server.current
-                ? [{ id: 'set-current', title: 'Set as Current', image: 'checkmark.circle' } satisfies MenuAction]
+                ? [{ id: 'set-current', title: 'Set as Default', image: 'checkmark.circle' } satisfies MenuAction]
                 : []),
               { id: 'test', title: 'Test Connection', image: 'network' },
               ...(!isDefaultServer(server.serverId)
                 ? [{ id: 'edit', title: 'Edit', image: 'pencil' } satisfies MenuAction]
                 : []),
               ...(!server.current && !isDefaultServer(server.serverId)
-                ? [{ id: 'delete', title: 'Delete Server', image: 'trash', attributes: { destructive: true } } satisfies MenuAction]
+                ? [{ id: 'delete', title: 'Remove Server', image: 'trash', attributes: { destructive: true } } satisfies MenuAction]
                 : []),
             ];
             const handleServerAction = (actionId: string) => {
@@ -472,16 +473,14 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
             return (
               <SettingsSection
                 key={server.serverId}
-                title={server.current ? 'Current server' : 'Server'}
+                title={server.current ? 'Default server' : 'Server'}
                 footer={`${getConnectionLabel(server.serverId)}${isDefaultServer(server.serverId) ? ' · Built-in local server' : ''}`}
               >
               <SettingsRow
                 title={isDefaultServer(server.serverId) ? DEFAULT_SERVER_NAME : server.serverName || `${serverName} Server`}
-                detail={isExpanded ? server.serverUrl : undefined}
-                detailSameFont={false}
-                detailFontSize={12}
                 onPress={() => setExpandedServerId(isExpanded ? null : server.serverId)}
                 accessibilityLabel={`${isExpanded ? 'Collapse' : 'Expand'} ${server.serverName} server details`}
+                isLast={!isExpanded}
                 titleAccessory={server.current
                   ? <MaterialCommunityIcons name="crown" size={18} color="#ffcc00" />
                   : undefined}
@@ -503,6 +502,15 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
                   />
                 }
               />
+              {isExpanded ? (
+                <SettingsRow
+                  title=""
+                  detail={server.serverUrl}
+                  detailSameFont={false}
+                  detailFontSize={12}
+                  isLast
+                />
+              ) : null}
               </SettingsSection>
             );
           })}
