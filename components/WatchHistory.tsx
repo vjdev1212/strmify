@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
+import { useFocusEffect } from 'expo-router';
 import {
   Pressable,
   TouchableOpacity,
@@ -15,6 +16,7 @@ import { useTheme } from '@/context/ThemeContext';
 import NativeStackList from '@/components/native-stack-list';
 import { NativeButton } from '@/components/native-ui-controls';
 import PosterArtwork from '@/components/PosterArtwork';
+import type { PlaybackSettings } from '@/components/coreplayer/models';
 
 export interface WatchHistoryItem {
   title: string;
@@ -26,6 +28,7 @@ export interface WatchHistoryItem {
   useKsPlayer?: string;
   positionSeconds: number;
   durationSeconds?: number;
+  playbackSettings?: PlaybackSettings;
   artwork: string;
   timestamp: number;
 }
@@ -84,7 +87,9 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
   const CARD_HEIGHT = Math.round((CARD_WIDTH * 9) / 16);
   const CARD_SPACING = 16;
 
-  useEffect(() => { loadWatchHistory(); }, [type]);
+  useFocusEffect(useCallback(() => {
+    void loadWatchHistory();
+  }, [type]));
 
   const getAnimatedValue = (key: string) => {
     if (!animatedValues.has(key)) animatedValues.set(key, new Animated.Value(1));
@@ -99,6 +104,7 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
         const normalized = parsed
           .map(p => ({
             ...p,
+            positionSeconds: Number(p.playbackSettings?.positionSeconds ?? p.positionSeconds),
             durationSeconds: p.durationSeconds ? Number(p.durationSeconds) : undefined,
           })) as unknown as WatchHistoryItem[];
         const validHistory = normalized.filter(isValidWatchHistoryItem);

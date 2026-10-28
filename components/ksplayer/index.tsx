@@ -39,6 +39,7 @@ import { GlassView } from 'expo-glass-effect';
 import { SkipBanner } from "../introdb/skipBanner";
 import { useIntroDB } from "../introdb/useIntroDb";
 import { isPictureInPictureSupported } from "@/utils/MediaPlayer";
+import type { PlaybackSettings } from "../coreplayer/models";
 
 const { KSPlayerView: VideoComponent } = require('@/components/ksplayer/KSPlayerView');
 
@@ -66,7 +67,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     isLoadingStream = false,
     loadingMessage,
     back: onBack,
-    resumePositionSeconds = 0,
+    resumePlaybackSettings,
     pictureInPictureEnabled = true,
     artwork,
     subtitles = [],
@@ -84,6 +85,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     const isHideControlsScheduled = useRef(false);
     const wasPlayingBeforeSeek = useRef(false);
     const lastKnownTimeRef = useRef<number>(0);
+    const restoredResumeKeyRef = useRef<string | null>(null);
     const hasReportedErrorRef = useRef(false);
     const seekTimeoutRef = useRef<any>(null);
     const progressUpdateTimerRef = useRef<any>(null);
@@ -91,7 +93,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     const playerState = usePlayerState();
     const subtitleState = useSubtitleState();
     const uiState = useUIState();
-    const settings = useEnhancedPlayerSettings();
+    const settings = useEnhancedPlayerSettings(resumePlaybackSettings);
     const timers = useTimers();
     const animations = usePlayerAnimations();
 
@@ -107,6 +109,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         if (isLoadingStream) {
             playerState.setIsReady(false);
             playerState.setIsBuffering(true);
+            restoredResumeKeyRef.current = null;
         }
     }, [isLoadingStream, playerState.setIsReady, playerState.setIsBuffering]);
 
@@ -115,41 +118,59 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     const settingsMenuRef = useRef<MenuComponentRef>(null);
     const streamMenuRef = useRef<MenuComponentRef>(null);
 
-    const [contentFit, setContentFit] = useState<string>(RNResizeMode.COVER);
+    const [contentFit, setContentFit] = useState<string>(
+        resumePlaybackSettings?.contentFit ?? RNResizeMode.COVER
+    );
     const [showContentFitLabel, setShowContentFitLabel] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
     const [videoError, setVideoError] = useState<string | null>(null);
     const [availableAudioTracks, setAvailableAudioTracks] = useState<any[]>([]);
     const [availableTextTracks, setAvailableTextTracks] = useState<any[]>([]);
-    const [selectedAudioTrack, setSelectedAudioTrack] = useState<number>(-1);
+    const [selectedAudioTrack, setSelectedAudioTrack] = useState<number>(
+        resumePlaybackSettings?.audioTrackIndex ?? -1
+    );
 
-    const [selectedCustomSubtitleIndex, setSelectedCustomSubtitleIndex] = useState<number>(-1);
-    const [selectedEmbeddedTextTrack, setSelectedEmbeddedTextTrack] = useState<number>(-1);
+    const [selectedCustomSubtitleIndex, setSelectedCustomSubtitleIndex] = useState<number>(
+        resumePlaybackSettings?.subtitleMode === 'custom' ? resumePlaybackSettings.subtitleIndex : -1
+    );
+    const [selectedEmbeddedTextTrack, setSelectedEmbeddedTextTrack] = useState<number>(
+        resumePlaybackSettings?.subtitleMode === 'embedded' ? resumePlaybackSettings.subtitleIndex : -1
+    );
     const [embeddedSubtitleText, setEmbeddedSubtitleText] = useState<string>('');
+
+    const playbackSettings = useMemo<PlaybackSettings>(() => ({
+        isMuted: settings.isMuted,
+        playbackSpeed: settings.playbackSpeed,
+        contentFit: contentFit === 'contain' || contentFit === 'stretch' ? contentFit : 'cover',
+        audioTrackIndex: selectedAudioTrack,
+        subtitleMode: selectedEmbeddedTextTrack >= 0
+            ? 'embedded'
+            : selectedCustomSubtitleIndex >= 0
+                ? 'custom'
+                : 'off',
+        subtitleIndex: selectedEmbeddedTextTrack >= 0
+            ? selectedEmbeddedTextTrack
+            : selectedCustomSubtitleIndex,
+        subtitlePosition: settings.subtitlePosition,
+        subtitleDelay: settings.subtitleDelay
+    }), [
+        settings.isMuted,
+        settings.playbackSpeed,
+        settings.subtitlePosition,
+        settings.subtitleDelay,
+        contentFit,
+        selectedAudioTrack,
+        selectedCustomSubtitleIndex,
+        selectedEmbeddedTextTrack
+    ]);
+    const playbackSettingsRef = useRef(playbackSettings);
+    playbackSettingsRef.current = playbackSettings;
+    const resumePositionSeconds = resumePlaybackSettings?.positionSeconds ?? 0;
 
     const isUsingCustomSub = selectedCustomSubtitleIndex >= 0;
     const isUsingEmbeddedSub = selectedEmbeddedTextTrack >= 0;
     const canUsePictureInPicture =
         pictureInPictureEnabled && isPictureInPictureSupported();
-
-    // Restore playback position
-    useEffect(() => {
-        if (!playerState.isReady || playerState.duration <= 0 || resumePositionSeconds <= 0) {
-            return;
-        }
-
-        const currentTime = Math.min(resumePositionSeconds, playerState.duration);
-        isSeeking.current = true;
-        wasPlayingBeforeSeek.current = false;
-        videoRef.current?.seek(currentTime);
-        playerState.setCurrentTime(currentTime);
-        lastKnownTimeRef.current = currentTime;
-
-        const timeoutId = setTimeout(() => {
-            isSeeking.current = false;
-        }, 300);
-        return () => clearTimeout(timeoutId);
-    }, [playerState.isReady, playerState.duration, resumePositionSeconds]);
 
     const showControlsTemporarily = useCallback(() => {
         setShowControls(true);
@@ -177,7 +198,8 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
             if (updateProgress) {
                 updateProgress({
                     positionSeconds: lastKnownTimeRef.current,
-                    durationSeconds: playerState.duration
+                    durationSeconds: playerState.duration,
+                    playbackSettings: playbackSettingsRef.current
                 });
             }
             clearAllTimers();
@@ -243,12 +265,24 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
             if (lastKnownTimeRef.current > 0 && playerState.duration > 0) {
                 updateProgress({
                     positionSeconds: lastKnownTimeRef.current,
-                    durationSeconds: playerState.duration
+                    durationSeconds: playerState.duration,
+                    playbackSettings: playbackSettingsRef.current
                 });
             }
         }, 60 * 1000);
         return () => { if (progressUpdateTimerRef.current) clearInterval(progressUpdateTimerRef.current); };
     }, [playerState.isReady, playerState.duration, updateProgress]);
+
+    useEffect(() => {
+        if (!updateProgress || !playerState.isReady || playerState.currentTime <= 1 || playerState.duration <= 0) {
+            return;
+        }
+        updateProgress({
+            positionSeconds: lastKnownTimeRef.current,
+            durationSeconds: playerState.duration,
+            playbackSettings
+        });
+    }, [playbackSettings, playerState.isReady, playerState.duration, updateProgress]);
 
     // Auto-hide controls on ready
     useEffect(() => {
@@ -281,26 +315,57 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         hasReportedErrorRef.current = false;
         Animated.timing(bufferOpacity, { toValue: 0, duration: 200, useNativeDriver: true }).start();
 
+        const resumeKey = `${videoUrl}:${resumePositionSeconds}`;
+        if (
+            resumePositionSeconds > 0 &&
+            data.duration > 0 &&
+            Number.isFinite(data.duration) &&
+            restoredResumeKeyRef.current !== resumeKey
+        ) {
+            const resumeTime = Math.min(resumePositionSeconds, data.duration);
+            restoredResumeKeyRef.current = resumeKey;
+            isSeeking.current = true;
+            wasPlayingBeforeSeek.current = false;
+            videoRef.current?.seek(resumeTime);
+            playerState.setCurrentTime(resumeTime);
+            lastKnownTimeRef.current = resumeTime;
+            if (seekTimeoutRef.current) clearTimeout(seekTimeoutRef.current);
+            seekTimeoutRef.current = setTimeout(() => {
+                isSeeking.current = false;
+            }, 500);
+        }
+
         if (data.audioTracks && Array.isArray(data.audioTracks) && data.audioTracks.length > 0) {
             setAvailableAudioTracks(data.audioTracks);
-            if (selectedAudioTrack === -1) {
+            if (selectedAudioTrack < 0 || selectedAudioTrack >= data.audioTracks.length) {
                 setSelectedAudioTrack(0);
                 settings.setSelectedAudioTrack(0);
+                videoRef.current?.selectAudioTrack(0);
+            } else {
+                videoRef.current?.selectAudioTrack(selectedAudioTrack);
             }
         }
         if (data.textTracks && Array.isArray(data.textTracks) && data.textTracks.length > 0) {
             setAvailableTextTracks(data.textTracks);
+            if (selectedEmbeddedTextTrack >= data.textTracks.length) {
+                setSelectedEmbeddedTextTrack(-1);
+            } else if (selectedEmbeddedTextTrack >= 0) {
+                videoRef.current?.selectTextTrack(selectedEmbeddedTextTrack);
+            }
         }
 
         setEmbeddedSubtitleText('');
-    }, [bufferOpacity, playerState, selectedAudioTrack, settings]);
+    }, [bufferOpacity, playerState, selectedAudioTrack, selectedEmbeddedTextTrack, settings, videoUrl, resumePositionSeconds]);
 
     const handleAudioTracks = useCallback((data: { audioTracks: any[] }) => {
         if (data.audioTracks && Array.isArray(data.audioTracks) && data.audioTracks.length > 0) {
             setAvailableAudioTracks(data.audioTracks);
-            if (selectedAudioTrack === -1) {
+            if (selectedAudioTrack < 0 || selectedAudioTrack >= data.audioTracks.length) {
                 setSelectedAudioTrack(0);
                 settings.setSelectedAudioTrack(0);
+                videoRef.current?.selectAudioTrack(0);
+            } else {
+                videoRef.current?.selectAudioTrack(selectedAudioTrack);
             }
         }
     }, [selectedAudioTrack, settings]);
@@ -308,8 +373,13 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     const handleTextTracks = useCallback((data: { textTracks: any[] }) => {
         if (data.textTracks && Array.isArray(data.textTracks) && data.textTracks.length > 0) {
             setAvailableTextTracks(data.textTracks);
+            if (selectedEmbeddedTextTrack >= data.textTracks.length) {
+                setSelectedEmbeddedTextTrack(-1);
+            } else if (selectedEmbeddedTextTrack >= 0) {
+                videoRef.current?.selectTextTrack(selectedEmbeddedTextTrack);
+            }
         }
-    }, []);
+    }, [selectedEmbeddedTextTrack]);
 
     const handleSubtitleText = useCallback((data: { text: string }) => {
         setEmbeddedSubtitleText(data.text ?? '');
@@ -653,6 +723,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
             message: '',
             positionSeconds: lastKnownTimeRef.current,
             durationSeconds: playerState.duration,
+            playbackSettings: playbackSettingsRef.current,
             player: "ksplayer"
         });
     }, [playerState.duration, onBack]);

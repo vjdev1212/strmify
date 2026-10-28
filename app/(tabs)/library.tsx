@@ -143,7 +143,10 @@ const LibraryScreen: React.FC = () => {
         season: item.season,
         episode: item.episode,
         useKsPlayer: item.useKsPlayer,
-        positionSeconds: item.positionSeconds,
+        playbackSettings: JSON.stringify({
+          ...item.playbackSettings,
+          positionSeconds: item.playbackSettings?.positionSeconds ?? item.positionSeconds
+        }),
         artwork: item.artwork
       },
     });

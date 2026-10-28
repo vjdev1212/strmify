@@ -34,6 +34,18 @@ export interface ErrorResponse {
     status: number;
 }
 
+export interface PlaybackSettings {
+    positionSeconds?: number;
+    isMuted: boolean;
+    playbackSpeed: number;
+    contentFit: 'contain' | 'cover' | 'stretch';
+    audioTrackIndex: number;
+    subtitleMode: 'off' | 'custom' | 'embedded';
+    subtitleIndex: number;
+    subtitlePosition: number;
+    subtitleDelay: number;
+}
+
 export interface MediaPlayerProps {
     videoUrl: string;
     title: string;
@@ -41,7 +53,7 @@ export interface MediaPlayerProps {
     loadingMessage?: string;
     audioTracks?: AudioTrack[];
     back: (event: BackEvent) => void;
-    resumePositionSeconds?: number;
+    resumePlaybackSettings?: PlaybackSettings;
     autoPlay?: boolean;
     pictureInPictureEnabled?: boolean;
     artwork?: string;
@@ -66,19 +78,21 @@ export interface TVShowMetadata {
     episode: number;
 }
 
-interface PlaybackPositionEvent {
+export interface PlaybackPositionEvent {
     positionSeconds: number;
     durationSeconds: number;
+    playbackSettings?: PlaybackSettings;
 }
 
 interface PlaybackErrorEvent {
     error: string;
 }
 
-interface BackEvent {
+export interface BackEvent {
     message: string;
     positionSeconds: number;
     durationSeconds: number;
+    playbackSettings?: PlaybackSettings;
     code?: string;
     player: "native" | "ksplayer";
 }
