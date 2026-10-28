@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FlatList, Image, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, { Easing, useReducedMotion, useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { ActivityIndicator, Text, View } from '@/components/Themed';
 import { NativeButton } from '@/components/native-ui-controls';
 import PersonDetailsCloseButton from '@/components/person-details-close-button';
@@ -11,6 +12,38 @@ import type { Credit, PersonDetailsContentProps } from '@/components/person-deta
 const FILMOGRAPHY_IMAGE_BASE = 'https://image.tmdb.org/t/p/w342';
 
 const FILMOGRAPHY_BATCH_SIZE = 5;
+
+function PersonProfileImage({
+  uri,
+  onLoad,
+  onError,
+}: {
+  uri: string;
+  onLoad: () => void;
+  onError: () => void;
+}) {
+  const opacity = useSharedValue(0);
+  const reducedMotion = useReducedMotion();
+  const imageStyle = useAnimatedStyle(() => ({ opacity: opacity.get() }));
+
+  return (
+    <Animated.View style={[StyleSheet.absoluteFill, imageStyle]}>
+      <Image
+        source={{ uri }}
+        onLoad={() => {
+          opacity.set(withTiming(1, {
+            duration: reducedMotion ? 150 : 250,
+            easing: Easing.bezier(0.23, 1, 0.32, 1),
+          }));
+          onLoad();
+        }}
+        onError={onError}
+        style={[StyleSheet.absoluteFill, styles.heroImage]}
+        resizeMode="cover"
+      />
+    </Animated.View>
+  );
+}
 
 const FilmographyItem = React.memo(function FilmographyItem({
   item,
@@ -137,6 +170,8 @@ export default function PersonDetailsContent({
   onRetry,
   onClose,
   onCreditPress,
+  scrollingHandledByParent = false,
+  externalCloseButton = false,
 }: PersonDetailsContentProps) {
   const profileFacts = person
     ? [
@@ -152,109 +187,118 @@ export default function PersonDetailsContent({
   const heroHeight = width;
   const posterWidth = Math.max(100, Math.min(140, (width - spacing.mdLg * 2 - spacing.md * 2) / 3));
 
-  return (
-    <View style={[styles.modalRoot, { backgroundColor: colors.background }]}>
-      {loading ? (
-        <View style={styles.stateContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
-      ) : error || !person ? (
-        <View style={styles.stateContainer}>
-          <Text style={[styles.errorText, { color: colors.textMuted }]}>{error ?? 'Profile unavailable.'}</Text>
-          <NativeButton
-            label="Try again"
-            accessibilityLabel="Retry loading profile"
-            onPress={onRetry}
-            seedColor={colors.primary}
-            style={styles.retryButton}
+  const profileContent = loading ? (
+    <View style={styles.stateContainer}>
+      <ActivityIndicator size="large" color={colors.primary} />
+    </View>
+  ) : error || !person ? (
+    <View style={styles.stateContainer}>
+      <Text style={[styles.errorText, { color: colors.textMuted }]}>{error ?? 'Profile unavailable.'}</Text>
+      <NativeButton
+        label="Try again"
+        accessibilityLabel="Retry loading profile"
+        onPress={onRetry}
+        seedColor={colors.primary}
+        style={styles.retryButton}
+      />
+    </View>
+  ) : (
+    <View style={styles.content}>
+      <View style={[styles.hero, { width: heroWidth, height: heroHeight, backgroundColor: colors.backgroundCard }]}>
+        {profileImage && !profileImageError ? (
+          <PersonProfileImage
+            key={profileImage}
+            uri={profileImage}
+            onLoad={onProfileImageLoad}
+            onError={onProfileImageError}
           />
-        </View>
-      ) : (
+        ) : (
+          <View style={[styles.profilePlaceholder, styles.heroImage]}>
+            <Ionicons name="person-circle-outline" size={88} color={colors.textMuted} />
+          </View>
+        )}
+        {profileImage && profileImageLoading && !profileImageError ? (
+          <View pointerEvents="none" style={styles.heroLoader}>
+            <ActivityIndicator color={colors.primary} />
+          </View>
+        ) : null}
+      </View>
+
+      <View style={styles.details}>
+        <Text style={[styles.personName, { color: colors.text }]} numberOfLines={2}>{person.name}</Text>
+        {person.known_for_department ? (
+          <Text style={[styles.personDepartment, { color: colors.textMuted }]}>{person.known_for_department}</Text>
+        ) : null}
+        {profileFacts.length > 0 ? (
+          <View style={styles.profileFacts}>
+            {profileFacts.map((fact) => (
+              <View key={fact.label} style={[styles.profileFact, { backgroundColor: colors.backgroundCard }]}>
+                <Text style={[styles.factLabel, { color: colors.textMuted }]}>{fact.label}</Text>
+                <Text style={[styles.personMeta, { color: colors.text }]}>{fact.value}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
+
+        {person.also_known_as && person.also_known_as.length > 0 ? (
+          <View style={[styles.infoCard, { backgroundColor: colors.backgroundCard }]}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Also known as</Text>
+            <Text style={[styles.personMeta, { color: colors.textMuted }]}>
+              {person.also_known_as.slice(0, 8).join(', ')}
+            </Text>
+          </View>
+        ) : null}
+
+        {person.biography ? (
+          <PersonBiography
+            biography={person.biography}
+            width={width - spacing.mdLg * 2}
+            colors={colors}
+          />
+        ) : null}
+
+        {castCredits.length > 0 ? (
+          <FilmographySection title="Cast" credits={castCredits} onPress={onCreditPress} colors={colors} posterWidth={posterWidth} />
+        ) : null}
+
+        {crewCredits.length > 0 ? (
+          <FilmographySection title="Crew" credits={crewCredits} onPress={onCreditPress} colors={colors} posterWidth={posterWidth} />
+        ) : castCredits.length === 0 ? (
+          <View style={styles.filmographySection}>
+            <Text style={[styles.sectionTitle, styles.filmographyHeading, { color: colors.text }]}>Credits</Text>
+            <Text style={[styles.emptyText, { color: colors.textMuted }]}>No cast or crew credits available.</Text>
+          </View>
+        ) : null}
+      </View>
+    </View>
+  );
+
+  return (
+    <View style={[styles.modalRoot, scrollingHandledByParent && styles.contentSizedRoot, { backgroundColor: colors.background }]}>
+      {scrollingHandledByParent || loading || error || !person ? profileContent : (
         <ScrollView
           contentInsetAdjustmentBehavior="never"
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.content}
+          contentContainerStyle={styles.scrollContent}
         >
-          <View style={[styles.hero, { width: heroWidth, height: heroHeight, backgroundColor: colors.backgroundCard }]}>
-            {profileImage && !profileImageError ? (
-              <Image
-                source={{ uri: profileImage }}
-                onLoad={onProfileImageLoad}
-                onError={onProfileImageError}
-                style={[StyleSheet.absoluteFill, styles.heroImage]}
-                resizeMode="cover"
-              />
-            ) : (
-              <View style={[styles.profilePlaceholder, styles.heroImage]}>
-                <Ionicons name="person-circle-outline" size={88} color={colors.textMuted} />
-              </View>
-            )}
-            {profileImage && profileImageLoading && !profileImageError ? (
-              <View pointerEvents="none" style={styles.heroLoader}>
-                <ActivityIndicator color={colors.primary} />
-              </View>
-            ) : null}
-          </View>
-
-          <View style={styles.details}>
-            <Text style={[styles.personName, { color: colors.text }]} numberOfLines={2}>{person.name}</Text>
-            {person.known_for_department ? (
-              <Text style={[styles.personDepartment, { color: colors.textMuted }]}>{person.known_for_department}</Text>
-            ) : null}
-            {profileFacts.length > 0 ? (
-              <View style={styles.profileFacts}>
-                {profileFacts.map((fact) => (
-                  <View key={fact.label} style={[styles.profileFact, { backgroundColor: colors.backgroundCard }]}>
-                    <Text style={[styles.factLabel, { color: colors.textMuted }]}>{fact.label}</Text>
-                    <Text style={[styles.personMeta, { color: colors.text }]}>{fact.value}</Text>
-                  </View>
-                ))}
-              </View>
-            ) : null}
-
-            {person.also_known_as && person.also_known_as.length > 0 ? (
-              <View style={[styles.infoCard, { backgroundColor: colors.backgroundCard }]}>
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>Also known as</Text>
-                <Text style={[styles.personMeta, { color: colors.textMuted }]}>
-                  {person.also_known_as.slice(0, 8).join(', ')}
-                </Text>
-              </View>
-            ) : null}
-
-            {person.biography ? (
-              <PersonBiography
-                biography={person.biography}
-                width={width - spacing.mdLg * 2}
-                colors={colors}
-              />
-            ) : null}
-
-            {castCredits.length > 0 ? (
-              <FilmographySection title="Cast" credits={castCredits} onPress={onCreditPress} colors={colors} posterWidth={posterWidth} />
-            ) : null}
-
-            {crewCredits.length > 0 ? (
-              <FilmographySection title="Crew" credits={crewCredits} onPress={onCreditPress} colors={colors} posterWidth={posterWidth} />
-            ) : castCredits.length === 0 ? (
-              <View style={styles.filmographySection}>
-                <Text style={[styles.sectionTitle, styles.filmographyHeading, { color: colors.text }]}>Credits</Text>
-                <Text style={[styles.emptyText, { color: colors.textMuted }]}>No cast or crew credits available.</Text>
-              </View>
-            ) : null}
-          </View>
+          {profileContent}
         </ScrollView>
       )}
-      <View style={styles.closeButton}>
-        <PersonDetailsCloseButton onPress={onClose} color={colors.text} />
-      </View>
+      {!externalCloseButton ? (
+        <View style={styles.closeButton}>
+          <PersonDetailsCloseButton onPress={onClose} color={colors.text} />
+        </View>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   modalRoot: { flex: 1 },
-  stateContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.lg, gap: spacing.md },
+  stateContainer: { flex: 1, minHeight: 300, justifyContent: 'center', alignItems: 'center', padding: spacing.lg, gap: spacing.md },
   content: { paddingBottom: spacing.xxl },
+  scrollContent: { flexGrow: 1 },
+  contentSizedRoot: { flexGrow: 1 },
   closeButton: { position: 'absolute', top: spacing.md, right: spacing.md, zIndex: 2 },
   hero: { position: 'relative', justifyContent: 'flex-end', overflow: 'hidden' },
   heroImage: { borderRadius: 0 },

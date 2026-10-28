@@ -43,4 +43,6 @@ export interface PersonDetailsContentProps {
   onRetry: () => void;
   onClose: () => void;
   onCreditPress: (credit: Credit) => void;
+  scrollingHandledByParent?: boolean;
+  externalCloseButton?: boolean;
 }
