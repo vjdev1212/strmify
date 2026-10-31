@@ -19,6 +19,7 @@
       "bundleIdentifier": "com.vijayyuvi.strmify",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
+        "NSLocalNetworkUsageDescription": "Strmify connects to media servers on your local network.",
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true,
           "NSAllowsLocalNetworking": true

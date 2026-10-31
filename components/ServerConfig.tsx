@@ -9,6 +9,7 @@ import { WebMenu } from '@/components/WebMenuView';
 import { useTheme } from '@/context/ThemeContext';
 import { confirmAction, showAlert } from '@/utils/platform';
 import { StorageKeys, storageService } from '@/utils/StorageService';
+import { discoverStremioServers, type DiscoveredStremioServer } from '@/utils/stremioServerDiscovery';
 
 interface ServerConfigProps {
   serverName: string;
@@ -51,6 +52,9 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [expandedServerId, setExpandedServerId] = useState<string | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({});
+  const [discoveredServers, setDiscoveredServers] = useState<DiscoveredStremioServer[]>([]);
+  const [isDiscovering, setIsDiscovering] = useState(false);
+  const [discoveryMessage, setDiscoveryMessage] = useState('');
 
   const loadServers = async () => {
     try {
@@ -150,6 +154,32 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
     setConnectionStatus((current) => ({ ...current, [server.serverId]: 'checking' }));
     const status = await checkServerConnection(server);
     setConnectionStatus((current) => ({ ...current, [server.serverId]: status }));
+  };
+
+  const discoverServers = async () => {
+    setDiscoveredServers([]);
+    setIsDiscovering(true);
+    setDiscoveryMessage('Searching this local /24 for Stremio on ports 11470 and 12470…');
+    try {
+      const results = await discoverStremioServers();
+      setDiscoveredServers(results);
+      setDiscoveryMessage(results.length > 0
+        ? `${results.length} server${results.length === 1 ? '' : 's'} found.`
+        : 'No Stremio servers found on this local /24.');
+    } catch (error) {
+      setDiscoveredServers([]);
+      setDiscoveryMessage(error instanceof Error ? error.message : 'LAN discovery failed.');
+    } finally {
+      setIsDiscovering(false);
+    }
+  };
+
+  const selectDiscoveredServer = (server: DiscoveredStremioServer) => {
+    setEditingId(null);
+    setServerUrl(server.serverUrl);
+    setServerLabel(`Stremio (${server.host})`);
+    setIsCurrent(!serverConfigs.some((configuredServer) => configuredServer.current));
+    setIsAddingNew(true);
   };
 
   const getConnectionLabel = (serverId: string) => {
@@ -396,9 +426,35 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
               title="Add Server"
               leading={<MaterialIcons name="add" size={20} color="#30d158" />}
               onPress={startAddingServer}
-              isLast
+              isLast={serverType !== 'stremio'}
             />
+            {serverType === 'stremio' ? (
+              <SettingsRow
+                title="Discover on LAN"
+                detail={discoveryMessage || (Platform.OS === 'web'
+                  ? 'LAN discovery is available in the iOS and Android apps.'
+                  : 'Search this network for Stremio servers.')}
+                leading={<MaterialIcons name="wifi-find" size={20} color="#0a84ff" />}
+                onPress={() => void discoverServers()}
+                disabled={isDiscovering || Platform.OS === 'web'}
+                isLast={discoveredServers.length === 0}
+              />
+            ) : null}
           </SettingsSection>
+          {discoveredServers.length > 0 ? (
+            <SettingsSection title="Discovered servers" footer="Select a server to review and save it.">
+              {discoveredServers.map((server, index) => (
+                <SettingsRow
+                  key={server.serverUrl}
+                  title={server.host}
+                  detail={server.serverUrl}
+                  leading={<MaterialIcons name="dns" size={20} color="#30d158" />}
+                  onPress={() => selectDiscoveredServer(server)}
+                  isLast={index === discoveredServers.length - 1}
+                />
+              ))}
+            </SettingsSection>
+          ) : null}
           {serverConfigs.length === 0 ? (
             <SettingsSection title="Servers">
               <SettingsRow
