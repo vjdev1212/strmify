@@ -1,10 +1,12 @@
-import { ActivityIndicator, StatusBar, Text, TextInput, View } from '@vjdev1212/media-ui-kit';
+import { ActivityIndicator, StatusBar, Text, View } from '@vjdev1212/media-ui-kit';
 import { MediaGrid, GENRE_NAMES, type MediaGridItem } from '@vjdev1212/media-ui-kit';
 import { useTheme } from '@/context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
+import SegmentedControl from '@expo/ui/community/segmented-control';
 import { router, Stack } from 'expo-router';
+import { useHeaderHeight } from 'expo-router/react-navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { Keyboard, Platform, Pressable, StyleSheet } from 'react-native';
+import { Platform, Pressable, StyleSheet, TextInput as NativeTextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { radius, spacing, systemDarkBackground, typography } from '@/constants/theme';
 import { libraryService } from '@/utils/LibraryService';
@@ -12,6 +14,15 @@ import { showAlert } from '@/utils/platform';
 
 const TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 type SearchFilter = 'all' | 'movie' | 'series';
+const FILTER_OPTIONS: { id: SearchFilter; title: string }[] = [
+  { id: 'all', title: 'All' },
+  { id: 'movie', title: 'Movies' },
+  { id: 'series', title: 'Series' },
+];
+
+const SearchHeaderBackground = () => (
+  <View style={{ flex: 1, backgroundColor: 'transparent' }} />
+);
 
 interface TMDBSearchItem {
   id: number;
@@ -80,13 +91,13 @@ async function fetchSearchResults(
 
 const SearchScreen = () => {
   const { colors } = useTheme();
+  const headerHeight = useHeaderHeight();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<MediaGridItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const [selectedFilter, setSelectedFilter] = useState<SearchFilter>('all');
-  const [keyboardVisible, setKeyboardVisible] = useState(false);
   const trimmedQuery = useMemo(() => query.trim(), [query]);
   const filteredResults = useMemo(
     () => selectedFilter === 'all'
@@ -94,15 +105,6 @@ const SearchScreen = () => {
       : results.filter((item) => item.type === selectedFilter),
     [results, selectedFilter],
   );
-
-  useEffect(() => {
-    const showSubscription = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
-    const hideSubscription = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
-    return () => {
-      showSubscription.remove();
-      hideSubscription.remove();
-    };
-  }, []);
 
   useEffect(() => {
     if (!trimmedQuery) {
@@ -137,110 +139,82 @@ const SearchScreen = () => {
     };
   }, [retryCount, trimmedQuery]);
 
-  const clearSearch = () => {
-    setQuery('');
-  };
-  const handleQueryChange = (value: string) => {
+  const changeQuery = (value: string) => {
     setQuery(value);
     setSelectedFilter('all');
   };
-  const showFilters = Boolean(trimmedQuery) && !loading && !error && !keyboardVisible;
 
   return (
     <SafeAreaView
       edges={['left', 'right', 'bottom']}
-      style={[styles.container, { backgroundColor: systemDarkBackground }]}
+      style={[
+        styles.container,
+        {
+          backgroundColor: systemDarkBackground,
+          paddingTop: headerHeight,
+        },
+      ]}
     >
       <StatusBar />
       <Stack.Screen
         options={{
-          headerShown: Platform.OS !== 'web',
+          headerShown: true,
           headerBackVisible: false,
-          headerTransparent: false,
+          headerTransparent: true,
+          headerBackground: SearchHeaderBackground,
           headerShadowVisible: false,
-          headerStyle: { backgroundColor: systemDarkBackground },
+          headerTitle: 'Search',
+          headerStyle: { backgroundColor: 'transparent' },
+          headerBlurEffect: 'none',
           headerUserInterfaceStyle: 'dark',
           headerTintColor: colors.text,
-          headerTitle: 'Search',
-          headerSearchBarOptions: {
+          headerSearchBarOptions: Platform.OS === 'ios' ? {
             placeholder: 'Search movies or series',
             autoCapitalize: 'none',
-            barTintColor: '#1C1C1E',
-            textColor: '#FFFFFF',
-            hintTextColor: '#8E8E93',
-            headerIconColor: '#FFFFFF',
-            tintColor: '#0A84FF',
             hideWhenScrolling: false,
-            onChangeText: (event) => handleQueryChange(event.nativeEvent.text),
-            onFocus: () => setKeyboardVisible(true),
-            onBlur: () => setKeyboardVisible(false),
-            onCancelButtonPress: clearSearch,
-            onSearchButtonPress: (event) => handleQueryChange(event.nativeEvent.text),
-          },
+            placement: 'stacked',
+            onChangeText: (event) => changeQuery(event.nativeEvent.text),
+            onCancelButtonPress: () => changeQuery(''),
+            onSearchButtonPress: (event) => changeQuery(event.nativeEvent.text),
+          } : undefined,
         }}
       />
-      {Platform.OS === 'web' && (
-        <View style={styles.webSearchHeader}>
-          <View style={styles.webSearchField}>
+      {Platform.OS !== 'ios' && (
+        <View style={styles.searchHeader}>
+          <View style={styles.searchField}>
             <Ionicons name="search-outline" size={22} color={colors.text} />
-            <TextInput
+            <NativeTextInput
               accessibilityLabel="Search movies or series"
               autoCapitalize="none"
               autoCorrect={false}
+              clearButtonMode="never"
               keyboardAppearance="dark"
-              onChangeText={handleQueryChange}
-              onFocus={() => setKeyboardVisible(true)}
-              onBlur={() => setKeyboardVisible(false)}
+              onChangeText={changeQuery}
               placeholder="Search movies or series"
               placeholderTextColor={colors.textDim}
               returnKeyType="search"
-              style={[styles.webSearchInput, { color: colors.text }]}
+              style={[styles.searchInput, { color: colors.text }]}
+              underlineColorAndroid="transparent"
               value={query}
             />
-            {query.length > 0 && (
-              <Pressable
-                accessibilityLabel="Clear search text"
-                accessibilityRole="button"
-                hitSlop={8}
-                onPress={clearSearch}
-              >
-                <Ionicons name="close-circle" size={20} color="#D1D1D6" />
-              </Pressable>
-            )}
           </View>
         </View>
       )}
 
-      {showFilters && (
-        <View accessibilityRole="tablist" style={styles.filterBar}>
-          {([
-            { id: 'all', label: 'All' },
-            { id: 'movie', label: 'Movies' },
-            { id: 'series', label: 'TV Shows' },
-          ] as const).map((filter) => {
-            const selected = selectedFilter === filter.id;
-            return (
-              <Pressable
-                accessibilityRole="tab"
-                accessibilityState={{ selected }}
-                key={filter.id}
-                onPress={() => setSelectedFilter(filter.id)}
-                style={[
-                  styles.filterButton,
-                  selected && styles.selectedFilterButton,
-                ]}
-              >
-                <Text style={[
-                  styles.filterLabel,
-                  { color: selected ? '#000000' : colors.textMuted },
-                ]}>
-                  {filter.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      )}
+      <View style={styles.filterRow}>
+        <SegmentedControl
+          accessibilityLabel="Filter search results"
+          appearance="dark"
+          selectedIndex={FILTER_OPTIONS.findIndex((option) => option.id === selectedFilter)}
+          style={{ backgroundColor: 'transparent' }}
+          tintColor={colors.primary}
+          values={FILTER_OPTIONS.map((option) => option.title)}
+          onValueChange={(value) => {
+            const option = FILTER_OPTIONS.find((filter) => filter.title === value);
+            if (option) setSelectedFilter(option.id);
+          }}
+        />
+      </View>
 
       <View style={styles.resultsContainer}>
         {loading ? (
@@ -256,7 +230,6 @@ const SearchScreen = () => {
           </View>
         ) : trimmedQuery && filteredResults.length > 0 ? (
           <MediaGrid
-            compact
             detailsPath="/movie/details"
             items={filteredResults}
             safeAreaEdges={['left', 'right']}
@@ -284,15 +257,18 @@ const SearchScreen = () => {
                 ? 'No results found'
                 : selectedFilter === 'movie'
                   ? 'No movies found'
-                  : selectedFilter === 'series'
-                    ? 'No TV shows found'
-                    : 'No results found'}
+                  : 'No TV shows found'}
             </Text>
             <Text style={[styles.emptySubtitle, { color: colors.textDim }]}>
               Try searching with different keywords.
             </Text>
           </View>
-        ) : null}
+        ) : (
+          <View style={styles.statusContainer}>
+            <Text style={[styles.statusText, { color: colors.textMuted }]}>Search movies and TV shows</Text>
+            <Text style={[styles.emptySubtitle, { color: colors.textDim }]}>Enter a title to get started.</Text>
+          </View>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -302,48 +278,36 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  webSearchHeader: {
+  searchHeader: {
     paddingHorizontal: spacing.md,
     paddingTop: spacing.sm,
     paddingBottom: spacing.sm,
   },
-  webSearchField: {
-    height: 44,
+  searchField: {
+    minHeight: 48,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
     paddingHorizontal: spacing.md,
     borderRadius: radius.capsule,
+    borderCurve: 'continuous',
+    overflow: 'hidden',
     backgroundColor: '#1C1C1E',
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: '#38383A',
   },
-  webSearchInput: {
+  searchInput: {
     flex: 1,
     minWidth: 0,
     paddingVertical: 0,
     fontSize: 17,
+    backgroundColor: 'transparent',
+    borderWidth: 0,
   },
-  filterBar: {
-    flexDirection: 'row',
-    gap: spacing.sm,
+  filterRow: {
     paddingHorizontal: spacing.md,
     paddingTop: spacing.sm,
     paddingBottom: spacing.sm,
-  },
-  filterButton: {
-    minHeight: 36,
-    justifyContent: 'center',
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.capsule,
-    backgroundColor: '#1C1C1E',
-  },
-  selectedFilterButton: {
-    backgroundColor: '#FFFFFF',
-  },
-  filterLabel: {
-    ...typography.subhead,
-    fontWeight: '600',
   },
   resultsContainer: {
     flex: 1,
