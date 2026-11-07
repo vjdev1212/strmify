@@ -138,6 +138,15 @@ const MovieDetails = () => {
     }
   };
 
+  const handlePosterItemPress = useCallback((tmdbId: number, type: 'movie' | 'series') => {
+    if (isHapticsSupported()) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push({ pathname: `/${type}/details`, params: { tmdbid: tmdbId } });
+  }, []);
+
+  const handlePosterSeeAllPress = useCallback((apiUrl: string, title: string, type: 'movie' | 'series') => {
+    if (isHapticsSupported()) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push({ pathname: `/${type}/list`, params: { apiUrl, title } });
+  }, []);
 
   if (loading) {
     return (
@@ -169,16 +178,6 @@ const MovieDetails = () => {
       },
     });
   };
-
-  const handlePosterItemPress = useCallback((tmdbId: number, type: 'movie' | 'series') => {
-    if (isHapticsSupported()) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push({ pathname: `/${type}/details`, params: { tmdbid: tmdbId } });
-  }, []);
-
-  const handlePosterSeeAllPress = useCallback((apiUrl: string, title: string, type: 'movie' | 'series') => {
-    if (isHapticsSupported()) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push({ pathname: `/${type}/list`, params: { apiUrl, title } });
-  }, []);
 
   return (
     <ScrollView

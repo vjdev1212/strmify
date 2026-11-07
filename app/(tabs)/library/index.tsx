@@ -9,20 +9,17 @@ import {
   RefreshControl,
   useWindowDimensions,
 } from 'react-native';
-import { router, useFocusEffect } from 'expo-router';
+import { router, Stack, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { View, Text, StatusBar } from '@vjdev1212/media-ui-kit';
+import { View, Text } from '@vjdev1212/media-ui-kit';
 import WatchHistory, { WatchHistoryItem } from '@/components/WatchHistory';
 import { LibraryItem, libraryService } from '@/utils/LibraryService';
-import { BlurGradientBackground } from '@vjdev1212/media-ui-kit';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { BottomSpacing } from '@vjdev1212/media-ui-kit';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '@/context/ThemeContext';
 import NativeStackList from '@/components/native-stack-list';
-import { NativeButton } from '@vjdev1212/media-ui-kit';
 import { PosterArtwork } from '@vjdev1212/media-ui-kit';
-import { radius, spacing, systemDarkBackground, typography } from '@/constants/theme';
+import { radius, spacing, typography } from '@/constants/theme';
 
 type CategoryType = 'all' | 'movies' | 'tv';
 
@@ -260,29 +257,6 @@ const LibraryScreen: React.FC = () => {
     );
   };
 
-  const renderCategoryButton = (category: CategoryType, label: string, icon: string) => {
-    const isActive = activeCategory === category;
-    return (
-      <NativeButton
-        variant="text"
-        style={[
-          styles.categoryButton,
-          {
-            backgroundColor: isActive ? colors.text : colors.primaryCard,
-            borderColor: isActive ? colors.text : colors.border,
-          },
-        ]}
-        onPress={() => setActiveCategory(category)}
-        seedColor={colors.primary}
-      >
-        <Ionicons name={icon as any} size={18} color={isActive ? '#000000' : colors.textMuted} />
-        <Text style={[styles.categoryButtonText, { color: isActive ? '#000000' : colors.textMuted, fontWeight: isActive ? '600' : '500' }]}>
-          {label}
-        </Text>
-      </NativeButton>
-    );
-  };
-
   const getTotalCount = () => {
     switch (activeCategory) {
       case 'all': return allUnwatched.length + allWatched.length;
@@ -352,22 +326,13 @@ const LibraryScreen: React.FC = () => {
     );
   };
 
+  const totalCount = getTotalCount();
+
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar />
-      <BlurGradientBackground />
-      <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Library</Text>
-        <Text style={[styles.headerSubtitle, { color: colors.text }]}>
-          {getTotalCount()} {getTotalCount() === 1 ? 'item' : 'items'}
-        </Text>
-      </View>
-      <View style={styles.categoryContainer}>
-        {renderCategoryButton('all', 'All', 'albums-outline')}
-        {renderCategoryButton('movies', 'Movies', 'film-outline')}
-        {renderCategoryButton('tv', 'Series', 'tv-outline')}
-      </View>
+    <>
       <ScrollView
+        style={styles.container}
+        contentInsetAdjustmentBehavior="automatic"
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -378,21 +343,44 @@ const LibraryScreen: React.FC = () => {
           />
         }
       >
+        <View style={styles.summary}>
+          <Text style={[styles.headerSubtitle, { color: colors.text }]}>
+            {totalCount} {totalCount === 1 ? 'item' : 'items'}
+          </Text>
+        </View>
         {renderContent()}
         <BottomSpacing space={100} />
       </ScrollView>
-    </SafeAreaView>
+      <Stack.Toolbar placement="right">
+        <Stack.Toolbar.Menu icon="line.3.horizontal.decrease" title="Filter Library">
+          <Stack.Toolbar.MenuAction
+            isOn={activeCategory === 'all'}
+            onPress={() => setActiveCategory('all')}
+          >
+            All
+          </Stack.Toolbar.MenuAction>
+          <Stack.Toolbar.MenuAction
+            isOn={activeCategory === 'movies'}
+            onPress={() => setActiveCategory('movies')}
+          >
+            Movies
+          </Stack.Toolbar.MenuAction>
+          <Stack.Toolbar.MenuAction
+            isOn={activeCategory === 'tv'}
+            onPress={() => setActiveCategory('tv')}
+          >
+            Series
+          </Stack.Toolbar.MenuAction>
+        </Stack.Toolbar.Menu>
+      </Stack.Toolbar>
+    </>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { paddingHorizontal: spacing.md, paddingTop: spacing.lg, paddingBottom: spacing.sm },
-  headerTitle: { ...typography.largeTitle, marginBottom: spacing.xs },
+  summary: { paddingHorizontal: spacing.md, paddingTop: spacing.md },
   headerSubtitle: { ...typography.caption, color: '#8E8E93' },
-  categoryContainer: { flexDirection: 'row', paddingHorizontal: spacing.md, paddingVertical: spacing.sm, gap: spacing.sm },
-  categoryButton: { flexDirection: 'row', alignItems: 'center', minHeight: 40, paddingVertical: spacing.sm, paddingHorizontal: spacing.md, borderRadius: radius.capsule, borderWidth: 1, gap: spacing.sm },
-  categoryButtonText: { ...typography.subhead },
   section: { marginTop: spacing.sm, marginBottom: 0 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.md, marginBottom: spacing.sm },
   sectionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },

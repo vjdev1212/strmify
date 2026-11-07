@@ -2,7 +2,6 @@ import React from 'react';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import * as Haptics from 'expo-haptics';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, FieldGroup, Host, Icon, Row, Spacer, Text } from '@expo/ui';
 import { List } from '@expo/ui/swift-ui';
 import {
@@ -14,8 +13,6 @@ import {
   scrollIndicators,
   shapes,
 } from '@expo/ui/swift-ui/modifiers';
-import { Text as AppText, View } from '@vjdev1212/media-ui-kit';
-import { useTheme } from '@/context/ThemeContext';
 import { isHapticsSupported } from '@/utils/platform';
 import { systemDarkBackground } from '@/constants/theme';
 
@@ -70,7 +67,6 @@ const settingsSections: {
 
 export default function SettingsHome() {
   const router = useRouter();
-  const { colors } = useTheme();
   const version = Constants.expoConfig?.version ?? 'Unknown';
 
   const openSettings = async (route: SettingsRoute) => {
@@ -81,53 +77,46 @@ export default function SettingsHome() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: systemDarkBackground }} edges={['top']}>
-      <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12, backgroundColor: 'transparent' }}>
-        <AppText style={{ color: colors.text, fontSize: 30, fontWeight: '700', letterSpacing: -0.3 }}>
-          Settings
-        </AppText>
-      </View>
-      <Host style={{ flex: 1 }} colorScheme="dark">
-        <List modifiers={[
-          listStyle('insetGrouped'),
-          scrollIndicators('never', 'vertical'),
-          scrollContentBackground('hidden'),
-          background(systemDarkBackground),
-        ]}>
-          {settingsSections.map((section) => (
-            <FieldGroup.Section key={section.title} title={section.title}>
-              {section.items.map((item) => (
-                <Button
-                  key={item.route}
-                  onPress={() => openSettings(item.route)}
-                  variant="text"
+    <Host style={{ flex: 1 }} colorScheme="dark">
+      <List modifiers={[
+        listStyle('insetGrouped'),
+        scrollIndicators('never', 'vertical'),
+        scrollContentBackground('hidden'),
+        background(systemDarkBackground),
+      ]}>
+        {settingsSections.map((section) => (
+          <FieldGroup.Section key={section.title} title={section.title}>
+            {section.items.map((item) => (
+              <Button
+                key={item.route}
+                onPress={() => openSettings(item.route)}
+                variant="text"
+              >
+                <Row
+                  spacing={12}
+                  alignment="center"
+                  modifiers={[
+                    frame({ maxWidth: Infinity }),
+                    contentShape(shapes.rectangle()),
+                  ]}
                 >
-                  <Row
-                    spacing={12}
-                    alignment="center"
-                    modifiers={[
-                      frame({ maxWidth: Infinity }),
-                      contentShape(shapes.rectangle()),
-                    ]}
-                  >
-                    <Icon name={item.icon} size={20} color={item.iconColor} />
-                    <Text>{item.title}</Text>
-                    <Spacer flexible />
-                    <Icon name="chevron.right" size={13} color="#8e8e93" />
-                  </Row>
-                </Button>
-              ))}
-            </FieldGroup.Section>
-          ))}
-          <FieldGroup.Section title="Strmify">
-            <Row>
-              <Text>Version</Text>
-              <Spacer flexible />
-              <Text>{version}</Text>
-            </Row>
+                  <Icon name={item.icon} size={20} color={item.iconColor} />
+                  <Text>{item.title}</Text>
+                  <Spacer flexible />
+                  <Icon name="chevron.right" size={13} color="#8e8e93" />
+                </Row>
+              </Button>
+            ))}
           </FieldGroup.Section>
-        </List>
-      </Host>
-    </SafeAreaView>
+        ))}
+        <FieldGroup.Section title="Strmify">
+          <Row>
+            <Text>Version</Text>
+            <Spacer flexible />
+            <Text>{version}</Text>
+          </Row>
+        </FieldGroup.Section>
+      </List>
+    </Host>
   );
 }

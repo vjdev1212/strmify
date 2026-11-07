@@ -145,16 +145,7 @@ const SearchScreen = () => {
   };
 
   return (
-    <SafeAreaView
-      edges={['left', 'right', 'bottom']}
-      style={[
-        styles.container,
-        {
-          backgroundColor: systemDarkBackground,
-          paddingTop: headerHeight,
-        },
-      ]}
-    >
+    <>
       <StatusBar />
       <Stack.Screen
         options={{
@@ -168,17 +159,19 @@ const SearchScreen = () => {
           headerBlurEffect: 'none',
           headerUserInterfaceStyle: 'dark',
           headerTintColor: colors.text,
-          headerSearchBarOptions: Platform.OS === 'ios' ? {
-            placeholder: 'Search movies or series',
-            autoCapitalize: 'none',
-            hideWhenScrolling: false,
-            placement: 'stacked',
-            onChangeText: (event) => changeQuery(event.nativeEvent.text),
-            onCancelButtonPress: () => changeQuery(''),
-            onSearchButtonPress: (event) => changeQuery(event.nativeEvent.text),
-          } : undefined,
         }}
       />
+      {Platform.OS === 'ios' && (
+        <Stack.SearchBar
+          placeholder="Search movies or series"
+          autoCapitalize="none"
+          hideWhenScrolling={false}
+          placement="stacked"
+          onChangeText={(event) => changeQuery(event.nativeEvent.text)}
+          onCancelButtonPress={() => changeQuery('')}
+          onSearchButtonPress={(event) => changeQuery(event.nativeEvent.text)}
+        />
+      )}
       {Platform.OS !== 'ios' && (
         <View style={styles.searchHeader}>
           <View style={styles.searchField}>
@@ -201,76 +194,86 @@ const SearchScreen = () => {
         </View>
       )}
 
-      <View style={styles.filterRow}>
-        <SegmentedControl
-          accessibilityLabel="Filter search results"
-          appearance="dark"
-          selectedIndex={FILTER_OPTIONS.findIndex((option) => option.id === selectedFilter)}
-          style={{ backgroundColor: 'transparent' }}
-          tintColor={colors.primary}
-          values={FILTER_OPTIONS.map((option) => option.title)}
-          onValueChange={(value) => {
-            const option = FILTER_OPTIONS.find((filter) => filter.title === value);
-            if (option) setSelectedFilter(option.id);
-          }}
-        />
-      </View>
-
-      <View style={styles.resultsContainer}>
-        {loading ? (
-          <View style={styles.statusContainer}>
-            <ActivityIndicator size="large" color={colors.primary} />
-          </View>
-        ) : error ? (
-          <View style={styles.statusContainer}>
-            <Text style={[styles.statusText, { color: colors.textMuted }]}>{error}</Text>
-            <Pressable accessibilityRole="button" onPress={() => setRetryCount((count) => count + 1)}>
-              <Text style={[styles.retryText, { color: colors.primary }]}>Try again</Text>
-            </Pressable>
-          </View>
-        ) : trimmedQuery && filteredResults.length > 0 ? (
-          <MediaGrid
-            detailsPath="/movie/details"
-            items={filteredResults}
-            safeAreaEdges={['left', 'right']}
-            onItemPress={(item) => router.push({
-              pathname: item.type === 'movie' ? '/movie/details' : '/series/details',
-              params: { tmdbid: String(item.tmdbid) },
-            })}
-            onAddToWatchlist={(item) => libraryService.addToLibrary({
-              id: `${item.type ?? 'movie'}-${item.tmdbid}`,
-              tmdbid: String(item.tmdbid),
-              type: item.type ?? 'movie',
-              title: item.name,
-              poster: item.poster,
-              backdrop: item.background,
-              year: item.year,
-              rating: item.imdbRating,
-              genres: item.genres,
-            })}
-            onActionError={showAlert}
+      <SafeAreaView
+        edges={['left', 'right', 'bottom']}
+        style={[
+          styles.container,
+          {
+            backgroundColor: systemDarkBackground,
+            paddingTop: headerHeight,
+          },
+        ]}
+      >
+        <View style={styles.filterRow}>
+          <SegmentedControl
+            accessibilityLabel="Filter search results"
+            appearance="dark"
+            selectedIndex={FILTER_OPTIONS.findIndex((option) => option.id === selectedFilter)}
+            style={{ backgroundColor: 'transparent' }}
+            tintColor={colors.primary}
+            values={FILTER_OPTIONS.map((option) => option.title)}
+            onValueChange={(value) => {
+              const option = FILTER_OPTIONS.find((filter) => filter.title === value);
+              if (option) setSelectedFilter(option.id);
+            }}
           />
-        ) : trimmedQuery ? (
-          <View style={styles.statusContainer}>
-            <Text style={[styles.statusText, { color: colors.textMuted }]}>
-              {results.length === 0
-                ? 'No results found'
-                : selectedFilter === 'movie'
-                  ? 'No movies found'
-                  : 'No TV shows found'}
-            </Text>
-            <Text style={[styles.emptySubtitle, { color: colors.textDim }]}>
-              Try searching with different keywords.
-            </Text>
-          </View>
-        ) : (
-          <View style={styles.statusContainer}>
-            <Text style={[styles.statusText, { color: colors.textMuted }]}>Search movies and TV shows</Text>
-            <Text style={[styles.emptySubtitle, { color: colors.textDim }]}>Enter a title to get started.</Text>
-          </View>
-        )}
-      </View>
-    </SafeAreaView>
+        </View>
+        <View style={styles.resultsContainer}>
+          {loading ? (
+            <View style={styles.statusContainer}>
+              <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+          ) : error ? (
+            <View style={styles.statusContainer}>
+              <Text style={[styles.statusText, { color: colors.textMuted }]}>{error}</Text>
+              <Pressable accessibilityRole="button" onPress={() => setRetryCount((count) => count + 1)}>
+                <Text style={[styles.retryText, { color: colors.primary }]}>Try again</Text>
+              </Pressable>
+            </View>
+          ) : trimmedQuery && filteredResults.length > 0 ? (
+            <MediaGrid
+              detailsPath="/movie/details"
+              items={filteredResults}
+              safeAreaEdges={['left', 'right']}
+              onItemPress={(item) => router.push({
+                pathname: item.type === 'movie' ? '/movie/details' : '/series/details',
+                params: { tmdbid: String(item.tmdbid) },
+              })}
+              onAddToWatchlist={(item) => libraryService.addToLibrary({
+                id: `${item.type ?? 'movie'}-${item.tmdbid}`,
+                tmdbid: String(item.tmdbid),
+                type: item.type ?? 'movie',
+                title: item.name,
+                poster: item.poster,
+                backdrop: item.background,
+                year: item.year,
+                rating: item.imdbRating,
+                genres: item.genres,
+              })}
+              onActionError={showAlert}
+            />
+          ) : trimmedQuery ? (
+            <View style={styles.statusContainer}>
+              <Text style={[styles.statusText, { color: colors.textMuted }]}>
+                {results.length === 0
+                  ? 'No results found'
+                  : selectedFilter === 'movie'
+                    ? 'No movies found'
+                    : 'No TV shows found'}
+              </Text>
+              <Text style={[styles.emptySubtitle, { color: colors.textDim }]}>
+                Try searching with different keywords.
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.statusContainer}>
+              <Text style={[styles.statusText, { color: colors.textMuted }]}>Search movies and TV shows</Text>
+              <Text style={[styles.emptySubtitle, { color: colors.textDim }]}>Enter a title to get started.</Text>
+            </View>
+          )}
+        </View>
+      </SafeAreaView>
+    </>
   );
 };
 
