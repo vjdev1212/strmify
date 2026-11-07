@@ -1,6 +1,6 @@
 import { Link, Stack } from 'expo-router';
 import { StyleSheet } from 'react-native';
-import { StatusBar, Text, View } from '@/components/Themed';
+import { StatusBar, Text, View } from '@vjdev1212/media-ui-kit';
 import React from 'react';
 
 export default function NotFoundScreen() {

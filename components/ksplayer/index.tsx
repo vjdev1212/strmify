@@ -1,10 +1,10 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { TouchableOpacity, Animated, Platform } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import { NativeButton } from "@/components/native-ui-controls";
+import { NativeButton } from "@vjdev1212/media-ui-kit";
 import { MenuView } from '@expo/ui/community/menu';
 import type { MenuComponentRef } from '@expo/ui/community/menu';
-import { WebMenu } from "@/components/WebMenuView";
+import { WebMenu } from "@vjdev1212/media-ui-kit";
 import { styles } from "../coreplayer/styles";
 import {
     usePlayerState,
@@ -34,7 +34,7 @@ import {
     ErrorDisplay,
     ExtendedMediaPlayerProps,
 } from "../coreplayer";
-import { View, Text } from "../Themed";
+import { View, Text } from '@vjdev1212/media-ui-kit';
 import { GlassView } from 'expo-glass-effect';
 import { SkipBanner } from "../introdb/skipBanner";
 import { useIntroDB } from "../introdb/useIntroDb";

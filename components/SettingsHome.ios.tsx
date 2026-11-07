@@ -14,7 +14,7 @@ import {
   scrollIndicators,
   shapes,
 } from '@expo/ui/swift-ui/modifiers';
-import { Text as AppText, View } from '@/components/Themed';
+import { Text as AppText, View } from '@vjdev1212/media-ui-kit';
 import { useTheme } from '@/context/ThemeContext';
 import { isHapticsSupported } from '@/utils/platform';
 import { systemDarkBackground } from '@/constants/theme';

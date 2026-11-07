@@ -1,7 +1,7 @@
 import { SegmentType, SkipResult } from "@/clients/introDb";
 import React, { useEffect, useRef } from "react";
 import { StyleSheet, Text, Animated } from "react-native";
-import { NativeButton } from "@/components/native-ui-controls";
+import { NativeButton } from "@vjdev1212/media-ui-kit";
 
 const SEGMENT_LABELS: Record<SegmentType, string> = {
     recap: "Skip Recap",

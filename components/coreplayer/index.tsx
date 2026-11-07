@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { View, Text, Animated, ActivityIndicator, Image, Platform, PanResponder, Dimensions } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { NativeButton } from '@/components/native-ui-controls';
+import { NativeButton } from '@vjdev1212/media-ui-kit';
 import NativeProgressSlider from './native-progress-slider';
 import { showAlert } from '@/utils/platform';
 import { parseSubtitleFile } from './subtitle';

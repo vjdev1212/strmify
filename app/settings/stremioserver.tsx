@@ -1,5 +1,5 @@
 import ServerConfiguration from '@/components/ServerConfig';
-import { StatusBar, View } from '@/components/Themed';
+import { StatusBar, View } from '@vjdev1212/media-ui-kit';
 import { useTheme } from '@/context/ThemeContext';
 import { systemDarkBackground } from '@/constants/theme';
 

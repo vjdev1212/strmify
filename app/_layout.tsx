@@ -8,7 +8,7 @@ import 'react-native-reanimated';
 import { View, StyleSheet } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '@/context/ThemeContext';
-import BlurGradientBackground from '@/components/BlurGradientBackground';
+import { BlurGradientBackground } from '@vjdev1212/media-ui-kit';
 import { Colors, systemDarkBackground } from '@/constants/theme';
 
 export { ErrorBoundary } from 'expo-router';

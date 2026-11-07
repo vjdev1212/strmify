@@ -1,12 +1,14 @@
-import { ActivityIndicator, StatusBar, Text, TextInput, View } from '@/components/Themed';
-import MediaGrid, { GENRE_NAMES, type MediaGridItem } from '@/components/MediaGrid';
+import { ActivityIndicator, StatusBar, Text, TextInput, View } from '@vjdev1212/media-ui-kit';
+import { MediaGrid, GENRE_NAMES, type MediaGridItem } from '@vjdev1212/media-ui-kit';
 import { useTheme } from '@/context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
-import { Stack } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Keyboard, Platform, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { radius, spacing, systemDarkBackground, typography } from '@/constants/theme';
+import { libraryService } from '@/utils/LibraryService';
+import { showAlert } from '@/utils/platform';
 
 const TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 type SearchFilter = 'all' | 'movie' | 'series';
@@ -258,6 +260,22 @@ const SearchScreen = () => {
             detailsPath="/movie/details"
             items={filteredResults}
             safeAreaEdges={['left', 'right']}
+            onItemPress={(item) => router.push({
+              pathname: item.type === 'movie' ? '/movie/details' : '/series/details',
+              params: { tmdbid: String(item.tmdbid) },
+            })}
+            onAddToWatchlist={(item) => libraryService.addToLibrary({
+              id: `${item.type ?? 'movie'}-${item.tmdbid}`,
+              tmdbid: String(item.tmdbid),
+              type: item.type ?? 'movie',
+              title: item.name,
+              poster: item.poster,
+              backdrop: item.background,
+              year: item.year,
+              rating: item.imdbRating,
+              genres: item.genres,
+            })}
+            onActionError={showAlert}
           />
         ) : trimmedQuery ? (
           <View style={styles.statusContainer}>

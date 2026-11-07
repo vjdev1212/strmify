@@ -2,22 +2,27 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
 import type { ScrollViewInstance } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ActivityIndicator, StatusBar, Text, View } from '../../components/Themed';
-import MediaContentDescription from '@/components/MediaContentDescription';
-import MediaContentHeader from '@/components/MediaContentHeader';
-import MediaContentPoster from '@/components/MediaContentPoster';
-import SeasonEpisodeList from '@/components/SeasonEpisodeList';
-import BottomSpacing from '@/components/BottomSpacing';
-import MediaLogo from '@/components/MediaLogo';
-import MediaCastAndCrews from '@/components/MediaCastAndCrews';
-import PosterList from '@/components/PosterList';
-import MediaContentDetailsList from '@/components/MediaContentDetailsList';
-import PlayButton from '@/components/PlayButton';
-import WatchTrailerButton from '@/components/WatchTrailer';
-import LibraryButton from '@/components/LibraryButton';
+import { ActivityIndicator, StatusBar, Text, View } from '@vjdev1212/media-ui-kit';
+import { SeasonEpisodeList } from '@vjdev1212/media-ui-kit';
+import {
+  BottomSpacing,
+  MediaCastAndCrews,
+  MediaContentDescription,
+  MediaContentDetailsList,
+  MediaContentHeader,
+  MediaContentPoster,
+  MediaLogo,
+  PlayButton,
+  PosterList,
+  WatchTrailerButton,
+} from '@vjdev1212/media-ui-kit';
+import { PersonDetailsScreen } from '@vjdev1212/media-ui-kit';
+import { LibraryButton } from '@vjdev1212/media-ui-kit';
+import { libraryService } from '@/utils/LibraryService';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '@/context/ThemeContext';
 import { spacing, typography } from '@/constants/theme';
+import { isHapticsSupported } from '@/utils/platform';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -28,6 +33,7 @@ const SeriesDetails = () => {
   const [loading, setLoading] = useState(true);
   const [cast, setCast] = useState<any[]>([]);
   const [trailerKey, setTrailerKey] = useState<string | null>(null);
+  const [selectedPersonId, setSelectedPersonId] = useState<number | null>(null);
   const { width, height } = useWindowDimensions();
   const isPortrait = height > width;
   const ref = useRef<ScrollViewInstance | null>(null);
@@ -179,6 +185,16 @@ const SeriesDetails = () => {
     });
   }, [data, imdbid, tmdbid]);
 
+  const handlePosterItemPress = useCallback((posterTmdbId: number, type: 'movie' | 'series') => {
+    if (isHapticsSupported()) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push({ pathname: `/${type}/details`, params: { tmdbid: posterTmdbId } });
+  }, []);
+
+  const handlePosterSeeAllPress = useCallback((apiUrl: string, title: string, type: 'movie' | 'series') => {
+    if (isHapticsSupported()) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push({ pathname: `/${type}/list`, params: { apiUrl, title } });
+  }, []);
+
   if (loading) {
     return (
       <View style={styles.centeredContainer}>
@@ -262,7 +278,10 @@ const SeriesDetails = () => {
                 year: data.released?.split('-')[0],
                 rating: data.imdbRating,
                 genres: data.genre,
-                watched: false
+              }}
+              service={libraryService}
+              onPressFeedback={() => {
+                if (isHapticsSupported()) return Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               }}
             />
             <PlayButton onPress={handlePlayPress} />
@@ -284,18 +303,28 @@ const SeriesDetails = () => {
         </View>
       </View>
       <View style={styles.castContainer}>
-        <MediaCastAndCrews cast={cast}></MediaCastAndCrews>
+        <MediaCastAndCrews cast={cast} onPersonPress={setSelectedPersonId} />
       </View>
+      <PersonDetailsScreen
+        visible={selectedPersonId !== null}
+        personId={selectedPersonId}
+        apiKey={EXPO_PUBLIC_TMDB_API_KEY}
+        onClose={() => setSelectedPersonId(null)}
+        onCreditPress={(credit) => router.push({
+          pathname: credit.media_type === 'movie' ? '/movie/details' : '/series/details',
+          params: { tmdbid: String(credit.id) },
+        })}
+      />
       {
         isPortrait && (
           <MediaContentDetailsList type='tv' released={data.released} country={data.country} languages={data.languages} genre={data.genre || data.genres} runtime={data.runtime} imdbRating={data.imdbRating} />
         )
       }
       <View style={styles.recommendationsContainer}>
-        <PosterList apiUrl={`https://api.themoviedb.org/3/tv/${tmdbid}/recommendations`} title='Recommended' type='series' compact />
+        <PosterList apiUrl={`https://api.themoviedb.org/3/tv/${tmdbid}/recommendations`} title='Recommended' type='series' compact onItemPress={handlePosterItemPress} onSeeAllPress={handlePosterSeeAllPress} />
       </View>
       <View style={styles.recommendationsContainer}>
-        <PosterList apiUrl={`https://api.themoviedb.org/3/tv/${tmdbid}/similar`} title='Similar to this' type='series' compact />
+        <PosterList apiUrl={`https://api.themoviedb.org/3/tv/${tmdbid}/similar`} title='Similar to this' type='series' compact onItemPress={handlePosterItemPress} onSeeAllPress={handlePosterSeeAllPress} />
       </View>
       <BottomSpacing space={50} />
     </ScrollView>

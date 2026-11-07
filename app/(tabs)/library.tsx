@@ -11,17 +11,17 @@ import {
 } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { View, Text, StatusBar } from '@/components/Themed';
+import { View, Text, StatusBar } from '@vjdev1212/media-ui-kit';
 import WatchHistory, { WatchHistoryItem } from '@/components/WatchHistory';
 import { LibraryItem, libraryService } from '@/utils/LibraryService';
-import BlurGradientBackground from '@/components/BlurGradientBackground';
+import { BlurGradientBackground } from '@vjdev1212/media-ui-kit';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import BottomSpacing from '@/components/BottomSpacing';
+import { BottomSpacing } from '@vjdev1212/media-ui-kit';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '@/context/ThemeContext';
 import NativeStackList from '@/components/native-stack-list';
-import { NativeButton } from '@/components/native-ui-controls';
-import PosterArtwork from '@/components/PosterArtwork';
+import { NativeButton } from '@vjdev1212/media-ui-kit';
+import { PosterArtwork } from '@vjdev1212/media-ui-kit';
 import { radius, spacing, systemDarkBackground, typography } from '@/constants/theme';
 
 type CategoryType = 'all' | 'movies' | 'tv';
