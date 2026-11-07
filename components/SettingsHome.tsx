@@ -3,12 +3,8 @@ import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, View } from '@/components/Themed';
-import { SettingsPage, SettingsRow, SettingsSection } from '@/components/NativeSettings';
-import { useTheme } from '@/context/ThemeContext';
+import { SettingsPage, SettingsRow, SettingsSection } from '@vjdev1212/media-ui-kit';
 import { isHapticsSupported } from '@/utils/platform';
-import { spacing, systemDarkBackground, typography } from '@/constants/theme';
 
 type SettingsRoute =
   | '/settings/addons'
@@ -56,7 +52,6 @@ const settingsSections: {
 
 export default function SettingsHome() {
   const router = useRouter();
-  const { colors } = useTheme();
   const version = Constants.expoConfig?.version ?? 'Unknown';
 
   const openSettings = async (route: SettingsRoute) => {
@@ -67,30 +62,23 @@ export default function SettingsHome() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: systemDarkBackground }} edges={['top']}>
-      <View style={{ paddingHorizontal: spacing.md, paddingTop: spacing.lg, paddingBottom: spacing.sm }}>
-        <Text style={[typography.largeTitle, { color: colors.text }]}>
-          Settings
-        </Text>
-      </View>
-      <SettingsPage hideScrollIndicator>
-        {settingsSections.map((section) => (
-          <SettingsSection key={section.title} title={section.title}>
-            {section.items.map((item, index) => (
-              <SettingsRow
-                key={item.route}
-                title={item.title}
-                leading={<Ionicons name={item.icon} size={20} color={item.iconColor} />}
-                onPress={() => openSettings(item.route)}
-                isLast={index === section.items.length - 1}
-              />
-            ))}
-          </SettingsSection>
-        ))}
-        <SettingsSection title="Strmify">
-          <SettingsRow title="Version" detail={version} isLast />
+    <SettingsPage hideScrollIndicator>
+      {settingsSections.map((section) => (
+        <SettingsSection key={section.title} title={section.title}>
+          {section.items.map((item, index) => (
+            <SettingsRow
+              key={item.route}
+              title={item.title}
+              leading={<Ionicons name={item.icon} size={20} color={item.iconColor} />}
+              onPress={() => openSettings(item.route)}
+              isLast={index === section.items.length - 1}
+            />
+          ))}
         </SettingsSection>
-      </SettingsPage>
-    </SafeAreaView>
+      ))}
+      <SettingsSection title="Strmify">
+        <SettingsRow title="Version" detail={version} isLast />
+      </SettingsSection>
+    </SettingsPage>
   );
 }

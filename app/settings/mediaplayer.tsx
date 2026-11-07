@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { ActivityIndicator } from 'react-native';
-import { StatusBar, View } from '@/components/Themed';
-import { SettingsPage, SettingsRow, SettingsSection } from '@/components/NativeSettings';
-import NativeFieldSelect from '@/components/native-field-select';
+import { StatusBar, View } from '@vjdev1212/media-ui-kit';
+import { SettingsPage, SettingsRow, SettingsSection } from '@vjdev1212/media-ui-kit';
+import { NativeFieldSelect } from '@vjdev1212/media-ui-kit';
 import { getOriginalPlatform, showAlert } from '@/utils/platform';
 import { Players } from '@/utils/MediaPlayer';
 import { StorageKeys, storageService } from '@/utils/StorageService';

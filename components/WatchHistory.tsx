@@ -10,12 +10,12 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { StorageKeys, storageService } from '@/utils/StorageService';
-import { View, Text } from './Themed';
+import { View, Text } from '@vjdev1212/media-ui-kit';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '@/context/ThemeContext';
 import NativeStackList from '@/components/native-stack-list';
-import { NativeButton } from '@/components/native-ui-controls';
-import PosterArtwork from '@/components/PosterArtwork';
+import { NativeButton } from '@vjdev1212/media-ui-kit';
+import { PosterArtwork } from '@vjdev1212/media-ui-kit';
 import type { PlaybackSettings } from '@/components/coreplayer/models';
 
 export interface WatchHistoryItem {

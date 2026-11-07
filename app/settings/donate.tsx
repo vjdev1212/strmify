@@ -1,8 +1,8 @@
 import React from 'react';
 import { Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { StatusBar, View } from '@/components/Themed';
-import { SettingsPage, SettingsRow, SettingsSection } from '@/components/NativeSettings';
+import { StatusBar, View } from '@vjdev1212/media-ui-kit';
+import { SettingsPage, SettingsRow, SettingsSection } from '@vjdev1212/media-ui-kit';
 import { showAlert } from '@/utils/platform';
 import { useTheme } from '@/context/ThemeContext';
 import { systemDarkBackground } from '@/constants/theme';

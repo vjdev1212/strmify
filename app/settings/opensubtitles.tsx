@@ -5,10 +5,10 @@ import { StorageKeys, storageService } from '@/utils/StorageService';
 import { showAlert } from '@/utils/platform';
 import { SUBTITLE_LANGUAGES } from '@/utils/Subtitles';
 import { useTheme } from '@/context/ThemeContext';
-import { View, Text } from '@/components/Themed';
-import { NativeTextInput } from '@/components/native-ui-controls';
-import { SettingsPage, SettingsRow, SettingsSection } from '@/components/NativeSettings';
-import NativeFieldSelect from '@/components/native-field-select';
+import { View, Text } from '@vjdev1212/media-ui-kit';
+import { NativeTextInput } from '@vjdev1212/media-ui-kit';
+import { SettingsPage, SettingsRow, SettingsSection } from '@vjdev1212/media-ui-kit';
+import { NativeFieldSelect } from '@vjdev1212/media-ui-kit';
 import { systemDarkBackground } from '@/constants/theme';
 
 const OpenSubtitlesConfigScreen: React.FC = () => {

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { MaterialIcons } from '@expo/vector-icons';
 import { FieldGroup, Host, ListItem, RNHostView, Text as NativeText, TextInput, useNativeState } from '@expo/ui';
 import { router } from 'expo-router';
-import { StatusBar, View } from '@/components/Themed';
+import { StatusBar, View } from '@vjdev1212/media-ui-kit';
 import { useTheme } from '@/context/ThemeContext';
 import { systemDarkBackground } from '@/constants/theme';
 import { StorageKeys, storageService } from '@/utils/StorageService';

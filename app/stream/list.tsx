@@ -1,14 +1,15 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { Pressable, ScrollView, StyleSheet, View as RNView, useWindowDimensions } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, View as RNView, useWindowDimensions } from 'react-native';
 import type { ScrollViewInstance } from 'react-native';
 import { Share } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { MenuView } from '@expo/ui/community/menu';
 import * as Clipboard from 'expo-clipboard';
-import { NativeButton } from '@/components/native-ui-controls';
-import { ActivityIndicator, StatusBar, Text, View } from '@/components/Themed';
+import { NativeButton } from '@vjdev1212/media-ui-kit';
+import { ActivityIndicator, StatusBar, Text, View } from '@vjdev1212/media-ui-kit';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useHeaderHeight } from 'expo-router/react-navigation';
 import { isHapticsSupported, showAlert } from '@/utils/platform';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { extractQuality, extractSize, getStreamType } from '@/utils/StreamItem';
@@ -177,6 +178,7 @@ const StreamItem = React.memo(({
 
 const StreamListScreen = () => {
     const { colors } = useTheme();
+    const headerHeight = useHeaderHeight();
     const { width: screenWidth } = useWindowDimensions();
     const [pagerWidth, setPagerWidth] = useState(screenWidth);
     const { imdbid, type, title, season, episode } = useLocalSearchParams<{ imdbid: string; type: string; name: string; title: string; season?: string; episode?: string; }>();
@@ -344,16 +346,24 @@ const StreamListScreen = () => {
     );
 
     return (
-        <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
+        <SafeAreaView
+            style={[
+                styles.container,
+                Platform.OS === 'ios' ? { paddingTop: headerHeight } : null,
+            ]}
+            edges={['left', 'right']}
+        >
             <StatusBar />
             <Stack.Screen options={{
+                headerShown: true,
                 title,
                 headerTitle: title,
                 headerTitleAlign: 'center',
-                headerTransparent: false,
+                headerTransparent: Platform.OS === 'ios',
                 headerBackground: () => (
-                    <RNView style={{ flex: 1, backgroundColor: systemDarkBackground }} />
+                    <RNView style={{ flex: 1, backgroundColor: Platform.OS === 'ios' ? 'transparent' : systemDarkBackground }} />
                 ),
+                headerStyle: { backgroundColor: Platform.OS === 'ios' ? 'transparent' : systemDarkBackground },
                 headerShadowVisible: false,
             }} />
             {loading && addons.length === 0 ? renderLoadingState('Loading add-ons…') : addons.length > 0 ? (

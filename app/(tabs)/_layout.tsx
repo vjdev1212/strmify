@@ -6,6 +6,7 @@ import { Colors, systemDarkBackground } from '@/constants/theme';
 export default function TabLayout() {
   const { colors } = useTheme();
   const tabContentStyle = { backgroundColor: systemDarkBackground };
+  const searchTabContentStyle = { backgroundColor: 'transparent' };
 
   return (
     <NativeTabs
@@ -21,7 +22,8 @@ export default function TabLayout() {
       <NativeTabs.Trigger
         name="search"
         role={Platform.OS === 'ios' ? 'search' : undefined}
-        contentStyle={tabContentStyle}
+        disableAutomaticSearchActivation={false}
+        contentStyle={searchTabContentStyle}
       >
         {Platform.OS !== 'ios' && <NativeTabs.Trigger.Label>Search</NativeTabs.Trigger.Label>}
         {Platform.OS !== 'ios' && (

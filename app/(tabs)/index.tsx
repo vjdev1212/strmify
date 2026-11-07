@@ -7,18 +7,17 @@ import {
   Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { StatusBar, Text } from '@/components/Themed';
-import PosterList from '@/components/PosterList';
-import BottomSpacing from '@/components/BottomSpacing';
-import AppleTVCarousel from '@/components/PosterCarousel';
+import { StatusBar, Text, PosterList, BottomSpacing, BlurGradientBackground } from '@vjdev1212/media-ui-kit';
+import { PosterCarousel } from '@vjdev1212/media-ui-kit';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { isHapticsSupported } from '@/utils/platform';
 import { CatalogUrl, MovieGneres, TvGneres } from '@/constants/Tmdb';
-import BlurGradientBackground from '@/components/BlurGradientBackground';
 import { useTheme } from '@/context/ThemeContext';
-import { NativeButton } from '@/components/native-ui-controls';
+import { NativeButton } from '@vjdev1212/media-ui-kit';
 import { radius, spacing, typography } from '@/constants/theme';
+
+const TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
 export default function HomeScreen() {
   const { colors } = useTheme();
@@ -91,17 +90,30 @@ export default function HomeScreen() {
     router.push({ pathname: `/${type}/details`, params: { tmdbid: item.tmdbid } });
   }, []);
 
+  const handlePosterItemPress = useCallback((tmdbId: number, type: 'movie' | 'series') => {
+    if (isHapticsSupported()) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push({ pathname: `/${type}/details`, params: { tmdbid: tmdbId } });
+  }, []);
+
+  const handlePosterSeeAllPress = useCallback((apiUrl: string, title: string, type: 'movie' | 'series') => {
+    if (isHapticsSupported()) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push({ pathname: `/${type}/list`, params: { apiUrl, title } });
+  }, []);
+
   const renderCatalogList = useCallback(({ item }: { item: (typeof activeLists)[number] }) => (
     <PosterList
       apiUrl={item.apiUrl}
       title={item.title}
       type={item.type as 'movie' | 'series'}
+      onItemPress={handlePosterItemPress}
+      onSeeAllPress={handlePosterSeeAllPress}
     />
-  ), []);
+  ), [handlePosterItemPress, handlePosterSeeAllPress]);
 
   const listHeader = (
     <>
-      <AppleTVCarousel
+      <PosterCarousel
+        apiKey={TMDB_API_KEY}
         filter={filter}
         onItemPress={handleCarouselItemPress}
         autoPlay={true}
