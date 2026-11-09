@@ -243,16 +243,15 @@ const LibraryScreen: React.FC = () => {
             {items.length} {items.length === 1 ? 'item' : 'items'}
           </Text>
         </View>
-        <View style={{ height: CARD_HEIGHT + 62 }}>
-          <NativeStackList
-            data={items}
-            axis="horizontal"
-            spacing={CARD_SPACING}
-            horizontalContentInset={CARD_SPACING}
-            renderItem={renderLibraryItem}
-            keyExtractor={(item, index) => `${item.tmdbid}-${item.type}-${index}`}
-          />
-        </View>
+        <NativeStackList
+          data={items}
+          axis="horizontal"
+          spacing={CARD_SPACING}
+          horizontalContentInset={CARD_SPACING}
+          style={{ height: CARD_HEIGHT + 62 }}
+          renderItem={renderLibraryItem}
+          keyExtractor={(item, index) => `${item.tmdbid}-${item.type}-${index}`}
+        />
       </View>
     );
   };

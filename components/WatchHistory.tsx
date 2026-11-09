@@ -180,7 +180,7 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
         spacing={CARD_SPACING}
         horizontalContentInset={CARD_SPACING}
         keyExtractor={(item, index) => `${item.videoUrl}-${item.timestamp}-${index}`}
-        style={styles.scrollContent}
+        style={[styles.scrollContent, { height: CARD_HEIGHT + 46 }]}
         renderItem={(item, index) => {
           const itemKey = `${item.videoUrl}-${item.timestamp}-${index}`;
           const animValue = getAnimatedValue(itemKey);

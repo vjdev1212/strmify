@@ -755,6 +755,11 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                 <VideoComponent
                     ref={videoRef}
                     url={videoUrl}
+                    title={title}
+                    subtitle={tvShow
+                        ? `Season ${tvShow.season}, Episode ${tvShow.episode}`
+                        : undefined}
+                    artworkUri={artwork}
                     headers={videoHeaders}
                     paused={isPaused}
                     muted={settings.isMuted}
@@ -767,6 +772,8 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                     onBuffer={handleBuffer}
                     onError={handleError}
                     onEnd={handleEnd}
+                    onRemotePlay={() => setIsPaused(false)}
+                    onRemotePause={() => setIsPaused(true)}
                     onAudioTracks={handleAudioTracks}
                     onTextTracks={handleTextTracks}
                     onSubtitleText={handleSubtitleText}

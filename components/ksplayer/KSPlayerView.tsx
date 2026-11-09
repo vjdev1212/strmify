@@ -47,6 +47,9 @@ export interface KSOnSubtitleTextData { text: string }
 
 export interface KSPlayerViewProps {
   url: string;
+  title: string;
+  subtitle?: string;
+  artworkUri?: string;
   headers?: Record<string, string>;
   paused?: boolean;
   muted?: boolean;
@@ -60,6 +63,8 @@ export interface KSPlayerViewProps {
   onBuffer?: (data: KSOnBufferData) => void;
   onError?: (data: KSOnErrorData) => void;
   onEnd?: () => void;
+  onRemotePlay?: () => void;
+  onRemotePause?: () => void;
   onReadyForDisplay?: () => void;
   onAudioTracks?: (data: { audioTracks: KSAudioTrack[] }) => void;
   onTextTracks?: (data: { textTracks: KSTextTrack[] }) => void;
@@ -159,6 +164,9 @@ export const KSPlayerView = forwardRef<KSPlayerRef, KSPlayerViewProps>((props, r
         ref={nativeRef}
         style={StyleSheet.absoluteFill}
         url={props.url}
+        title={props.title}
+        subtitle={props.subtitle ?? ''}
+        artworkUri={props.artworkUri ?? ''}
         headers={props.headers ?? {}}
         paused={props.paused ?? false}
         muted={props.muted ?? false}
@@ -170,6 +178,8 @@ export const KSPlayerView = forwardRef<KSPlayerRef, KSPlayerViewProps>((props, r
         onBuffer={handleBuffer}
         onError={handleError}
         onEnd={handleEnd}
+        onRemotePlay={props.onRemotePlay}
+        onRemotePause={props.onRemotePause}
         onReadyForDisplay={handleReadyForDisplay}
         onAudioTracks={handleAudioTracks}
         onTextTracks={handleTextTracks}

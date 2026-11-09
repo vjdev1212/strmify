@@ -1,6 +1,6 @@
 import { Fragment } from 'react';
 import { Column, Host, RNHostView, Row, ScrollView } from '@expo/ui';
-import { View as RNView } from 'react-native';
+import { ScrollView as RNScrollView, View as RNView } from 'react-native';
 import type { NativeStackListProps } from './native-stack-list.types';
 
 export default function NativeStackList<T>({
@@ -14,6 +14,34 @@ export default function NativeStackList<T>({
   renderItem,
   style,
 }: NativeStackListProps<T>) {
+  if (axis === 'horizontal' && !nativeItems) {
+    const horizontalItems = data.map((item, index) => (
+      <RNView key={keyExtractor(item, index)}>{renderItem(item, index)}</RNView>
+    ));
+    if (!scrollable) {
+      return (
+        <RNView style={[{ flexDirection: 'row', gap: spacing, paddingHorizontal: horizontalContentInset }, style]}>
+          {horizontalItems}
+        </RNView>
+      );
+    }
+
+    return (
+      <RNScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={[{ flexGrow: 0, flexShrink: 0 }, style]}
+        contentContainerStyle={{
+          alignItems: 'flex-start',
+          gap: spacing,
+          paddingHorizontal: horizontalContentInset,
+        }}
+      >
+        {horizontalItems}
+      </RNScrollView>
+    );
+  }
+
   const items = data.map((item, index) => {
     const key = keyExtractor(item, index);
     const content = renderItem(item, index);
