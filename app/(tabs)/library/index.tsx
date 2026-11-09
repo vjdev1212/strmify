@@ -188,6 +188,7 @@ const LibraryScreen: React.FC = () => {
                 <Image
                   source={{ uri: item.backdrop || item.poster }}
                   onLoad={onImageLoad}
+                  resizeMethod="resize"
                   style={styles.backdrop}
                   resizeMode="cover"
                 />

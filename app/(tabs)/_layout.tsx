@@ -1,4 +1,3 @@
-import { Platform } from 'react-native';
 import { NativeTabs } from 'expo-router/native-tabs';
 import { useTheme } from '@/context/ThemeContext';
 import { Colors, systemDarkBackground } from '@/constants/theme';
@@ -19,16 +18,9 @@ export default function TabLayout() {
         <NativeTabs.Trigger.Icon sf="house" drawable="ic_home" />
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger
-        name="search"
-        role={Platform.OS === 'ios' ? 'search' : undefined}
-        disableAutomaticSearchActivation={false}
-        contentStyle={searchTabContentStyle}
-      >
-        {Platform.OS !== 'ios' && <NativeTabs.Trigger.Label>Search</NativeTabs.Trigger.Label>}
-        {Platform.OS !== 'ios' && (
-          <NativeTabs.Trigger.Icon sf="magnifyingglass" drawable="ic_search" />
-        )}
+      <NativeTabs.Trigger name="search" contentStyle={searchTabContentStyle}>
+        <NativeTabs.Trigger.Label>Search</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="magnifyingglass" drawable="ic_search" />
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="library" contentStyle={tabContentStyle}>

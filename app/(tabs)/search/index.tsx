@@ -1,4 +1,4 @@
-import { ActivityIndicator, StatusBar, Text, View } from '@vjdev1212/media-ui-kit';
+import { ActivityIndicator, BlurGradientBackground, StatusBar, Text, View } from '@vjdev1212/media-ui-kit';
 import { MediaGrid, GENRE_NAMES, type MediaGridItem } from '@vjdev1212/media-ui-kit';
 import { useTheme } from '@/context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,7 +8,7 @@ import { useHeaderHeight } from 'expo-router/react-navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { Platform, Pressable, StyleSheet, TextInput as NativeTextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { radius, spacing, systemDarkBackground, typography } from '@/constants/theme';
+import { radius, spacing, typography } from '@/constants/theme';
 import { libraryService } from '@/utils/LibraryService';
 import { showAlert } from '@/utils/platform';
 
@@ -145,7 +145,8 @@ const SearchScreen = () => {
   };
 
   return (
-    <>
+    <View style={styles.container}>
+      <BlurGradientBackground />
       <StatusBar />
       <Stack.Screen
         options={{
@@ -195,29 +196,31 @@ const SearchScreen = () => {
       )}
 
       <SafeAreaView
-        edges={['left', 'right', 'bottom']}
+        edges={['left', 'right']}
         style={[
           styles.container,
           {
-            backgroundColor: systemDarkBackground,
+            backgroundColor: 'transparent',
             paddingTop: headerHeight,
           },
         ]}
       >
-        <View style={styles.filterRow}>
-          <SegmentedControl
-            accessibilityLabel="Filter search results"
-            appearance="dark"
-            selectedIndex={FILTER_OPTIONS.findIndex((option) => option.id === selectedFilter)}
-            style={{ backgroundColor: 'transparent' }}
-            tintColor={colors.primary}
-            values={FILTER_OPTIONS.map((option) => option.title)}
-            onValueChange={(value) => {
-              const option = FILTER_OPTIONS.find((filter) => filter.title === value);
-              if (option) setSelectedFilter(option.id);
-            }}
-          />
-        </View>
+        {trimmedQuery.length > 0 && (
+          <View style={styles.filterRow}>
+            <SegmentedControl
+              accessibilityLabel="Filter search results"
+              appearance="dark"
+              selectedIndex={FILTER_OPTIONS.findIndex((option) => option.id === selectedFilter)}
+              style={{ backgroundColor: 'transparent' }}
+              tintColor={colors.primary}
+              values={FILTER_OPTIONS.map((option) => option.title)}
+              onValueChange={(value) => {
+                const option = FILTER_OPTIONS.find((filter) => filter.title === value);
+                if (option) setSelectedFilter(option.id);
+              }}
+            />
+          </View>
+        )}
         <View style={styles.resultsContainer}>
           {loading ? (
             <View style={styles.statusContainer}>
@@ -235,6 +238,8 @@ const SearchScreen = () => {
               detailsPath="/movie/details"
               items={filteredResults}
               safeAreaEdges={['left', 'right']}
+              showGenres={false}
+              yearOnSeparateLine
               onItemPress={(item) => router.push({
                 pathname: item.type === 'movie' ? '/movie/details' : '/series/details',
                 params: { tmdbid: String(item.tmdbid) },
@@ -273,7 +278,7 @@ const SearchScreen = () => {
           )}
         </View>
       </SafeAreaView>
-    </>
+    </View>
   );
 };
 

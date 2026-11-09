@@ -216,7 +216,7 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
                 <View style={[styles.imageContainer, { height: CARD_HEIGHT, backgroundColor: colors.background }]}>
                   <PosterArtwork key={item.artwork} style={styles.artworkFrame} borderRadius={12}>
                     {(onImageLoad) => (
-                      <Image source={{ uri: item.artwork }} onLoad={onImageLoad} style={styles.backdrop} resizeMode="cover" />
+                      <Image source={{ uri: item.artwork }} onLoad={onImageLoad} resizeMethod="resize" style={styles.backdrop} resizeMode="cover" />
                     )}
                   </PosterArtwork>
                   <TouchableOpacity
