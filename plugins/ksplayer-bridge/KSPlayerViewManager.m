@@ -5,9 +5,6 @@
 
 // Props
 RCT_EXPORT_VIEW_PROPERTY(url, NSString)
-RCT_EXPORT_VIEW_PROPERTY(title, NSString)
-RCT_EXPORT_VIEW_PROPERTY(subtitle, NSString)
-RCT_EXPORT_VIEW_PROPERTY(artworkUri, NSString)
 RCT_EXPORT_VIEW_PROPERTY(headers, NSDictionary)
 RCT_EXPORT_VIEW_PROPERTY(paused, BOOL)
 RCT_EXPORT_VIEW_PROPERTY(muted, BOOL)
@@ -21,8 +18,6 @@ RCT_EXPORT_VIEW_PROPERTY(onProgress, RCTDirectEventBlock)
 RCT_EXPORT_VIEW_PROPERTY(onEnd, RCTDirectEventBlock)
 RCT_EXPORT_VIEW_PROPERTY(onError, RCTDirectEventBlock)
 RCT_EXPORT_VIEW_PROPERTY(onBuffer, RCTDirectEventBlock)
-RCT_EXPORT_VIEW_PROPERTY(onRemotePlay, RCTDirectEventBlock)
-RCT_EXPORT_VIEW_PROPERTY(onRemotePause, RCTDirectEventBlock)
 RCT_EXPORT_VIEW_PROPERTY(onReadyForDisplay, RCTDirectEventBlock)
 RCT_EXPORT_VIEW_PROPERTY(onAudioTracks, RCTDirectEventBlock)
 RCT_EXPORT_VIEW_PROPERTY(onTextTracks, RCTDirectEventBlock)

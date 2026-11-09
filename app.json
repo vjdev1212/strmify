@@ -58,8 +58,7 @@
         "react-native-video",
         {
           "enableAndroidPictureInPicture": true,
-          "enableBackgroundAudio": true,
-          "enableNotificationControls": true
+          "enableBackgroundAudio": true
         }
       ],
       "expo-router",

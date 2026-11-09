@@ -14,27 +14,13 @@ class KSPlayerRNView: UIView {
         }
     }
 
-    @objc var title: String = "" {
-        didSet { updateNowPlayingInfo() }
-    }
-
-    @objc var subtitle: String = "" {
-        didSet { updateNowPlayingInfo() }
-    }
-
-    @objc var artworkUri: String = "" {
-        didSet { loadNowPlayingArtwork() }
-    }
-
     @objc var headers: NSDictionary = [:] {
         didSet { loadVideo() }
     }
 
     @objc var paused: Bool = false {
         didSet {
-            nowPlayingIsPaused = paused
             if paused { playerView.pause() } else { playerView.play() }
-            updateNowPlayingInfo()
         }
     }
 
@@ -57,8 +43,6 @@ class KSPlayerRNView: UIView {
     @objc var onLoad: RCTDirectEventBlock?
     @objc var onProgress: RCTDirectEventBlock?
     @objc var onEnd: RCTDirectEventBlock?
-    @objc var onRemotePlay: RCTDirectEventBlock?
-    @objc var onRemotePause: RCTDirectEventBlock?
     @objc var onError: RCTDirectEventBlock?
     @objc var onBuffer: RCTDirectEventBlock?
     @objc var onReadyForDisplay: RCTDirectEventBlock?
@@ -69,12 +53,6 @@ class KSPlayerRNView: UIView {
     private var hasSetup = false
     private var lastReportedTime: Double = -1
     private var lastSubtitleText: String = ""
-    private var artworkRequest: URLSessionDataTask?
-    private var loadedArtworkUri: String?
-    private var nowPlayingArtwork: MPMediaItemArtwork?
-    private var remoteCommandTargets: [Any] = []
-    private var hasStartedPlayback = false
-    private var nowPlayingIsPaused = false
 
     private lazy var playerView: IOSVideoPlayerView = {
         let view = IOSVideoPlayerView()
@@ -117,24 +95,12 @@ class KSPlayerRNView: UIView {
         setupPlayer()
     }
 
-    deinit {
-        artworkRequest?.cancel()
-        let commandCenter = MPRemoteCommandCenter.shared()
-        for target in remoteCommandTargets {
-            for command in commandCenter.commands {
-                command.removeTarget(target)
-            }
-        }
-        MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
-    }
-
     // MARK: - Setup
 
     private func setupPlayer() {
         guard !hasSetup else { return }
         hasSetup = true
 
-        configureRemoteCommands()
         backgroundColor = .black
         addSubview(playerView)
 
@@ -151,7 +117,6 @@ class KSPlayerRNView: UIView {
             // Progress event (throttled to 0.25 s)
             if abs(currentTime - self.lastReportedTime) >= 0.25 {
                 self.lastReportedTime = currentTime
-                self.updateNowPlayingInfo(currentTime: currentTime, duration: totalTime)
                 self.onProgress?([
                     "currentTime": currentTime,
                     "duration": totalTime,
@@ -178,9 +143,6 @@ class KSPlayerRNView: UIView {
 
     private func loadVideo() {
         guard !url.isEmpty, let videoURL = URL(string: url) else { return }
-
-        hasStartedPlayback = false
-        MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
 
         var httpHeaders: [String: String] = [:]
         headers.forEach { key, value in
@@ -229,122 +191,6 @@ class KSPlayerRNView: UIView {
         controller.canStartPictureInPictureAutomaticallyFromInline = pictureInPictureEnabled
     }
 
-    private func configureRemoteCommands() {
-        let commandCenter = MPRemoteCommandCenter.shared()
-        remoteCommandTargets = [
-            commandCenter.playCommand.addTarget { [weak self] _ in
-                self?.play()
-                self?.onRemotePlay?([:])
-                return .success
-            },
-            commandCenter.pauseCommand.addTarget { [weak self] _ in
-                self?.pause()
-                self?.onRemotePause?([:])
-                return .success
-            },
-            commandCenter.togglePlayPauseCommand.addTarget { [weak self] _ in
-                guard let self else { return .commandFailed }
-                if self.nowPlayingIsPaused {
-                    self.play()
-                    self.onRemotePlay?([:])
-                } else {
-                    self.pause()
-                    self.onRemotePause?([:])
-                }
-                return .success
-            },
-            commandCenter.skipForwardCommand.addTarget { [weak self] _ in
-                guard let self,
-                      let player = self.playerView.playerLayer?.player else {
-                    return .commandFailed
-                }
-                self.seek(to: player.currentTime + 10)
-                return .success
-            },
-            commandCenter.skipBackwardCommand.addTarget { [weak self] _ in
-                guard let self,
-                      let player = self.playerView.playerLayer?.player else {
-                    return .commandFailed
-                }
-                self.seek(to: max(0, player.currentTime - 10))
-                return .success
-            },
-            commandCenter.changePlaybackPositionCommand.addTarget { [weak self] event in
-                guard let self,
-                      let positionEvent = event as? MPChangePlaybackPositionCommandEvent else {
-                    return .commandFailed
-                }
-                self.seek(to: positionEvent.positionTime)
-                return .success
-            },
-        ]
-    }
-
-    private func loadNowPlayingArtwork() {
-        artworkRequest?.cancel()
-        nowPlayingArtwork = nil
-        loadedArtworkUri = nil
-
-        guard let url = URL(string: artworkUri), url.scheme == "https" || url.scheme == "http" else {
-            updateNowPlayingInfo()
-            return
-        }
-
-        let requestedUri = artworkUri
-        artworkRequest = URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
-            DispatchQueue.main.async {
-                guard let self, self.artworkUri == requestedUri else { return }
-                self.artworkRequest = nil
-
-                guard error == nil,
-                      let response = response as? HTTPURLResponse,
-                      (200..<300).contains(response.statusCode),
-                      let data,
-                      let image = UIImage(data: data) else {
-                    self.updateNowPlayingInfo()
-                    return
-                }
-
-                self.loadedArtworkUri = requestedUri
-                self.nowPlayingArtwork = MPMediaItemArtwork(boundsSize: image.size) { _ in image }
-                self.updateNowPlayingInfo()
-            }
-        }
-        artworkRequest?.resume()
-    }
-
-    private func updateNowPlayingInfo(currentTime: Double? = nil, duration: Double? = nil) {
-        guard Thread.isMainThread else {
-            DispatchQueue.main.async { [weak self] in
-                self?.updateNowPlayingInfo(currentTime: currentTime, duration: duration)
-            }
-            return
-        }
-        guard hasStartedPlayback else { return }
-
-        var info: [String: Any] = [
-            MPMediaItemPropertyTitle: title.isEmpty ? "Strmify" : title,
-            MPNowPlayingInfoPropertyPlaybackRate: nowPlayingIsPaused ? 0.0 : Double(rate),
-        ]
-        if !subtitle.isEmpty {
-            info[MPMediaItemPropertyAlbumTitle] = subtitle
-        }
-        if let currentTime {
-            info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = currentTime
-        }
-        if let duration, duration > 0 {
-            info[MPMediaItemPropertyPlaybackDuration] = duration
-        }
-        if loadedArtworkUri == artworkUri, let nowPlayingArtwork {
-            info[MPMediaItemPropertyArtwork] = nowPlayingArtwork
-        }
-
-        MPNowPlayingInfoCenter.default().nowPlayingInfo = info
-        if #available(iOS 13.0, *) {
-            MPNowPlayingInfoCenter.default().playbackState = nowPlayingIsPaused ? .paused : .playing
-        }
-    }
-
     // MARK: - Track reporting
 
     // KSPlayer adds embedded subtitles asynchronously (1 s after readyToPlay).
@@ -391,17 +237,8 @@ class KSPlayerRNView: UIView {
 
     // MARK: - Imperative commands
 
-    func play() {
-        nowPlayingIsPaused = false
-        playerView.play()
-        updateNowPlayingInfo()
-    }
-
-    func pause() {
-        nowPlayingIsPaused = true
-        playerView.pause()
-        updateNowPlayingInfo()
-    }
+    func play()  { playerView.play() }
+    func pause() { playerView.pause() }
 
     func seek(to time: Double) {
         playerView.seek(time: time) { [weak self] _ in _ = self }
@@ -471,8 +308,6 @@ extension KSPlayerRNView: PlayerControllerDelegate {
             playerView.playerLayer?.player.playbackRate = rate
             applyResizeMode()
             configurePictureInPicture()
-            hasStartedPlayback = true
-            updateNowPlayingInfo(currentTime: player.currentTime, duration: player.duration)
 
         case .buffering:
             onBuffer?(["isBuffering": true])
@@ -481,13 +316,9 @@ extension KSPlayerRNView: PlayerControllerDelegate {
             onBuffer?(["isBuffering": false])
 
         case .error:
-            hasStartedPlayback = false
-            MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
             onError?(["error": ["message": "KSPlayer playback error", "code": -1]])
 
         case .playedToTheEnd:
-            hasStartedPlayback = false
-            MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
             onEnd?([:])
 
         default:

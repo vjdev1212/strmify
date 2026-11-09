@@ -793,16 +793,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         }
         return undefined;
     }, [useEmbeddedSubtitles, selectedTextTrack]);
-    const videoSource = useMemo(() => ({
-        uri: videoUrl,
-        metadata: {
-            title,
-            subtitle: tvShow
-                ? `Season ${tvShow.season}, Episode ${tvShow.episode}`
-                : undefined,
-            imageUri: artwork,
-        },
-    }), [videoUrl, title, tvShow, artwork]);
+    const videoSource = useMemo(() => ({ uri: videoUrl }), [videoUrl]);
     const videoSelectedAudioTrack: SelectedTrack | undefined = useMemo(() => (
         selectedAudioTrack >= 0 ? { type: 'index', value: selectedAudioTrack } as SelectedTrack : undefined
     ), [selectedAudioTrack]);
@@ -823,7 +814,6 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                 <Video
                     ref={videoRef}
                     source={videoSource}
-                    showNotificationControls
                     style={styles.video}
                     paused={isPaused}
                     muted={settings.isMuted}
