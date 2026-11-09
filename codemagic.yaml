@@ -2,7 +2,7 @@ workflows:
   strmify-ios-build:
     name: Strmify iOS Build
     environment:
-      node: 18
+      node: 22.23.4
       xcode: latest
       groups:
         - EXPO
@@ -118,7 +118,7 @@ workflows:
   strmify-ios-dev:
     name: Strmify iOS Development Build
     environment:
-      node: 18
+      node: 22.23.4
       xcode: latest
       groups:
         - EXPO
