@@ -118,35 +118,34 @@ const StreamItem = React.memo(({
                 accessibilityLabel={`Open ${name}`}
                 style={styles.streamItem}
             >
-                <RNView style={styles.streamHeader}>
-                    <RNView style={styles.streamTitleLabel}>
-                        <Feather name="film" size={15} color={colors.textMuted} style={styles.streamTitleIcon} />
-                        <Text style={[styles.streamName, { color: colors.text }]} numberOfLines={2}>{name}</Text>
+                <RNView style={styles.streamContent}>
+                    <RNView style={styles.streamHeader}>
+                        <Text style={[styles.streamName, { color: '#FFFFFF' }]} numberOfLines={2}>{name}</Text>
+                        {quality ? (
+                            <RNView style={[styles.qualityBadge, { backgroundColor: colors.primaryMuted, borderColor: colors.primaryBorder }]}>
+                                <Feather name="tv" size={13} color={colors.text} />
+                                <Text style={[styles.qualityText, { color: colors.text }]}>{quality}</Text>
+                            </RNView>
+                        ) : null}
                     </RNView>
-                    {quality ? (
-                        <RNView style={[styles.qualityBadge, { backgroundColor: colors.primaryMuted, borderColor: colors.primaryBorder }]}>
-                            <Feather name="tv" size={13} color={colors.text} />
-                            <Text style={[styles.qualityText, { color: colors.text }]}>{quality}</Text>
-                        </RNView>
+                    {(title || description) ? (
+                        <Text style={[styles.streamDescription, { color: title ? '#FFFFFF' : colors.textMuted }]}>{title || description}</Text>
                     ) : null}
-                </RNView>
-                {(title || description) ? (
-                    <Text style={[styles.streamDescription, { color: colors.textMuted }]}>{title || description}</Text>
-                ) : null}
-                <RNView style={styles.streamFooter}>
-                    {size ? (
-                        <RNView style={styles.sizeBadge}>
-                            <Feather name="hard-drive" size={12} color={colors.textMuted} />
-                            <Text style={[styles.streamSize, { color: colors.textMuted }]}>{size}</Text>
+                    <RNView style={styles.streamFooter}>
+                        {size ? (
+                            <RNView style={styles.sizeBadge}>
+                                <Feather name="hard-drive" size={12} color={colors.textMuted} />
+                                <Text style={[styles.streamSize, { color: colors.textMuted }]}>{size}</Text>
+                            </RNView>
+                        ) : null}
+                        <RNView style={styles.streamTypeLabel}>
+                            {streamType === 'Torrent' ? (
+                                <Ionicons name="magnet-outline" size={13} color={colors.textDim} />
+                            ) : (
+                                <Feather name={streamTypeIcon} size={13} color={colors.textDim} />
+                            )}
+                            <Text style={[styles.streamType, { color: colors.textDim }]}>{streamType}</Text>
                         </RNView>
-                    ) : null}
-                    <RNView style={styles.streamTypeLabel}>
-                        {streamType === 'Torrent' ? (
-                            <Ionicons name="magnet-outline" size={13} color={colors.textDim} />
-                        ) : (
-                            <Feather name={streamTypeIcon} size={13} color={colors.textDim} />
-                        )}
-                        <Text style={[styles.streamType, { color: colors.textDim }]}>{streamType}</Text>
                     </RNView>
                 </RNView>
             </Pressable>
@@ -168,7 +167,7 @@ const StreamItem = React.memo(({
                     onPressIn={triggerActionHaptic}
                     onPress={(event) => event.stopPropagation()}
                 >
-                    <Feather name="more-vertical" size={20} color={colors.textMuted} />
+                    <Feather name="more-horizontal" size={20} color={colors.textMuted} />
                 </Pressable>
             </MenuView>
             {!isLast ? <RNView style={[styles.streamDivider, { backgroundColor: colors.border }]} /> : null}
@@ -359,11 +358,11 @@ const StreamListScreen = () => {
                 title,
                 headerTitle: title,
                 headerTitleAlign: 'center',
-                headerTransparent: Platform.OS === 'ios',
+                headerTransparent: true,
                 headerBackground: () => (
-                    <RNView style={{ flex: 1, backgroundColor: Platform.OS === 'ios' ? 'transparent' : systemDarkBackground }} />
+                    <RNView style={{ flex: 1, backgroundColor: 'transparent' }} />
                 ),
-                headerStyle: { backgroundColor: Platform.OS === 'ios' ? 'transparent' : systemDarkBackground },
+                headerStyle: { backgroundColor: 'transparent' },
                 headerShadowVisible: false,
             }} />
             {loading && addons.length === 0 ? renderLoadingState('Loading add-ons…') : addons.length > 0 ? (
@@ -445,18 +444,17 @@ const styles = StyleSheet.create({
     streamsContent: { paddingTop: 8, paddingBottom: 64 },
     streamItemContainer: { position: 'relative', paddingLeft: spacing.lg, paddingRight: spacing.md, paddingVertical: spacing.sm },
     streamItem: { width: '100%', paddingRight: spacing.xl },
+    streamContent: { flex: 1, minWidth: 0 },
     streamHeader: { flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'flex-start', marginBottom: spacing.sm, gap: spacing.sm },
     actionMenu: { position: 'absolute', top: spacing.xs, right: spacing.md, zIndex: 1 },
     actionButton: { minWidth: 32, minHeight: 32, justifyContent: 'center', alignItems: 'center' },
-    streamTitleLabel: { flexShrink: 1, minWidth: 0, flexDirection: 'row', alignItems: 'flex-start', gap: 7 },
-    streamTitleIcon: { marginTop: 3 },
     streamName: { ...typography.headline, flexShrink: 1 },
     qualityBadge: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, borderRadius: radius.sm, borderWidth: StyleSheet.hairlineWidth },
     qualityText: { ...typography.caption, fontWeight: '600' },
     streamDescription: { ...typography.caption, marginBottom: spacing.md },
-    streamFooter: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    streamFooter: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
     streamTypeLabel: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-    sizeBadge: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, borderRadius: radius.sm },
+    sizeBadge: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
     streamSize: { ...typography.caption, fontWeight: '500' },
     streamType: { ...typography.caption, textTransform: 'uppercase', fontWeight: '600', letterSpacing: 0.8 },
     streamDivider: { height: StyleSheet.hairlineWidth, width: '100%', marginVertical: spacing.sm },
