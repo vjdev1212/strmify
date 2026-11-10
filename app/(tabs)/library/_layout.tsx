@@ -19,7 +19,7 @@ export default function LibraryLayout() {
         headerBackground: TransparentHeaderBackground,
         headerShadowVisible: true,
         headerStyle: { backgroundColor: isIOS ? 'transparent' : colors.background },
-        headerLargeTitleEnabled: false,
+        headerLargeTitleEnabled: isIOS,
         headerLargeStyle: { backgroundColor: 'transparent' },
         headerLargeTitleShadowVisible: true,
         headerBlurEffect: 'none',
