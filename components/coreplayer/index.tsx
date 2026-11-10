@@ -20,7 +20,6 @@ import { useTheme } from '@/context/ThemeContext';
 export const CONSTANTS = {
     CONTROLS_AUTO_HIDE_DELAY: 3000,
     CONTENT_FIT_LABEL_DELAY: 1000,
-    SUBTITLE_UPDATE_INTERVAL: 50,
     PLAYBACK_SPEEDS: [0.25, 0.50, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0, 1.1, 1.15, 1.20, 1.25, 1.50, 1.75, 2.0],
     CONTENT_FIT_OPTIONS: ['contain', 'cover', 'fill'] as const,
     RN_VIDEO_CONTENT_FIT_OPTIONS: [ResizeMode.CONTAIN, ResizeMode.COVER, ResizeMode.STRETCH]
@@ -232,6 +231,8 @@ export const findActiveSubtitle = (
     return active?.text || '';
 };
 
+const subtitlePrefixEndCache = new WeakMap<object, number[]>();
+
 export const findActiveSubtitleWithDelay = (
     currentTime: number,
     parsedSubtitles: any[],
@@ -239,10 +240,28 @@ export const findActiveSubtitleWithDelay = (
 ): string => {
     if (parsedSubtitles.length === 0) return '';
     const adjustedTime = currentTime + (delay / 1000);
-    const active = parsedSubtitles.find(
-        sub => adjustedTime >= sub.start && adjustedTime <= sub.end
-    );
-    return active?.text || '';
+    let prefixMaxEnds = subtitlePrefixEndCache.get(parsedSubtitles);
+    if (!prefixMaxEnds) {
+        let maxEnd = Number.NEGATIVE_INFINITY;
+        prefixMaxEnds = parsedSubtitles.map(subtitle => {
+            maxEnd = Math.max(maxEnd, subtitle.end);
+            return maxEnd;
+        });
+        subtitlePrefixEndCache.set(parsedSubtitles, prefixMaxEnds);
+    }
+
+    let low = 0;
+    let high = prefixMaxEnds.length;
+    while (low < high) {
+        const middle = Math.floor((low + high) / 2);
+        if (prefixMaxEnds[middle] >= adjustedTime) high = middle;
+        else low = middle + 1;
+    }
+
+    const subtitle = parsedSubtitles[low];
+    return subtitle && subtitle.start <= adjustedTime && subtitle.end >= adjustedTime
+        ? subtitle.text || ''
+        : '';
 };
 
 export const hideControls = (

@@ -55,6 +55,8 @@ interface BackEvent {
 interface WatchHistoryItem {
   title: string;
   videoUrl: string;
+  streamInfoHash?: string;
+  streamFileIdx?: number;
   imdbid: string;
   type: string;
   season: string;
@@ -235,6 +237,8 @@ const MediaPlayerScreen: React.FC = () => {
     streamDataKey: streamDataKeyParam,
     selectedStreamIndex,
     videoUrl: directVideoUrl,
+    streamInfoHash: streamInfoHashParam,
+    streamFileIdx: streamFileIdxParam,
     title,
     imdbid,
     type,
@@ -250,6 +254,11 @@ const MediaPlayerScreen: React.FC = () => {
   const parsedPlaybackSettings = parsePlaybackSettingsParam(playbackSettingsParam);
   const resumePositionSeconds =
     parsedPlaybackSettings?.positionSeconds ?? parsePositiveNumberParam(watchHistoryPositionSeconds);
+  const historyInfoHash = firstParamValue(streamInfoHashParam);
+  const requestedHistoryFileIdx = Number.parseInt(firstParamValue(streamFileIdxParam) ?? '', 10);
+  const historyFileIdx = Number.isInteger(requestedHistoryFileIdx) && requestedHistoryFileIdx >= 0
+    ? requestedHistoryFileIdx
+    : undefined;
   const resumePlaybackSettings = parsedPlaybackSettings
     ? { ...parsedPlaybackSettings, positionSeconds: resumePositionSeconds }
     : resumePositionSeconds > 0
@@ -277,6 +286,7 @@ const MediaPlayerScreen: React.FC = () => {
   const [players, setPlayers] = useState<{ name: string; scheme: string; encodeUrl: boolean }[]>([]);
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
   const [isTorrent, setIsTorrent] = useState<boolean>(false);
+  const [currentTorrentFileIdx, setCurrentTorrentFileIdx] = useState<number | undefined>();
 
   const [stremioClient, setStremioClient] = useState<StreamingServerClient | null>(null);
 
@@ -342,6 +352,20 @@ const MediaPlayerScreen: React.FC = () => {
       }
 
       if (cancelled) return;
+
+      if (historyInfoHash) {
+        const historyStream: Stream = {
+          name: `${String(title || 'Continue watching')} (continue watching)`,
+          infoHash: historyInfoHash,
+          fileIdx: historyFileIdx,
+        };
+        const historyStreams = [historyStream];
+        setStreams(historyStreams);
+        setCurrentStreamIndex(0);
+        initializePlayerAndSelect(historyStreams, 0);
+        initializeClient();
+        return;
+      }
 
       if (directVideoUrl) {
         setVideoUrl(directVideoUrl as string);
@@ -551,6 +575,8 @@ const MediaPlayerScreen: React.FC = () => {
     setIsLoadingStream(true);
     setStreamError('');
     setCurrentPlayerType(Platform.OS === "ios" ? "ksplayer" : "native");
+    setIsTorrent(false);
+    setCurrentTorrentFileIdx(undefined);
 
     const stream = streamsToUse[streamIndex];
     const { url, fileIdx } = stream;
@@ -575,10 +601,11 @@ const MediaPlayerScreen: React.FC = () => {
 
         setIsTorrent(true);
 
-        const client = stremioClient || new StreamingServerClient(selectedServer.serverUrl);
+        const client = new StreamingServerClient(selectedServer.serverUrl);
 
         // Resolve the correct file index, fetching the torrent file list if needed.
         const resolvedFileIdx = await resolveFileIdx(infoHash!, fileIdx, client);
+        setCurrentTorrentFileIdx(resolvedFileIdx >= 0 ? resolvedFileIdx : undefined);
 
         finalVideoUrl = await generatePlayerUrlWithInfoHash(
           infoHash!,
@@ -637,7 +664,7 @@ const MediaPlayerScreen: React.FC = () => {
           return;
         }
 
-        const client = stremioClient || new StreamingServerClient(selectedServer.serverUrl);
+        const client = new StreamingServerClient(selectedServer.serverUrl);
 
         // Resolve the correct file index, fetching the torrent file list if needed.
         const resolvedFileIdx = await resolveFileIdx(infoHash!, fileIdx, client);
@@ -687,6 +714,7 @@ const MediaPlayerScreen: React.FC = () => {
       if (selectedPlayer === Players.Default) {
         if (newStream.url) {
           setVideoUrl(newStream.url);
+          setIsTorrent(false);
           setCurrentPlayerType("native");
         } else {
           loadStream(newIndex);
@@ -865,6 +893,10 @@ const MediaPlayerScreen: React.FC = () => {
       const historyItem: WatchHistoryItem = {
         title: title as string,
         videoUrl: videoUrl as string,
+        streamInfoHash: isTorrent
+          ? getInfoHashFromStream(streams[currentStreamIndex]) ?? undefined
+          : undefined,
+        streamFileIdx: isTorrent ? currentTorrentFileIdx : undefined,
         positionSeconds: savedPositionSeconds,
         playbackSettings: savedPlaybackSettings,
         artwork,
@@ -879,6 +911,10 @@ const MediaPlayerScreen: React.FC = () => {
         history[existingIndex] = {
           title: title as string,
           videoUrl: videoUrl as string,
+          streamInfoHash: isTorrent
+            ? getInfoHashFromStream(streams[currentStreamIndex]) ?? undefined
+            : undefined,
+          streamFileIdx: isTorrent ? currentTorrentFileIdx : undefined,
           artwork,
           imdbid: imdbid as string,
           type: type as string,

@@ -26,7 +26,7 @@ export const parseSRT = (srtContent: string) => {
         }
     }
 
-    return subtitles;
+    return subtitles.sort((a, b) => a.start - b.start);
 };
 
 export const parseSRTTime = (hours: string, minutes: string, seconds: string, milliseconds: string): number => {
@@ -80,7 +80,7 @@ export const parseWebVTT = (vttContent: string) => {
         subtitles.push(currentSubtitle);
     }
 
-    return subtitles;
+    return subtitles.sort((a, b) => a.start - b.start);
 };
 
 export const parseVTTTime = (timeStr: string): number => {

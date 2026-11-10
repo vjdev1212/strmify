@@ -133,7 +133,9 @@ const LibraryScreen: React.FC = () => {
     router.push({
       pathname: '/stream/player',
       params: {
-        videoUrl: item.videoUrl,
+        videoUrl: item.streamInfoHash ? undefined : item.videoUrl,
+        streamInfoHash: item.streamInfoHash,
+        streamFileIdx: item.streamFileIdx?.toString(),
         title: item.title,
         imdbid: item.imdbid,
         type: item.type,

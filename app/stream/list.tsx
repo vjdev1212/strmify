@@ -20,6 +20,14 @@ import { radius, spacing, systemSelectionBlue, systemSeparatorGray, typography }
 interface Stream { name: string; title?: string; url?: string; embed?: string; infoHash?: string; magnet?: string; magnetLink?: string; description?: string; }
 interface Addon { name: string; url?: string; streamBaseUrl?: string; types?: string[]; }
 interface StreamResponse { streams?: Stream[]; }
+interface WatchHistoryResumeItem {
+    imdbid?: unknown;
+    type?: unknown;
+    season?: unknown;
+    episode?: unknown;
+    positionSeconds?: unknown;
+    playbackSettings?: unknown;
+}
 type ThemeColors = ReturnType<typeof useTheme>['colors'];
 
 const ADDONS_KEY = StorageKeys.ADDONS_KEY;
@@ -45,6 +53,41 @@ const getStreamHash = (stream: Stream): string | undefined => {
 };
 
 const getStreamUrl = (stream: Stream): string | undefined => stream.url || stream.embed;
+
+const getWatchHistoryPosition = (
+    imdbid: string,
+    type: string,
+    season?: string,
+    episode?: string
+): number | undefined => {
+    try {
+        const historyJson = storageService.getItem(StorageKeys.WATCH_HISTORY_KEY);
+        if (!historyJson) return undefined;
+
+        const history: unknown = JSON.parse(historyJson);
+        if (!Array.isArray(history)) throw new Error('Watch history is not a list');
+
+        const item = (history as WatchHistoryResumeItem[]).find(entry =>
+            entry.imdbid === imdbid &&
+            entry.type === type &&
+            String(entry.season ?? '') === String(season ?? '') &&
+            String(entry.episode ?? '') === String(episode ?? '')
+        );
+        if (!item) return undefined;
+
+        const playbackPosition =
+            item.playbackSettings &&
+            typeof item.playbackSettings === 'object' &&
+            'positionSeconds' in item.playbackSettings
+                ? item.playbackSettings.positionSeconds
+                : undefined;
+        const position = Number(playbackPosition ?? item.positionSeconds);
+        return Number.isFinite(position) && position > 0 ? position : undefined;
+    } catch (error) {
+        console.error('Failed to read continue watching position:', error);
+        return undefined;
+    }
+};
 
 const AddonItem = React.memo(({
     item,
@@ -271,15 +314,25 @@ const StreamListScreen = () => {
         const streamDataKey = `${STREAM_DATA_KEY_PREFIX}${Date.now()}_${Math.random().toString(36).slice(2)}`;
         try {
             storageService.setItem(streamDataKey, JSON.stringify(streams));
+            const resumePosition = getWatchHistoryPosition(imdbid, type, season, episode);
             router.push({
                 pathname: '/stream/player',
-                params: { streamDataKey, selectedStreamIndex: index.toString(), title, imdbid, type, season, episode },
+                params: {
+                    streamDataKey,
+                    selectedStreamIndex: index.toString(),
+                    title,
+                    imdbid,
+                    type,
+                    season,
+                    episode,
+                    ...(resumePosition ? { positionSeconds: resumePosition.toString() } : {}),
+                },
             });
         } catch (error) {
             console.error('Failed to open selected stream:', error);
             showAlert('Playback', 'Unable to open this stream. Please try again.');
         }
-    }, [streams, router, imdbid, type, season, episode]);
+    }, [streams, router, imdbid, type, season, episode, title]);
 
     const handleCopyStreamValue = useCallback(async (stream: Stream): Promise<void> => {
         triggerActionHaptic();

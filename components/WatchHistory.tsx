@@ -22,6 +22,8 @@ import type { PlaybackSettings } from '@/components/coreplayer/models';
 export interface WatchHistoryItem {
   title: string;
   videoUrl: string;
+  streamInfoHash?: string;
+  streamFileIdx?: number;
   imdbid: string;
   type: string;
   season: string;

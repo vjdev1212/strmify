@@ -244,19 +244,12 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     // ─── Update custom subtitle display text ─────────────────────────────────
     useEffect(() => {
         if (!isUsingCustomSub || subtitleState.parsedSubtitles.length === 0) return;
-        const update = () => {
-            const text = findActiveSubtitleWithDelay(
-                playerState.currentTime,
-                subtitleState.parsedSubtitles,
-                settings.subtitleDelay
-            );
-            if (text !== subtitleState.currentSubtitle) {
-                subtitleState.setCurrentSubtitle(text);
-            }
-        };
-        update();
-        const interval = setInterval(update, CONSTANTS.SUBTITLE_UPDATE_INTERVAL);
-        return () => clearInterval(interval);
+        const text = findActiveSubtitleWithDelay(
+            playerState.currentTime,
+            subtitleState.parsedSubtitles,
+            settings.subtitleDelay
+        );
+        subtitleState.setCurrentSubtitle(text);
     }, [isUsingCustomSub, subtitleState.parsedSubtitles, playerState.currentTime, settings.subtitleDelay]);
 
     // Playback position save interval
