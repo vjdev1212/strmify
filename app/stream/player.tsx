@@ -6,8 +6,8 @@ import {
   Players
 } from "@/utils/MediaPlayer";
 import { showAlert } from "@/utils/platform";
-import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from "expo-router";
+import React, { useCallback, useEffect, useState } from "react";
 import { Platform, Linking, View, Text, StyleSheet, StatusBar, Pressable } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useTheme } from "@/context/ThemeContext";
@@ -289,6 +289,26 @@ const MediaPlayerScreen: React.FC = () => {
   const [returnCountdown, setReturnCountdown] = useState<number | null>(null);
   const navigation = useNavigation();
 
+  useFocusEffect(
+    useCallback(() => {
+      if (Platform.OS === 'web') return;
+
+      let isFocused = true;
+      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE)
+        .then(() => {
+          if (isFocused) StatusBar.setHidden(true, 'slide');
+        })
+        .catch(error => console.warn('Failed to lock player landscape orientation:', error));
+
+      return () => {
+        isFocused = false;
+        StatusBar.setHidden(false, 'slide');
+        ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP)
+          .catch(error => console.warn('Failed to restore portrait orientation:', error));
+      };
+    }, [])
+  );
+
   useEffect(() => {
     if (!streamError) {
       setReturnCountdown(null);
@@ -318,15 +338,7 @@ const MediaPlayerScreen: React.FC = () => {
 
     const init = async () => {
       if (Platform.OS !== 'web') {
-        try {
-          await ScreenOrientation.unlockAsync();
-          await new Promise(r => setTimeout(r, 100));
-          await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
-          navigation.setOptions({ gestureEnabled: true });
-          StatusBar.setHidden(true, 'slide');
-        } catch (e) {
-          console.warn('Orientation lock failed:', e);
-        }
+        navigation.setOptions({ gestureEnabled: true });
       }
 
       if (cancelled) return;
@@ -387,14 +399,8 @@ const MediaPlayerScreen: React.FC = () => {
     init();
 
     return () => {
-      (async () => {
-        try {
-          await ScreenOrientation.unlockAsync();
-          await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
-          navigation.setOptions({ gestureEnabled: true });
-          StatusBar.setHidden(false, 'slide');
-        } catch { }
-      })();
+      cancelled = true;
+      navigation.setOptions({ gestureEnabled: true });
     };
   }, []);
 
@@ -415,29 +421,10 @@ const MediaPlayerScreen: React.FC = () => {
       setSelectedPlayer(savedPlayer);
 
       if (savedPlayer === Players.Default) {
-        setupOrientation();
         await loadStream(streamIndex, parsedStreams, serverList, selectedId);
       } else {
         handleExternalPlayer(parsedStreams[streamIndex], savedPlayer, platformPlayers, serverList, selectedId);
       }
-    }
-  };
-
-  const setupOrientation = async () => {
-    if (Platform.OS !== 'web') {
-      try {
-        await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
-        StatusBar.setHidden(true);
-      } catch (error) {
-        console.warn("Failed to set orientation:", error);
-      }
-    }
-  };
-
-  const cleanupOrientation = async () => {
-    if (Platform.OS !== 'web') {
-      await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.DEFAULT);
-      StatusBar.setHidden(false);
     }
   };
 

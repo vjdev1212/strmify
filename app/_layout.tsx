@@ -1,13 +1,14 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Stack, usePathname } from 'expo-router';
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router/react-navigation';
 import Constants from 'expo-constants';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
-import { Appearance, View, StyleSheet } from 'react-native';
+import { Appearance, Platform, View, StyleSheet } from 'react-native';
 import { BlurView } from 'expo-blur';
+import * as ScreenOrientation from 'expo-screen-orientation';
 import { useTheme } from '@/context/ThemeContext';
 import { Colors } from '@/constants/theme';
 import { applyUserInterfaceStyle, getUserInterfaceStyle } from '@/utils/UserInterfaceStyle';
@@ -39,6 +40,7 @@ export default function RootLayout() {
 function RootLayoutNav() {
     const { colors, colorScheme } = useTheme();
     const navigationTheme = colorScheme === 'dark' ? DarkTheme : DefaultTheme;
+    const pathname = usePathname();
 
     useEffect(() => {
         if (__DEV__) {
@@ -47,6 +49,13 @@ function RootLayoutNav() {
             );
         }
     }, [colorScheme]);
+
+    useEffect(() => {
+        if (Platform.OS === 'web' || pathname === '/stream/player') return;
+
+        ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP)
+            .catch(error => console.warn('Failed to lock app portrait orientation:', error));
+    }, [pathname]);
 
     const HeaderBackground = () => (
         <BlurView intensity={20} tint={colorScheme} style={styles.headerBlur}>
