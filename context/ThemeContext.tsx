@@ -1,5 +1,1 @@
-import { Colors } from '@/constants/theme';
-
-export function useTheme() {
-    return { colors: Colors };
-}
+export { useTheme } from '@vjdev1212/media-ui-kit';

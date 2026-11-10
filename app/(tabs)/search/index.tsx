@@ -8,7 +8,7 @@ import { useHeaderHeight } from 'expo-router/react-navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { Platform, Pressable, StyleSheet, TextInput as NativeTextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { radius, spacing, systemDarkBackground, typography } from '@/constants/theme';
+import { radius, spacing, typography } from '@/constants/theme';
 import { libraryService } from '@/utils/LibraryService';
 import { showAlert } from '@/utils/platform';
 
@@ -90,7 +90,7 @@ async function fetchSearchResults(
 }
 
 const SearchScreen = () => {
-  const { colors } = useTheme();
+  const { colors, colorScheme } = useTheme();
   const headerHeight = useHeaderHeight();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<MediaGridItem[]>([]);
@@ -145,7 +145,7 @@ const SearchScreen = () => {
   };
 
   return (
-    <>
+    <View style={styles.container}>
       <StatusBar />
       <Stack.Screen
         options={{
@@ -157,8 +157,9 @@ const SearchScreen = () => {
           headerTitle: 'Search',
           headerStyle: { backgroundColor: 'transparent' },
           headerBlurEffect: 'none',
-          headerUserInterfaceStyle: 'dark',
+          headerUserInterfaceStyle: colorScheme,
           headerTintColor: colors.text,
+          headerTitleStyle: { color: colors.text },
         }}
       />
       {Platform.OS === 'ios' && (
@@ -174,14 +175,14 @@ const SearchScreen = () => {
       )}
       {Platform.OS !== 'ios' && (
         <View style={styles.searchHeader}>
-          <View style={styles.searchField}>
+          <View style={[styles.searchField, { backgroundColor: colors.primaryCard, borderColor: colors.border }]}>
             <Ionicons name="search-outline" size={22} color={colors.text} />
             <NativeTextInput
               accessibilityLabel="Search movies or series"
               autoCapitalize="none"
               autoCorrect={false}
               clearButtonMode="never"
-              keyboardAppearance="dark"
+              keyboardAppearance={colorScheme}
               onChangeText={changeQuery}
               placeholder="Search movies or series"
               placeholderTextColor={colors.textDim}
@@ -195,29 +196,30 @@ const SearchScreen = () => {
       )}
 
       <SafeAreaView
-        edges={['left', 'right', 'bottom']}
+        edges={['left', 'right']}
         style={[
           styles.container,
           {
-            backgroundColor: systemDarkBackground,
+            backgroundColor: 'transparent',
             paddingTop: headerHeight,
           },
         ]}
       >
-        <View style={styles.filterRow}>
-          <SegmentedControl
-            accessibilityLabel="Filter search results"
-            appearance="dark"
-            selectedIndex={FILTER_OPTIONS.findIndex((option) => option.id === selectedFilter)}
-            style={{ backgroundColor: 'transparent' }}
-            tintColor={colors.primary}
-            values={FILTER_OPTIONS.map((option) => option.title)}
-            onValueChange={(value) => {
-              const option = FILTER_OPTIONS.find((filter) => filter.title === value);
-              if (option) setSelectedFilter(option.id);
-            }}
-          />
-        </View>
+        {trimmedQuery.length > 0 && (
+          <View style={styles.filterRow}>
+            <SegmentedControl
+              accessibilityLabel="Filter search results"
+              appearance={colorScheme}
+              selectedIndex={FILTER_OPTIONS.findIndex((option) => option.id === selectedFilter)}
+              style={{ backgroundColor: 'transparent' }}
+              values={FILTER_OPTIONS.map((option) => option.title)}
+              onValueChange={(value) => {
+                const option = FILTER_OPTIONS.find((filter) => filter.title === value);
+                if (option) setSelectedFilter(option.id);
+              }}
+            />
+          </View>
+        )}
         <View style={styles.resultsContainer}>
           {loading ? (
             <View style={styles.statusContainer}>
@@ -232,9 +234,11 @@ const SearchScreen = () => {
             </View>
           ) : trimmedQuery && filteredResults.length > 0 ? (
             <MediaGrid
-              detailsPath="/movie/details"
+              mediaType={selectedFilter === 'series' ? 'series' : 'movie'}
               items={filteredResults}
               safeAreaEdges={['left', 'right']}
+              showGenres={false}
+              yearOnSeparateLine
               onItemPress={(item) => router.push({
                 pathname: item.type === 'movie' ? '/movie/details' : '/series/details',
                 params: { tmdbid: String(item.tmdbid) },
@@ -273,7 +277,7 @@ const SearchScreen = () => {
           )}
         </View>
       </SafeAreaView>
-    </>
+    </View>
   );
 };
 
@@ -295,9 +299,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.capsule,
     borderCurve: 'continuous',
     overflow: 'hidden',
-    backgroundColor: '#1C1C1E',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#38383A',
   },
   searchInput: {
     flex: 1,

@@ -1,85 +1,66 @@
 import { Color } from 'expo-router';
 import { Platform } from 'react-native';
 
-const ACCENT = '#777777';
-const BACKGROUND = '#000000';
-const CARD = '#1C1C1E';
-const SECONDARY_CARD = '#2C2C2E';
+export {
+    Colors,
+    DarkColors,
+    LightColors,
+    radius,
+    spacing,
+    systemDarkBackground,
+    typography,
+} from '@vjdev1212/media-ui-kit';
+export type { AppColors } from '@vjdev1212/media-ui-kit';
 
-export const systemDarkBackground = Platform.select({
-    ios: Color.ios.systemBackground,
-    android: Color.android.dynamic.surface,
-    default: BACKGROUND,
+const settingsAccent = {
+    blue: '#007AFF',
+    purple: '#AF52DE',
+    orange: '#FF9500',
+    green: '#34C759',
+    teal: '#30B0C7',
+    pink: '#FF2D55',
+    gray: '#8E8E93',
+    red: '#FF3B30',
+    googleGreen: '#34A853',
+    coffee: '#A2845E',
+} as const;
+
+export const settingsIconColors = {
+    addOns: settingsAccent.purple,
+    mediaPlayer: settingsAccent.blue,
+    appearance: settingsAccent.teal,
+    stremio: settingsAccent.orange,
+    subtitles: settingsAccent.teal,
+    downloads: settingsAccent.green,
+    contact: settingsAccent.orange,
+    disclaimer: settingsAccent.gray,
+    donate: settingsAccent.pink,
+    version: settingsAccent.gray,
+    action: settingsAccent.blue,
+    success: settingsAccent.green,
+    warning: settingsAccent.orange,
+    neutral: settingsAccent.gray,
+    danger: settingsAccent.red,
+    share: settingsAccent.blue,
+    configure: settingsAccent.purple,
+    refresh: settingsAccent.orange,
+    apple: settingsAccent.gray,
+    googlePlay: settingsAccent.googleGreen,
+    sideStore: settingsAccent.blue,
+    altStore: settingsAccent.purple,
+    coffee: settingsAccent.coffee,
+} as const;
+
+export const settingsActionBlue = settingsIconColors.action;
+
+export const systemSelectionBlue = Platform.select({
+    ios: Color.ios.systemBlue,
+    android: Color.android.dynamic.primary,
+    default: settingsAccent.blue,
 })!;
 
-export type AppColors = {
-    primary: string;
-    background: string;
-    primaryCard: string;
-    primaryDark: string;
-    primaryMuted: string;
-    primaryBorder: string;
-    primarySurface: string;
-    primarySubtle: string;
-    primaryGhost: string;
-    primaryFaint: string;
-    backgroundMid: string;
-    backgroundCard: string;
-    backgroundOverlay: string;
-    gradientBg: readonly [string, string, string];
-    gradientOverlay: readonly [string, string, string];
-    text: string;
-    textMuted: string;
-    textDim: string;
-    border: string;
-    borderStrong: string;
-};
-
-export const Colors: AppColors = {
-    primary: ACCENT,
-    background: BACKGROUND,
-    primaryDark: '#0066CC',
-    primaryMuted: ACCENT + '33',
-    primaryBorder: ACCENT + '4D',
-    primarySurface: ACCENT + '1A',
-    primaryCard: CARD,
-    primarySubtle: SECONDARY_CARD,
-    primaryGhost: '#FFFFFF0D',
-    primaryFaint: '#FFFFFF08',
-    backgroundMid: '#000000CC',
-    backgroundCard: CARD,
-    backgroundOverlay: '#00000080',
-    gradientBg: [BACKGROUND, '#101014', BACKGROUND] as const,
-    gradientOverlay: ['transparent', '#00000080', '#000000EB'] as const,
-    text: '#ffffff',
-    textMuted: '#EBEBF599',
-    textDim: '#8E8E93',
-    border: '#38383A',
-    borderStrong: '#636366',
-};
-
-export const spacing = {
-    xs: 4,
-    sm: 8,
-    md: 16,
-    mdLg: 20,
-    lg: 24,
-    xl: 32,
-    xxl: 48,
-} as const;
-
-export const radius = {
-    sm: 10,
-    md: 14,
-    lg: 20,
-    capsule: 999,
-} as const;
-
-export const typography = {
-    largeTitle: { fontSize: 34, lineHeight: 41, fontWeight: '700' as const, letterSpacing: 0.3 },
-    title: { fontSize: 22, lineHeight: 28, fontWeight: '700' as const, letterSpacing: 0.1 },
-    headline: { fontSize: 17, lineHeight: 22, fontWeight: '600' as const },
-    body: { fontSize: 17, lineHeight: 24, fontWeight: '400' as const },
-    subhead: { fontSize: 15, lineHeight: 20, fontWeight: '400' as const },
-    caption: { fontSize: 13, lineHeight: 18, fontWeight: '400' as const },
-} as const;
+export const systemSeparatorGray = Platform.select({
+    ios: Color.ios.separator,
+    android: Color.android.dynamic.outlineVariant,
+    default: settingsAccent.gray,
+})!;

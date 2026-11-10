@@ -1,12 +1,11 @@
 import ServerConfiguration from '@/components/ServerConfig';
 import { StatusBar, View } from '@vjdev1212/media-ui-kit';
 import { useTheme } from '@/context/ThemeContext';
-import { systemDarkBackground } from '@/constants/theme';
 
 const StremioServerScreen = () => {
     const { colors } = useTheme();
     return (
-        <View style={{ flex: 1, backgroundColor: systemDarkBackground }}>
+        <View style={{ flex: 1, backgroundColor: colors.background }}>
             <StatusBar />
             <ServerConfiguration
                 serverName="Stremio"

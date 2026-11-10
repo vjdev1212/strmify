@@ -1,15 +1,19 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import { DarkTheme, ThemeProvider } from 'expo-router/react-navigation';
+import { Stack, usePathname } from 'expo-router';
+import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router/react-navigation';
+import Constants from 'expo-constants';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
-import { View, StyleSheet } from 'react-native';
+import { Appearance, Platform, View, StyleSheet } from 'react-native';
 import { BlurView } from 'expo-blur';
+import * as ScreenOrientation from 'expo-screen-orientation';
 import { useTheme } from '@/context/ThemeContext';
-import { BlurGradientBackground } from '@vjdev1212/media-ui-kit';
-import { Colors, systemDarkBackground } from '@/constants/theme';
+import { Colors } from '@/constants/theme';
+import { applyUserInterfaceStyle, getUserInterfaceStyle } from '@/utils/UserInterfaceStyle';
+
+applyUserInterfaceStyle(getUserInterfaceStyle());
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -34,11 +38,28 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-    const { colors } = useTheme();
+    const { colors, colorScheme } = useTheme();
+    const navigationTheme = colorScheme === 'dark' ? DarkTheme : DefaultTheme;
+    const pathname = usePathname();
+
+    useEffect(() => {
+        if (__DEV__) {
+            console.info(
+                `[appearance-debug] React Native scheme: ${Appearance.getColorScheme()}; theme scheme: ${colorScheme}; Expo setting: ${Constants.expoConfig?.userInterfaceStyle ?? 'unset'}`,
+            );
+        }
+    }, [colorScheme]);
+
+    useEffect(() => {
+        if (Platform.OS === 'web' || pathname === '/stream/player') return;
+
+        ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP)
+            .catch(error => console.warn('Failed to lock app portrait orientation:', error));
+    }, [pathname]);
 
     const HeaderBackground = () => (
-        <BlurView intensity={20} style={styles.headerBlur}>
-            <View style={[styles.headerGlass, { borderBottomColor: colors.border }]} />
+        <BlurView intensity={20} tint={colorScheme} style={styles.headerBlur}>
+            <View style={[styles.headerGlass, { backgroundColor: colors.backgroundOverlay, borderBottomColor: colors.border }]} />
         </BlurView>
     );
 
@@ -49,34 +70,43 @@ function RootLayoutNav() {
     const screenOptions = {
         headerShown: true,
         headerTransparent: true,
-        headerUserInterfaceStyle: 'dark' as const,
+        headerUserInterfaceStyle: colorScheme,
         headerBackButtonDisplayMode: 'minimal' as const,
         headerBackground: InvisibleHeaderBackground,
         headerTitle: '',
         headerTintColor: colors.text,
+        headerTitleStyle: { color: colors.text },
         headerBackTitle: '',
         headerShadowVisible: false,
         headerStyle: { backgroundColor: 'transparent' },
-        contentStyle: { backgroundColor: systemDarkBackground },
+        contentStyle: { backgroundColor: colors.background },
     };
 
     return (
         <ThemeProvider value={{
-            ...DarkTheme,
-            colors: { ...DarkTheme.colors, background: Colors.background },
+            ...navigationTheme,
+            colors: {
+                ...navigationTheme.colors,
+                primary: colors.primary,
+                background: colors.background,
+                card: colors.primaryCard,
+                text: colors.text,
+                border: colors.border,
+                notification: colors.primary,
+            },
         }}>
-            <View style={[styles.container, { backgroundColor: systemDarkBackground }]}>
-                <BlurGradientBackground />
+            <View style={[styles.container, { backgroundColor: colors.background }]}>
                 <Stack
                     screenOptions={{
-                        headerUserInterfaceStyle: 'dark',
+                        headerUserInterfaceStyle: colorScheme,
                         headerBackButtonDisplayMode: 'minimal',
                         headerBackTitle: '',
                         headerTintColor: colors.text,
+                        headerTitleStyle: { color: colors.text },
                         headerTransparent: false,
                         headerStyle: { backgroundColor: 'transparent' },
                         headerBackground: InvisibleHeaderBackground,
-                        contentStyle: { backgroundColor: systemDarkBackground },
+                        contentStyle: { backgroundColor: colors.background },
                     }}
                 >
                     <Stack.Screen
@@ -90,7 +120,7 @@ function RootLayoutNav() {
                             headerTintColor: colors.text,
                             headerBackTitle: '',
                             title: 'Home',
-                            contentStyle: { backgroundColor: systemDarkBackground },
+                            contentStyle: { backgroundColor: colors.background },
                         }}
                     />
                     <Stack.Screen name="movie/details" options={{
@@ -110,7 +140,7 @@ function RootLayoutNav() {
                         name="stream/player"
                         options={{
                             headerShown: false,
-                            contentStyle: { backgroundColor: systemDarkBackground },
+                            contentStyle: { backgroundColor: colors.background },
                         }}
                     />
                     <Stack.Screen name="settings/addons" options={{ ...screenOptions, title: 'Add-ons', headerTitle: 'Add-ons' }} />
@@ -122,6 +152,7 @@ function RootLayoutNav() {
                     <Stack.Screen name="settings/donate" options={{ ...screenOptions, title: 'Support Strmify', headerTitle: 'Support Strmify' }} />
                     <Stack.Screen name="settings/downloads" options={{ ...screenOptions, title: 'Downloads', headerTitle: 'Downloads' }} />
                     <Stack.Screen name="settings/mediaplayer" options={{ ...screenOptions, title: 'Media Player', headerTitle: 'Media Player' }} />
+                    <Stack.Screen name="settings/appearance" options={{ ...screenOptions, title: 'Appearance', headerTitle: 'Appearance' }} />
                 </Stack>
             </View>
         </ThemeProvider>
@@ -138,45 +169,45 @@ const styles = StyleSheet.create({
     },
     headerGlass: {
         flex: 1,
-        backgroundColor: 'rgba(18, 18, 18, 0.8)',
+        backgroundColor: 'transparent',
         borderBottomWidth: 1,
-        borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+        borderBottomColor: 'transparent',
     },
 });
 
 export const globalGlassStyles = StyleSheet.create({
     glassContainer: {
-        backgroundColor: 'rgba(28, 28, 30, 0.92)',
+        backgroundColor: Colors.backgroundCard,
         borderWidth: 1,
-        borderColor: '#38383A',
+        borderColor: Colors.border,
         borderRadius: 20,
         borderCurve: 'continuous',
         boxShadow: '0 8px 24px rgba(0, 0, 0, 0.28)',
     },
     glassCard: {
-        backgroundColor: '#1C1C1E',
+        backgroundColor: Colors.backgroundCard,
         borderWidth: 1,
-        borderColor: '#38383A',
+        borderColor: Colors.border,
         borderRadius: 14,
         borderCurve: 'continuous',
         padding: 16,
         boxShadow: '0 4px 12px rgba(0, 0, 0, 0.18)',
     },
     glassButton: {
-        backgroundColor: '#2C2C2E',
+        backgroundColor: Colors.primarySubtle,
         borderWidth: 1,
-        borderColor: '#48484A',
+        borderColor: Colors.border,
         borderRadius: 999,
         paddingVertical: 12,
         paddingHorizontal: 20,
     },
     glassOverlay: {
-        backgroundColor: 'rgba(0, 0, 0, 0.3)',
+        backgroundColor: Colors.backgroundOverlay,
         borderRadius: 14,
         borderCurve: 'continuous',
         padding: 12,
     },
     glassText: {
-        color: '#ffffff',
+        color: Colors.text,
     },
 });

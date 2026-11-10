@@ -42,7 +42,7 @@ const LibraryScreen: React.FC = () => {
   const { width, height } = useWindowDimensions();
   const isPortrait = height > width;
 
-  const CARD_WIDTH = isPortrait ? 210 : 270;
+  const CARD_WIDTH = isPortrait ? 190 : 240;
   const CARD_HEIGHT = Math.round((CARD_WIDTH * 9) / 16);
   const CARD_SPACING = 16;
 
@@ -188,6 +188,7 @@ const LibraryScreen: React.FC = () => {
                 <Image
                   source={{ uri: item.backdrop || item.poster }}
                   onLoad={onImageLoad}
+                  resizeMethod="resize"
                   style={styles.backdrop}
                   resizeMode="cover"
                 />
@@ -195,7 +196,7 @@ const LibraryScreen: React.FC = () => {
             </PosterArtwork>
             {item.watched && (
               <View style={styles.watchedBadge}>
-                <Ionicons name="checkmark-circle" size={20} color="#4ade80" />
+                <Ionicons name="checkmark-circle" size={20} color="#fff" />
               </View>
             )}
             <TouchableOpacity
@@ -215,15 +216,7 @@ const LibraryScreen: React.FC = () => {
           </View>
           <View style={styles.infoContainer}>
             <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>{item.title}</Text>
-            <View style={styles.metaRow}>
-              {item.year && <Text style={[styles.year, { color: colors.text }]}>{item.year}</Text>}
-              {item.year && item.genres && item.genres.length > 0 && (
-                <Text style={[styles.separator, { color: colors.text }]}>•</Text>
-              )}
-              {item.genres && item.genres.length > 0 && (
-                <Text style={[styles.genres, { color: colors.text }]} numberOfLines={1}>{item.genres[0]}</Text>
-              )}
-            </View>
+            {item.year && <Text style={[styles.year, { color: colors.text }]}>{item.year}</Text>}
           </View>
         </Pressable>
       </Animated.View>
@@ -239,20 +232,19 @@ const LibraryScreen: React.FC = () => {
             <Ionicons name={icon as any} size={20} color={colors.text} />
             <Text style={[styles.sectionTitle, { color: colors.text }]}>{title}</Text>
           </View>
-          <Text style={[styles.sectionCount, { color: colors.text }]}>
+          <Text style={[styles.sectionCount, { color: colors.textMuted }]}>
             {items.length} {items.length === 1 ? 'item' : 'items'}
           </Text>
         </View>
-        <View style={{ height: CARD_HEIGHT + 62 }}>
-          <NativeStackList
-            data={items}
-            axis="horizontal"
-            spacing={CARD_SPACING}
-            horizontalContentInset={CARD_SPACING}
-            renderItem={renderLibraryItem}
-            keyExtractor={(item, index) => `${item.tmdbid}-${item.type}-${index}`}
-          />
-        </View>
+        <NativeStackList
+          data={items}
+          axis="horizontal"
+          spacing={CARD_SPACING}
+          horizontalContentInset={0}
+          style={{ height: CARD_HEIGHT + 62 }}
+          renderItem={renderLibraryItem}
+          keyExtractor={(item, index) => `${item.tmdbid}-${item.type}-${index}`}
+        />
       </View>
     );
   };
@@ -304,7 +296,7 @@ const LibraryScreen: React.FC = () => {
     const totalCount = unwatched.length + watched.length;
 
     return (
-      <View>
+      <View style={styles.librarySections}>
         <WatchHistory onItemSelect={handleWatchHistoryItemSelect} type={getWatchHistoryType()} />
         {totalCount === 0 ? (
           <View style={styles.emptyContainer}>
@@ -343,11 +335,6 @@ const LibraryScreen: React.FC = () => {
           />
         }
       >
-        <View style={styles.summary}>
-          <Text style={[styles.headerSubtitle, { color: colors.text }]}>
-            {totalCount} {totalCount === 1 ? 'item' : 'items'}
-          </Text>
-        </View>
         {renderContent()}
         <BottomSpacing space={100} />
       </ScrollView>
@@ -380,12 +367,13 @@ const LibraryScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   summary: { paddingHorizontal: spacing.md, paddingTop: spacing.md },
-  headerSubtitle: { ...typography.caption, color: '#8E8E93' },
-  section: { marginTop: spacing.sm, marginBottom: 0 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.md, marginBottom: spacing.sm },
+  headerSubtitle: { ...typography.caption },
+  librarySections: { gap: spacing.lg, paddingTop: spacing.lg },
+  section: { marginTop: 0, marginBottom: 0, paddingHorizontal: spacing.md },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm },
   sectionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   sectionTitle: { ...typography.headline },
-  sectionCount: { ...typography.caption, color: '#8E8E93', fontWeight: '500' },
+  sectionCount: { ...typography.caption, fontWeight: '500' },
   card: { backgroundColor: 'transparent', borderRadius: radius.md },
   imageContainer: { width: '100%', position: 'relative', borderRadius: radius.md, overflow: 'hidden' },
   artworkFrame: { width: '100%', height: '100%' },
@@ -395,10 +383,7 @@ const styles = StyleSheet.create({
   removeButton: { position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: 16, padding: 6 },
   infoContainer: { paddingTop: 8, paddingHorizontal: 4 },
   title: { fontSize: 14, fontWeight: '500', marginBottom: 4, lineHeight: 18 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' },
   year: { fontSize: 12, opacity: 0.6, fontWeight: '500' },
-  separator: { fontSize: 12, opacity: 0.4, marginHorizontal: 6 },
-  genres: { fontSize: 12, opacity: 0.5, flex: 1 },
   emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 80, paddingHorizontal: 40 },
   emptyTitle: { fontSize: 22, fontWeight: '500', marginTop: 20, marginBottom: 8 },
   emptyText: { fontSize: 14, opacity: 0.6, textAlign: 'center', lineHeight: 20 },

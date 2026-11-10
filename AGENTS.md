@@ -11,14 +11,16 @@ MCP server configuration lives in `.codex/config.toml`. Keep this file token-fre
 
 ## Project Snapshot
 
-Strmify is an Expo Router React Native app for iOS, Android, and web. It discovers movies and series through TMDB metadata, resolves streams through Stremio-compatible add-ons, supports direct and torrent streams, integrates OpenSubtitles, and offers multiple playback paths including React Native Video, native players, TorrServer/Stremio service URLs, and a custom iOS KSPlayer bridge.
+Strmify is an Expo Router React Native app targeting iOS and Android; web is not a supported target. It discovers movies and series through TMDB metadata, resolves streams through Stremio-compatible add-ons, supports direct and torrent streams, integrates OpenSubtitles, and offers multiple playback paths including React Native Video, native players, TorrServer/Stremio service URLs, and a custom iOS KSPlayer bridge.
 
 Primary stack:
 
-- Expo 55, React 19, React Native 0.83, Expo Router typed routes.
+- Expo 58, React 19, React Native 0.88, Expo Router typed routes.
 - TypeScript with `strict: true` and `@/*` path aliases.
 - MMKV-backed local storage through `utils/StorageService.ts`.
-- Theme context through `context/ThemeContext.tsx` and shared themed primitives in `components/Themed.tsx`.
+- Theme context through `context/ThemeContext.tsx` and shared themed primitives from `@vjdev1212/media-ui-kit`.
+- Shared React Native UI components from the sibling `media-ui-kit` repository, installed as `@vjdev1212/media-ui-kit`.
+- Expo UI universal controls, with SwiftUI or Jetpack Compose controls only when platform-specific behavior is required.
 - Native iOS player integration through `plugins/withKSPlayer.js` and `plugins/ksplayer-bridge/`.
 
 ## Repository Map
@@ -27,7 +29,7 @@ Primary stack:
 - `app/(tabs)/`: Tab screens for home, search, library, and settings.
 - `app/settings/`: Settings subpages for add-ons, players, subtitles, downloads, and support pages.
 - `app/movie/`, `app/series/`, `app/stream/`: Media details, listing, stream selection, and playback routes.
-- `components/`: Reusable UI and feature components.
+- `components/`: Strmify-specific UI and feature components. Prefer `@vjdev1212/media-ui-kit` for reusable UI shared across apps.
 - `components/coreplayer/`: Shared custom player controls, subtitle handling, stream/audio/subtitle action builders, and playback UI helpers.
 - `components/nativeplayer/` and `components/ksplayer/`: Platform player wrappers.
 - `clients/`: Network clients for Stremio, OpenSubtitles, TorrServer, intro data, and related services.
@@ -36,7 +38,7 @@ Primary stack:
 - `hooks/`: Shared hooks.
 - `utils/`: Platform helpers, storage, library/watch history, stream parsing, subtitles, dates, and media player helpers.
 - `plugins/`: Expo config plugins and native bridge source.
-- `assets/`, `public/`, `sources/`, `Strmify-screenshots/`: Static assets, PWA files, SideStore source, and screenshots.
+- `assets/`, `public/`, `sources/`, `Strmify-screenshots/`: Static assets, legacy web/PWA files (not a supported target), SideStore source, and screenshots.
 
 ## Agentic Operating Mode
 
@@ -60,11 +62,9 @@ Use these commands from the repository root:
 - Start Expo dev server: `npm start`
 - Run Android dev build: `npm run android`
 - Run iOS dev build: `npm run ios`
-- Run web app: `npm run web`
 - Type-check: `npx tsc --noEmit`
 - Run Jest tests once, only when explicitly requested or clearly useful: `npx jest --runInBand`
 - Run project tests in watch mode, only for interactive local work: `npm test`
-- Export web build: `npm run build:web`
 - Android preview build through EAS: `npm run build:android`
 
 Tests are not required by default. Prefer `npx tsc --noEmit`, targeted builds, and clear manual verification notes unless the user asks for tests.
@@ -84,14 +84,28 @@ Tests are not required by default. Prefer `npx tsc --noEmit`, targeted builds, a
 - Clean up timers, event listeners, and async effects on unmount.
 - Do not log sensitive tokens, full URLs containing credentials, or private user data.
 - Keep comments sparse and useful. Explain platform quirks, fallbacks, and non-obvious streaming/player decisions.
+- Keep code straightforward and easy to understand, debug, and maintain. Prefer clear names and simple control flow over clever abstractions.
+- Treat performance as a core requirement. Avoid unnecessary renders, state, effects, and expensive work on the UI thread; virtualize growing collections and clean up or cancel asynchronous work.
 
 ## UI And UX Standards
 
 - Match the existing dark, glassy, media-focused UI.
-- Use `useTheme()` and themed primitives from `components/Themed.tsx` for app UI.
-- Keep screens responsive across phone, tablet, and web. Use stable dimensions for posters, carousels, controls, and player overlays to avoid layout shift.
-- Prefer native-feeling controls and iconography from `@expo/vector-icons`.
+- Before implementing or changing UI, consult both platform guidelines:
+  - Apple Human Interface Guidelines: https://developer.apple.com/design/human-interface-guidelines
+  - Android design guidance: https://developer.android.com/design/ui/mobile/guides/foundations
+- Use shared themed primitives and reusable components from `@vjdev1212/media-ui-kit` where they fit. Put cross-app UI in the `media-ui-kit` repository; keep Strmify routing and app-specific data behavior here.
+- Use Expo UI universal controls by default. Consult the Expo UI documentation and use platform-specific SwiftUI or Jetpack Compose controls only when a platform-specific behavior is required and no suitable universal control exists:
+  - Universal components and controls: https://docs.expo.dev/versions/latest/sdk/ui/universal/
+  - SwiftUI components: https://docs.expo.dev/versions/latest/sdk/ui/swift-ui/
+  - Jetpack Compose components: https://docs.expo.dev/versions/latest/sdk/ui/jetpack-compose/
+  - Drop-in replacements: https://docs.expo.dev/versions/latest/sdk/ui/drop-in-replacements/
+- Do not add third-party or other external UI controls. For controls not covered by Expo UI, use only options documented in Expo UI's Drop-in replacements.
+- Prefer shared React Native implementations that work on iOS and Android. Use platform-specific files or checks only for necessary native behavior, and keep shared behavior and types aligned. Do not add web-specific features or target web parity unless explicitly requested.
+- Respect safe areas, system bars, keyboard behavior, back navigation, orientation changes, and app lifecycle on both platforms. Keep layouts usable across phone and tablet sizes.
+- Make interactive elements accessible to VoiceOver and TalkBack with meaningful labels, roles, and state, logical focus order, sufficient contrast and touch targets, and support for text scaling.
+- Keep interactions responsive; use haptics sparingly for meaningful actions and guard platform-specific APIs. Make motion purposeful, interruptible where appropriate, and respectful of reduced-motion preferences.
 - Keep player UI touch targets large and accessible. Player overlays must not block core gestures unintentionally.
+- Prefer native-feeling controls and iconography from `@expo/vector-icons`.
 - Preserve haptics guards through `isHapticsSupported()` before calling Expo Haptics.
 - For settings, keep rows scannable and predictable; avoid marketing-style copy.
 - Respect platform differences with `Platform.select`, `utils/platform.ts`, and existing player abstractions.
@@ -118,7 +132,7 @@ Tests are not required by default. Prefer `npx tsc --noEmit`, targeted builds, a
 
 - Tests are optional and should only be added or run when explicitly requested or when they are the clearest low-cost verification.
 - For TypeScript/API shape changes, prefer `npx tsc --noEmit`.
-- For route, UI, and player changes, use type-checking plus a manual verification note when a device run is not practical.
+- For route, UI, and player changes, use type-checking plus a manual iOS and Android verification note when device runs are not practical.
 - For build/config changes, run the relevant build command when practical.
 - If verification is skipped, state why and describe the path that should be manually checked.
 
@@ -137,6 +151,6 @@ Before finishing, check:
 - Code is readable, maintainable, debuggable, and easy for a newcomer to follow.
 - TypeScript/build verification was run when practical, or the reason it was skipped is documented.
 - Any new async path has loading, error, and empty states where user-facing.
-- Platform behavior is considered for iOS, Android, and web.
+- iOS and Android behavior, accessibility, and performance are considered; web is not a supported target.
 - Persistent storage keys and route params are backward compatible.
 - No unrelated files or generated artifacts were modified accidentally.

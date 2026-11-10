@@ -7,7 +7,7 @@ import {
   Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { StatusBar, Text, PosterList, BottomSpacing, BlurGradientBackground } from '@vjdev1212/media-ui-kit';
+import { StatusBar, Text, PosterList, BottomSpacing } from '@vjdev1212/media-ui-kit';
 import { PosterCarousel } from '@vjdev1212/media-ui-kit';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -129,23 +129,22 @@ export default function HomeScreen() {
               style={[
                 styles.filterButton,
                 {
-                backgroundColor: filter === item.key ? colors.text : colors.primaryCard,
-                borderColor: filter === item.key ? colors.text : colors.border,
+                backgroundColor: filter === item.key ? colors.primary : colors.primaryCard,
+                borderColor: filter === item.key ? colors.primary : colors.border,
                 },
               ]}
               onPress={() => handleFilterChange(item.key as 'all' | 'movies' | 'series')}
-              seedColor={colors.primary}
             >
               <Ionicons
                 name={item.icon as any}
                 size={18}
-                color={filter === item.key ? '#000000' : colors.textMuted}
+                color={filter === item.key ? colors.onPrimary : colors.textMuted}
                 style={styles.filterIcon}
               />
               <Text
                 style={[
                   styles.filterButtonText,
-                  { color: filter === item.key ? '#000000' : colors.textMuted },
+                  { color: filter === item.key ? colors.onPrimary : colors.textMuted },
                   filter === item.key && styles.filterButtonTextActive,
                 ]}
               >
@@ -161,7 +160,6 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <StatusBar />
-      <BlurGradientBackground />
       <FlatList
         key={filter}
         data={activeLists}

@@ -1,5 +1,4 @@
 import { Stack } from 'expo-router';
-import { systemDarkBackground } from '@/constants/theme';
 
 export default function SearchLayout() {
   return (
@@ -7,7 +6,7 @@ export default function SearchLayout() {
       screenOptions={{
         headerShown: true,
         headerBackVisible: false,
-        contentStyle: { backgroundColor: systemDarkBackground },
+        contentStyle: { backgroundColor: 'transparent' },
       }}
     />
   );

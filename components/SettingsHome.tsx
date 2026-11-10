@@ -5,10 +5,12 @@ import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { SettingsPage, SettingsRow, SettingsSection } from '@vjdev1212/media-ui-kit';
 import { isHapticsSupported } from '@/utils/platform';
+import { settingsIconColors } from '@/constants/theme';
 
 type SettingsRoute =
   | '/settings/addons'
   | '/settings/mediaplayer'
+  | '/settings/appearance'
   | '/settings/stremioserver'
   | '/settings/opensubtitles'
   | '/settings/downloads'
@@ -18,33 +20,39 @@ type SettingsRoute =
 
 const settingsSections: {
   title: string;
-  items: { title: string; route: SettingsRoute; icon: React.ComponentProps<typeof Ionicons>['name']; iconColor: string }[];
+  items: {
+    title: string;
+    route: SettingsRoute;
+    icon: React.ComponentProps<typeof Ionicons>['name'];
+    color: string;
+  }[];
 }[] = [
   {
     title: 'General',
     items: [
-      { title: 'Add-ons', route: '/settings/addons', icon: 'extension-puzzle-outline', iconColor: '#FF9F0A' },
-      { title: 'Media Player', route: '/settings/mediaplayer', icon: 'play-circle-outline', iconColor: '#30D158' },
+      { title: 'Appearance', route: '/settings/appearance', icon: 'contrast-outline', color: settingsIconColors.appearance },
+      { title: 'Add-ons', route: '/settings/addons', icon: 'extension-puzzle-outline', color: settingsIconColors.addOns },
+      { title: 'Media Player', route: '/settings/mediaplayer', icon: 'play-circle-outline', color: settingsIconColors.mediaPlayer },
     ],
   },
   {
     title: 'Integrations',
     items: [
-      { title: 'Stremio', route: '/settings/stremioserver', icon: 'server-outline', iconColor: '#0A84FF' },
-      { title: 'OpenSubtitles', route: '/settings/opensubtitles', icon: 'chatbox-ellipses-outline', iconColor: '#BF5AF2' },
+      { title: 'Stremio', route: '/settings/stremioserver', icon: 'server-outline', color: settingsIconColors.stremio },
+      { title: 'OpenSubtitles', route: '/settings/opensubtitles', icon: 'chatbox-ellipses-outline', color: settingsIconColors.subtitles },
     ],
   },
   {
     title: 'Resources',
-    items: [{ title: 'Downloads', route: '/settings/downloads', icon: 'download-outline', iconColor: '#64D2FF' }],
+    items: [{ title: 'Downloads', route: '/settings/downloads', icon: 'download-outline', color: settingsIconColors.downloads }],
   },
   ...(process.env.EXPO_PUBLIC_SHOW_CONTACT === 'true'
     ? [{
       title: 'About',
       items: [
-        { title: 'Contact', route: '/settings/contact' as const, icon: 'mail-outline' as const, iconColor: '#64D2FF' },
-        { title: 'Disclaimer', route: '/settings/disclaimer' as const, icon: 'information-circle-outline' as const, iconColor: '#FFD60A' },
-        { title: 'Donate', route: '/settings/donate' as const, icon: 'heart-outline' as const, iconColor: '#FF453A' },
+        { title: 'Contact', route: '/settings/contact' as const, icon: 'mail-outline' as const, color: settingsIconColors.contact },
+        { title: 'Disclaimer', route: '/settings/disclaimer' as const, icon: 'information-circle-outline' as const, color: settingsIconColors.disclaimer },
+        { title: 'Donate', route: '/settings/donate' as const, icon: 'heart-outline' as const, color: settingsIconColors.donate },
       ],
     }]
     : []),
@@ -69,7 +77,7 @@ export default function SettingsHome() {
             <SettingsRow
               key={item.route}
               title={item.title}
-              leading={<Ionicons name={item.icon} size={20} color={item.iconColor} />}
+              leading={<Ionicons name={item.icon} size={20} color={item.color} />}
               onPress={() => openSettings(item.route)}
               isLast={index === section.items.length - 1}
             />
@@ -77,7 +85,12 @@ export default function SettingsHome() {
         </SettingsSection>
       ))}
       <SettingsSection title="Strmify">
-        <SettingsRow title="Version" detail={version} isLast />
+        <SettingsRow
+          title="Version"
+          detail={version}
+          leading={<Ionicons name="information-circle-outline" size={20} color={settingsIconColors.version} />}
+          isLast
+        />
       </SettingsSection>
     </SettingsPage>
   );

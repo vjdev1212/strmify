@@ -5,13 +5,13 @@ import { StatusBar, View } from '@vjdev1212/media-ui-kit';
 import { SettingsPage, SettingsRow, SettingsSection } from '@vjdev1212/media-ui-kit';
 import { showAlert } from '@/utils/platform';
 import { useTheme } from '@/context/ThemeContext';
-import { systemDarkBackground } from '@/constants/theme';
+import { settingsIconColors } from '@/constants/theme';
 
 const resources = [
-  { title: 'Google Play Store', detail: 'Download for Android devices', icon: 'logo-google-playstore' as const, iconColor: '#34A853', url: 'https://play.google.com/store/apps/details?id=com.vijayyuvi.strmify' },
-  { title: 'Manual IPA Install', detail: 'Direct download for sideloading', icon: 'logo-apple' as const, iconColor: '#FFFFFF', url: 'https://github.com/vjdev1212/strmify/releases' },
-  { title: 'SideStore Source', detail: 'Install through SideStore', icon: 'cloud-download-outline' as const, iconColor: '#5E5CE6', url: 'sidestore://source?url=https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/sources/sidestore-source.json' },
-  { title: 'AltStore Source', detail: 'Install through AltStore', icon: 'cloud-download-outline' as const, iconColor: '#0A84FF', url: 'altstore://source?url=https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/sources/sidestore-source.json' },
+  { title: 'Google Play Store', detail: 'Download for Android devices', icon: 'logo-google-playstore' as const, color: settingsIconColors.googlePlay, url: 'https://play.google.com/store/apps/details?id=com.vijayyuvi.strmify' },
+  { title: 'Manual IPA Install', detail: 'Direct download for sideloading', icon: 'logo-apple' as const, color: settingsIconColors.apple, url: 'https://github.com/vjdev1212/strmify/releases' },
+  { title: 'SideStore Source', detail: 'Install through SideStore', icon: 'cloud-download-outline' as const, color: settingsIconColors.sideStore, url: 'sidestore://source?url=https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/sources/sidestore-source.json' },
+  { title: 'AltStore Source', detail: 'Install through AltStore', icon: 'cloud-download-outline' as const, color: settingsIconColors.altStore, url: 'altstore://source?url=https://raw.githubusercontent.com/vjdev1212/strmify/refs/heads/main/sources/sidestore-source.json' },
 ];
 
 export default function DownloadsScreen() {
@@ -27,7 +27,7 @@ export default function DownloadsScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: systemDarkBackground }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <StatusBar />
       <SettingsPage>
         {resources.map((resource, index) => (
@@ -40,7 +40,7 @@ export default function DownloadsScreen() {
               title={resource.title}
               onPress={() => openResource(resource.url)}
               isLast
-              leading={<Ionicons name={resource.icon} size={20} color={resource.iconColor} />}
+              leading={<Ionicons name={resource.icon} size={20} color={resource.color} />}
               trailing={<Ionicons name="open-outline" size={17} color={colors.textDim} />}
             />
           </SettingsSection>

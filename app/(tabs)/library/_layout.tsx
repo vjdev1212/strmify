@@ -1,6 +1,6 @@
 import { Stack } from 'expo-router';
 import { Platform, View } from 'react-native';
-import { systemDarkBackground } from '@/constants/theme';
+import { useTheme } from '@/context/ThemeContext';
 
 const TransparentHeaderBackground = () => (
   <View style={{ flex: 1, backgroundColor: 'transparent' }} />
@@ -8,6 +8,7 @@ const TransparentHeaderBackground = () => (
 
 export default function LibraryLayout() {
   const isIOS = Platform.OS === 'ios';
+  const { colors } = useTheme();
 
   return (
     <Stack
@@ -17,12 +18,12 @@ export default function LibraryLayout() {
         headerTransparent: isIOS,
         headerBackground: TransparentHeaderBackground,
         headerShadowVisible: true,
-        headerStyle: { backgroundColor: isIOS ? 'transparent' : systemDarkBackground },
-        headerLargeTitleEnabled: false,
+        headerStyle: { backgroundColor: isIOS ? 'transparent' : colors.background },
+        headerLargeTitleEnabled: isIOS,
         headerLargeStyle: { backgroundColor: 'transparent' },
         headerLargeTitleShadowVisible: true,
         headerBlurEffect: 'none',
-        contentStyle: { backgroundColor: systemDarkBackground },
+        contentStyle: { backgroundColor: colors.background },
       }}
     >
       <Stack.Screen name="index" options={{ title: 'Library' }} />

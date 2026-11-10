@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { Host } from '@expo/ui';
-import { Slider } from '@expo/ui';
+import { Host, Slider } from '@expo/ui';
+import { settingsActionBlue } from '@/constants/theme';
 import { styles } from './styles';
 import type { NativeProgressSliderProps } from './native-progress-slider.types';
 
@@ -21,7 +21,11 @@ export default function NativeProgressSlider({
   }, []);
 
   return (
-    <Host style={styles.progressSlider} colorScheme="dark" seedColor="#007aff">
+    <Host
+      style={[styles.progressSlider, { backgroundColor: 'transparent' }]}
+      colorScheme="dark"
+      seedColor={settingsActionBlue}
+    >
       <Slider
         min={0}
         max={1}

@@ -15,7 +15,7 @@ const SeriesList = () => {
       <MediaGrid
         apiUrl={apiUrl ?? ''}
         apiKey={process.env.EXPO_PUBLIC_TMDB_API_KEY}
-        detailsPath="/series/details"
+        mediaType="series"
         onItemPress={(item) => router.push({ pathname: '/series/details', params: { tmdbid: String(item.tmdbid) } })}
         onAddToWatchlist={(item: MediaGridItem) => libraryService.addToLibrary({
           id: `series-${item.tmdbid}`,
