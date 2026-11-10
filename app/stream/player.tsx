@@ -8,12 +8,13 @@ import {
 import { showAlert } from "@/utils/platform";
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { Platform, Linking, View, Text, StyleSheet, StatusBar } from "react-native";
+import { Platform, Linking, View, Text, StyleSheet, StatusBar, Pressable } from "react-native";
+import { MaterialIcons } from "@expo/vector-icons";
+import { useTheme } from "@/context/ThemeContext";
 import { ServerConfig } from "@/components/ServerConfig";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StreamingServerClient, TorrentFile } from "@/clients/stremio";
 import * as ScreenOrientation from 'expo-screen-orientation';
-import { Colors } from '@/constants/theme';
 
 interface PlaybackPositionEvent {
   positionSeconds: number;
@@ -22,8 +23,25 @@ interface PlaybackPositionEvent {
 }
 
 interface PlaybackErrorEvent {
-  error: string;
+  error?: unknown;
+  message?: unknown;
+  code?: string | number;
 }
+
+const getPlaybackErrorMessage = (event: PlaybackErrorEvent): string => {
+  if (typeof event.error === 'string' && event.error.trim()) return event.error.trim();
+  if (
+    event.error &&
+    typeof event.error === 'object' &&
+    'message' in event.error &&
+    typeof event.error.message === 'string' &&
+    event.error.message.trim()
+  ) {
+    return event.error.message.trim();
+  }
+  if (typeof event.message === 'string' && event.message.trim()) return event.message.trim();
+  return 'The selected stream could not be played.';
+};
 
 interface BackEvent {
   message: string;
@@ -210,6 +228,7 @@ function pickEpisodeFileIdx(
 
 const MediaPlayerScreen: React.FC = () => {
   const router = useRouter();
+  const { colors } = useTheme();
 
   const {
     streams: streamsParam,
@@ -264,11 +283,35 @@ const MediaPlayerScreen: React.FC = () => {
   const [currentPlayerType, setCurrentPlayerType] = useState<"native" | "ksplayer">(
     Platform.OS === "ios" ? "ksplayer" : "native"
   );
-  const [hasTriedNative, setHasTriedNative] = useState(false);
 
   const [statusText, setStatusText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [returnCountdown, setReturnCountdown] = useState<number | null>(null);
   const navigation = useNavigation();
+
+  useEffect(() => {
+    if (!streamError) {
+      setReturnCountdown(null);
+      return;
+    }
+
+    setReturnCountdown(10);
+  }, [streamError]);
+
+  useEffect(() => {
+    if (!streamError || returnCountdown === null) return;
+
+    const timer = setTimeout(() => {
+      if (returnCountdown === 1) {
+        router.back();
+        return;
+      }
+
+      setReturnCountdown(returnCountdown - 1);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [returnCountdown, router, streamError]);
 
   useEffect(() => {
     let cancelled = false;
@@ -358,14 +401,6 @@ const MediaPlayerScreen: React.FC = () => {
   useEffect(() => {
     if (openSubtitlesClient) fetchSubtitles();
   }, [imdbid, type, season, episode, openSubtitlesClient]);
-
-  useEffect(() => {
-    if (currentPlayerType === "ksplayer" && hasTriedNative) {
-      console.log('Switching to KSPlayer');
-      setStreamError('');
-      setIsLoadingStream(false);
-    }
-  }, [currentPlayerType, hasTriedNative]);
 
   const initializePlayerAndSelect = async (parsedStreams: Stream[], streamIndex: number) => {
     const platformPlayers = getPlatformSpecificPlayers();
@@ -529,7 +564,6 @@ const MediaPlayerScreen: React.FC = () => {
     setIsLoadingStream(true);
     setStreamError('');
     setCurrentPlayerType(Platform.OS === "ios" ? "ksplayer" : "native");
-    setHasTriedNative(false);
 
     const stream = streamsToUse[streamIndex];
     const { url, fileIdx } = stream;
@@ -667,7 +701,6 @@ const MediaPlayerScreen: React.FC = () => {
         if (newStream.url) {
           setVideoUrl(newStream.url);
           setCurrentPlayerType("native");
-          setHasTriedNative(false);
         } else {
           loadStream(newIndex);
         }
@@ -676,18 +709,16 @@ const MediaPlayerScreen: React.FC = () => {
   };
 
   const handlePlaybackError = (event: PlaybackErrorEvent) => {
-    console.log('Playback error:', event);
-    if (Platform.OS === "ios" && currentPlayerType === "ksplayer" && !hasTriedNative) {
-      console.log('KSPlayer failed, falling back to native player');
-      setHasTriedNative(true);
-      setStreamError('');
-      setCurrentPlayerType("native");
-    } else {
-      const errorMessage = event.error || 'Playback failed';
-      console.log('Final playback error:', errorMessage);
-      setStreamError(errorMessage);
-      setIsLoadingStream(false);
-    }
+    const errorMessage = getPlaybackErrorMessage(event);
+    console.warn('Playback failed:', {
+      player: currentPlayerType,
+      code: event.code,
+      message: errorMessage,
+    });
+    setStreamError(
+      `Unable to play this stream. ${errorMessage}. Return to the stream list and try another stream.`
+    );
+    setIsLoadingStream(false);
   };
 
   const initializeClient = async () => {
@@ -906,38 +937,55 @@ const MediaPlayerScreen: React.FC = () => {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <Player
-        key={`${String(imdbid)}:${String(type)}:${String(season)}:${String(episode)}:${resumePositionSeconds}`}
-        videoUrl={videoUrl}
-        isLoadingStream={isLoadingStream}
-        loadingMessage={statusText}
-        isTorrent={isTorrent}
-        title={title as string}
-        back={handleBack}
-        resumePlaybackSettings={resumePlaybackSettings}
-        artwork={artwork as string}
-        subtitles={subtitles}
-        openSubtitlesClient={openSubtitlesClient}
-        isLoadingSubtitles={isLoadingSubtitles}
-        updateProgress={handleUpdateProgress}
-        onPlaybackError={handlePlaybackError}
-        streams={streams}
-        currentStreamIndex={currentStreamIndex}
-        onStreamChange={handleStreamChange}
-        onForceSwitchToKSPlayer={() => {
-          setCurrentPlayerType("ksplayer");
-          setHasTriedNative(true);
-        }}
-        tvShow={
-          type === 'series' && imdbid && season && episode
-            ? {
-              imdbId: imdbid as string,
-              season: parseInt(season as string, 10),
-              episode: parseInt(episode as string, 10),
-            }
-            : undefined
-        }
-      />
+      {streamError ? (
+        <View style={[styles.errorContainer, { backgroundColor: colors.background }]}>
+          <MaterialIcons name="error-outline" size={64} color={colors.danger} />
+          <Text style={[styles.errorTitle, { color: colors.text }]}>Playback failed</Text>
+          <Text style={[styles.errorMessage, { color: colors.textMuted }]} selectable>
+            {streamError}
+          </Text>
+          <Text style={[styles.errorMessage, { color: colors.textMuted }]} accessibilityLiveRegion="polite">
+            Returning to the previous screen in {returnCountdown ?? 5} seconds...
+          </Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Return to stream list"
+            onPress={() => router.back()}
+            style={[styles.backButton, { backgroundColor: colors.primary }]}
+          >
+            <Text style={[styles.backButtonText, { color: colors.onPrimary }]}>Back to streams</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <Player
+          key={`${currentPlayerType}:${String(imdbid)}:${String(type)}:${String(season)}:${String(episode)}:${resumePositionSeconds}`}
+          videoUrl={videoUrl}
+          isLoadingStream={isLoadingStream}
+          loadingMessage={statusText}
+          isTorrent={isTorrent}
+          title={title as string}
+          back={handleBack}
+          resumePlaybackSettings={resumePlaybackSettings}
+          artwork={artwork as string}
+          subtitles={subtitles}
+          openSubtitlesClient={openSubtitlesClient}
+          isLoadingSubtitles={isLoadingSubtitles}
+          updateProgress={handleUpdateProgress}
+          onPlaybackError={handlePlaybackError}
+          streams={streams}
+          currentStreamIndex={currentStreamIndex}
+          onStreamChange={handleStreamChange}
+          tvShow={
+            type === 'series' && imdbid && season && episode
+              ? {
+                imdbId: imdbid as string,
+                season: parseInt(season as string, 10),
+                episode: parseInt(episode as string, 10),
+              }
+              : undefined
+          }
+        />
+      )}
     </GestureHandlerRootView>
   );
 };
@@ -947,121 +995,29 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  errorOverlay: {
-    flex: 1,
-    width: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  errorCard: {
-    borderRadius: 24,
-    padding: 32,
-    width: '90%',
-    maxWidth: 400,
-    alignItems: 'center',
-  },
-  errorIconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  errorIcon: {
-    fontSize: 48,
+    padding: 24,
+    gap: 16,
   },
   errorTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '600',
-    marginBottom: 12,
     textAlign: 'center',
   },
   errorMessage: {
-    color: Colors.danger,
     fontSize: 15,
     textAlign: 'center',
-    marginBottom: 8,
     lineHeight: 22,
-  },
-  errorSubMessage: {
-    fontSize: 13,
-    textAlign: 'center',
-    marginBottom: 28,
-    lineHeight: 20,
-  },
-  errorButtonsContainer: {
-    width: '100%',
-    gap: 12,
-  },
-  retryButton: {
-    paddingVertical: 14,
-    paddingHorizontal: 32,
-    borderRadius: 14,
-    width: '100%',
-    alignItems: 'center',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  retryButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    letterSpacing: 0.5,
+    maxWidth: 400,
   },
   backButton: {
-    paddingVertical: 14,
-    paddingHorizontal: 32,
-    borderRadius: 14,
-    width: '100%',
+    minHeight: 48,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 12,
     alignItems: 'center',
-    borderWidth: 1,
+    justifyContent: 'center',
   },
   backButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  bottomSheetBackground: {
-    borderTopLeftRadius: 10,
-    borderTopRightRadius: 10,
-  },
-  bottomSheetIndicator: {
-    width: 40,
-  },
-  bottomSheetContent: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    marginBottom: 20,
-  },
-  statusContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 20,
-    backgroundColor: 'transparent',
-  },
-  bottomSheetLoader: {
-    marginBottom: 20,
-  },
-  statusText: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 30,
-    paddingHorizontal: 20,
-    lineHeight: 22,
-  },
-  cancelButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 40,
-    borderRadius: 8,
-    minWidth: 120,
-    alignItems: 'center',
-  },
-  cancelButtonText: {
     fontSize: 16,
     fontWeight: '600',
   },

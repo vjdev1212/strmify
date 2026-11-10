@@ -44,7 +44,6 @@ export interface ExtendedMediaPlayerProps extends MediaPlayerProps {
     streams?: Stream[];
     currentStreamIndex?: number;
     onStreamChange?: (index: number) => void;
-    onForceSwitchToKSPlayer?: () => void;
 }
 
 export interface SubtitleSource {
