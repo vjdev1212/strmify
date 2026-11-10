@@ -11,6 +11,7 @@ import { WebMenu } from '@vjdev1212/media-ui-kit';
 import { showAlert } from '@/utils/platform';
 import { StorageKeys, storageService } from '@/utils/StorageService';
 import { useTheme } from '@/context/ThemeContext';
+import { settingsIconColors } from '@/constants/theme';
 
 const ADDONS_KEY = StorageKeys.ADDONS_KEY;
 const defaultAddonLogo = 'https://i.ibb.co/fSJ42PJ/addon.png';
@@ -179,7 +180,7 @@ const AddonsScreen = () => {
         <SettingsSection title="Manage add-ons">
           <SettingsRow
             title="Add new Addon"
-            leading={<MaterialIcons name="add" size={20} color={colors.primary} />}
+            leading={<MaterialIcons name="add" size={20} color={settingsIconColors.success} />}
             onPress={() => router.push('/settings/add')}
             isLast
           />
@@ -198,7 +199,13 @@ const AddonsScreen = () => {
                 return true;
               }).map((action) => ({
                 ...action,
-                imageColor: action.id === 'remove' ? undefined : colors.text,
+                imageColor: action.id === 'remove'
+                  ? settingsIconColors.danger
+                  : action.id === 'update'
+                    ? settingsIconColors.refresh
+                    : action.id === 'share'
+                      ? settingsIconColors.share
+                      : settingsIconColors.configure,
               }));
               const handleAction = (actionId: string) => {
                 if (actionId === 'update' && typeof addon.manifestUrl === 'string' && !isUpdating) {
@@ -236,7 +243,13 @@ const AddonsScreen = () => {
                           ? 'settings-outline'
                           : 'trash-outline',
                     titleColor: id === 'remove' ? colors.danger : undefined,
-                    iconColor: id === 'remove' ? colors.danger : undefined,
+                    iconColor: id === 'remove'
+                      ? settingsIconColors.danger
+                      : id === 'update'
+                        ? settingsIconColors.refresh
+                        : id === 'share'
+                          ? settingsIconColors.share
+                          : settingsIconColors.configure,
                   }))}
                   onPressAction={handleAction}
                 >
@@ -257,6 +270,7 @@ const AddonsScreen = () => {
                 <SettingsRow
                   key={`${addon.id}-summary`}
                   title={`${addon.name || 'Unnamed add-on'}${addon.version ? ` · ${addon.version}` : ''}`}
+                  leading={<Ionicons name="extension-puzzle-outline" size={20} color={settingsIconColors.addOns} />}
                   onPress={() => setExpandedAddonId(isExpanded ? null : addon.id)}
                   accessibilityLabel={`${isExpanded ? 'Hide' : 'Show'} details for ${addon.name || 'add-on'}`}
                   trailing={

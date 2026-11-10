@@ -84,7 +84,7 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
 
   const { width, height } = useWindowDimensions();
   const isPortrait = height > width;
-  const CARD_WIDTH = isPortrait ? 210 : 270;
+  const CARD_WIDTH = isPortrait ? 190 : 240;
   const CARD_HEIGHT = Math.round((CARD_WIDTH * 9) / 16);
   const CARD_SPACING = 16;
 
@@ -170,7 +170,7 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Continue Watching</Text>
         </View>
         <NativeButton variant="text" onPress={clearAllHistory} style={styles.clearAllButton}>
-          <Ionicons name="trash-outline" size={14} color={colors.danger} />
+          <Ionicons name="close-circle" size={16} color={colors.danger} />
           <Text style={[styles.clearAllText, { color: colors.danger }]}>Clear All</Text>
         </NativeButton>
       </View>
@@ -181,7 +181,7 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
         spacing={CARD_SPACING}
         horizontalContentInset={CARD_SPACING}
         keyExtractor={(item, index) => `${item.videoUrl}-${item.timestamp}-${index}`}
-        style={[styles.scrollContent, { height: CARD_HEIGHT + 46 }]}
+        style={{ height: CARD_HEIGHT + 46 }}
         renderItem={(item, index) => {
           const itemKey = `${item.videoUrl}-${item.timestamp}-${index}`;
           const animValue = getAnimatedValue(itemKey);
@@ -251,13 +251,12 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
 };
 
 const styles = StyleSheet.create({
-  section: { marginTop: 24, marginBottom: 10 },
+  section: { marginTop: 0, marginBottom: 0 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 12 },
   sectionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   sectionTitle: { fontSize: 20, fontWeight: '600' },
   clearAllButton: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 8 },
   clearAllText: { fontSize: 13, fontWeight: '500' },
-  scrollContent: { marginVertical: 10 },
   card: { backgroundColor: 'transparent', borderRadius: 12 },
   imageContainer: { width: '100%', position: 'relative', borderRadius: 12, overflow: 'hidden' },
   artworkFrame: { width: '100%', height: '100%' },

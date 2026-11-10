@@ -8,6 +8,7 @@ import { getOriginalPlatform, showAlert } from '@/utils/platform';
 import { Players } from '@/utils/MediaPlayer';
 import { StorageKeys, storageService } from '@/utils/StorageService';
 import { useTheme } from '@/context/ThemeContext';
+import { settingsActionBlue, settingsIconColors } from '@/constants/theme';
 
 interface PlayerConfig {
   name: string;
@@ -134,17 +135,17 @@ export default function MediaPlayerConfigScreen() {
           <SettingsSection title="Actions">
             <SettingsRow
               title={saving ? 'Saving…' : 'Save'}
-              titleColor={colors.primary}
+              titleColor={settingsActionBlue}
               onPress={savePlayerConfig}
               disabled={saving || !selectedPlayer}
-              leading={<Ionicons name="checkmark-circle-outline" size={20} color={colors.primary} />}
+              leading={<Ionicons name="checkmark-circle-outline" size={20} color={settingsActionBlue} />}
             />
             <SettingsRow
               title="Reset"
               onPress={resetToDefault}
               destructive
               isLast
-              leading={<Ionicons name="refresh-outline" size={20} color={colors.danger} />}
+              leading={<Ionicons name="refresh-outline" size={20} color={settingsIconColors.neutral} />}
               trailing={<Ionicons name="chevron-forward" size={17} color={colors.textDim} />}
             />
           </SettingsSection>

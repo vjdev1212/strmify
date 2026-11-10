@@ -6,6 +6,7 @@ import { StatusBar, View } from '@vjdev1212/media-ui-kit';
 import { useTheme } from '@/context/ThemeContext';
 import { StorageKeys, storageService } from '@/utils/StorageService';
 import { showAlert } from '@/utils/platform';
+import { settingsActionBlue } from '@/constants/theme';
 
 const ADDONS_KEY = StorageKeys.ADDONS_KEY;
 const defaultAddonLogo = 'https://i.ibb.co/fSJ42PJ/addon.png';
@@ -91,11 +92,11 @@ export default function AddAddonScreen() {
               onPress={loading ? undefined : () => void addAddon()}
               leading={
                 <RNHostView matchContents>
-                  <MaterialIcons name="save" size={20} color={colors.primary} />
+                  <MaterialIcons name="save" size={20} color={settingsActionBlue} />
                 </RNHostView>
               }
             >
-              <NativeText>Submit</NativeText>
+              <NativeText textStyle={{ color: settingsActionBlue }}>Submit</NativeText>
             </ListItem>
             <ListItem
               onPress={loading ? undefined : () => router.back()}

@@ -5,6 +5,7 @@ import { StatusBar, View } from '@vjdev1212/media-ui-kit';
 import { SettingsPage, SettingsRow, SettingsSection } from '@vjdev1212/media-ui-kit';
 import { showAlert } from '@/utils/platform';
 import { useTheme } from '@/context/ThemeContext';
+import { settingsIconColors } from '@/constants/theme';
 
 export default function DonateScreen() {
   const { colors } = useTheme();
@@ -31,7 +32,7 @@ export default function DonateScreen() {
             title="Buy Me a Coffee"
             onPress={openDonationPage}
             isLast
-            leading={<Ionicons name="cafe-outline" size={20} color={colors.primary} />}
+            leading={<Ionicons name="cafe-outline" size={20} color={settingsIconColors.coffee} />}
             trailing={<Ionicons name="open-outline" size={17} color={colors.textDim} />}
           />
         </SettingsSection>

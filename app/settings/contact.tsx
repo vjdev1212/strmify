@@ -5,6 +5,7 @@ import { StatusBar, View } from '@vjdev1212/media-ui-kit';
 import { SettingsPage, SettingsRow, SettingsSection } from '@vjdev1212/media-ui-kit';
 import { showAlert } from '@/utils/platform';
 import { useTheme } from '@/context/ThemeContext';
+import { settingsIconColors } from '@/constants/theme';
 
 const contactActions = [
   {
@@ -45,7 +46,7 @@ export default function ContactScreen() {
               title={action.title}
               onPress={() => openContact(action.url)}
               isLast
-              leading={<Ionicons name={action.icon} size={20} color={colors.danger} />}
+              leading={<Ionicons name={action.icon} size={20} color={settingsIconColors.contact} />}
               trailing={<Ionicons name="open-outline" size={17} color={colors.textDim} />}
             />
           </SettingsSection>

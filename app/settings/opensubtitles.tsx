@@ -9,6 +9,7 @@ import { View, Text } from '@vjdev1212/media-ui-kit';
 import { NativeTextInput } from '@vjdev1212/media-ui-kit';
 import { SettingsPage, SettingsRow, SettingsSection } from '@vjdev1212/media-ui-kit';
 import { NativeFieldSelect } from '@vjdev1212/media-ui-kit';
+import { settingsActionBlue, settingsIconColors } from '@/constants/theme';
 
 const OpenSubtitlesConfigScreen: React.FC = () => {
     const { colors } = useTheme();
@@ -127,7 +128,7 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
                                     />
                                     <SettingsRow
                                         title={showApiKey ? 'Hide API key' : 'Show API key'}
-                                        leading={<Ionicons name={showApiKey ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.primary} />}
+                                        leading={<Ionicons name={showApiKey ? 'eye-off-outline' : 'eye-outline'} size={20} color={settingsIconColors.subtitles} />}
                                         onPress={() => setShowApiKey((visible) => !visible)}
                                         isLast
                                     />
@@ -153,7 +154,7 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
                                         title={getLanguageName(code)}
                                         leading={<Text style={{ color: colors.textMuted }}>{index + 1}</Text>}
                                         trailing={selectedLanguages.length > 1 ? (
-                                            <Ionicons name="remove-circle-outline" size={20} color={colors.textDim} />
+                                            <Ionicons name="remove-circle-outline" size={20} color={settingsIconColors.danger} />
                                         ) : null}
                                         onPress={selectedLanguages.length > 1 ? () => removeLanguage(code) : undefined}
                                         isLast={index === selectedLanguages.length - 1}
@@ -167,8 +168,8 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
                                     detail={isSaving ? 'Saving…' : undefined}
                                     onPress={saveConfiguration}
                                     disabled={isSaving || (!useDefaultKey && !apiKey.trim())}
-                                    titleColor={colors.primary}
-                                    leading={<Ionicons name="checkmark-circle-outline" size={20} color={colors.primary} />}
+                                    titleColor={settingsActionBlue}
+                                    leading={<Ionicons name="checkmark-circle-outline" size={20} color={settingsActionBlue} />}
                                 />
                                 <SettingsRow
                                     title="Reset"

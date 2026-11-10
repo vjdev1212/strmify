@@ -5,7 +5,7 @@ import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { SettingsPage, SettingsRow, SettingsSection } from '@vjdev1212/media-ui-kit';
 import { isHapticsSupported } from '@/utils/platform';
-import { useTheme } from '@/context/ThemeContext';
+import { settingsIconColors } from '@/constants/theme';
 
 type SettingsRoute =
   | '/settings/addons'
@@ -19,33 +19,38 @@ type SettingsRoute =
 
 const settingsSections: {
   title: string;
-  items: { title: string; route: SettingsRoute; icon: React.ComponentProps<typeof Ionicons>['name'] }[];
+  items: {
+    title: string;
+    route: SettingsRoute;
+    icon: React.ComponentProps<typeof Ionicons>['name'];
+    color: string;
+  }[];
 }[] = [
   {
     title: 'General',
     items: [
-      { title: 'Add-ons', route: '/settings/addons', icon: 'extension-puzzle-outline' },
-      { title: 'Media Player', route: '/settings/mediaplayer', icon: 'play-circle-outline' },
+      { title: 'Add-ons', route: '/settings/addons', icon: 'extension-puzzle-outline', color: settingsIconColors.addOns },
+      { title: 'Media Player', route: '/settings/mediaplayer', icon: 'play-circle-outline', color: settingsIconColors.mediaPlayer },
     ],
   },
   {
     title: 'Integrations',
     items: [
-      { title: 'Stremio', route: '/settings/stremioserver', icon: 'server-outline' },
-      { title: 'OpenSubtitles', route: '/settings/opensubtitles', icon: 'chatbox-ellipses-outline' },
+      { title: 'Stremio', route: '/settings/stremioserver', icon: 'server-outline', color: settingsIconColors.stremio },
+      { title: 'OpenSubtitles', route: '/settings/opensubtitles', icon: 'chatbox-ellipses-outline', color: settingsIconColors.subtitles },
     ],
   },
   {
     title: 'Resources',
-    items: [{ title: 'Downloads', route: '/settings/downloads', icon: 'download-outline' }],
+    items: [{ title: 'Downloads', route: '/settings/downloads', icon: 'download-outline', color: settingsIconColors.downloads }],
   },
   ...(process.env.EXPO_PUBLIC_SHOW_CONTACT === 'true'
     ? [{
       title: 'About',
       items: [
-        { title: 'Contact', route: '/settings/contact' as const, icon: 'mail-outline' as const },
-        { title: 'Disclaimer', route: '/settings/disclaimer' as const, icon: 'information-circle-outline' as const },
-        { title: 'Donate', route: '/settings/donate' as const, icon: 'heart-outline' as const },
+        { title: 'Contact', route: '/settings/contact' as const, icon: 'mail-outline' as const, color: settingsIconColors.contact },
+        { title: 'Disclaimer', route: '/settings/disclaimer' as const, icon: 'information-circle-outline' as const, color: settingsIconColors.disclaimer },
+        { title: 'Donate', route: '/settings/donate' as const, icon: 'heart-outline' as const, color: settingsIconColors.donate },
       ],
     }]
     : []),
@@ -53,7 +58,6 @@ const settingsSections: {
 
 export default function SettingsHome() {
   const router = useRouter();
-  const { colors } = useTheme();
   const version = Constants.expoConfig?.version ?? 'Unknown';
 
   const openSettings = async (route: SettingsRoute) => {
@@ -71,7 +75,7 @@ export default function SettingsHome() {
             <SettingsRow
               key={item.route}
               title={item.title}
-              leading={<Ionicons name={item.icon} size={20} color={colors.textMuted} />}
+              leading={<Ionicons name={item.icon} size={20} color={item.color} />}
               onPress={() => openSettings(item.route)}
               isLast={index === section.items.length - 1}
             />
@@ -82,7 +86,7 @@ export default function SettingsHome() {
         <SettingsRow
           title="Version"
           detail={version}
-          leading={<Ionicons name="information-circle-outline" size={20} color={colors.textMuted} />}
+          leading={<Ionicons name="information-circle-outline" size={20} color={settingsIconColors.version} />}
           isLast
         />
       </SettingsSection>

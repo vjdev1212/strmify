@@ -9,6 +9,7 @@ import { WebMenu } from '@vjdev1212/media-ui-kit';
 import { useTheme } from '@/context/ThemeContext';
 import { confirmAction, showAlert } from '@/utils/platform';
 import { StorageKeys, storageService } from '@/utils/StorageService';
+import { settingsActionBlue, settingsIconColors } from '@/constants/theme';
 
 interface ServerConfigProps {
   serverName: string;
@@ -170,14 +171,14 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
   const getConnectionColor = (serverId: string) => {
     switch (connectionStatus[serverId]) {
       case 'connected':
-        return colors.primary;
+        return settingsIconColors.success;
       case 'disconnected':
       case 'error':
-        return colors.danger;
+        return settingsIconColors.danger;
       case 'checking':
-        return colors.textMuted;
+        return settingsIconColors.warning;
       default:
-        return colors.textDim;
+        return settingsIconColors.neutral;
     }
   };
 
@@ -362,7 +363,8 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
           <SettingsSection title="Actions">
             <SettingsRow
               title="Save server"
-              leading={<MaterialIcons name="check-circle-outline" size={20} color={colors.primary} />}
+              titleColor={settingsActionBlue}
+              leading={<MaterialIcons name="check-circle-outline" size={20} color={settingsActionBlue} />}
               onPress={() => void saveServer()}
             />
             <SettingsRow
@@ -382,7 +384,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
           >
             <SettingsRow
               title="Refresh"
-              leading={<MaterialIcons name="refresh" size={20} color={colors.primary} />}
+              leading={<MaterialIcons name="refresh" size={20} color={settingsIconColors.refresh} />}
               onPress={() => void checkAllConnections()}
               isLast
             />
@@ -393,7 +395,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
           >
             <SettingsRow
               title="Add Server"
-              leading={<MaterialIcons name="add" size={20} color={colors.primary} />}
+              leading={<MaterialIcons name="add" size={20} color={settingsIconColors.success} />}
               onPress={startAddingServer}
               isLast
             />
@@ -481,7 +483,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
                 accessibilityLabel={`${isExpanded ? 'Collapse' : 'Expand'} ${server.serverName} server details`}
                 isLast={!isExpanded}
                 titleAccessory={server.current
-                  ? <MaterialCommunityIcons name="crown" size={18} color={colors.primary} />
+                  ? <MaterialCommunityIcons name="crown" size={18} color={settingsIconColors.warning} />
                   : undefined}
                 trailing={
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>

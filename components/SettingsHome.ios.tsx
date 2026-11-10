@@ -15,6 +15,7 @@ import {
 } from '@expo/ui/swift-ui/modifiers';
 import { isHapticsSupported } from '@/utils/platform';
 import { useTheme } from '@/context/ThemeContext';
+import { settingsIconColors } from '@/constants/theme';
 
 type SettingsRoute =
   | '/settings/addons'
@@ -32,33 +33,34 @@ const settingsSections: {
     title: string;
     route: SettingsRoute;
     icon: React.ComponentProps<typeof Icon>['name'];
+    color: string;
   }[];
 }[] = [
     {
       title: 'General',
       items: [
-        { title: 'Add-ons', route: '/settings/addons', icon: 'puzzlepiece.extension' },
-        { title: 'Media Player', route: '/settings/mediaplayer', icon: 'play.rectangle' },
+        { title: 'Add-ons', route: '/settings/addons', icon: 'puzzlepiece.extension', color: settingsIconColors.addOns },
+        { title: 'Media Player', route: '/settings/mediaplayer', icon: 'play.rectangle', color: settingsIconColors.mediaPlayer },
       ],
     },
     {
       title: 'Integrations',
       items: [
-        { title: 'Stremio', route: '/settings/stremioserver', icon: 'server.rack' },
-        { title: 'OpenSubtitles', route: '/settings/opensubtitles', icon: 'captions.bubble' },
+        { title: 'Stremio', route: '/settings/stremioserver', icon: 'server.rack', color: settingsIconColors.stremio },
+        { title: 'OpenSubtitles', route: '/settings/opensubtitles', icon: 'captions.bubble', color: settingsIconColors.subtitles },
       ],
     },
     {
       title: 'Resources',
-      items: [{ title: 'Downloads', route: '/settings/downloads', icon: 'arrow.down.circle' }],
+      items: [{ title: 'Downloads', route: '/settings/downloads', icon: 'arrow.down.circle', color: settingsIconColors.downloads }],
     },
     ...(process.env.EXPO_PUBLIC_SHOW_CONTACT === 'true'
       ? [{
         title: 'About',
         items: [
-          { title: 'Contact', route: '/settings/contact' as const, icon: 'envelope' as const },
-          { title: 'Disclaimer', route: '/settings/disclaimer' as const, icon: 'info.circle' as const },
-          { title: 'Donate', route: '/settings/donate' as const, icon: 'heart' as const },
+          { title: 'Contact', route: '/settings/contact' as const, icon: 'envelope' as const, color: settingsIconColors.contact },
+          { title: 'Disclaimer', route: '/settings/disclaimer' as const, icon: 'info.circle' as const, color: settingsIconColors.disclaimer },
+          { title: 'Donate', route: '/settings/donate' as const, icon: 'heart' as const, color: settingsIconColors.donate },
         ],
       }]
       : []),
@@ -100,7 +102,7 @@ export default function SettingsHome() {
                     contentShape(shapes.rectangle()),
                   ]}
                 >
-                  <Icon name={item.icon} size={20} />
+                  <Icon name={item.icon} size={20} color={item.color} />
                   <Text>{item.title}</Text>
                   <Spacer flexible />
                   <Icon name="chevron.right" size={13} />
@@ -111,7 +113,7 @@ export default function SettingsHome() {
         ))}
         <FieldGroup.Section title="Strmify">
           <Row spacing={12} alignment="center">
-            <Icon name="info.circle" size={20} />
+            <Icon name="info.circle" size={20} color={settingsIconColors.version} />
             <Text>Version</Text>
             <Spacer flexible />
             <Text>{version}</Text>
