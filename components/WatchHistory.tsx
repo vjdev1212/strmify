@@ -78,6 +78,7 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
   const { colors } = useTheme();
   const [history, setHistory] = useState<WatchHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadedArtworkKeys, setLoadedArtworkKeys] = useState<Set<string>>(() => new Set());
   const animatedValues = useRef<Map<string, Animated.Value>>(new Map()).current;
   const touchStartRef = useRef<{ pageX: number; pageY: number } | null>(null);
   const didScrollRef = useRef(false);
@@ -217,26 +218,39 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
                 <View style={[styles.imageContainer, { height: CARD_HEIGHT, backgroundColor: colors.background }]}>
                   <PosterArtwork key={item.artwork} style={styles.artworkFrame} borderRadius={12}>
                     {(onImageLoad) => (
-                      <Image source={{ uri: item.artwork }} onLoad={onImageLoad} resizeMethod="resize" style={styles.backdrop} resizeMode="cover" />
+                      <Image
+                        source={{ uri: item.artwork }}
+                        onLoad={() => {
+                          onImageLoad();
+                          setLoadedArtworkKeys((loadedKeys) => new Set(loadedKeys).add(itemKey));
+                        }}
+                        resizeMethod="resize"
+                        style={styles.backdrop}
+                        resizeMode="cover"
+                      />
                     )}
                   </PosterArtwork>
-                  <TouchableOpacity
-                    style={styles.removeButton}
-                    onPress={(e) => { e.stopPropagation(); removeHistoryItem(item, itemKey); }}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="close" size={16} color="#fff" />
-                  </TouchableOpacity>
-                  <View style={styles.positionBadge}>
-                    <NativeText
-                      style={styles.positionText}
-                      accessibilityLabel={item.durationSeconds ? `Watched ${formatDuration(item.positionSeconds)} of ${formatDuration(item.durationSeconds)}` : `Watched ${formatDuration(item.positionSeconds)}`}
-                    >
-                      {item.durationSeconds && Number.isFinite(item.durationSeconds)
-                        ? `${formatTimeShort(item.positionSeconds)} / ${formatTimeShort(item.durationSeconds)}`
-                        : formatDuration(item.positionSeconds)}
-                    </NativeText>
-                  </View>
+                  {loadedArtworkKeys.has(itemKey) ? (
+                    <>
+                      <TouchableOpacity
+                        style={styles.removeButton}
+                        onPress={(e) => { e.stopPropagation(); removeHistoryItem(item, itemKey); }}
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons name="close" size={16} color="#fff" />
+                      </TouchableOpacity>
+                      <View style={styles.positionBadge}>
+                        <NativeText
+                          style={styles.positionText}
+                          accessibilityLabel={item.durationSeconds ? `Watched ${formatDuration(item.positionSeconds)} of ${formatDuration(item.durationSeconds)}` : `Watched ${formatDuration(item.positionSeconds)}`}
+                        >
+                          {item.durationSeconds && Number.isFinite(item.durationSeconds)
+                            ? `${formatTimeShort(item.positionSeconds)} / ${formatTimeShort(item.durationSeconds)}`
+                            : formatDuration(item.positionSeconds)}
+                        </NativeText>
+                      </View>
+                    </>
+                  ) : null}
                 </View>
                 <View style={styles.infoContainer}>
                   <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>{item.title}</Text>
@@ -262,7 +276,7 @@ const styles = StyleSheet.create({
   artworkFrame: { width: '100%', height: '100%' },
   backdrop: { width: '100%', height: '100%' },
   removeButton: { position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: 16, padding: 6 },
-  positionBadge: { position: 'absolute', bottom: 8, left: 8, zIndex: 2, elevation: 4, backgroundColor: '#000000', paddingHorizontal: 8, paddingVertical: 5, borderRadius: 6 },
+  positionBadge: { position: 'absolute', bottom: 8, left: 8, zIndex: 2, elevation: 4, paddingHorizontal: 8, paddingVertical: 5, borderRadius: 6 },
   positionText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700', includeFontPadding: false },
   infoContainer: { paddingTop: 8, paddingHorizontal: 4 },
   title: { fontSize: 14, fontWeight: '500', marginBottom: 4, lineHeight: 18 },

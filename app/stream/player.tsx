@@ -63,6 +63,25 @@ const WATCH_HISTORY_KEY = StorageKeys.WATCH_HISTORY_KEY;
 const MAX_HISTORY_ITEMS = 30;
 const DEFAULT_MEDIA_PLAYER_KEY = StorageKeys.DEFAULT_MEDIA_PLAYER_KEY;
 
+const firstParamValue = (value: string | string[] | undefined): string | undefined =>
+  Array.isArray(value) ? value[0] : value;
+
+const parseStreams = (serializedStreams: string): Stream[] => {
+  const trimmedStreams = serializedStreams.trim();
+  if (!trimmedStreams.startsWith('[')) {
+    throw new Error('Stream data is not a JSON array');
+  }
+
+  const parsed: unknown = JSON.parse(trimmedStreams);
+  if (
+    !Array.isArray(parsed) ||
+    parsed.some((stream) => !stream || typeof stream !== 'object' || typeof stream.name !== 'string')
+  ) {
+    throw new Error('Stream data has an invalid format');
+  }
+  return parsed as Stream[];
+};
+
 const parsePositiveNumberParam = (value: string | string[] | undefined): number => {
   const rawValue = Array.isArray(value) ? value[0] : value;
   const parsedValue = Number(rawValue);
@@ -194,6 +213,7 @@ const MediaPlayerScreen: React.FC = () => {
 
   const {
     streams: streamsParam,
+    streamDataKey: streamDataKeyParam,
     selectedStreamIndex,
     videoUrl: directVideoUrl,
     title,
@@ -275,11 +295,23 @@ const MediaPlayerScreen: React.FC = () => {
         return;
       }
 
-      if (streamsParam) {
+      const streamDataKey = firstParamValue(streamDataKeyParam);
+      const serializedStreams = streamDataKey
+        ? storageService.getItem(streamDataKey)
+        : firstParamValue(streamsParam);
+
+      if (streamDataKey || serializedStreams) {
         try {
-          const parsedStreams = JSON.parse(streamsParam as string);
+          if (!serializedStreams) {
+            throw new Error('Stream data is missing. Return to the stream list and select a stream again.');
+          }
+          const parsedStreams = parseStreams(serializedStreams);
+          if (streamDataKey) storageService.removeItem(streamDataKey);
           setStreams(parsedStreams);
-          const initialIndex = selectedStreamIndex ? parseInt(selectedStreamIndex as string) : 0;
+          const requestedIndex = Number.parseInt(firstParamValue(selectedStreamIndex) ?? '0', 10);
+          const initialIndex = Number.isInteger(requestedIndex) && requestedIndex >= 0 && requestedIndex < parsedStreams.length
+            ? requestedIndex
+            : 0;
           setCurrentStreamIndex(initialIndex);
           const savedPlayer = loadDefaultPlayer();
           if (!savedPlayer) {
@@ -290,10 +322,20 @@ const MediaPlayerScreen: React.FC = () => {
             initializePlayerAndSelect(parsedStreams, initialIndex);
           }
         } catch (error) {
-          console.error('Failed to parse streams:', error);
-          setStreamError('Failed to load streams');
+          console.error('Failed to load stream data:', error);
+          const message =
+            error instanceof Error && error.message.startsWith('Stream data')
+              ? error.message
+              : 'Stream data is invalid. Return to the stream list and select a stream again.';
+          setStreamError(message);
+          showAlert('Playback', message);
           setIsLoadingStream(false);
         }
+      } else {
+        const message = 'Stream data is unavailable. Return to the stream list and select a stream again.';
+        setStreamError(message);
+        showAlert('Playback', message);
+        setIsLoadingStream(false);
       }
 
       initializeClient();

@@ -195,7 +195,7 @@ export const getSourcePriority = (source: string): number => {
 };
 
 export const extractSize = (text: string): string => {
-    const sizeMatch = text?.match(/(\d+(?:\.\d+)?)\s*(GB|MB|TB|GiB|MiB|TiB)/i);
+    const sizeMatch = text?.match(/(\d+(?:\.\d+)?)\s*(GB|MB|TB|GiB|MiB|TiB)\b(?!\s*(?:\/\s*s(?:ec)?|per\s*second)\b)/i);
     return sizeMatch ? `${sizeMatch[1]} ${sizeMatch[2].toUpperCase()}` : '';
 };
 

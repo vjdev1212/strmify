@@ -1,3 +1,6 @@
+import { Color } from 'expo-router';
+import { Platform } from 'react-native';
+
 export {
     Colors,
     DarkColors,
@@ -49,3 +52,15 @@ export const settingsIconColors = {
 } as const;
 
 export const settingsActionBlue = settingsIconColors.action;
+
+export const systemSelectionBlue = Platform.select({
+    ios: Color.ios.systemBlue,
+    android: Color.android.dynamic.primary,
+    default: settingsAccent.blue,
+})!;
+
+export const systemSeparatorGray = Platform.select({
+    ios: Color.ios.separator,
+    android: Color.android.dynamic.outlineVariant,
+    default: settingsAccent.gray,
+})!;

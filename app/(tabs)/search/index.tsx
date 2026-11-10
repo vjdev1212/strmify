@@ -234,7 +234,7 @@ const SearchScreen = () => {
             </View>
           ) : trimmedQuery && filteredResults.length > 0 ? (
             <MediaGrid
-              detailsPath="/movie/details"
+              mediaType={selectedFilter === 'series' ? 'series' : 'movie'}
               items={filteredResults}
               safeAreaEdges={['left', 'right']}
               showGenres={false}

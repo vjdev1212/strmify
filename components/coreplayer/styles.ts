@@ -179,13 +179,6 @@ export const styles = StyleSheet.create({
         borderCurve: 'continuous',
     },
 
-    blurGlassSurface: {
-        overflow: 'hidden',
-        backgroundColor: 'rgba(0, 0, 0, 0.28)',
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.2)',
-    },
-
     solidGlassSurface: {
         backgroundColor: '#242424',
         borderWidth: 1,

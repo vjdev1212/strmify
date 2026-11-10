@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { extractQuality, extractSize, getStreamType } from '@/utils/StreamItem';
 import { StorageKeys, storageService } from '@/utils/StorageService';
 import { useTheme } from '@/context/ThemeContext';
-import { radius, spacing, typography } from '@/constants/theme';
+import { radius, spacing, systemSelectionBlue, systemSeparatorGray, typography } from '@/constants/theme';
 
 interface Stream { name: string; title?: string; url?: string; embed?: string; infoHash?: string; magnet?: string; magnetLink?: string; description?: string; }
 interface Addon { name: string; url?: string; streamBaseUrl?: string; types?: string[]; }
@@ -23,6 +23,7 @@ interface StreamResponse { streams?: Stream[]; }
 type ThemeColors = ReturnType<typeof useTheme>['colors'];
 
 const ADDONS_KEY = StorageKeys.ADDONS_KEY;
+const STREAM_DATA_KEY_PREFIX = 'STRMIFY_STREAM_DATA_';
 
 const triggerActionHaptic = () => {
     if (!isHapticsSupported()) return;
@@ -60,7 +61,7 @@ const AddonItem = React.memo(({
         onPress={() => onPress(item)}
         accessibilityRole="button"
         accessibilityState={{ selected: isSelected }}
-        style={[styles.addonItem, isSelected && { borderBottomColor: colors.primary }]}
+        style={[styles.addonItem, isSelected && { borderBottomColor: systemSelectionBlue }]}
     >
         <Text style={[
             styles.addonName,
@@ -146,7 +147,7 @@ const StreamItem = React.memo(({
                             ) : (
                                 <Feather name={streamTypeIcon} size={13} color={colors.textDim} />
                             )}
-                            <Text style={[styles.streamType, { color: colors.textDim }]}>{streamType}</Text>
+                            <Text style={[styles.streamType, { color: colors.textMuted }]}>{streamType}</Text>
                         </RNView>
                     </RNView>
                 </RNView>
@@ -172,7 +173,7 @@ const StreamItem = React.memo(({
                     <Feather name="more-horizontal" size={20} color={colors.textMuted} />
                 </Pressable>
             </MenuView>
-            {!isLast ? <RNView style={[styles.streamDivider, { backgroundColor: colors.border }]} /> : null}
+            {!isLast ? <RNView style={[styles.streamDivider, { backgroundColor: colors.borderStrong }]} /> : null}
         </RNView>
     );
 });
@@ -267,7 +268,17 @@ const StreamListScreen = () => {
 
     const handleStreamSelected = useCallback(async (stream: Stream, index: number): Promise<void> => {
         triggerActionHaptic();
-        router.push({ pathname: '/stream/player', params: { streams: JSON.stringify(streams), selectedStreamIndex: index.toString(), title, imdbid, type, season, episode } });
+        const streamDataKey = `${STREAM_DATA_KEY_PREFIX}${Date.now()}_${Math.random().toString(36).slice(2)}`;
+        try {
+            storageService.setItem(streamDataKey, JSON.stringify(streams));
+            router.push({
+                pathname: '/stream/player',
+                params: { streamDataKey, selectedStreamIndex: index.toString(), title, imdbid, type, season, episode },
+            });
+        } catch (error) {
+            console.error('Failed to open selected stream:', error);
+            showAlert('Playback', 'Unable to open this stream. Please try again.');
+        }
     }, [streams, router, imdbid, type, season, episode]);
 
     const handleCopyStreamValue = useCallback(async (stream: Stream): Promise<void> => {
@@ -368,7 +379,7 @@ const StreamListScreen = () => {
             }} />
             {loading && addons.length === 0 ? renderLoadingState('Loading add-ons…') : addons.length > 0 ? (
                 <>
-                    <View style={styles.sourceSection}>
+                    <View style={[styles.sourceSection, { borderBottomColor: systemSeparatorGray }]}>
                         <ScrollView
                             horizontal
                             showsHorizontalScrollIndicator={false}

@@ -652,9 +652,9 @@ export const ProgressBar: React.FC<{
                         {progressContent}
                     </View>
                 ) : (
-                    <BlurView intensity={70} tint="dark" style={[styles.glassContainer, styles.blurGlassSurface]}>
+                    <GlassView glassEffectStyle="clear" style={styles.glassContainer}>
                         {progressContent}
-                    </BlurView>
+                    </GlassView>
                 )}
             </View>
         </View>

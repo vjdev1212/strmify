@@ -240,7 +240,7 @@ const LibraryScreen: React.FC = () => {
           data={items}
           axis="horizontal"
           spacing={CARD_SPACING}
-          horizontalContentInset={CARD_SPACING}
+          horizontalContentInset={0}
           style={{ height: CARD_HEIGHT + 62 }}
           renderItem={renderLibraryItem}
           keyExtractor={(item, index) => `${item.tmdbid}-${item.type}-${index}`}
@@ -369,8 +369,8 @@ const styles = StyleSheet.create({
   summary: { paddingHorizontal: spacing.md, paddingTop: spacing.md },
   headerSubtitle: { ...typography.caption },
   librarySections: { gap: spacing.lg, paddingTop: spacing.lg },
-  section: { marginTop: 0, marginBottom: 0 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.md, marginBottom: spacing.sm },
+  section: { marginTop: 0, marginBottom: 0, paddingHorizontal: spacing.md },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm },
   sectionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   sectionTitle: { ...typography.headline },
   sectionCount: { ...typography.caption, fontWeight: '500' },
