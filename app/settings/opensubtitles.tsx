@@ -9,7 +9,6 @@ import { View, Text } from '@vjdev1212/media-ui-kit';
 import { NativeTextInput } from '@vjdev1212/media-ui-kit';
 import { SettingsPage, SettingsRow, SettingsSection } from '@vjdev1212/media-ui-kit';
 import { NativeFieldSelect } from '@vjdev1212/media-ui-kit';
-import { systemDarkBackground } from '@/constants/theme';
 
 const OpenSubtitlesConfigScreen: React.FC = () => {
     const { colors } = useTheme();
@@ -87,7 +86,7 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
     };
 
     return (
-        <View style={{ flex: 1, backgroundColor: systemDarkBackground }}>
+        <View style={{ flex: 1, backgroundColor: colors.background }}>
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
                 <SettingsPage>
                     {isLoading ? (
@@ -168,8 +167,8 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
                                     detail={isSaving ? 'Saving…' : undefined}
                                     onPress={saveConfiguration}
                                     disabled={isSaving || (!useDefaultKey && !apiKey.trim())}
-                                    titleColor="#0A84FF"
-                                    leading={<Ionicons name="checkmark-circle-outline" size={20} color="#0A84FF" />}
+                                    titleColor={colors.primary}
+                                    leading={<Ionicons name="checkmark-circle-outline" size={20} color={colors.primary} />}
                                 />
                                 <SettingsRow
                                     title="Reset"
@@ -177,7 +176,7 @@ const OpenSubtitlesConfigScreen: React.FC = () => {
                                     disabled={isSaving}
                                     destructive
                                     isLast
-                                    leading={<Ionicons name="trash-outline" size={20} color="#ff453a" />}
+                                    leading={<Ionicons name="trash-outline" size={20} color={colors.danger} />}
                                 />
                             </SettingsSection>
                         </>

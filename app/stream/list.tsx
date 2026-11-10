@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { extractQuality, extractSize, getStreamType } from '@/utils/StreamItem';
 import { StorageKeys, storageService } from '@/utils/StorageService';
 import { useTheme } from '@/context/ThemeContext';
-import { radius, spacing, systemDarkBackground, typography } from '@/constants/theme';
+import { radius, spacing, typography } from '@/constants/theme';
 
 interface Stream { name: string; title?: string; url?: string; embed?: string; infoHash?: string; magnet?: string; magnetLink?: string; description?: string; }
 interface Addon { name: string; url?: string; streamBaseUrl?: string; types?: string[]; }
@@ -48,21 +48,23 @@ const getStreamUrl = (stream: Stream): string | undefined => stream.url || strea
 const AddonItem = React.memo(({
     item,
     isSelected,
+    colors,
     onPress,
 }: {
     item: Addon;
     isSelected: boolean;
+    colors: ThemeColors;
     onPress: (item: Addon) => void;
 }) => (
     <Pressable
         onPress={() => onPress(item)}
         accessibilityRole="button"
         accessibilityState={{ selected: isSelected }}
-        style={[styles.addonItem, isSelected && styles.selectedAddonItem]}
+        style={[styles.addonItem, isSelected && { borderBottomColor: colors.primary }]}
     >
         <Text style={[
             styles.addonName,
-            { color: isSelected ? '#FFFFFF' : '#D0D0D0', fontWeight: isSelected ? '600' : '400' },
+            { color: isSelected ? colors.primary : colors.textMuted, fontWeight: isSelected ? '600' : '400' },
         ]} numberOfLines={1}>
             {item.name}
         </Text>
@@ -120,7 +122,7 @@ const StreamItem = React.memo(({
             >
                 <RNView style={styles.streamContent}>
                     <RNView style={styles.streamHeader}>
-                        <Text style={[styles.streamName, { color: '#FFFFFF' }]} numberOfLines={2}>{name}</Text>
+                        <Text style={[styles.streamName, { color: colors.text }]} numberOfLines={2}>{name}</Text>
                         {quality ? (
                             <RNView style={[styles.qualityBadge, { backgroundColor: colors.primaryMuted, borderColor: colors.primaryBorder }]}>
                                 <Feather name="tv" size={13} color={colors.text} />
@@ -129,7 +131,7 @@ const StreamItem = React.memo(({
                         ) : null}
                     </RNView>
                     {(title || description) ? (
-                        <Text style={[styles.streamDescription, { color: title ? '#FFFFFF' : colors.textMuted }]}>{title || description}</Text>
+                        <Text style={[styles.streamDescription, { color: title ? colors.text : colors.textMuted }]}>{title || description}</Text>
                     ) : null}
                     <RNView style={styles.streamFooter}>
                         {size ? (
@@ -334,11 +336,10 @@ const StreamListScreen = () => {
                         triggerActionHaptic();
                         router.push('/settings/add');
                     }}
-                    seedColor="#ffffff"
-                    style={styles.addAddonButton}
+                    style={[styles.addAddonButton, { backgroundColor: colors.primary }]}
                 >
-                    <Ionicons name="add-outline" size={24} color="#000000" style={styles.addAddonButtonIcon} />
-                    <Text style={styles.addAddonButtonText}>Add an add-on</Text>
+                    <Ionicons name="add-outline" size={24} color={colors.onPrimary} style={styles.addAddonButtonIcon} />
+                    <Text style={[styles.addAddonButtonText, { color: colors.onPrimary }]}>Add an add-on</Text>
                 </NativeButton>
             </RNView>
         </View>
@@ -378,6 +379,7 @@ const StreamListScreen = () => {
                                     key={`${item.name}-${index}`}
                                     item={item}
                                     isSelected={item.name === selectedAddon?.name}
+                                    colors={colors}
                                     onPress={handleAddonPress}
                                 />
                             ))}
@@ -435,7 +437,6 @@ const styles = StyleSheet.create({
     sourceSection: { width: '100%', paddingVertical: 8, borderBottomWidth: StyleSheet.hairlineWidth },
     addonList: { alignItems: 'center', gap: spacing.lg, paddingHorizontal: spacing.md },
     addonItem: { minHeight: 44, justifyContent: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' },
-    selectedAddonItem: { borderBottomColor: '#0A84FF' },
     addonName: { ...typography.subhead, fontWeight: '600' },
     streamsPager: { flex: 1 },
     streamsPagerContent: { flexGrow: 1 },
@@ -487,10 +488,9 @@ const styles = StyleSheet.create({
         alignSelf: 'center',
         flexDirection: 'row',
         justifyContent: 'center',
-        backgroundColor: '#ffffff',
         marginTop: 12,
     },
-    addAddonButtonText: { color: '#000000', ...typography.headline },
+    addAddonButtonText: { ...typography.headline },
     addAddonButtonIcon: { marginRight: 8 },
 });
 

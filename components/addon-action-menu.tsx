@@ -1,5 +1,6 @@
 import React from 'react';
 import { MenuView, type MenuAction } from '@expo/ui/community/menu';
+import { useTheme } from '@/context/ThemeContext';
 
 interface AddonActionMenuProps {
   title: string;
@@ -14,12 +15,14 @@ export default function AddonActionMenu({
   onPressAction,
   children,
 }: AddonActionMenuProps) {
+  const { colorScheme } = useTheme();
+
   return (
     <MenuView
       title={title}
       actions={actions}
       onPressAction={({ nativeEvent }) => onPressAction(nativeEvent.event)}
-      colorScheme="dark"
+      colorScheme={colorScheme}
       shouldOpenOnLongPress={false}
     >
       {children}

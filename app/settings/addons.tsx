@@ -11,7 +11,6 @@ import { WebMenu } from '@vjdev1212/media-ui-kit';
 import { showAlert } from '@/utils/platform';
 import { StorageKeys, storageService } from '@/utils/StorageService';
 import { useTheme } from '@/context/ThemeContext';
-import { systemDarkBackground } from '@/constants/theme';
 
 const ADDONS_KEY = StorageKeys.ADDONS_KEY;
 const defaultAddonLogo = 'https://i.ibb.co/fSJ42PJ/addon.png';
@@ -174,13 +173,13 @@ const AddonsScreen = () => {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: systemDarkBackground }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <StatusBar />
       <SettingsPage onRefresh={onRefresh}>
         <SettingsSection title="Manage add-ons">
           <SettingsRow
             title="Add new Addon"
-            leading={<MaterialIcons name="add" size={20} color="#30d158" />}
+            leading={<MaterialIcons name="add" size={20} color={colors.primary} />}
             onPress={() => router.push('/settings/add')}
             isLast
           />
@@ -236,8 +235,8 @@ const AddonsScreen = () => {
                         : id === 'configure'
                           ? 'settings-outline'
                           : 'trash-outline',
-                    titleColor: id === 'remove' ? '#ff453a' : undefined,
-                    iconColor: id === 'remove' ? '#ff453a' : undefined,
+                    titleColor: id === 'remove' ? colors.danger : undefined,
+                    iconColor: id === 'remove' ? colors.danger : undefined,
                   }))}
                   onPressAction={handleAction}
                 >
@@ -276,7 +275,6 @@ const AddonsScreen = () => {
                     key={`${addon.id}-details`}
                     title={addon.description || 'No description available.'}
                     detail={categories || undefined}
-                    detailColor="#8e8e93"
                     isLast
                   />
                 ) : null,

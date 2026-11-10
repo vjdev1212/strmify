@@ -5,14 +5,12 @@ import { StatusBar, View } from '@vjdev1212/media-ui-kit';
 import { SettingsPage, SettingsRow, SettingsSection } from '@vjdev1212/media-ui-kit';
 import { showAlert } from '@/utils/platform';
 import { useTheme } from '@/context/ThemeContext';
-import { systemDarkBackground } from '@/constants/theme';
 
 const contactActions = [
   {
     title: 'Report a Bug',
     detail: 'Let us know when something is not working',
     icon: 'bug-outline' as const,
-    iconColor: '#FF453A',
     url: process.env.EXPO_PUBLIC_REPORT_BUG_URL ?? '',
   },
 ];
@@ -34,7 +32,7 @@ export default function ContactScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: systemDarkBackground }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <StatusBar />
       <SettingsPage>
         {contactActions.map((action, index) => (
@@ -47,7 +45,7 @@ export default function ContactScreen() {
               title={action.title}
               onPress={() => openContact(action.url)}
               isLast
-              leading={<Ionicons name={action.icon} size={20} color={action.iconColor} />}
+              leading={<Ionicons name={action.icon} size={20} color={colors.danger} />}
               trailing={<Ionicons name="open-outline" size={17} color={colors.textDim} />}
             />
           </SettingsSection>

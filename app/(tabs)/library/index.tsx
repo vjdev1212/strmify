@@ -196,7 +196,7 @@ const LibraryScreen: React.FC = () => {
             </PosterArtwork>
             {item.watched && (
               <View style={styles.watchedBadge}>
-                <Ionicons name="checkmark-circle" size={20} color="#4ade80" />
+                <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
               </View>
             )}
             <TouchableOpacity
@@ -240,7 +240,7 @@ const LibraryScreen: React.FC = () => {
             <Ionicons name={icon as any} size={20} color={colors.text} />
             <Text style={[styles.sectionTitle, { color: colors.text }]}>{title}</Text>
           </View>
-          <Text style={[styles.sectionCount, { color: colors.text }]}>
+          <Text style={[styles.sectionCount, { color: colors.textMuted }]}>
             {items.length} {items.length === 1 ? 'item' : 'items'}
           </Text>
         </View>
@@ -344,7 +344,7 @@ const LibraryScreen: React.FC = () => {
         }
       >
         <View style={styles.summary}>
-          <Text style={[styles.headerSubtitle, { color: colors.text }]}>
+          <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>
             {totalCount} {totalCount === 1 ? 'item' : 'items'}
           </Text>
         </View>
@@ -380,12 +380,12 @@ const LibraryScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   summary: { paddingHorizontal: spacing.md, paddingTop: spacing.md },
-  headerSubtitle: { ...typography.caption, color: '#8E8E93' },
+  headerSubtitle: { ...typography.caption },
   section: { marginTop: spacing.sm, marginBottom: 0 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.md, marginBottom: spacing.sm },
   sectionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   sectionTitle: { ...typography.headline },
-  sectionCount: { ...typography.caption, color: '#8E8E93', fontWeight: '500' },
+  sectionCount: { ...typography.caption, fontWeight: '500' },
   card: { backgroundColor: 'transparent', borderRadius: radius.md },
   imageContainer: { width: '100%', position: 'relative', borderRadius: radius.md, overflow: 'hidden' },
   artworkFrame: { width: '100%', height: '100%' },

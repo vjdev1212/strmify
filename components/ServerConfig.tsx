@@ -42,7 +42,7 @@ const getDefaultServer = (serverType: string, serverName: string): ServerConfig 
 });
 
 const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverType, defaultUrl }) => {
-  const { colors } = useTheme();
+  const { colors, colorScheme } = useTheme();
   const [serverUrl, setServerUrl] = useState(defaultUrl);
   const [serverLabel, setServerLabel] = useState(`${serverName} Server`);
   const [isCurrent, setIsCurrent] = useState(false);
@@ -170,14 +170,14 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
   const getConnectionColor = (serverId: string) => {
     switch (connectionStatus[serverId]) {
       case 'connected':
-        return '#30d158';
+        return colors.primary;
       case 'disconnected':
       case 'error':
-        return '#ff453a';
+        return colors.danger;
       case 'checking':
-        return '#ff9f0a';
+        return colors.textMuted;
       default:
-        return '#8e8e93';
+        return colors.textDim;
     }
   };
 
@@ -353,7 +353,6 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
                   <NativeSwitch
                     value={isCurrent}
                     onValueChange={setIsCurrent}
-                    seedColor={colors.primary}
                   />
                 }
                 isLast
@@ -363,12 +362,12 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
           <SettingsSection title="Actions">
             <SettingsRow
               title="Save server"
-              leading={<MaterialIcons name="check-circle-outline" size={20} color="#30d158" />}
+              leading={<MaterialIcons name="check-circle-outline" size={20} color={colors.primary} />}
               onPress={() => void saveServer()}
             />
             <SettingsRow
               title="Cancel"
-              leading={<MaterialIcons name="close" size={20} color="#ff453a" />}
+              leading={<MaterialIcons name="close" size={20} color={colors.danger} />}
               onPress={cancelEditing}
               destructive
               isLast
@@ -383,7 +382,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
           >
             <SettingsRow
               title="Refresh"
-              leading={<MaterialIcons name="refresh" size={20} color="#0a84ff" />}
+              leading={<MaterialIcons name="refresh" size={20} color={colors.primary} />}
               onPress={() => void checkAllConnections()}
               isLast
             />
@@ -394,7 +393,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
           >
             <SettingsRow
               title="Add Server"
-              leading={<MaterialIcons name="add" size={20} color="#30d158" />}
+              leading={<MaterialIcons name="add" size={20} color={colors.primary} />}
               onPress={startAddingServer}
               isLast
             />
@@ -451,8 +450,8 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
                       : action.id === 'test'
                         ? 'git-network-outline'
                         : 'trash-outline',
-                  titleColor: action.id === 'delete' ? '#ff453a' : undefined,
-                  iconColor: action.id === 'delete' ? '#ff453a' : undefined,
+                  titleColor: action.id === 'delete' ? colors.danger : undefined,
+                  iconColor: action.id === 'delete' ? colors.danger : undefined,
                 }))}
                 onPressAction={handleServerAction}
               >
@@ -463,7 +462,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
                 title={`${server.serverName} actions`}
                 actions={serverActions}
                 onPressAction={({ nativeEvent }) => handleServerAction(nativeEvent.event)}
-                colorScheme="dark"
+                colorScheme={colorScheme}
                 shouldOpenOnLongPress={false}
               >
                 {actionTrigger}
@@ -482,7 +481,7 @@ const ServerConfiguration: React.FC<ServerConfigProps> = ({ serverName, serverTy
                 accessibilityLabel={`${isExpanded ? 'Collapse' : 'Expand'} ${server.serverName} server details`}
                 isLast={!isExpanded}
                 titleAccessory={server.current
-                  ? <MaterialCommunityIcons name="crown" size={18} color="#ffcc00" />
+                  ? <MaterialCommunityIcons name="crown" size={18} color={colors.primary} />
                   : undefined}
                 trailing={
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>

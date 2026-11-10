@@ -169,13 +169,27 @@ export const styles = StyleSheet.create({
     // Progress Bar
     progressContainerWithMargin: {
         marginBottom: 15,
-        paddingVertical: 10,
+        paddingVertical: 6,
     },
 
     glassContainer: {
         paddingHorizontal: 10,
-        paddingVertical: 10,
-        borderRadius: 100
+        paddingVertical: 6,
+        borderRadius: 100,
+        borderCurve: 'continuous',
+    },
+
+    blurGlassSurface: {
+        overflow: 'hidden',
+        backgroundColor: 'rgba(0, 0, 0, 0.28)',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.2)',
+    },
+
+    solidGlassSurface: {
+        backgroundColor: '#242424',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.2)',
     },
 
     sliderRow: {
@@ -187,8 +201,7 @@ export const styles = StyleSheet.create({
 
     progressSlider: {
         flex: 1,
-        height: 20,
-        paddingHorizontal: 10,
+        height: 32,
     },
 
     timeText: {

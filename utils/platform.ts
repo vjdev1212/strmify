@@ -17,7 +17,7 @@ export const isOrientationSupported = (): boolean => {
 
 export const showAlert = (title: string, message: string, buttons?: AlertButton[]) => {
   if (Platform.OS === 'ios' || Platform.OS === 'android') {
-    Alert.alert(title, message, buttons, { userInterfaceStyle: 'dark', cancelable: true });
+    Alert.alert(title, message, buttons, { cancelable: true });
   } else {
     window.alert(`${title}\n\n${message}`);
   }
@@ -41,8 +41,7 @@ export const confirmAction = async (
         { text: confirmText, style: 'destructive', onPress: () => resolve(true) },
       ],
       {
-        cancelable: true,
-        userInterfaceStyle: 'dark'
+        cancelable: true
       }
     );
   });

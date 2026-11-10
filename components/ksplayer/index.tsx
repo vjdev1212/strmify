@@ -55,6 +55,7 @@ const MenuWrapper: React.FC<any> = (props) => {
         >
             <MenuView
                 {...props}
+                colorScheme="dark"
                 style={undefined}
             />
         </View>
@@ -177,16 +178,16 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         Animated.timing(controlsOpacity, { toValue: 1, duration: 200, useNativeDriver: true }).start();
         clearTimer('hideControls');
         isHideControlsScheduled.current = false;
-        if (shouldAutoHideControls.current) {
+        if (shouldAutoHideControls.current && !isPaused) {
             isHideControlsScheduled.current = true;
             setTimer('hideControls', () => {
-                if (shouldAutoHideControls.current) {
+                if (shouldAutoHideControls.current && !isPaused) {
                     hideControls(setShowControls, controlsOpacity);
                 }
                 isHideControlsScheduled.current = false;
             }, CONSTANTS.CONTROLS_AUTO_HIDE_DELAY);
         }
-    }, [controlsOpacity, clearTimer, setTimer, setShowControls]);
+    }, [controlsOpacity, clearTimer, isPaused, setTimer, setShowControls]);
 
     useEffect(() => {
         lastKnownTimeRef.current = playerState.currentTime;
@@ -284,12 +285,21 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         });
     }, [playbackSettings, playerState.isReady, playerState.duration, updateProgress]);
 
-    // Auto-hide controls on ready
+    // Keep controls visible while paused; resume the normal auto-hide after playback resumes.
     useEffect(() => {
-        if (playerState.isReady && !isPaused) {
-            showControlsTemporarily();
+        if (!playerState.isReady) return;
+
+        if (isPaused) {
+            clearTimer('hideControls');
+            isHideControlsScheduled.current = false;
+            controlsOpacity.stopAnimation();
+            controlsOpacity.setValue(1);
+            setShowControls(true);
+            return;
         }
-    }, [playerState.isReady]);
+
+        showControlsTemporarily();
+    }, [clearTimer, controlsOpacity, isPaused, playerState.isReady, setShowControls, showControlsTemporarily]);
 
     useEffect(() => {
         playerState.setIsPlaying(playerState.isReady && !isPaused);
@@ -830,7 +840,6 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                                     onPressAction={Platform.OS === 'web' ? handleWebAction : handleNativeAction}
                                     actions={streamActions}
                                     shouldOpenOnLongPress={false}
-                                    colorScheme="dark"
                                     onOpenMenu={handleMenuOpen}
                                     onCloseMenu={handleMenuClose}
                                 >
@@ -862,7 +871,6 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                                     onPressAction={Platform.OS === 'web' ? handleWebAction : handleNativeAction}
                                     actions={audioActions}
                                     shouldOpenOnLongPress={false}
-                                    colorScheme="dark"
                                     onOpenMenu={handleMenuOpen}
                                     onCloseMenu={handleMenuClose}
                                 >
@@ -882,7 +890,6 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                                     onPressAction={Platform.OS === 'web' ? handleWebAction : handleNativeAction}
                                     actions={subtitleActions}
                                     shouldOpenOnLongPress={false}
-                                    colorScheme="dark"
                                     onOpenMenu={handleMenuOpen}
                                     onCloseMenu={handleMenuClose}
                                 >
@@ -901,7 +908,6 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
                                 onPressAction={Platform.OS === 'web' ? handleWebAction : handleNativeAction}
                                 actions={settingsActions}
                                 shouldOpenOnLongPress={false}
-                                colorScheme="dark"
                                 onOpenMenu={handleMenuOpen}
                                 onCloseMenu={handleMenuClose}
                             >

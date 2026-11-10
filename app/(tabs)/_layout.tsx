@@ -1,17 +1,16 @@
 import { NativeTabs } from 'expo-router/native-tabs';
 import { useTheme } from '@/context/ThemeContext';
-import { Colors, systemDarkBackground } from '@/constants/theme';
 
 export default function TabLayout() {
   const { colors } = useTheme();
-  const tabContentStyle = { backgroundColor: systemDarkBackground };
+  const tabContentStyle = { backgroundColor: colors.background };
   const searchTabContentStyle = { backgroundColor: 'transparent' };
 
   return (
     <NativeTabs
       minimizeBehavior="onScrollDown"
       tintColor={colors.primary}
-      backgroundColor={Colors.background}
+      backgroundColor={colors.background}
     >
       <NativeTabs.Trigger name="index" contentStyle={tabContentStyle}>
         <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>

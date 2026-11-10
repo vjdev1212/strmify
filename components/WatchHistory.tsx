@@ -4,6 +4,7 @@ import {
   Pressable,
   TouchableOpacity,
   Image,
+  Text as NativeText,
   StyleSheet,
   Animated,
   useWindowDimensions,
@@ -168,9 +169,9 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
           <Ionicons name="play-circle-outline" size={22} color={colors.text} />
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Continue Watching</Text>
         </View>
-        <NativeButton variant="text" onPress={clearAllHistory} style={styles.clearAllButton} seedColor={colors.primary}>
-          <Ionicons name="trash-outline" size={14} color="#ff6b6b" />
-          <Text style={styles.clearAllText}>Clear All</Text>
+        <NativeButton variant="text" onPress={clearAllHistory} style={styles.clearAllButton}>
+          <Ionicons name="trash-outline" size={14} color={colors.danger} />
+          <Text style={[styles.clearAllText, { color: colors.danger }]}>Clear All</Text>
         </NativeButton>
       </View>
 
@@ -227,14 +228,14 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
                     <Ionicons name="close" size={16} color={colors.text} />
                   </TouchableOpacity>
                   <View style={styles.positionBadge}>
-                    <Text
-                      style={[styles.positionText, { color: colors.text }]}
+                    <NativeText
+                      style={styles.positionText}
                       accessibilityLabel={item.durationSeconds ? `Watched ${formatDuration(item.positionSeconds)} of ${formatDuration(item.durationSeconds)}` : `Watched ${formatDuration(item.positionSeconds)}`}
                     >
                       {item.durationSeconds && Number.isFinite(item.durationSeconds)
                         ? `${formatTimeShort(item.positionSeconds)} / ${formatTimeShort(item.durationSeconds)}`
                         : formatDuration(item.positionSeconds)}
-                    </Text>
+                    </NativeText>
                   </View>
                 </View>
                 <View style={styles.infoContainer}>
@@ -254,16 +255,16 @@ const styles = StyleSheet.create({
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 12 },
   sectionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   sectionTitle: { fontSize: 20, fontWeight: '600' },
-  clearAllButton: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 8, backgroundColor: 'rgba(255, 107, 107, 0.12)' },
-  clearAllText: { fontSize: 13, fontWeight: '500', color: '#ff6b6b' },
+  clearAllButton: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 8 },
+  clearAllText: { fontSize: 13, fontWeight: '500' },
   scrollContent: { marginVertical: 10 },
   card: { backgroundColor: 'transparent', borderRadius: 12 },
   imageContainer: { width: '100%', position: 'relative', borderRadius: 12, overflow: 'hidden' },
   artworkFrame: { width: '100%', height: '100%' },
   backdrop: { width: '100%', height: '100%' },
   removeButton: { position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: 16, padding: 6 },
-  positionBadge: { position: 'absolute', bottom: 8, left: 8, backgroundColor: 'rgba(0,0,0,0.7)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  positionText: { fontSize: 11, fontWeight: '500' },
+  positionBadge: { position: 'absolute', bottom: 8, left: 8, zIndex: 2, elevation: 4, backgroundColor: '#000000', paddingHorizontal: 8, paddingVertical: 5, borderRadius: 6 },
+  positionText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700', includeFontPadding: false },
   infoContainer: { paddingTop: 8, paddingHorizontal: 4 },
   title: { fontSize: 14, fontWeight: '500', marginBottom: 4, lineHeight: 18 },
 });

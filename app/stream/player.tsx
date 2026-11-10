@@ -13,6 +13,7 @@ import { ServerConfig } from "@/components/ServerConfig";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StreamingServerClient, TorrentFile } from "@/clients/stremio";
 import * as ScreenOrientation from 'expo-screen-orientation';
+import { Colors } from '@/constants/theme';
 
 interface PlaybackPositionEvent {
   positionSeconds: number;
@@ -937,7 +938,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   errorMessage: {
-    color: '#ff6b6b',
+    color: Colors.danger,
     fontSize: 15,
     textAlign: 'center',
     marginBottom: 8,

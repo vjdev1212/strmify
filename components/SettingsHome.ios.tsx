@@ -14,7 +14,7 @@ import {
   shapes,
 } from '@expo/ui/swift-ui/modifiers';
 import { isHapticsSupported } from '@/utils/platform';
-import { systemDarkBackground } from '@/constants/theme';
+import { useTheme } from '@/context/ThemeContext';
 
 type SettingsRoute =
   | '/settings/addons'
@@ -32,34 +32,33 @@ const settingsSections: {
     title: string;
     route: SettingsRoute;
     icon: React.ComponentProps<typeof Icon>['name'];
-    iconColor: string;
   }[];
 }[] = [
     {
       title: 'General',
       items: [
-        { title: 'Add-ons', route: '/settings/addons', icon: 'puzzlepiece.extension', iconColor: '#FF9F0A' },
-        { title: 'Media Player', route: '/settings/mediaplayer', icon: 'play.rectangle', iconColor: '#30D158' },
+        { title: 'Add-ons', route: '/settings/addons', icon: 'puzzlepiece.extension' },
+        { title: 'Media Player', route: '/settings/mediaplayer', icon: 'play.rectangle' },
       ],
     },
     {
       title: 'Integrations',
       items: [
-        { title: 'Stremio', route: '/settings/stremioserver', icon: 'server.rack', iconColor: '#0A84FF' },
-        { title: 'OpenSubtitles', route: '/settings/opensubtitles', icon: 'captions.bubble', iconColor: '#BF5AF2' },
+        { title: 'Stremio', route: '/settings/stremioserver', icon: 'server.rack' },
+        { title: 'OpenSubtitles', route: '/settings/opensubtitles', icon: 'captions.bubble' },
       ],
     },
     {
       title: 'Resources',
-      items: [{ title: 'Downloads', route: '/settings/downloads', icon: 'arrow.down.circle', iconColor: '#64D2FF' }],
+      items: [{ title: 'Downloads', route: '/settings/downloads', icon: 'arrow.down.circle' }],
     },
     ...(process.env.EXPO_PUBLIC_SHOW_CONTACT === 'true'
       ? [{
         title: 'About',
         items: [
-          { title: 'Contact', route: '/settings/contact' as const, icon: 'envelope' as const, iconColor: '#64D2FF' },
-          { title: 'Disclaimer', route: '/settings/disclaimer' as const, icon: 'info.circle' as const, iconColor: '#FFD60A' },
-          { title: 'Donate', route: '/settings/donate' as const, icon: 'heart' as const, iconColor: '#FF453A' },
+          { title: 'Contact', route: '/settings/contact' as const, icon: 'envelope' as const },
+          { title: 'Disclaimer', route: '/settings/disclaimer' as const, icon: 'info.circle' as const },
+          { title: 'Donate', route: '/settings/donate' as const, icon: 'heart' as const },
         ],
       }]
       : []),
@@ -67,6 +66,7 @@ const settingsSections: {
 
 export default function SettingsHome() {
   const router = useRouter();
+  const { colorScheme, colors } = useTheme();
   const version = Constants.expoConfig?.version ?? 'Unknown';
 
   const openSettings = async (route: SettingsRoute) => {
@@ -77,12 +77,12 @@ export default function SettingsHome() {
   };
 
   return (
-    <Host style={{ flex: 1 }} colorScheme="dark">
+    <Host style={{ flex: 1 }} colorScheme={colorScheme}>
       <List modifiers={[
         listStyle('insetGrouped'),
         scrollIndicators('never', 'vertical'),
         scrollContentBackground('hidden'),
-        background(systemDarkBackground),
+        background(colors.background),
       ]}>
         {settingsSections.map((section) => (
           <FieldGroup.Section key={section.title} title={section.title}>
@@ -100,17 +100,18 @@ export default function SettingsHome() {
                     contentShape(shapes.rectangle()),
                   ]}
                 >
-                  <Icon name={item.icon} size={20} color={item.iconColor} />
+                  <Icon name={item.icon} size={20} />
                   <Text>{item.title}</Text>
                   <Spacer flexible />
-                  <Icon name="chevron.right" size={13} color="#8e8e93" />
+                  <Icon name="chevron.right" size={13} />
                 </Row>
               </Button>
             ))}
           </FieldGroup.Section>
         ))}
         <FieldGroup.Section title="Strmify">
-          <Row>
+          <Row spacing={12} alignment="center">
+            <Icon name="info.circle" size={20} />
             <Text>Version</Text>
             <Spacer flexible />
             <Text>{version}</Text>

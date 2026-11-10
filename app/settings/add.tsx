@@ -4,7 +4,6 @@ import { FieldGroup, Host, ListItem, RNHostView, Text as NativeText, TextInput, 
 import { router } from 'expo-router';
 import { StatusBar, View } from '@vjdev1212/media-ui-kit';
 import { useTheme } from '@/context/ThemeContext';
-import { systemDarkBackground } from '@/constants/theme';
 import { StorageKeys, storageService } from '@/utils/StorageService';
 import { showAlert } from '@/utils/platform';
 
@@ -12,7 +11,7 @@ const ADDONS_KEY = StorageKeys.ADDONS_KEY;
 const defaultAddonLogo = 'https://i.ibb.co/fSJ42PJ/addon.png';
 
 export default function AddAddonScreen() {
-  const { colors } = useTheme();
+  const { colors, colorScheme } = useTheme();
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const nativeUrl = useNativeState(url);
@@ -60,9 +59,9 @@ export default function AddAddonScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: systemDarkBackground }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <StatusBar />
-      <Host style={{ flex: 1 }} colorScheme="dark" seedColor={colors.primary}>
+      <Host style={{ flex: 1 }} colorScheme={colorScheme}>
         <FieldGroup>
           <FieldGroup.Section title="Manifest URL">
             <TextInput
@@ -92,7 +91,7 @@ export default function AddAddonScreen() {
               onPress={loading ? undefined : () => void addAddon()}
               leading={
                 <RNHostView matchContents>
-                  <MaterialIcons name="save" size={20} color="#30d158" />
+                  <MaterialIcons name="save" size={20} color={colors.primary} />
                 </RNHostView>
               }
             >
@@ -102,7 +101,7 @@ export default function AddAddonScreen() {
               onPress={loading ? undefined : () => router.back()}
               leading={
                 <RNHostView matchContents>
-                  <MaterialIcons name="cancel" size={20} color="#ff453a" />
+                  <MaterialIcons name="cancel" size={20} color={colors.danger} />
                 </RNHostView>
               }
             >

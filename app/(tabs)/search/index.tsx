@@ -1,4 +1,4 @@
-import { ActivityIndicator, BlurGradientBackground, StatusBar, Text, View } from '@vjdev1212/media-ui-kit';
+import { ActivityIndicator, StatusBar, Text, View } from '@vjdev1212/media-ui-kit';
 import { MediaGrid, GENRE_NAMES, type MediaGridItem } from '@vjdev1212/media-ui-kit';
 import { useTheme } from '@/context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
@@ -90,7 +90,7 @@ async function fetchSearchResults(
 }
 
 const SearchScreen = () => {
-  const { colors } = useTheme();
+  const { colors, colorScheme } = useTheme();
   const headerHeight = useHeaderHeight();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<MediaGridItem[]>([]);
@@ -146,7 +146,6 @@ const SearchScreen = () => {
 
   return (
     <View style={styles.container}>
-      <BlurGradientBackground />
       <StatusBar />
       <Stack.Screen
         options={{
@@ -158,8 +157,9 @@ const SearchScreen = () => {
           headerTitle: 'Search',
           headerStyle: { backgroundColor: 'transparent' },
           headerBlurEffect: 'none',
-          headerUserInterfaceStyle: 'dark',
+          headerUserInterfaceStyle: colorScheme,
           headerTintColor: colors.text,
+          headerTitleStyle: { color: colors.text },
         }}
       />
       {Platform.OS === 'ios' && (
@@ -175,14 +175,14 @@ const SearchScreen = () => {
       )}
       {Platform.OS !== 'ios' && (
         <View style={styles.searchHeader}>
-          <View style={styles.searchField}>
+          <View style={[styles.searchField, { backgroundColor: colors.primaryCard, borderColor: colors.border }]}>
             <Ionicons name="search-outline" size={22} color={colors.text} />
             <NativeTextInput
               accessibilityLabel="Search movies or series"
               autoCapitalize="none"
               autoCorrect={false}
               clearButtonMode="never"
-              keyboardAppearance="dark"
+              keyboardAppearance={colorScheme}
               onChangeText={changeQuery}
               placeholder="Search movies or series"
               placeholderTextColor={colors.textDim}
@@ -209,10 +209,9 @@ const SearchScreen = () => {
           <View style={styles.filterRow}>
             <SegmentedControl
               accessibilityLabel="Filter search results"
-              appearance="dark"
+              appearance={colorScheme}
               selectedIndex={FILTER_OPTIONS.findIndex((option) => option.id === selectedFilter)}
               style={{ backgroundColor: 'transparent' }}
-              tintColor={colors.primary}
               values={FILTER_OPTIONS.map((option) => option.title)}
               onValueChange={(value) => {
                 const option = FILTER_OPTIONS.find((filter) => filter.title === value);
@@ -300,9 +299,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.capsule,
     borderCurve: 'continuous',
     overflow: 'hidden',
-    backgroundColor: '#1C1C1E',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#38383A',
   },
   searchInput: {
     flex: 1,

@@ -8,7 +8,6 @@ import { getOriginalPlatform, showAlert } from '@/utils/platform';
 import { Players } from '@/utils/MediaPlayer';
 import { StorageKeys, storageService } from '@/utils/StorageService';
 import { useTheme } from '@/context/ThemeContext';
-import { systemDarkBackground } from '@/constants/theme';
 
 interface PlayerConfig {
   name: string;
@@ -115,7 +114,7 @@ export default function MediaPlayerConfigScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: systemDarkBackground }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <StatusBar />
       {loading ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -135,17 +134,17 @@ export default function MediaPlayerConfigScreen() {
           <SettingsSection title="Actions">
             <SettingsRow
               title={saving ? 'Saving…' : 'Save'}
-              titleColor="#0A84FF"
+              titleColor={colors.primary}
               onPress={savePlayerConfig}
               disabled={saving || !selectedPlayer}
-              leading={<Ionicons name="checkmark-circle-outline" size={20} color="#0A84FF" />}
+              leading={<Ionicons name="checkmark-circle-outline" size={20} color={colors.primary} />}
             />
             <SettingsRow
               title="Reset"
               onPress={resetToDefault}
               destructive
               isLast
-              leading={<Ionicons name="refresh-outline" size={20} color="#ff453a" />}
+              leading={<Ionicons name="refresh-outline" size={20} color={colors.danger} />}
               trailing={<Ionicons name="chevron-forward" size={17} color={colors.textDim} />}
             />
           </SettingsSection>

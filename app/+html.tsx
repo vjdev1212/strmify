@@ -18,7 +18,7 @@ export default function Root({ children }: { children: React.ReactNode }) {
         */}
         <ScrollViewStyleReset />
 
-        {/* Using raw CSS styles as an escape-hatch to ensure the background color never flickers in dark-mode. */}
+        {/* Keep the page background aligned with the system theme before the app hydrates. */}
         <style dangerouslySetInnerHTML={{ __html: responsiveBackground }} />
         {/* Add any additional <head> elements that you want globally available on web... */}
       </head>
@@ -28,12 +28,12 @@ export default function Root({ children }: { children: React.ReactNode }) {
 }
 
 const responsiveBackground = `
-body {
-  background-color: #fff;
+:root {
+  color-scheme: light dark;
+  background-color: Canvas;
 }
-@media (prefers-color-scheme: dark) {
-  body {
-    background: linear-gradient(#111111, #444444);
-  }
+body {
+  background-color: Canvas;
+  color: CanvasText;
 }
 `;
