@@ -196,7 +196,7 @@ const LibraryScreen: React.FC = () => {
             </PosterArtwork>
             {item.watched && (
               <View style={styles.watchedBadge}>
-                <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
+                <Ionicons name="checkmark-circle" size={20} color="#fff" />
               </View>
             )}
             <TouchableOpacity

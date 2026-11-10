@@ -225,7 +225,7 @@ const WatchHistory: React.FC<WatchHistoryProps> = ({ onItemSelect, type }) => {
                     onPress={(e) => { e.stopPropagation(); removeHistoryItem(item, itemKey); }}
                     activeOpacity={0.7}
                   >
-                    <Ionicons name="close" size={16} color={colors.text} />
+                    <Ionicons name="close" size={16} color="#fff" />
                   </TouchableOpacity>
                   <View style={styles.positionBadge}>
                     <NativeText

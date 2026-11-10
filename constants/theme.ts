@@ -25,6 +25,7 @@ const settingsAccent = {
 export const settingsIconColors = {
     addOns: settingsAccent.purple,
     mediaPlayer: settingsAccent.blue,
+    appearance: settingsAccent.teal,
     stremio: settingsAccent.orange,
     subtitles: settingsAccent.teal,
     downloads: settingsAccent.green,

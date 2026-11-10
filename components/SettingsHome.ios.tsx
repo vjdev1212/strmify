@@ -20,6 +20,7 @@ import { settingsIconColors } from '@/constants/theme';
 type SettingsRoute =
   | '/settings/addons'
   | '/settings/mediaplayer'
+  | '/settings/appearance'
   | '/settings/stremioserver'
   | '/settings/opensubtitles'
   | '/settings/downloads'
@@ -39,6 +40,7 @@ const settingsSections: {
     {
       title: 'General',
       items: [
+        { title: 'Appearance', route: '/settings/appearance', icon: 'circle.lefthalf.filled', color: settingsIconColors.appearance },
         { title: 'Add-ons', route: '/settings/addons', icon: 'puzzlepiece.extension', color: settingsIconColors.addOns },
         { title: 'Media Player', route: '/settings/mediaplayer', icon: 'play.rectangle', color: settingsIconColors.mediaPlayer },
       ],

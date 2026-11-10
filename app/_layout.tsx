@@ -10,6 +10,9 @@ import { Appearance, View, StyleSheet } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '@/context/ThemeContext';
 import { Colors } from '@/constants/theme';
+import { applyUserInterfaceStyle, getUserInterfaceStyle } from '@/utils/UserInterfaceStyle';
+
+applyUserInterfaceStyle(getUserInterfaceStyle());
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -140,6 +143,7 @@ function RootLayoutNav() {
                     <Stack.Screen name="settings/donate" options={{ ...screenOptions, title: 'Support Strmify', headerTitle: 'Support Strmify' }} />
                     <Stack.Screen name="settings/downloads" options={{ ...screenOptions, title: 'Downloads', headerTitle: 'Downloads' }} />
                     <Stack.Screen name="settings/mediaplayer" options={{ ...screenOptions, title: 'Media Player', headerTitle: 'Media Player' }} />
+                    <Stack.Screen name="settings/appearance" options={{ ...screenOptions, title: 'Appearance', headerTitle: 'Appearance' }} />
                 </Stack>
             </View>
         </ThemeProvider>
