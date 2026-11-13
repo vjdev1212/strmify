@@ -121,6 +121,19 @@ export default function PosterSectionsManager({
 
   const toggleSection = useCallback((section: HomeSection, enabled: boolean) => {
     if (!preferences) return;
+    if (!enabled) {
+      const enabledSectionCount = preferences.sections.filter(
+        (item) => item.mediaType === section.mediaType && item.enabled,
+      ).length;
+      if (enabledSectionCount <= 1) {
+        const mediaTypeLabel = section.mediaType === 'movie' ? 'Movies' : 'Series';
+        showAlert(
+          'Keep a List Enabled',
+          `At least one ${mediaTypeLabel} list must remain enabled on the Home Screen.`,
+        );
+        return;
+      }
+    }
     savePreferences({
       ...preferences,
       sections: preferences.sections.map((item) => (
