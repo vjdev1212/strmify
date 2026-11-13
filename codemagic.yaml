@@ -122,6 +122,8 @@ workflows:
       xcode: latest
       groups:
         - EXPO
+      vars:
+        APP_VARIANT: development
     scripts:
       - name: Checkout media-ui-kit
         script: |
@@ -335,6 +337,8 @@ workflows:
       java: latest
       groups:
         - EXPO
+      vars:
+        APP_VARIANT: development
     scripts:
       - name: Checkout media-ui-kit
         script: |
