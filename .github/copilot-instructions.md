@@ -13,6 +13,7 @@ These platform requirements take precedence over any conflicting web-support gui
 - Prefer shared UI from `@vjdev1212/media-ui-kit` before creating a new component. Put genuinely reusable cross-app components in the `media-ui-kit` repository; keep Strmify-only behavior, such as route navigation and app data, in this repository.
 - Treat performance as a core requirement. Avoid unnecessary renders, state, effects, and expensive work on the UI thread. Use efficient, virtualized lists for growing collections and clean up asynchronous work, timers, and listeners.
 - Preserve strict TypeScript and existing patterns. Handle loading, empty, and error states explicitly for user-facing asynchronous work.
+- Do not generate or scaffold `.test.ts` or `.test.tsx` files as part of a change. Avoid creating new test files unless the user explicitly asks for them or the project already requires them.
 
 ## UI and platform requirements
 

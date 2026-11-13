@@ -69,6 +69,8 @@ Use these commands from the repository root:
 
 Tests are not required by default. Prefer `npx tsc --noEmit`, targeted builds, and clear manual verification notes unless the user asks for tests.
 
+- Do not generate or scaffold `.test.ts` or `.test.tsx` files as part of changes. Avoid creating new test files unless there is an explicit request or a project requirement that already calls for them.
+
 ## Coding Standards
 
 - Keep TypeScript strict. Avoid `any` unless the upstream API shape is genuinely dynamic; prefer small local types for TMDB, Stremio, OpenSubtitles, and player payloads.
