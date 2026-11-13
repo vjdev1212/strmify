@@ -333,24 +333,37 @@ export function buildHomeSectionApiUrl(
 }
 
 export function getOrderedHomeSections(sections: HomeSection[]): HomeSection[] {
-    const positions = new Map<HomeSectionMediaType, number>();
-    return sections
-        .map((section, originalIndex) => {
-            const catalogMediaType = section.kind === 'catalog'
-                ? HOME_CATALOG.find((definition) => definition.id === section.id)?.mediaType
-                : undefined;
-            const mediaType = catalogMediaType ?? section.mediaType;
-            const position = positions.get(mediaType) ?? 0;
-            positions.set(mediaType, position + 1);
-            const typePriority = mediaType === 'movie' ? 0 : mediaType === 'any' ? 1 : 2;
-            return { section, originalIndex, position, typePriority };
-        })
-        .sort((left, right) => (
-            left.position - right.position
-            || left.typePriority - right.typePriority
-            || left.originalIndex - right.originalIndex
-        ))
-        .map(({ section }) => section);
+    const sectionsByMediaType: Record<HomeSectionMediaType, HomeSection[]> = {
+        movie: [],
+        any: [],
+        series: [],
+    };
+
+    for (const section of sections) {
+        const catalogMediaType = HOME_CATALOG.find(
+            (definition) => definition.id === section.id,
+        )?.mediaType;
+        sectionsByMediaType[catalogMediaType ?? section.mediaType].push(section);
+    }
+
+    const orderedSections: HomeSection[] = [];
+    const positionCount = Math.max(
+        sectionsByMediaType.movie.length,
+        sectionsByMediaType.any.length,
+        sectionsByMediaType.series.length,
+    );
+
+    for (let position = 0; position < positionCount; position += 1) {
+        const movieSection = sectionsByMediaType.movie[position];
+        const anySection = sectionsByMediaType.any[position];
+        const seriesSection = sectionsByMediaType.series[position];
+
+        if (movieSection) orderedSections.push(movieSection);
+        if (anySection) orderedSections.push(anySection);
+        if (seriesSection) orderedSections.push(seriesSection);
+    }
+
+    return orderedSections;
 }
 
 export function getHomeSectionDisplayTitle(section: HomeSection): string {
