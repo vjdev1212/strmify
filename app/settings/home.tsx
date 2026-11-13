@@ -587,9 +587,19 @@ export default function HomeSettingsScreen() {
           style={[styles.modal, { backgroundColor: colors.background }]}
         >
           <RNView style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Back to Manage Lists"
+              disabled={loading}
+              onPress={cancelEditor}
+              style={styles.backButton}
+            >
+              <Ionicons name="arrow-back-outline" size={22} color={colors.text} />
+            </Pressable>
             <RNText style={[styles.modalTitle, { color: colors.text }]}>
               {isEditingSection ? 'Edit List' : 'Add List'}
             </RNText>
+            <RNView style={styles.headerSpacer} />
           </RNView>
           <Host style={{ flex: 1 }} colorScheme={colorScheme}>
           <FieldGroup>
@@ -920,7 +930,7 @@ export default function HomeSettingsScreen() {
             <FormTextInput
               value={draft.originCountry}
               onChangeText={(value) => updateDraft('originCountry', value)}
-              placeholder="IN"
+              placeholder="US"
               accessibilityLabel="Origin country code"
               editable={!loading}
               autoCapitalize="characters"
@@ -933,11 +943,11 @@ export default function HomeSettingsScreen() {
             <FormTextInput
               value={draft.minimumVoteAverage}
               onChangeText={(value) => updateDraft('minimumVoteAverage', value)}
-              placeholder="7"
+              placeholder="6"
               accessibilityLabel="Minimum TMDB vote average"
               editable={!loading}
               keyboardType="decimal-pad"
-              maxLength={4}
+              maxLength={2}
             />
           </FieldGroup.Section>
 
@@ -1039,11 +1049,22 @@ const styles = StyleSheet.create({
   modalHeader: {
     alignItems: 'center',
     borderBottomWidth: StyleSheet.hairlineWidth,
-    justifyContent: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     minHeight: 52,
     paddingHorizontal: 16,
   },
+  backButton: {
+    alignItems: 'center',
+    height: 44,
+    justifyContent: 'center',
+    width: 44,
+  },
+  headerSpacer: {
+    width: 44,
+  },
   modalTitle: {
+    flex: 1,
     fontSize: 17,
     fontWeight: '600',
     textAlign: 'center',
