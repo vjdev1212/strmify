@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Modal, Pressable, StyleSheet, Text as RNText, View as RNView } from 'react-native';
+import { Modal, Platform, Pressable, StyleSheet, Text as RNText, View as RNView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { GlassView } from 'expo-glass-effect';
 import {
   FieldGroup,
   Host,
@@ -587,35 +588,9 @@ export default function HomeSettingsScreen() {
           style={[styles.modal, { backgroundColor: colors.background }]}
         >
           <RNView style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Cancel"
-              disabled={loading}
-              onPress={cancelEditor}
-              style={styles.cancelAction}
-            >
-              <Ionicons name="close-circle" size={20} color={settingsIconColors.danger} />
-              <RNText style={[styles.actionText, { color: settingsIconColors.danger }]}>Cancel</RNText>
-            </Pressable>
             <RNText style={[styles.modalTitle, { color: colors.text }]}>
               {isEditingSection ? 'Edit List' : 'Add List'}
             </RNText>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={isEditingSection ? 'Save changes' : 'Add List'}
-              disabled={loading}
-              onPress={saveSection}
-              style={styles.submitAction}
-            >
-              <Ionicons
-                name={isEditingSection ? 'checkmark-circle' : 'add-circle'}
-                size={20}
-                color={settingsActionBlue}
-              />
-              <RNText style={[styles.actionText, { color: settingsActionBlue }]}>
-                {isEditingSection ? 'Save' : 'Add List'}
-              </RNText>
-            </Pressable>
           </RNView>
           <Host style={{ flex: 1 }} colorScheme={colorScheme}>
           <FieldGroup>
@@ -1026,6 +1001,67 @@ export default function HomeSettingsScreen() {
             </FieldGroup.SectionFooter>
           </FieldGroup.Section>
 
+          <FieldGroup.Section>
+            <RNHostView matchContents={{ vertical: true }} style={{ width: '100%' }}>
+              <RNView style={styles.formActions}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Cancel"
+                  disabled={loading}
+                  onPress={cancelEditor}
+                  style={styles.actionPressable}
+                >
+                  <GlassView
+                    glassEffectStyle="regular"
+                    isInteractive
+                    colorScheme={colorScheme}
+                    style={[
+                      styles.glassAction,
+                      Platform.OS === 'android' && {
+                        backgroundColor: colors.primaryCard,
+                        borderColor: colors.border,
+                        borderWidth: StyleSheet.hairlineWidth,
+                      },
+                    ]}
+                  >
+                    <Ionicons name="close-circle" size={20} color={settingsIconColors.danger} />
+                    <RNText style={[styles.actionText, { color: settingsIconColors.danger }]}>Cancel</RNText>
+                  </GlassView>
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={isEditingSection ? 'Save changes' : 'Add List'}
+                  disabled={loading}
+                  onPress={saveSection}
+                  style={styles.actionPressable}
+                >
+                  <GlassView
+                    glassEffectStyle="regular"
+                    isInteractive
+                    colorScheme={colorScheme}
+                    style={[
+                      styles.glassAction,
+                      Platform.OS === 'android' && {
+                        backgroundColor: colors.primaryCard,
+                        borderColor: colors.border,
+                        borderWidth: StyleSheet.hairlineWidth,
+                      },
+                    ]}
+                  >
+                    <Ionicons
+                      name={isEditingSection ? 'checkmark-circle' : 'add-circle'}
+                      size={20}
+                      color={settingsActionBlue}
+                    />
+                    <RNText style={[styles.actionText, { color: settingsActionBlue }]} numberOfLines={1}>
+                      {isEditingSection ? 'Save changes' : 'Add List'}
+                    </RNText>
+                  </GlassView>
+                </Pressable>
+              </RNView>
+            </RNHostView>
+          </FieldGroup.Section>
+
           </FieldGroup>
           </Host>
         </SafeAreaView>
@@ -1041,33 +1077,34 @@ const styles = StyleSheet.create({
   modalHeader: {
     alignItems: 'center',
     borderBottomWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     minHeight: 52,
+    paddingHorizontal: 16,
+  },
+  formActions: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  actionPressable: {
+    flex: 1,
+    minHeight: 48,
+  },
+  glassAction: {
+    alignItems: 'center',
+    borderRadius: 999,
+    flex: 1,
+    flexDirection: 'row',
+    gap: 6,
+    justifyContent: 'center',
+    minHeight: 48,
     paddingHorizontal: 12,
-  },
-  cancelAction: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 5,
-    justifyContent: 'flex-start',
-    minHeight: 44,
-    minWidth: 84,
-  },
-  submitAction: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 5,
-    justifyContent: 'flex-end',
-    minHeight: 44,
-    minWidth: 84,
   },
   actionText: {
     fontSize: 14,
     fontWeight: '600',
   },
   modalTitle: {
-    flex: 1,
     fontSize: 17,
     fontWeight: '600',
     textAlign: 'center',

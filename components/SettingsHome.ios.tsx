@@ -41,7 +41,7 @@ const settingsSections: {
       title: 'General',
       items: [
         { title: 'Appearance', route: '/settings/appearance', icon: 'circle.lefthalf.filled', color: settingsIconColors.appearance },
-        { title: 'Home Screen', route: '/settings/home', icon: 'house', color: settingsIconColors.success },
+        { title: 'Customize Home', route: '/settings/home', icon: 'house', color: settingsIconColors.success },
         { title: 'Add-ons', route: '/settings/addons', icon: 'puzzlepiece.extension', color: settingsIconColors.addOns },
         { title: 'Media Player', route: '/settings/mediaplayer', icon: 'play.rectangle', color: settingsIconColors.mediaPlayer },
       ],
