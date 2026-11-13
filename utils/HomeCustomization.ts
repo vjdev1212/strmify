@@ -79,17 +79,17 @@ const legacyGenreCatalogIds = new Set([
     ...movieGenreKeys.map((name) => `catalog:movie:${name}`),
     ...seriesGenreKeys.map((name) => `catalog:series:${name}`),
 ]);
+const removedCatalogIds = new Set(['catalog:movie:upcoming']);
 
 export const HOME_CATALOG: HomeCatalogDefinition[] = [
-    { id: 'catalog:movie:trending', title: 'Trending', allTitle: 'Movies - Trending', mediaType: 'movie', apiUrl: CatalogUrl.trendingMovies, visibleIn: ['all', 'movies'] },
-    { id: 'catalog:series:trending', title: 'Trending', allTitle: 'Series - Trending', mediaType: 'series', apiUrl: CatalogUrl.trendingSeries, visibleIn: ['all', 'series'] },
-    { id: 'catalog:movie:popular', title: 'Popular', mediaType: 'movie', apiUrl: CatalogUrl.popularMovies, visibleIn: ['all'] },
+    { id: 'catalog:movie:trending', title: 'Movies - Trending', allTitle: 'Movies - Trending', mediaType: 'movie', apiUrl: CatalogUrl.trendingMovies, visibleIn: ['all', 'movies'] },
+    { id: 'catalog:series:trending', title: 'Series - Trending', allTitle: 'Series - Trending', mediaType: 'series', apiUrl: CatalogUrl.trendingSeries, visibleIn: ['all', 'series'] },
+    { id: 'catalog:movie:popular', title: 'Movies - Popular', mediaType: 'movie', apiUrl: CatalogUrl.popularMovies, visibleIn: ['all'] },
     { id: 'catalog:series:popular', title: 'Series - Popular', mediaType: 'series', apiUrl: CatalogUrl.popularSeries, visibleIn: ['all'] },
-    { id: 'catalog:movie:top-rated', title: 'Top Rated', mediaType: 'movie', apiUrl: CatalogUrl.topMovies, visibleIn: ['all'] },
+    { id: 'catalog:movie:top-rated', title: 'Movies - Top Rated', mediaType: 'movie', apiUrl: CatalogUrl.topMovies, visibleIn: ['all'] },
     { id: 'catalog:series:top-rated', title: 'Series - Top Rated', mediaType: 'series', apiUrl: CatalogUrl.topSeries, visibleIn: ['all'] },
-    { id: 'catalog:movie:now-playing', title: 'Now Playing', allTitle: 'Movies - Now Playing', mediaType: 'movie', apiUrl: CatalogUrl.nowPlayingMovies, visibleIn: ['all', 'movies'] },
+    { id: 'catalog:movie:now-playing', title: 'Movies - Now Playing', allTitle: 'Movies - Now Playing', mediaType: 'movie', apiUrl: CatalogUrl.nowPlayingMovies, visibleIn: ['all', 'movies'] },
     { id: 'catalog:series:on-the-air', title: 'Series - On the Air', mediaType: 'series', apiUrl: CatalogUrl.onTheAirTv, visibleIn: ['all'] },
-    { id: 'catalog:movie:upcoming', title: 'Movies - Upcoming', mediaType: 'movie', apiUrl: CatalogUrl.upcomingMovies, visibleIn: ['all'] },
     { id: 'catalog:series:airing-today', title: 'Series - Airing Today', mediaType: 'series', apiUrl: CatalogUrl.airingTodayTv, visibleIn: ['all'] },
 ];
 
@@ -214,6 +214,11 @@ export function loadHomePreferences(): HomePreferences {
 
     if (Array.isArray(stored.sections)) {
         const savedSections = stored.sections
+            .filter((section) => {
+                if (!section || typeof section !== 'object' || Array.isArray(section)) return true;
+                const id = (section as Record<string, unknown>).id;
+                return typeof id !== 'string' || !removedCatalogIds.has(id);
+            })
             .map((section) => parseSavedSection(section))
             .filter((section) => (
                 section.kind !== 'catalog' || !legacyGenreCatalogIds.has(section.id)
