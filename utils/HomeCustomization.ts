@@ -84,13 +84,13 @@ const removedCatalogIds = new Set(['catalog:movie:upcoming']);
 export const HOME_CATALOG: HomeCatalogDefinition[] = [
     { id: 'catalog:movie:trending', title: 'Movies - Trending', allTitle: 'Movies - Trending', mediaType: 'movie', apiUrl: CatalogUrl.trendingMovies, visibleIn: ['all', 'movies'] },
     { id: 'catalog:series:trending', title: 'Series - Trending', allTitle: 'Series - Trending', mediaType: 'series', apiUrl: CatalogUrl.trendingSeries, visibleIn: ['all', 'series'] },
-    { id: 'catalog:movie:popular', title: 'Movies - Popular', mediaType: 'movie', apiUrl: CatalogUrl.popularMovies, visibleIn: ['all'] },
-    { id: 'catalog:series:popular', title: 'Series - Popular', mediaType: 'series', apiUrl: CatalogUrl.popularSeries, visibleIn: ['all'] },
-    { id: 'catalog:movie:top-rated', title: 'Movies - Top Rated', mediaType: 'movie', apiUrl: CatalogUrl.topMovies, visibleIn: ['all'] },
-    { id: 'catalog:series:top-rated', title: 'Series - Top Rated', mediaType: 'series', apiUrl: CatalogUrl.topSeries, visibleIn: ['all'] },
+    { id: 'catalog:movie:popular', title: 'Movies - Popular', mediaType: 'movie', apiUrl: CatalogUrl.popularMovies, visibleIn: ['all', 'movies'] },
+    { id: 'catalog:series:popular', title: 'Series - Popular', mediaType: 'series', apiUrl: CatalogUrl.popularSeries, visibleIn: ['all', 'series'] },
+    { id: 'catalog:movie:top-rated', title: 'Movies - Top Rated', mediaType: 'movie', apiUrl: CatalogUrl.topMovies, visibleIn: ['all', 'movies'] },
+    { id: 'catalog:series:top-rated', title: 'Series - Top Rated', mediaType: 'series', apiUrl: CatalogUrl.topSeries, visibleIn: ['all', 'series'] },
     { id: 'catalog:movie:now-playing', title: 'Movies - Now Playing', allTitle: 'Movies - Now Playing', mediaType: 'movie', apiUrl: CatalogUrl.nowPlayingMovies, visibleIn: ['all', 'movies'] },
-    { id: 'catalog:series:on-the-air', title: 'Series - On the Air', mediaType: 'series', apiUrl: CatalogUrl.onTheAirTv, visibleIn: ['all'] },
-    { id: 'catalog:series:airing-today', title: 'Series - Airing Today', mediaType: 'series', apiUrl: CatalogUrl.airingTodayTv, visibleIn: ['all'] },
+    { id: 'catalog:series:on-the-air', title: 'Series - On the Air', mediaType: 'series', apiUrl: CatalogUrl.onTheAirTv, visibleIn: ['all', 'series'] },
+    { id: 'catalog:series:airing-today', title: 'Series - Airing Today', mediaType: 'series', apiUrl: CatalogUrl.airingTodayTv, visibleIn: ['all', 'series'] },
 ];
 
 const defaultSection = (definition: HomeCatalogDefinition): HomeSection => ({
