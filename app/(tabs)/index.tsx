@@ -9,7 +9,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar, Text, PosterList, BottomSpacing } from '@vjdev1212/media-ui-kit';
 import { PosterCarousel } from '@vjdev1212/media-ui-kit';
-import type { CarouselSource } from '@vjdev1212/media-ui-kit';
+import type { CarouselSource, PosterListSource } from '@vjdev1212/media-ui-kit';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { isHapticsSupported, showAlert } from '@/utils/platform';
@@ -36,7 +36,7 @@ export default function HomeScreen() {
       setHomePreferences(loadHomePreferences());
     } catch (error) {
       console.error('Failed to load home screen preferences:', error);
-      showAlert('Unable to Load Home', 'Your saved home screen preferences could not be read.');
+      showAlert('Unable to Load Catalogues', 'Your saved catalogue settings could not be read.');
     }
   }, []));
 
@@ -52,11 +52,19 @@ export default function HomeScreen() {
   );
 
   const carouselSources = useMemo(
-    (): CarouselSource[] => activeLists.map((list) => ({
-      apiUrl: list.apiUrl,
-      type: list.mediaType,
-      minimumPopularity: list.minimumPopularity,
-    })),
+    (): CarouselSource[] => activeLists.flatMap((list) => (
+      list.sources
+        ? list.sources.map((source) => ({
+          apiUrl: source.apiUrl,
+          type: source.mediaType,
+          minimumPopularity: source.minimumPopularity,
+        }))
+        : [{
+          apiUrl: list.apiUrl,
+          type: list.mediaType === 'any' ? 'movie' : list.mediaType,
+          minimumPopularity: list.minimumPopularity,
+        }]
+    )),
     [activeLists],
   );
 
@@ -78,10 +86,25 @@ export default function HomeScreen() {
   const handlePosterSeeAllPress = useCallback((
     apiUrl: string,
     title: string,
-    type: 'movie' | 'series',
+    type: 'movie' | 'series' | 'any',
     minimumPopularity?: number,
+    sources?: PosterListSource[],
   ) => {
     if (isHapticsSupported()) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (type === 'any') {
+      router.push({
+        pathname: '/movie/list',
+        params: {
+          title,
+          mediaType: 'any',
+          movieApiUrl: sources?.find((source) => source.type === 'movie')?.apiUrl ?? '',
+          seriesApiUrl: sources?.find((source) => source.type === 'series')?.apiUrl ?? '',
+          ...(minimumPopularity !== undefined ? { minimumPopularity: String(minimumPopularity) } : {}),
+        },
+      });
+      return;
+    }
+
     router.push({
       pathname: `/${type}/list`,
       params: {
@@ -97,6 +120,7 @@ export default function HomeScreen() {
       apiUrl={item.apiUrl}
       title={item.title}
       type={item.mediaType}
+      sources={item.sources?.map((source) => ({ ...source, type: source.mediaType }))}
       minimumPopularity={item.minimumPopularity}
       onItemPress={handlePosterItemPress}
       onSeeAllPress={handlePosterSeeAllPress}
@@ -149,7 +173,7 @@ export default function HomeScreen() {
             variant="text"
             style={[styles.filterButton, { backgroundColor: colors.primaryCard, borderColor: colors.border }]}
             onPress={() => router.push('/settings/home')}
-            accessibilityLabel="Customize home screen"
+            accessibilityLabel="Catalogue settings"
           >
             <Ionicons name="settings-outline" size={18} color={colors.textMuted} />
           </NativeButton>
@@ -169,13 +193,13 @@ export default function HomeScreen() {
         ListEmptyComponent={(
           <View style={styles.emptyState}>
             <Text style={{ color: colors.textMuted, textAlign: 'center' }}>
-              No sections are enabled for this filter. Enable a poster section or add a Discover section in Home settings.
+              No sections are enabled for this filter. Enable a catalogue or add a Discover catalogue in Catalogues.
             </Text>
             <NativeButton
               variant="text"
               onPress={() => router.push('/settings/home')}
             >
-              <Text style={{ color: colors.primary }}>Customize home screen</Text>
+              <Text style={{ color: colors.primary }}>Open Catalogues</Text>
             </NativeButton>
           </View>
         )}

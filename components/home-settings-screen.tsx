@@ -23,7 +23,9 @@ import {
   loadHomePreferences,
   normalizeHomeGenreIds,
   saveHomePreferences,
+  type HomeFilter,
   type HomeMediaType,
+  type HomeSectionMediaType,
   type HomePreferences,
   type HomeSection,
   type HomeSortOrder,
@@ -43,13 +45,13 @@ interface TmdbCertification {
 }
 
 interface FilterMetadata {
-  mediaType: HomeMediaType;
+  mediaType: HomeSectionMediaType;
   genres: TmdbGenre[];
   certifications: Record<string, TmdbCertification[]>;
 }
 
 interface FilterMetadataState {
-  mediaType: HomeMediaType | null;
+  mediaType: HomeSectionMediaType | null;
   genres: TmdbGenre[];
   certifications: Record<string, TmdbCertification[]>;
   loading: boolean;
@@ -75,20 +77,20 @@ interface WatchRegionsState {
 }
 
 interface WatchProvidersState {
-  mediaType: HomeMediaType | null;
+  mediaType: HomeSectionMediaType | null;
   region: string | null;
   providers: TmdbWatchProvider[];
   loading: boolean;
   error: string | null;
 }
 
-const filterMetadataCache = new Map<HomeMediaType, FilterMetadata>();
+const filterMetadataCache = new Map<HomeSectionMediaType, FilterMetadata>();
 let watchRegionsCache: TmdbWatchRegion[] | null = null;
 const watchProvidersCache = new Map<string, TmdbWatchProvider[]>();
 
 interface SectionDraft {
   title: string;
-  mediaType: HomeMediaType;
+  mediaType: HomeSectionMediaType;
   languageCode: string;
   displayLanguage: string;
   region: string;
@@ -109,7 +111,7 @@ interface SectionDraft {
   watchProviders: string;
 }
 
-const newSectionDraft = (mediaType: HomeMediaType = 'movie'): SectionDraft => ({
+const newSectionDraft = (mediaType: HomeSectionMediaType = 'movie'): SectionDraft => ({
   title: '',
   mediaType,
   languageCode: '',
@@ -234,19 +236,21 @@ function parseCountryCode(value: string, label: string): string | undefined {
 }
 
 async function fetchFilterMetadata(
-  mediaType: HomeMediaType,
+  mediaType: HomeSectionMediaType,
   signal: AbortSignal,
 ): Promise<FilterMetadata> {
   if (!TMDB_API_KEY) {
     throw new Error('TMDB API key is not configured. Set EXPO_PUBLIC_TMDB_API_KEY to load home filters.');
   }
 
-  const endpoint = mediaType === 'movie' ? 'movie' : 'tv';
-  const [genreResponse, certificationResponse] = await Promise.all([
-    fetch(
+  const endpoints = mediaType === 'any'
+    ? ['movie', 'tv']
+    : [mediaType === 'movie' ? 'movie' : 'tv'];
+  const [genreResponses, certificationResponse] = await Promise.all([
+    Promise.all(endpoints.map((endpoint) => fetch(
       `https://api.themoviedb.org/3/genre/${endpoint}/list?language=en-US&api_key=${encodeURIComponent(TMDB_API_KEY)}`,
       { signal },
-    ),
+    ))),
     mediaType === 'movie'
       ? fetch(
         `https://api.themoviedb.org/3/certification/movie/list?api_key=${encodeURIComponent(TMDB_API_KEY)}`,
@@ -254,31 +258,42 @@ async function fetchFilterMetadata(
       )
       : Promise.resolve(null),
   ]);
-  if (!genreResponse.ok) throw new Error(`TMDB genre request failed (HTTP ${genreResponse.status}).`);
+  const failedGenreResponse = genreResponses.find((response) => !response.ok);
+  if (failedGenreResponse) {
+    throw new Error(`TMDB genre request failed (HTTP ${failedGenreResponse.status}).`);
+  }
   if (certificationResponse && !certificationResponse.ok) {
     throw new Error(`TMDB certification request failed (HTTP ${certificationResponse.status}).`);
   }
 
-  const [genrePayload, certificationPayload]: [unknown, unknown] = await Promise.all([
-    genreResponse.json(),
+  const [genrePayloads, certificationPayload]: [unknown[], unknown] = await Promise.all([
+    Promise.all(genreResponses.map((response) => response.json())),
     certificationResponse ? certificationResponse.json() : Promise.resolve(null),
   ]);
-  if (!genrePayload || typeof genrePayload !== 'object' || !('genres' in genrePayload)) {
-    throw new Error('TMDB returned an invalid genre list.');
-  }
-  const genreRows = (genrePayload as { genres: unknown }).genres;
-  if (!Array.isArray(genreRows)) throw new Error('TMDB returned an invalid genre list.');
-  const genres = genreRows.flatMap((genre): TmdbGenre[] => {
-    if (
-      !genre
-      || typeof genre !== 'object'
-      || !('id' in genre)
-      || !('name' in genre)
-      || typeof genre.id !== 'number'
-      || typeof genre.name !== 'string'
-    ) return [];
-    return [{ id: genre.id, name: genre.name }];
+  const genreLists = genrePayloads.map((payload) => {
+    if (!payload || typeof payload !== 'object' || !('genres' in payload)) {
+      throw new Error('TMDB returned an invalid genre list.');
+    }
+    const genreRows = (payload as { genres: unknown }).genres;
+    if (!Array.isArray(genreRows)) throw new Error('TMDB returned an invalid genre list.');
+    return genreRows.flatMap((genre): TmdbGenre[] => {
+      if (
+        !genre
+        || typeof genre !== 'object'
+        || !('id' in genre)
+        || !('name' in genre)
+        || typeof genre.id !== 'number'
+        || typeof genre.name !== 'string'
+      ) return [];
+      return [{ id: genre.id, name: genre.name }];
+    });
   });
+  const sharedGenreIds = mediaType === 'any'
+    ? new Set(genreLists[1].map((genre) => genre.id))
+    : null;
+  const genres = genreLists[0].filter((genre) => (
+    !sharedGenreIds || sharedGenreIds.has(genre.id)
+  ));
   if (genres.length === 0) throw new Error('TMDB returned no genres for this media type.');
 
   const certifications: Record<string, TmdbCertification[]> = {};
@@ -352,7 +367,7 @@ async function fetchWatchRegions(signal: AbortSignal): Promise<TmdbWatchRegion[]
 }
 
 async function fetchWatchProviders(
-  mediaType: HomeMediaType,
+  mediaType: HomeSectionMediaType,
   region: string,
   signal: AbortSignal,
 ): Promise<TmdbWatchProvider[]> {
@@ -360,41 +375,52 @@ async function fetchWatchProviders(
     throw new Error('TMDB API key is not configured. Set EXPO_PUBLIC_TMDB_API_KEY to load watch providers.');
   }
 
-  const endpoint = mediaType === 'movie' ? 'movie' : 'tv';
+  const endpoints = mediaType === 'any'
+    ? ['movie', 'tv']
+    : [mediaType === 'movie' ? 'movie' : 'tv'];
   const query = new URLSearchParams({
     language: 'en-US',
     watch_region: region,
     api_key: TMDB_API_KEY,
   });
-  const response = await fetch(
+  const responses = await Promise.all(endpoints.map((endpoint) => fetch(
     `https://api.themoviedb.org/3/watch/providers/${endpoint}?${query.toString()}`,
     { signal },
-  );
-  if (!response.ok) throw new Error(`TMDB watch-provider request failed (HTTP ${response.status}).`);
-
-  const payload: unknown = await response.json();
-  if (!payload || typeof payload !== 'object' || !('results' in payload) || !Array.isArray(payload.results)) {
-    throw new Error('TMDB returned an invalid watch-provider list.');
+  )));
+  const failedResponse = responses.find((response) => !response.ok);
+  if (failedResponse) {
+    throw new Error(`TMDB watch-provider request failed (HTTP ${failedResponse.status}).`);
   }
 
-  return payload.results.flatMap((provider): TmdbWatchProvider[] => {
-    if (
-      !provider
-      || typeof provider !== 'object'
-      || !('provider_id' in provider)
-      || !('provider_name' in provider)
-      || typeof provider.provider_id !== 'number'
-      || typeof provider.provider_name !== 'string'
-    ) return [];
+  const payloads: unknown[] = await Promise.all(responses.map((response) => response.json()));
+  const providersById = new Map<number, TmdbWatchProvider>();
+  for (const payload of payloads) {
+    if (!payload || typeof payload !== 'object' || !('results' in payload) || !Array.isArray(payload.results)) {
+      throw new Error('TMDB returned an invalid watch-provider list.');
+    }
 
-    return [{
-      provider_id: provider.provider_id,
-      provider_name: provider.provider_name,
-      display_priority: 'display_priority' in provider && typeof provider.display_priority === 'number'
-        ? provider.display_priority
-        : Number.MAX_SAFE_INTEGER,
-    }];
-  }).sort((a, b) => a.display_priority - b.display_priority || a.provider_name.localeCompare(b.provider_name));
+    for (const provider of payload.results) {
+      if (
+        !provider
+        || typeof provider !== 'object'
+        || !('provider_id' in provider)
+        || !('provider_name' in provider)
+        || typeof provider.provider_id !== 'number'
+        || typeof provider.provider_name !== 'string'
+      ) continue;
+
+      providersById.set(provider.provider_id, {
+        provider_id: provider.provider_id,
+        provider_name: provider.provider_name,
+        display_priority: 'display_priority' in provider && typeof provider.display_priority === 'number'
+          ? provider.display_priority
+          : Number.MAX_SAFE_INTEGER,
+      });
+    }
+  }
+
+  return [...providersById.values()]
+    .sort((a, b) => a.display_priority - b.display_priority || a.provider_name.localeCompare(b.provider_name));
 }
 
 export default function HomeSettingsScreen({ editorOnly = false }: { editorOnly?: boolean }) {
@@ -403,11 +429,14 @@ export default function HomeSettingsScreen({ editorOnly = false }: { editorOnly?
   const requestedEditId = typeof routeParams.editSectionId === 'string'
     ? routeParams.editSectionId
     : undefined;
-  const requestedMediaType: HomeMediaType = routeParams.mediaType === 'series' ? 'series' : 'movie';
+  const requestedMediaType: HomeSectionMediaType = routeParams.mediaType === 'series'
+    || routeParams.mediaType === 'any'
+    ? routeParams.mediaType
+    : 'movie';
   const shouldCreateSection = routeParams.createSection === '1';
   const isEditorScreen = editorOnly || Boolean(requestedEditId || shouldCreateSection);
   const [preferences, setPreferences] = useState<HomePreferences>(DEFAULT_HOME_PREFERENCES);
-  const [selectedPosterMediaType, setSelectedPosterMediaType] = useState<HomeMediaType>(requestedMediaType);
+  const [selectedPosterMediaType, setSelectedPosterMediaType] = useState<HomeFilter>('all');
   const [draft, setDraft] = useState<SectionDraft>(() => newSectionDraft(requestedMediaType));
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -509,7 +538,6 @@ export default function HomeSettingsScreen({ editorOnly = false }: { editorOnly?
         );
         if (section) {
           setEditingId(section.id);
-          setSelectedPosterMediaType(section.mediaType);
           setDraft(draftFromSection(section));
         } else {
           showAlert('Section Not Found', 'This Discover section may have been deleted.');
@@ -523,12 +551,11 @@ export default function HomeSettingsScreen({ editorOnly = false }: { editorOnly?
         }
       } else if (shouldCreateSection || editorOnly) {
         setEditingId(null);
-        setSelectedPosterMediaType(requestedMediaType);
         setDraft(newSectionDraft(requestedMediaType));
       }
     } catch (error) {
       console.error('Failed to load home screen preferences:', error);
-      showAlert('Unable to Load Home Settings', 'Your saved home screen settings could not be read.');
+      showAlert('Unable to Load Catalogues', 'Your saved catalogue settings could not be read.');
     } finally {
       setLoading(false);
     }
@@ -820,8 +847,11 @@ export default function HomeSettingsScreen({ editorOnly = false }: { editorOnly?
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <Stack.Screen
         options={{
-          title: isEditorScreen ? (isEditingSection ? 'Edit List' : 'Add List') : 'Manage Lists',
-          headerTitle: isEditorScreen ? (isEditingSection ? 'Edit List' : 'Add List') : 'Manage Lists',
+          title: isEditorScreen ? (isEditingSection ? 'Edit Catalogue' : 'Add Catalogue') : 'Catalogues',
+          headerTitle: isEditorScreen ? (isEditingSection ? 'Edit Catalogue' : 'Add Catalogue') : 'Catalogues',
+          ...(isEditorScreen
+            ? { headerBackButtonDisplayMode: 'minimal' as const, headerBackTitle: '' }
+            : {}),
         }}
       />
       <StatusBar />
@@ -829,7 +859,7 @@ export default function HomeSettingsScreen({ editorOnly = false }: { editorOnly?
         <Host style={{ flex: 1 }} colorScheme={colorScheme}>
           <FieldGroup>
 
-          <FieldGroup.Section title={isEditingSection ? 'Edit List' : 'New List'}>
+          <FieldGroup.Section title={isEditingSection ? 'Edit Catalogue' : 'New Catalogue'}>
             <FormTextInput
               value={draft.title}
               onChangeText={(value) => updateDraft('title', value)}
@@ -840,7 +870,7 @@ export default function HomeSettingsScreen({ editorOnly = false }: { editorOnly?
               returnKeyType="next"
             />
             <FieldGroup.SectionFooter>
-              <NativeText>Give this list a name, then choose the TMDB Discover filters below.</NativeText>
+              <NativeText>Give this catalogue a name, then choose the TMDB Discover filters below.</NativeText>
             </FieldGroup.SectionFooter>
           </FieldGroup.Section>
 
@@ -849,13 +879,12 @@ export default function HomeSettingsScreen({ editorOnly = false }: { editorOnly?
               selectedValue={draft.mediaType}
               enabled={!loading}
               onValueChange={(value) => {
-                if (value === 'movie' || value === 'series') {
-                  setSelectedPosterMediaType(value);
+                if (value === 'movie' || value === 'series' || value === 'any') {
                   setDraft((current) => ({
                     ...current,
                     mediaType: value,
                     watchProviders: current.mediaType === value ? current.watchProviders : '',
-                    sortBy: value === 'series' && current.sortBy.startsWith('revenue.')
+                    sortBy: value !== 'movie' && current.sortBy.startsWith('revenue.')
                       ? 'popularity.desc'
                       : current.sortBy,
                   }));
@@ -864,6 +893,7 @@ export default function HomeSettingsScreen({ editorOnly = false }: { editorOnly?
             >
               <Picker.Item label="Movies" value="movie" />
               <Picker.Item label="Series" value="series" />
+              <Picker.Item label="Any (Movies and Series)" value="any" />
             </Picker>
           </FieldGroup.Section>
 
@@ -1324,7 +1354,7 @@ export default function HomeSettingsScreen({ editorOnly = false }: { editorOnly?
 
           <SettingsSection title="Actions">
             <SettingsRow
-              title={isEditingSection ? 'Save changes' : 'Add List'}
+              title={isEditingSection ? 'Save changes' : 'Add Catalogue'}
               leading={
                 <Ionicons
                   name={isEditingSection ? 'checkmark-circle-outline' : 'add-circle-outline'}

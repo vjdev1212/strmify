@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { MediaGrid } from '@vjdev1212/media-ui-kit';
 import type { MediaGridItem } from '@vjdev1212/media-ui-kit';
@@ -6,10 +6,20 @@ import { libraryService } from '@/utils/LibraryService';
 import { showAlert } from '@/utils/platform';
 
 const MoviesList = () => {
-  const { apiUrl, title, minimumPopularity: minimumPopularityParam } = useLocalSearchParams<{
+  const {
+    apiUrl,
+    title,
+    minimumPopularity: minimumPopularityParam,
+    mediaType,
+    movieApiUrl,
+    seriesApiUrl,
+  } = useLocalSearchParams<{
     apiUrl?: string;
     title?: string;
     minimumPopularity?: string;
+    mediaType?: string;
+    movieApiUrl?: string;
+    seriesApiUrl?: string;
   }>();
   const parsedMinimumPopularity = minimumPopularityParam === undefined
     ? undefined
@@ -20,6 +30,15 @@ const MoviesList = () => {
     ? parsedMinimumPopularity
     : undefined;
   const pageTitle = title || 'Movies';
+  const isMixedList = mediaType === 'any';
+  const sources = useMemo(() => (
+    isMixedList
+      ? [
+        ...(movieApiUrl ? [{ apiUrl: movieApiUrl, mediaType: 'movie' as const }] : []),
+        ...(seriesApiUrl ? [{ apiUrl: seriesApiUrl, mediaType: 'series' as const }] : []),
+      ]
+      : undefined
+  ), [isMixedList, movieApiUrl, seriesApiUrl]);
 
   return (
     <>
@@ -27,20 +46,27 @@ const MoviesList = () => {
       <MediaGrid
         apiUrl={apiUrl ?? ''}
         apiKey={process.env.EXPO_PUBLIC_TMDB_API_KEY}
-        mediaType="movie"
+        mediaType={isMixedList ? 'any' : 'movie'}
+        sources={sources}
         minimumPopularity={minimumPopularity}
-        onItemPress={(item) => router.push({ pathname: '/movie/details', params: { tmdbid: String(item.tmdbid) } })}
-        onAddToWatchlist={(item: MediaGridItem) => libraryService.addToLibrary({
-          id: `movie-${item.tmdbid}`,
-          tmdbid: String(item.tmdbid),
-          type: 'movie',
-          title: item.name,
-          poster: item.poster,
-          backdrop: item.background,
-          year: item.year,
-          rating: item.imdbRating,
-          genres: item.genres,
-        })}
+        onItemPress={(item) => {
+          const type = item.type === 'series' ? 'series' : 'movie';
+          router.push({ pathname: `/${type}/details`, params: { tmdbid: String(item.tmdbid) } });
+        }}
+        onAddToWatchlist={(item: MediaGridItem) => {
+          const type = item.type === 'series' ? 'series' : 'movie';
+          return libraryService.addToLibrary({
+            id: `${type}-${item.tmdbid}`,
+            tmdbid: String(item.tmdbid),
+            type,
+            title: item.name,
+            poster: item.poster,
+            backdrop: item.background,
+            year: item.year,
+            rating: item.imdbRating,
+            genres: item.genres,
+          });
+        }}
         onActionError={showAlert}
       />
     </>

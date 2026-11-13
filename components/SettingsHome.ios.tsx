@@ -2,7 +2,8 @@ import React from 'react';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import * as Haptics from 'expo-haptics';
-import { Button, HStack, Host, Image, List, Section, Spacer, Text } from '@expo/ui/swift-ui';
+import { Host } from '@expo/ui';
+import { Button, HStack, Image, List, Section, Spacer, Text } from '@expo/ui/swift-ui';
 import {
   background,
   contentShape,
@@ -41,7 +42,7 @@ const settingsSections: {
       title: 'General',
       items: [
         { title: 'Appearance', route: '/settings/appearance', icon: 'circle.lefthalf.filled', color: settingsIconColors.appearance },
-        { title: 'Home Screen', route: '/settings/home', icon: 'house', color: settingsIconColors.success },
+        { title: 'Catalogues', route: '/settings/home', icon: 'house', color: settingsIconColors.success },
         { title: 'Add-ons', route: '/settings/addons', icon: 'puzzlepiece.extension', color: settingsIconColors.addOns },
         { title: 'Media Player', route: '/settings/mediaplayer', icon: 'play.rectangle', color: settingsIconColors.mediaPlayer },
       ],
