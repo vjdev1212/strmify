@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import React, { useState, useMemo, useCallback } from 'react';
 import {
   FlatList,
@@ -9,13 +9,19 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar, Text, PosterList, BottomSpacing } from '@vjdev1212/media-ui-kit';
 import { PosterCarousel } from '@vjdev1212/media-ui-kit';
+import type { CarouselSource } from '@vjdev1212/media-ui-kit';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { isHapticsSupported } from '@/utils/platform';
-import { CatalogUrl, MovieGneres, TvGneres } from '@/constants/Tmdb';
+import { isHapticsSupported, showAlert } from '@/utils/platform';
 import { useTheme } from '@/context/ThemeContext';
 import { NativeButton } from '@vjdev1212/media-ui-kit';
 import { radius, spacing, typography } from '@/constants/theme';
+import {
+  DEFAULT_HOME_PREFERENCES,
+  getVisibleHomeSections,
+  loadHomePreferences,
+  type HomePreferences,
+} from '@/utils/HomeCustomization';
 
 const TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 
@@ -23,6 +29,16 @@ export default function HomeScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [filter, setFilter] = useState<'all' | 'movies' | 'series'>('all');
+  const [homePreferences, setHomePreferences] = useState<HomePreferences>(DEFAULT_HOME_PREFERENCES);
+
+  useFocusEffect(useCallback(() => {
+    try {
+      setHomePreferences(loadHomePreferences());
+    } catch (error) {
+      console.error('Failed to load home screen preferences:', error);
+      showAlert('Unable to Load Home', 'Your saved home screen preferences could not be read.');
+    }
+  }, []));
 
   const filters = [
     { key: 'all', label: 'All', icon: 'albums-outline' },
@@ -30,55 +46,19 @@ export default function HomeScreen() {
     { key: 'series', label: 'Series', icon: 'tv-outline' }
   ];
 
-  const allLists = useMemo(() => [
-    { apiUrl: CatalogUrl.trendingMovies, title: 'Movies - Trending', type: 'movie' },
-    { apiUrl: CatalogUrl.trendingSeries, title: 'Series - Trending', type: 'series' },
-    { apiUrl: CatalogUrl.popularMovies, title: 'Movies - Popular', type: 'movie' },
-    { apiUrl: CatalogUrl.popularSeries, title: 'Series - Popular', type: 'series' },
-    { apiUrl: CatalogUrl.topMovies, title: 'Movies - Top Rated', type: 'movie' },
-    { apiUrl: CatalogUrl.topSeries, title: 'Series - Top Rated', type: 'series' },
-    { apiUrl: CatalogUrl.nowPlayingMovies, title: 'Movies - Now Playing', type: 'movie' },
-    { apiUrl: CatalogUrl.onTheAirTv, title: 'Series - On the Air', type: 'series' },
-    { apiUrl: CatalogUrl.upcomingMovies, title: 'Movies - Upcoming', type: 'movie' },
-    { apiUrl: CatalogUrl.airingTodayTv, title: 'Series - Airing Today', type: 'series' },
-  ], []);
+  const activeLists = useMemo(
+    () => getVisibleHomeSections(homePreferences, filter),
+    [filter, homePreferences],
+  );
 
-  const movieLists = useMemo(() => [
-    { apiUrl: CatalogUrl.trendingMovies, title: 'Trending', type: 'movie' },
-    { apiUrl: CatalogUrl.nowPlayingMovies, title: 'Now Playing', type: 'movie' },
-    { apiUrl: MovieGneres.action, title: 'Action', type: 'movie' },
-    { apiUrl: MovieGneres.adventure, title: 'Adventure', type: 'movie' },
-    { apiUrl: MovieGneres.scifi, title: 'Sci-Fi', type: 'movie' },
-    { apiUrl: MovieGneres.comedy, title: 'Comedy', type: 'movie' },
-    { apiUrl: MovieGneres.family, title: 'Family', type: 'movie' },
-    { apiUrl: MovieGneres.animation, title: 'Animation', type: 'movie' },
-    { apiUrl: MovieGneres.thriller, title: 'Thriller', type: 'movie' },
-    { apiUrl: MovieGneres.crime, title: 'Crime', type: 'movie' },
-    { apiUrl: MovieGneres.horror, title: 'Horror', type: 'movie' },
-    { apiUrl: MovieGneres.mystery, title: 'Mystery', type: 'movie' },
-    { apiUrl: MovieGneres.fantasy, title: 'Fantasy', type: 'movie' },
-    { apiUrl: MovieGneres.drama, title: 'Drama', type: 'movie' },
-  ], []);
-
-  const seriesLists = useMemo(() => [
-    { apiUrl: CatalogUrl.trendingSeries, title: 'Trending', type: 'series' },
-    { apiUrl: TvGneres.actionAdventure, title: 'Action & Adventure', type: 'series' },
-    { apiUrl: TvGneres.drama, title: 'Drama', type: 'series' },
-    { apiUrl: TvGneres.crime, title: 'Crime', type: 'series' },
-    { apiUrl: TvGneres.comedy, title: 'Comedy', type: 'series' },
-    { apiUrl: TvGneres.mystery, title: 'Mystery', type: 'series' },
-    { apiUrl: TvGneres.scifiFantsy, title: 'Sci-Fi & Fantasy', type: 'series' },
-    { apiUrl: TvGneres.animation, title: 'Animation', type: 'series' },
-    { apiUrl: TvGneres.family, title: 'Family', type: 'series' },
-    { apiUrl: TvGneres.kids, title: 'Kids', type: 'series' },
-  ], []);
-
-  const activeLists = useMemo(() => {
-    if (filter === 'all') return allLists;
-    if (filter === 'movies') return movieLists;
-    if (filter === 'series') return seriesLists;
-    return [];
-  }, [filter, allLists, movieLists, seriesLists]);
+  const carouselSources = useMemo(
+    (): CarouselSource[] => activeLists.map((list) => ({
+      apiUrl: list.apiUrl,
+      type: list.mediaType,
+      minimumPopularity: list.minimumPopularity,
+    })),
+    [activeLists],
+  );
 
   const handleFilterChange = useCallback(async (newFilter: 'all' | 'movies' | 'series') => {
     if (await isHapticsSupported()) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -95,16 +75,29 @@ export default function HomeScreen() {
     router.push({ pathname: `/${type}/details`, params: { tmdbid: tmdbId } });
   }, []);
 
-  const handlePosterSeeAllPress = useCallback((apiUrl: string, title: string, type: 'movie' | 'series') => {
+  const handlePosterSeeAllPress = useCallback((
+    apiUrl: string,
+    title: string,
+    type: 'movie' | 'series',
+    minimumPopularity?: number,
+  ) => {
     if (isHapticsSupported()) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push({ pathname: `/${type}/list`, params: { apiUrl, title } });
+    router.push({
+      pathname: `/${type}/list`,
+      params: {
+        apiUrl,
+        title,
+        ...(minimumPopularity !== undefined ? { minimumPopularity: String(minimumPopularity) } : {}),
+      },
+    });
   }, []);
 
   const renderCatalogList = useCallback(({ item }: { item: (typeof activeLists)[number] }) => (
     <PosterList
       apiUrl={item.apiUrl}
       title={item.title}
-      type={item.type as 'movie' | 'series'}
+      type={item.mediaType}
+      minimumPopularity={item.minimumPopularity}
       onItemPress={handlePosterItemPress}
       onSeeAllPress={handlePosterSeeAllPress}
     />
@@ -114,7 +107,7 @@ export default function HomeScreen() {
     <>
       <PosterCarousel
         apiKey={TMDB_API_KEY}
-        filter={filter}
+        posterLists={carouselSources}
         onItemPress={handleCarouselItemPress}
         autoPlay={true}
         autoPlayInterval={6000}
@@ -152,6 +145,14 @@ export default function HomeScreen() {
               </Text>
             </NativeButton>
           ))}
+          <NativeButton
+            variant="text"
+            style={[styles.filterButton, { backgroundColor: colors.primaryCard, borderColor: colors.border }]}
+            onPress={() => router.push('/settings/home')}
+            accessibilityLabel="Customize home screen"
+          >
+            <Ionicons name="settings-outline" size={18} color={colors.textMuted} />
+          </NativeButton>
         </View>
       </View>
     </>
@@ -163,8 +164,21 @@ export default function HomeScreen() {
       <FlatList
         key={filter}
         data={activeLists}
-        keyExtractor={(item) => `${filter}-${item.apiUrl}`}
+        keyExtractor={(item) => `${filter}-${item.id}`}
         renderItem={renderCatalogList}
+        ListEmptyComponent={(
+          <View style={styles.emptyState}>
+            <Text style={{ color: colors.textMuted, textAlign: 'center' }}>
+              No sections are enabled for this filter. Enable a poster section or add a Discover section in Home settings.
+            </Text>
+            <NativeButton
+              variant="text"
+              onPress={() => router.push('/settings/home')}
+            >
+              <Text style={{ color: colors.primary }}>Customize home screen</Text>
+            </NativeButton>
+          </View>
+        )}
         ListHeaderComponent={listHeader}
         ListFooterComponent={<BottomSpacing space={50} />}
         initialNumToRender={2}
@@ -183,6 +197,7 @@ const styles = StyleSheet.create({
   },
   filtersContainer: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     gap: spacing.sm,
@@ -208,5 +223,11 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     marginTop: spacing.sm,
+  },
+  emptyState: {
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xl,
   },
 });

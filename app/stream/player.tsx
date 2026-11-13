@@ -348,7 +348,7 @@ const MediaPlayerScreen: React.FC = () => {
 
     const init = async () => {
       if (Platform.OS !== 'web') {
-        navigation.setOptions({ gestureEnabled: true });
+        navigation.setOptions({ gestureEnabled: Platform.OS !== 'ios' });
       }
 
       if (cancelled) return;

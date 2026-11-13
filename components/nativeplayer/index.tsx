@@ -85,6 +85,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     const shouldAutoHideControls = useRef(true);
     const isSeeking = useRef(false);
     const isHideControlsScheduled = useRef(false);
+    const controlsDismissedByTap = useRef(false);
     const wasPlayingBeforeSeek = useRef(false);
     const lastKnownTimeRef = useRef<number>(0);
     const restoredResumeKeyRef = useRef<string | null>(null);
@@ -182,6 +183,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         pictureInPictureEnabled && isPictureInPictureSupported();
 
     const showControlsTemporarily = useCallback(() => {
+        controlsDismissedByTap.current = false;
         setShowControls(true);
         Animated.timing(controlsOpacity, { toValue: 1, duration: 200, useNativeDriver: true }).start();
 
@@ -313,19 +315,20 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
     // Keep controls visible while paused; resume the normal auto-hide after playback resumes.
     useEffect(() => {
-        if (!playerState.isReady) return;
+        if (!playerState.isReady || !isPaused || controlsDismissedByTap.current) return;
 
-        if (isPaused) {
-            clearTimer('hideControls');
-            isHideControlsScheduled.current = false;
-            controlsOpacity.stopAnimation();
-            controlsOpacity.setValue(1);
-            setShowControls(true);
-            return;
+        clearTimer('hideControls');
+        isHideControlsScheduled.current = false;
+        controlsOpacity.stopAnimation();
+        controlsOpacity.setValue(1);
+        setShowControls(true);
+    }, [clearTimer, controlsOpacity, isPaused, playerState.isReady, setShowControls]);
+
+    useEffect(() => {
+        if (playerState.isReady && !isPaused && uiState.showControls && !controlsDismissedByTap.current) {
+            showControlsTemporarily();
         }
-
-        showControlsTemporarily();
-    }, [clearTimer, controlsOpacity, isPaused, playerState.isReady, setShowControls, showControlsTemporarily]);
+    }, [isPaused, playerState.isReady, showControlsTemporarily, uiState.showControls]);
 
     useEffect(() => {
         playerState.setIsPlaying(playerState.isReady && !isPaused);
@@ -535,18 +538,17 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     }, [contentFit, showControlsTemporarily, showContentFitLabelTemporarily]);
 
     const handleOverlayPress = useCallback(() => {
-        if (!shouldAutoHideControls.current) {
-            shouldAutoHideControls.current = true;
-            showControlsTemporarily();
-            return;
-        }
+        shouldAutoHideControls.current = true;
+        clearTimer('hideControls');
+        isHideControlsScheduled.current = false;
 
         if (uiState.showControls) {
+            controlsDismissedByTap.current = true;
             hideControls(setShowControls, controlsOpacity);
         } else {
             showControlsTemporarily();
         }
-    }, [uiState.showControls, showControlsTemporarily, controlsOpacity, setShowControls]);
+    }, [clearTimer, uiState.showControls, showControlsTemporarily, controlsOpacity, setShowControls]);
 
     const handleSliderChange = useCallback((value: number) => {
         if (!playerState.isReady || playerState.duration <= 0) return;

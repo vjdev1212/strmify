@@ -11,6 +11,7 @@ type SettingsRoute =
   | '/settings/addons'
   | '/settings/mediaplayer'
   | '/settings/appearance'
+  | '/settings/home'
   | '/settings/stremioserver'
   | '/settings/opensubtitles'
   | '/settings/downloads'
@@ -31,6 +32,7 @@ const settingsSections: {
     title: 'General',
     items: [
       { title: 'Appearance', route: '/settings/appearance', icon: 'contrast-outline', color: settingsIconColors.appearance },
+      { title: 'Home Screen', route: '/settings/home', icon: 'home-outline', color: settingsIconColors.success },
       { title: 'Add-ons', route: '/settings/addons', icon: 'extension-puzzle-outline', color: settingsIconColors.addOns },
       { title: 'Media Player', route: '/settings/mediaplayer', icon: 'play-circle-outline', color: settingsIconColors.mediaPlayer },
     ],

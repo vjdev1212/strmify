@@ -145,7 +145,7 @@ export default function MediaPlayerConfigScreen() {
               onPress={resetToDefault}
               destructive
               isLast
-              leading={<Ionicons name="refresh-outline" size={20} color={settingsIconColors.neutral} />}
+              leading={<Ionicons name="refresh-outline" size={20} color={settingsIconColors.danger} />}
               trailing={<Ionicons name="chevron-forward" size={17} color={colors.textDim} />}
             />
           </SettingsSection>
