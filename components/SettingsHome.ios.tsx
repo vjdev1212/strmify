@@ -2,8 +2,7 @@ import React from 'react';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import * as Haptics from 'expo-haptics';
-import { Button, FieldGroup, Host, Icon, Row, Spacer, Text } from '@expo/ui';
-import { List } from '@expo/ui/swift-ui';
+import { Button, HStack, Host, Image, List, Section, Spacer, Text } from '@expo/ui/swift-ui';
 import {
   background,
   contentShape,
@@ -21,6 +20,7 @@ type SettingsRoute =
   | '/settings/addons'
   | '/settings/mediaplayer'
   | '/settings/appearance'
+  | '/settings/home'
   | '/settings/stremioserver'
   | '/settings/opensubtitles'
   | '/settings/downloads'
@@ -33,7 +33,7 @@ const settingsSections: {
   items: {
     title: string;
     route: SettingsRoute;
-    icon: React.ComponentProps<typeof Icon>['name'];
+    icon: React.ComponentProps<typeof Image>['systemName'];
     color: string;
   }[];
 }[] = [
@@ -41,6 +41,7 @@ const settingsSections: {
       title: 'General',
       items: [
         { title: 'Appearance', route: '/settings/appearance', icon: 'circle.lefthalf.filled', color: settingsIconColors.appearance },
+        { title: 'Home Screen', route: '/settings/home', icon: 'house', color: settingsIconColors.success },
         { title: 'Add-ons', route: '/settings/addons', icon: 'puzzlepiece.extension', color: settingsIconColors.addOns },
         { title: 'Media Player', route: '/settings/mediaplayer', icon: 'play.rectangle', color: settingsIconColors.mediaPlayer },
       ],
@@ -89,14 +90,13 @@ export default function SettingsHome() {
         background(colors.background),
       ]}>
         {settingsSections.map((section) => (
-          <FieldGroup.Section key={section.title} title={section.title}>
+          <Section key={section.title} title={section.title}>
             {section.items.map((item) => (
               <Button
                 key={item.route}
                 onPress={() => openSettings(item.route)}
-                variant="text"
               >
-                <Row
+                <HStack
                   spacing={12}
                   alignment="center"
                   modifiers={[
@@ -104,23 +104,23 @@ export default function SettingsHome() {
                     contentShape(shapes.rectangle()),
                   ]}
                 >
-                  <Icon name={item.icon} size={20} color={item.color} />
+                  <Image systemName={item.icon} size={20} color={item.color} />
                   <Text>{item.title}</Text>
-                  <Spacer flexible />
-                  <Icon name="chevron.right" size={13} />
-                </Row>
+                  <Spacer />
+                  <Image systemName="chevron.right" size={13} />
+                </HStack>
               </Button>
             ))}
-          </FieldGroup.Section>
+          </Section>
         ))}
-        <FieldGroup.Section title="Strmify">
-          <Row spacing={12} alignment="center">
-            <Icon name="info.circle" size={20} color={settingsIconColors.version} />
+        <Section title="Strmify">
+          <HStack spacing={12} alignment="center">
+            <Image systemName="info.circle" size={20} color={settingsIconColors.version} />
             <Text>Version</Text>
-            <Spacer flexible />
+            <Spacer />
             <Text>{version}</Text>
-          </Row>
-        </FieldGroup.Section>
+          </HStack>
+        </Section>
       </List>
     </Host>
   );

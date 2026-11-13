@@ -6,16 +6,29 @@ import { libraryService } from '@/utils/LibraryService';
 import { showAlert } from '@/utils/platform';
 
 const SeriesList = () => {
-  const { apiUrl, title } = useLocalSearchParams<{ apiUrl?: string; title?: string }>();
+  const { apiUrl, title, minimumPopularity: minimumPopularityParam } = useLocalSearchParams<{
+    apiUrl?: string;
+    title?: string;
+    minimumPopularity?: string;
+  }>();
+  const parsedMinimumPopularity = minimumPopularityParam === undefined
+    ? undefined
+    : Number(minimumPopularityParam);
+  const minimumPopularity = parsedMinimumPopularity !== undefined
+    && Number.isFinite(parsedMinimumPopularity)
+    && parsedMinimumPopularity >= 0
+    ? parsedMinimumPopularity
+    : undefined;
   const pageTitle = title || 'TV Shows';
 
   return (
     <>
-      <Stack.Screen options={{ title: pageTitle, headerTitle: pageTitle, headerTitleAlign: 'left', headerTransparent: true, headerShadowVisible: false }} />
+      <Stack.Screen options={{ title: pageTitle, headerTitle: pageTitle, headerTitleAlign: 'left', headerTransparent: false, headerShadowVisible: false }} />
       <MediaGrid
         apiUrl={apiUrl ?? ''}
         apiKey={process.env.EXPO_PUBLIC_TMDB_API_KEY}
         mediaType="series"
+        minimumPopularity={minimumPopularity}
         onItemPress={(item) => router.push({ pathname: '/series/details', params: { tmdbid: String(item.tmdbid) } })}
         onAddToWatchlist={(item: MediaGridItem) => libraryService.addToLibrary({
           id: `series-${item.tmdbid}`,

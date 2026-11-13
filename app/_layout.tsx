@@ -153,6 +153,7 @@ function RootLayoutNav() {
                     <Stack.Screen name="settings/downloads" options={{ ...screenOptions, title: 'Downloads', headerTitle: 'Downloads' }} />
                     <Stack.Screen name="settings/mediaplayer" options={{ ...screenOptions, title: 'Media Player', headerTitle: 'Media Player' }} />
                     <Stack.Screen name="settings/appearance" options={{ ...screenOptions, title: 'Appearance', headerTitle: 'Appearance' }} />
+                    <Stack.Screen name="settings/home" options={{ ...screenOptions, title: 'Manage Lists', headerTitle: 'Manage Lists' }} />
                 </Stack>
             </View>
         </ThemeProvider>
