@@ -234,7 +234,9 @@ export function loadHomePreferences(): HomePreferences {
             .map((section) => {
                 if (section.kind !== 'catalog') return section;
                 const definition = HOME_CATALOG.find((item) => item.id === section.id);
-                return definition ? { ...section, title: definition.title } : section;
+                return definition
+                    ? { ...section, title: definition.title, mediaType: definition.mediaType }
+                    : section;
             });
         const ids = new Set<string>();
         for (const section of savedSections) {
@@ -334,9 +336,13 @@ export function getOrderedHomeSections(sections: HomeSection[]): HomeSection[] {
     const positions = new Map<HomeSectionMediaType, number>();
     return sections
         .map((section, originalIndex) => {
-            const position = positions.get(section.mediaType) ?? 0;
-            positions.set(section.mediaType, position + 1);
-            const typePriority = section.mediaType === 'movie' ? 0 : section.mediaType === 'any' ? 1 : 2;
+            const catalogMediaType = section.kind === 'catalog'
+                ? HOME_CATALOG.find((definition) => definition.id === section.id)?.mediaType
+                : undefined;
+            const mediaType = catalogMediaType ?? section.mediaType;
+            const position = positions.get(mediaType) ?? 0;
+            positions.set(mediaType, position + 1);
+            const typePriority = mediaType === 'movie' ? 0 : mediaType === 'any' ? 1 : 2;
             return { section, originalIndex, position, typePriority };
         })
         .sort((left, right) => (
@@ -347,13 +353,20 @@ export function getOrderedHomeSections(sections: HomeSection[]): HomeSection[] {
         .map(({ section }) => section);
 }
 
+export function getHomeSectionDisplayTitle(section: HomeSection): string {
+    if (section.kind !== 'discover' || section.mediaType === 'any') return section.title;
+    const prefix = section.mediaType === 'movie' ? 'Movies' : 'Series';
+    const title = section.title.replace(/^(Movies|Series)\s*-\s*/i, '');
+    return `${prefix} - ${title}`;
+}
+
 export function getVisibleHomeSections(
     preferences: HomePreferences,
     filter: HomeFilter,
 ): HomeListItem[] {
     const catalogById = new Map(HOME_CATALOG.map((definition) => [definition.id, definition]));
     const orderedSections = filter === 'all'
-        ? getOrderedHomeSections(preferences.sections)
+        ? getOrderedHomeSections(preferences.sections.filter((section) => section.enabled))
         : preferences.sections;
     return orderedSections.flatMap<HomeListItem>((section) => {
         if (!section.enabled) return [];
@@ -369,13 +382,15 @@ export function getVisibleHomeSections(
             }];
         }
 
+        const title = getHomeSectionDisplayTitle(section);
+
         if (section.mediaType === 'any') {
             if (filter === 'all') {
                 const movieApiUrl = buildHomeSectionApiUrl(section, 'movie');
                 const seriesApiUrl = buildHomeSectionApiUrl(section, 'series');
                 return [{
                     id: section.id,
-                    title: section.title,
+                    title,
                     mediaType: 'any',
                     apiUrl: movieApiUrl,
                     sources: [
@@ -388,7 +403,7 @@ export function getVisibleHomeSections(
             const mediaType = filter === 'movies' ? 'movie' : 'series';
             return [{
                 id: section.id,
-                title: section.title,
+                title,
                 mediaType,
                 apiUrl: buildHomeSectionApiUrl(section, mediaType),
                 minimumPopularity: 1,
@@ -398,7 +413,7 @@ export function getVisibleHomeSections(
         if (filter !== 'all' && section.mediaType !== (filter === 'movies' ? 'movie' : 'series')) return [];
         return [{
             id: section.id,
-            title: section.title,
+            title,
             mediaType: section.mediaType,
             apiUrl: buildHomeSectionApiUrl(section),
             minimumPopularity: 1,

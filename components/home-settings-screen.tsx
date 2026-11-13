@@ -23,7 +23,6 @@ import {
   loadHomePreferences,
   normalizeHomeGenreIds,
   saveHomePreferences,
-  type HomeFilter,
   type HomeMediaType,
   type HomeSectionMediaType,
   type HomePreferences,
@@ -436,7 +435,7 @@ export default function HomeSettingsScreen({ editorOnly = false }: { editorOnly?
   const shouldCreateSection = routeParams.createSection === '1';
   const isEditorScreen = editorOnly || Boolean(requestedEditId || shouldCreateSection);
   const [preferences, setPreferences] = useState<HomePreferences>(DEFAULT_HOME_PREFERENCES);
-  const [selectedPosterMediaType, setSelectedPosterMediaType] = useState<HomeFilter>('all');
+  const [selectedPosterMediaType, setSelectedPosterMediaType] = useState<'movies' | 'series'>('movies');
   const [draft, setDraft] = useState<SectionDraft>(() => newSectionDraft(requestedMediaType));
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -872,29 +871,6 @@ export default function HomeSettingsScreen({ editorOnly = false }: { editorOnly?
             <FieldGroup.SectionFooter>
               <NativeText>Give this catalogue a name, then choose the TMDB Discover filters below.</NativeText>
             </FieldGroup.SectionFooter>
-          </FieldGroup.Section>
-
-          <FieldGroup.Section title="Media type">
-            <Picker
-              selectedValue={draft.mediaType}
-              enabled={!loading}
-              onValueChange={(value) => {
-                if (value === 'movie' || value === 'series' || value === 'any') {
-                  setDraft((current) => ({
-                    ...current,
-                    mediaType: value,
-                    watchProviders: current.mediaType === value ? current.watchProviders : '',
-                    sortBy: value !== 'movie' && current.sortBy.startsWith('revenue.')
-                      ? 'popularity.desc'
-                      : current.sortBy,
-                  }));
-                }
-              }}
-            >
-              <Picker.Item label="Movies" value="movie" />
-              <Picker.Item label="Series" value="series" />
-              <Picker.Item label="Any (Movies and Series)" value="any" />
-            </Picker>
           </FieldGroup.Section>
 
           <FieldGroup.Section title="Original language (optional)">
