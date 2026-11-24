@@ -1,6 +1,7 @@
 workflows:
   strmify-ios-build:
     name: Strmify iOS Build
+    max_build_duration: 20
     environment:
       node: 18
       xcode: latest
@@ -117,6 +118,7 @@ workflows:
 
   strmify-ios-dev:
     name: Strmify iOS Development Build
+    max_build_duration: 20
     environment:
       node: 18
       xcode: latest
@@ -224,6 +226,7 @@ workflows:
 
   strmify-android-build:
     name: Strmify Android Build
+    max_build_duration: 30
     environment:
       node: 18
       java: latest
@@ -332,6 +335,7 @@ workflows:
 
   strmify-android-dev:
     name: Strmify Android Development Build
+    max_build_duration: 30
     environment:
       node: 18
       java: latest
