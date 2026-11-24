@@ -1,8 +1,8 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
-import type { ScrollViewInstance } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { StyleSheet, useWindowDimensions } from 'react-native';
+import Animated, { useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ActivityIndicator, StatusBar, Text, View } from '@vjdev1212/media-ui-kit';
+import { ActivityIndicator, PosterOverlayColors, StatusBar, Text, ThemeOverrideProvider, View } from '@vjdev1212/media-ui-kit';
 import { SeasonEpisodeList } from '@vjdev1212/media-ui-kit';
 import {
   BottomSpacing,
@@ -38,10 +38,13 @@ const SeriesDetails = () => {
   const [selectedPersonId, setSelectedPersonId] = useState<number | null>(null);
   const { width, height } = useWindowDimensions();
   const isPortrait = height > width;
-  const ref = useRef<ScrollViewInstance | null>(null);
   const [season, setSeason] = useState<number>(1);
   const [episode, setEpisode] = useState<number>(1);
   const { colors } = useTheme();
+  const scrollY = useSharedValue(0);
+  const handleScroll = useAnimatedScrollHandler((event) => {
+    scrollY.set(event.contentOffset.y);
+  });
 
   useEffect(() => {
     const fetchDetails = async () => {
@@ -254,12 +257,38 @@ const SeriesDetails = () => {
     return `${data.name} S${String(season).padStart(2, '0')}E${String(episode).padStart(2, '0')}`;
   }
 
+  const actionButtons = (
+    <View style={styles.buttonsContainer}>
+      <LibraryButton
+        item={{
+          id: `series-${tmdbid}`,
+          tmdbid: tmdbid as string,
+          type: 'series',
+          title: data.name,
+          poster: data.poster,
+          backdrop: data.background,
+          year: data.released?.split('-')[0],
+          rating: data.imdbRating,
+          genres: data.genre,
+        }}
+        service={libraryService}
+        glass
+        onPressFeedback={() => {
+          if (isHapticsSupported()) return Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        }}
+      />
+      <PlayButton onPress={handlePlayPress} />
+      <WatchTrailerButton trailerKey={trailerKey} glass />
+    </View>
+  );
+
   return (
-    <ScrollView
+    <Animated.ScrollView
       showsVerticalScrollIndicator={false}
       removeClippedSubviews={false}
       style={styles.container}
-      ref={ref}
+      onScroll={handleScroll}
+      scrollEventThrottle={16}
     >
       <StatusBar />
       <View style={[styles.rootContainer, {
@@ -271,18 +300,23 @@ const SeriesDetails = () => {
           width: isPortrait ? '100%' : '50%',
           padding: isPortrait ? null : '2%'
         }]}>
-          <MediaContentPoster background={data.background} isPortrait={isPortrait} />
+          <MediaContentPoster background={data.background} isPortrait={isPortrait} scrollY={scrollY} />
           <LinearGradient
             pointerEvents="none"
             colors={['transparent', 'rgba(0, 0, 0, 0.3)', 'rgba(0, 0, 0, 0.92)']}
             locations={[0, 0.4, 1]}
             start={{ x: 0, y: 0 }}
             end={{ x: 0, y: 1 }}
-            style={styles.posterTitleOverlay}
-          >
-            <MediaLogo logo={data.logo} title={data.name} />
-          </LinearGradient>
+            style={styles.posterGradient}
+          />
+          <ThemeOverrideProvider colorScheme="dark" colors={PosterOverlayColors}>
+            <View pointerEvents="box-none" style={styles.posterContentOverlay}>
+              <MediaLogo logo={data.logo} title={data.name} />
+              <MediaContentDescription description={data.description} placement="poster" />
+            </View>
+          </ThemeOverrideProvider>
         </View>
+
         <View style={[styles.detailsContainer, {
           width: isPortrait ? '100%' : '50%',
           paddingHorizontal: isPortrait ? null : 5,
@@ -296,36 +330,10 @@ const SeriesDetails = () => {
               runtime={data.runtime}
               imdbRating={data.imdbRating}
               releaseInfo={data.releaseInfo}
-            />)}
-          <View style={styles.buttonsContainer}>
-            <LibraryButton
-              item={{
-                id: `series-${tmdbid}`,
-                tmdbid: tmdbid as string,
-                type: 'series',
-                title: data.name,
-                poster: data.poster,
-                backdrop: data.background,
-                year: data.released?.split('-')[0],
-                rating: data.imdbRating,
-                genres: data.genre,
-              }}
-              service={libraryService}
-              onPressFeedback={() => {
-                if (isHapticsSupported()) return Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              }}
             />
-            <PlayButton onPress={handlePlayPress} />
-            <WatchTrailerButton trailerKey={trailerKey} />
-          </View>
-          <MediaContentDescription description={data.description} />
-          {
-            isPortrait ? (null) : (
-              <>
-                <BottomSpacing space={80} />
-              </>
-            )
-          }
+          )}
+          {actionButtons}
+          {!isPortrait && <BottomSpacing space={80} />}
         </View>
       </View>
       <View>
@@ -358,7 +366,7 @@ const SeriesDetails = () => {
         <PosterList apiUrl={`https://api.themoviedb.org/3/tv/${tmdbid}/similar`} title='Similar to this' type='series' compact onItemPress={handlePosterItemPress} onSeeAllPress={handlePosterSeeAllPress} />
       </View>
       <BottomSpacing space={50} />
-    </ScrollView>
+    </Animated.ScrollView>
   );
 };
 
@@ -375,13 +383,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     position: 'relative',
   },
-  posterTitleOverlay: {
+  posterGradient: {
     position: 'absolute',
     top: 0,
     bottom: 0,
     left: 0,
     right: 0,
     zIndex: 1,
+  },
+  posterContentOverlay: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    zIndex: 2,
     justifyContent: 'flex-end',
     paddingVertical: spacing.md,
   },

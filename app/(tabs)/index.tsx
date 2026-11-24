@@ -6,6 +6,7 @@ import {
   View,
   Platform,
 } from 'react-native';
+import Animated, { useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar, Text, PosterList, BottomSpacing } from '@vjdev1212/media-ui-kit';
 import { PosterCarousel } from '@vjdev1212/media-ui-kit';
@@ -20,6 +21,7 @@ import {
   DEFAULT_HOME_PREFERENCES,
   getVisibleHomeSections,
   loadHomePreferences,
+  type HomeListItem,
   type HomePreferences,
 } from '@/utils/HomeCustomization';
 
@@ -28,6 +30,11 @@ const TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 export default function HomeScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const scrollY = useSharedValue(0);
+  const listRef = React.useRef<FlatList<HomeListItem> | null>(null);
+  const handleScroll = useAnimatedScrollHandler((event) => {
+    scrollY.set(event.contentOffset.y);
+  });
   const [filter, setFilter] = useState<'all' | 'movies' | 'series'>('all');
   const [homePreferences, setHomePreferences] = useState<HomePreferences>(DEFAULT_HOME_PREFERENCES);
 
@@ -70,8 +77,11 @@ export default function HomeScreen() {
 
   const handleFilterChange = useCallback(async (newFilter: 'all' | 'movies' | 'series') => {
     if (await isHapticsSupported()) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (newFilter === filter) return;
+    scrollY.set(0);
+    listRef.current?.scrollToOffset({ offset: 0, animated: false });
     setFilter(newFilter);
-  }, []);
+  }, [filter, scrollY]);
 
   const handleCarouselItemPress = useCallback((item: any) => {
     const type = item.type == 'movie' ? 'movie' : 'series';
@@ -132,6 +142,7 @@ export default function HomeScreen() {
       <PosterCarousel
         apiKey={TMDB_API_KEY}
         posterLists={carouselSources}
+        scrollY={scrollY}
         onItemPress={handleCarouselItemPress}
         autoPlay={true}
         autoPlayInterval={6000}
@@ -185,8 +196,8 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <StatusBar />
-      <FlatList
-        key={filter}
+      <Animated.FlatList
+        ref={listRef}
         data={activeLists}
         keyExtractor={(item) => `${filter}-${item.id}`}
         renderItem={renderCatalogList}
@@ -210,6 +221,8 @@ export default function HomeScreen() {
         windowSize={5}
         removeClippedSubviews={false}
         showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
       />
     </View>
   );
