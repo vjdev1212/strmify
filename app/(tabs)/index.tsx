@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   contentContainer: {
-    marginTop: spacing.sm,
+    marginTop: spacing.lg,
   },
   emptyState: {
     alignItems: 'center',
