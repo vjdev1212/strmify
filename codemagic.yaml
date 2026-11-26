@@ -112,9 +112,24 @@ workflows:
             echo "❌ Failed to create IPA"
             exit 1
           fi
-    
+
+      - name: Package IPA as ZIP
+        script: |
+          set -e
+          cd ios/build
+          IPA_FILE=$(find . -maxdepth 1 -type f -name '*.ipa' | head -1)
+          if [ -z "$IPA_FILE" ]; then
+            echo "No IPA found to package"
+            exit 1
+          fi
+
+          ZIP_FILE="${IPA_FILE%.ipa}.zip"
+          zip -j "$ZIP_FILE" "$IPA_FILE"
+          echo "ZIP created: $ZIP_FILE"
+
     artifacts:
       - ios/build/*.ipa
+      - ios/build/*.zip
       - ios/build/**/*.xcarchive
 
   strmify-ios-dev:
@@ -234,8 +249,23 @@ workflows:
             exit 1
           fi
 
+      - name: Package IPA as ZIP
+        script: |
+          set -e
+          cd ios/build
+          IPA_FILE=$(find . -maxdepth 1 -type f -name '*.ipa' | head -1)
+          if [ -z "$IPA_FILE" ]; then
+            echo "No development IPA found to package"
+            exit 1
+          fi
+
+          ZIP_FILE="${IPA_FILE%.ipa}.zip"
+          zip -j "$ZIP_FILE" "$IPA_FILE"
+          echo "Development ZIP created: $ZIP_FILE"
+
     artifacts:
       - ios/build/*.ipa
+      - ios/build/*.zip
 
   # ── Android workflows ────────────────────────────────────────────────────────
 
