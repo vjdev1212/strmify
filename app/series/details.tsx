@@ -23,7 +23,7 @@ import { libraryService } from '@/utils/LibraryService';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '@/context/ThemeContext';
 import { spacing, typography } from '@/constants/theme';
-import { isHapticsSupported } from '@/utils/platform';
+import { isHapticsSupported, showAlert } from '@/utils/platform';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const EXPO_PUBLIC_TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
@@ -360,10 +360,10 @@ const SeriesDetails = () => {
         )
       }
       <View style={styles.recommendationsContainer}>
-        <PosterList apiUrl={`https://api.themoviedb.org/3/tv/${tmdbid}/recommendations`} title='Recommended' type='series' compact onItemPress={handlePosterItemPress} onSeeAllPress={handlePosterSeeAllPress} />
+        <PosterList apiUrl={`https://api.themoviedb.org/3/tv/${tmdbid}/recommendations`} title='Recommended' type='series' compact onItemPress={handlePosterItemPress} onAddToWatchlist={(poster) => libraryService.addToLibrary({ id: `${poster.type}-${poster.tmdbid}`, tmdbid: String(poster.tmdbid), type: poster.type, title: poster.name, poster: poster.poster, backdrop: poster.background, year: poster.year, rating: poster.imdbRating, genres: [] })} onActionError={showAlert} onSeeAllPress={handlePosterSeeAllPress} />
       </View>
       <View style={styles.recommendationsContainer}>
-        <PosterList apiUrl={`https://api.themoviedb.org/3/tv/${tmdbid}/similar`} title='Similar to this' type='series' compact onItemPress={handlePosterItemPress} onSeeAllPress={handlePosterSeeAllPress} />
+        <PosterList apiUrl={`https://api.themoviedb.org/3/tv/${tmdbid}/similar`} title='Similar to this' type='series' compact onItemPress={handlePosterItemPress} onAddToWatchlist={(poster) => libraryService.addToLibrary({ id: `${poster.type}-${poster.tmdbid}`, tmdbid: String(poster.tmdbid), type: poster.type, title: poster.name, poster: poster.poster, backdrop: poster.background, year: poster.year, rating: poster.imdbRating, genres: [] })} onActionError={showAlert} onSeeAllPress={handlePosterSeeAllPress} />
       </View>
       <BottomSpacing space={50} />
     </Animated.ScrollView>

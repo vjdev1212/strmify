@@ -2,49 +2,60 @@ import React, { useState, useCallback, useRef } from 'react';
 import {
   ScrollView,
   Pressable,
-  TouchableOpacity,
   Image,
   StyleSheet,
   Animated,
   RefreshControl,
-  useWindowDimensions,
+  Platform,
 } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
+import { MenuView, type MenuAction } from '@expo/ui/community/menu';
 import { Ionicons } from '@expo/vector-icons';
-import { View, Text } from '@vjdev1212/media-ui-kit';
+import { View, Text, WebMenu } from '@vjdev1212/media-ui-kit';
 import WatchHistory, { WatchHistoryItem } from '@/components/WatchHistory';
 import { LibraryItem, libraryService } from '@/utils/LibraryService';
 import { BottomSpacing } from '@vjdev1212/media-ui-kit';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '@/context/ThemeContext';
-import NativeStackList from '@/components/native-stack-list';
 import { PosterArtwork } from '@vjdev1212/media-ui-kit';
-import { radius, spacing, typography } from '@/constants/theme';
+import { spacing, typography } from '@/constants/theme';
 
-type CategoryType = 'all' | 'movies' | 'tv';
+type LibrarySection = 'all' | 'continue' | 'watchlists' | 'watched';
 
 const LibraryScreen: React.FC = () => {
-  const { colors } = useTheme();
+  const { colors, colorScheme } = useTheme();
   const [allUnwatched, setAllUnwatched] = useState<LibraryItem[]>([]);
   const [allWatched, setAllWatched] = useState<LibraryItem[]>([]);
-  const [moviesUnwatched, setMoviesUnwatched] = useState<LibraryItem[]>([]);
-  const [moviesWatched, setMoviesWatched] = useState<LibraryItem[]>([]);
-  const [seriesUnwatched, setSeriesUnwatched] = useState<LibraryItem[]>([]);
-  const [seriesWatched, setSeriesWatched] = useState<LibraryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [activeCategory, setActiveCategory] = useState<CategoryType>('all');
+  const [activeSection, setActiveSection] = useState<LibrarySection>('all');
 
   const animatedValues = useRef(new Map<string, Animated.Value>()).current;
   const touchStartRef = useRef<{ pageX: number; pageY: number } | null>(null);
   const didScrollRef = useRef(false);
+  const longPressRef = useRef(false);
+  const longPressResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const { width, height } = useWindowDimensions();
-  const isPortrait = height > width;
+  const markLongPress = () => {
+    longPressRef.current = true;
+    if (longPressResetRef.current) clearTimeout(longPressResetRef.current);
+    longPressResetRef.current = setTimeout(() => {
+      longPressRef.current = false;
+      longPressResetRef.current = null;
+    }, 1000);
+  };
 
-  const CARD_WIDTH = isPortrait ? 190 : 240;
-  const CARD_HEIGHT = Math.round((CARD_WIDTH * 9) / 16);
-  const CARD_SPACING = 16;
+  const consumeLongPress = () => {
+    if (!longPressRef.current) return false;
+    longPressRef.current = false;
+    if (longPressResetRef.current) clearTimeout(longPressResetRef.current);
+    longPressResetRef.current = null;
+    return true;
+  };
+
+  const POSTER_WIDTH = 88;
+  const POSTER_HEIGHT = 132;
+  const CARD_SPACING = 0;
 
   useFocusEffect(
     useCallback(() => {
@@ -60,20 +71,8 @@ const LibraryScreen: React.FC = () => {
       const allUnwatchedItems = latest100.filter(item => !item.watched);
       const allWatchedItems = latest100.filter(item => item.watched);
 
-      const movieItems = latest100.filter(item => item.type === 'movie');
-      const moviesUnwatchedItems = movieItems.filter(item => !item.watched);
-      const moviesWatchedItems = movieItems.filter(item => item.watched);
-
-      const seriesItems = latest100.filter(item => item.type === 'series');
-      const seriesUnwatchedItems = seriesItems.filter(item => !item.watched);
-      const seriesWatchedItems = seriesItems.filter(item => item.watched);
-
       setAllUnwatched(allUnwatchedItems);
       setAllWatched(allWatchedItems);
-      setMoviesUnwatched(moviesUnwatchedItems);
-      setMoviesWatched(moviesWatchedItems);
-      setSeriesUnwatched(seriesUnwatchedItems);
-      setSeriesWatched(seriesWatchedItems);
     } catch (error) {
       console.error('Failed to load library:', error);
     } finally {
@@ -122,6 +121,19 @@ const LibraryScreen: React.FC = () => {
     }
   };
 
+  const handleLibraryMenuAction = async (item: LibraryItem, itemKey: string, actionId: string) => {
+    if (actionId === 'details') {
+      router.push({
+        pathname: item.type === 'series' ? '/series/details' : '/movie/details',
+        params: { tmdbid: item.tmdbid },
+      });
+    } else if (actionId === 'toggle-watched') {
+      await toggleWatchStatus(item);
+    } else if (actionId === 'remove') {
+      await removeFromLibrary(item, itemKey);
+    }
+  };
+
   const handleItemPress = (item: LibraryItem) => {
     router.push({
       pathname: item.type === 'movie' ? '/movie/details' : '/series/details',
@@ -154,110 +166,141 @@ const LibraryScreen: React.FC = () => {
   const renderLibraryItem = (item: LibraryItem, index: number) => {
     const itemKey = `${item.tmdbid}-${item.type}-${index}`;
     const animValue = getAnimatedValue(itemKey);
+    const menuActions: MenuAction[] = [
+      {
+        id: 'details',
+        title: item.type === 'series' ? 'Go to TV Show' : 'Go to Movie',
+        image: 'arrow.up.right',
+      },
+      {
+        id: 'toggle-watched',
+        title: item.watched ? 'Mark as Unwatched' : 'Mark as Watched',
+        image: item.watched ? 'eye.slash' : 'eye',
+      },
+      {
+        id: 'remove',
+        title: 'Remove',
+        image: 'trash',
+        imageColor: colors.danger,
+        attributes: { destructive: true },
+      },
+    ];
+    const mediaButton = (
+      <Pressable
+        style={styles.mediaButton}
+        onTouchStart={(event) => {
+          touchStartRef.current = {
+            pageX: event.nativeEvent.pageX,
+            pageY: event.nativeEvent.pageY,
+          };
+          didScrollRef.current = false;
+        }}
+        onTouchMove={(event) => {
+          const start = touchStartRef.current;
+          if (!start) return;
+
+          const { pageX, pageY } = event.nativeEvent;
+          if (Math.abs(pageX - start.pageX) > 10 || Math.abs(pageY - start.pageY) > 10) {
+            didScrollRef.current = true;
+          }
+        }}
+        onLongPress={markLongPress}
+        onPress={() => {
+          if (!consumeLongPress() && !didScrollRef.current) handleItemPress(item);
+        }}
+      >
+        <View style={[styles.imageContainer, { width: POSTER_WIDTH, height: POSTER_HEIGHT, backgroundColor: colors.background }]}>
+          <PosterArtwork key={item.backdrop || item.poster} style={styles.artworkFrame} borderRadius={10}>
+            {(onImageLoad) => (
+              <Image
+                source={{ uri: item.backdrop || item.poster }}
+                onLoad={onImageLoad}
+                resizeMethod="resize"
+                style={styles.backdrop}
+                resizeMode="cover"
+              />
+            )}
+          </PosterArtwork>
+        </View>
+        <View style={styles.infoContainer}>
+          <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>{item.title}</Text>
+          <Text style={[styles.mediaType, { color: colors.textMuted }]}>{item.type === 'series' ? 'TV Show' : 'Movie'}</Text>
+          {item.year && <Text style={[styles.year, { color: colors.text }]}>{item.year}</Text>}
+        </View>
+      </Pressable>
+    );
 
     return (
       <Animated.View
         style={[
-          { width: CARD_WIDTH },
+          styles.rowWrapper,
           { opacity: animValue, transform: [{ scale: animValue }] },
         ]}
       >
-        <Pressable
-          style={styles.card}
-          onTouchStart={(event) => {
-            touchStartRef.current = {
-              pageX: event.nativeEvent.pageX,
-              pageY: event.nativeEvent.pageY,
-            };
-            didScrollRef.current = false;
-          }}
-          onTouchMove={(event) => {
-            const start = touchStartRef.current;
-            if (!start) return;
-
-            const { pageX, pageY } = event.nativeEvent;
-            if (Math.abs(pageX - start.pageX) > 10 || Math.abs(pageY - start.pageY) > 10) {
-              didScrollRef.current = true;
-            }
-          }}
-          onPress={() => {
-            if (!didScrollRef.current) handleItemPress(item);
-          }}
+        <View
+          style={styles.libraryRow}
         >
-          <View style={[styles.imageContainer, { height: CARD_HEIGHT, backgroundColor: colors.background }]}>
-            <PosterArtwork key={item.backdrop || item.poster} style={styles.artworkFrame} borderRadius={10}>
-              {(onImageLoad) => (
-                <Image
-                  source={{ uri: item.backdrop || item.poster }}
-                  onLoad={onImageLoad}
-                  resizeMethod="resize"
-                  style={styles.backdrop}
-                  resizeMode="cover"
-                />
-              )}
-            </PosterArtwork>
-            {item.watched && (
-              <View style={styles.watchedBadge}>
-                <Ionicons name="checkmark-circle" size={20} color="#fff" />
-              </View>
-            )}
-            <TouchableOpacity
-              style={styles.watchButton}
-              onPress={(e) => { e.stopPropagation(); toggleWatchStatus(item); }}
-              activeOpacity={0.7}
+          {Platform.OS === 'web' ? mediaButton : (
+            <MenuView
+              title={item.title}
+              actions={menuActions}
+              shouldOpenOnLongPress
+              colorScheme={colorScheme}
+              style={styles.mediaMenuTrigger}
+              onPressAction={({ nativeEvent }) => void handleLibraryMenuAction(item, itemKey, nativeEvent.event)}
             >
-              <Ionicons name={item.watched ? "eye-off-outline" : "eye-outline"} size={18} color="#fff" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.removeButton}
-              onPress={(e) => { e.stopPropagation(); removeFromLibrary(item, itemKey); }}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="close" size={16} color="#fff" />
-            </TouchableOpacity>
+              {mediaButton}
+            </MenuView>
+          )}
+          <View style={styles.menuActionSlot}>
+            {(() => {
+              const menuButton = (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`More actions for ${item.title}`}
+                  hitSlop={10}
+                  style={styles.menuButton}
+                >
+                  <Ionicons name="ellipsis-horizontal" size={21} color={colors.text} />
+                </Pressable>
+              );
+              return Platform.OS === 'web' ? (
+                <WebMenu
+                  title={item.title}
+                  actions={menuActions.map(({ id, title, image }) => ({
+                    id: id ?? title,
+                    title,
+                    icon: image === 'trash'
+                      ? 'trash-outline'
+                      : image === 'arrow.up.right'
+                        ? 'arrow-forward-outline'
+                        : image === 'eye'
+                          ? 'eye-outline'
+                          : 'eye-off-outline',
+                    titleColor: id === 'remove' ? colors.danger : undefined,
+                    iconColor: id === 'remove' ? colors.danger : undefined,
+                  }))}
+                  onPressAction={(actionId) => void handleLibraryMenuAction(item, itemKey, actionId)}
+                >
+                  {menuButton}
+                </WebMenu>
+              ) : (
+                <MenuView
+                  title={item.title}
+                  actions={menuActions}
+                  shouldOpenOnLongPress={false}
+                  colorScheme={colorScheme}
+                  onPressAction={({ nativeEvent }) => void handleLibraryMenuAction(item, itemKey, nativeEvent.event)}
+                >
+                  {menuButton}
+                </MenuView>
+              );
+            })()}
           </View>
-          <View style={styles.infoContainer}>
-            <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>{item.title}</Text>
-            {item.year && <Text style={[styles.year, { color: colors.text }]}>{item.year}</Text>}
-          </View>
-        </Pressable>
+          <View pointerEvents="none" style={[styles.rowDivider, { backgroundColor: colors.text }]} />
+        </View>
       </Animated.View>
     );
-  };
-
-  const renderSection = (title: string, items: LibraryItem[], icon: string) => {
-    if (items.length === 0) return null;
-    return (
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <View style={styles.sectionTitleRow}>
-            <Ionicons name={icon as any} size={20} color={colors.text} />
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>{title}</Text>
-          </View>
-          <Text style={[styles.sectionCount, { color: colors.textMuted }]}>
-            {items.length} {items.length === 1 ? 'item' : 'items'}
-          </Text>
-        </View>
-        <NativeStackList
-          data={items}
-          axis="horizontal"
-          spacing={CARD_SPACING}
-          horizontalContentInset={0}
-          style={{ height: CARD_HEIGHT + 62 }}
-          renderItem={renderLibraryItem}
-          keyExtractor={(item, index) => `${item.tmdbid}-${item.type}-${index}`}
-        />
-      </View>
-    );
-  };
-
-  const getTotalCount = () => {
-    switch (activeCategory) {
-      case 'all': return allUnwatched.length + allWatched.length;
-      case 'movies': return moviesUnwatched.length + moviesWatched.length;
-      case 'tv': return seriesUnwatched.length + seriesWatched.length;
-      default: return 0;
-    }
   };
 
   const renderContent = () => {
@@ -269,58 +312,47 @@ const LibraryScreen: React.FC = () => {
       );
     }
 
-    const getUnwatched = () => {
-      switch (activeCategory) {
-        case 'movies': return moviesUnwatched;
-        case 'tv': return seriesUnwatched;
-        default: return allUnwatched;
-      }
-    };
-
-    const getWatched = () => {
-      switch (activeCategory) {
-        case 'movies': return moviesWatched;
-        case 'tv': return seriesWatched;
-        default: return allWatched;
-      }
-    };
-
-    const getWatchHistoryType = () => {
-      switch (activeCategory) {
-        case 'movies': return 'movie';
-        case 'tv': return 'series';
-        default: return 'all';
-      }
-    };
-
-    const unwatched = getUnwatched();
-    const watched = getWatched();
-    const totalCount = unwatched.length + watched.length;
+    const libraryItems = activeSection === 'watchlists'
+      ? allUnwatched
+      : activeSection === 'watched'
+        ? allWatched
+        : activeSection === 'all'
+          ? [...allUnwatched, ...allWatched]
+          : [];
+    const isAll = activeSection === 'all';
+    const isContinueWatching = activeSection === 'continue';
+    const shouldShowHistory = isAll || isContinueWatching;
+    const hasItems = isAll || isContinueWatching || libraryItems.length > 0;
 
     return (
       <View style={styles.librarySections}>
-        <WatchHistory onItemSelect={handleWatchHistoryItemSelect} type={getWatchHistoryType()} />
-        {totalCount === 0 ? (
+        {shouldShowHistory && <WatchHistory onItemSelect={handleWatchHistoryItemSelect} type="all" />}
+        {!hasItems ? (
           <View style={styles.emptyContainer}>
             <Ionicons name="albums-outline" size={80} color={colors.primary} />
             <Text style={[styles.emptyTitle, { color: colors.text }]}>
-              {activeCategory === 'all' ? 'Your Library is Empty' : activeCategory === 'movies' ? 'No Movies in Library' : 'No TV Shows in Library'}
+              {activeSection === 'watchlists' ? 'Your Watchlist is Empty' : 'No Completed Items'}
             </Text>
             <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-              Add {activeCategory === 'all' ? 'movies and TV shows' : activeCategory === 'movies' ? 'movies' : 'TV shows'} to your library to watch later
+              {activeSection === 'watchlists' ? 'Add movies and TV shows to your library to watch later' : 'Watched items will appear here'}
             </Text>
           </View>
         ) : (
           <>
-            {renderSection('Watchlists', unwatched, 'eye-outline')}
-            {renderSection('Watched', watched, 'checkmark-circle-outline')}
+            <View style={styles.section}>
+              <View style={{ gap: CARD_SPACING }}>
+                {libraryItems.map((item, index) => (
+                  <React.Fragment key={`${item.tmdbid}-${item.type}-${index}`}>
+                    {renderLibraryItem(item, index)}
+                  </React.Fragment>
+                ))}
+              </View>
+            </View>
           </>
         )}
       </View>
     );
   };
-
-  const totalCount = getTotalCount();
 
   return (
     <>
@@ -343,22 +375,28 @@ const LibraryScreen: React.FC = () => {
       <Stack.Toolbar placement="right">
         <Stack.Toolbar.Menu icon="line.3.horizontal.decrease" title="Filter Library">
           <Stack.Toolbar.MenuAction
-            isOn={activeCategory === 'all'}
-            onPress={() => setActiveCategory('all')}
+            isOn={activeSection === 'all'}
+            onPress={() => setActiveSection('all')}
           >
             All
           </Stack.Toolbar.MenuAction>
           <Stack.Toolbar.MenuAction
-            isOn={activeCategory === 'movies'}
-            onPress={() => setActiveCategory('movies')}
+            isOn={activeSection === 'continue'}
+            onPress={() => setActiveSection('continue')}
           >
-            Movies
+            Continue Watching
           </Stack.Toolbar.MenuAction>
           <Stack.Toolbar.MenuAction
-            isOn={activeCategory === 'tv'}
-            onPress={() => setActiveCategory('tv')}
+            isOn={activeSection === 'watchlists'}
+            onPress={() => setActiveSection('watchlists')}
           >
-            Series
+            Watchlists
+          </Stack.Toolbar.MenuAction>
+          <Stack.Toolbar.MenuAction
+            isOn={activeSection === 'watched'}
+            onPress={() => setActiveSection('watched')}
+          >
+            Completed
           </Stack.Toolbar.MenuAction>
         </Stack.Toolbar.Menu>
       </Stack.Toolbar>
@@ -370,22 +408,22 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   summary: { paddingHorizontal: spacing.md, paddingTop: spacing.md },
   headerSubtitle: { ...typography.caption },
-  librarySections: { gap: spacing.lg, paddingTop: spacing.lg },
-  section: { marginTop: 0, marginBottom: 0, paddingHorizontal: spacing.md },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm },
-  sectionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  sectionTitle: { ...typography.headline },
-  sectionCount: { ...typography.caption, fontWeight: '500' },
-  card: { backgroundColor: 'transparent', borderRadius: radius.md },
-  imageContainer: { width: '100%', position: 'relative', borderRadius: radius.md, overflow: 'hidden' },
+  librarySections: { gap: 0, paddingTop: spacing.lg },
+  section: { marginTop: 0, marginBottom: 0 },
+  rowWrapper: { width: '100%' },
+  libraryRow: { position: 'relative', flexDirection: 'row', alignItems: 'flex-start', gap: 16, paddingHorizontal: 16, paddingVertical: 12 },
+  mediaButton: { flex: 1, flexDirection: 'row', alignItems: 'flex-start', gap: 16 },
+  mediaMenuTrigger: { flex: 1, minWidth: 0 },
+  rowDivider: { position: 'absolute', left: 16, right: 16, bottom: 0, height: StyleSheet.hairlineWidth, opacity: 0.1 },
+  imageContainer: { position: 'relative', borderRadius: 12, overflow: 'hidden' },
   artworkFrame: { width: '100%', height: '100%' },
   backdrop: { width: '100%', height: '100%' },
-  watchedBadge: { position: 'absolute', top: 8, left: 8, backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: 16, padding: 4 },
-  watchButton: { position: 'absolute', top: 8, left: 8, backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: 16, padding: 6 },
-  removeButton: { position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: 16, padding: 6 },
-  infoContainer: { paddingTop: 8, paddingHorizontal: 4 },
-  title: { fontSize: 14, fontWeight: '500', marginBottom: 4, lineHeight: 18 },
-  year: { fontSize: 12, opacity: 0.6, fontWeight: '500' },
+  menuActionSlot: { width: 56, minWidth: 56, alignItems: 'center', justifyContent: 'flex-start', paddingTop: 4 },
+  menuButton: { width: 40, minHeight: 48, alignItems: 'center', justifyContent: 'flex-start' },
+  infoContainer: { flex: 1, gap: 4, paddingTop: 4, paddingRight: 16 },
+  title: { fontSize: 17, fontWeight: '600', lineHeight: 22 },
+  mediaType: { fontSize: 14, lineHeight: 19 },
+  year: { fontSize: 14, lineHeight: 19, opacity: 0.6, fontWeight: '500' },
   emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 80, paddingHorizontal: 40 },
   emptyTitle: { fontSize: 22, fontWeight: '500', marginTop: 20, marginBottom: 8 },
   emptyText: { fontSize: 14, opacity: 0.6, textAlign: 'center', lineHeight: 20 },

@@ -226,7 +226,7 @@ const StreamListScreen = () => {
     const headerHeight = useHeaderHeight();
     const { width: screenWidth } = useWindowDimensions();
     const [pagerWidth, setPagerWidth] = useState(screenWidth);
-    const { imdbid, type, title, season, episode } = useLocalSearchParams<{ imdbid: string; type: string; name: string; title: string; season?: string; episode?: string; }>();
+    const { imdbid, tmdbid, type, title, season, episode } = useLocalSearchParams<{ imdbid: string; tmdbid?: string; type: string; name: string; title: string; season?: string; episode?: string; }>();
     const [addons, setAddons] = useState<Addon[]>([]);
     const [selectedAddon, setSelectedAddon] = useState<Addon | null>(null);
     const [selectedAddonIndex, setSelectedAddonIndex] = useState(0);
@@ -322,6 +322,7 @@ const StreamListScreen = () => {
                     selectedStreamIndex: index.toString(),
                     title,
                     imdbid,
+                    tmdbid,
                     type,
                     season,
                     episode,

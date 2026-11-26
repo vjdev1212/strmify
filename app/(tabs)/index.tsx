@@ -14,6 +14,7 @@ import type { CarouselSource, PosterListSource } from '@vjdev1212/media-ui-kit';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { isHapticsSupported, showAlert } from '@/utils/platform';
+import { libraryService } from '@/utils/LibraryService';
 import { useTheme } from '@/context/ThemeContext';
 import { NativeButton } from '@vjdev1212/media-ui-kit';
 import { radius, spacing, typography } from '@/constants/theme';
@@ -133,6 +134,18 @@ export default function HomeScreen() {
       sources={item.sources?.map((source) => ({ ...source, type: source.mediaType }))}
       minimumPopularity={item.minimumPopularity}
       onItemPress={handlePosterItemPress}
+      onAddToWatchlist={(poster) => libraryService.addToLibrary({
+        id: `${poster.type}-${poster.tmdbid}`,
+        tmdbid: String(poster.tmdbid),
+        type: poster.type,
+        title: poster.name,
+        poster: poster.poster,
+        backdrop: poster.background,
+        year: poster.year,
+        rating: poster.imdbRating,
+        genres: [],
+      })}
+      onActionError={showAlert}
       onSeeAllPress={handlePosterSeeAllPress}
     />
   ), [handlePosterItemPress, handlePosterSeeAllPress]);

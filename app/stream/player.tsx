@@ -58,10 +58,12 @@ interface WatchHistoryItem {
   streamInfoHash?: string;
   streamFileIdx?: number;
   imdbid: string;
+  tmdbid?: string;
   type: string;
   season: string;
   episode: string;
   positionSeconds: number;
+  durationSeconds: number;
   playbackSettings?: PlaybackSettings;
   artwork: string;
   timestamp: number;
@@ -240,6 +242,7 @@ const MediaPlayerScreen: React.FC = () => {
     streamInfoHash: streamInfoHashParam,
     streamFileIdx: streamFileIdxParam,
     title,
+    tmdbid,
     imdbid,
     type,
     season,
@@ -898,9 +901,11 @@ const MediaPlayerScreen: React.FC = () => {
           : undefined,
         streamFileIdx: isTorrent ? currentTorrentFileIdx : undefined,
         positionSeconds: savedPositionSeconds,
+        durationSeconds: totalSeconds,
         playbackSettings: savedPlaybackSettings,
         artwork,
         imdbid: imdbid as string,
+        tmdbid: tmdbid as string | undefined,
         type: type as string,
         season: season as string,
         episode: episode as string,
@@ -917,10 +922,12 @@ const MediaPlayerScreen: React.FC = () => {
           streamFileIdx: isTorrent ? currentTorrentFileIdx : undefined,
           artwork,
           imdbid: imdbid as string,
+          tmdbid: tmdbid as string | undefined,
           type: type as string,
           season: season as string,
           episode: episode as string,
           positionSeconds: savedPositionSeconds,
+          durationSeconds: totalSeconds,
           playbackSettings: savedPlaybackSettings ?? history[existingIndex].playbackSettings,
           timestamp: Date.now()
         };
