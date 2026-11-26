@@ -170,7 +170,14 @@ const MovieDetails = () => {
       });
       return;
     }
-    router.push({ pathname: `/${type}/list`, params: { apiUrl, title } });
+    router.push({
+      pathname: `/${type}/list`,
+      params: {
+        apiUrl,
+        title,
+        ...(minimumPopularity !== undefined ? { minimumPopularity: String(minimumPopularity) } : {}),
+      },
+    });
   }, []);
 
   if (loading) {
@@ -188,6 +195,8 @@ const MovieDetails = () => {
       </View>
     );
   }
+
+  const minimumPopularity = 0.5;
 
   const handlePlayPress = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -251,8 +260,8 @@ const MovieDetails = () => {
           <MediaContentPoster background={data.background} isPortrait={isPortrait} scrollY={scrollY} />
           <LinearGradient
             pointerEvents="none"
-            colors={['transparent', 'rgba(0, 0, 0, 0.3)', 'rgba(0, 0, 0, 0.92)']}
-            locations={[0, 0.4, 1]}
+            colors={['transparent', 'rgba(0, 0, 0, 0.12)', 'rgba(0, 0, 0, 0.76)']}
+            locations={[0, 0.58, 1]}
             start={{ x: 0, y: 0 }}
             end={{ x: 0, y: 1 }}
             style={styles.posterGradient}
@@ -260,7 +269,7 @@ const MovieDetails = () => {
           <ThemeOverrideProvider colorScheme="dark" colors={PosterOverlayColors}>
             <View pointerEvents="box-none" style={styles.posterContentOverlay}>
               <MediaLogo logo={data.logo} title={data.name} />
-              <MediaContentDescription description={data.description} placement="poster" />
+              <MediaContentDescription description={data.description} placement="poster" collapsedLines={2} />
             </View>
           </ThemeOverrideProvider>
         </View>
@@ -302,10 +311,10 @@ const MovieDetails = () => {
         )
       }
       <View style={styles.recommendationsContainer}>
-        <PosterList apiUrl={`https://api.themoviedb.org/3/movie/${tmdbid}/recommendations`} title='Recommended' type='movie' compact onItemPress={handlePosterItemPress} onSeeAllPress={handlePosterSeeAllPress} />
+        <PosterList apiUrl={`https://api.themoviedb.org/3/movie/${tmdbid}/recommendations`} title='Recommended' type='movie' minimumPopularity={minimumPopularity} compact onItemPress={handlePosterItemPress} onSeeAllPress={handlePosterSeeAllPress} />
       </View>
       <View style={styles.recommendationsContainer}>
-        <PosterList apiUrl={`https://api.themoviedb.org/3/movie/${tmdbid}/similar`} title='Similar to this' type='movie' compact onItemPress={handlePosterItemPress} onSeeAllPress={handlePosterSeeAllPress} />
+        <PosterList apiUrl={`https://api.themoviedb.org/3/movie/${tmdbid}/similar`} title='Similar to this' type='movie' minimumPopularity={minimumPopularity} compact onItemPress={handlePosterItemPress} onSeeAllPress={handlePosterSeeAllPress} />
       </View>
       <BottomSpacing space={50} />
     </Animated.ScrollView>
