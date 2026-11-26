@@ -16,6 +16,8 @@ import { settingsIconColors } from '@/constants/theme';
 const ADDONS_KEY = StorageKeys.ADDONS_KEY;
 const defaultAddonLogo = 'https://i.ibb.co/fSJ42PJ/addon.png';
 const addonActionIcons = {
+  moveUp: Platform.OS === 'android' ? require('@/assets/icons/poster-move-up.xml') : 'arrow.up',
+  moveDown: Platform.OS === 'android' ? require('@/assets/icons/poster-move-down.xml') : 'arrow.down',
   update: Platform.OS === 'android' ? require('@/assets/icons/addon-refresh.xml') : 'arrow.clockwise',
   share: Platform.OS === 'android' ? require('@/assets/icons/addon-share.xml') : 'square.and.arrow.up',
   configure: Platform.OS === 'android' ? require('@/assets/icons/addon-settings.xml') : 'gearshape',
@@ -33,6 +35,8 @@ interface InstalledAddon {
 }
 
 const addonMenuActions: MenuAction[] = [
+  { id: 'move-up', title: 'Move Up', image: addonActionIcons.moveUp },
+  { id: 'move-down', title: 'Move Down', image: addonActionIcons.moveDown },
   { id: 'update', title: 'Update', image: addonActionIcons.update },
   { id: 'share', title: 'Share', image: addonActionIcons.share },
   { id: 'configure', title: 'Configure', image: addonActionIcons.configure },
@@ -143,6 +147,41 @@ const AddonsScreen = () => {
     }
   };
 
+  const moveAddon = (addonId: string, offset: -1 | 1) => {
+    const sourceIndex = addons.findIndex((addon) => addon.id === addonId);
+    const destinationIndex = sourceIndex + offset;
+    if (sourceIndex < 0 || destinationIndex < 0 || destinationIndex >= addons.length) return;
+
+    const updatedAddons = [...addons];
+    [updatedAddons[sourceIndex], updatedAddons[destinationIndex]] = [
+      updatedAddons[destinationIndex],
+      updatedAddons[sourceIndex],
+    ];
+
+    try {
+      const storedAddons = storageService.getItem(ADDONS_KEY);
+      const addonsObject = storedAddons ? JSON.parse(storedAddons) : {};
+      const orderedEntries = Object.entries(addonsObject);
+      const storedSourceIndex = orderedEntries.findIndex(([id]) => id === addonId);
+      const storedDestinationIndex = storedSourceIndex + offset;
+      if (
+        storedSourceIndex < 0
+        || storedDestinationIndex < 0
+        || storedDestinationIndex >= orderedEntries.length
+      ) return;
+
+      [orderedEntries[storedSourceIndex], orderedEntries[storedDestinationIndex]] = [
+        orderedEntries[storedDestinationIndex],
+        orderedEntries[storedSourceIndex],
+      ];
+      storageService.setItem(ADDONS_KEY, JSON.stringify(Object.fromEntries(orderedEntries)));
+      setAddons(updatedAddons);
+    } catch (error) {
+      console.error('Failed to reorder add-ons:', error);
+      showAlert('Error', 'Failed to reorder add-ons.');
+    }
+  };
+
   const openConfiguration = async (url: string) => {
     try {
       await WebBrowser.openBrowserAsync(`${url}/configure`);
@@ -190,6 +229,7 @@ const AddonsScreen = () => {
             {addons.flatMap((addon) => {
               const isUpdating = updatingAddonId === addon.id;
               const isExpanded = expandedAddonId === addon.id;
+              const addonIndex = addons.findIndex((item) => item.id === addon.id);
               const availableActions = addonMenuActions.filter((action) => {
                 if (
                   (action.id === 'update' || action.id === 'share') &&
@@ -201,14 +241,28 @@ const AddonsScreen = () => {
                 ...action,
                 imageColor: action.id === 'remove'
                   ? settingsIconColors.danger
+                  : action.id === 'move-up' || action.id === 'move-down'
+                    ? colors.textDim
                   : action.id === 'update'
                     ? settingsIconColors.refresh
                     : action.id === 'share'
                       ? settingsIconColors.share
                       : settingsIconColors.configure,
+                attributes: {
+                  ...action.attributes,
+                  disabled: action.id === 'move-up'
+                    ? addonIndex === 0
+                    : action.id === 'move-down'
+                      ? addonIndex === addons.length - 1
+                      : action.attributes?.disabled,
+                },
               }));
               const handleAction = (actionId: string) => {
-                if (actionId === 'update' && typeof addon.manifestUrl === 'string' && !isUpdating) {
+                if (actionId === 'move-up') {
+                  moveAddon(addon.id, -1);
+                } else if (actionId === 'move-down') {
+                  moveAddon(addon.id, 1);
+                } else if (actionId === 'update' && typeof addon.manifestUrl === 'string' && !isUpdating) {
                   void updateAddonManifest(addon.id, addon.manifestUrl);
                 } else if (actionId === 'share' && typeof addon.manifestUrl === 'string') {
                   void shareManifestUrl(addon.manifestUrl);
@@ -237,6 +291,10 @@ const AddonsScreen = () => {
                     title,
                     icon: id === 'update'
                       ? 'refresh-outline'
+                      : id === 'move-up'
+                        ? 'arrow-up-outline'
+                        : id === 'move-down'
+                          ? 'arrow-down-outline'
                       : id === 'share'
                         ? 'share-outline'
                         : id === 'configure'
@@ -245,6 +303,8 @@ const AddonsScreen = () => {
                     titleColor: id === 'remove' ? colors.danger : undefined,
                     iconColor: id === 'remove'
                       ? settingsIconColors.danger
+                      : id === 'move-up' || id === 'move-down'
+                        ? colors.textDim
                       : id === 'update'
                         ? settingsIconColors.refresh
                         : id === 'share'

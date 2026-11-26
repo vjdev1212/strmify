@@ -86,6 +86,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     const isSeeking = useRef(false);
     const isHideControlsScheduled = useRef(false);
     const controlsDismissedByTap = useRef(false);
+    const controlsVisibleRef = useRef(true);
     const wasPlayingBeforeSeek = useRef(false);
     const lastKnownTimeRef = useRef<number>(0);
     const restoredResumeKeyRef = useRef<string | null>(null);
@@ -133,6 +134,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     );
     const [showContentFitLabel, setShowContentFitLabel] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
+    const isPausedRef = useRef(false);
     const [videoError, setVideoError] = useState<string | null>(null);
     const [availableAudioTracks, setAvailableAudioTracks] = useState<any[]>([]);
     const [availableTextTracks, setAvailableTextTracks] = useState<any[]>([]);
@@ -145,6 +147,8 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
     const [useEmbeddedSubtitles, setUseEmbeddedSubtitles] = useState(
         resumePlaybackSettings?.subtitleMode === 'embedded'
     );
+
+    isPausedRef.current = isPaused;
 
     const playbackSettings = useMemo<PlaybackSettings>(() => ({
         isMuted: settings.isMuted,
@@ -184,22 +188,25 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
     const showControlsTemporarily = useCallback(() => {
         controlsDismissedByTap.current = false;
+        controlsVisibleRef.current = true;
         setShowControls(true);
+        controlsOpacity.stopAnimation();
         Animated.timing(controlsOpacity, { toValue: 1, duration: 200, useNativeDriver: true }).start();
 
         clearTimer('hideControls');
         isHideControlsScheduled.current = false;
 
-        if (shouldAutoHideControls.current && !isPaused) {
+        if (shouldAutoHideControls.current) {
             isHideControlsScheduled.current = true;
             setTimer('hideControls', () => {
-                if (shouldAutoHideControls.current && !isPaused) {
+                if (shouldAutoHideControls.current) {
+                    controlsVisibleRef.current = false;
                     hideControls(setShowControls, controlsOpacity);
                 }
                 isHideControlsScheduled.current = false;
             }, CONSTANTS.CONTROLS_AUTO_HIDE_DELAY);
         }
-    }, [controlsOpacity, clearTimer, isPaused, setTimer, setShowControls]);
+    }, [controlsOpacity, clearTimer, setTimer, setShowControls]);
 
     useEffect(() => {
         lastKnownTimeRef.current = playerState.currentTime;
@@ -313,16 +320,15 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         });
     }, [playbackSettings, playerState.isReady, playerState.duration, updateProgress]);
 
-    // Keep controls visible while paused; resume the normal auto-hide after playback resumes.
+    // Keep controls visible while transitioning to a paused state, while allowing the active hide timer to finish.
     useEffect(() => {
         if (!playerState.isReady || !isPaused || controlsDismissedByTap.current) return;
 
-        clearTimer('hideControls');
-        isHideControlsScheduled.current = false;
         controlsOpacity.stopAnimation();
         controlsOpacity.setValue(1);
+        controlsVisibleRef.current = true;
         setShowControls(true);
-    }, [clearTimer, controlsOpacity, isPaused, playerState.isReady, setShowControls]);
+    }, [controlsOpacity, isPaused, playerState.isReady, setShowControls]);
 
     useEffect(() => {
         if (playerState.isReady && !isPaused && uiState.showControls && !controlsDismissedByTap.current) {
@@ -517,11 +523,10 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
     const togglePlayPause = useCallback(() => {
         if (!playerState.isReady) return;
-        setIsPaused((wasPaused) => {
-            const nextPaused = !wasPaused;
-            playerState.setIsPlaying(!nextPaused);
-            return nextPaused;
-        });
+        const nextPaused = !isPausedRef.current;
+        isPausedRef.current = nextPaused;
+        setIsPaused(nextPaused);
+        playerState.setIsPlaying(!nextPaused);
         showControlsTemporarily();
     }, [playerState, showControlsTemporarily]);
 
@@ -542,13 +547,15 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         clearTimer('hideControls');
         isHideControlsScheduled.current = false;
 
-        if (uiState.showControls) {
+        if (controlsVisibleRef.current) {
             controlsDismissedByTap.current = true;
+            controlsVisibleRef.current = false;
             hideControls(setShowControls, controlsOpacity);
         } else {
+            controlsVisibleRef.current = true;
             showControlsTemporarily();
         }
-    }, [clearTimer, uiState.showControls, showControlsTemporarily, controlsOpacity, setShowControls]);
+    }, [clearTimer, showControlsTemporarily, controlsOpacity, setShowControls]);
 
     const handleSliderChange = useCallback((value: number) => {
         if (!playerState.isReady || playerState.duration <= 0) return;
@@ -732,6 +739,7 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
         clearTimer('hideControls');
         controlsOpacity.stopAnimation();
         controlsOpacity.setValue(1);
+        controlsVisibleRef.current = true;
         setShowControls(true);
     }, [clearTimer, controlsOpacity, setShowControls]);
 
@@ -870,16 +878,16 @@ export const MediaPlayer: React.FC<ExtendedMediaPlayerProps> = ({
 
             {!isLoadingStream && playerState.isReady && uiState.showControls && (
                 <Animated.View style={[styles.controlsOverlay, { opacity: controlsOpacity }]} pointerEvents="box-none">
-                    <View style={styles.topControls}>
+                    <View pointerEvents="box-none" style={styles.topControls}>
                         <NativeButton variant="text" style={styles.backButton} onPress={handleBack} accessibilityLabel="Go back" seedColor="#ffffff">
                             <Ionicons name="chevron-back" size={28} color="white" />
                         </NativeButton>
 
-                        <View style={styles.titleContainer}>
+                        <View pointerEvents="none" style={styles.titleContainer}>
                             <Text style={styles.titleText} numberOfLines={1}>{title}</Text>
                         </View>
 
-                        <GlassView glassEffectStyle="clear" style={styles.topRightControls}>
+                        <GlassView pointerEvents="box-none" glassEffectStyle="clear" style={styles.topRightControls}>
                             {canUsePictureInPicture && playerState.isReady && (
                                 <NativeButton variant="text" style={styles.controlButton} onPress={handlePictureInPicture} accessibilityLabel="Picture in picture" seedColor="#ffffff">
                                     <MaterialIcons name="picture-in-picture-alt" size={24} color="white" />
