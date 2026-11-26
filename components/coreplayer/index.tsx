@@ -268,6 +268,7 @@ export const hideControls = (
     setShowControls: (show: boolean) => void,
     controlsOpacity: Animated.Value
 ) => {
+    controlsOpacity.stopAnimation();
     Animated.timing(controlsOpacity, {
         toValue: 0,
         duration: 300,
@@ -584,7 +585,7 @@ export const CenterControls: React.FC<{
     if (!isReady) return null;
 
     return (
-        <View style={styles.centerControls}>
+        <View pointerEvents="box-none" style={styles.centerControls}>
             <NativeButton variant="text" style={styles.skipButton} onPress={onSkipBackward} accessibilityLabel="Skip backward" seedColor="#ffffff">
                 <GlassView glassEffectStyle="clear" style={styles.glassIcon}>
                     <MaterialIcons name="replay-10" size={36} color={"#ffffff"} />
@@ -663,14 +664,14 @@ export const ProgressBar: React.FC<{
     );
 
     return (
-        <View style={styles.bottomControls}>
-            <View style={styles.progressContainerWithMargin}>
+        <View pointerEvents="box-none" style={styles.bottomControls}>
+            <View pointerEvents="box-none" style={styles.progressContainerWithMargin}>
                 {reduceTransparency ? (
-                    <View style={[styles.glassContainer, styles.solidGlassSurface]}>
+                    <View pointerEvents="box-none" style={[styles.glassContainer, styles.solidGlassSurface]}>
                         {progressContent}
                     </View>
                 ) : (
-                    <GlassView glassEffectStyle="clear" style={styles.glassContainer}>
+                    <GlassView pointerEvents="box-none" glassEffectStyle="clear" style={styles.glassContainer}>
                         {progressContent}
                     </GlassView>
                 )}
